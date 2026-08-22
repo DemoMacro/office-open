@@ -29,7 +29,7 @@ import {
   hasPlaceholders,
   replaceAudioPlaceholders,
   replaceChartPlaceholders,
-  replaceHyperlinkPlaceholders,
+  replacePlaceholders,
   replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
   replaceMediaPlaceholders,
@@ -72,7 +72,7 @@ import { buildHeaderFooterShapes } from "@shared/header-footer";
 import type { MediaData } from "@shared/media/data";
 import { createThemeXml } from "@shared/theme";
 
-import { PptxWriteContext } from "./context";
+import { PptxWriteContext, type HyperlinkEntry } from "./context";
 import { timingDesc } from "./parts/descriptors/animation";
 import { backgroundDesc } from "./parts/descriptors/background";
 import { stringifyChild } from "./parts/descriptors/bridge";
@@ -177,6 +177,79 @@ function buildRels(entries: RelEntry[]): Relationships {
     rels.addRelationship(e.id, e.type, e.target, e.mode as "External" | undefined);
   }
   return rels;
+}
+
+/**
+ * Replace `{hlink:key}` placeholders in a serialized part with real r:ids and
+ * wire the matching hyperlink relationships. Every part that can host text
+ * (master, layout, notes slide, notesMaster, handoutMaster) routes here —
+ * without it, hyperlinks in those parts leak raw placeholders and dangle.
+ * `slideTargetPrefix` differs per directory: slides reference each other
+ * directly, every other part needs "../slides/". Slide-target relationships
+ * dedup by target (a part may carry only one slide rel per target — several
+ * hyperlinks jumping to the same slide share one rId).
+ */
+function wirePartHyperlinks(
+  xml: string,
+  hyperlinks: HyperlinkEntry[],
+  nextId: number,
+  add: (id: number, type: RelationshipType, target: string, mode?: "External") => void,
+  slideTargetPrefix: string,
+  existingIdOf?: (target: string) => number | undefined,
+): string {
+  const keys = collectPlaceholderKeys(xml, "hlink:");
+  if (keys.length === 0) return xml;
+  const keySet = new Set(keys);
+  const matched = hyperlinks.filter((h) => keySet.has(h.key));
+  const SLIDE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide";
+  // Parts that resolve an existing rel (slides, notes) are round-trip owners —
+  // each hyperlink keeps its own relationship there even when targets repeat
+  // (source files may legally carry several). Fresh parts (master, layout,
+  // notesMaster, handoutMaster) dedup by target so the SDK's one-slide-rel-
+  // per-target rule holds for generated packages. Resolve pre-existing rels
+  // once up front — a live re-query would see rels this helper just added and
+  // fold round-trip duplicates into one.
+  const dedup = existingIdOf === undefined;
+  const preExisting = new Map<string, number>();
+  if (existingIdOf) {
+    for (const hlink of matched) {
+      if (hlink.slide === undefined) continue;
+      const target = `${slideTargetPrefix}slide${hlink.slide}.xml`;
+      if (!preExisting.has(target)) {
+        const id = existingIdOf(target);
+        if (id !== undefined) preExisting.set(target, id);
+      }
+    }
+  }
+  const idBySlideTarget = new Map<string, number>();
+  let cursor = nextId;
+  const idByKey = new Map<string, number>();
+  for (const hlink of matched) {
+    if (hlink.slide === undefined) continue;
+    const target = `${slideTargetPrefix}slide${hlink.slide}.xml`;
+    let id = preExisting.get(target);
+    if (id === undefined) id = dedup ? idBySlideTarget.get(target) : undefined;
+    if (id === undefined) {
+      id = cursor++;
+      if (dedup) idBySlideTarget.set(target, id);
+      add(id, SLIDE_REL as RelationshipType, target);
+    }
+    idByKey.set(hlink.key, id);
+  }
+  for (const hlink of matched) {
+    if (hlink.slide !== undefined) continue;
+    const id = cursor++;
+    idByKey.set(hlink.key, id);
+    add(
+      id,
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+      hlink.url ?? "",
+      "External",
+    );
+  }
+  const replacement = new Map<string, string>();
+  for (const [key, id] of idByKey) replacement.set(`hlink:${key}`, `rId${id}`);
+  return replacePlaceholders(xml, replacement);
 }
 
 function resolveSlideSize(size?: SlideSize): { width: number; height: number } {
@@ -355,6 +428,14 @@ function buildMasterMap(
         });
       }
     }
+    // Hyperlinks on master shapes/text — same placeholder wiring slides get.
+    masterXml = wirePartHyperlinks(
+      masterXml,
+      ctx.hyperlinks,
+      masterRelsEntries.length + 1,
+      (id, type, target, mode) => masterRelsEntries.push({ id, type, target, mode }),
+      "../slides/",
+    );
     // Master-level passthrough relationships (round-trip) — re-emitted as
     // written unless the model already registered the same kind (ownership
     // test: targets may be renamed and ISO-strict types differ in URI only).
@@ -976,6 +1057,14 @@ export function compilePresentation(
         );
       }
     }
+    // Hyperlinks on layout shapes/text — same placeholder wiring slides get.
+    replacedLayoutXml = wirePartHyperlinks(
+      replacedLayoutXml,
+      descCtx.hyperlinks,
+      layoutRels.nextRelationshipId,
+      (id, type, target, mode) => layoutRels.addRelationship(id, type, target, mode),
+      "../slides/",
+    );
     mapping[`SlideLayout${li}`] = {
       data: XML_DECL + replacedLayoutXml,
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
@@ -1015,8 +1104,7 @@ export function compilePresentation(
     }
     presOptions.notesMasterRId = notesMasterRId;
     const notesMasterThemeIndex = themes.length + 1;
-    const notesMasterXml =
-      notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? "";
+    let notesMasterXml = notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? "";
     const notesMasterThemeXml = createThemeXml(options.notesMasterOptions?.theme, descCtx);
     mapping["NotesMasterTheme"] = {
       data: XML_DECL + notesMasterThemeXml,
@@ -1038,10 +1126,21 @@ export function compilePresentation(
         `../media/${mediaItem.fileName}`,
       );
     }
+    notesMasterXml = replaceImagePlaceholders(
+      notesMasterXml,
+      notesMasterMediaData,
+      notesMasterImageOffset,
+    );
+    // Hyperlinks on notes-master shapes/text — same placeholder wiring slides get.
+    notesMasterXml = wirePartHyperlinks(
+      notesMasterXml,
+      descCtx.hyperlinks,
+      notesMasterRels.nextRelationshipId,
+      (id, type, target, mode) => notesMasterRels.addRelationship(id, type, target, mode),
+      "../slides/",
+    );
     mapping["NotesMaster"] = {
-      data:
-        XML_DECL +
-        replaceImagePlaceholders(notesMasterXml, notesMasterMediaData, notesMasterImageOffset),
+      data: XML_DECL + notesMasterXml,
       path: "ppt/notesMasters/notesMaster1.xml",
     };
     mapping["NotesMasterRelationships"] = {
@@ -1086,9 +1185,22 @@ export function compilePresentation(
         `../media/${mediaItem.fileName}`,
       );
     }
+    let handoutXml = replaceImagePlaceholders(
+      handoutMasterXml,
+      handoutMediaData,
+      handoutImageOffset,
+    );
+    // Hyperlinks on handout-master shapes/text — same placeholder wiring
+    // slides get.
+    handoutXml = wirePartHyperlinks(
+      handoutXml,
+      descCtx.hyperlinks,
+      handoutMasterRels.nextRelationshipId,
+      (id, type, target, mode) => handoutMasterRels.addRelationship(id, type, target, mode),
+      "../slides/",
+    );
     mapping["HandoutMaster"] = {
-      data:
-        XML_DECL + replaceImagePlaceholders(handoutMasterXml, handoutMediaData, handoutImageOffset),
+      data: XML_DECL + handoutXml,
       path: "ppt/handoutMasters/handoutMaster1.xml",
     };
     mapping["HandoutMasterRelationships"] = {
@@ -1247,30 +1359,18 @@ export function compilePresentation(
       }
 
       // Hyperlinks
-      const slideHlinkKeys = collectPlaceholderKeys(replacedSlideXml, "hlink:");
-      if (slideHlinkKeys.length > 0) {
-        const slideHlinkKeySet = new Set(slideHlinkKeys);
-        const slideHlinks = descCtx.hyperlinks.filter((h) => slideHlinkKeySet.has(h.key));
-        const hlinkOffset = currentSlideRels.nextRelationshipId;
-        replacedSlideXml = replaceHyperlinkPlaceholders(replacedSlideXml, slideHlinks, hlinkOffset);
-        for (const [hi, hlink] of slideHlinks.entries()) {
-          if (hlink.slide !== undefined) {
-            // Internal slide jump: r:id → slideN.xml, no TargetMode (internal).
-            currentSlideRels.addRelationship(
-              hlinkOffset + hi,
-              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
-              `slide${hlink.slide}.xml`,
-            );
-          } else {
-            currentSlideRels.addRelationship(
-              hlinkOffset + hi,
-              "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
-              hlink.url ?? "",
-              "External",
-            );
-          }
-        }
-      }
+      // Hyperlinks — slides reference each other directly (no ../slides/).
+      replacedSlideXml = wirePartHyperlinks(
+        replacedSlideXml,
+        descCtx.hyperlinks,
+        currentSlideRels.nextRelationshipId,
+        (id, type, target, mode) => currentSlideRels.addRelationship(id, type, target, mode),
+        "",
+        (target) => {
+          const rid = currentSlideRels.idOf("slide", target);
+          return rid === undefined ? undefined : Number(rid.slice(3));
+        },
+      );
 
       // Linked image sources (a:blip @r:link) — one External image relationship
       // per referenced URL.
@@ -1506,9 +1606,6 @@ export function compilePresentation(
     notesSlideToSlide.set(notesIdx, slideIdx);
   }
   for (let i = 0; i < notesOptions.length; i++) {
-    files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(
-      XML_DECL + (notesSlideDesc.stringify(notesOptions[i]!, descCtx) ?? ""),
-    );
     const slideIdx = notesSlideToSlide.get(i) ?? 0;
     const nsRels = new Relationships();
     nsRels.addRelationship(
@@ -1521,6 +1618,33 @@ export function compilePresentation(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide",
       `../slides/slide${slideIdx + 1}.xml`,
     );
+    // Media referenced by notes shapes gets slide-style image wiring (notes
+    // accept pictures just like slides do).
+    const notesRaw = notesSlideDesc.stringify(notesOptions[i]!, descCtx) ?? "";
+    const notesMediaData = getReferencedMedia(notesRaw, media.array);
+    const notesImageOffset = nsRels.nextRelationshipId;
+    for (const [idx, mediaItem] of notesMediaData.entries()) {
+      nsRels.addRelationship(
+        notesImageOffset + idx,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${mediaItem.fileName}`,
+      );
+    }
+    let notesXml = replaceImagePlaceholders(notesRaw, notesMediaData, notesImageOffset);
+    // Hyperlinks in notes text get the same placeholder wiring slides get
+    // (a jump to the host slide reuses its existing slide rel).
+    notesXml = wirePartHyperlinks(
+      notesXml,
+      descCtx.hyperlinks,
+      nsRels.nextRelationshipId,
+      (id, type, target, mode) => nsRels.addRelationship(id, type, target, mode),
+      "../slides/",
+      (target) => {
+        const rid = nsRels.idOf("slide", target);
+        return rid === undefined ? undefined : Number(rid.slice(3));
+      },
+    );
+    files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(XML_DECL + notesXml);
     files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
       XML_DECL + nsRels.serialize(),
     );

@@ -218,16 +218,16 @@ export interface AnimationOptions {
   deceleration?: number;
   /** Restart behavior: "always", "whenNotActive", "never". */
   restart?: "always" | "whenNotActive" | "never";
-  /** Sync behavior: "canSlip", "isLocked", "stoppable". */
-  syncBehavior?: "canSlip" | "isLocked" | "stoppable";
+  /** Sync behavior: "canSlip", "locked". */
+  syncBehavior?: "canSlip" | "locked";
   /** Time filter string. */
   timeFilter?: string;
   /** Event filter string. */
   eventFilter?: string;
   /** Display state. */
   display?: boolean;
-  /** Master relationship: "clearConn", "keepConn", "resume". */
-  masterRelation?: "clearConn" | "keepConn" | "resume";
+  /** Master relationship: "sameClick", "lastClick", "nextClick". */
+  masterRelation?: "sameClick" | "lastClick" | "nextClick";
   /** Build level for animation. */
   buildLevel?: number;
   groupId?: number;
@@ -256,7 +256,7 @@ export interface AnimationOptions {
   formula?: string;
   /** Color space for color animation. */
   colorSpace?: "rgb" | "hsl";
-  pathEditMode?: "relative" | "fixed" | "none";
+  pathEditMode?: "relative" | "fixed";
   previousAction?: "none" | "skipTimed";
   pointsTypes?: string;
   /** Rotation angle in degrees (p:animMotion `@rAng`, ST_Angle in the XML). */

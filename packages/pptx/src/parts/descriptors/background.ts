@@ -46,7 +46,9 @@ function stringifyBackgroundInner(opts: BackgroundOptions, ctx: WriteContext): s
   const bgPrAttrs: string[] = [];
   if (opts.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
 
-  const fillXml = buildFill(opts.fill ?? { type: "none" });
+  // buildFill skips a one-stop gradient (illegal gsLst) — a skipped fill falls
+  // back to noFill so p:bgPr always carries exactly one fill element
+  const fillXml = buildFill(opts.fill ?? { type: "none" }) ?? "<a:noFill/>";
 
   let effectsXml = "";
   if (opts.effects) {
