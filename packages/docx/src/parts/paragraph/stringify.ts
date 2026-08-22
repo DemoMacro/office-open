@@ -561,28 +561,28 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   if (opts.italic !== undefined) s += onOff("w:i", opts.italic);
   if (opts.italicComplexScript !== undefined) s += onOff("w:iCs", opts.italicComplexScript);
 
-  // Caps
+  // Caps — EG_RPrBase order is caps then smallCaps
   // w:smallCaps and w:caps are independent EG_RPrBase siblings — both can
   // appear on the same run, so each is emitted on its own.
-  if (opts.smallCaps !== undefined) {
-    s += onOff("w:smallCaps", opts.smallCaps);
-  }
   if (opts.allCaps !== undefined) {
     s += onOff("w:caps", opts.allCaps);
   }
+  if (opts.smallCaps !== undefined) {
+    s += onOff("w:smallCaps", opts.smallCaps);
+  }
 
-  // Strike
+  // Strike through webHidden — strictly in EG_RPrBase sequence order
   if (opts.strike !== undefined) s += onOff("w:strike", opts.strike);
   if (opts.doubleStrike !== undefined) s += onOff("w:dstrike", opts.doubleStrike);
-  if (opts.emboss !== undefined) s += onOff("w:emboss", opts.emboss);
-  if (opts.imprint !== undefined) s += onOff("w:imprint", opts.imprint);
   if (opts.outline !== undefined) s += onOff("w:outline", opts.outline);
   if (opts.shadow !== undefined) s += onOff("w:shadow", opts.shadow);
-  if (opts.webHidden !== undefined) s += onOff("w:webHidden", opts.webHidden);
+  if (opts.emboss !== undefined) s += onOff("w:emboss", opts.emboss);
+  if (opts.imprint !== undefined) s += onOff("w:imprint", opts.imprint);
   if (opts.noProof !== undefined) s += onOff("w:noProof", opts.noProof);
   if (opts.snapToGrid !== undefined) s += onOff("w:snapToGrid", opts.snapToGrid);
   // w:val="0" forms are meaningful (explicitly off) — emit on any set value.
   if (opts.vanish !== undefined) s += onOff("w:vanish", opts.vanish);
+  if (opts.webHidden !== undefined) s += onOff("w:webHidden", opts.webHidden);
 
   // Color
   if (opts.color) s += colorStr(opts.color);
@@ -630,11 +630,17 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Shading
   if (opts.shading) s += shadingStr(opts.shading);
 
+  // Fit text — EG_RPrBase order: shd, fitText, vertAlign, rtl, cs, em, lang
+  if (opts.fitText !== undefined) s += `<w:fitText w:val="${opts.fitText}"/>`;
+
   // Vertical alignment
   if (opts.verticalAlign) s += `<w:vertAlign w:val="${opts.verticalAlign}"/>`;
 
   // RTL
   if (opts.rightToLeft !== undefined) s += onOff("w:rtl", opts.rightToLeft);
+
+  // Complex script
+  if (opts.complexScript !== undefined) s += onOff("w:cs", opts.complexScript);
 
   // Emphasis mark
   if (opts.emphasisMark) s += `<w:em w:val="${opts.emphasisMark.type ?? "dot"}"/>`;
@@ -642,20 +648,14 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   // Language
   if (opts.language) s += languageStr(opts.language);
 
+  // East Asian layout
+  if (opts.eastAsianLayout) s += eastAsianLayoutStr(opts.eastAsianLayout);
+
   // Spec vanish — val="0" is meaningful (explicitly off)
   if (opts.specVanish !== undefined) s += onOff("w:specVanish", opts.specVanish);
 
-  // Math
+  // Math (oMath is the EG_RPrBase tail)
   if (opts.math) s += onOff("w:oMath", opts.math);
-
-  // Fit text
-  if (opts.fitText !== undefined) s += `<w:fitText w:val="${opts.fitText}"/>`;
-
-  // Complex script
-  if (opts.complexScript !== undefined) s += onOff("w:cs", opts.complexScript);
-
-  // East Asian layout
-  if (opts.eastAsianLayout) s += eastAsianLayoutStr(opts.eastAsianLayout);
 
   // Content part
   if (opts.contentPartRId) s += `<w:contentPart r:id="${opts.contentPartRId}"/>`;
