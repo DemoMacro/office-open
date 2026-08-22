@@ -5033,26 +5033,6 @@
       "required": ["element"],
       "type": "object"
     },
-    "CustomXmlDataBindingOptions": {
-      "additionalProperties": false,
-      "description": "Data binding configuration",
-      "properties": {
-        "prefixMappings": {
-          "description": "Namespace prefix mappings",
-          "type": "string"
-        },
-        "storeItemID": {
-          "description": "Store item ID — absent when the binding has no store item",
-          "type": "string"
-        },
-        "xpath": {
-          "description": "XPath expression for the data binding",
-          "type": "string"
-        }
-      },
-      "required": ["xpath"],
-      "type": "object"
-    },
     "CustomXmlPropertiesOptions": {
       "additionalProperties": false,
       "description": "Custom XML properties",
@@ -5063,10 +5043,6 @@
             "$ref": "#/definitions/CustomXmlAttributeOptions"
           },
           "type": "array"
-        },
-        "dataBinding": {
-          "$ref": "#/definitions/CustomXmlDataBindingOptions",
-          "description": "XML data binding"
         },
         "placeholder": {
           "description": "Placeholder text",
@@ -7048,7 +7024,7 @@
     },
     "ErrorBarDirection": {
       "description": "Which axes the error bars span: both, x only, or y only.",
-      "enum": ["both", "x", "y"],
+      "enum": ["x", "y"],
       "type": "string"
     },
     "ErrorBarOptions": {
@@ -9581,10 +9557,6 @@
       "additionalProperties": false,
       "description": "Mail merge configuration",
       "properties": {
-        "active": {
-          "description": "Whether this mail merge is the active one (w:active)",
-          "type": "boolean"
-        },
         "activeRecord": {
           "description": "Active record index",
           "type": "number"
@@ -9642,10 +9614,6 @@
         },
         "query": {
           "description": "SQL query to select data",
-          "type": "string"
-        },
-        "recipients": {
-          "description": "Recipients data reference (w:recipients r:id)",
           "type": "string"
         },
         "viewMergedData": {
@@ -12022,10 +11990,6 @@
           "$ref": "#/definitions/MailMergeSourceType"
         },
         "udl": {
-          "type": "string"
-        },
-        "uniqueTag": {
-          "description": "Unique tag for identifying the data source (w:uniqueTag)",
           "type": "string"
         }
       },
@@ -18352,7 +18316,7 @@
           "type": "string"
         },
         "storeItemID": {
-          "description": "Custom XML store item ID — absent when no store item is bound",
+          "description": "Custom XML store item ID (required by 's",
           "type": "string"
         },
         "xpath": {
@@ -18360,7 +18324,7 @@
           "type": "string"
         }
       },
-      "required": ["xpath"],
+      "required": ["xpath", "storeItemID"],
       "type": "object"
     },
     "SdtDateOptions": {
@@ -19902,9 +19866,6 @@
           "items": {
             "additionalProperties": false,
             "properties": {
-              "appCheck": {
-                "type": "string"
-              },
               "appName": {
                 "type": "string"
               },
@@ -20346,9 +20307,6 @@
             },
             "solutionID": {
               "type": "string"
-            },
-            "val": {
-              "type": "string"
             }
           },
           "type": "object"
@@ -20499,6 +20457,10 @@
         },
         "trackRevisions": {
           "description": "Enable track changes (revision marking)",
+          "type": "boolean"
+        },
+        "uiCompat97To2003": {
+          "description": "Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+). Absent from the ISO transitional schema but written by Word and declared in the Open XML SDK schema data — kept for round-trip fidelity.",
           "type": "boolean"
         },
         "updateFields": {
@@ -20962,46 +20924,6 @@
       "additionalProperties": false,
       "description": "Shape properties. Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
       "properties": {
-        "childExtentHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childExtentWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },

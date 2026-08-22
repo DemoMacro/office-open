@@ -597,8 +597,8 @@
           "type": "object"
         },
         "masterRelation": {
-          "description": "Master relationship: \"clearConn\", \"keepConn\", \"resume\".",
-          "enum": ["clearConn", "keepConn", "resume"],
+          "description": "Master relationship: \"sameClick\", \"lastClick\", \"nextClick\".",
+          "enum": ["sameClick", "lastClick", "nextClick"],
           "type": "string"
         },
         "mediaType": {
@@ -667,7 +667,7 @@
           "type": "string"
         },
         "pathEditMode": {
-          "enum": ["relative", "fixed", "none"],
+          "enum": ["relative", "fixed"],
           "type": "string"
         },
         "pathType": {
@@ -748,8 +748,8 @@
           "type": "array"
         },
         "syncBehavior": {
-          "description": "Sync behavior: \"canSlip\", \"isLocked\", \"stoppable\".",
-          "enum": ["canSlip", "isLocked", "stoppable"],
+          "description": "Sync behavior: \"canSlip\", \"locked\".",
+          "enum": ["canSlip", "locked"],
           "type": "string"
         },
         "timeFilter": {
@@ -1097,8 +1097,8 @@
           "type": "object"
         },
         "masterRelation": {
-          "description": "Master relationship: \"clearConn\", \"keepConn\", \"resume\".",
-          "enum": ["clearConn", "keepConn", "resume"],
+          "description": "Master relationship: \"sameClick\", \"lastClick\", \"nextClick\".",
+          "enum": ["sameClick", "lastClick", "nextClick"],
           "type": "string"
         },
         "mediaType": {
@@ -1167,7 +1167,7 @@
           "type": "string"
         },
         "pathEditMode": {
-          "enum": ["relative", "fixed", "none"],
+          "enum": ["relative", "fixed"],
           "type": "string"
         },
         "pathType": {
@@ -1245,8 +1245,8 @@
           "type": "array"
         },
         "syncBehavior": {
-          "description": "Sync behavior: \"canSlip\", \"isLocked\", \"stoppable\".",
-          "enum": ["canSlip", "isLocked", "stoppable"],
+          "description": "Sync behavior: \"canSlip\", \"locked\".",
+          "enum": ["canSlip", "locked"],
           "type": "string"
         },
         "timeFilter": {
@@ -5422,7 +5422,7 @@
     },
     "ErrorBarDirection": {
       "description": "Which axes the error bars span: both, x only, or y only.",
-      "enum": ["both", "x", "y"],
+      "enum": ["x", "y"],
       "type": "string"
     },
     "ErrorBarOptions": {
@@ -5801,10 +5801,6 @@
             "$ref": "#/definitions/SupplementalFontOptions"
           },
           "type": "array"
-        },
-        "symbol": {
-          "$ref": "#/definitions/TextFontOptions",
-          "description": "Symbol font (a:sym)."
         }
       },
       "type": "object"
@@ -7387,46 +7383,6 @@
       "additionalProperties": false,
       "description": "Locked-canvas child shape (a:sp). Shape properties (position/geometry/fill/ outline/effects) come from the core model; text is plain string only — locked-canvas shapes carry no rich text.",
       "properties": {
-        "childExtentHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childExtentWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },
@@ -10956,46 +10912,6 @@
       "additionalProperties": false,
       "description": "Shape properties. Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
       "properties": {
-        "childExtentHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childExtentWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },

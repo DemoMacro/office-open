@@ -5673,7 +5673,7 @@
     },
     "ErrorBarDirection": {
       "description": "Which axes the error bars span: both, x only, or y only.",
-      "enum": ["both", "x", "y"],
+      "enum": ["x", "y"],
       "type": "string"
     },
     "ErrorBarOptions": {
@@ -5798,27 +5798,11 @@
         "name": {
           "type": "string"
         },
-        "publishToServer": {
-          "description": "Publish to server",
-          "type": "boolean"
-        },
         "refersTo": {
           "type": "string"
         },
         "sheetId": {
           "type": "number"
-        },
-        "vbProcedure": {
-          "description": "VBA procedure",
-          "type": "boolean"
-        },
-        "workbookParameter": {
-          "description": "Workbook parameter",
-          "type": "boolean"
-        },
-        "xlm": {
-          "description": "XLM macro",
-          "type": "boolean"
         }
       },
       "required": ["name"],
@@ -6349,10 +6333,6 @@
             "$ref": "#/definitions/SupplementalFontOptions"
           },
           "type": "array"
-        },
-        "symbol": {
-          "$ref": "#/definitions/TextFontOptions",
-          "description": "Symbol font (a:sym)."
         }
       },
       "type": "object"
@@ -13550,46 +13530,6 @@
       "additionalProperties": false,
       "description": "Shape properties. Field order follows the XSD content model; the serializer emits in that order. Container-only attributes (bwMode, rotWithShape) and the wrapping tag are the caller's responsibility.",
       "properties": {
-        "childExtentHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childExtentWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
-        "childOffsetY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
-        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },
@@ -14757,10 +14697,6 @@
       "additionalProperties": false,
       "description": "Table style element.",
       "properties": {
-        "button": {
-          "description": "Button style (for pivot tables)",
-          "type": "boolean"
-        },
         "dxfId": {
           "description": "Differential format index (dxf)",
           "type": "number"
@@ -16178,12 +16114,16 @@
           "type": "boolean"
         },
         "destinationFile": {
-          "description": "Destination file name",
+          "description": "Destination file name (@destinationFile, required)",
           "type": "string"
         },
-        "rId": {
-          "description": "Relationship ID to the published item",
+        "divId": {
+          "description": "HTML div id of the published item (@divId, required)",
           "type": "string"
+        },
+        "id": {
+          "description": "Unique publish-object id (@id, unsignedInt, required)",
+          "type": "number"
         },
         "sourceObject": {
           "description": "Source object reference",
@@ -16194,7 +16134,7 @@
           "type": "string"
         }
       },
-      "required": ["rId"],
+      "required": ["id", "divId", "destinationFile"],
       "type": "object"
     },
     "WebPublishingOptions": {
