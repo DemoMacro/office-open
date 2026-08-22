@@ -4,7 +4,7 @@
  * @module
  */
 
-import { parseOnOff } from "@office-open/core";
+import { parseOnOff, xsdComments } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, stringifyElement } from "@office-open/xml";
 
@@ -224,7 +224,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (parseOnOff(attr(v, "changesSavedWin"))) view.changesSavedWin = true;
         if (parseOnOff(attr(v, "onlySync"))) view.onlySync = true;
         const sc = attr(v, "showComments");
-        if (sc) view.showComments = sc as CustomWorkbookViewOptions["showComments"];
+        if (sc)
+          view.showComments = xsdComments.from(sc) as CustomWorkbookViewOptions["showComments"];
         views.push(view);
       }
       if (views.length > 0) result.customViews = views;

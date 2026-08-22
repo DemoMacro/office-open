@@ -4,7 +4,7 @@
  * @module
  */
 
-import { derivePasswordHash } from "@office-open/core";
+import { derivePasswordHash, xsdComments } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
 import { hashPassword } from "@util/index";
 
@@ -306,7 +306,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       if (v.mergeInterval !== undefined) vAttrs.push(`mergeInterval="${v.mergeInterval}"`);
       if (v.changesSavedWin) vAttrs.push('changesSavedWin="1"');
       if (v.onlySync) vAttrs.push('onlySync="1"');
-      if (v.showComments) vAttrs.push(`showComments="${escapeXml(v.showComments)}"`);
+      if (v.showComments) vAttrs.push(`showComments="${xsdComments.to(v.showComments)}"`);
       parts.push(`<customWorkbookView ${vAttrs.join(" ")}/>`);
     }
     parts.push("</customWorkbookViews>");

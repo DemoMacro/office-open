@@ -21,6 +21,7 @@ export interface SheetDefinition {
   state?: "visible" | "hidden" | "veryHidden";
 }
 
+/** A pivot cache hookup (workbook.xml pivotCache @cacheId plus its relationship id). */
 export interface PivotCacheReference {
   cacheId: number;
   rId: string;
@@ -78,10 +79,15 @@ export interface CustomWorkbookViewOptions {
   changesSavedWin?: boolean;
   /** Only sync (CT_CustomWorkbookView `@onlySync`) */
   onlySync?: boolean;
-  /** Show comments (CT_CustomWorkbookView `@showComments`, ST_Comments) */
+  /**
+   * Show comments (CT_CustomWorkbookView `@showComments`, ST_Comments):
+   * none → commNone, indicator → commIndicator, comment (indicator plus
+   * comment) → commIndAndComment.
+   */
   showComments?: "none" | "indicator" | "comment";
 }
 
+/** Workbook-level protection locks (workbook.xml workbookProtection). */
 export interface WorkbookProtectionOptions {
   /** Lock workbook structure (add/delete/rename/move sheets) */
   lockStructure?: boolean;

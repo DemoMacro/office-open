@@ -330,6 +330,12 @@ export const xsdAxisCrossBetween = bidi({ middleOfCategory: "midCat" } as const)
 
 export const xsdAxisCrosses = bidi({ zero: "autoZero" } as const);
 
+export const xsdComments = bidi({
+  none: "commNone",
+  indicator: "commIndicator",
+  comment: "commIndAndComment",
+} as const);
+
 export const xsdErrorValueType = bidi({
   custom: "cust",
   fixedValue: "fixedVal",

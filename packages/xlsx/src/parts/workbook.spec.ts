@@ -60,6 +60,27 @@ describe("workbookDesc round-trip", () => {
     });
   });
 
+  it("maps customViews showComments to ST_Comments tokens", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      customViews: [
+        {
+          name: "Mine",
+          guid: "{11111111-2222-3333-4444-555555555555}",
+          windowWidth: 28800,
+          windowHeight: 14400,
+          activeSheetId: 1,
+          showComments: "comment",
+        },
+      ],
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('showComments="commIndAndComment"');
+
+    const result = roundTrip(opts);
+    expect(result.customViews?.[0]?.showComments).toBe("comment");
+  });
+
   it("round-trips smartTagPr and smartTagTypes", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
