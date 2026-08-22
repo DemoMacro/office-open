@@ -46,6 +46,27 @@ let _nativeDeflateAsync: AsyncDeflateFn | undefined;
 let _nativeInflate: InflateFn | undefined;
 let _nativeCrc32: Crc32Fn | undefined;
 
+// Bun-specific fast path: Bun.deflateSync/Bun.inflateSync emit/accept RAW
+// deflate (bit-identical to deflateRawSync output) but skip the node:zlib
+// compat wrapper — ~10x on the small parts that dominate OPC packages, ~2x
+// on inflate, ~1.3x on large buffers. Probed off globalThis since core ships
+// no bun-types dependency.
+const bunApi = (
+  globalThis as {
+    Bun?: {
+      deflateSync?: (data: Uint8Array, opts?: { level?: number }) => Uint8Array;
+      inflateSync?: (data: Uint8Array) => Uint8Array;
+    };
+  }
+).Bun;
+if (typeof bunApi?.deflateSync === "function") {
+  _nativeDeflate = (data: Uint8Array, level: number): Uint8Array =>
+    bunApi.deflateSync!(data, { level });
+  if (typeof bunApi.inflateSync === "function") {
+    _nativeInflate = (data: Uint8Array): Uint8Array => bunApi.inflateSync!(data);
+  }
+}
+
 // `node:zlib` resolves in Node and Bun (via its Node compat layer); in
 // browsers and Deno the dynamic import rejects, so we fall back to fflate.
 // The import itself is the probe — do NOT gate on `process.versions.node`:
@@ -57,8 +78,10 @@ try {
   // rejects (or yields a stub without it) on incomplete polyfills.
   const zlib = await import("node:zlib");
   if (typeof zlib.deflateRawSync !== "function") throw new Error("no native deflate");
-  _nativeDeflate = (data: Uint8Array, level: number): Uint8Array =>
-    zlib.deflateRawSync(data, { level });
+  if (_nativeDeflate === undefined) {
+    _nativeDeflate = (data: Uint8Array, level: number): Uint8Array =>
+      zlib.deflateRawSync(data, { level });
+  }
   _nativeDeflateAsync = (data: Uint8Array, level: number): Promise<Uint8Array> =>
     new Promise<Uint8Array>((resolve, reject) =>
       zlib.deflateRaw(data, { level }, (err, result) => {
@@ -70,7 +93,7 @@ try {
     typeof zlib.crc32 === "function" ? (data: Uint8Array) => zlib.crc32(data) : computeCrc32;
   // Inflate is optional (deflate presence doesn't guarantee it), so probe
   // separately — nativeUnzip only becomes available when this resolves.
-  if (typeof zlib.inflateRawSync === "function") {
+  if (typeof zlib.inflateRawSync === "function" && _nativeInflate === undefined) {
     _nativeInflate = (data: Uint8Array): Uint8Array => zlib.inflateRawSync(data);
   }
 } catch {
