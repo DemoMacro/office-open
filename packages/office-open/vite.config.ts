@@ -1,5 +1,5 @@
 import nodePolyfills from "@rolldown/plugin-node-polyfills";
-import { defineConfig } from "vite-plus";
+import { defineConfig, type PluginOption } from "vite-plus";
 
 export default defineConfig({
   pack: {
@@ -16,7 +16,7 @@ export default defineConfig({
       "src/convert/index.ts",
       "src/cli.ts",
     ],
-    plugins: [nodePolyfills()],
+    plugins: [nodePolyfills()] as PluginOption[],
     shims: true,
   },
 });

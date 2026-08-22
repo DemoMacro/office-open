@@ -81,7 +81,7 @@
     "bench": "vp test bench"
   },
   "dependencies": {
-    "@noble/hashes": "2.2.0",
+    "@noble/hashes": "2.3.0",
     "@office-open/xml": "workspace:*",
     "fflate": "0.8.3"
   }

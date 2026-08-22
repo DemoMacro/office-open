@@ -104,6 +104,20 @@ export const hasNativeDeflate = (): boolean => _nativeDeflate !== undefined;
 
 export const hasNativeInflate = (): boolean => _nativeInflate !== undefined;
 
+// fflate's async zip entries hand every chunk to a dedicated worker via
+// postMessage with a transfer list. On Bun that worker pool hurts: teardown
+// lags creation, so back-to-back stream generations accumulate cost (measured
+// 0.4s → 4.4s per drain on a 130-part deck) and embedded pools crash outright
+// (vitest bench: "Worker exited unexpectedly"). Main-thread deflate is the
+// better trade there; Node keeps the worker path for its parallel libuv pool.
+const _prefersMainThreadDeflate = typeof bunApi?.deflateSync === "function";
+
+/**
+ * True when DEFLATE work should run on the main thread instead of fflate's
+ * per-entry workers (Bun). See {@link createZipStream} in packer.ts.
+ */
+export const prefersMainThreadDeflate = (): boolean => _prefersMainThreadDeflate;
+
 /**
  * Synchronous native CRC-32 (`zlib.crc32`, Node/Bun only) — undefined where no
  * native zlib resolved (browsers/Deno). Used by media dedup as a fast content

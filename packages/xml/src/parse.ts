@@ -33,7 +33,7 @@ export function nativeTypeValue(value: string): string | number | boolean {
   // in OOXML (row/column indexes, sizes, ids). At most 15 digits is always
   // exact in float64, so the scan replaces the Number() + String(n)
   // round-trip (the String(n) side allocates) without re-checking losslessness.
-  const neg = value.charCodeAt(0) === 0x2d /* - */;
+  const neg = value.charCodeAt(0) === 0x2d; /* - */
   const start = neg ? 1 : 0;
   const digits = value.length - start;
   if (digits > 0 && digits <= 15) {
@@ -346,7 +346,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       }
     }
 
-    const isSelfClosing = xmlString.charCodeAt(pos) === 0x2f /* / */;
+    const isSelfClosing = xmlString.charCodeAt(pos) === 0x2f; /* / */
     if (isSelfClosing) pos += 2;
     else pos++;
 

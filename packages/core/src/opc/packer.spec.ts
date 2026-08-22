@@ -2,7 +2,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-pl
 
 import { decodeBase64, encodeBase64 } from "../util/base64";
 import { isBase64DataURL, toUint8Array } from "../util/data-type";
-import { createPacker, type XmlifyedFile } from "./packer";
+import { createPacker, unzipSync, ZipStreamWriter, type XmlifyedFile } from "./packer";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -337,6 +337,74 @@ describe("createPacker", () => {
       const stream = Packer.toStream(mockFile);
       const data = await collectStream(stream);
       expect(data.length).toBeGreaterThan(0);
+    });
+
+    it("keeps caller-owned buffers intact across repeated streams", async () => {
+      // Regression: fflate's AsyncZipDeflate transfers each pushed buffer to
+      // its worker (detaching the caller's view), so regenerating from the
+      // same files threw DataCloneError on the second pass.
+      const media = new Uint8Array(2048).fill(0xab);
+      const xml = new TextEncoder().encode("<root>hello</root>");
+      compileMock.mockReturnValue({
+        "doc.xml": xml,
+        "media/image1.bin": [media, { level: 6 }],
+      });
+
+      for (let round = 1; round <= 3; round++) {
+        const data = await collectStream(Packer.toStream(mockFile));
+        const unzipped = unzipSync(data);
+        expect(unzipped["doc.xml"]).toEqual(xml);
+        expect(unzipped["media/image1.bin"]).toEqual(media);
+      }
+      expect(media.length).toBe(2048);
+      expect(media[0]).toBe(0xab);
+    });
+  });
+
+  describe("ZipStreamWriter", () => {
+    const encode = (s: string): Uint8Array => new TextEncoder().encode(s);
+
+    const runWriter = async (parts: readonly Uint8Array[]): Promise<Uint8Array> => {
+      const chunks: Uint8Array[] = [];
+      let finish!: (out: Uint8Array) => void;
+      const finished = new Promise<Uint8Array>((resolve) => {
+        finish = resolve;
+      });
+      const writer = new ZipStreamWriter((err, chunk, final) => {
+        if (err) throw err;
+        chunks.push(chunk);
+        if (!final) return;
+        const total = chunks.reduce((s, c) => s + c.length, 0);
+        const out = new Uint8Array(total);
+        let offset = 0;
+        for (const c of chunks) {
+          out.set(c, offset);
+          offset += c.length;
+        }
+        finish(out);
+      });
+      const sink = writer.addPart("doc.xml");
+      for (const part of parts.slice(0, -1)) sink.push(part);
+      sink.end(parts[parts.length - 1]);
+      writer.end();
+      return finished;
+    };
+
+    it("streams a part across multiple chunks and round-trips", async () => {
+      const out = await runWriter([encode("<root>"), encode("streamed"), encode("</root>")]);
+      expect(unzipSync(out)["doc.xml"]).toEqual(encode("<root>streamed</root>"));
+    });
+
+    it("keeps caller-owned chunks intact across repeated archives", async () => {
+      const first = encode("<root>");
+      const middle = encode("streamed");
+      const last = encode("</root>");
+      for (let round = 1; round <= 2; round++) {
+        const out = await runWriter([first, middle, last]);
+        expect(unzipSync(out)["doc.xml"]).toEqual(encode("<root>streamed</root>"));
+      }
+      expect(first.length).toBe(6);
+      expect(middle.length).toBe(8);
     });
   });
 });

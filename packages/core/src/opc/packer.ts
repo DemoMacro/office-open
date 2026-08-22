@@ -10,6 +10,7 @@ import {
   type Zippable,
   AsyncZipDeflate,
   Zip,
+  ZipDeflate,
   ZipPassThrough,
   zip,
   zipSync,
@@ -17,7 +18,12 @@ import {
 
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
-import { hasNativeDeflate, nativeZip, nativeZipAsync } from "./zip-native";
+import {
+  hasNativeDeflate,
+  nativeZip,
+  nativeZipAsync,
+  prefersMainThreadDeflate,
+} from "./zip-native";
 
 export type { Zippable, ZipOptions } from "fflate";
 export { strFromU8, unzipSync, zipSync } from "fflate";
@@ -157,6 +163,10 @@ export const createZipStream = (
   files: Zippable,
   defaultLevel: number = ZIP_DEFLATE_LEVEL,
 ): ReadableStream<Uint8Array> => {
+  // Bun's worker teardown lags creation, so per-entry workers accumulate cost
+  // across back-to-back generations — see prefersMainThreadDeflate(). Node
+  // keeps AsyncZipDeflate for its parallel libuv thread pool.
+  const mainThread = prefersMainThreadDeflate();
   return new ReadableStream<Uint8Array>({
     start(controller) {
       try {
@@ -176,12 +186,20 @@ export const createZipStream = (
           const level = Array.isArray(data)
             ? ((data[1] as ZipOptions).level ?? defaultLevel)
             : defaultLevel;
+          const workerPath = level !== ZIP_STORED_LEVEL && !mainThread;
           const entry =
             level === ZIP_STORED_LEVEL
               ? new ZipPassThrough(name)
-              : new AsyncZipDeflate(name, { level: level as ZipOptions["level"] });
+              : workerPath
+                ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
+                : new ZipDeflate(name, { level: level as ZipOptions["level"] });
           zip.add(entry);
-          entry.push(raw, true);
+          // AsyncZipDeflate transfers each pushed buffer to its worker
+          // (postMessage move semantics), detaching the caller's view —
+          // regenerating from the same files would push an already-detached
+          // buffer and throw DataCloneError. Only the worker entry needs the
+          // copy; pass-through and main-thread entries keep zero-copy.
+          entry.push(workerPath ? raw.slice() : raw, true);
         }
 
         zip.end();
@@ -203,8 +221,8 @@ export const createZipStream = (
 export interface ZipPartSink {
   /** Append a chunk to the part. */
   push(chunk: Uint8Array): void;
-  /** Finalize the part. Must be called before adding the next one. */
-  end(): void;
+  /** Finalize the part, optionally with a final chunk. Must be called before adding the next one. */
+  end(lastChunk?: Uint8Array): void;
 }
 
 /**
@@ -220,7 +238,8 @@ export interface ZipPartSink {
  */
 export class ZipStreamWriter {
   private readonly zip: Zip;
-  private current: AsyncZipDeflate | ZipPassThrough | undefined;
+  private current: AsyncZipDeflate | ZipDeflate | ZipPassThrough | undefined;
+  private readonly mainThread = prefersMainThreadDeflate();
 
   constructor(
     ondata: (err: Error | null, chunk: Uint8Array, final: boolean) => void,
@@ -232,18 +251,23 @@ export class ZipStreamWriter {
   /** Add a part and return its incremental sink. `end()` the previous first. */
   addPart(name: string, level: number = this.defaultLevel): ZipPartSink {
     if (this.current) throw new Error(`ZipStreamWriter: previous part not finalized`);
+    const workerPath = level !== ZIP_STORED_LEVEL && !this.mainThread;
     const entry =
       level === ZIP_STORED_LEVEL
         ? new ZipPassThrough(name)
-        : new AsyncZipDeflate(name, { level: level as ZipOptions["level"] });
+        : workerPath
+          ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
+          : new ZipDeflate(name, { level: level as ZipOptions["level"] });
     // AsyncZipDeflate hands chunks to a worker; ondata delivery is asynchronous,
-    // so ordering between parts is preserved by fflate's internal queue.
+    // so ordering between parts is preserved by fflate's internal queue. The
+    // worker transfer-detaches every chunk it is handed, so sinks receive
+    // copies — a caller-held buffer must survive repeated generations.
     this.zip.add(entry);
     this.current = entry;
     return {
-      push: (chunk) => entry.push(chunk, false),
+      push: (chunk) => entry.push(workerPath ? chunk.slice() : chunk, false),
       end: (lastChunk?: Uint8Array) => {
-        entry.push(lastChunk ?? new Uint8Array(0), true);
+        entry.push((workerPath ? lastChunk?.slice() : lastChunk) ?? new Uint8Array(0), true);
         this.current = undefined;
       },
     };

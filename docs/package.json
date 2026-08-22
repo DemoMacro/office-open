@@ -9,9 +9,9 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@ai-sdk/openai-compatible": "2.0.50",
+    "@ai-sdk/openai-compatible": "2.0.68",
     "docus": "5.12.3",
-    "nuxt": "4.4.8",
+    "nuxt": "4.5.2",
     "office-open": "workspace:*"
   }
 }
