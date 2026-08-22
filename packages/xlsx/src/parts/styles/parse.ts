@@ -86,7 +86,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
   if (patternFill) {
     const result: CellFillOptions = {};
     const patternType = attr(patternFill, "patternType");
-    if (patternType) result.patternType = patternType;
+    if (patternType) result.patternType = patternType as CellFillOptions["patternType"];
     const fg = findChild(patternFill, "fgColor");
     if (fg) {
       result.color = parseColorHex(fg);

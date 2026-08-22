@@ -54,8 +54,8 @@ export interface WebPropertiesOptions {
   post?: string;
   /** HTML tables only (CT_WebPr `@htmlTables`) */
   htmlTables?: boolean;
-  /** HTML formatting: "all" | "rtf" | "none" (default "none") */
-  htmlFormat?: string;
+  /** HTML formatting (CT_WebPr `@htmlFormat`, ST_HtmlFmt) */
+  htmlFormat?: "none" | "rtf" | "all";
   /** Edit page URL (CT_WebPr `@editPage`) */
   editPage?: string;
   /** Selected tables (CT_Tables: string name, number index, null = all/missing) */
@@ -64,8 +64,8 @@ export interface WebPropertiesOptions {
 
 /** Text import field (CT_TextField). */
 export interface ConnectionTextFieldOptions {
-  /** Field data type (ST_ExternalConnectionType, default "general") */
-  type?: string;
+  /** Field data type (CT_TextField `@type`, ST_ExternalConnectionType) */
+  type?: "general" | "text" | "MDY" | "DMY" | "YMD" | "MYD" | "DYM" | "YDM" | "skip" | "EMD";
   /** Field position (default 0) */
   position?: number;
 }
@@ -390,7 +390,8 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (attr(webEl, "url") !== undefined) w.url = attr(webEl, "url");
         if (attr(webEl, "post") !== undefined) w.post = attr(webEl, "post");
         if (parseOnOff(attr(webEl, "htmlTables"))) w.htmlTables = true;
-        if (attr(webEl, "htmlFormat") !== undefined) w.htmlFormat = attr(webEl, "htmlFormat");
+        if (attr(webEl, "htmlFormat") !== undefined)
+          w.htmlFormat = attr(webEl, "htmlFormat") as WebPropertiesOptions["htmlFormat"];
         if (attr(webEl, "editPage") !== undefined) w.editPage = attr(webEl, "editPage");
         const tablesEl = findChild(webEl, "tables");
         if (tablesEl) {
@@ -434,7 +435,8 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
           for (const fEl of fieldsEl.elements ?? []) {
             if (fEl.name !== "textField") continue;
             const f: ConnectionTextFieldOptions = {};
-            if (attr(fEl, "type") !== undefined) f.type = attr(fEl, "type");
+            if (attr(fEl, "type") !== undefined)
+              f.type = attr(fEl, "type") as ConnectionTextFieldOptions["type"];
             const pos = attrNum(fEl, "position");
             if (pos !== undefined) f.position = pos;
             fields.push(f);

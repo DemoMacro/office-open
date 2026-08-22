@@ -33,8 +33,17 @@ export interface PivotDataField {
   summarize?: ConsolidateFunction;
   /** Custom name for the data field (default: "Sum of {field}") */
   name?: string;
-  /** Show data as (CT_DataField `@showDataAs`) */
-  showDataAs?: string;
+  /** Show data as (CT_DataField `@showDataAs`, ST_ShowDataAs) */
+  showDataAs?:
+    | "normal"
+    | "difference"
+    | "percent"
+    | "percentDiff"
+    | "runTotal"
+    | "percentOfRow"
+    | "percentOfCol"
+    | "percentOfTotal"
+    | "index";
   /** Base field index for "show data as" calculations */
   baseField?: number;
   /** Base item index for "show data as" calculations */

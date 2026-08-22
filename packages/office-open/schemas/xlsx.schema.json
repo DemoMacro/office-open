@@ -1626,6 +1626,28 @@
           "type": "string"
         },
         "patternType": {
+          "description": "Pattern kind",
+          "enum": [
+            "none",
+            "solid",
+            "mediumGray",
+            "darkGray",
+            "lightGray",
+            "darkHorizontal",
+            "darkVertical",
+            "darkDown",
+            "darkUp",
+            "darkGrid",
+            "darkTrellis",
+            "lightHorizontal",
+            "lightVertical",
+            "lightDown",
+            "lightUp",
+            "lightGrid",
+            "lightTrellis",
+            "gray125",
+            "gray0625"
+          ],
           "type": "string"
         },
         "stops": {
@@ -3556,6 +3578,7 @@
         },
         "type": {
           "description": "Field data type",
+          "enum": ["general", "text", "MDY", "DMY", "YMD", "MYD", "DYM", "YDM", "skip", "EMD"],
           "type": "string"
         }
       },
@@ -5609,6 +5632,7 @@
         },
         "type": {
           "description": "Cell data type",
+          "enum": ["b", "n", "e", "s", "str", "inlineStr"],
           "type": "string"
         },
         "value": {
@@ -7787,7 +7811,8 @@
           "type": "number"
         },
         "order": {
-          "description": "Sort order: \"u\" | \"a\" | \"d\" | \"aa\" | \"ad\" | \"na\" | \"nd\" (default \"u\")",
+          "description": "Sort order: u unsorted, a ascending, d descending, aa alphabetical ascending, ad alphabetical descending, na natural ascending, nd natural descending.",
+          "enum": ["u", "a", "d", "aa", "ad", "na", "nd"],
           "type": "string"
         },
         "stringIndexes": {
@@ -9824,6 +9849,17 @@
         },
         "showDataAs": {
           "description": "Show data as",
+          "enum": [
+            "normal",
+            "difference",
+            "percent",
+            "percentDiff",
+            "runTotal",
+            "percentOfRow",
+            "percentOfCol",
+            "percentOfTotal",
+            "index"
+          ],
           "type": "string"
         },
         "sortByTupleItems": {
@@ -15571,7 +15607,8 @@
           "type": "boolean"
         },
         "htmlFormat": {
-          "description": "HTML formatting: \"all\" | \"rtf\" | \"none\" (default \"none\")",
+          "description": "HTML formatting",
+          "enum": ["none", "rtf", "all"],
           "type": "string"
         },
         "htmlTables": {

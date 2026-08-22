@@ -70,7 +70,27 @@ export interface CellFillOptions {
   tint?: number;
   /** Foreground automatic color (CT_Color `@auto` on fgColor) */
   fgAutoColor?: boolean;
-  patternType?: string;
+  /** Pattern kind (CT_PatternFill `@patternType`, ST_PatternType) */
+  patternType?:
+    | "none"
+    | "solid"
+    | "mediumGray"
+    | "darkGray"
+    | "lightGray"
+    | "darkHorizontal"
+    | "darkVertical"
+    | "darkDown"
+    | "darkUp"
+    | "darkGrid"
+    | "darkTrellis"
+    | "lightHorizontal"
+    | "lightVertical"
+    | "lightDown"
+    | "lightUp"
+    | "lightGrid"
+    | "lightTrellis"
+    | "gray125"
+    | "gray0625";
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: string;
   /** Background theme palette index (CT_Color `@theme` on bgColor) */

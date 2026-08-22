@@ -28,8 +28,8 @@ export interface ExternalDefinedNameOptions {
 export interface ExternalCellOptions {
   /** Cell reference, e.g. "A1" */
   reference: string;
-  /** Cell data type */
-  type?: string;
+  /** Cell data type (CT_ExternalCell `@t`, ST_CellType — like DdeValueOptions) */
+  type?: "b" | "n" | "e" | "s" | "str" | "inlineStr";
   /** Cell value */
   value?: string;
   /** Value metadata index (CT_ExternalCell `@vm`) */
@@ -336,7 +336,8 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
               const cell: ExternalCellOptions = {
                 reference: String(cellChild.attributes?.["r"] ?? ""),
               };
-              if (cellChild.attributes?.["t"]) cell.type = String(cellChild.attributes["t"]);
+              if (cellChild.attributes?.["t"])
+                cell.type = String(cellChild.attributes["t"]) as ExternalCellOptions["type"];
               if (cellChild.attributes?.["vm"] !== undefined)
                 cell.valueMetadataIndex = Number(cellChild.attributes["vm"]);
               const vEl = findChild(cellChild, "v");

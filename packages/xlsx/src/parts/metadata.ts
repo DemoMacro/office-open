@@ -98,8 +98,12 @@ export interface MdxSetOptions {
   namespaceCount: number;
   /** Tuple count */
   count?: number;
-  /** Sort order: "u" | "a" | "d" | "aa" | "ad" | "na" | "nd" (default "u") */
-  order?: string;
+  /**
+   * Sort order (CT_MdxSet `@ord`, ST_MdxSetOrder, default "u"): u unsorted,
+   * a ascending, d descending, aa alphabetical ascending, ad alphabetical
+   * descending, na natural ascending, nd natural descending.
+   */
+  order?: "u" | "a" | "d" | "aa" | "ad" | "na" | "nd";
   /** Member name string indexes (n children) */
   stringIndexes?: MetadataStringIndexOptions[];
 }
@@ -378,7 +382,7 @@ export const metadataDesc: CustomDescriptor<MetadataOptions> = {
           const s: Partial<MdxSetOptions> = { namespaceCount: attrNum(msEl, "ns") ?? 0 };
           const c = attrNum(msEl, "c");
           if (c !== undefined) s.count = c;
-          if (attr(msEl, "o") !== undefined) s.order = attr(msEl, "o");
+          if (attr(msEl, "o") !== undefined) s.order = attr(msEl, "o") as MdxSetOptions["order"];
           const idx = parseStringIndexes(msEl);
           if (idx) s.stringIndexes = idx;
           m.set = s as MdxSetOptions;
