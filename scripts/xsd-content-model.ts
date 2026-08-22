@@ -89,6 +89,9 @@ interface Slot {
 interface Container {
   ct: string[];
   slots: Slot[];
+  // union of every CT variant's slot members (w:sdtContent block/run/cell/row
+  // variants are context-dependent) — set-level gate input, ordered gates use slots
+  variantElements?: string[];
 }
 
 // ── Minimal XML tokenizer ────────────────────────────────────────────────────
@@ -254,7 +257,9 @@ function flatten(
 
   if (node.tag === "element") {
     const { min, max } = cardinality(node);
-    const name = node.attrs.ref ?? qualify(node.attrs.name ?? "", sf);
+    // same-file refs carry no prefix in the source (vml's ref="path") — they
+    // still resolve into the owning schema's namespace
+    const name = node.attrs.ref ? qualify(node.attrs.ref, sf) : qualify(node.attrs.name ?? "", sf);
     if (!name) return [];
     return [{ elements: [name], min, max }];
   }
@@ -266,11 +271,14 @@ function flatten(
   }
 
   if (node.tag === "group") {
-    // group definition body — resolve through the owning schema
-    const target = resolveGroup(node, sf);
-    if (!target) return [];
+    // group definition body — resolve through the owning schema; local member
+    // declarations qualify with the *defining* file's prefix (a:EG_Media
+    // members are a:audioCd even when referenced from pml)
+    const resolved = resolveGroup(node, sf);
+    if (!resolved) return [];
+    const [target, owner] = resolved;
     const { min, max } = cardinality(node);
-    return flattenChildren(target, sf, groupDepth + 1).map((s) =>
+    return flattenChildren(target, owner, groupDepth + 1).map((s) =>
       // the ref's own cardinality wraps the group body: an optional ref makes
       // every inner slot optional, an unbounded ref makes pick groups "any"
       min === 1 && max === 1 ? s : scaleSlot(s, min, max, target),
@@ -347,42 +355,68 @@ function qualify(name: string, sf: SchemaFile): string {
 }
 
 // Resolve a group definition: local first, then through import prefixes.
-function resolveGroup(refNode: XNode, sf: SchemaFile): XNode | null {
-  const ref = refNode.attrs.ref;
-  if (!ref)
-    return refNode.attrs.name ? (sf.groups.get(qualify(refNode.attrs.name, sf)) ?? null) : null;
-  // ref="p:EG_..." → look in the schema imported under prefix p
+// Resolve a group definition to [node, owning schema]: ref="p:EG_..." looks in
+// the schema imported under prefix p; member declarations qualify with the
+// *defining* file's prefix (a:EG_Media members are a:audioCd even from pml).
+function resolveGroup(refNode: XNode, sf: SchemaFile): [XNode, SchemaFile] | null {
+  const ref = refNode.attrs.ref ?? refNode.attrs.name;
+  if (!ref) return null;
   if (ref.includes(":")) {
     const p = ref.slice(0, ref.indexOf(":"));
     const targetFile = sf.importPrefixes.get(p);
     if (targetFile && schemas.has(targetFile)) {
-      const g = schemas.get(targetFile)!.groups.get(ref);
-      if (g) return g;
+      const owner = schemas.get(targetFile)!;
+      const g = owner.groups.get(ref);
+      if (g) return [g, owner];
     }
     // fall back: any schema whose prefixed group matches
     for (const s of schemas.values()) {
       const g = s.groups.get(ref);
-      if (g) return g;
+      if (g) return [g, s];
     }
     warnings.push(`${sf.file}: unresolved group ref ${ref}`);
     return null;
   }
-  return sf.groups.get(qualify(ref, sf)) ?? null;
+  const local = sf.groups.get(qualify(ref, sf));
+  return local ? [local, sf] : null;
 }
 
-// Same-schema-type resolution for complexType refs used by element type=...
+// Resolve a complexType's content model. complexContent/extension chains the
+// base type's slots before the extension body (XSD extension semantics);
+// restriction and simpleContent carry their own (or no) particle tree.
 function complexTypeSlots(ctName: string, sf: SchemaFile, seen: Set<string>): Slot[] {
   if (seen.has(ctName)) return [];
   seen.add(ctName);
-  const local = sf.complexTypes.get(ctName);
-  if (local) return flattenChildren(local, sf, 0);
 
-  // cross-file: simple type names (ST_*) and types from imported schemas
-  for (const s of schemas.values()) {
-    const node = s.complexTypes.get(ctName);
-    if (node) return flattenChildren(node, s, 0);
+  let node: XNode | undefined = sf.complexTypes.get(ctName);
+  let owner: SchemaFile = sf;
+  if (!node) {
+    for (const s of schemas.values()) {
+      const found = s.complexTypes.get(ctName);
+      if (found) {
+        node = found;
+        owner = s;
+        break;
+      }
+    }
   }
-  return [];
+  if (!node) return [];
+
+  const complexContent = node.children.find((c) => c.tag === "complexContent");
+  if (complexContent) {
+    const body = complexContent.children.find(
+      (c) => c.tag === "extension" || c.tag === "restriction",
+    );
+    if (!body) return [];
+    if (body.tag === "extension") {
+      const base = body.attrs.base ?? "";
+      const baseSlots = base && !base.includes(":") ? complexTypeSlots(base, owner, seen) : [];
+      return [...baseSlots, ...flattenChildren(body, owner, 0)];
+    }
+    return flattenChildren(body, owner, 0);
+  }
+  if (node.children.some((c) => c.tag === "simpleContent")) return [];
+  return flattenChildren(node, owner, 0);
 }
 
 // ── Element table assembly ───────────────────────────────────────────────────
@@ -390,16 +424,33 @@ function complexTypeSlots(ctName: string, sf: SchemaFile, seen: Set<string>): Sl
 const containers = new Map<string, Container>();
 const namespaces: Record<string, string> = {};
 
+// Richness for "most complete model wins": slot count first, total member
+// count as tie-breaker (w:ins has a 1-slot CT_MathCtrlIns variant vs the
+// 1-slot pick-any CT_RunTrackChange carrying every run-level element).
+const richness = (slots: Slot[]) =>
+  slots.length * 1000 + slots.reduce((n, s) => n + (s.elements?.length ?? 0), 0);
+
 function addElement(elementQName: string, ctName: string, slots: Slot[]) {
+  const unionInto = (target: Container) => {
+    for (const s of slots) {
+      for (const e of s.elements ?? []) {
+        if (!target.variantElements) target.variantElements = [];
+        if (!target.variantElements.includes(e)) target.variantElements.push(e);
+      }
+    }
+  };
   const existing = containers.get(elementQName);
   if (existing) {
     if (!existing.ct.includes(ctName)) existing.ct.push(ctName);
     // several elements share a base and a full complexType (CT_SectPrBase vs
     // CT_SectPr); keep the most complete slot list for gate purposes
-    if (slots.length > existing.slots.length) existing.slots = slots;
+    if (richness(slots) > richness(existing.slots)) existing.slots = slots;
+    unionInto(existing);
     return;
   }
-  containers.set(elementQName, { ct: [ctName], slots });
+  const fresh: Container = { ct: [ctName], slots };
+  containers.set(elementQName, fresh);
+  unionInto(fresh);
 }
 
 function collectFromSchema(sf: SchemaFile) {
@@ -438,7 +489,9 @@ function build(): string {
 
   const orderedContainers: Record<string, Container> = {};
   for (const key of [...containers.keys()].sort()) {
-    orderedContainers[key] = containers.get(key)!;
+    const c = containers.get(key)!;
+    if (c.variantElements) c.variantElements.sort();
+    orderedContainers[key] = c;
   }
 
   const payload = {
