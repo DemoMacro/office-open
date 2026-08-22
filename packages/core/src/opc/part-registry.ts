@@ -210,7 +210,8 @@ export const DOCX_PARTS = {
     },
     {
       path: "word/glossary/document.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.glossary+xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
       presence: { kind: "conditional", flag: "hasGlossary" },
     },
     {
@@ -402,7 +403,7 @@ export const PPTX_PARTS = {
     {
       path: "ppt/slideSyncPr/slideSyncPr${i}.xml",
       contentType:
-        "application/vnd.openxmlformats-officedocument.presentationml.slideSyncProperties+xml",
+        "application/vnd.openxmlformats-officedocument.presentationml.slideUpdateInfo+xml",
       presence: { kind: "repeated", countFrom: "slides with slideSync" },
     },
   ],
@@ -542,13 +543,18 @@ export const XLSX_PARTS = {
     },
     {
       path: "xl/metadata.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.metadata+xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetMetadata+xml",
       presence: { kind: "conditional", flag: "metadata" },
     },
     {
       path: "xl/xmlMaps.xml",
       contentType: "application/xml",
       presence: { kind: "conditional", flag: "xmlMaps" },
+    },
+    {
+      path: "xl/volTypes.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.volTypes+xml",
+      presence: { kind: "conditional", flag: "volTypes" },
     },
     {
       path: "xl/tables/tableSingleCells${i}.xml",
@@ -574,7 +580,7 @@ export const XLSX_PARTS = {
     },
     {
       path: "xl/users.xml",
-      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.users+xml",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.userNames+xml",
       presence: { kind: "conditional", flag: "revisionLog.users" },
     },
   ],
