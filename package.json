@@ -37,6 +37,8 @@
     "schema:check": "tsx scripts/generate-schema.ts --check",
     "schema:validate": "tsx scripts/schema-validate.ts",
     "corpus:setup": "tsx scripts/corpus-check.ts --setup",
+    "models:generate": "tsx scripts/xsd-content-model.ts",
+    "models:check": "tsx scripts/xsd-content-model.ts --check",
     "corpus:check": "tsx scripts/corpus-check.ts",
     "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
