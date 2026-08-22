@@ -193,4 +193,27 @@ describe("collectPassthroughParts", () => {
     );
     expect(Array.from(media?.data ?? [])).toEqual(Array.from(binary));
   });
+
+  it("normalizes obsolete URIs in single-quoted and long-prefixed declarations", () => {
+    const files = basePackage();
+    files["word/odd.xml"] =
+      "<r xmlns:wordprocessingCanvas='http://schemas.openxmlformats.org/wordprocessingml/2006/3/main'><a/></r>";
+
+    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    const odd = result.parts.find((p) => p.path === "word/odd.xml");
+    expect(new TextDecoder().decode(odd?.data)).toBe(
+      "<r xmlns:wordprocessingCanvas='http://schemas.openxmlformats.org/wordprocessingml/2006/main'><a/></r>",
+    );
+  });
+
+  it("leaves obsolete URIs in non-xmlns attribute values untouched", () => {
+    const files = basePackage();
+    files["word/attr.xml"] =
+      '<d href="http://schemas.openxmlformats.org/spreadsheetml/2006/5/main"/>';
+    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    const attr = result.parts.find((p) => p.path === "word/attr.xml");
+    expect(new TextDecoder().decode(attr?.data)).toContain(
+      'href="http://schemas.openxmlformats.org/spreadsheetml/2006/5/main"',
+    );
+  });
 });

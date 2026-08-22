@@ -63,6 +63,7 @@ import type { PivotCacheReference, TablePartReference, SheetDefinition } from "@
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import {
   buildWorksheetXml,
+  editSheetTailMarker,
   stripWorksheetPlaceholders,
   type WorksheetContext,
 } from "@parts/worksheet";
@@ -854,7 +855,7 @@ function compileWorksheetPart(
 
     // Insert drawing reference at its CT_Worksheet sequence position.
     const drawingRid = ++nextRid;
-    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="rId${drawingRid}"/>`);
+    sheetXml = editSheetTailMarker(sheetXml, "<!--DRAWING-->", `<drawing r:id="rId${drawingRid}"/>`);
 
     // Add drawing relationship to worksheet rels
     wsRels!.addRelationship(
@@ -898,7 +899,7 @@ function compileWorksheetPart(
     );
 
     // Insert legacyDrawing reference at its CT_Worksheet sequence position.
-    sheetXml = sheetXml.replace("<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="rId${vmlRid}"/>`);
+    sheetXml = editSheetTailMarker(sheetXml, "<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="rId${vmlRid}"/>`);
   }
 
   // Background picture
@@ -915,7 +916,7 @@ function compileWorksheetPart(
     state.globalMediaIdx++;
     const bgRid = ++nextRid;
     wsRels!.addRelationship(bgRid, IMAGE_REL, `../media/${entry.fileName}`);
-    sheetXml = sheetXml.replace("<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
+    sheetXml = editSheetTailMarker(sheetXml, "<!--BACKGROUND_PICTURE-->", `<picture r:id="rId${bgRid}"/>`);
   }
 
   // Round-trip drawing/legacyDrawing references. The referenced part passes
@@ -945,11 +946,11 @@ function compileWorksheetPart(
   };
   if (wsOpts.drawingRid) {
     const rid = escapeXml(resolvePassthroughRid("/drawing", wsOpts.drawingRid));
-    sheetXml = sheetXml.replace("<!--DRAWING-->", `<drawing r:id="${rid}"/>`);
+    sheetXml = editSheetTailMarker(sheetXml, "<!--DRAWING-->", `<drawing r:id="${rid}"/>`);
   }
   if (wsOpts.legacyDrawingRid) {
     const rid = escapeXml(resolvePassthroughRid("/vmlDrawing", wsOpts.legacyDrawingRid));
-    sheetXml = sheetXml.replace("<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="${rid}"/>`);
+    sheetXml = editSheetTailMarker(sheetXml, "<!--LEGACY_DRAWING-->", `<legacyDrawing r:id="${rid}"/>`);
   }
 
   // Pivot tables
@@ -1148,7 +1149,7 @@ function compileWorksheetPart(
 
   // Insert tableParts at their CT_Worksheet sequence position
   if (wsTableParts.length > 0) {
-    sheetXml = sheetXml.replace("<!--TABLE_PARTS-->", buildTablePartsXml(wsTableParts));
+    sheetXml = editSheetTailMarker(sheetXml, "<!--TABLE_PARTS-->", buildTablePartsXml(wsTableParts));
   }
   // Strip placeholders the compiler did not replace (drawing, legacyDrawing,
   // tableParts) — their existence depends on relationships owned here.

@@ -1050,6 +1050,32 @@ export function appendSheetDataRows(
 }
 
 /**
+ * Replace the first occurrence of a placeholder marker inside the sheet tail
+ * region (between the sheetData close tag and `</worksheet>`). stringify emits
+ * `<sheetData></sheetData>` even when empty, so the anchor always hits near the
+ * end of the string, and cell text is XML-escaped so marker bytes cannot occur
+ * inside the sheet body — scanning the small tail avoids walking a multi-MB
+ * sheet both for hits and for misses. A missing marker returns the input
+ * unchanged with zero copying.
+ */
+export function editSheetTailMarker(xml: string, marker: string, replacement: string): string {
+  const tailStart = findSheetTailStart(xml);
+  if (tailStart === -1) return xml;
+  const tail = xml.slice(tailStart);
+  const at = tail.indexOf(marker);
+  if (at === -1) return xml;
+  return xml.slice(0, tailStart) + tail.slice(0, at) + replacement + tail.slice(at + marker.length);
+}
+
+function findSheetTailStart(xml: string): number {
+  // Backward search hits immediately: the close tag is near the string end.
+  // The self-closing form only guards a future empty-sheet emission change.
+  let at = xml.lastIndexOf("</sheetData>");
+  if (at === -1) at = xml.lastIndexOf("<sheetData/>");
+  return at;
+}
+
+/**
  * Strip the placeholder comments stringifyWorksheet emits for parts whose
  * relationships the compiler owns (drawing, legacyDrawing, tableParts,
  * background picture). The compiler replaces the ones it needs and strips the
@@ -1057,11 +1083,10 @@ export function appendSheetDataRows(
  * append/replace) always strip.
  */
 export function stripWorksheetPlaceholders(xml: string): string {
-  return xml
-    .replace("<!--DRAWING-->", "")
-    .replace("<!--LEGACY_DRAWING-->", "")
-    .replace("<!--TABLE_PARTS-->", "")
-    .replace("<!--BACKGROUND_PICTURE-->", "");
+  let out = editSheetTailMarker(xml, "<!--BACKGROUND_PICTURE-->", "");
+  out = editSheetTailMarker(out, "<!--TABLE_PARTS-->", "");
+  out = editSheetTailMarker(out, "<!--LEGACY_DRAWING-->", "");
+  return editSheetTailMarker(out, "<!--DRAWING-->", "");
 }
 
 function buildCellString(

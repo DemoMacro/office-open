@@ -51,8 +51,8 @@ export const OOXML_OBSOLETE_NAMESPACE_ALIASES: Readonly<Record<string, string>> 
  */
 export function normalizeObsoleteNamespaceAliases(data: Uint8Array): Uint8Array {
   let result = data;
-  for (const [obsolete, finalUri] of Object.entries(OOXML_OBSOLETE_NAMESPACE_ALIASES)) {
-    result = replaceAsciiBytes(result, obsolete, finalUri);
+  for (const pattern of OBSOLETE_PATTERNS) {
+    result = replaceAsciiBytes(result, pattern);
   }
   return result;
 }
@@ -81,31 +81,51 @@ function isNamespaceDeclarationValue(
   ) {
     i--;
   }
-  const name = new TextDecoder().decode(data.subarray(i + 1, nameEnd));
-  return name === "xmlns" || name.startsWith("xmlns:");
+  // Byte compare against "xmlns"/"xmlns:…" — a decode would allocate a string
+  // per hit just to test a fixed prefix. The name is the full attribute name,
+  // so "xmlns:foo" (any prefix length) qualifies too.
+  const nameStart = i + 1;
+  const nameLen = nameEnd - nameStart;
+  if (nameLen < 5) return false;
+  for (let k = 0; k < 5; k++) {
+    if (data[nameStart + k] !== XMLNS_BYTES[k]) return false;
+  }
+  return nameLen === 5 || data[nameStart + 5] === 58; // ':'
 }
 
-function replaceAsciiBytes(data: Uint8Array, search: string, replacement: string): Uint8Array {
-  const needle = new TextEncoder().encode(search);
+/** "xmlns" as bytes — module constant so the hit-path compare allocates nothing. */
+const XMLNS_BYTES = Uint8Array.from([120, 109, 108, 110, 115]);
+
+function replaceAsciiBytes(
+  data: Uint8Array,
+  pattern: { needle: Uint8Array; value: Uint8Array },
+): Uint8Array {
+  const { needle, value } = pattern;
   const positions: number[] = [];
-  for (let i = 0; i <= data.length - needle.length; ) {
-    let matches = true;
-    for (let j = 0; j < needle.length; j++) {
-      if (data[i + j] !== needle[j]) {
-        matches = false;
-        break;
+  // Candidate scan driven by Uint8Array.indexOf (a native memchr in V8/JSC):
+  // a per-byte loop walked every offset of multi-MB passthrough parts, while
+  // indexOf skips between first-byte candidates at memory bandwidth.
+  const first = needle[0]!;
+  const lastStart = data.length - needle.length;
+  let i = data.indexOf(first);
+  while (i !== -1) {
+    if (i <= lastStart) {
+      let matches = true;
+      for (let j = 1; j < needle.length; j++) {
+        if (data[i + j] !== needle[j]!) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches && isNamespaceDeclarationValue(data, i, needle.length)) {
+        positions.push(i);
+        i += needle.length - 1; // skip past the match (the +1 below resumes after it)
       }
     }
-    if (matches && isNamespaceDeclarationValue(data, i, needle.length)) {
-      positions.push(i);
-      i += needle.length;
-    } else {
-      i++;
-    }
+    i = data.indexOf(first, i + 1);
   }
   if (positions.length === 0) return data;
 
-  const value = new TextEncoder().encode(replacement);
   const out = new Uint8Array(data.length + positions.length * (value.length - needle.length));
   let sourceOffset = 0;
   let targetOffset = 0;
@@ -120,6 +140,14 @@ function replaceAsciiBytes(data: Uint8Array, search: string, replacement: string
   out.set(data.subarray(sourceOffset), targetOffset);
   return out;
 }
+
+// Needle/value pairs encoded once at module load — the per-call
+// TextEncoder().encode() pair allocated on every passthrough part.
+const OBSOLETE_PATTERNS: ReadonlyArray<{ needle: Uint8Array; value: Uint8Array }> =
+  Object.entries(OOXML_OBSOLETE_NAMESPACE_ALIASES).map(([obsolete, finalUri]) => ({
+    needle: new TextEncoder().encode(obsolete),
+    value: new TextEncoder().encode(finalUri),
+  }));
 
 export const OOXML_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
   // Obsolete aliases resolve through their final namespace's canonical prefix.
