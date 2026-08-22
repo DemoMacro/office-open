@@ -1,3 +1,4 @@
+import type { LongHexNumber } from "@office-open/core";
 /**
  * Styles module for WordprocessingML documents.
  *
@@ -252,7 +253,7 @@ interface ParsedStyle {
   personalCompose?: boolean;
   personalReply?: boolean;
   hidden?: boolean;
-  rsid?: string;
+  rsid?: LongHexNumber;
   paragraph?: ParagraphStylePropertiesOptions;
   run?: RunStylePropertiesOptions;
   table?: Partial<TablePropertiesOptions>;

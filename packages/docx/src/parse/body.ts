@@ -22,7 +22,7 @@ import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
 import { parseTextbox } from "@parts/textbox/textbox-parse";
 import type { SectionOptions } from "@shared/section";
-import type { SectionChild } from "@shared/section";
+import type { BlockContentChild, SectionChild } from "@shared/section";
 
 import {
   parseBookmarkEndOptions,
@@ -179,7 +179,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
         sdt: {
           properties: sdtResult.properties,
           endProperties: sdtResult.endProperties,
-          children: sdtResult.children as SectionChild[] | undefined,
+          children: sdtResult.children as BlockContentChild[] | undefined,
         },
       };
     }

@@ -1,3 +1,4 @@
+import type { LongHexNumber } from "@office-open/core";
 /**
  * Section properties module for WordprocessingML documents.
  *
@@ -37,10 +38,10 @@ export interface HeaderFooterGroup<T> {
 }
 
 export interface SectionPropertiesOptionsBase {
-  runPropertiesRsid?: string;
-  deletionRsid?: string;
-  additionRsid?: string;
-  sectionRsid?: string;
+  runPropertiesRsid?: LongHexNumber;
+  deletionRsid?: LongHexNumber;
+  additionRsid?: LongHexNumber;
+  sectionRsid?: LongHexNumber;
   /**
    * Page size (w:pgSz). Three states: omitted (fresh generation defaults to
    * A4 portrait); a PageSizeProperties object (emits provided values); or

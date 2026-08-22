@@ -1,3 +1,4 @@
+import type { LongHexNumber } from "@office-open/core";
 import type { ObjectElementOptions } from "@parts/object";
 
 import type { FootnoteEndnoteReferenceOptions, ParagraphChild } from "../paragraph";
@@ -120,11 +121,11 @@ interface RunOptionsBase {
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {
     /** Revision save ID for the run (w:rsidR, hex string e.g. "00123456"). */
-    additionRsid?: string;
+    additionRsid?: LongHexNumber;
     /** Revision save ID for run properties (w:rsidRPr, hex string). */
-    runPropertiesRsid?: string;
+    runPropertiesRsid?: LongHexNumber;
     /** Revision save ID when run was deleted (w:rsidDel, hex string). */
-    deletionRsid?: string;
+    deletionRsid?: LongHexNumber;
   };
 
 export type ParagraphRunOptions = RunOptionsBase & ParagraphRunPropertiesOptions;

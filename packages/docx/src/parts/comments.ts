@@ -9,7 +9,7 @@
 
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
-import type { BookmarkStartOptions } from "@parts/paragraph/links/bookmark";
+import type { BookmarkStartOptions, DisplacedByCustomXml } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import { tableDesc } from "@parts/table/descriptor";
@@ -131,7 +131,8 @@ export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
           if (id !== undefined && name !== undefined) {
             const bs: BookmarkStartOptions = { id, name };
             const disp = attr(sub, "w:displacedByCustomXml");
-            if (disp === "before" || disp === "after") bs.displacedByCustomXml = disp;
+            if (disp === "next" || disp === "prev")
+              bs.displacedByCustomXml = disp as DisplacedByCustomXml;
             const colFirst = attrNum(sub, "w:colFirst");
             if (colFirst !== undefined) bs.colFirst = colFirst;
             const colLast = attrNum(sub, "w:colLast");

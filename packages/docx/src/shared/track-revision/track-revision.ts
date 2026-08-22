@@ -1,3 +1,4 @@
+import type { DateTime } from "@office-open/core";
 /**
  * Track Revision module for WordprocessingML documents.
  *
@@ -24,5 +25,5 @@ export interface ChangedProperties {
   /** Name of the author who made the change */
   author: string;
   /** Date and time when the change was made (ISO 8601 format) */
-  date: string;
+  date: DateTime;
 }

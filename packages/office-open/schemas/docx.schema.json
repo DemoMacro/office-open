@@ -1225,6 +1225,10 @@
       },
       "type": "object"
     },
+    "BlockContentChild": {
+      "$ref": "#/definitions/SectionChild",
+      "description": "SectionChild minus the body-only w:altChunk leg — the content model of customXml and sdt containers (EG_ContentBlockContent has no altChunk, unlike the body-level EG_BlockLevelElts and w:txbxContent)."
+    },
     "BlurEffectOptions": {
       "additionalProperties": false,
       "description": "Blur effect options.",
@@ -2097,8 +2101,8 @@
           "type": "string"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
           "description": "Unique identifier for this change (must be unique within the document)",
@@ -2127,8 +2131,8 @@
           "type": "string"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
           "description": "Unique identifier for this change (must be unique within the document)",
@@ -2190,8 +2194,8 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "w:rsid — revision save id.",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w:rsid — revision save id."
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions"
@@ -3950,8 +3954,8 @@
           "type": "array"
         },
         "date": {
-          "description": "Creation date; defaults to the current time.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Creation date; defaults to the current time."
         },
         "initials": {
           "description": "Author initials.",
@@ -4864,9 +4868,9 @@
       "description": "Options for block-level custom XML. Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
       "properties": {
         "children": {
-          "description": "Block content (paragraphs, tables, etc.)",
+          "description": "Block content (paragraphs, tables, etc.) — no altChunk (XSD EG_ContentBlockContent).",
           "items": {
-            "$ref": "#/definitions/SectionChild"
+            "$ref": "#/definitions/BlockContentChild"
           },
           "type": "array"
         },
@@ -5238,6 +5242,12 @@
       "description": "Binary content as a string or an array of byte values.",
       "examples": ["data:image/png;base64,iVBORw0KGgo="]
     },
+    "DateTime": {
+      "description": "ISO 8601 timestamp (xsd:dateTime) — Office writes the UTC Z suffix.",
+      "examples": ["2024-06-01T09:30:00Z"],
+      "pattern": "^-?\\d{4,}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$",
+      "type": "string"
+    },
     "DefaultShapeStyleOptions": {
       "additionalProperties": false,
       "description": "Shape style — a:style.",
@@ -5412,8 +5422,8 @@
       "type": "object"
     },
     "DisplacedByCustomXml": {
-      "description": "whether a range marker is displaced before or after a sibling customXml element. Shared by every derivative (bookmark, move range, comment range, …).",
-      "enum": ["before", "after"],
+      "description": "whether a range marker is displaced to the previous or next sibling customXml element. Shared by every derivative (bookmark, move range, comment range, …).",
+      "enum": ["next", "prev"],
       "type": "string"
     },
     "DisplayBlanksAs": {
@@ -11182,8 +11192,8 @@
           "type": "number"
         },
         "date": {
-          "description": "Date of the move.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date of the move."
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
@@ -11228,8 +11238,8 @@
           "type": "number"
         },
         "date": {
-          "description": "Date of the move.",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date of the move."
         },
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
@@ -11402,8 +11412,8 @@
           "type": "string"
         },
         "date": {
-          "description": "Date of the change",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date of the change"
         },
         "id": {
           "description": "Revision ID",
@@ -11549,8 +11559,8 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "w:rsid — revision save id.",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w:rsid — revision save id."
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions",
@@ -12504,8 +12514,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",
@@ -12537,8 +12547,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",
@@ -12803,8 +12813,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",
@@ -12836,8 +12846,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",
@@ -13498,8 +13508,8 @@
                       "type": "string"
                     },
                     "date": {
-                      "description": "Date of the change",
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime",
+                      "description": "Date of the change"
                     },
                     "id": {
                       "description": "Revision ID",
@@ -13554,7 +13564,7 @@
                       "type": "string"
                     },
                     "date": {
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime"
                     },
                     "id": {
                       "type": "string"
@@ -13761,8 +13771,8 @@
           "type": "boolean"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -13856,8 +13866,8 @@
                       "type": "string"
                     },
                     "date": {
-                      "description": "Date of the change",
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime",
+                      "description": "Date of the change"
                     },
                     "id": {
                       "description": "Revision ID",
@@ -13912,7 +13922,7 @@
                       "type": "string"
                     },
                     "date": {
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime"
                     },
                     "id": {
                       "type": "string"
@@ -14645,8 +14655,8 @@
           "type": "boolean"
         },
         "rsid": {
-          "description": "w:rsid — revision save id.",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w:rsid — revision save id."
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions"
@@ -14801,8 +14811,8 @@
                       "type": "string"
                     },
                     "date": {
-                      "description": "Date of the change",
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime",
+                      "description": "Date of the change"
                     },
                     "id": {
                       "description": "Revision ID",
@@ -14857,7 +14867,7 @@
                       "type": "string"
                     },
                     "date": {
-                      "type": "string"
+                      "$ref": "#/definitions/DateTime"
                     },
                     "id": {
                       "type": "string"
@@ -16531,8 +16541,8 @@
       "description": "Options for creating a Run element.\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.",
       "properties": {
         "additionRsid": {
-          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\")."
         },
         "allCaps": {
           "type": "boolean"
@@ -16840,8 +16850,8 @@
           "type": "string"
         },
         "deletionRsid": {
-          "description": "Revision save ID when run was deleted (w:rsidDel, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when run was deleted (w:rsidDel, hex string)."
         },
         "doubleStrike": {
           "type": "boolean"
@@ -17002,8 +17012,8 @@
           "type": "boolean"
         },
         "runPropertiesRsid": {
-          "description": "Revision save ID for run properties (w:rsidRPr, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for run properties (w:rsidRPr, hex string)."
         },
         "scale": {
           "type": "number"
@@ -17140,8 +17150,8 @@
           "type": "string"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "doubleStrike": {
           "type": "boolean"
@@ -19083,8 +19093,8 @@
                               "type": "string"
                             },
                             "date": {
-                              "description": "Date of the change",
-                              "type": "string"
+                              "$ref": "#/definitions/DateTime",
+                              "description": "Date of the change"
                             },
                             "id": {
                               "description": "Revision ID",
@@ -19139,7 +19149,7 @@
                               "type": "string"
                             },
                             "date": {
-                              "type": "string"
+                              "$ref": "#/definitions/DateTime"
                             },
                             "id": {
                               "type": "string"
@@ -19292,7 +19302,7 @@
               "properties": {
                 "children": {
                   "items": {
-                    "$ref": "#/definitions/SectionChild"
+                    "$ref": "#/definitions/BlockContentChild"
                   },
                   "type": "array"
                 },
@@ -19367,8 +19377,7 @@
           "title": "rawXml",
           "type": "object"
         }
-      ],
-      "description": "Discriminated union for section body, header, and footer children.\n\nEach variant uses a single-key discriminator:\n- `{ paragraph: … }` → paragraph\n- `{ table: … }`      → table\n- `{ toc: … }`         → table of contents\n- `{ textbox: … }`     → textbox\n- `{ sdt: … }`         → structured document tag\n- `{ altChunk: … }`    → alt chunk\n- `{ customXml: … }`   → custom XML\n- `{ bookmarkStart/End }` → body-level range markers (between paragraphs)"
+      ]
     },
     "SectionOptions": {
       "additionalProperties": false,
@@ -19471,7 +19480,7 @@
       "additionalProperties": false,
       "properties": {
         "additionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "author": {
           "description": "Name of the author who made the change",
@@ -19484,11 +19493,11 @@
           "$ref": "#/definitions/ColumnsProperties"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "deletionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
@@ -19569,10 +19578,10 @@
           "type": "boolean"
         },
         "runPropertiesRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "sectionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "textDirection": {
           "description": "Section text flow direction (w:textDirection).",
@@ -19598,7 +19607,7 @@
       "additionalProperties": false,
       "properties": {
         "additionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "bidi": {
           "type": "boolean"
@@ -19607,7 +19616,7 @@
           "$ref": "#/definitions/ColumnsProperties"
         },
         "deletionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
@@ -19687,10 +19696,10 @@
           "type": "boolean"
         },
         "runPropertiesRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "sectionRsid": {
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber"
         },
         "textDirection": {
           "description": "Section text flow direction (w:textDirection).",
@@ -21847,8 +21856,8 @@
                 "type": "boolean"
               },
               "rsid": {
-                "description": "w:rsid — revision save id.",
-                "type": "string"
+                "$ref": "#/definitions/LongHexNumber",
+                "description": "w:rsid — revision save id."
               },
               "run": {
                 "$ref": "#/definitions/RunStylePropertiesOptions"
@@ -21962,8 +21971,8 @@
                 "type": "boolean"
               },
               "rsid": {
-                "description": "w:rsid — revision save id.",
-                "type": "string"
+                "$ref": "#/definitions/LongHexNumber",
+                "description": "w:rsid — revision save id."
               },
               "run": {
                 "$ref": "#/definitions/RunStylePropertiesOptions"
@@ -22028,8 +22037,8 @@
       "description": "Options for creating a SymbolRun.",
       "properties": {
         "additionRsid": {
-          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\").",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\")."
         },
         "allCaps": {
           "type": "boolean"
@@ -22341,8 +22350,8 @@
           "type": "string"
         },
         "deletionRsid": {
-          "description": "Revision save ID when run was deleted (w:rsidDel, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when run was deleted (w:rsidDel, hex string)."
         },
         "doubleStrike": {
           "type": "boolean"
@@ -22508,8 +22517,8 @@
           "type": "boolean"
         },
         "runPropertiesRsid": {
-          "description": "Revision save ID for run properties (w:rsidRPr, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for run properties (w:rsidRPr, hex string)."
         },
         "scale": {
           "type": "number"
@@ -22928,8 +22937,8 @@
           "type": "number"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "deletion": {
           "$ref": "#/definitions/ChangedProperties"
@@ -23403,8 +23412,8 @@
           "$ref": "#/definitions/TableCellSpacingProperties"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "description": {
           "description": "Table description for accessibility (tblDescription)",
@@ -23545,8 +23554,8 @@
           "type": "string"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
           "description": "Unique identifier for this change (must be unique within the document)",
@@ -23664,8 +23673,8 @@
       "additionalProperties": false,
       "properties": {
         "additionRsid": {
-          "description": "Revision save ID for the row (w:rsidR, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for the row (w:rsidR, hex string)."
         },
         "cantSplit": {
           "description": "Whether the row can be split across pages (cantSplit)",
@@ -23718,8 +23727,8 @@
           "$ref": "#/definitions/ChangedProperties"
         },
         "deletionRsid": {
-          "description": "Revision save ID when row was deleted (w:rsidDel, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when row was deleted (w:rsidDel, hex string)."
         },
         "divId": {
           "description": "div ID for HTML compatibility (divId)",
@@ -23790,16 +23799,16 @@
           "type": "string"
         },
         "runPropertiesRsid": {
-          "description": "Revision save ID for row properties (w:rsidRPr, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for row properties (w:rsidRPr, hex string)."
         },
         "tableHeader": {
           "description": "Whether the row should be repeated as a header row on each page (tblHeader)",
           "type": "boolean"
         },
         "tableRowRsid": {
-          "description": "Revision save ID for table row (w:rsidTr, hex string).",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID for table row (w:rsidTr, hex string)."
         },
         "widthAfter": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -23833,8 +23842,8 @@
           "description": "Conditional formatting style (cnfStyle)"
         },
         "date": {
-          "description": "Date and time when the change was made (ISO 8601 format)",
-          "type": "string"
+          "$ref": "#/definitions/DateTime",
+          "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "divId": {
           "description": "div ID for HTML compatibility (divId)",
@@ -24084,8 +24093,8 @@
           "description": "Table row properties."
         },
         "rsid": {
-          "description": "w:rsid — revision save id.",
-          "type": "string"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w:rsid — revision save id."
         },
         "run": {
           "$ref": "#/definitions/RunStylePropertiesOptions",
@@ -25167,8 +25176,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",
@@ -25200,8 +25209,8 @@
                   "type": "array"
                 },
                 "date": {
-                  "description": "Date and time when the change was made (ISO 8601 format)",
-                  "type": "string"
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
                   "description": "Unique identifier for this change (must be unique within the document)",

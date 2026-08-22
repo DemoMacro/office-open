@@ -4806,6 +4806,12 @@
       "description": "Binary content as a string or an array of byte values.",
       "examples": ["data:image/png;base64,iVBORw0KGgo="]
     },
+    "DateTime": {
+      "description": "ISO 8601 timestamp (xsd:dateTime) — Office writes the UTC Z suffix.",
+      "examples": ["2024-06-01T09:30:00Z"],
+      "pattern": "^-?\\d{4,}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$",
+      "type": "string"
+    },
     "DefaultShapeDefinitionOptions": {
       "additionalProperties": false,
       "description": "Default shape/line/text definition.",
@@ -11413,7 +11419,7 @@
           "type": "string"
         },
         "date": {
-          "type": "string"
+          "$ref": "#/definitions/DateTime"
         },
         "initials": {
           "type": "string"

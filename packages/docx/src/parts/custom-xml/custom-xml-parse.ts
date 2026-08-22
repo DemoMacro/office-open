@@ -5,7 +5,7 @@
  */
 import { attr, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type { SectionChild } from "@shared/section";
+import type { BlockContentChild, SectionChild } from "@shared/section";
 
 import type { DocxReadContext } from "../../context";
 import { parseCustomXmlProperties } from "../bodychildren";
@@ -45,7 +45,7 @@ export function parseCustomXmlBlock(
     const parsed = parseChild(child, ctx);
     children.push(parsed);
   }
-  if (children.length > 0) opts.children = children;
+  if (children.length > 0) opts.children = children as BlockContentChild[];
 
   return opts as CustomXmlBlockOptions;
 }

@@ -57,6 +57,7 @@ const widthTypeOf = (el: Element): string | undefined => {
   const raw = attr(el, "w:type");
   return raw !== undefined ? xsdTableWidthType.from(raw) : undefined;
 };
+import type { DisplacedByCustomXml } from "@parts/paragraph/links/bookmark";
 import { parseBorderSide } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 import { parseShading, type ShadingProperties } from "@shared/shading";
@@ -1127,7 +1128,8 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (id !== undefined) {
         const marker: MarkupRangeOptions = { id };
         const disp = attr(child, "w:displacedByCustomXml");
-        if (disp === "before" || disp === "after") marker.displacedByCustomXml = disp;
+        if (disp === "next" || disp === "prev")
+          marker.displacedByCustomXml = disp as DisplacedByCustomXml;
         childCells.push(
           child.name === "w:commentRangeStart"
             ? { commentRangeStart: marker }
@@ -1140,7 +1142,8 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (id !== undefined && name) {
         const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
         const disp = attr(child, "w:displacedByCustomXml");
-        if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+        if (disp === "next" || disp === "prev")
+          bookmarkStart.displacedByCustomXml = disp as DisplacedByCustomXml;
         const colFirst = attrNum(child, "w:colFirst");
         if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
         const colLast = attrNum(child, "w:colLast");
@@ -1152,7 +1155,8 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (id !== undefined) {
         const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
         const disp = attr(child, "w:displacedByCustomXml");
-        if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+        if (disp === "next" || disp === "prev")
+          bookmarkEnd.displacedByCustomXml = disp as DisplacedByCustomXml;
         childCells.push({ bookmarkEnd: bookmarkEnd as MarkupRangeOptions });
       }
     } else if (child.name === "w:sdt") {

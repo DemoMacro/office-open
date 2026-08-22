@@ -1,3 +1,4 @@
+import type { LongHexNumber } from "@office-open/core";
 import { escapeXml } from "@office-open/xml";
 import { documentNamespaceRecord } from "@parts/document/document-attributes";
 import { AlignmentType } from "@parts/paragraph";
@@ -79,7 +80,7 @@ export interface StyleOptions {
   /** CT_Style w:hidden — style hidden from the UI (CT_OnOff). */
   hidden?: boolean;
   /** CT_Style w:rsid — revision save id (CT_LongHexNumber, hex string verbatim). */
-  rsid?: string;
+  rsid?: LongHexNumber;
   /** CT_Style `@w:default` — the default style for its type (CT_OnOff). */
   default?: boolean;
   /** CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff). */

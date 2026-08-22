@@ -293,6 +293,14 @@ function stringifySectionPropertiesInner(
     parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
   }
 
+  // Paper source — EG_SectPrContents order: … pgMar, paperSrc, pgBorders …
+  if (opts.paperSrc) {
+    const psAttr: string[] = [];
+    if (opts.paperSrc.first !== undefined) psAttr.push(`w:first="${opts.paperSrc.first}"`);
+    if (opts.paperSrc.other !== undefined) psAttr.push(`w:other="${opts.paperSrc.other}"`);
+    parts.push(`<w:paperSrc ${psAttr.join(" ")}/>`);
+  }
+
   // Page borders
   if (borders) parts.push(pageBordersXml(borders));
 
@@ -305,33 +313,19 @@ function stringifySectionPropertiesInner(
   // Columns
   if (opts.columns) parts.push(columnsXml(opts.columns));
 
-  // Vertical alignment
+  // Element order follows EG_SectPrContents in wml.xsd: formProt, vAlign,
+  // noEndnote, titlePg, textDirection, bidi, rtlGutter, docGrid.
+  if (opts.formProtection !== undefined)
+    parts.push(opts.formProtection ? "<w:formProt/>" : '<w:formProt w:val="0"/>');
   if (opts.verticalAlign) parts.push(verticalAlignXml(opts.verticalAlign));
-
-  // Boolean on/off elements — direct string output
+  if (opts.noEndnote !== undefined)
+    parts.push(opts.noEndnote ? "<w:noEndnote/>" : '<w:noEndnote w:val="0"/>');
   if (opts.titlePage !== undefined)
     parts.push(opts.titlePage ? "<w:titlePg/>" : '<w:titlePg w:val="0"/>');
   if (textDirection) parts.push(`<w:textDirection w:val="${textDirection}"/>`);
-  if (opts.noEndnote !== undefined)
-    parts.push(opts.noEndnote ? "<w:noEndnote/>" : '<w:noEndnote w:val="0"/>');
-  if (opts.formProtection !== undefined)
-    parts.push(opts.formProtection ? "<w:formProt/>" : '<w:formProt w:val="0"/>');
   if (opts.bidi !== undefined) parts.push(opts.bidi ? "<w:bidi/>" : '<w:bidi w:val="0"/>');
   if (opts.rtlGutter !== undefined)
     parts.push(opts.rtlGutter ? "<w:rtlGutter/>" : '<w:rtlGutter w:val="0"/>');
-
-  // Paper source
-  if (opts.paperSrc) {
-    const psAttr: string[] = [];
-    if (opts.paperSrc.first !== undefined) psAttr.push(`w:first="${opts.paperSrc.first}"`);
-    if (opts.paperSrc.other !== undefined) psAttr.push(`w:other="${opts.paperSrc.other}"`);
-    parts.push(`<w:paperSrc ${psAttr.join(" ")}/>`);
-  }
-
-  // Printer settings
-  if (opts.printerSettingsId !== undefined) {
-    parts.push(`<w:printerSettings r:id="${opts.printerSettingsId}"/>`);
-  }
 
   // Document grid — three states:
   //  - undefined (fresh, unset): emit Word's CJK default line grid (linePitch
@@ -340,6 +334,11 @@ function stringifySectionPropertiesInner(
   //  - false (explicit off, e.g. parsed source had no w:docGrid): omit.
   if (omitDefaults ? typeof opts.grid === "object" : opts.grid !== false) {
     parts.push(docGridXml(linePitch, charSpace, gridType));
+  }
+
+  // Printer settings
+  if (opts.printerSettingsId !== undefined) {
+    parts.push(`<w:printerSettings r:id="${opts.printerSettingsId}"/>`);
   }
 
   // Revision (sectPrChange)

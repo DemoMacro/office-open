@@ -45,6 +45,7 @@ import type {
   BookmarkStartOptions,
   MoveRangeStartOptions,
 } from "@parts/paragraph/links/bookmark";
+import type { DisplacedByCustomXml } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type {
   NumberingInsertionOptions,
@@ -1420,7 +1421,7 @@ function parseMoveRangeStart(el: Element): MoveRangeStartOptions | null {
   const date = attr(el, "w:date");
   if (date !== undefined) m.date = date;
   const disp = attr(el, "w:displacedByCustomXml");
-  if (disp === "before" || disp === "after") m.displacedByCustomXml = disp;
+  if (disp === "next" || disp === "prev") m.displacedByCustomXml = disp as DisplacedByCustomXml;
   const colFirst = attrNum(el, "w:colFirst");
   if (colFirst !== undefined) m.colFirst = colFirst;
   const colLast = attrNum(el, "w:colLast");
@@ -1448,7 +1449,7 @@ function parseMarkupRangeOptions(el: Element): MarkupRangeOptions | undefined {
   if (id === undefined) return undefined;
   const m: Partial<MarkupRangeOptions> = { id };
   const disp = attr(el, "w:displacedByCustomXml");
-  if (disp === "before" || disp === "after") m.displacedByCustomXml = disp;
+  if (disp === "next" || disp === "prev") m.displacedByCustomXml = disp as DisplacedByCustomXml;
   return m as MarkupRangeOptions;
 }
 
@@ -1468,7 +1469,8 @@ export function parseBookmarkStartOptions(el: Element): BookmarkStartOptions | u
   if (id === undefined || !name) return undefined;
   const bookmarkStart: Partial<BookmarkStartOptions> = { id, name };
   const disp = attr(el, "w:displacedByCustomXml");
-  if (disp === "before" || disp === "after") bookmarkStart.displacedByCustomXml = disp;
+  if (disp === "next" || disp === "prev")
+    bookmarkStart.displacedByCustomXml = disp as DisplacedByCustomXml;
   const colFirst = attrNum(el, "w:colFirst");
   if (colFirst !== undefined) bookmarkStart.colFirst = colFirst;
   const colLast = attrNum(el, "w:colLast");
@@ -1482,7 +1484,8 @@ export function parseBookmarkEndOptions(el: Element): MarkupRangeOptions | undef
   if (id === undefined) return undefined;
   const bookmarkEnd: Partial<MarkupRangeOptions> = { id };
   const disp = attr(el, "w:displacedByCustomXml");
-  if (disp === "before" || disp === "after") bookmarkEnd.displacedByCustomXml = disp;
+  if (disp === "next" || disp === "prev")
+    bookmarkEnd.displacedByCustomXml = disp as DisplacedByCustomXml;
   return bookmarkEnd as MarkupRangeOptions;
 }
 

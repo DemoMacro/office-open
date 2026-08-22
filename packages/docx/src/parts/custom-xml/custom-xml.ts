@@ -13,7 +13,7 @@ import type { TableRowOptions } from "@parts/table/table-row";
  *
  * @module
  */
-import type { SectionChild } from "@shared/section";
+import type { BlockContentChild } from "@shared/section";
 
 // ── Options ──
 
@@ -74,8 +74,8 @@ export interface CustomXmlRunOptions {
  * controls (`w:sdt`) or customXml parts for new content.
  */
 export type CustomXmlBlockOptions = CustomXmlRunOptions & {
-  /** Block content (paragraphs, tables, etc.) */
-  children?: SectionChild[];
+  /** Block content (paragraphs, tables, etc.) — no altChunk (XSD EG_ContentBlockContent). */
+  children?: BlockContentChild[];
 };
 
 /**

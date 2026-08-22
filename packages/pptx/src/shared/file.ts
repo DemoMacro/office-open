@@ -7,6 +7,7 @@ import type {
   ThemeOverrideOptions,
   UniversalMeasure,
 } from "@office-open/core";
+import type { DateTime } from "@office-open/core";
 import type { BackgroundOptions } from "@parts/background";
 import type { ColorMappingOverrideOptions } from "@parts/descriptors/color-map-override";
 import type { NotesSlideOptions } from "@parts/descriptors/notes-slide";
@@ -108,7 +109,7 @@ export interface SlideCommentOptions {
   /** Anchor Y in EMU or UniversalMeasure (e.g. "50px", "2cm"). */
   y: number | UniversalMeasure;
   initials?: string;
-  date?: string;
+  date?: DateTime;
   modified?: boolean;
 }
 

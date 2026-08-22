@@ -19,7 +19,7 @@ import { onOff, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
 import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
-import type { SectionChild } from "@shared/section";
+import type { BlockContentChild, SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
 
@@ -147,7 +147,7 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
 
 export interface SdtBlockOptions {
   properties: SdtPropertiesOptions;
-  children?: SectionChild[];
+  children?: BlockContentChild[];
   /** Run properties for the SDT end mark (w:sdtEndPr). */
   endProperties?: RunPropertiesOptions;
 }
@@ -484,7 +484,7 @@ export interface CustomXmlBlockDescriptorOptions {
   element: string;
   uri?: string;
   customXmlPr?: CustomXmlPropertiesOptions;
-  children?: SectionChild[];
+  children?: BlockContentChild[];
 }
 
 function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
@@ -572,7 +572,7 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
         childList.push(_parseBodyChild(child, dctx));
       }
     }
-    if (childList.length > 0) opts.children = childList;
+    if (childList.length > 0) opts.children = childList as BlockContentChild[];
 
     return opts as CustomXmlBlockDescriptorOptions;
   },

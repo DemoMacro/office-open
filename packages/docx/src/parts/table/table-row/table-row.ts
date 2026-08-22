@@ -7,6 +7,7 @@
  */
 
 import type { BaseTableRowOptions } from "@office-open/core";
+import type { LongHexNumber } from "@office-open/core";
 import type { CustomXmlCellOptions } from "@parts/custom-xml";
 import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -53,11 +54,11 @@ export interface TableRowOptions
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (w:rsidRPr, hex string). */
-  runPropertiesRsid?: string;
+  runPropertiesRsid?: LongHexNumber;
   /** Revision save ID for the row (w:rsidR, hex string). */
-  additionRsid?: string;
+  additionRsid?: LongHexNumber;
   /** Revision save ID when row was deleted (w:rsidDel, hex string). */
-  deletionRsid?: string;
+  deletionRsid?: LongHexNumber;
   /** Revision save ID for table row (w:rsidTr, hex string). */
-  tableRowRsid?: string;
+  tableRowRsid?: LongHexNumber;
 }

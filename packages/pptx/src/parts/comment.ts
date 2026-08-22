@@ -4,6 +4,7 @@
  * @module
  */
 import type { UniversalMeasure } from "@office-open/core";
+import type { DateTime } from "@office-open/core";
 
 export interface AuthorEntry {
   id: number;
@@ -16,7 +17,7 @@ export interface AuthorEntry {
 export interface CommentEntry {
   authorId: number;
   idx: number;
-  date?: string;
+  date?: DateTime;
   modified?: boolean;
   x: number | UniversalMeasure;
   y: number | UniversalMeasure;

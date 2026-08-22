@@ -73,8 +73,8 @@ describe("range markers parse", () => {
   it("parses bookmarkStart/End with column scope and displacedByCustomXml", () => {
     const cs = childrenOf(
       parseParagraphXml(
-        `<w:bookmarkStart w:id="1" w:name="bm" w:colFirst="0" w:colLast="2" w:displacedByCustomXml="before"/>` +
-          `<w:bookmarkEnd w:id="1" w:displacedByCustomXml="after"/>`,
+        `<w:bookmarkStart w:id="1" w:name="bm" w:colFirst="0" w:colLast="2" w:displacedByCustomXml="next"/>` +
+          `<w:bookmarkEnd w:id="1" w:displacedByCustomXml="prev"/>`,
       ),
     );
     expect(cs[0]?.bookmarkStart).toEqual({
@@ -82,15 +82,15 @@ describe("range markers parse", () => {
       name: "bm",
       colFirst: 0,
       colLast: 2,
-      displacedByCustomXml: "before",
+      displacedByCustomXml: "next",
     });
-    expect(cs[1]?.bookmarkEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
+    expect(cs[1]?.bookmarkEnd).toEqual({ id: 1, displacedByCustomXml: "prev" });
   });
 
   it("parses moveFromRangeStart with column scope and displacedByCustomXml", () => {
     const cs = childrenOf(
       parseParagraphXml(
-        `<w:moveFromRangeStart w:id="3" w:name="m" w:colFirst="0" w:colLast="1" w:displacedByCustomXml="after"/>`,
+        `<w:moveFromRangeStart w:id="3" w:name="m" w:colFirst="0" w:colLast="1" w:displacedByCustomXml="prev"/>`,
       ),
     );
     expect(cs[0]?.moveFromRangeStart).toEqual({
@@ -98,22 +98,22 @@ describe("range markers parse", () => {
       name: "m",
       colFirst: 0,
       colLast: 1,
-      displacedByCustomXml: "after",
+      displacedByCustomXml: "prev",
     });
   });
 
   it("parses commentRange and move range ends with displacedByCustomXml", () => {
     const cs = childrenOf(
       parseParagraphXml(
-        `<w:commentRangeStart w:id="1" w:displacedByCustomXml="before"/>` +
-          `<w:commentRangeEnd w:id="1" w:displacedByCustomXml="after"/>` +
-          `<w:moveFromRangeEnd w:id="2" w:displacedByCustomXml="before"/>` +
+        `<w:commentRangeStart w:id="1" w:displacedByCustomXml="next"/>` +
+          `<w:commentRangeEnd w:id="1" w:displacedByCustomXml="prev"/>` +
+          `<w:moveFromRangeEnd w:id="2" w:displacedByCustomXml="next"/>` +
           `<w:moveToRangeEnd w:id="3"/>`,
       ),
     );
-    expect(cs[0]?.commentRangeStart).toEqual({ id: 1, displacedByCustomXml: "before" });
-    expect(cs[1]?.commentRangeEnd).toEqual({ id: 1, displacedByCustomXml: "after" });
-    expect(cs[2]?.moveFromRangeEnd).toEqual({ id: 2, displacedByCustomXml: "before" });
+    expect(cs[0]?.commentRangeStart).toEqual({ id: 1, displacedByCustomXml: "next" });
+    expect(cs[1]?.commentRangeEnd).toEqual({ id: 1, displacedByCustomXml: "prev" });
+    expect(cs[2]?.moveFromRangeEnd).toEqual({ id: 2, displacedByCustomXml: "next" });
     expect(cs[3]?.moveToRangeEnd).toEqual({ id: 3 });
   });
 

@@ -1,4 +1,5 @@
 import type { UniversalMeasure } from "@office-open/core";
+import type { LongHexNumber } from "@office-open/core";
 /**
  * Run properties parser for DOCX documents.
  *
@@ -464,9 +465,9 @@ export function parseRun(
 ): {
   properties: RunPropertiesOptions | undefined;
   children: ParsedRunChild[];
-  additionRsid?: string;
-  runPropertiesRsid?: string;
-  deletionRsid?: string;
+  additionRsid?: LongHexNumber;
+  runPropertiesRsid?: LongHexNumber;
+  deletionRsid?: LongHexNumber;
 } {
   const rPr = findChild(el, "w:rPr");
   const properties = rPr ? parseRunProperties(rPr) : undefined;

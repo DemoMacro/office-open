@@ -4,6 +4,7 @@
  * @module
  */
 
+import type { DateTime } from "@office-open/core";
 import type { BookmarkStartOptions, MarkupRangeOptions } from "@parts/paragraph/links/bookmark";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import type { TableOptions } from "@parts/table/table";
@@ -56,7 +57,7 @@ export interface CommentChildOptions {
   /** Author initials (CT_Comment `@w:initials`). */
   initials?: string;
   /** Creation date (CT_Comment `@w:date`, ISO 8601 string); defaults to the current time. */
-  date?: string;
+  date?: DateTime;
   /** Comment reply content stored in word/comments.xml (maps to CommentOptions.children). */
   children: (string | ParagraphOptions)[];
   /** Anchored document content the comment range wraps (inline runs/text). */

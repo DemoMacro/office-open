@@ -1,3 +1,4 @@
+import type { DateTime } from "@office-open/core";
 import type { ShadingProperties } from "@shared/shading";
 /**
  * Paragraph properties types for WordprocessingML documents.
@@ -25,7 +26,7 @@ export interface NumberingInsertionOptions {
   /** Author of the change */
   author: string;
   /** Date of the change */
-  date?: string;
+  date?: DateTime;
 }
 
 /**
@@ -200,7 +201,7 @@ export type ParagraphStylePropertiesOptions = {
           /** Author of the change */
           author: string;
           /** Date of the change */
-          date?: string;
+          date?: DateTime;
         };
         /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
         insertion?: NumberingInsertionOptions;
@@ -229,7 +230,7 @@ export type ParagraphStylePropertiesOptions = {
           original: string;
           id: string;
           author: string;
-          date?: string;
+          date?: DateTime;
         };
         /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange) */
         insertion?: NumberingInsertionOptions;

@@ -186,6 +186,17 @@ export type UnsignedShortHex = string;
 export type Base64 = string;
 
 /**
+ * An xsd:dateTime timestamp in ISO 8601 form (track-change and comment
+ * dates). Office writes the UTC "Z" suffix ("2024-06-01T09:30:00Z").
+ *
+ * @example
+ * ```typescript
+ * const stamp: DateTime = "2024-06-01T09:30:00Z";
+ * ```
+ */
+export type DateTime = string;
+
+/**
  * Validates and converts a number to an integer (decimal number).
  *
  * Reference: ST_DecimalNumber in OOXML specification

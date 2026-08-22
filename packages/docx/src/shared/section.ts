@@ -30,6 +30,13 @@ import type { TableOptions } from "@parts/table/table";
  * - `{ customXml: … }`   → custom XML
  * - `{ bookmarkStart/End }` → body-level range markers (between paragraphs)
  */
+/**
+ * SectionChild minus the body-only w:altChunk leg — the content model of
+ * customXml and sdt containers (EG_ContentBlockContent has no altChunk,
+ * unlike the body-level EG_BlockLevelElts and w:txbxContent).
+ */
+export type BlockContentChild = Exclude<SectionChild, { altChunk: unknown }>;
+
 export type SectionChild =
   | { paragraph: string | ParagraphOptions }
   | { table: TableOptions }
@@ -45,7 +52,7 @@ export type SectionChild =
         properties: SdtPropertiesOptions;
         /** Run properties for the SDT end mark (w:sdtEndPr). */
         endProperties?: RunPropertiesOptions;
-        children?: SectionChild[];
+        children?: BlockContentChild[];
       };
     }
   | { altChunk: AltChunkOptions }

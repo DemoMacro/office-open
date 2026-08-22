@@ -7,14 +7,15 @@
  * @module
  */
 
+import type { DateTime } from "@office-open/core";
 import type { RunOptions } from "@parts/paragraph/run/run";
 
 /**
- * ST_DisplacedByCustomXml — whether a range marker is displaced before or
- * after a sibling customXml element. Shared by every CT_MarkupRange derivative
- * (bookmark, move range, comment range, …).
+ * ST_DisplacedByCustomXml — whether a range marker is displaced to the
+ * previous or next sibling customXml element. Shared by every
+ * CT_MarkupRange derivative (bookmark, move range, comment range, …).
  */
-export type DisplacedByCustomXml = "before" | "after";
+export type DisplacedByCustomXml = "next" | "prev";
 
 /**
  * Options for a CT_MarkupRange end marker — `@id` + `@displacedByCustomXml`.
@@ -67,7 +68,7 @@ export interface MoveRangeStartOptions {
   /** Author of the move (CT_MoveBookmark `@w:author`). */
   author?: string;
   /** Date of the move (CT_MoveBookmark `@w:date`). */
-  date?: string;
+  date?: DateTime;
   /** Displacement relative to a sibling customXml (CT_MarkupRange `@w:displacedByCustomXml`). */
   displacedByCustomXml?: DisplacedByCustomXml;
   /** First column of a table-cell move range scope (CT_BookmarkRange `@w:colFirst`). */
@@ -118,7 +119,7 @@ export interface MoveRangeOptions {
   /** Author of the move (CT_MoveBookmark + move run `@w:author`, required). */
   author: string;
   /** Date of the move (CT_MoveBookmark + move run `@w:date`, required). */
-  date: string;
+  date: DateTime;
   /** Moved content carried by the move run (inline runs/text). */
   wrap?: (string | RunOptions)[];
   /** Move range name (CT_Bookmark `@w:name`, required). Share it across the
