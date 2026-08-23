@@ -87,6 +87,8 @@ export interface AnimationBuildOptions {
   /** What the shape is that builds: its text paragraphs, a diagram, an OLE chart, or a generic graphic. */
   type: "paragraph" | "diagram" | "oleChart" | "graphic";
   shapeId: number;
+  /** Build group id — must match the paired animation entry's groupId: the
+   * SDK validates bldP/bldDgm @grpId against the shape's cTn @grpId. */
   groupId: number;
   uiExpand?: boolean;
   // paragraph-specific
