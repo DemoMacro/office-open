@@ -16448,7 +16448,7 @@
           "type": "string"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip only.",
+          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -16496,7 +16496,7 @@
           "type": "array"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (drawings, VML, external links, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so model-driven parts need no exclusion here.",
+          "description": "Parts carried verbatim from the source that generate() does not rebuild (drawings, VML, external links, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so model-driven parts need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {

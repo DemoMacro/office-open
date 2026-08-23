@@ -14,7 +14,7 @@
  * @module
  */
 
-import { attr, type Element } from "@office-open/xml";
+import { attr, escapeXml, type Element } from "@office-open/xml";
 
 import {
   contentTypesDesc,
@@ -22,6 +22,7 @@ import {
   type ContentTypeOverride,
 } from "./content-types-input";
 import { normalizeObsoleteNamespaceAliases } from "./namespaces";
+import type { Zippable } from "./packer";
 import type { ParsedArchive } from "./parser";
 import { partPathToRelsPath, resolveRelationshipTarget } from "./relationships";
 
@@ -175,4 +176,64 @@ export function collectPassthroughParts(
   captureRels(archive.get("_rels/.rels"), "");
 
   return { parts, relationships };
+}
+
+// ── Dangling-relationship guard ──
+
+/** Regex metacharacters in a literal target path (e.g. "." in file names). */
+const RE_ESCAPE = /[.*+?^${}()|[\]\\]/g;
+
+/**
+ * Drop passthrough relationships whose target part is absent from the final
+ * package: a dangling internal Target makes Office refuse to open the file,
+ * and a hand-authored options JSON can reference parts it never carried in
+ * `rawParts`. Parsed sources never produce this (their targets exist in the
+ * source archive), so the guard only fires on the hand-authoring input face.
+ * External and same-part `#fragment` targets are left alone.
+ *
+ * Runs after `compileMapping` on the assembled file map; rewrites the rebuilt
+ * .rels part in place. Returns the number of relationships removed.
+ */
+export function dropDanglingPassthroughRels(
+  files: Zippable,
+  passthroughRelationships: readonly PassthroughRelationship[] | undefined,
+): number {
+  if (!passthroughRelationships || passthroughRelationships.length === 0) return 0;
+  // OPC part-name matching is case-insensitive — a source can spell the rel
+  // target "docProps/thumbnail.jpeg" against the part "docProps/Thumbnail.jpeg"
+  // (collectPassthroughParts' kept set is lowercase for the same reason).
+  const paths = new Set(Object.keys(files).map((p) => p.toLowerCase()));
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let dropped = 0;
+  for (const rel of passthroughRelationships) {
+    if (rel.targetMode === "External" || rel.target.startsWith("#")) continue;
+    const relsPath = rel.source === "" ? "_rels/.rels" : partPathToRelsPath(rel.source);
+    const entry = files[relsPath];
+    // A .rels part is always a flat entry (Uint8Array or [Uint8Array, opts]);
+    // nested Zippable directories never match a part path.
+    const bytes =
+      entry instanceof Uint8Array
+        ? entry
+        : Array.isArray(entry) && entry[0] instanceof Uint8Array
+          ? entry[0]
+          : undefined;
+    if (!bytes) continue;
+    const xml = decoder.decode(bytes);
+    // claimSourceRel emits the captured target verbatim, so the emitted entry
+    // carries the exact escaped string. Model-emitted rels always target parts
+    // the compiler just produced, so they can never match a missing target.
+    const escaped = escapeXml(rel.target).replace(RE_ESCAPE, "\\$&");
+    if (!escaped) continue;
+    const targetAttr = new RegExp(`(<Relationship\\b[^>]*\\bTarget="${escaped}"[^>]*/>)`);
+    const match = targetAttr.exec(xml);
+    if (!match) continue;
+    const resolved = resolveRelationshipTarget(rel.source, rel.target);
+    if (paths.has(resolved.toLowerCase())) continue;
+    const stripped = xml.slice(0, match.index) + xml.slice(match.index + match[1]!.length);
+    const rewritten = encoder.encode(stripped);
+    files[relsPath] = Array.isArray(entry) ? [rewritten, entry[1]] : rewritten;
+    dropped++;
+  }
+  return dropped;
 }

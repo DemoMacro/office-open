@@ -5902,14 +5902,14 @@
           "description": "Background image rendered as a full-page VML fill"
         },
         "rawMedia": {
-          "description": "Media referenced by  {@link  rawXml }  placeholders, registered on generate.",
+          "description": "Media referenced by `rawXml` placeholders, registered on generate.",
           "items": {
             "$ref": "#/definitions/BackgroundRawMediaOptions"
           },
           "type": "array"
         },
         "rawXml": {
-          "description": "Verbatim `<w:background>` XML for backgrounds that don't fit the structured model (e.g. VML pattern fills with texture images). `r:id` references are rewritten to `{fileName}` placeholders resolved by the compiler; the referenced media is carried in  {@link  rawMedia }  for registration.",
+          "description": "Verbatim `<w:background>` XML for backgrounds that don't fit the structured model (e.g. VML pattern fills with texture images). `r:id` references are rewritten to `{fileName}` placeholders resolved by the compiler; the referenced media is carried in `rawMedia` for registration. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "type": "string"
         },
         "themeColor": {
@@ -6339,7 +6339,7 @@
           "$ref": "#/definitions/NumberingOptions"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. document.xml → theme/customXml). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip only.",
+          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. document.xml → theme/customXml). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -6373,7 +6373,7 @@
           "type": "array"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (e.g. word/theme/*, customXml/*, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/fonts/headers need no exclusion here.",
+          "description": "Parts carried verbatim from the source that generate() does not rebuild (e.g. word/theme/*, customXml/*, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/fonts/headers need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -8335,11 +8335,11 @@
           "$ref": "#/definitions/MediaTransformation"
         },
         "vmlFallback": {
-          "description": "Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips.",
+          "description": "Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "type": "string"
         },
         "vmlFallbackMedia": {
-          "description": "Media referenced by  {@link  vmlFallback }  `{fileName}` placeholders, registered on generate.",
+          "description": "Media referenced by `vmlFallback` `{fileName}` placeholders, registered on generate.",
           "items": {
             "$ref": "#/definitions/BackgroundRawMediaOptions"
           },
@@ -15410,7 +15410,7 @@
           "type": "array"
         },
         "vmlFallback": {
-          "description": "Serialized mc:Fallback element from parse — carried when the source wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback = a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on stringify (drawing vmlFallback pattern).",
+          "description": "Serialized mc:Fallback element from parse — carried when the source wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback = a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on stringify (drawing vmlFallback pattern). Round-trip channel: captured from a parsed source document — do not hand-author.",
           "type": "string"
         },
         "w14AnchorId": {
@@ -20877,11 +20877,11 @@
           "$ref": "#/definitions/MediaTransformation"
         },
         "vmlFallback": {
-          "description": "Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips.",
+          "description": "Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "type": "string"
         },
         "vmlFallbackMedia": {
-          "description": "Media referenced by  {@link  vmlFallback }  `{fileName}` placeholders, registered on generate.",
+          "description": "Media referenced by `vmlFallback` `{fileName}` placeholders, registered on generate.",
           "items": {
             "$ref": "#/definitions/BackgroundRawMediaOptions"
           },

@@ -109,6 +109,7 @@ export {
 // Package-wide passthrough (SDK ExtendedPart analogue)
 export {
   collectPassthroughParts,
+  dropDanglingPassthroughRels,
   type PassthroughPart,
   type PassthroughRelationship,
   type PassthroughResult,

@@ -15,6 +15,7 @@ import {
   buildRootRelationships,
   compileMapping,
   contentTypesDesc,
+  dropDanglingPassthroughRels,
   type PassthroughRelationship,
   type RelationshipType,
   deriveContentTypes,
@@ -569,6 +570,9 @@ export function compileWorkbook(
   files["[Content_Types].xml"] = encoder.encode(
     XML_DECL + (contentTypesDesc.stringify(contentTypesInput, ctx) ?? ""),
   );
+  // Guard: drop passthrough rels whose target part never made it into the
+  // package (hand-authored input) — Office refuses to open dangling rels.
+  dropDanglingPassthroughRels(files, options.passthroughRelationships);
   return files;
 }
 

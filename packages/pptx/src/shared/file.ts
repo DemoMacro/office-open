@@ -77,18 +77,22 @@ export interface LayoutDefinition {
   customerData?: { rId: string }[];
   /**
    * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
-   * where p14:creationId lives) — verbatim round-trip.
+   * where p14:creationId lives) — verbatim round-trip (captured from a parsed source; do not hand-author).
    */
   cSldExt?: string;
   // Child slide elements
   colorMappingOverride?: ColorMappingOverrideOptions;
   transition?: TransitionOptions;
   animations?: AnimationsOptions;
-  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author). */
   ext?: string;
   // Fresh API (placeholder-template generation)
   placeholders?: LayoutPlaceholderOptions;
-  /** Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields. */
+  /**
+   * Verbatim layout XML; when set, the compiler parses this instead of
+   * synthesizing layout XML from the structured fields. Round-trip channel:
+   * captured from a parsed source document — do not hand-author.
+   */
   layout?: string;
   /** Theme override (themeOverride{n}.xml part) — per-layout deviations from the owning master's theme. */
   themeOverride?: ThemeOverrideOptions;
@@ -145,12 +149,12 @@ export interface SlideOptions {
   slideSync?: SlideSyncOptions;
   /**
    * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
-   * where p14:creationId lives) — verbatim round-trip.
+   * where p14:creationId lives) — verbatim round-trip (captured from a parsed source; do not hand-author).
    */
   cSldExt?: string;
   /** Structured entries, or verbatim p:timing inner XML when the source tree exceeds the model. */
   animations?: SlideAnimation[] | string;
-  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author). */
   ext?: string;
   /** Section name — slides sharing a name form one p14:section in presentation.xml. */
   section?: string;
@@ -168,7 +172,7 @@ export interface ShowOptions {
   useTimings?: boolean;
   slideRange?: { start: number; end: number };
   penColor?: string;
-  /** Verbatim children of the showPr p:extLst (p14 laser pointer extensions). */
+  /** Verbatim children of the showPr p:extLst (p14 laser pointer extensions) — round-trip channel: captured from a parsed source; do not hand-author. */
   ext?: string;
 }
 
@@ -224,12 +228,12 @@ export interface PresentationOptions extends CorePropertiesOptions {
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
   smartTags?: { rId: string };
   colorMru?: string[];
-  /** Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions). */
+  /** Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author. */
   presentationPropertiesExt?: string;
   /**
    * Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside
    * the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) —
-   * verbatim round-trip. Same slot naming as SlideOptions.ext.
+   * verbatim round-trip (captured from a parsed source; do not hand-author). Same slot naming as SlideOptions.ext.
    */
   ext?: string;
   /** Extended properties (docProps/app.xml) */
@@ -253,12 +257,15 @@ export interface PresentationOptions extends CorePropertiesOptions {
    * absorb survives with bytes and content-type declaration intact. Parts the
    * compiler happens to rebuild under the same path win over the passthrough
    * copy (assembly order), so media/charts/notes need no exclusion here.
+   * Round-trip channel: captured from a parsed source document — do not
+   * hand-author.
    */
   rawParts?: { path: string; data: DataType; contentType?: string }[];
   /**
    * Relationships from rebuilt parts' source .rels that point at rawParts
    * (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target
-   * unchanged (passthrough paths never move), fresh rId. Round-trip only.
+   * unchanged (passthrough paths never move), fresh rId. Round-trip channel:
+   * captured from a parsed source document — do not hand-author.
    */
   passthroughRelationships?: {
     source: string;

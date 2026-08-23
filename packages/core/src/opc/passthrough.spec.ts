@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { zipSync } from "./packer";
 import { parseArchive } from "./parser";
-import { collectPassthroughParts } from "./passthrough";
+import { collectPassthroughParts, dropDanglingPassthroughRels } from "./passthrough";
 
 function archiveOf(files: Record<string, string | Uint8Array>): ReturnType<typeof parseArchive> {
   const zippable: Record<string, Uint8Array> = {};
@@ -215,5 +215,152 @@ describe("collectPassthroughParts", () => {
     expect(new TextDecoder().decode(attr?.data)).toContain(
       'href="http://schemas.openxmlformats.org/spreadsheetml/2006/5/main"',
     );
+  });
+});
+
+describe("dropDanglingPassthroughRels", () => {
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
+  /** A rebuilt package shape: document.xml (rebuilt) + rels + a theme part. */
+  function assembled(): Record<string, Uint8Array> {
+    return {
+      "word/document.xml": encoder.encode("<w:document/>"),
+      "word/_rels/document.xml.rels": encoder.encode(
+        `<Relationships>` +
+          `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>` +
+          `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"/>` +
+          `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://example.com" TargetMode="External"/>` +
+          `<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image1.png"/>` +
+          `</Relationships>`,
+      ),
+      "word/theme/theme1.xml": encoder.encode("<a:theme/>"),
+      "word/media/image1.png": new Uint8Array([1]),
+      "_rels/.rels": encoder.encode(
+        `<Relationships>` +
+          `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+          `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail" Target="docProps/thumbnail.jpeg"/>` +
+          `</Relationships>`,
+      ),
+    };
+  }
+
+  it("drops internal rels whose target part is absent", () => {
+    const files = assembled();
+    // theme (present) and customXml (absent — hand-authored without rawParts)
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
+        target: "../customXml/item1.xml",
+        rId: "rId2",
+      },
+    ]);
+    expect(dropped).toBe(1);
+    const rels = decoder.decode(files["word/_rels/document.xml.rels"]);
+    expect(rels).not.toContain("customXml");
+    // siblings survive
+    expect(rels).toContain('Target="theme/theme1.xml"');
+  });
+
+  it("keeps rels whose target part exists", () => {
+    const files = assembled();
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+        target: "theme/theme1.xml",
+        rId: "rId1",
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["word/_rels/document.xml.rels"])).toContain(
+      'Target="theme/theme1.xml"',
+    );
+  });
+
+  it("keeps External and #fragment targets without touching their rels part", () => {
+    const files = assembled();
+    const before = files["word/_rels/document.xml.rels"];
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        target: "https://example.com",
+        rId: "rId3",
+        targetMode: "External",
+      },
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        target: "#Sheet2!A1",
+        rId: "rId5",
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(files["word/_rels/document.xml.rels"]).toBe(before);
+  });
+
+  it('drops root-level rels from _rels/.rels (source "")', () => {
+    const files = assembled();
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "",
+        relationshipType:
+          "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail",
+        target: "docProps/thumbnail.jpeg",
+        rId: "rId2",
+      },
+    ]);
+    expect(dropped).toBe(1);
+    const root = decoder.decode(files["_rels/.rels"]);
+    expect(root).not.toContain("thumbnail");
+    expect(root).toContain("officeDocument");
+  });
+
+  it("resolves targets case-insensitively (OPC part-name matching)", () => {
+    const files = assembled();
+    // part stored as Thumbnail.jpeg, rel target spelled thumbnail.jpeg
+    delete files["word/media/image1.png"];
+    files["word/Media/Image1.PNG"] = new Uint8Array([1]);
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        target: "media/image1.png",
+        rId: "rId4",
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["word/_rels/document.xml.rels"])).toContain(
+      'Target="media/image1.png"',
+    );
+  });
+
+  it("preserves the [data, opts] entry form when rewriting", () => {
+    const files = assembled();
+    const opts = { level: 0 as const };
+    files["word/_rels/document.xml.rels"] = encoder.encode(
+      `<Relationships>` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="../customXml/item1.xml"/>` +
+        `</Relationships>`,
+    );
+    // @ts-expect-error tuple entry — Zippable allows it
+    files["word/_rels/document.xml.rels"] = [files["word/_rels/document.xml.rels"], opts];
+    dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
+        target: "../customXml/item1.xml",
+        rId: "rId1",
+      },
+    ]);
+    expect(Array.isArray(files["word/_rels/document.xml.rels"])).toBe(true);
   });
 });

@@ -13,6 +13,7 @@ import {
   addBinaryFile,
   buildRootRelationships,
   convertToEmu,
+  dropDanglingPassthroughRels,
 } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import {
@@ -1733,6 +1734,10 @@ export function compilePresentation(
   files["[Content_Types].xml"] = encoder.encode(
     XML_DECL + (contentTypesDesc.stringify(contentTypesInput, descCtx) ?? ""),
   );
+
+  // Guard: drop passthrough rels whose target part never made it into the
+  // package (hand-authored input) — Office refuses to open dangling rels.
+  dropDanglingPassthroughRels(files, options.passthroughRelationships);
 
   return files;
 }

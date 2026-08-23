@@ -6553,7 +6553,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "children": {
@@ -6585,14 +6585,14 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions.",
+          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "headerFooter": {
           "$ref": "#/definitions/SlideHeaderFooterOptions"
         },
         "layout": {
-          "description": "Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields.",
+          "description": "Verbatim layout XML; when set, the compiler parses this instead of synthesizing layout XML from the structured fields. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "type": "string"
         },
         "layoutId": {
@@ -7589,7 +7589,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "children": {
@@ -7663,7 +7663,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions.",
+          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "headerFooter": {
@@ -9513,7 +9513,7 @@
           "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty. Mixing slides is rejected — it would be silently dropped."
         },
         "ext": {
-          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) — verbatim round-trip. Same slot naming as SlideOptions.ext.",
+          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) — verbatim round-trip (captured from a parsed source; do not hand-author). Same slot naming as SlideOptions.ext.",
           "type": "string"
         },
         "firstSlideNum": {
@@ -9571,7 +9571,7 @@
           "$ref": "#/definitions/NotesMasterOptions"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip only.",
+          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -9601,14 +9601,14 @@
           "$ref": "#/definitions/PhotoAlbumOptions"
         },
         "presentationPropertiesExt": {
-          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions).",
+          "description": "Verbatim inner XML of p:presentationPr's p:extLst (presProps extensions) — round-trip channel: captured from a parsed source; do not hand-author.",
           "type": "string"
         },
         "print": {
           "$ref": "#/definitions/PrintPropertiesOptions"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (handout masters, customXml, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/charts/notes need no exclusion here.",
+          "description": "Parts carried verbatim from the source that generate() does not rebuild (handout masters, customXml, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/charts/notes need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -11261,7 +11261,7 @@
       "description": "Slide-show setup (p:presentation > p:showPr).",
       "properties": {
         "ext": {
-          "description": "Verbatim children of the showPr p:extLst (p14 laser pointer extensions).",
+          "description": "Verbatim children of the showPr p:extLst (p14 laser pointer extensions) — round-trip channel: captured from a parsed source; do not hand-author.",
           "type": "string"
         },
         "loop": {
@@ -11586,7 +11586,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip.",
+          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "children": {
@@ -11625,7 +11625,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions.",
+          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author).",
           "type": "string"
         },
         "headerFooter": {

@@ -63,10 +63,11 @@ export interface SlideMasterOptions {
   controls?: ControlOptions[];
   /**
    * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
-   * where p14:creationId lives) — verbatim round-trip.
+   * where p14:creationId lives) — verbatim round-trip (captured from a
+   * parsed source; do not hand-author).
    */
   cSldExt?: string;
-  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions. */
+  /** Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author). */
   ext?: string;
 }
 

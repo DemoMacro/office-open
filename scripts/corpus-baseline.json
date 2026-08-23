@@ -16,8 +16,8 @@
     },
     "pptx": {
       "total": 183,
-      "clean": 170,
-      "diff": 12,
+      "clean": 169,
+      "diff": 13,
       "parseFail": 1,
       "genFail": 0
     }
@@ -141,8 +141,8 @@
     "docx": {
       "total": 76,
       "clean": 44,
-      "diff": 27,
-      "parseFail": 5,
+      "diff": 28,
+      "parseFail": 4,
       "genFail": 0
     },
     "xlsx": {

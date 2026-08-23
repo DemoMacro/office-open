@@ -16,6 +16,7 @@ import {
   compileMapping,
   contentTypesDesc,
   createThemeXml,
+  dropDanglingPassthroughRels,
   deriveContentTypes,
   DOCX_PARTS,
   findAndReplaceImagePlaceholders,
@@ -225,6 +226,10 @@ export function compileDocument(
   files["[Content_Types].xml"] = encoder.encode(
     buildContentTypesData(ctx, files, passthroughSkipped),
   );
+
+  // Guard: drop passthrough rels whose target part never made it into the
+  // package (hand-authored input) — Office refuses to open dangling rels.
+  dropDanglingPassthroughRels(files, ctx._options.passthroughRelationships);
 
   return files;
 }

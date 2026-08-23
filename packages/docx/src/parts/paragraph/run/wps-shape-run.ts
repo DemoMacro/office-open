@@ -23,9 +23,13 @@ interface ShapeRunOptions {
   transformation: MediaTransformation;
   floating?: Floating;
   altText?: DocPropertiesOptions;
-  /** Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips. */
+  /**
+   * Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full
+   * mc:AlternateContent round-trips. Round-trip channel: captured from a
+   * parsed source document — do not hand-author.
+   */
   vmlFallback?: string;
-  /** Media referenced by {@link vmlFallback} `{fileName}` placeholders, registered on generate. */
+  /** Media referenced by `vmlFallback` `{fileName}` placeholders, registered on generate. */
   vmlFallbackMedia?: BackgroundRawMediaOptions[];
   /** mc:Choice Requires attribute (e.g. "wps") used to regenerate the AlternateContent wrapper. */
   mcChoiceRequires?: string;

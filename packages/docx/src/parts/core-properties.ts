@@ -125,12 +125,15 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * absorb survives with bytes and content-type declaration intact. Parts the
    * compiler happens to rebuild under the same path win over the passthrough
    * copy (assembly order), so media/fonts/headers need no exclusion here.
+   * Round-trip channel: captured from a parsed source document — do not
+   * hand-author.
    */
   rawParts?: { path: string; data: DataType; contentType?: string }[];
   /**
    * Relationships from rebuilt parts' source .rels that point at rawParts
    * (e.g. document.xml → theme/customXml). Re-emitted verbatim — target
-   * unchanged (passthrough paths never move), fresh rId. Round-trip only.
+   * unchanged (passthrough paths never move), fresh rId. Round-trip channel:
+   * captured from a parsed source document — do not hand-author.
    */
   passthroughRelationships?: {
     source: string;

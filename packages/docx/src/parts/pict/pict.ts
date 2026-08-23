@@ -43,7 +43,8 @@ export interface PictOptions {
   /** Serialized mc:Fallback element from parse — carried when the source
    *  wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback =
    *  a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on
-   *  stringify (drawing vmlFallback pattern). */
+   *  stringify (drawing vmlFallback pattern). Round-trip channel: captured
+   *  from a parsed source document — do not hand-author. */
   vmlFallback?: string;
   /** mc:Choice @Requires namespace prefix; defaults to "w14" on stringify. */
   mcChoiceRequires?: string;
