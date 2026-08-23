@@ -899,15 +899,6 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    // Round-trip: when parse captured the settings part verbatim, re-emit it
-    // as-is (the structured path below only covers a subset of CT_Settings).
-    // Use captured root attributes (xmlns:* + mc:Ignorable) so source-specific
-    // namespaces (xmlns:sl, xmlns:wpsCustomData, …) are preserved.
-    if (opts.rawXml !== undefined) {
-      const ns = opts.rootAttributes ? attrStr(opts.rootAttributes) : SETTINGS_NS;
-      return `<w:settings ${ns}>${opts.rawXml}</w:settings>`;
-    }
-
     const p: string[] = [];
 
     // XSD CT_Settings sequence order

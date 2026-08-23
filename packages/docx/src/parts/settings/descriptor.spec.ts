@@ -204,7 +204,7 @@ describe("settingsDesc round-trip", () => {
     expect(result.characterSpacingControl).toBeUndefined();
   });
 
-  it("drops unmapped non-standard elements (no verbatim rawXml fallback)", () => {
+  it("drops unmapped non-standard elements (no verbatim fallback)", () => {
     // Parse is fully structured and aligned with generate; elements outside
     // SettingsOptions (like WPS's wpsCustomData) are dropped rather than
     // captured verbatim.
@@ -220,8 +220,6 @@ describe("settingsDesc round-trip", () => {
 
     // Structured read still works.
     expect(parsed.defaultTabStop).toBe(720);
-    // Unmapped non-standard element is dropped (no rawXml capture).
-    expect(parsed.rawXml).toBeUndefined();
 
     // Re-emit uses structured generation (fixed SETTINGS_NS).
     const xml = settingsDesc.stringify(parsed, writeCtx)!;
@@ -229,7 +227,7 @@ describe("settingsDesc round-trip", () => {
     expect(xml).not.toContain("wpsCustomData");
   });
 
-  it("uses structured generation when rawXml is absent", () => {
+  it("generates structured settings XML", () => {
     const xml = settingsDesc.stringify({ defaultTabStop: 720 }, writeCtx)!;
     expect(xml).toContain('<w:defaultTabStop w:val="720"/>');
   });

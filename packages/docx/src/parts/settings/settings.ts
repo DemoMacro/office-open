@@ -33,21 +33,6 @@ export interface ShapeDefaultsOptions {
  * @see {@link Settings}
  */
 export interface SettingsOptions {
-  /**
-   * Verbatim inner XML of `<w:settings>` (all child elements). When set (from
-   * parse), generate emits it verbatim so the full CT_Settings content — compat
-   * flags, math properties, rsids, footnote/endnote properties, shape defaults,
-   * clrSchemeMapping, etc. (~100 element types, most without a structured API) —
-   * round-trips byte-for-byte. Delete this to fall back to structured generation.
-   */
-  rawXml?: string;
-  /**
-   * Root `<w:settings>` attributes captured verbatim from the source (`xmlns:*`
-   * declarations + `mc:Ignorable`). Preserves source-specific namespaces (e.g.
-   * `xmlns:sl`, `xmlns:wpsCustomData`) that the fixed SETTINGS_NS constant
-   * omits, so rawXml child elements using those prefixes stay well-formed.
-   */
-  rootAttributes?: Record<string, string>;
   /** Enable different headers/footers for even and odd pages */
   evenAndOddHeaders?: boolean;
   /** Enable track changes (revision marking) */
