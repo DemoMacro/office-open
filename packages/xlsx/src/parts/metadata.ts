@@ -186,9 +186,15 @@ export interface MetadataOptions {
   mdx?: MdxOptions[];
   /** Future metadata entries */
   futureMetadata?: FutureMetadataOptions[];
-  /** Cell metadata blocks (cellMetadata) */
+  /**
+   * Cell metadata blocks (cellMetadata). Round-trip only — Excel 365
+   * refuses files carrying these fresh, with or without cell references.
+   */
   cellMetadata?: MetadataBlockOptions[];
-  /** Value metadata blocks (valueMetadata) */
+  /**
+   * Value metadata blocks (valueMetadata). Round-trip only — Excel 365
+   * refuses files carrying these fresh, with or without cell references.
+   */
   valueMetadata?: MetadataBlockOptions[];
 }
 

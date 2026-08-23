@@ -1,7 +1,7 @@
-// Rich metadata part (xl/metadata.xml) — types, strings, future metadata, and
-// cell/value metadata blocks. The cell-level cellMetadataId/valueMetadataId
-// references are intentionally not exercised: Excel 365 treats the
-// XLDAPROPERTY cell-reference combination as corrupt and strips it on open.
+// Rich metadata part (xl/metadata.xml) — types, strings, and future metadata.
+// cellMetadata/valueMetadata blocks are intentionally not exercised: Excel 365
+// refuses the file outright when they appear fresh (with or without cell-level
+// cm/vm references) — verified empirically; they stay round-trip only.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 
@@ -34,8 +34,6 @@ const buffer = await generateWorkbook({
     ],
     strings: [{ value: "Product catalog" }],
     futureMetadata: [{ name: "XLDAPROPERTY", blocks: [{}] }],
-    cellMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
-    valueMetadata: [{ records: [{ typeIndex: 0, valueIndex: 0 }] }],
   },
 });
 
