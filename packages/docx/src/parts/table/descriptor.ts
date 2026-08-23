@@ -172,12 +172,13 @@ function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
   // Cells must end with a paragraph unless the last child is already one.
   // Block containers (sdt/customXml/toc/textbox) hold the closing paragraph
   // themselves, so a cell ending in one round-trips without an injected <w:p/>.
+  // A nested table does NOT count — Word treats a table-only cell as corrupt
+  // and refuses the file, so it always gets the trailing paragraph.
   const last = children?.[children.length - 1];
   const endsWithParagraph =
     last !== undefined &&
     typeof last !== "string" &&
     ("paragraph" in last ||
-      "table" in last ||
       "sdt" in last ||
       "customXml" in last ||
       "toc" in last ||
