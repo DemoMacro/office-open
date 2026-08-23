@@ -29,6 +29,7 @@ interface Slot {
   max?: number;
   pick?: "one" | "any";
   any?: string[];
+  arms?: string[][];
 }
 interface ContainerModel {
   slots: Slot[];
@@ -48,14 +49,15 @@ interface Prepared {
   members: Set<string>;
   slotOf: Map<string, number>;
   multiSlot: Set<string>;
-  exclusiveSlot: Map<string, number>; // member → pick-one max-1 slot (-1 = ambiguous)
+  exclusivePairs: Set<string>; // sorted "a\0b" pairs that may not co-occur
+  exclusiveMembers: Set<string>; // members appearing in any exclusive pair
   anyPrefixes: string[];
   anyAll: boolean;
   otherExcluded: string | null;
 }
 
 // per container type (lazily built): member set, slot index per member,
-// single-round exclusive members (pick one, max 1)
+// single-round exclusive pairs (pick one, max 1)
 const prepared = new Map<string, Prepared | null>();
 function prepare(qname: string): Prepared | null {
   let p = prepared.get(qname);
@@ -68,7 +70,8 @@ function prepare(qname: string): Prepared | null {
   const members = new Set<string>();
   const slotOf = new Map<string, number>();
   const multiSlot = new Set<string>();
-  const exclusiveSlot = new Map<string, number>(); // exclusivity is per slot
+  const exclusivePairs = new Set<string>();
+  const addPair = (a: string, b: string) => exclusivePairs.add(a < b ? `${a}\0${b}` : `${b}\0${a}`);
   const anyPrefixes: string[] = [];
   let anyAll = false;
   let otherExcluded: string | null = null; // prefix to exclude for ##other
@@ -87,11 +90,20 @@ function prepare(qname: string): Prepared | null {
       continue;
     }
     if (s.pick === "one" && s.max === 1) {
-      for (const e of s.elements ?? []) {
-        // an element in several pick-one slots is only safely exclusive when
-        // every occurrence is the same slot — skip ambiguity
-        if (exclusiveSlot.has(e)) exclusiveSlot.set(e, -1);
-        else exclusiveSlot.set(e, i);
+      if (s.arms && s.arms.length > 1) {
+        // exclusivity is ACROSS arms only — members of a group-ref arm
+        // (c:dLbls shared settings) combine freely within their arm
+        for (let a = 0; a < s.arms.length; a++) {
+          for (let b = a + 1; b < s.arms.length; b++) {
+            for (const x of s.arms[a]!) for (const y of s.arms[b]!) addPair(x, y);
+          }
+        }
+      } else {
+        for (let a = 0; a < (s.elements ?? []).length; a++) {
+          for (let b = a + 1; b < (s.elements ?? []).length; b++) {
+            addPair(s.elements![a]!, s.elements![b]!);
+          }
+        }
       }
     }
     for (const e of s.elements ?? []) {
@@ -103,12 +115,31 @@ function prepare(qname: string): Prepared | null {
   // context-dependent elements (w:sdtContent block/run/cell/row variants)
   // cannot be checked against one picked model — the table carries the union
   if (c.variantElements) for (const e of c.variantElements) members.add(e);
-  p = { members, slotOf, multiSlot, exclusiveSlot, anyPrefixes, anyAll, otherExcluded };
+  const exclusiveMembers = new Set<string>();
+  for (const pair of exclusivePairs) {
+    const [x, y] = pair.split("\0");
+    exclusiveMembers.add(x!);
+    exclusiveMembers.add(y!);
+  }
+  p = {
+    members,
+    slotOf,
+    multiSlot,
+    exclusivePairs,
+    exclusiveMembers,
+    anyPrefixes,
+    anyAll,
+    otherExcluded,
+  };
   prepared.set(qname, p);
   return p;
 }
 
-const violations: string[] = [];
+const violations = new Set<string>();
+
+function report(at: string, message: string): void {
+  violations.add(`${at}: ${message}`);
+}
 
 // ISO-transitional table only knows its own namespaces; other prefixes are
 // vendor extensions (wp14/x14/…) adjudicated by MCE, not by this gate
@@ -131,7 +162,7 @@ function checkContainer(qname: string, children: string[], at: string): void {
     if (p.anyAll) continue;
     if (p.otherExcluded !== null && px !== p.otherExcluded) continue;
     if (p.anyPrefixes.includes(px) || p.anyPrefixes.includes("")) continue;
-    violations.push(`${at}: <${qname}> child ${child} not in content model`);
+    report(at, `<${qname}> child ${child} not in content model`);
   }
   // slot order: slot index sequence over modeled children must be non-decreasing
   let prev = -1;
@@ -140,24 +171,22 @@ function checkContainer(qname: string, children: string[], at: string): void {
     if (p.multiSlot.has(child) || !p.slotOf.has(child)) continue;
     const idx = p.slotOf.get(child)!;
     if (idx < prev) {
-      violations.push(
-        `${at}: <${qname}> order: ${child} (slot ${idx}) after ${prevChild} (slot ${prev})`,
-      );
+      report(at, `<${qname}> order: ${child} (slot ${idx}) after ${prevChild} (slot ${prev})`);
     }
     prev = idx;
     prevChild = child;
   }
-  // single-round exclusivity: members of the same pick-one max-1 slot co-occurring
-  const perSlot = new Map<number, Set<string>>();
-  for (const child of children) {
-    const idx = p.exclusiveSlot.get(child);
-    if (idx === undefined || idx < 0) continue;
-    if (!perSlot.has(idx)) perSlot.set(idx, new Set());
-    perSlot.get(idx)!.add(child);
-  }
-  for (const names of perSlot.values()) {
-    if (names.size > 1) {
-      violations.push(`${at}: <${qname}> exclusive members co-occur: ${[...names].join(" + ")}`);
+  // single-round exclusivity: exclusive pairs co-occurring among the children.
+  // Containers can hold hundreds of children (worksheet rows), so pairwise
+  // runs only over members known to participate in an exclusive pair.
+  const present = [...new Set(children)].filter((c) => p.exclusiveMembers.has(c));
+  for (let a = 0; a < present.length; a++) {
+    for (let b = a + 1; b < present.length; b++) {
+      const x = present[a]!;
+      const y = present[b]!;
+      if (p.exclusivePairs.has(x < y ? `${x}\0${y}` : `${y}\0${x}`)) {
+        report(at, `<${qname}> exclusive members co-occur: ${x} + ${y}`);
+      }
     }
   }
 }
@@ -202,8 +231,14 @@ function checkFile(file: string): void {
       }
       if (qname === "mc:AlternateContent") mcDepth++;
       if (selfClose) {
+        // self-closing children count as much as closed ones — chart XML is
+        // wall-to-wall `<c:showVal val="1"/>`, skipping the check here left
+        // whole containers unvalidated
         const parent = stack.at(-1);
-        if (parent && mcDepth === 0) parent.children.push(qname);
+        if (parent && mcDepth === 0) {
+          parent.children.push(qname);
+          checkContainer(parent.qname, parent.children, `${name} > ${parentPath(stack)}`);
+        }
         continue;
       }
       stack.push({ qname, children: [] });
@@ -249,8 +284,9 @@ for (const v of violations) {
       : "exclusive";
   byKind.set(kind, (byKind.get(kind) ?? 0) + 1);
 }
-console.log(`${files.length} file(s): ${violations.length} violations`, Object.fromEntries(byKind));
+const list = [...violations];
+console.log(`${files.length} file(s): ${list.length} violations`, Object.fromEntries(byKind));
 const shown = 40;
-for (const v of violations.slice(0, shown)) console.log("  " + v);
-if (violations.length > shown) console.log(`  … ${violations.length - shown} more`);
-if (violations.length > 0) process.exit(1);
+for (const v of list.slice(0, shown)) console.log("  " + v);
+if (list.length > shown) console.log(`  … ${list.length - shown} more`);
+if (list.length > 0) process.exit(1);

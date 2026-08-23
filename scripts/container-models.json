@@ -7677,6 +7677,17 @@
         "c:userShapes"
       ]
     },
+    "c:clrMapOvr": {
+      "ct": ["CT_ColorMapping"],
+      "slots": [
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst"]
+    },
     "c:crossAx": {
       "ct": ["CT_UnsignedInt"],
       "slots": []
@@ -7733,9 +7744,27 @@
             "c:showBubbleSize",
             "c:separator"
           ],
-          "min": 1,
+          "min": 0,
           "max": 1,
-          "pick": "one"
+          "pick": "one",
+          "arms": [
+            ["c:delete"],
+            [
+              "c:layout",
+              "c:tx",
+              "c:numFmt",
+              "c:spPr",
+              "c:txPr",
+              "c:dLblPos",
+              "c:showLegendKey",
+              "c:showVal",
+              "c:showCatName",
+              "c:showSerName",
+              "c:showPercent",
+              "c:showBubbleSize",
+              "c:separator"
+            ]
+          ]
         },
         {
           "elements": ["c:extLst"],
@@ -7791,9 +7820,27 @@
             "c:showLeaderLines",
             "c:leaderLines"
           ],
-          "min": 1,
+          "min": 0,
           "max": 1,
-          "pick": "one"
+          "pick": "one",
+          "arms": [
+            ["c:delete"],
+            [
+              "c:numFmt",
+              "c:spPr",
+              "c:txPr",
+              "c:dLblPos",
+              "c:showLegendKey",
+              "c:showVal",
+              "c:showCatName",
+              "c:showSerName",
+              "c:showPercent",
+              "c:showBubbleSize",
+              "c:separator",
+              "c:showLeaderLines",
+              "c:leaderLines"
+            ]
+          ]
         },
         {
           "elements": ["c:extLst"],
@@ -8563,7 +8610,7 @@
         },
         {
           "elements": ["c:delete", "c:txPr"],
-          "min": 1,
+          "min": 0,
           "max": 1,
           "pick": "one"
         },
@@ -9505,6 +9552,27 @@
       "ct": ["CT_RadarStyle"],
       "slots": []
     },
+    "c:rich": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
+    },
     "c:rotX": {
       "ct": ["CT_RotX"],
       "slots": []
@@ -9936,6 +10004,78 @@
       "ct": ["CT_Boolean"],
       "slots": []
     },
+    "c:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
+    },
     "c:splitPos": {
       "ct": ["CT_Double"],
       "slots": []
@@ -10309,6 +10449,27 @@
       ],
       "variantElements": ["c:rich", "c:strRef", "c:v"]
     },
+    "c:txPr": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
+    },
     "c:upBars": {
       "ct": ["CT_UpDownBar"],
       "slots": [
@@ -10351,8 +10512,16 @@
       "slots": []
     },
     "c:userShapes": {
-      "ct": ["CT_RelId"],
-      "slots": []
+      "ct": ["CT_RelId", "CT_Drawing"],
+      "slots": [
+        {
+          "elements": ["cdr:relSizeAnchor", "cdr:absSizeAnchor"],
+          "min": 0,
+          "max": "unbounded",
+          "pick": "any"
+        }
+      ],
+      "variantElements": ["cdr:absSizeAnchor", "cdr:relSizeAnchor"]
     },
     "c:val": {
       "ct": ["CT_Double", "CT_NumDataSource"],
@@ -10784,6 +10953,139 @@
         "cdr:sp"
       ]
     },
+    "cdr:blipFill": {
+      "ct": ["CT_BlipFillProperties"],
+      "slots": [
+        {
+          "elements": ["a:blip"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:srcRect"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:tile", "a:stretch"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:blip", "a:srcRect", "a:stretch", "a:tile"]
+    },
+    "cdr:cNvCxnSpPr": {
+      "ct": ["CT_NonVisualConnectorProperties"],
+      "slots": [
+        {
+          "elements": ["a:cxnSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:stCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:endCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:cxnSpLocks", "a:endCxn", "a:extLst", "a:stCxn"]
+    },
+    "cdr:cNvGraphicFramePr": {
+      "ct": ["CT_NonVisualGraphicFrameProperties"],
+      "slots": [
+        {
+          "elements": ["a:graphicFrameLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:graphicFrameLocks"]
+    },
+    "cdr:cNvGrpSpPr": {
+      "ct": ["CT_NonVisualGroupDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:grpSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:grpSpLocks"]
+    },
+    "cdr:cNvPicPr": {
+      "ct": ["CT_NonVisualPictureProperties"],
+      "slots": [
+        {
+          "elements": ["a:picLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:picLocks"]
+    },
+    "cdr:cNvPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
+    "cdr:cNvSpPr": {
+      "ct": ["CT_NonVisualDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:spLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:spLocks"]
+    },
     "cdr:cxnSp": {
       "ct": ["CT_Connector"],
       "slots": [
@@ -10804,6 +11106,10 @@
         }
       ],
       "variantElements": ["cdr:nvCxnSpPr", "cdr:spPr", "cdr:style"]
+    },
+    "cdr:ext": {
+      "ct": ["CT_PositiveSize2D"],
+      "slots": []
     },
     "cdr:from": {
       "ct": ["CT_Marker"],
@@ -10870,6 +11176,58 @@
         "cdr:nvGrpSpPr",
         "cdr:pic",
         "cdr:sp"
+      ]
+    },
+    "cdr:grpSpPr": {
+      "ct": ["CT_GroupShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:scene3d",
+        "a:solidFill",
+        "a:xfrm"
       ]
     },
     "cdr:nvCxnSpPr": {
@@ -11034,6 +11392,104 @@
       ],
       "variantElements": ["cdr:nvSpPr", "cdr:spPr", "cdr:style", "cdr:txBody"]
     },
+    "cdr:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
+    },
+    "cdr:style": {
+      "ct": ["CT_ShapeStyle"],
+      "slots": [
+        {
+          "elements": ["a:lnRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fillRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fontRef"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:effectRef", "a:fillRef", "a:fontRef", "a:lnRef"]
+    },
     "cdr:to": {
       "ct": ["CT_Marker"],
       "slots": [
@@ -11049,6 +11505,43 @@
         }
       ],
       "variantElements": ["cdr:x", "cdr:y"]
+    },
+    "cdr:txBody": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
+    },
+    "cdr:xfrm": {
+      "ct": ["CT_Transform2D"],
+      "slots": [
+        {
+          "elements": ["a:off"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:ext", "a:off"]
     },
     "cell": {
       "ct": ["CT_ExternalCell"],
@@ -11952,6 +12445,40 @@
       "ct": ["CT_AnimOne"],
       "slots": []
     },
+    "dgm:bg": {
+      "ct": ["CT_BackgroundFormatting"],
+      "slots": [
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:solidFill"
+      ]
+    },
     "dgm:bulletEnabled": {
       "ct": ["CT_BulletEnabled"],
       "slots": []
@@ -12214,6 +12741,17 @@
         "dgm:ruleLst",
         "dgm:shape"
       ]
+    },
+    "dgm:extLst": {
+      "ct": ["CT_OfficeArtExtensionList"],
+      "slots": [
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:ext"]
     },
     "dgm:fillClrLst": {
       "ct": ["CT_Colors"],
@@ -12635,6 +13173,32 @@
       ],
       "variantElements": ["dgm:dataModel"]
     },
+    "dgm:scene3d": {
+      "ct": ["CT_Scene3D"],
+      "slots": [
+        {
+          "elements": ["a:camera"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lightRig"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:backdrop"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:backdrop", "a:camera", "a:extLst", "a:lightRig"]
+    },
     "dgm:shape": {
       "ct": ["CT_Shape"],
       "slots": [
@@ -12650,6 +13214,135 @@
         }
       ],
       "variantElements": ["dgm:adjLst", "dgm:extLst"]
+    },
+    "dgm:sp3d": {
+      "ct": ["CT_Shape3D"],
+      "slots": [
+        {
+          "elements": ["a:bevelT"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:bevelB"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extrusionClr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:contourClr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:bevelB", "a:bevelT", "a:contourClr", "a:extLst", "a:extrusionClr"]
+    },
+    "dgm:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
+    },
+    "dgm:style": {
+      "ct": ["CT_ShapeStyle"],
+      "slots": [
+        {
+          "elements": ["a:lnRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fillRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fontRef"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:effectRef", "a:fillRef", "a:fontRef", "a:lnRef"]
     },
     "dgm:styleData": {
       "ct": ["CT_SampleData"],
@@ -12794,6 +13487,27 @@
         "dgm:txLinClrLst",
         "dgm:txPr"
       ]
+    },
+    "dgm:t": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
     },
     "dgm:title": {
       "ct": ["CT_CTName", "CT_Name", "CT_SDName"],
@@ -12949,6 +13663,23 @@
         "dgm:orgChart",
         "dgm:resizeHandles"
       ]
+    },
+    "dgm:whole": {
+      "ct": ["CT_WholeE2oFormatting"],
+      "slots": [
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:effectDag", "a:effectLst", "a:ln"]
     },
     "diagonal": {
       "ct": ["CT_BorderPr"],
@@ -13840,6 +14571,43 @@
       ],
       "variantElements": ["kpi"]
     },
+    "lc:lockedCanvas": {
+      "ct": ["CT_GvmlGroupShape"],
+      "slots": [
+        {
+          "elements": ["a:nvGrpSpPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:grpSpPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:txSp", "a:sp", "a:cxnSp", "a:pic", "a:graphicFrame", "a:grpSp"],
+          "min": 0,
+          "max": "unbounded",
+          "pick": "any"
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:cxnSp",
+        "a:extLst",
+        "a:graphicFrame",
+        "a:grpSp",
+        "a:grpSpPr",
+        "a:nvGrpSpPr",
+        "a:pic",
+        "a:sp",
+        "a:txSp"
+      ]
+    },
     "left": {
       "ct": ["CT_BorderPr"],
       "slots": [
@@ -14266,7 +15034,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -14396,7 +15220,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -14530,7 +15410,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -14733,7 +15669,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -14989,7 +15981,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -15498,7 +16546,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -15619,7 +16723,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -15830,7 +16990,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:br",
+              "w:t",
+              "w:contentPart",
+              "w:delText",
+              "w:instrText",
+              "w:delInstrText",
+              "w:noBreakHyphen",
+              "w:softHyphen",
+              "w:dayShort",
+              "w:monthShort",
+              "w:yearShort",
+              "w:dayLong",
+              "w:monthLong",
+              "w:yearLong",
+              "w:annotationRef",
+              "w:footnoteRef",
+              "w:endnoteRef",
+              "w:separator",
+              "w:continuationSeparator",
+              "w:sym",
+              "w:pgNum",
+              "w:cr",
+              "w:tab",
+              "w:object",
+              "w:pict",
+              "w:fldChar",
+              "w:ruby",
+              "w:footnoteReference",
+              "w:endnoteReference",
+              "w:commentReference",
+              "w:drawing",
+              "w:ptab",
+              "w:lastRenderedPageBreak"
+            ],
+            ["m:t"]
+          ]
         }
       ],
       "variantElements": [
@@ -15888,7 +17086,8 @@
           "elements": ["m:nor", "m:scr", "m:sty"],
           "min": 0,
           "max": 1,
-          "pick": "one"
+          "pick": "one",
+          "arms": [["m:nor"], ["m:scr", "m:sty"]]
         },
         {
           "elements": ["m:brk"],
@@ -16194,7 +17393,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -16324,7 +17579,63 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ],
+            [
+              "w:customXml",
+              "w:fldSimple",
+              "w:hyperlink",
+              "w:smartTag",
+              "w:sdt",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         },
         {
           "elements": ["m:ctrlPr"],
@@ -17339,6 +18650,32 @@
         "p:extLst"
       ]
     },
+    "p:bgRef": {
+      "ct": ["CT_StyleMatrixReference"],
+      "slots": [
+        {
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr"
+      ]
+    },
     "p:bldAsOne": {
       "ct": ["CT_Empty"],
       "slots": []
@@ -17386,9 +18723,116 @@
       ],
       "variantElements": ["p:tmplLst"]
     },
+    "p:bldSub": {
+      "ct": ["CT_AnimationGraphicalObjectBuildProperties"],
+      "slots": [
+        {
+          "elements": ["a:bldDgm", "a:bldChart"],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:bldChart", "a:bldDgm"]
+    },
     "p:blinds": {
       "ct": ["CT_OrientationTransition"],
       "slots": []
+    },
+    "p:blipFill": {
+      "ct": ["CT_BlipFillProperties"],
+      "slots": [
+        {
+          "elements": ["a:blip"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:srcRect"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:tile", "a:stretch"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:blip", "a:srcRect", "a:stretch", "a:tile"]
+    },
+    "p:bodyStyle": {
+      "ct": ["CT_TextListStyle"],
+      "slots": [
+        {
+          "elements": ["a:defPPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl1pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl2pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl3pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl4pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl5pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl6pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl7pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl8pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl9pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:defPPr",
+        "a:extLst",
+        "a:lvl1pPr",
+        "a:lvl2pPr",
+        "a:lvl3pPr",
+        "a:lvl4pPr",
+        "a:lvl5pPr",
+        "a:lvl6pPr",
+        "a:lvl7pPr",
+        "a:lvl8pPr",
+        "a:lvl9pPr"
+      ]
     },
     "p:bold": {
       "ct": ["CT_EmbeddedFontDataId"],
@@ -17454,6 +18898,117 @@
         }
       ],
       "variantElements": ["p:cTn", "p:tgtEl"]
+    },
+    "p:cNvCxnSpPr": {
+      "ct": ["CT_NonVisualConnectorProperties"],
+      "slots": [
+        {
+          "elements": ["a:cxnSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:stCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:endCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:cxnSpLocks", "a:endCxn", "a:extLst", "a:stCxn"]
+    },
+    "p:cNvGraphicFramePr": {
+      "ct": ["CT_NonVisualGraphicFrameProperties"],
+      "slots": [
+        {
+          "elements": ["a:graphicFrameLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:graphicFrameLocks"]
+    },
+    "p:cNvGrpSpPr": {
+      "ct": ["CT_NonVisualGroupDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:grpSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:grpSpLocks"]
+    },
+    "p:cNvPicPr": {
+      "ct": ["CT_NonVisualPictureProperties"],
+      "slots": [
+        {
+          "elements": ["a:picLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:picLocks"]
+    },
+    "p:cNvPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
+    "p:cNvSpPr": {
+      "ct": ["CT_NonVisualDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:spLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:spLocks"]
     },
     "p:cSld": {
       "ct": ["CT_CommonSlideData"],
@@ -17612,6 +19167,81 @@
     "p:circle": {
       "ct": ["CT_Empty"],
       "slots": []
+    },
+    "p:clrMap": {
+      "ct": ["CT_ColorMapping"],
+      "slots": [
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst"]
+    },
+    "p:clrMapOvr": {
+      "ct": ["CT_ColorMappingOverride"],
+      "slots": [
+        {
+          "elements": ["a:masterClrMapping", "a:overrideClrMapping"],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:masterClrMapping", "a:overrideClrMapping"]
+    },
+    "p:clrMru": {
+      "ct": ["CT_ColorMRU"],
+      "slots": [
+        {
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
+          "min": 0,
+          "max": "unbounded",
+          "pick": "any"
+        }
+      ],
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr"
+      ]
+    },
+    "p:clrVal": {
+      "ct": ["CT_Color"],
+      "slots": [
+        {
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr"
+      ]
     },
     "p:cm": {
       "ct": ["CT_Comment"],
@@ -17806,6 +19436,79 @@
       ],
       "variantElements": ["p:extLst", "p:nvCxnSpPr", "p:spPr", "p:style"]
     },
+    "p:defaultTextStyle": {
+      "ct": ["CT_TextListStyle"],
+      "slots": [
+        {
+          "elements": ["a:defPPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl1pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl2pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl3pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl4pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl5pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl6pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl7pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl8pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl9pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:defPPr",
+        "a:extLst",
+        "a:lvl1pPr",
+        "a:lvl2pPr",
+        "a:lvl3pPr",
+        "a:lvl4pPr",
+        "a:lvl5pPr",
+        "a:lvl6pPr",
+        "a:lvl7pPr",
+        "a:lvl8pPr",
+        "a:lvl9pPr"
+      ]
+    },
     "p:diamond": {
       "ct": ["CT_Empty"],
       "slots": []
@@ -17934,9 +19637,47 @@
       "ct": ["CT_TLAnimVariantFloatVal"],
       "slots": []
     },
-    "p:from": {
-      "ct": ["CT_TLPoint"],
+    "p:font": {
+      "ct": ["CT_TextFont"],
       "slots": []
+    },
+    "p:from": {
+      "ct": ["CT_Color", "CT_TLPoint"],
+      "slots": [
+        {
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr"
+      ]
+    },
+    "p:graphicEl": {
+      "ct": ["CT_AnimationElementChoice"],
+      "slots": [
+        {
+          "elements": ["a:dgm", "a:chart"],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:chart", "a:dgm"]
     },
     "p:graphicFrame": {
       "ct": ["CT_GraphicalObjectFrame"],
@@ -17963,6 +19704,10 @@
         }
       ],
       "variantElements": ["a:graphic", "p:extLst", "p:nvGraphicFramePr", "p:xfrm"]
+    },
+    "p:gridSpacing": {
+      "ct": ["CT_PositiveSize2D"],
+      "slots": []
     },
     "p:grpSp": {
       "ct": ["CT_GroupShape"],
@@ -17999,6 +19744,58 @@
         "p:nvGrpSpPr",
         "p:pic",
         "p:sp"
+      ]
+    },
+    "p:grpSpPr": {
+      "ct": ["CT_GroupShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:scene3d",
+        "a:solidFill",
+        "a:xfrm"
       ]
     },
     "p:guide": {
@@ -18253,6 +20050,83 @@
       ],
       "variantElements": ["p:notesMasterId"]
     },
+    "p:notesStyle": {
+      "ct": ["CT_TextListStyle"],
+      "slots": [
+        {
+          "elements": ["a:defPPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl1pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl2pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl3pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl4pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl5pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl6pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl7pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl8pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl9pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:defPPr",
+        "a:extLst",
+        "a:lvl1pPr",
+        "a:lvl2pPr",
+        "a:lvl3pPr",
+        "a:lvl4pPr",
+        "a:lvl5pPr",
+        "a:lvl6pPr",
+        "a:lvl7pPr",
+        "a:lvl8pPr",
+        "a:lvl9pPr"
+      ]
+    },
+    "p:notesSz": {
+      "ct": ["CT_PositiveSize2D"],
+      "slots": []
+    },
     "p:notesTextViewPr": {
       "ct": ["CT_NotesTextViewProperties"],
       "slots": [
@@ -18453,6 +20327,83 @@
       ],
       "variantElements": ["p:embed", "p:link", "p:pic"]
     },
+    "p:origin": {
+      "ct": ["CT_Point2D"],
+      "slots": []
+    },
+    "p:otherStyle": {
+      "ct": ["CT_TextListStyle"],
+      "slots": [
+        {
+          "elements": ["a:defPPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl1pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl2pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl3pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl4pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl5pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl6pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl7pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl8pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl9pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:defPPr",
+        "a:extLst",
+        "a:lvl1pPr",
+        "a:lvl2pPr",
+        "a:lvl3pPr",
+        "a:lvl4pPr",
+        "a:lvl5pPr",
+        "a:lvl6pPr",
+        "a:lvl7pPr",
+        "a:lvl8pPr",
+        "a:lvl9pPr"
+      ]
+    },
     "p:outlineViewPr": {
       "ct": ["CT_OutlineViewProperties"],
       "slots": [
@@ -18488,6 +20439,32 @@
         }
       ],
       "variantElements": ["p:cTn"]
+    },
+    "p:penClr": {
+      "ct": ["CT_Color"],
+      "slots": [
+        {
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
+          "min": 1,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr"
+      ]
     },
     "p:ph": {
       "ct": ["CT_Placeholder"],
@@ -18544,6 +20521,10 @@
     },
     "p:plus": {
       "ct": ["CT_Empty"],
+      "slots": []
+    },
+    "p:pos": {
+      "ct": ["CT_Point2D"],
       "slots": []
     },
     "p:present": {
@@ -18756,6 +20737,22 @@
     "p:rtn": {
       "ct": ["CT_TLTriggerRuntimeNode"],
       "slots": []
+    },
+    "p:scale": {
+      "ct": ["CT_Scale2D"],
+      "slots": [
+        {
+          "elements": ["a:sx"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:sy"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:sx", "a:sy"]
     },
     "p:seq": {
       "ct": ["CT_TLTimeNodeSequence"],
@@ -19077,6 +21074,10 @@
       "ct": ["CT_SmartTags"],
       "slots": []
     },
+    "p:snd": {
+      "ct": ["CT_EmbeddedWAVAudioFile"],
+      "slots": []
+    },
     "p:sndAc": {
       "ct": ["CT_TransitionSoundAction"],
       "slots": [
@@ -19088,6 +21089,10 @@
         }
       ],
       "variantElements": ["p:endSnd", "p:stSnd"]
+    },
+    "p:sndTgt": {
+      "ct": ["CT_EmbeddedWAVAudioFile"],
+      "slots": []
     },
     "p:sorterViewPr": {
       "ct": ["CT_SlideSorterViewProperties"],
@@ -19135,6 +21140,78 @@
         }
       ],
       "variantElements": ["p:extLst", "p:nvSpPr", "p:spPr", "p:style", "p:txBody"]
+    },
+    "p:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
     },
     "p:spTgt": {
       "ct": ["CT_TLShapeTargetElement"],
@@ -19218,6 +21295,32 @@
     "p:strips": {
       "ct": ["CT_CornerDirectionTransition"],
       "slots": []
+    },
+    "p:style": {
+      "ct": ["CT_ShapeStyle"],
+      "slots": [
+        {
+          "elements": ["a:lnRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fillRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fontRef"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:effectRef", "a:fillRef", "a:fontRef", "a:lnRef"]
     },
     "p:subSp": {
       "ct": ["CT_TLSubShapeId"],
@@ -19337,6 +21440,79 @@
       ],
       "variantElements": ["p:bldLst", "p:extLst", "p:tnLst"]
     },
+    "p:titleStyle": {
+      "ct": ["CT_TextListStyle"],
+      "slots": [
+        {
+          "elements": ["a:defPPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl1pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl2pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl3pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl4pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl5pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl6pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl7pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl8pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:lvl9pPr"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:defPPr",
+        "a:extLst",
+        "a:lvl1pPr",
+        "a:lvl2pPr",
+        "a:lvl3pPr",
+        "a:lvl4pPr",
+        "a:lvl5pPr",
+        "a:lvl6pPr",
+        "a:lvl7pPr",
+        "a:lvl8pPr",
+        "a:lvl9pPr"
+      ]
+    },
     "p:tmAbs": {
       "ct": ["CT_TLIterateIntervalTime"],
       "slots": []
@@ -19412,16 +21588,35 @@
       ]
     },
     "p:to": {
-      "ct": ["CT_TLPoint", "CT_TLAnimVariant"],
+      "ct": ["CT_Color", "CT_TLPoint", "CT_TLAnimVariant"],
       "slots": [
         {
-          "elements": ["p:boolVal", "p:intVal", "p:fltVal", "p:strVal", "p:clrVal"],
+          "elements": [
+            "a:scrgbClr",
+            "a:srgbClr",
+            "a:hslClr",
+            "a:sysClr",
+            "a:schemeClr",
+            "a:prstClr"
+          ],
           "min": 1,
           "max": 1,
           "pick": "one"
         }
       ],
-      "variantElements": ["p:boolVal", "p:clrVal", "p:fltVal", "p:intVal", "p:strVal"]
+      "variantElements": [
+        "a:hslClr",
+        "a:prstClr",
+        "a:schemeClr",
+        "a:scrgbClr",
+        "a:srgbClr",
+        "a:sysClr",
+        "p:boolVal",
+        "p:clrVal",
+        "p:fltVal",
+        "p:intVal",
+        "p:strVal"
+      ]
     },
     "p:transition": {
       "ct": ["CT_SlideTransition"],
@@ -19490,6 +21685,27 @@
         "p:wipe",
         "p:zoom"
       ]
+    },
+    "p:txBody": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
     },
     "p:txEl": {
       "ct": ["CT_TLTextTargetElement"],
@@ -19630,6 +21846,22 @@
       "ct": ["CT_SideDirectionTransition"],
       "slots": []
     },
+    "p:xfrm": {
+      "ct": ["CT_Transform2D"],
+      "slots": [
+        {
+          "elements": ["a:off"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:ext", "a:off"]
+    },
     "p:zoom": {
       "ct": ["CT_InOutTransition"],
       "slots": []
@@ -19733,6 +21965,65 @@
       "ct": ["CT_PhoneticPr"],
       "slots": []
     },
+    "pic:blipFill": {
+      "ct": ["CT_BlipFillProperties"],
+      "slots": [
+        {
+          "elements": ["a:blip"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:srcRect"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:tile", "a:stretch"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:blip", "a:srcRect", "a:stretch", "a:tile"]
+    },
+    "pic:cNvPicPr": {
+      "ct": ["CT_NonVisualPictureProperties"],
+      "slots": [
+        {
+          "elements": ["a:picLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:picLocks"]
+    },
+    "pic:cNvPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
     "pic:nvPicPr": {
       "ct": ["CT_PictureNonVisual"],
       "slots": [
@@ -19769,6 +22060,78 @@
         }
       ],
       "variantElements": ["pic:blipFill", "pic:nvPicPr", "pic:spPr"]
+    },
+    "pic:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
     },
     "picture": {
       "ct": ["CT_SheetBackgroundPicture"],
@@ -21616,9 +23979,48 @@
             "v:roundrect",
             "o:diagram"
           ],
-          "min": 1,
+          "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ],
+            ["v:group"],
+            ["v:shape"],
+            ["v:shapetype"],
+            ["v:arc"],
+            ["v:curve"],
+            ["v:image"],
+            ["v:line"],
+            ["v:oval"],
+            ["v:polyline"],
+            ["v:rect"],
+            ["v:roundrect"],
+            ["o:diagram"]
+          ]
         }
       ],
       "variantElements": [
@@ -21829,7 +24231,34 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -21894,7 +24323,35 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ],
+            ["o:ink"]
+          ]
         }
       ],
       "variantElements": [
@@ -21955,7 +24412,34 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -22015,7 +24499,34 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -22080,9 +24591,39 @@
             "pvml:iscomment",
             "o:equationxml"
           ],
-          "min": 1,
+          "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "v:path",
+              "v:formulas",
+              "v:handles",
+              "v:fill",
+              "v:stroke",
+              "v:shadow",
+              "v:textbox",
+              "v:textpath",
+              "v:imagedata",
+              "o:skew",
+              "o:extrusion",
+              "o:callout",
+              "o:lock",
+              "o:clippath",
+              "o:signatureline",
+              "w10:wrap",
+              "w10:anchorlock",
+              "w10:bordertop",
+              "w10:borderbottom",
+              "w10:borderleft",
+              "w10:borderright",
+              "x:ClientData",
+              "pvml:textdata"
+            ],
+            ["o:ink"],
+            ["pvml:iscomment"],
+            ["o:equationxml"]
+          ]
         }
       ],
       "variantElements": [
@@ -22614,7 +25155,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -22669,7 +25248,7 @@
           "elements": ["w:behavior"],
           "min": 1,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "one"
         }
       ],
       "variantElements": ["w:behavior"]
@@ -22732,7 +25311,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         },
         {
           "elements": ["w:sectPr"],
@@ -23012,7 +25625,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -23561,7 +26208,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -23800,7 +26485,64 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -23916,7 +26658,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -24277,7 +27057,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         },
         {
           "elements": ["w:sectPr"],
@@ -24429,7 +27243,7 @@
           "elements": ["w:docPart"],
           "min": 1,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "one"
         }
       ],
       "variantElements": ["w:docPart"]
@@ -24610,7 +27424,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -24738,9 +27586,21 @@
             "w:ddList",
             "w:textInput"
           ],
-          "min": 1,
+          "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            ["w:name"],
+            ["w:label"],
+            ["w:tabIndex"],
+            ["w:enabled"],
+            ["w:calcOnExit"],
+            ["w:entryMacro"],
+            ["w:exitMacro"],
+            ["w:helpText"],
+            ["w:statusText"],
+            ["w:checkBox", "w:ddList", "w:textInput"]
+          ]
         }
       ],
       "variantElements": [
@@ -24872,7 +27732,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -25039,7 +27937,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -25327,7 +28259,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -25457,7 +28423,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -25604,7 +28604,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -25735,7 +28773,64 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -26261,7 +29356,64 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -26385,7 +29537,64 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            [
+              "m:acc",
+              "m:bar",
+              "m:box",
+              "m:borderBox",
+              "m:d",
+              "m:eqArr",
+              "m:f",
+              "m:func",
+              "m:groupChr",
+              "m:limLow",
+              "m:limUpp",
+              "m:m",
+              "m:nary",
+              "m:phant",
+              "m:rad",
+              "m:sPre",
+              "m:sSub",
+              "m:sSubSup",
+              "m:sSup",
+              "m:r"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -26801,7 +30010,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -27668,7 +30915,37 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            ["w:r"],
+            [
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -27767,7 +31044,37 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            ["w:r"],
+            [
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -27930,7 +31237,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -28944,7 +32289,45 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:smartTag",
+              "w:sdt",
+              "w:dir",
+              "w:bdo",
+              "w:r",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:fldSimple"],
+            ["w:hyperlink"],
+            ["w:subDoc"]
+          ]
         }
       ],
       "variantElements": [
@@ -29408,7 +32791,39 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            ["w:tr"],
+            ["w:customXml"],
+            ["w:sdt"],
+            [
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -29892,7 +33307,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -30277,7 +33726,39 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            ["w:tc"],
+            ["w:customXml"],
+            ["w:sdt"],
+            [
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ]
+          ]
         }
       ],
       "variantElements": [
@@ -30434,7 +33915,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -30487,7 +34002,7 @@
           "elements": ["w:type"],
           "min": 1,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "one"
         }
       ],
       "variantElements": ["w:type"]
@@ -31223,6 +34738,209 @@
         "wp:wrapTopAndBottom"
       ]
     },
+    "wp:bg": {
+      "ct": ["CT_BackgroundFormatting"],
+      "slots": [
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:solidFill"
+      ]
+    },
+    "wp:bodyPr": {
+      "ct": ["CT_TextBodyProperties"],
+      "slots": [
+        {
+          "elements": ["a:prstTxWarp"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:noAutofit", "a:normAutofit", "a:spAutoFit"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d", "a:flatTx"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:extLst",
+        "a:flatTx",
+        "a:noAutofit",
+        "a:normAutofit",
+        "a:prstTxWarp",
+        "a:scene3d",
+        "a:sp3d",
+        "a:spAutoFit"
+      ]
+    },
+    "wp:cNvCnPr": {
+      "ct": ["CT_NonVisualConnectorProperties"],
+      "slots": [
+        {
+          "elements": ["a:cxnSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:stCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:endCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:cxnSpLocks", "a:endCxn", "a:extLst", "a:stCxn"]
+    },
+    "wp:cNvContentPartPr": {
+      "ct": ["CT_NonVisualContentPartProperties"],
+      "slots": [
+        {
+          "elements": ["a:cpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:cpLocks", "a:extLst"]
+    },
+    "wp:cNvFrPr": {
+      "ct": ["CT_NonVisualGraphicFrameProperties"],
+      "slots": [
+        {
+          "elements": ["a:graphicFrameLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:graphicFrameLocks"]
+    },
+    "wp:cNvGraphicFramePr": {
+      "ct": ["CT_NonVisualGraphicFrameProperties"],
+      "slots": [
+        {
+          "elements": ["a:graphicFrameLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:graphicFrameLocks"]
+    },
+    "wp:cNvGrpSpPr": {
+      "ct": ["CT_NonVisualGroupDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:grpSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:grpSpLocks"]
+    },
+    "wp:cNvPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
+    "wp:cNvSpPr": {
+      "ct": ["CT_NonVisualDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:spLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:spLocks"]
+    },
     "wp:contentPart": {
       "ct": ["CT_WordprocessingContentPart"],
       "slots": [
@@ -31244,8 +34962,44 @@
       ],
       "variantElements": ["wp:extLst", "wp:nvContentPartPr", "wp:xfrm"]
     },
+    "wp:docPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
     "wp:effectExtent": {
       "ct": ["CT_EffectExtent"],
+      "slots": []
+    },
+    "wp:extLst": {
+      "ct": ["CT_OfficeArtExtensionList"],
+      "slots": [
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:ext"]
+    },
+    "wp:extent": {
+      "ct": ["CT_PositiveSize2D"],
       "slots": []
     },
     "wp:graphicFrame": {
@@ -31321,6 +35075,58 @@
         "wp:wsp"
       ]
     },
+    "wp:grpSpPr": {
+      "ct": ["CT_GroupShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:scene3d",
+        "a:solidFill",
+        "a:xfrm"
+      ]
+    },
     "wp:inline": {
       "ct": ["CT_Inline"],
       "slots": [
@@ -31357,6 +35163,10 @@
         "wp:effectExtent",
         "wp:extent"
       ]
+    },
+    "wp:lineTo": {
+      "ct": ["CT_Point2D"],
+      "slots": []
     },
     "wp:linkedTxbx": {
       "ct": ["CT_LinkedTextboxInformation"],
@@ -31408,6 +35218,112 @@
         }
       ],
       "variantElements": ["wp:align", "wp:posOffset"]
+    },
+    "wp:simplePos": {
+      "ct": ["CT_Point2D"],
+      "slots": []
+    },
+    "wp:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
+    },
+    "wp:start": {
+      "ct": ["CT_Point2D"],
+      "slots": []
+    },
+    "wp:style": {
+      "ct": ["CT_ShapeStyle"],
+      "slots": [
+        {
+          "elements": ["a:lnRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fillRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fontRef"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:effectRef", "a:fillRef", "a:fontRef", "a:lnRef"]
     },
     "wp:txbx": {
       "ct": ["CT_TextboxInfo"],
@@ -31463,7 +35379,41 @@
           ],
           "min": 0,
           "max": "unbounded",
-          "pick": "any"
+          "pick": "any",
+          "arms": [
+            [
+              "w:customXml",
+              "w:sdt",
+              "w:p",
+              "w:tbl",
+              "w:proofErr",
+              "w:permStart",
+              "w:permEnd",
+              "w:bookmarkStart",
+              "w:bookmarkEnd",
+              "w:moveFromRangeStart",
+              "w:moveFromRangeEnd",
+              "w:moveToRangeStart",
+              "w:moveToRangeEnd",
+              "w:commentRangeStart",
+              "w:commentRangeEnd",
+              "w:customXmlInsRangeStart",
+              "w:customXmlInsRangeEnd",
+              "w:customXmlDelRangeStart",
+              "w:customXmlDelRangeEnd",
+              "w:customXmlMoveFromRangeStart",
+              "w:customXmlMoveFromRangeEnd",
+              "w:customXmlMoveToRangeStart",
+              "w:customXmlMoveToRangeEnd",
+              "w:ins",
+              "w:del",
+              "w:moveFrom",
+              "w:moveTo",
+              "m:oMathPara",
+              "m:oMath"
+            ],
+            ["w:altChunk"]
+          ]
         }
       ],
       "variantElements": [
@@ -31540,6 +35490,23 @@
         "wp:grpSpPr",
         "wp:wsp"
       ]
+    },
+    "wp:whole": {
+      "ct": ["CT_WholeE2oFormatting"],
+      "slots": [
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:effectDag", "a:effectLst", "a:ln"]
     },
     "wp:wpc": {
       "ct": ["CT_WordprocessingCanvas"],
@@ -31693,6 +35660,22 @@
         "wp:style",
         "wp:txbx"
       ]
+    },
+    "wp:xfrm": {
+      "ct": ["CT_Transform2D"],
+      "slots": [
+        {
+          "elements": ["a:off"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:ext", "a:off"]
     },
     "x": {
       "ct": ["CT_Index", "CT_X"],
@@ -31890,6 +35873,139 @@
         "xdr:sp"
       ]
     },
+    "xdr:blipFill": {
+      "ct": ["CT_BlipFillProperties"],
+      "slots": [
+        {
+          "elements": ["a:blip"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:srcRect"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:tile", "a:stretch"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        }
+      ],
+      "variantElements": ["a:blip", "a:srcRect", "a:stretch", "a:tile"]
+    },
+    "xdr:cNvCxnSpPr": {
+      "ct": ["CT_NonVisualConnectorProperties"],
+      "slots": [
+        {
+          "elements": ["a:cxnSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:stCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:endCxn"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:cxnSpLocks", "a:endCxn", "a:extLst", "a:stCxn"]
+    },
+    "xdr:cNvGraphicFramePr": {
+      "ct": ["CT_NonVisualGraphicFrameProperties"],
+      "slots": [
+        {
+          "elements": ["a:graphicFrameLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:graphicFrameLocks"]
+    },
+    "xdr:cNvGrpSpPr": {
+      "ct": ["CT_NonVisualGroupDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:grpSpLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:grpSpLocks"]
+    },
+    "xdr:cNvPicPr": {
+      "ct": ["CT_NonVisualPictureProperties"],
+      "slots": [
+        {
+          "elements": ["a:picLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:picLocks"]
+    },
+    "xdr:cNvPr": {
+      "ct": ["CT_NonVisualDrawingProps"],
+      "slots": [
+        {
+          "elements": ["a:hlinkClick"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:hlinkHover"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:hlinkClick", "a:hlinkHover"]
+    },
+    "xdr:cNvSpPr": {
+      "ct": ["CT_NonVisualDrawingShapeProps"],
+      "slots": [
+        {
+          "elements": ["a:spLocks"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:extLst", "a:spLocks"]
+    },
     "xdr:clientData": {
       "ct": ["CT_AnchorClientData"],
       "slots": []
@@ -31918,6 +36034,10 @@
         }
       ],
       "variantElements": ["xdr:nvCxnSpPr", "xdr:spPr", "xdr:style"]
+    },
+    "xdr:ext": {
+      "ct": ["CT_PositiveSize2D"],
+      "slots": []
     },
     "xdr:from": {
       "ct": ["CT_Marker"],
@@ -31994,6 +36114,58 @@
         "xdr:nvGrpSpPr",
         "xdr:pic",
         "xdr:sp"
+      ]
+    },
+    "xdr:grpSpPr": {
+      "ct": ["CT_GroupShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:noFill",
+        "a:pattFill",
+        "a:scene3d",
+        "a:solidFill",
+        "a:xfrm"
       ]
     },
     "xdr:nvCxnSpPr": {
@@ -32146,6 +36318,10 @@
       ],
       "variantElements": ["xdr:blipFill", "xdr:nvPicPr", "xdr:spPr", "xdr:style"]
     },
+    "xdr:pos": {
+      "ct": ["CT_Point2D"],
+      "slots": []
+    },
     "xdr:sp": {
       "ct": ["CT_Shape"],
       "slots": [
@@ -32171,6 +36347,104 @@
         }
       ],
       "variantElements": ["xdr:nvSpPr", "xdr:spPr", "xdr:style", "xdr:txBody"]
+    },
+    "xdr:spPr": {
+      "ct": ["CT_ShapeProperties"],
+      "slots": [
+        {
+          "elements": ["a:xfrm"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:custGeom", "a:prstGeom"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": [
+            "a:noFill",
+            "a:solidFill",
+            "a:gradFill",
+            "a:blipFill",
+            "a:pattFill",
+            "a:grpFill"
+          ],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:ln"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectLst", "a:effectDag"],
+          "min": 0,
+          "max": 1,
+          "pick": "one"
+        },
+        {
+          "elements": ["a:scene3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:sp3d"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:extLst"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": [
+        "a:blipFill",
+        "a:custGeom",
+        "a:effectDag",
+        "a:effectLst",
+        "a:extLst",
+        "a:gradFill",
+        "a:grpFill",
+        "a:ln",
+        "a:noFill",
+        "a:pattFill",
+        "a:prstGeom",
+        "a:scene3d",
+        "a:solidFill",
+        "a:sp3d",
+        "a:xfrm"
+      ]
+    },
+    "xdr:style": {
+      "ct": ["CT_ShapeStyle"],
+      "slots": [
+        {
+          "elements": ["a:lnRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fillRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:effectRef"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:fontRef"],
+          "min": 1,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:effectRef", "a:fillRef", "a:fontRef", "a:lnRef"]
     },
     "xdr:to": {
       "ct": ["CT_Marker"],
@@ -32242,6 +36516,27 @@
         "xdr:to"
       ]
     },
+    "xdr:txBody": {
+      "ct": ["CT_TextBody"],
+      "slots": [
+        {
+          "elements": ["a:bodyPr"],
+          "min": 1,
+          "max": 1
+        },
+        {
+          "elements": ["a:lstStyle"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:p"],
+          "min": 1,
+          "max": "unbounded"
+        }
+      ],
+      "variantElements": ["a:bodyPr", "a:lstStyle", "a:p"]
+    },
     "xdr:wsDr": {
       "ct": ["CT_Drawing"],
       "slots": [
@@ -32253,6 +36548,22 @@
         }
       ],
       "variantElements": ["xdr:absoluteAnchor", "xdr:oneCellAnchor", "xdr:twoCellAnchor"]
+    },
+    "xdr:xfrm": {
+      "ct": ["CT_Transform2D"],
+      "slots": [
+        {
+          "elements": ["a:off"],
+          "min": 0,
+          "max": 1
+        },
+        {
+          "elements": ["a:ext"],
+          "min": 0,
+          "max": 1
+        }
+      ],
+      "variantElements": ["a:ext", "a:off"]
     },
     "xf": {
       "ct": ["CT_Xf"],

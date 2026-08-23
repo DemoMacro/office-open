@@ -81,6 +81,9 @@ interface Slot {
   min: number;
   max: number | "unbounded";
   pick?: "one" | "any";
+  // choice arms, present only when some arm expands to several elements
+  // (a group ref): members combine freely within an arm, exclusively across
+  arms?: string[][];
   // group-ref with unbounded repeat over a multi-slot body cannot be expressed
   // by inline slots without losing the "repeat the whole sequence" semantics
   approxRepeat?: true;
@@ -285,32 +288,60 @@ function flatten(
     );
   }
 
-  if (node.tag === "sequence" || node.tag === "choice" || node.tag === "all") {
+  if (node.tag === "choice") {
+    // each direct child particle is one ARM of the choice. A group-ref arm
+    // expands to its members, which combine freely WITHIN the arm — `arms`
+    // records that boundary so gates test exclusivity ACROSS arms only
+    // (c:dLbls: delete XOR the shared-settings group, never two shared
+    // settings). A nested choice flattens into its parent arm; exclusivity
+    // inside it degrades to the arm union (rare, approximate).
+    const { min, max } = cardinality(node);
+    const pick = max === "unbounded" || refMax === "unbounded" ? "any" : "one";
+    const elements: string[] = [];
+    const arms: string[][] = [];
+    const wildcards: Slot[] = [];
+    let slotMin = min;
+    // the slot may repeat as often as the choice itself (or its referencing
+    // ref) allows — unbounded there is what makes pick "any" repeatable
+    let slotMax: number | "unbounded" = mergeMax(max, refMax);
+    for (const child of node.children) {
+      if (!isParticle(child)) continue;
+      const armElements: string[] = [];
+      for (const s of flatten(child, sf, 1, 1, groupDepth + 1)) {
+        if (s.elements) armElements.push(...s.elements);
+        else wildcards.push(s);
+        slotMin = Math.min(slotMin, s.min);
+        slotMax = mergeMax(slotMax, s.max);
+      }
+      if (armElements.length > 0) {
+        arms.push(armElements);
+        elements.push(...armElements);
+      }
+    }
+    // single-element arms carry no extra information — the flat member list
+    // already expresses pairwise exclusivity; only record multi-element arms
+    const hasGroupArm = arms.some((a) => a.length > 1);
+    if (elements.length === 0) return wildcards;
+    const slot: Slot = {
+      elements,
+      min: slotMin,
+      max: slotMax,
+      pick,
+      ...(hasGroupArm ? { arms } : {}),
+    };
+    return [slot, ...wildcards];
+  }
+
+  if (node.tag === "sequence" || node.tag === "all") {
     const { min, max } = cardinality(node);
     const inner = flattenChildren(node, sf, groupDepth + 1);
-    const scaled = min === 1 && max === 1 ? inner : inner.map((s) => scaleSlot(s, min, max, node));
-    if (node.tag === "choice" && scaled.length > 0) {
-      // merge members into one pick slot; keep any-wildcards as their own slots
-      const elements: string[] = [];
-      const wildcards: Slot[] = [];
-      for (const s of scaled) {
-        if (s.elements) elements.push(...s.elements);
-        else wildcards.push(s);
-      }
-      const slot: Slot =
-        elements.length > 0
-          ? {
-              elements,
-              min: scaled[0]!.min,
-              max: scaled[0]!.max,
-              pick: scaled[0]!.max === "unbounded" || refMax === "unbounded" ? "any" : "one",
-            }
-          : wildcards[0]!;
-      return [slot, ...wildcards.slice(elements.length > 0 ? 0 : 1)];
-    }
-    return scaled;
+    return min === 1 && max === 1 ? inner : inner.map((s) => scaleSlot(s, min, max, node));
   }
   return [];
+}
+
+function isParticle(node: XNode): boolean {
+  return ["element", "group", "choice", "sequence", "all", "any"].includes(node.tag);
 }
 
 // Wrapping a group/choice body in the referencing particle's cardinality:
@@ -318,9 +349,7 @@ function flatten(
 // repeat ("any"). A bounded ref around a multi-particle body cannot
 // repeat-the-sequence when inlined — flagged as approximate.
 function scaleSlot(s: Slot, min: number, max: number | "unbounded", owner: XNode): Slot {
-  const childCount = owner.children.filter((c) =>
-    ["element", "group", "choice", "sequence", "all", "any"].includes(c.tag),
-  ).length;
+  const childCount = owner.children.filter(isParticle).length;
   const out: Slot = {
     ...s,
     min: min === 0 ? 0 : Math.min(s.min, min),
@@ -343,7 +372,7 @@ function describe(node: XNode): string {
 function flattenChildren(container: XNode, sf: SchemaFile, groupDepth: number): Slot[] {
   const out: Slot[] = [];
   for (const child of container.children) {
-    if (!["element", "group", "choice", "sequence", "all", "any"].includes(child.tag)) continue;
+    if (!isParticle(child)) continue;
     out.push(...flatten(child, sf, 1, 1, groupDepth));
   }
   return out;
@@ -453,6 +482,20 @@ function addElement(elementQName: string, ctName: string, slots: Slot[]) {
   unionInto(fresh);
 }
 
+// A type reference may cross namespaces (pml's `<xsd:element name="to"
+// type="a:CT_Color"/>` inside CT_TLAnimateColorBehavior): resolve the prefix
+// through the referencing file's imports to the owning schema so those
+// element models land in the table instead of being dropped.
+function resolveTypeRef(type: string, sf: SchemaFile): [SchemaFile, string] | undefined {
+  if (!type.includes(":")) return [sf, type];
+  const px = type.slice(0, type.indexOf(":"));
+  const local = type.slice(type.indexOf(":") + 1);
+  const file = sf.importPrefixes.get(px);
+  const target = file ? schemas.get(file) : undefined;
+  if (target?.complexTypes.has(local)) return [target, local];
+  return undefined;
+}
+
 function collectFromSchema(sf: SchemaFile) {
   const schemaEl = parseXml(fs.readFileSync(path.join(SCHEMA_DIR, sf.file), "utf-8")).children.find(
     (c) => c.tag === "schema",
@@ -464,9 +507,15 @@ function collectFromSchema(sf: SchemaFile) {
       if (child.tag === "element") {
         const qname = child.attrs.ref ?? qualify(child.attrs.name ?? "", sf);
         const type = child.attrs.type;
-        if (qname && type && !type.includes(":")) {
-          const slots = complexTypeSlots(type, sf, new Set());
-          if (slots.length > 0 || sf.complexTypes.has(type)) addElement(qname, type, slots);
+        if (qname && type) {
+          const resolved = resolveTypeRef(type, sf);
+          if (resolved) {
+            const [typeSf, typeName] = resolved;
+            const slots = complexTypeSlots(typeName, typeSf, new Set());
+            if (slots.length > 0 || typeSf.complexTypes.has(typeName)) {
+              addElement(qname, typeName, slots);
+            }
+          }
         }
       }
       walk(child);
@@ -503,13 +552,27 @@ function build(): string {
   return JSON.stringify(payload, null, 2) + "\n";
 }
 
+/**
+ * The repo formatter (oxfmt) rewraps the generated JSON (folds short arrays
+ * onto one line), so the drift gate compares parsed values, not text —
+ * `vp check --fix` and `models:generate` must not fight over formatting.
+ */
+function sameJson(a: string, b: string): boolean {
+  if (a === b) return true;
+  try {
+    return JSON.stringify(JSON.parse(a)) === JSON.stringify(JSON.parse(b));
+  } catch {
+    return false;
+  }
+}
+
 function main() {
   const json = build();
   const check = process.argv.includes("--check");
 
   if (check) {
     const committed = fs.existsSync(OUT_FILE) ? fs.readFileSync(OUT_FILE, "utf-8") : "";
-    if (committed === json) {
+    if (sameJson(committed, json)) {
       console.log(`container-models.json up to date (${containers.size} containers)`);
       return;
     }
