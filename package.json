@@ -44,6 +44,7 @@
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
     "postinstall": "pnpm build && vp config && basis git setup",
+    "docs:parity": "tsx scripts/docs-parity-check.ts",
     "docs:dev": "pnpm --filter @office-open/docs dev",
     "docs:build": "pnpm --filter @office-open/docs build",
     "docs:generate": "pnpm --filter @office-open/docs generate",
