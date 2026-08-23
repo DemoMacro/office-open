@@ -49,7 +49,7 @@ import { externalLinkDesc } from "@parts/external-link";
 import type { WorkbookOptions } from "@parts/file";
 import { metadataDesc } from "@parts/metadata";
 import type { MetadataOptions } from "@parts/metadata";
-import { aggregate, collectUniqueValues } from "@parts/pivot";
+import { aggregate, profilePivotFields } from "@parts/pivot";
 import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
@@ -1653,7 +1653,7 @@ function renderPivotSheetData(
     if (colFieldIndices.length > 0 && !colFieldIndices.some((idx) => idx === -1)) {
       // --- Cross-tab layout (with column fields) ---
       // Unique column values for the first column field
-      const colUniqueVals = collectUniqueValues(sourceData.records, colFieldIndices[0] ?? 0).map(
+      const colUniqueVals = profilePivotFields(sourceData)[colFieldIndices[0] ?? 0]!.unique.map(
         (v) => (typeof v === "string" || typeof v === "number" ? String(v) : String(v ?? "")),
       );
 

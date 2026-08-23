@@ -13,7 +13,7 @@ import { escapeXml, findChild, attr, attrNum } from "@office-open/xml";
 
 import type { PivotCacheDefinitionOptions } from "./pivot/pivot-utils";
 import type { PivotSourceData, TupleOptions } from "./pivot/pivot-utils";
-import { collectUniqueValues, isNumericField, stringifyOlapPr } from "./pivot/pivot-utils";
+import { profilePivotFields, stringifyOlapPr } from "./pivot/pivot-utils";
 
 // ── Types ──
 
@@ -277,32 +277,23 @@ function stringifyPivotCacheDef(
     );
   }
 
-  // cacheFields
+  // cacheFields — one profile pass feeds every field's sharedItems
   const fieldNames = sourceData.fieldNames;
+  const profiles = profilePivotFields(sourceData);
   p.push(`<cacheFields count="${fieldNames.length}">`);
 
   for (let i = 0; i < fieldNames.length; i++) {
     const fieldName = fieldNames[i] ?? "";
-    const numeric = isNumericField(sourceData.records, i);
-    const uniqueVals = collectUniqueValues(sourceData.records, i);
+    const { numeric, unique: uniqueVals } = profiles[i]!;
 
     if (numeric) {
-      let min = Infinity,
-        max = -Infinity;
-      for (const row of sourceData.records) {
-        const v = row[i];
-        if (typeof v === "number") {
-          if (v < min) min = v;
-          if (v > max) max = v;
-        }
-      }
+      let min = profiles[i]!.min,
+        max = profiles[i]!.max;
       if (!isFinite(min)) {
         min = 0;
         max = 0;
       }
-      const allInteger = sourceData.records.every(
-        (row) => typeof row[i] === "number" && Number.isInteger(row[i]),
-      );
+      const allInteger = profiles[i]!.allInteger;
 
       const cfOverride = cacheDefOpts?.cacheFieldOverrides?.get(i);
       const cfExtraAttrs: string[] = [];
@@ -671,12 +662,11 @@ function stringifyPivotCacheDef(
 // ── Stringify: pivotCacheRecords ──
 
 function stringifyPivotCacheRecords(sourceData: PivotSourceData): string {
-  const numericFields = sourceData.fieldNames.map((_, i) => isNumericField(sourceData.records, i));
-  const fieldIndexMaps: Map<string, number>[] = sourceData.fieldNames.map((_, i) => {
-    if (numericFields[i]) return new Map<string, number>();
-    const unique = collectUniqueValues(sourceData.records, i);
+  const profiles = profilePivotFields(sourceData);
+  const fieldIndexMaps: Map<string, number>[] = profiles.map((f) => {
+    if (f.numeric) return new Map<string, number>();
     const map = new Map<string, number>();
-    for (let j = 0; j < unique.length; j++) map.set(String(unique[j]), j);
+    for (let j = 0; j < f.unique.length; j++) map.set(String(f.unique[j]), j);
     return map;
   });
 
@@ -693,7 +683,7 @@ function stringifyPivotCacheRecords(sourceData: PivotSourceData): string {
         p.push("<m/>");
       } else if (val instanceof Date) {
         p.push(`<d v="${val.toISOString().replace(/\.\d{3}Z$/, "Z")}"/>`);
-      } else if (numericFields[i]) {
+      } else if (profiles[i]!.numeric) {
         p.push(`<n v="${val}"/>`);
       } else {
         p.push(`<x v="${fieldIndexMaps[i]?.get(String(val)) ?? 0}"/>`);

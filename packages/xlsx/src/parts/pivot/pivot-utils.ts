@@ -896,6 +896,64 @@ export function collectUniqueValues(
   return result;
 }
 
+/** Per-field profile of pivot source records from a single pass. */
+export interface PivotFieldProfile {
+  /** True when no non-empty string value appears (numbers/nulls/dates pass). */
+  numeric: boolean;
+  /** First-seen-order distinct values (same as {@link collectUniqueValues}). */
+  unique: (string | number | null | Date)[];
+  /** Smallest/largest numeric value (±Infinity when the field has no numbers). */
+  min: number;
+  max: number;
+  /** True when every value is an integer number. */
+  allInteger: boolean;
+}
+
+const profileCache = new WeakMap<PivotSourceData, PivotFieldProfile[]>();
+
+/**
+ * Profile every field of the source records in one pass — numericity, unique
+ * values, and numeric min/max/integer flags together. Memoized per source
+ * object so the cache-definition and cache-records stringifiers share a
+ * single scan instead of each re-walking the records per field.
+ */
+export function profilePivotFields(sourceData: PivotSourceData): PivotFieldProfile[] {
+  const cached = profileCache.get(sourceData);
+  if (cached !== undefined) return cached;
+  const cols = sourceData.fieldNames.map(() => ({
+    profile: {
+      numeric: true,
+      unique: [] as (string | number | null | Date)[],
+      min: Infinity,
+      max: -Infinity,
+      allInteger: true,
+    } as PivotFieldProfile,
+    seen: new Set<string>(),
+  }));
+  for (const row of sourceData.records) {
+    for (let i = 0; i < cols.length; i++) {
+      const col = cols[i]!;
+      const val = row[i];
+      if (typeof val === "string" && val !== "") col.profile.numeric = false;
+      const key = val instanceof Date ? val.toISOString() : String(val);
+      if (!col.seen.has(key)) {
+        col.seen.add(key);
+        col.profile.unique.push(val ?? null);
+      }
+      if (typeof val === "number") {
+        if (val < col.profile.min) col.profile.min = val;
+        if (val > col.profile.max) col.profile.max = val;
+        if (!Number.isInteger(val)) col.profile.allInteger = false;
+      } else {
+        col.profile.allInteger = false;
+      }
+    }
+  }
+  const profiles = cols.map((c) => c.profile);
+  profileCache.set(sourceData, profiles);
+  return profiles;
+}
+
 /**
  * Check if a field is numeric (all non-empty values are numbers).
  */

@@ -22,5 +22,6 @@ export {
   PivotFilterType as PivotFilterTypeValue,
   collectUniqueValues,
   isNumericField,
+  profilePivotFields,
   aggregate,
 } from "./pivot-utils";

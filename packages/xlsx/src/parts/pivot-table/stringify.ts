@@ -8,7 +8,8 @@ import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml } from "@office-open/xml";
 import { columnToLetter, parseA1Cell } from "@util/index";
 
-import { collectUniqueValues } from "../pivot/pivot-utils";
+import { profilePivotFields } from "../pivot/pivot-utils";
+import type { PivotFieldProfile } from "../pivot/pivot-utils";
 import type {
   PivotAreaOptions,
   PivotAreaReferenceOptions,
@@ -308,6 +309,7 @@ function buildPivotFields(
   pageIndices: number[],
 ): string {
   const fieldNames = sd.fieldNames;
+  const profiles = profilePivotFields(sd);
   const parts: string[] = [`<pivotFields count="${fieldNames.length}">`];
 
   for (let i = 0; i < fieldNames.length; i++) {
@@ -334,7 +336,7 @@ function buildPivotFields(
         parts.push(`<pivotField ${dfAttrs.join(" ")}/>`);
       }
     } else if (isRow) {
-      const uniqueVals = collectUniqueValues(sd.records, i);
+      const uniqueVals = profiles[i]!.unique;
       const rAttrs = extraAttrs
         ? ` axis="axisRow" showAll="0" ${extraAttrs}`
         : ' axis="axisRow" showAll="0"';
@@ -344,7 +346,7 @@ function buildPivotFields(
       parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
       parts.push("</items></pivotField>");
     } else if (isCol) {
-      const uniqueVals = collectUniqueValues(sd.records, i);
+      const uniqueVals = profiles[i]!.unique;
       const cAttrs = extraAttrs
         ? ` axis="axisCol" showAll="0" ${extraAttrs}`
         : ' axis="axisCol" showAll="0"';
@@ -354,7 +356,7 @@ function buildPivotFields(
       parts.push(`<item t="default"${override?.defaultItemSd === false ? ' sd="0"' : ""}/>`);
       parts.push("</items></pivotField>");
     } else if (isPage) {
-      const uniqueVals = collectUniqueValues(sd.records, i);
+      const uniqueVals = profiles[i]!.unique;
       const pAttrs = extraAttrs
         ? ` axis="axisPage" showAll="0" ${extraAttrs}`
         : ' axis="axisPage" showAll="0"';
@@ -396,12 +398,19 @@ function buildRowFields(rowIndices: number[]): string {
   return parts.join("");
 }
 
+/** Unique-value count of field `idx`; an out-of-range index (an indexOf miss,
+ * -1) keeps collectUniqueValues' behavior of a single null value. */
+function uniqueCount(profiles: PivotFieldProfile[], idx: number): number {
+  return profiles[idx]?.unique.length ?? 1;
+}
+
 function buildRowItems(sd: PivotSourceData, rowIndices: number[]): string {
   if (rowIndices.length === 0) return '<rowItems count="1"><i/></rowItems>';
 
+  const profiles = profilePivotFields(sd);
   const allUniqueCounts: number[] = [];
   for (const idx of rowIndices) {
-    allUniqueCounts.push(collectUniqueValues(sd.records, idx).length);
+    allUniqueCounts.push(uniqueCount(profiles, idx));
   }
 
   if (rowIndices.length === 1) {
@@ -436,9 +445,10 @@ function buildColItems(
   dataFields: PivotDataField[],
 ): string {
   if (colIndices.length > 0) {
+    const profiles = profilePivotFields(sd);
     const allUniqueCounts: number[] = [];
     for (const idx of colIndices) {
-      allUniqueCounts.push(collectUniqueValues(sd.records, idx).length);
+      allUniqueCounts.push(uniqueCount(profiles, idx));
     }
     const combos = cartesianOfCounts(allUniqueCounts);
     const items: string[] = [];
@@ -486,17 +496,18 @@ function computeLocationRef(
   const start = parseA1Cell(startCell);
   if (!start) return location;
 
+  const profiles = profilePivotFields(sd);
   let rowCount = 1;
   const rowFieldIndex0 = rowFieldIndices[0];
   if (rowFieldIndex0 !== undefined) {
-    rowCount += collectUniqueValues(sd.records, rowFieldIndex0).length;
+    rowCount += uniqueCount(profiles, rowFieldIndex0);
   }
   rowCount += 1;
 
   let colCount = Math.max(rowFieldIndices.length, 1);
   const colFieldIndex0 = colFieldIndices[0];
   if (colFieldIndex0 !== undefined) {
-    colCount += collectUniqueValues(sd.records, colFieldIndex0).length;
+    colCount += uniqueCount(profiles, colFieldIndex0);
   } else if (dataFields.length > 1) {
     colCount += dataFields.length - 1;
   }
