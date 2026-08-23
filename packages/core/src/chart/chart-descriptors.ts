@@ -217,6 +217,32 @@ function stringifyErrBars(opts: ErrorBarOptions): string {
 
 // ── Data labels XML (CT_DLbls) ──
 
+/** EG_DLblShared members — emitted identically by per-point c:dLbl and group c:dLbls. */
+function dataLabelSharedParts(
+  opts: DataLabelOptions | DataLabelsOptions,
+  ctx: WriteContext,
+): string[] {
+  const parts: string[] = [];
+  if (opts.numberFormat !== undefined)
+    parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
+  parts.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties)
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+  if (opts.position !== undefined)
+    parts.push(valEl("c:dLblPos", xsdDataLabelPosition.to(opts.position)));
+  if (opts.showLegendKey !== undefined)
+    parts.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
+  if (opts.showVal !== undefined) parts.push(`<c:showVal${boolVal(opts.showVal)}/>`);
+  if (opts.showCatName !== undefined) parts.push(`<c:showCatName${boolVal(opts.showCatName)}/>`);
+  if (opts.showSerName !== undefined) parts.push(`<c:showSerName${boolVal(opts.showSerName)}/>`);
+  if (opts.showPercent !== undefined) parts.push(`<c:showPercent${boolVal(opts.showPercent)}/>`);
+  if (opts.showBubbleSize !== undefined)
+    parts.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
+  if (opts.separator !== undefined)
+    parts.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
+  return parts;
+}
+
 function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   // CT_DLbl: idx (required) → choice(delete | Group_DLbl needing ≥1 EG_DLblShared child).
   if (opts.delete) {
@@ -228,23 +254,7 @@ function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   else if (opts.layout) inner.push(stringifyLayout(opts.layout));
   if (opts.text)
     inner.push(`<c:tx><c:rich>${textBodyDesc.stringify(opts.text, ctx) ?? ""}</c:rich></c:tx>`);
-  if (opts.numberFormat !== undefined)
-    inner.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
-  inner.push(chartSpPr(opts.shapeProperties, ctx));
-  if (opts.textProperties)
-    inner.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
-  if (opts.position !== undefined)
-    inner.push(valEl("c:dLblPos", xsdDataLabelPosition.to(opts.position)));
-  if (opts.showLegendKey !== undefined)
-    inner.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
-  if (opts.showVal !== undefined) inner.push(`<c:showVal${boolVal(opts.showVal)}/>`);
-  if (opts.showCatName !== undefined) inner.push(`<c:showCatName${boolVal(opts.showCatName)}/>`);
-  if (opts.showSerName !== undefined) inner.push(`<c:showSerName${boolVal(opts.showSerName)}/>`);
-  if (opts.showPercent !== undefined) inner.push(`<c:showPercent${boolVal(opts.showPercent)}/>`);
-  if (opts.showBubbleSize !== undefined)
-    inner.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
-  if (opts.separator !== undefined)
-    inner.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
+  inner.push(...dataLabelSharedParts(opts, ctx));
   return `<c:dLbl><c:idx val="${opts.index}"/>${inner.join("")}</c:dLbl>`;
 }
 
@@ -277,24 +287,7 @@ function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string
   if (opts.delete === true || (opts.delete !== undefined && !hasShared)) {
     return `<c:dLbls>${head}<c:delete val="${opts.delete ? 1 : 0}"/></c:dLbls>`;
   }
-  const parts: string[] = [];
-  if (opts.numberFormat !== undefined)
-    parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
-  parts.push(chartSpPr(opts.shapeProperties, ctx));
-  if (opts.textProperties)
-    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
-  if (opts.position !== undefined)
-    parts.push(valEl("c:dLblPos", xsdDataLabelPosition.to(opts.position)));
-  if (opts.showLegendKey !== undefined)
-    parts.push(`<c:showLegendKey${boolVal(opts.showLegendKey)}/>`);
-  if (opts.showVal !== undefined) parts.push(`<c:showVal${boolVal(opts.showVal)}/>`);
-  if (opts.showCatName !== undefined) parts.push(`<c:showCatName${boolVal(opts.showCatName)}/>`);
-  if (opts.showSerName !== undefined) parts.push(`<c:showSerName${boolVal(opts.showSerName)}/>`);
-  if (opts.showPercent !== undefined) parts.push(`<c:showPercent${boolVal(opts.showPercent)}/>`);
-  if (opts.showBubbleSize !== undefined)
-    parts.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
-  if (opts.separator !== undefined)
-    parts.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
+  const parts = dataLabelSharedParts(opts, ctx);
   // CT_ChartLines (leaderLines); an empty element is XSD-valid.
   if (opts.showLeaderLines !== undefined)
     parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
@@ -500,16 +493,6 @@ function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[], formula
   return `<c:multiLvlStrRef>${refFormula(formula)}<c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
 }
 
-// Numeric categories keep their literal text so formats survive verbatim.
-function stringifyNumCatRef(
-  values: readonly string[],
-  formula?: string,
-  formatCode?: string,
-): string {
-  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
-  return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
-}
-
 /** Whether the chart carries category-source data (c:cat is optional in CT_Ser). */
 function hasCategoryData(opts: ChartSpaceOptions): boolean {
   return (
@@ -526,13 +509,21 @@ function stringifyCategorySource(opts: ChartSpaceOptions): string {
     return stringifyMultiLvlStrRef(opts.multiLevelCategories, opts.categoryFormula);
   if (opts.categoryLabels) return stringifyStrLit(opts.categoryLabels);
   if (opts.numericCategories) {
-    return stringifyNumCatRef(opts.categories ?? [], opts.categoryFormula, opts.categoryFormatCode);
+    return stringifyNumRef(opts.categories ?? [], opts.categoryFormula, opts.categoryFormatCode);
   }
   return stringifyStrRef(opts.categories ?? [], opts.categoryFormula);
 }
 
-function stringifyNumRef(values: readonly number[], formula?: string, formatCode?: string): string {
-  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
+// Numeric cache reference for series values and numeric categories (the latter
+// keep their literal text so formats survive verbatim).
+function stringifyNumRef(
+  values: readonly (string | number)[],
+  formula?: string,
+  formatCode?: string,
+): string {
+  const pts = values
+    .map((v, i) => `<c:pt idx="${i}"><c:v>${typeof v === "number" ? v : escapeXml(v)}</c:v></c:pt>`)
+    .join("");
   return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
 }
 
@@ -572,13 +563,12 @@ function stringifyDataTable(opts: DataTableOptions, ctx: WriteContext): string {
 
 function stringifyProtection(opts: ProtectionOptions): string {
   const parts: string[] = [];
-  if (opts.chartObject !== undefined)
-    parts.push(`<c:chartObject val="${opts.chartObject ? 1 : 0}"/>`);
-  if (opts.data !== undefined) parts.push(`<c:data val="${opts.data ? 1 : 0}"/>`);
-  if (opts.formatting !== undefined) parts.push(`<c:formatting val="${opts.formatting ? 1 : 0}"/>`);
-  if (opts.selection !== undefined) parts.push(`<c:selection val="${opts.selection ? 1 : 0}"/>`);
+  if (opts.chartObject !== undefined) parts.push(`<c:chartObject${boolVal(opts.chartObject)}/>`);
+  if (opts.data !== undefined) parts.push(`<c:data${boolVal(opts.data)}/>`);
+  if (opts.formatting !== undefined) parts.push(`<c:formatting${boolVal(opts.formatting)}/>`);
+  if (opts.selection !== undefined) parts.push(`<c:selection${boolVal(opts.selection)}/>`);
   if (opts.userInterface !== undefined)
-    parts.push(`<c:userInterface val="${opts.userInterface ? 1 : 0}"/>`);
+    parts.push(`<c:userInterface${boolVal(opts.userInterface)}/>`);
   return `<c:protection>${parts.join("")}</c:protection>`;
 }
 
@@ -914,12 +904,10 @@ function stringifySeries(
       parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
       parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
     }
-  } else if (hasCategoryData(opts)) {
-    parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
-    parts.push(
-      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode) : stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`,
-    );
   } else {
+    if (hasCategoryData(opts)) {
+      parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
+    }
     parts.push(
       `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode) : stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`,
     );
@@ -1100,30 +1088,27 @@ function stringifySecondaryGroup(
 
 // Same c:rich run shape for chart and axis titles so parse reuses readTitleText.
 function stringifyTitle(title: string | ChartTitleOptions, ctx: WriteContext): string {
-  if (typeof title !== "string") {
-    const parts: string[] = [];
-    if (title.text !== undefined) {
-      parts.push(
-        typeof title.text === "string"
-          ? `<c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title.text)}</a:t></a:r></a:p></c:rich></c:tx>`
-          : `<c:tx><c:rich>${textBodyDesc.stringify(title.text, ctx) ?? ""}</c:rich></c:tx>`,
-      );
-    }
-    if (title.layout !== undefined) {
-      parts.push(
-        title.layout === true
-          ? "<c:layout/>"
-          : stringifyLayout(title.layout as ManualLayoutOptions),
-      );
-    }
-    if (title.overlay !== undefined) parts.push(`<c:overlay${boolVal(title.overlay)}/>`);
-    if (title.shapeProperties) parts.push(chartSpPr(title.shapeProperties, ctx));
-    if (title.textProperties) {
-      parts.push(`<c:txPr>${textBodyDesc.stringify(title.textProperties, ctx) ?? ""}</c:txPr>`);
-    }
-    return `<c:title>${parts.join("")}</c:title>`;
+  // A bare string is a text-only title; every other field stays unset.
+  const opts: ChartTitleOptions = typeof title === "string" ? { text: title } : title;
+  const parts: string[] = [];
+  if (opts.text !== undefined) {
+    parts.push(
+      typeof opts.text === "string"
+        ? `<c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(opts.text)}</a:t></a:r></a:p></c:rich></c:tx>`
+        : `<c:tx><c:rich>${textBodyDesc.stringify(opts.text, ctx) ?? ""}</c:rich></c:tx>`,
+    );
   }
-  return `<c:title><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p><a:r><a:t>${escapeXml(title)}</a:t></a:r></a:p></c:rich></c:tx></c:title>`;
+  if (opts.layout !== undefined) {
+    parts.push(
+      opts.layout === true ? "<c:layout/>" : stringifyLayout(opts.layout as ManualLayoutOptions),
+    );
+  }
+  if (opts.overlay !== undefined) parts.push(`<c:overlay${boolVal(opts.overlay)}/>`);
+  if (opts.shapeProperties) parts.push(chartSpPr(opts.shapeProperties, ctx));
+  if (opts.textProperties) {
+    parts.push(`<c:txPr>${textBodyDesc.stringify(opts.textProperties, ctx) ?? ""}</c:txPr>`);
+  }
+  return `<c:title>${parts.join("")}</c:title>`;
 }
 
 // ── Legend XML ──
