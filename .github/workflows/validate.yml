@@ -16,3 +16,5 @@ jobs:
       - uses: "./.github/actions/install-and-build"
       - name: Validate Demos
         run: npx tsx scripts/validate.ts
+      - name: Check Container Models
+        run: pnpm run containers:check

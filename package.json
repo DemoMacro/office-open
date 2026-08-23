@@ -39,6 +39,7 @@
     "corpus:setup": "tsx scripts/corpus-check.ts --setup",
     "models:generate": "tsx scripts/xsd-content-model.ts",
     "models:check": "tsx scripts/xsd-content-model.ts --check",
+    "containers:check": "tsx scripts/check-containers.ts",
     "corpus:check": "tsx scripts/corpus-check.ts",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
