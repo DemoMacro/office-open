@@ -217,11 +217,15 @@ export function stringifyPivotTable(
   // filters
   if (o.filters && o.filters.length > 0) {
     const fParts: string[] = [`<filters count="${o.filters.length}">`];
+    // @id only needs to be unique within the filter list — the loop index is
+    // a stable default for fresh documents.
+    let filterIdx = -1;
     for (const f of o.filters) {
+      filterIdx++;
       const fAttrs: Record<string, string | number | boolean | undefined> = {
         fld: f.fld,
         type: f.type,
-        id: f.id,
+        id: f.id ?? filterIdx,
       };
       if (f.mpFld !== undefined) fAttrs.mpFld = f.mpFld;
       if (f.evalOrder !== undefined) fAttrs.evalOrder = f.evalOrder;

@@ -108,8 +108,8 @@ export interface XmlColumnPrOptions {
 }
 
 export interface TableOptions {
-  /** Unique table id (1-based, must be unique across the workbook) */
-  id: number;
+  /** Unique table id (1-based across the workbook); omit for auto-numbering */
+  id?: number;
   /** Table name (used in structured references) */
   name?: string;
   /** Display name (required by XSD, defaults to name if not set) */
@@ -137,6 +137,14 @@ export interface TableOptions {
    * here). Round-trip only.
    */
   ext?: string;
+  /**
+   * Table alternate-text (x14:table `@altText` inside the trailing extLst).
+   * Structured counterpart of {@link ext} — emit builds the x14:table
+   * extension from it when ext itself is absent.
+   */
+  altText?: string;
+  /** Table alternate-text summary (x14:table `@altTextSummary`). */
+  altTextSummary?: string;
   /** Auto-filter (ref shorthand or structured filter columns/sort state) */
   autoFilter?: string | AutoFilterOptions;
   /** Insert row shifts existing rows (CT_Table `@insertRowShift`) */
@@ -298,7 +306,20 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       p.push(`<tableStyleInfo${attrs(styleAttrs)}/>`);
     }
 
-    if (o.ext) p.push(`<extLst>${o.ext}</extLst>`);
+    if (o.ext) {
+      p.push(`<extLst>${o.ext}</extLst>`);
+    } else if (o.altText !== undefined || o.altTextSummary !== undefined) {
+      // x14:table extension (uri + ns per the x14 schema); the raw ext channel
+      // wins when both are present so a round-tripped source stays verbatim.
+      const a: string[] = [];
+      if (o.altText !== undefined) a.push(` altText="${escapeXml(o.altText)}"`);
+      if (o.altTextSummary !== undefined)
+        a.push(` altTextSummary="${escapeXml(o.altTextSummary)}"`);
+      p.push(
+        '<extLst><ext uri="{504A1905-F514-4f6f-8877-14C23A59335A}" xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main">' +
+          `<x14:table${a.join("")}/></ext></extLst>`,
+      );
+    }
 
     p.push("</table>");
     return p.join("");
@@ -404,6 +425,17 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     const extLstEl = findChild(el, "extLst");
     if (extLstEl) {
       result.ext = (extLstEl.elements ?? []).map((e) => stringifyElement(e)).join("");
+      // The x14:table accessibility attributes also surface as structured
+      // fields (the raw ext above still round-trips verbatim).
+      for (const ext of extLstEl.elements ?? []) {
+        for (const child of ext.elements ?? []) {
+          if (child.name !== "x14:table") continue;
+          const altText = attr(child, "altText");
+          if (altText !== undefined) result.altText = altText;
+          const altTextSummary = attr(child, "altTextSummary");
+          if (altTextSummary !== undefined) result.altTextSummary = altTextSummary;
+        }
+      }
     }
 
     // Differential format IDs

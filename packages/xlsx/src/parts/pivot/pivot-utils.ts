@@ -200,8 +200,8 @@ export interface PivotFilterOptions {
   fld: number;
   /** Filter type (required) */
   type: PivotFilterType;
-  /** Filter ID — unique within this pivot table (required) */
-  id: number;
+  /** Filter ID — unique within this pivot table; omit for auto (list index) */
+  id?: number;
   /** Measure field index for OLAP filters */
   mpFld?: number;
   /** Evaluation order */
