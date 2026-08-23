@@ -19,7 +19,12 @@
  * @module
  */
 
-import { pickGroupBase, pickNonVisualDrawingProperties } from "@office-open/core";
+import {
+  convertPixelsToEmu,
+  parseAngle,
+  pickGroupBase,
+  pickNonVisualDrawingProperties,
+} from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 import type { ShapePropertiesOptions, GroupTransform2DOptions } from "@office-open/core/drawing";
 import type {
@@ -59,9 +64,6 @@ import {
   toDocxShapeParts,
   toPresetGeometry,
 } from "./shape";
-
-const EMU_PER_PIXEL = 9525;
-const ANGLE_UNITS_PER_DEGREE = 60_000;
 
 // ── container cNvPr bridge ──
 
@@ -108,14 +110,14 @@ const hasCnvPr = (picked: Partial<NonVisualDrawingPropertiesOptions>): boolean =
 
 /** docx child MediaDataTransformation → absolute box (reads EMUs; falls back to pixels). */
 function docxChildMediaToBox(t: MediaDataTransformation): AbsoluteBox {
-  const x = t.offset?.emus?.x ?? (t.offset?.pixels.x ?? 0) * EMU_PER_PIXEL;
-  const y = t.offset?.emus?.y ?? (t.offset?.pixels.y ?? 0) * EMU_PER_PIXEL;
+  const x = t.offset?.emus?.x ?? convertPixelsToEmu(t.offset?.pixels.x ?? 0);
+  const y = t.offset?.emus?.y ?? convertPixelsToEmu(t.offset?.pixels.y ?? 0);
   return {
     x,
     y,
     width: t.emus.x,
     height: t.emus.y,
-    ...(t.rotation !== undefined ? { rotation: t.rotation / ANGLE_UNITS_PER_DEGREE } : {}),
+    ...(t.rotation !== undefined ? { rotation: parseAngle(t.rotation) } : {}),
     ...(t.flip?.horizontal ? { flipHorizontal: true } : {}),
     ...(t.flip?.vertical ? { flipVertical: true } : {}),
   };

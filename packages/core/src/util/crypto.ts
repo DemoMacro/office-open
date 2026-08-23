@@ -56,8 +56,10 @@ export function hashPasswordAgile(password: string, salt: Uint8Array, spinCount:
   initial.set(pwBytes, salt.length);
 
   let h = sha512(initial);
+  // SHA-512 digest is a fixed 64 bytes, so the counter buffer is allocated
+  // once and only the 4 little-endian counter bytes are rewritten per spin.
+  const buf = new Uint8Array(h.length + 4);
   for (let i = 0; i < spinCount; i++) {
-    const buf = new Uint8Array(h.length + 4);
     buf.set(h, 0);
     buf[h.length] = i & 0xff;
     buf[h.length + 1] = (i >> 8) & 0xff;

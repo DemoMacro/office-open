@@ -35,6 +35,7 @@ import {
   xsdHierBranch,
   xsdResizeHandles,
 } from "../util/mappings";
+import { parseOnOff } from "../util/values";
 import { parseDataModelOptions, stringifyDataModelOptions } from "./data-model";
 import type { DataModelOptions } from "./data-model";
 
@@ -735,11 +736,11 @@ function parseShape(el: Element): LayoutShapeOptions {
   const zOrderOff = attrNum(el, "zOrderOff");
   if (zOrderOff !== undefined) result.zOrderOffset = zOrderOff;
   const hideGeom = attr(el, "hideGeom");
-  if (hideGeom !== undefined) result.hideGeometry = hideGeom === "1" || hideGeom === "true";
+  if (hideGeom !== undefined) result.hideGeometry = parseOnOff(hideGeom) ?? false;
   const lkTxEntry = attr(el, "lkTxEntry");
-  if (lkTxEntry !== undefined) result.lockTextEntry = lkTxEntry === "1" || lkTxEntry === "true";
+  if (lkTxEntry !== undefined) result.lockTextEntry = parseOnOff(lkTxEntry) ?? false;
   const blipPhldr = attr(el, "blipPhldr");
-  if (blipPhldr !== undefined) result.blipPlaceholder = blipPhldr === "1" || blipPhldr === "true";
+  if (blipPhldr !== undefined) result.blipPlaceholder = parseOnOff(blipPhldr) ?? false;
   const adjLst = findChild(el, "dgm:adjLst");
   if (adjLst) {
     const adjustments: AdjustOptions[] = [];
@@ -815,7 +816,7 @@ function parseVariables(el: Element): VariableListOptions {
     for (const child of el.elements ?? []) {
       if (child.name !== `dgm:${tag}`) continue;
       const v = attr(child, "val") ?? "1";
-      return v === "1" || v === "true";
+      return parseOnOff(v) ?? false;
     }
     return undefined;
   };
@@ -984,7 +985,7 @@ function parseSampleData(el: Element | undefined): SampleDataOptions | undefined
   if (!el) return undefined;
   const result: Partial<SampleDataOptions> = {};
   const useDef = attr(el, "useDef");
-  if (useDef !== undefined) result.useDefault = useDef === "1" || useDef === "true";
+  if (useDef !== undefined) result.useDefault = parseOnOff(useDef) ?? false;
   const dataModel = parseDataModelOptions(findChild(el, "dgm:dataModel"));
   if (dataModel) result.dataModel = dataModel;
   return Object.keys(result).length ? (result as SampleDataOptions) : {};

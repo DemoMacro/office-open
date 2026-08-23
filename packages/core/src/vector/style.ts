@@ -1,3 +1,4 @@
+import type { Percentage, RelativeMeasure, UniversalMeasure } from "../util/values";
 /**
  * VML style mini-language.
  *
@@ -13,7 +14,7 @@
  *
  * @module
  */
-import type { Percentage, RelativeMeasure, UniversalMeasure } from "../util/values";
+import { parseVmlTrueFalse } from "./attributes";
 
 /**
  * Length value for VML style properties: "auto" (application-calculated),
@@ -101,7 +102,7 @@ export function parseVmlShapeStyle(record: Record<string, string>): VmlShapeStyl
     const field = keyToStyleMap[key];
     if (!field) continue;
     if (field === "wrapEdited" || field === "fitShapeToText") {
-      style[field] = value === "t" || value === "true";
+      style[field] = parseVmlTrueFalse(value);
     } else if (NUMERIC.test(value)) {
       style[field] = Number(value);
     } else {
