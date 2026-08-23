@@ -20,8 +20,13 @@ export interface ExternalDefinedNameOptions {
 export interface ExternalCellOptions {
   /** Cell reference, e.g. "A1" */
   reference: string;
-  /** Cell data type (CT_ExternalCell `@t`, ST_CellType — like DdeValueOptions) */
-  type?: "b" | "n" | "e" | "s" | "str" | "inlineStr";
+  /**
+   * Cell data type (CT_ExternalCell `@t`). ISO transitional reuses the full
+   * ST_CellType, but an external link has no sharedStrings table to resolve
+   * "s" against and CT_ExternalCell's only child is `<v>` (no `<is>` for
+   * inlineStr) — the usable domain is the ECMA-376 1st edition set.
+   */
+  type?: "b" | "n" | "e" | "str";
   /** Cell value */
   value?: string;
   /** Value metadata index (CT_ExternalCell `@vm`) */

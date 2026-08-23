@@ -73,7 +73,7 @@ describe("externalLinkDesc round-trip", () => {
               {
                 rowNumber: 1,
                 cells: [
-                  { reference: "A1", type: "s", value: "Hello" },
+                  { reference: "A1", type: "str", value: "Hello" },
                   { reference: "B1", type: "n", value: "42" },
                 ],
               },

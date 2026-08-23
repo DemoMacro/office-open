@@ -52,12 +52,13 @@ export function buildRPrXml(
   if (pr.condense) parts.push("<condense/>");
   if (pr.extend) parts.push("<extend/>");
   if (pr.color) {
-    // parseRPr encodes the non-rgb channels in the same string: a bare
-    // number is the legacy palette index, "theme:N" a theme slot. They must
-    // go back to their own attributes — rgb accepts only 8 hex chars
-    // (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
-    if (/^\d+$/.test(pr.color)) {
-      parts.push(`<color indexed="${pr.color}"/>`);
+    // parseRPr encodes the non-rgb channels in the same string: a short bare
+    // number (≤3 digits) is the legacy palette index, "theme:N" a theme slot.
+    // Longer digit strings are hex colors ("008000" is green, not index
+    // 8000). They must go back to their own attributes — rgb accepts only 8
+    // hex chars (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
+    if (/^\d{1,3}$/.test(pr.color)) {
+      parts.push(`<color indexed="${Number(pr.color)}"/>`);
     } else if (pr.color.startsWith("theme:")) {
       parts.push(`<color theme="${escapeXml(pr.color.slice(6))}"/>`);
     } else {

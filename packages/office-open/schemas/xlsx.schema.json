@@ -5754,8 +5754,8 @@
           "type": "string"
         },
         "type": {
-          "description": "Cell data type",
-          "enum": ["b", "n", "e", "s", "str", "inlineStr"],
+          "description": "Cell data type. ISO transitional reuses the full, but an external link has no sharedStrings table to resolve \"s\" against and 's only child is `<v>` (no `<is>` for inlineStr) — the usable domain is the ECMA-376 1st edition set.",
+          "enum": ["b", "n", "e", "str"],
           "type": "string"
         },
         "value": {

@@ -19,7 +19,7 @@ const buffer = await generateWorkbook({
               {
                 rowNumber: 1,
                 cells: [
-                  { reference: "A1", type: "s", value: "Product" },
+                  { reference: "A1", type: "str", value: "Product" },
                   { reference: "B1", type: "n", value: "100" },
                 ],
               },
