@@ -33,6 +33,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     const descCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextGroupId++;
     const name = opts.name ?? "Group";
+    descCtx.registerShapeId(name, id);
 
     const x = convertToEmu(opts.x ?? 0);
     const y = convertToEmu(opts.y ?? 0);

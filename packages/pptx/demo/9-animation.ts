@@ -381,6 +381,7 @@ const options: PresentationOptions = {
         {
           shape: {
             id: 3,
+            name: "SetFadeBox",
             x: "1.3cm",
             y: "3.2cm",
             width: "7.9cm",
@@ -417,7 +418,9 @@ const options: PresentationOptions = {
       animations: [
         { shapeId: 2, type: "fade", duration: 800 },
         {
-          shapeId: 3,
+          // shapeName resolves to the named shape's cNvPr id at compile time —
+          // the fresh-authoring channel (shapeId is the round-trip channel).
+          shapeName: "SetFadeBox",
           type: "fade",
           duration: 600,
           setBehavior: {

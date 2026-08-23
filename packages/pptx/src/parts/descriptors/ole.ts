@@ -33,6 +33,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
   stringify(opts, ctx) {
     const id = opts.id ?? _nextOleId++;
     const name = opts.name ?? `Object ${id}`;
+    (ctx as PptxWriteContext).registerShapeId(name, id);
 
     const x = convertToEmu(opts.x ?? 0);
     const y = convertToEmu(opts.y ?? 0);

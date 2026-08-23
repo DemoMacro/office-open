@@ -776,7 +776,7 @@ function buildPropertyAnimation(
 
 // --- Build list (bldLst) ---
 
-function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): string {
+function buildBuildList(builds: ResolvedAnimationBuildOptions[], nextId: () => number): string {
   const bldChildren: string[] = [];
 
   for (const bld of builds) {
@@ -869,9 +869,31 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
 
 // --- Main class ---
 
-/** One animated shape: the animation settings plus the target shape id. */
+/** One animated shape: the animation settings plus the target shape reference. */
 export interface AnimationEntry extends AnimationOptions {
+  /**
+   * Target shape's cNvPr id. Round-tripped sources keep the parsed value;
+   * fresh authoring prefers shapeName (an explicit id must not collide with
+   * the library's auto-assigned id stream).
+   */
+  shapeId?: number;
+  /**
+   * Target shape's cNvPr name — resolved to its id at compile time against the
+   * shapes of the same slide/layout/master. Unknown or duplicated names throw
+   * rather than emitting a dangling spTgt `@spid`.
+   */
+  shapeName?: string;
+}
+
+/** An AnimationBuildOptions with its shape reference resolved to a concrete id. */
+export interface ResolvedAnimationBuildOptions extends AnimationBuildOptions {
   shapeId: number;
+}
+
+/** An AnimationEntry with its shape reference resolved to a concrete id. */
+export interface ResolvedAnimationEntry extends AnimationEntry {
+  shapeId: number;
+  builds?: ResolvedAnimationBuildOptions[];
 }
 
 /**
@@ -891,7 +913,7 @@ export type AnimationsOptions = AnimationEntry[] | string;
 export class SlideTiming {
   private parts: string[] = [];
 
-  public constructor(entries: AnimationEntry[]) {
+  public constructor(entries: ResolvedAnimationEntry[]) {
     if (entries.length === 0) return;
 
     let id = 1;

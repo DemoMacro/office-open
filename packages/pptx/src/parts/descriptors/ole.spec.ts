@@ -8,6 +8,7 @@ import { oleDesc } from "./ole";
 // ── Mock contexts ──
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "{image1.png}",
   addOle: () => "{ole:oleObject1.bin}",

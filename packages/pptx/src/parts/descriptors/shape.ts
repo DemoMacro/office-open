@@ -75,6 +75,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
   stringify(opts, ctx) {
     const id = opts.id ?? _nextShapeId++;
     const name = opts.name ?? `Shape ${id}`;
+    (ctx as PptxWriteContext).registerShapeId(name, id);
     const parts: string[] = [];
 
     // ── p:nvSpPr ──
@@ -147,6 +148,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const pptx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextPictureId++;
     const name = opts.name ?? `Picture ${id}`;
+    pptx.registerShapeId(name, id);
 
     // Geometry: number is already EMU, string is UniversalMeasure → EMU
     const widthEmu = convertToEmu(opts.width ?? 0);

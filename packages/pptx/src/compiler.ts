@@ -743,6 +743,7 @@ function buildPresAttrOpts(
  */
 export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): string {
   const parts: string[] = [];
+  ctx.beginShapeScope();
 
   const sldAttrs: string[] = [];
   if (slideOpts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');

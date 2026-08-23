@@ -9,6 +9,7 @@ import { shapeDesc, pictureDesc, resetShapeIdCounter } from "./shape";
 // ── Mock PPTX write context ──
 
 class MockWriteContext {
+  registerShapeId() {}
   private _nextRelId = 1;
   addRelationship() {
     return `rId${this._nextRelId++}`;
@@ -196,7 +197,7 @@ describe("shapeDesc round-trip", () => {
     // @useBgFill.
     const xml = shapeDesc.stringify(
       { x: 0, y: 0, width: 100, height: 100, blackWhiteMode: "gray" },
-      {} as never,
+      { registerShapeId() {} } as never,
     );
     expect(xml).toContain('<p:spPr bwMode="gray">');
     expect(xml).not.toMatch(/<p:sp [^>]*bwMode/);
@@ -430,6 +431,7 @@ describe("pictureDesc round-trip", () => {
   // pictureDesc.stringify registers the image via addImage and reads the
   // canonical fileName back — mirror the entry instead of returning "".
   const picWriteCtx = {
+    registerShapeId() {},
     addRelationship: () => "rId1",
     addMedia: () => "",
     addImage: (_key: string, entry: { fileName: string }) => entry,
@@ -464,6 +466,7 @@ describe("pictureDesc round-trip", () => {
   it("emits a linked-only blip (r:link, no media registration)", () => {
     const imageLinks: string[] = [];
     const ctx = {
+      registerShapeId() {},
       addRelationship: () => "rId1",
       addMedia: () => "",
       addImage: () => {

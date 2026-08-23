@@ -5,7 +5,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { lineShapeDesc, connectorShapeDesc } from "./line";
 
-const writeCtx = {} as unknown as WriteContext;
+const writeCtx = { registerShapeId() {} } as unknown as WriteContext;
 const readCtx = {
   resolveRelationship: () => undefined,
   getPart: () => undefined,

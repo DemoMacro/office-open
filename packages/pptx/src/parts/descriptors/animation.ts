@@ -14,7 +14,12 @@ import {
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, findChild, findFirst, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import type { AnimationEntry, AnimationsOptions } from "@shared/animation/timing";
+import type {
+  AnimationEntry,
+  AnimationsOptions,
+  ResolvedAnimationBuildOptions,
+  ResolvedAnimationEntry,
+} from "@shared/animation/timing";
 import { SlideTiming } from "@shared/animation/timing";
 import {
   DIRECTION_SUBTYPES,
@@ -30,6 +35,8 @@ import type {
   EmphasisType,
   PathAnimationType,
 } from "@shared/animation/types";
+
+import type { PptxWriteContext } from "../../context";
 
 // ── Reverse lookup maps: presetID → type name ──
 // Built from the single stringify-side tables in shared/animation/timing.ts.
@@ -344,23 +351,57 @@ function parseDuration(val: string): number | undefined {
 
 // ── Descriptor ──
 
+/**
+ * Resolve shapeName references against the part's shape-name symbol table so
+ * every entry and build carries a concrete cNvPr id before SlideTiming
+ * serializes. shapeId wins when both are set; neither is an authoring error.
+ */
+function resolveAnimationShapeIds(
+  entries: AnimationEntry[],
+  ctx: PptxWriteContext,
+): ResolvedAnimationEntry[] {
+  const resolveShape = (ref: { shapeId?: number; shapeName?: string }): number => {
+    if (ref.shapeId !== undefined) return ref.shapeId;
+    if (ref.shapeName !== undefined) return ctx.resolveShapeName(ref.shapeName);
+    throw new Error(
+      "Animation entry needs a target: set shapeName (preferred) or shapeId on the shape it animates.",
+    );
+  };
+  return entries.map((entry): ResolvedAnimationEntry => {
+    const { shapeId, shapeName, builds, ...rest } = entry;
+    const resolved: ResolvedAnimationEntry = {
+      ...rest,
+      shapeId: resolveShape({ shapeId, shapeName }),
+    };
+    if (builds) {
+      resolved.builds = builds.map((bld): ResolvedAnimationBuildOptions => ({
+        ...bld,
+        shapeId: resolveShape(bld),
+      }));
+    }
+    return resolved;
+  });
+}
+
 export const timingDesc: CustomDescriptor<AnimationsOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     // Verbatim fallback — the source tree the structured model cannot rebuild.
     if (typeof opts === "string") return `<p:timing>${opts}</p:timing>`;
     if (opts.length === 0) return "";
-    const timing = new SlideTiming(opts);
+    const timing = new SlideTiming(resolveAnimationShapeIds(opts, ctx as PptxWriteContext));
     return timing.toXml();
   },
 
   parse(el, _ctx) {
     const animMap = parseTiming(el);
-    const entries: AnimationEntry[] = [];
+    const entries: ResolvedAnimationEntry[] = [];
     for (const [shapeId, optionsList] of animMap) {
       for (const options of optionsList) {
-        entries.push({ shapeId, ...options });
+        // Parsed options never carry builds (bldLst parses verbatim-side), so
+        // the shapeId from the spTgt map key is the only reference to fill.
+        entries.push({ ...options, shapeId } as ResolvedAnimationEntry);
       }
     }
     // Fidelity gate: rebuilding reorganizes the timing tree, so compare the

@@ -69,6 +69,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
   stringify(opts, ctx) {
     const parts: string[] = [];
+    ctx.beginShapeScope();
 
     // Root attributes (CT_SlideLayout: type/matchingName/preserve/userDrawn + AG_ChildSlide).
     const attrs: string[] = [`type="${xsdSlideLayoutType.to(opts.type ?? "custom")}"`];

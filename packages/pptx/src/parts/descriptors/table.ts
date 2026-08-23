@@ -103,6 +103,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     const pptxCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextTableId++;
     const name = opts.name ?? `Table ${id}`;
+    pptxCtx.registerShapeId(name, id);
 
     const x = convertToEmu(opts.x ?? 0);
     const y = convertToEmu(opts.y ?? 0);

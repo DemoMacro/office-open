@@ -83,6 +83,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
 
   stringify(opts, ctx) {
     const parts: string[] = [];
+    ctx.beginShapeScope();
 
     // Root (CT_SlideMaster: @preserve).
     const preserveAttr = opts.preserve ? ' preserve="1"' : "";

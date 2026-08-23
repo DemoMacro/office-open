@@ -15,6 +15,7 @@ import {
 } from "@office-open/core/drawing";
 import { findChild } from "@office-open/xml";
 
+import type { PptxWriteContext } from "../../context";
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
 import {
   readGraphicFrameLocking,
@@ -37,6 +38,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
   stringify(opts, ctx) {
     const id = opts.id ?? _nextLockedCanvasId++;
     const name = opts.name ?? `Locked Canvas ${id}`;
+    (ctx as PptxWriteContext).registerShapeId(name, id);
 
     const x = convertToEmu(opts.x ?? 0);
     const y = convertToEmu(opts.y ?? 0);

@@ -3,7 +3,9 @@ import { parse as parseXml } from "@office-open/xml";
 import type { AnimationEntry } from "@shared/animation/timing";
 import { describe, expect, it } from "vite-plus/test";
 
+import { PptxWriteContext } from "../../context";
 import { timingDesc } from "./animation";
+import { shapeDesc, resetShapeIdCounter } from "./shape";
 
 const writeCtx = {
   addRelationship: () => "rId1",
@@ -154,5 +156,71 @@ describe("timingDesc round-trip", () => {
     const result = parseTimingXml(xml);
     expect(typeof result).toBe("string");
     expect(timingDesc.stringify(result, writeCtx)).toBe(xml);
+  });
+});
+
+describe("shapeName resolution (fresh authoring channel)", () => {
+  /** A real context whose symbol table is populated by stringify-ing a shape,
+   *  exactly like stringifySlide does for a slide's spTree. */
+  function ctxWithShapes(shapeNames: string[]): PptxWriteContext {
+    const ctx = new PptxWriteContext();
+    ctx.beginShapeScope();
+    resetShapeIdCounter(2);
+    for (const name of shapeNames) {
+      shapeDesc.stringify({ name, x: 0, y: 0, width: 100, height: 100 }, ctx);
+    }
+    return ctx;
+  }
+
+  it("resolves shapeName to the shape's cNvPr id", () => {
+    const ctx = ctxWithShapes(["Hero"]);
+    const xml = timingDesc.stringify(
+      [{ shapeName: "Hero", type: "fade", trigger: "onClick" }],
+      ctx,
+    )!;
+    expect(xml).toContain('<p:spTgt spid="2"/>');
+  });
+
+  it("resolves shapeName on builds too", () => {
+    const ctx = ctxWithShapes(["First", "Second"]);
+    const xml = timingDesc.stringify(
+      [
+        {
+          shapeId: 2,
+          type: "fade",
+          trigger: "onClick",
+          builds: [{ type: "graphic", shapeName: "Second", groupId: 0, graphicBuildAsOne: true }],
+        },
+      ],
+      ctx,
+    )!;
+    // The build targets the second shape (cNvPr id 3), distinct from the
+    // entry's own target — proving the name resolved independently.
+    expect(xml).toContain('<p:bldGraphic spid="3" grpId="0">');
+  });
+
+  it("keeps an explicit shapeId verbatim (round-trip channel)", () => {
+    const ctx = ctxWithShapes(["Hero"]);
+    const xml = timingDesc.stringify([{ shapeId: 42, type: "fade", trigger: "onClick" }], ctx)!;
+    expect(xml).toContain('<p:spTgt spid="42"/>');
+  });
+
+  it("throws on an unknown shape name", () => {
+    const ctx = ctxWithShapes(["Hero"]);
+    expect(() => timingDesc.stringify([{ shapeName: "Ghost", type: "fade" }], ctx)).toThrowError(
+      /No shape named "Ghost"/,
+    );
+  });
+
+  it("throws on a duplicated shape name", () => {
+    const ctx = ctxWithShapes(["Twin", "Twin"]);
+    expect(() => timingDesc.stringify([{ shapeName: "Twin", type: "fade" }], ctx)).toThrowError(
+      /multiple shapes/,
+    );
+  });
+
+  it("throws when an entry has neither shapeId nor shapeName", () => {
+    const ctx = ctxWithShapes(["Hero"]);
+    expect(() => timingDesc.stringify([{ type: "fade" }], ctx)).toThrowError(/needs a target/);
   });
 });

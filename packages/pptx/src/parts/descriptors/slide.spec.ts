@@ -7,6 +7,8 @@ import { describe, expect, it } from "vite-plus/test";
 import { slideDesc } from "./slide";
 
 const writeCtx = {
+  registerShapeId() {},
+  beginShapeScope() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as WriteContext;

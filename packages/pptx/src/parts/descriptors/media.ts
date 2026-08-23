@@ -104,6 +104,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const id = opts.id ?? _nextVideoId++;
     const name = opts.name ?? `Video ${id}`;
     const pptx = ctx as PptxWriteContext;
+    pptx.registerShapeId(name, id);
     const mediaFileName = registerMediaFile(
       pptx,
       opts.data,
@@ -218,6 +219,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const id = opts.id ?? _nextAudioId++;
     const name = opts.name ?? `Audio ${id}`;
     const pptx = ctx as PptxWriteContext;
+    pptx.registerShapeId(name, id);
     const mediaFileName =
       opts.data !== undefined
         ? registerMediaFile(

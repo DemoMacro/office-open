@@ -7,6 +7,8 @@ import { PptxWriteContext } from "../../context";
 import { slideLayoutDesc } from "./slide-layout";
 
 const writeCtx = {
+  registerShapeId() {},
+  beginShapeScope() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as PptxWriteContext;

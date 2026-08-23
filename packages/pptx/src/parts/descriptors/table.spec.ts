@@ -8,6 +8,7 @@ import { tableDesc } from "./table";
 // ── Mock PPTX write context ──
 
 class MockWriteContext {
+  registerShapeId() {}
   private _nextRelId = 1;
   addRelationship() {
     return `rId${this._nextRelId++}`;

@@ -28,6 +28,7 @@ import type { Element } from "@office-open/xml";
 import type { ConnectorOptions, LineShapeOptions } from "@shared/shape/line-shape";
 import { readShapeStyle } from "@shared/shape/shape";
 
+import type { PptxWriteContext } from "../../context";
 import { readCnvPr } from "./shape";
 import { stringifyShapeStyle } from "./shape";
 
@@ -110,6 +111,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
   stringify(opts, ctx) {
     const id = opts.id ?? _nextLineId++;
     const name = opts.name ?? `Line ${id}`;
+    (ctx as PptxWriteContext).registerShapeId(name, id);
 
     const x1 = convertToEmu(opts.x1 ?? 0);
     const y1 = convertToEmu(opts.y1 ?? 0);
@@ -200,6 +202,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
   stringify(opts, ctx) {
     const id = opts.id ?? _nextConnectorId++;
     const name = opts.name ?? `Connector ${id}`;
+    (ctx as PptxWriteContext).registerShapeId(name, id);
 
     const x1 = convertToEmu(opts.x1 ?? 0);
     const y1 = convertToEmu(opts.y1 ?? 0);

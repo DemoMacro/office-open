@@ -8,6 +8,7 @@ import { lockedCanvasDesc } from "./locked-canvas";
 // ── Mock contexts ──
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as WriteContext;

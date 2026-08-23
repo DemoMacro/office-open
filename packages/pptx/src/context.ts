@@ -93,6 +93,9 @@ export class PptxWriteContext implements WriteContext {
   private _oleLinks = new Map<string, OleLinkEntry>();
   private _nextOleLinkId = 1;
   private _nextRelId = 1;
+  /** cNvPr name → id for the part being serialized (cleared per slide/layout/master). */
+  private _shapeIds = new Map<string, number>();
+  private _ambiguousShapeNames = new Set<string>();
   private _nextChartId = 1;
   private _nextSmartArtId = 1;
 
@@ -189,6 +192,54 @@ export class PptxWriteContext implements WriteContext {
 
   public nextChartKey(): string {
     return `chart_${this._nextChartId++}`;
+  }
+
+  // ── Shape-name symbol table ──
+
+  /**
+   * Clear the shape-name symbol table. spTgt @spid resolves within one part's
+   * spTree, so slide/layout/master serialization each starts a fresh scope.
+   */
+  public beginShapeScope(): void {
+    this._shapeIds.clear();
+    this._ambiguousShapeNames.clear();
+  }
+
+  /**
+   * Record a drawing's (cNvPr name, id) — the table animation `shapeName`
+   * references resolve against. A name carried by two different ids becomes
+   * ambiguous and stays unresolvable.
+   */
+  public registerShapeId(name: string, id: number): void {
+    const first = this._shapeIds.get(name);
+    if (first === undefined) this._shapeIds.set(name, id);
+    else if (first !== id) this._ambiguousShapeNames.add(name);
+  }
+
+  /**
+   * Resolve a shapeName reference to its cNvPr id. Throws when the name is
+   * unknown or ambiguous — a dangling spid would produce a file Office
+   * rejects, so the failure surfaces at compile time instead.
+   */
+  public resolveShapeName(name: string): number {
+    if (this._ambiguousShapeNames.has(name)) {
+      throw new Error(
+        `Shape name "${name}" is used by multiple shapes in this part — reference it by shapeId instead.`,
+      );
+    }
+    const id = this._shapeIds.get(name);
+    if (id === undefined) {
+      const names = [...this._shapeIds.keys()];
+      const available =
+        names.length === 0
+          ? "this part has no shapes"
+          : `shapes in this part are named: ${names
+              .slice(0, 8)
+              .map((n) => `"${n}"`)
+              .join(", ")}${names.length > 8 ? `, … (${names.length} total)` : ""}`;
+      throw new Error(`No shape named "${name}" in this part — ${available}.`);
+    }
+    return id;
   }
 
   public nextSmartArtKey(): string {

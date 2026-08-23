@@ -50,6 +50,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     const pptxCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextSmartArtId++;
     const name = opts.name ?? `Diagram ${id}`;
+    pptxCtx.registerShapeId(name, id);
     const saKey = opts.smartArtKey ?? pptxCtx.nextSmartArtKey();
 
     // Custom definitions embed their own id in the doc point's type ids.

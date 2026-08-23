@@ -39,6 +39,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     const pptxCtx = ctx as PptxWriteContext;
     const id = opts.id ?? _nextChartId++;
     const name = opts.name ?? `Chart ${id}`;
+    pptxCtx.registerShapeId(name, id);
     const chartKey = opts.chartKey ?? pptxCtx.nextChartKey();
 
     // Register chart data with context

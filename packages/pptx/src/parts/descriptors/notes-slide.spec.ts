@@ -7,6 +7,7 @@ import { notesSlideDesc } from "./notes-slide";
 import type { NotesSlideOptions } from "./notes-slide";
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as PptxWriteContext;

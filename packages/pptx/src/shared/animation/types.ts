@@ -86,7 +86,13 @@ export interface EndConditionOptions {
 export interface AnimationBuildOptions {
   /** What the shape is that builds: its text paragraphs, a diagram, an OLE chart, or a generic graphic. */
   type: "paragraph" | "diagram" | "oleChart" | "graphic";
-  shapeId: number;
+  /**
+   * Target shape's cNvPr id. Round-tripped sources keep the parsed value;
+   * fresh authoring prefers shapeName.
+   */
+  shapeId?: number;
+  /** Target shape's cNvPr name — resolved to its id at compile time, like AnimationEntry.shapeName. */
+  shapeName?: string;
   /** Build group id — must match the paired animation entry's groupId: the
    * SDK validates bldP/bldDgm @grpId against the shape's cTn @grpId. */
   groupId: number;

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { groupShapeDesc } from "./group";
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as WriteContext;

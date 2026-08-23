@@ -6,6 +6,7 @@ import type { PptxWriteContext } from "../../context";
 import { notesMasterDesc } from "./notes-master";
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
 } as unknown as PptxWriteContext;

@@ -23,6 +23,7 @@ import { smartArtDesc } from "./smartart";
 const smartArtRegistry = new Map<string, unknown>();
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
   nextSmartArtKey: () => "smartart_1024",

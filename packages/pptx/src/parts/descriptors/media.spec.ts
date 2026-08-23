@@ -7,6 +7,7 @@ import { describe, expect, it } from "vite-plus/test";
 import { videoDesc, audioDesc } from "./media";
 
 const writeCtx = {
+  registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
   addImage: (_key: string, entry: { fileName: string }) => entry,
