@@ -126,11 +126,12 @@ const doc: DocumentOptions = {
                       // Preview icon rendered via v:imagedata
                       iconImage: { data: iconPng, type: "png", title: "Excel Sheet" },
                       // Embedded OLE object → word/embeddings/oleObject1.bin
+                      // (ShapeID defaults to the preview shape's id so the
+                      // o:OLEObject↔v:shape tie stays consistent)
                       embed: {
                         data: oleBytes,
                         progId: "Excel.Sheet.12",
                         drawAspect: "content",
-                        shapeId: "_x0000_i1026",
                       },
                     },
                   },
