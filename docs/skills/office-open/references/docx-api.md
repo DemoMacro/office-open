@@ -317,7 +317,7 @@ Page number tokens (used as string values in TextRun children):
 | `MathPhant`             | `{ children: [...], properties?: { zeroAsc, zeroDesc } }`                     |
 | `MathBox`               | `{ children: [...], properties?: { opEmu } }`                                 |
 | `MathRun`               | `{ text: "content" }` or `"string content"`                                   |
-| `createMathAccent`      | `{ children: [...], accentCharacter?: string }` (factory function)            |
+| `MathAccent`            | `{ children: [...], accentCharacter?: string }`                               |
 
 ### Examples
 
