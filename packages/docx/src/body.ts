@@ -446,8 +446,11 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     // paragraph (the section-break paragraph carries both content and sectPr).
     // Host it there when possible; fall back to a dedicated break paragraph if
     // the section is empty or ends in a non-paragraph child. The last section
-    // emits its sectPr at the body level.
-    let sectPrHosted = isLast || !sectPrXml;
+    // emits its sectPr at the body level — and only the last section may omit
+    // it: a mid-document section with no explicit properties still emits an
+    // empty <w:sectPr/> (CT_SectPr children are all optional) so the
+    // user-declared boundary survives generate→parse.
+    let sectPrHosted = isLast;
     for (let ci = 0; ci < children.length; ci++) {
       const child = children[ci]!;
       const inject =
@@ -458,17 +461,47 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
       if (inject) sectPrHosted = true;
       parts.push(stringifyBodyChild(child, docCtx, inject ? sectPrXml : undefined));
     }
-    if (!isLast && sectPrXml && !sectPrHosted) {
-      parts.push(`<w:p><w:pPr>${sectPrXml}</w:pPr></w:p>`);
+    if (!isLast && !sectPrHosted) {
+      parts.push(`<w:p><w:pPr>${sectPrXml || "<w:sectPr/>"}</w:pPr></w:p>`);
     }
-    if (isLast && sectPrXml) {
-      parts.push(sectPrXml);
+    if (isLast && (sectPrXml || sections.length > 1)) {
+      // A single-section document without properties stays sectPr-free (Word
+      // applies defaults); with multiple sections the final boundary is
+      // structural too and emits an empty sectPr to keep the section count.
+      parts.push(sectPrXml || "<w:sectPr/>");
     }
   }
 
   parts.push("</w:body></w:document>");
 
-  return parts.join("");
+  return dedupeRevisionIds(parts.join(""));
+}
+
+// Revision markers carry document-unique @w:id values (the SDK enforces
+// uniqueness). Hand-written options may repeat an id across the markers of one
+// logical edit; renumber only the duplicates so round-tripped sources keep
+// their original ids byte-for-byte.
+const REVISION_ID_TAGS =
+  /(<w:(?:ins|del|moveFrom|moveTo|cellIns|cellDel|cellMerge|cellSplit|rPrChange|pPrChange|trPrChange|tcPrChange|sectPrChange|tblPrChange|tblGridChange)\b[^>]*w:id=")(\d+)(")/g;
+
+function dedupeRevisionIds(xml: string): string {
+  const seen = new Set<string>();
+  let hasDup = false;
+  for (const m of xml.matchAll(REVISION_ID_TAGS)) {
+    if (seen.has(m[2]!)) hasDup = true;
+    seen.add(m[2]!);
+  }
+  if (!hasDup) return xml;
+  const taken = new Set(seen);
+  return xml.replace(REVISION_ID_TAGS, (m, pre: string, id: string, post: string) => {
+    const first = !seen.has(id);
+    seen.add(id);
+    if (first) return m;
+    let n = 0;
+    while (taken.has(String(n))) n++;
+    taken.add(String(n));
+    return `${pre}${n}${post}`;
+  });
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
