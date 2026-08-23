@@ -186,8 +186,8 @@ function framePrStr(opts: FrameOptions): string {
     "w:vSpace": mapOptional(opts.space?.vertical, convertToTwip),
     "w:w": mapOptional(opts.width, convertToTwip),
     "w:wrap": opts.wrap,
-    "w:x": position?.x,
-    "w:y": position?.y,
+    "w:x": mapOptional(position?.x, convertToTwip),
+    "w:y": mapOptional(position?.y, convertToTwip),
   });
   return `<w:framePr${a}/>`;
 }
