@@ -113,6 +113,32 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
     domain: "media",
     summary: "Full chartSpace envelope wrapping chart options",
   },
+  { name: "AxisOptions", domain: "media", summary: "Chart axis (scaling, ticks, labels)" },
+  {
+    name: "ChartSeriesData",
+    domain: "media",
+    summary: "Category/value series data (numRef/strRef/lit)",
+  },
+  {
+    name: "ScatterSeriesData",
+    domain: "media",
+    summary: "Scatter chart x/y series data",
+  },
+  {
+    name: "BubbleSeriesData",
+    domain: "media",
+    summary: "Bubble chart x/y/size series data",
+  },
+  {
+    name: "ColorTransformOptions",
+    domain: "media",
+    summary: "Color transforms on a scheme color (lumMod, alpha, …)",
+  },
+  {
+    name: "EffectDagOptions",
+    domain: "media",
+    summary: "Effect DAG node (one effect in a chain)",
+  },
   {
     name: "SmartArtOptions",
     domain: "media",
@@ -161,6 +187,26 @@ const DOCX_ENTRIES: readonly SchemaEntry[] = [
     name: "SdtRunOptions",
     domain: "media",
     summary: "Structured document tag wrapping run content",
+  },
+  {
+    name: "SymbolRunOptions",
+    domain: "text",
+    summary: "Symbol-font character run (Wingdings etc.)",
+  },
+  {
+    name: "ParagraphPropertiesChangeOptions",
+    domain: "revisions",
+    summary: "Tracked change to paragraph properties (w:pPrChange)",
+  },
+  {
+    name: "RunPropertiesChangeOptions",
+    domain: "revisions",
+    summary: "Tracked change to run properties (w:rPrChange)",
+  },
+  {
+    name: "TrackChangeChild",
+    domain: "revisions",
+    summary: "Inserted/deleted content under a revision marker",
   },
   { name: "StylesOptions", domain: "styles", summary: "Default + paragraph/character/link styles" },
   {
@@ -257,6 +303,32 @@ const PPTX_ENTRIES: readonly SchemaEntry[] = [
   { name: "PictureOptions", domain: "media", summary: "Image (data, size, style, crop)" },
   { name: "TableOptions", domain: "media", summary: "Table (rows, first-row/banding flags)" },
   { name: "ChartOptions", domain: "media", summary: "Chart (type, series, axes, legend)" },
+  { name: "AxisOptions", domain: "media", summary: "Chart axis (scaling, ticks, labels)" },
+  {
+    name: "ChartSeriesData",
+    domain: "media",
+    summary: "Category/value series data (numRef/strRef/lit)",
+  },
+  {
+    name: "ScatterSeriesData",
+    domain: "media",
+    summary: "Scatter chart x/y series data",
+  },
+  {
+    name: "BubbleSeriesData",
+    domain: "media",
+    summary: "Bubble chart x/y/size series data",
+  },
+  {
+    name: "ColorTransformOptions",
+    domain: "media",
+    summary: "Color transforms on a scheme color (lumMod, alpha, …)",
+  },
+  {
+    name: "EffectDagOptions",
+    domain: "media",
+    summary: "Effect DAG node (one effect in a chain)",
+  },
   {
     name: "SmartArtOptions",
     domain: "media",
@@ -331,6 +403,37 @@ const XLSX_ENTRIES: readonly SchemaEntry[] = [
   { name: "TableOptions", domain: "features", summary: "Worksheet table (range, columns, style)" },
   { name: "PivotTableOptions", domain: "features", summary: "Pivot table definition" },
   { name: "WorksheetChartOptions", domain: "features", summary: "Anchored chart on a worksheet" },
+  {
+    name: "ChartSpaceOptions",
+    domain: "features",
+    summary: "Full chartSpace envelope wrapping chart options",
+  },
+  { name: "AxisOptions", domain: "features", summary: "Chart axis (scaling, ticks, labels)" },
+  {
+    name: "ChartSeriesData",
+    domain: "features",
+    summary: "Category/value series data (numRef/strRef/lit)",
+  },
+  {
+    name: "ScatterSeriesData",
+    domain: "features",
+    summary: "Scatter chart x/y series data",
+  },
+  {
+    name: "BubbleSeriesData",
+    domain: "features",
+    summary: "Bubble chart x/y/size series data",
+  },
+  {
+    name: "ColorTransformOptions",
+    domain: "features",
+    summary: "Color transforms on a scheme color (lumMod, alpha, …)",
+  },
+  {
+    name: "EffectDagOptions",
+    domain: "features",
+    summary: "Effect DAG node (one effect in a chain)",
+  },
   { name: "PictureOptions", domain: "media", summary: "Anchored image" },
   { name: "ShapeOptions", domain: "media", summary: "Anchored shape" },
   { name: "ConnectorOptions", domain: "media", summary: "Anchored connector" },

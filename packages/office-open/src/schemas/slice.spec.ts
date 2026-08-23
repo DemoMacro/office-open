@@ -48,7 +48,7 @@ describe("sliceSchema", () => {
       "ShapeOptions",
       "SdtRunOptions",
     ]) {
-      expect(definitions[stubbed]?.$comment).toBe(`office-open-stub:${stubbed}`);
+      expect(definitions[stubbed]?.title).toBe(`${stubbed} (stub)`);
     }
     // Non-cataloged dependencies expand normally (runs enter via the
     // ParagraphRunOptions entry, which is stubbed — but direct helpers expand).

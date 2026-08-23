@@ -38,25 +38,35 @@ function refsOf(def: unknown): string[] {
  * Build the empty-schema stub that replaces a non-requested entry.
  * No `type` keyword: boundary definitions may legitimately be scalars
  * (UniversalMeasure strings, enums), and `type: "object"` would wrongly
- * reject those values.
+ * reject those values. Kept minimal — a slice can carry hundreds of stubs,
+ * so every byte here is multiplied.
  */
 function buildStub(
   name: string,
   original: Record<string, unknown>,
   format: DocumentType | undefined,
 ): Record<string, unknown> {
-  const description = typeof original.description === "string" ? `${original.description}\n\n` : "";
+  const description = typeof original.description === "string" ? `${original.description}\n` : "";
   return {
     title: `${name} (stub)`,
     description:
       `${description}` +
-      `"${name}" is not expanded in this slice (a stub accepts any value). ` +
+      `Accepts any value. Expand: office-open-schema-lookup ` +
       (format
-        ? `Full fields: run \`office-open schema slice ${format} ${name}\` or call the office-open-schema-lookup tool with { type: "${format}", definitions: ["${name}"] }.`
-        : `Look up "${name}" on its own to get its full fields.`),
-    $comment: `office-open-stub:${name}`,
+        ? `{ type: "${format}", definitions: ["${name}"] }`
+        : `with definitions: ["${name}"]`),
   };
 }
+
+/**
+ * Hard cap on the serialized slice handed back to the model. Tool responses
+ * must stay well inside a model's comfortable context budget (Anthropic's
+ * tool guidance caps responses at 25k tokens); the entry catalog is the
+ * primary size control and this cap is the backstop — a slice that still
+ * exceeds it demotes its largest non-requested definitions to stubs until
+ * it fits.
+ */
+const MAX_SLICE_BYTES = 64 * 1024;
 
 /**
  * Extract the `$ref` closure of `definitions` from `schema`.
@@ -101,6 +111,20 @@ export function sliceSchema(
   const out: Record<string, unknown> = {};
   for (const name of expanded) out[name] = structuredClone(all[name]);
   for (const name of stubbed) out[name] = buildStub(name, all[name], format);
+
+  // Size backstop: demote the largest non-requested definitions to stubs
+  // until the slice fits. Requested definitions are never demoted.
+  while (JSON.stringify(out).length > MAX_SLICE_BYTES) {
+    const candidates = [...expanded]
+      .filter((name) => !requested.has(name))
+      .map((name) => [name, JSON.stringify(out[name]).length] as const)
+      .sort((a, b) => b[1] - a[1]);
+    if (candidates.length === 0) break;
+    const [name] = candidates[0]!;
+    expanded.delete(name);
+    stubbed.add(name);
+    out[name] = buildStub(name, all[name], format);
+  }
 
   const result: Record<string, unknown> = {
     $schema: "http://json-schema.org/draft-07/schema#",
