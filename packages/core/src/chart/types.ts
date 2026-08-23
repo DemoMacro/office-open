@@ -611,10 +611,13 @@ export interface AxisNumberFormatOptions {
  */
 export interface AxisOptions {
   kind: AxisKind;
-  /** c:axId (required). */
-  id: number;
-  /** c:crossAx target id (required). */
-  crossAxisId: number;
+  /**
+   * c:axId. Pure internal wiring — the axis pair references each other, so a
+   * fresh document may omit it and inherit the default axis slot's id.
+   */
+  id?: number;
+  /** c:crossAx target id; defaults to the default axis slot's pairing. */
+  crossAxisId?: number;
   scaling?: AxisScalingOptions;
   delete?: boolean;
   position?: AxisPosition;

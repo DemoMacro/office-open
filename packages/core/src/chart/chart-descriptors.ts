@@ -371,7 +371,7 @@ function stringifyDisplayUnits(opts: DisplayUnitsOptions): string {
  * EG_AxShared (axId…crosses/crossesAt), then the kind-specific tail from
  * CT_CatAx / CT_DateAx / CT_SerAx / CT_ValAx.
  */
-function stringifyAxis(opts: AxisOptions, ctx: WriteContext): string {
+function stringifyAxis(opts: WiredAxisOptions, ctx: WriteContext): string {
   const parts: string[] = [];
   parts.push(valEl("c:axId", opts.id));
   parts.push(stringifyScaling(opts.scaling));
@@ -1185,8 +1185,11 @@ function chartSpPr(opts: ShapePropertiesOptions | undefined, ctx: WriteContext):
 
 // ── Axes XML ──
 
+/** AxisOptions with the internal wiring ids guaranteed present. */
+type WiredAxisOptions = AxisOptions & { id: number; crossAxisId: number };
+
 /** Default bottom category axis (c:catAx) for generated charts. */
-function categoryAxis(id: number, crossAxisId: number): AxisOptions {
+function categoryAxis(id: number, crossAxisId: number): WiredAxisOptions {
   return {
     kind: "category",
     id,
@@ -1202,7 +1205,7 @@ function categoryAxis(id: number, crossAxisId: number): AxisOptions {
 }
 
 /** Default left value axis (c:valAx). */
-function valueAxis(id: number, crossAxisId: number): AxisOptions {
+function valueAxis(id: number, crossAxisId: number): WiredAxisOptions {
   return {
     kind: "value",
     id,
@@ -1216,7 +1219,7 @@ function valueAxis(id: number, crossAxisId: number): AxisOptions {
 }
 
 /** Default series axis (c:serAx) for surface charts. */
-function seriesAxis(id: number, crossAxisId: number): AxisOptions {
+function seriesAxis(id: number, crossAxisId: number): WiredAxisOptions {
   return {
     kind: "series",
     id,
@@ -1231,7 +1234,7 @@ function seriesAxis(id: number, crossAxisId: number): AxisOptions {
 }
 
 /** Sensible default axes derived from chart type, matching prior hardcoded output. */
-function defaultAxesFor(chartType: ChartType, threeD?: boolean): readonly AxisOptions[] {
+function defaultAxesFor(chartType: ChartType, threeD?: boolean): readonly WiredAxisOptions[] {
   if (NO_AXES_TYPES.has(chartType)) return [];
   if (chartType === "scatter" || chartType === "bubble") {
     return [valueAxis(10, 20), valueAxis(20, 10)];
@@ -1251,8 +1254,20 @@ function defaultAxesFor(chartType: ChartType, threeD?: boolean): readonly AxisOp
 }
 
 /** Provided axes override defaults; otherwise defaults are derived from chart type. */
-function axesFor(opts: ChartSpaceOptions): readonly AxisOptions[] {
-  return opts.axes ?? defaultAxesFor(opts.type, opts.threeD);
+function axesFor(opts: ChartSpaceOptions): readonly WiredAxisOptions[] {
+  if (!opts.axes) return defaultAxesFor(opts.type, opts.threeD);
+  // Fresh axes may omit their ids (nothing outside the axis pair references
+  // them) — fill from the same id slots the default factories use so a
+  // partial customization keeps consistent cat/val/ser wiring.
+  const slots = defaultAxesFor(opts.type, opts.threeD);
+  return opts.axes.map((axis, i) => {
+    const slot = slots[i] ?? slots[slots.length - 1]!;
+    return {
+      ...axis,
+      id: axis.id ?? slot.id,
+      crossAxisId: axis.crossAxisId ?? slot.crossAxisId,
+    };
+  });
 }
 
 function stringifyAxes(opts: ChartSpaceOptions, ctx: WriteContext): string {
