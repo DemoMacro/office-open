@@ -94,8 +94,12 @@ export class PptxWriteContext implements WriteContext {
   private _smartArts = new Map<string, SmartArtEntry>();
   private _hyperlinks = new Map<string, HyperlinkEntry>();
   private _imageLinks = new Map<string, ImageLinkEntry>();
+  /** url → key side index so registration dedup is O(1), not a scan. */
+  private _imageLinkKeys = new Map<string, string>();
   private _nextImageLinkId = 1;
   private _oleLinks = new Map<string, OleLinkEntry>();
+  /** url → key side index for O(1) registration dedup. */
+  private _oleLinkKeys = new Map<string, string>();
   private _nextOleLinkId = 1;
   private _nextRelId = 1;
   /** cNvPr name → id for the part being serialized (cleared per slide/layout/master). */
@@ -174,10 +178,11 @@ export class PptxWriteContext implements WriteContext {
    * and adds the External image relationship per slide/layout.
    */
   public addImageLink(url: string): string {
-    const existing = [...this._imageLinks.values()].find((l) => l.url === url);
-    if (existing) return existing.key;
+    const existingKey = this._imageLinkKeys.get(url);
+    if (existingKey !== undefined) return existingKey;
     const key = `img-link_${this._nextImageLinkId++}`;
     this._imageLinks.set(key, { key, url });
+    this._imageLinkKeys.set(url, key);
     return key;
   }
 
@@ -188,10 +193,11 @@ export class PptxWriteContext implements WriteContext {
    * slide/layout.
    */
   public addOleLink(url: string): string {
-    const existing = [...this._oleLinks.values()].find((l) => l.url === url);
-    if (existing) return existing.key;
+    const existingKey = this._oleLinkKeys.get(url);
+    if (existingKey !== undefined) return existingKey;
     const key = `ole-link_${this._nextOleLinkId++}`;
     this._oleLinks.set(key, { key, url });
+    this._oleLinkKeys.set(url, key);
     return key;
   }
 

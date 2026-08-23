@@ -306,16 +306,27 @@ function pptxToDocx(src: PptxTableOptions): DocxTableOptions {
   };
 }
 
+/** Index parsed merges by anchor cell ("row:col") for O(1) lookup per cell. */
+type ParsedMergeRef = NonNullable<ReturnType<typeof parseMergeRef>>;
+
+function mergeIndex(merges: ParsedMergeRef[]): Map<string, ParsedMergeRef> {
+  const index = new Map<string, ParsedMergeRef>();
+  for (const m of merges) index.set(`${m.row}:${m.col}`, m);
+  return index;
+}
+
 function xlsxToDocx(src: XlsxVisualTable): DocxTableOptions {
-  const merges = (src.mergeCells ?? [])
-    .map((m) => parseMergeRef(m.ref))
-    .filter((m): m is NonNullable<typeof m> => m !== undefined);
+  const merges = mergeIndex(
+    (src.mergeCells ?? [])
+      .map((m) => parseMergeRef(m.ref))
+      .filter((m): m is NonNullable<typeof m> => m !== undefined),
+  );
   const rows: DocxTableRowOptions[] = src.rows.map((row, ri) => ({
     ...(row.height !== undefined
       ? { height: { value: convertPointsToTwip(convertToPt(row.height)) } }
       : {}),
     cells: (row.cells ?? []).map((cell, ci): DocxTableCellOptions => {
-      const merge = merges.find((m) => m.row === ri && m.col === ci);
+      const merge = merges.get(`${ri}:${ci}`);
       const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
       const rowSpan = merge ? merge.rowEnd - merge.row + 1 : undefined;
       const text = cellValueToText(cell.value);
@@ -372,13 +383,15 @@ function docxToPptx(src: DocxTableOptions): PptxTableOptions {
 }
 
 function xlsxToPptx(src: XlsxVisualTable): PptxTableOptions {
-  const merges = (src.mergeCells ?? [])
-    .map((m) => parseMergeRef(m.ref))
-    .filter((m): m is NonNullable<typeof m> => m !== undefined);
+  const merges = mergeIndex(
+    (src.mergeCells ?? [])
+      .map((m) => parseMergeRef(m.ref))
+      .filter((m): m is NonNullable<typeof m> => m !== undefined),
+  );
   const rows: PptxTableRowOptions[] = src.rows.map((row, ri) => ({
     ...(row.height !== undefined ? { height: convertPointsToEmu(convertToPt(row.height)) } : {}),
     cells: (row.cells ?? []).map((cell, ci): PptxTableCellOptions => {
-      const merge = merges.find((m) => m.row === ri && m.col === ci);
+      const merge = merges.get(`${ri}:${ci}`);
       const columnSpan = merge ? merge.colEnd - merge.col + 1 : undefined;
       const rowSpan = merge ? merge.rowEnd - merge.row + 1 : undefined;
       const text = cellValueToText(cell.value);

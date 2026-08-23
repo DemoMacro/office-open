@@ -1282,6 +1282,14 @@ export function compilePresentation(
   };
 
   // Slides
+  // Group passthrough rels by source part once — the per-slide loop below
+  // looks its own slice up instead of re-filtering the full list each time.
+  const slidePassthroughBySource = new Map<string, typeof options.passthroughRelationships>();
+  for (const rel of options.passthroughRelationships ?? []) {
+    const group = slidePassthroughBySource.get(rel.source);
+    if (group) group.push(rel);
+    else slidePassthroughBySource.set(rel.source, [rel]);
+  }
   for (const [i, slide] of slides.entries()) {
     const slideXml = stringifySlide(slide, descCtx);
 
@@ -1293,7 +1301,7 @@ export function compilePresentation(
     // below it, so the rename never collides.
     promoteLayoutToSourceId(
       currentSlideRels,
-      options.passthroughRelationships?.filter((r) => r.source === `ppt/slides/slide${i + 1}.xml`),
+      slidePassthroughBySource.get(`ppt/slides/slide${i + 1}.xml`),
     );
     const slideImageOffset = currentSlideRels.nextRelationshipId;
     for (const [idx, mediaItem] of slideMediaData.entries()) {
