@@ -167,8 +167,9 @@ function stringifyBullet(options: BulletOptions): string[] {
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    // ST_TextBulletSizePercent is an "N%" string per the XSD pattern; Office
-    // also accepts per-mille integers when reading (handled at parse below).
+    // ST_TextBulletSizePercent is an "N%" string per the XSD pattern (25-400);
+    // the union's per-mille-integer branch is what Office writes but the XSD
+    // loader here only enforces the pattern, so emit the string form.
     parts.push(`<a:buSzPct val="${Math.round(options.size)}%"/>`);
   }
 

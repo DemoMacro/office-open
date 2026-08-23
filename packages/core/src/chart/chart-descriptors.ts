@@ -740,10 +740,12 @@ function chartTypeFooter(opts: ChartSpaceOptions, ctx: WriteContext): string {
         parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
       break;
     case "doughnut":
-      // CT_DoughnutChart: firstSliceAng → holeSize
+      // CT_DoughnutChart: firstSliceAng → holeSize. holeSize is XSD-optional
+      // (default 10) but the Open XML SDK's stricter schema requires it —
+      // always emit so both validators pass with identical rendering.
       if (opts.firstSliceAngle !== undefined)
         parts.push(valEl("c:firstSliceAng", opts.firstSliceAngle));
-      if (opts.holeSize !== undefined) parts.push(valEl("c:holeSize", opts.holeSize));
+      parts.push(valEl("c:holeSize", opts.holeSize ?? 10));
       break;
     case "bubble":
       // CT_BubbleChart: bubbleScale → showNegBubbles → sizeRepresents
