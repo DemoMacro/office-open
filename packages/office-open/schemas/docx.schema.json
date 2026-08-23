@@ -231,22 +231,7 @@
           "type": "object"
         },
         "anchor": {
-          "additionalProperties": false,
-          "description": "Anchor reference points for horizontal and vertical positioning",
-          "properties": {
-            "horizontal": {
-              "description": "Horizontal anchor reference point",
-              "enum": ["margin", "page", "text"],
-              "type": "string"
-            },
-            "vertical": {
-              "description": "Vertical anchor reference point",
-              "enum": ["margin", "page", "text"],
-              "type": "string"
-            }
-          },
-          "required": ["horizontal", "vertical"],
-          "type": "object"
+          "$ref": "#/definitions/XYFrameOptions/properties/anchor"
         },
         "anchorLock": {
           "description": "Lock the anchor position to prevent it from moving",
@@ -258,54 +243,17 @@
           "type": "string"
         },
         "height": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Frame height in twips or universal measure (e.g., \"1cm\", \"0.5in\")"
+          "$ref": "#/definitions/XYFrameOptions/properties/height"
         },
         "lines": {
           "description": "Number of lines for drop cap effect",
           "type": "number"
         },
         "rule": {
-          "description": "Height rule determining how frame height is calculated",
-          "enum": ["auto", "atLeast", "exact"],
-          "type": "string"
+          "$ref": "#/definitions/XYFrameOptions/properties/rule"
         },
         "space": {
-          "additionalProperties": false,
-          "description": "Spacing between frame and surrounding text in twips",
-          "properties": {
-            "horizontal": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ],
-              "description": "Horizontal spacing in twips or universal measure"
-            },
-            "vertical": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ],
-              "description": "Vertical spacing in twips or universal measure"
-            }
-          },
-          "required": ["horizontal", "vertical"],
-          "type": "object"
+          "$ref": "#/definitions/XYFrameOptions/properties/space"
         },
         "type": {
           "const": "alignment",
@@ -313,20 +261,10 @@
           "type": "string"
         },
         "width": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Frame width in twips or universal measure (e.g., \"1cm\", \"0.5in\")"
+          "$ref": "#/definitions/XYFrameOptions/properties/width"
         },
         "wrap": {
-          "description": "Text wrapping behavior around the frame",
-          "enum": ["around", "auto", "none", "notBeside", "through", "tight"],
-          "type": "string"
+          "$ref": "#/definitions/XYFrameOptions/properties/wrap"
         }
       },
       "required": ["alignment", "type"],
@@ -993,9 +931,7 @@
           "description": "Raw image data (Uint8Array, base64 string, etc.)"
         },
         "type": {
-          "description": "Image format type",
-          "enum": ["jpg", "png", "gif", "bmp", "tif", "ico", "emf", "wmf"],
-          "type": "string"
+          "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/type"
         }
       },
       "required": ["data", "type"],
@@ -1178,9 +1114,7 @@
       "description": "Blend effect — blends with nested container.",
       "properties": {
         "blend": {
-          "description": "Blend mode (required)",
-          "enum": ["over", "multiply", "screen", "darken", "lighten"],
-          "type": "string"
+          "$ref": "#/definitions/FillOverlayEffectOptions/properties/blend"
         },
         "container": {
           "$ref": "#/definitions/EffectDagOptions",
@@ -1668,11 +1602,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -1682,20 +1612,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -1706,16 +1633,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -1744,8 +1668,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -1782,15 +1705,7 @@
       "additionalProperties": false,
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1808,8 +1723,7 @@
           "$ref": "#/definitions/AutoNumberFormat"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -1884,15 +1798,7 @@
       "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1907,8 +1813,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -1947,15 +1852,7 @@
       "description": "Picture bullet (a:buBlip r:embed). `embed` is the image relationship id.",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1973,8 +1870,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -2105,72 +2001,7 @@
           "type": "boolean"
         },
         "numFmt": {
-          "description": "Number format (w:numFmt)",
-          "enum": [
-            "aiueo",
-            "aiueoFullWidth",
-            "arabicAbjad",
-            "arabicAlpha",
-            "bahtText",
-            "bullet",
-            "cardinalText",
-            "chicago",
-            "chineseCounting",
-            "chineseCountingThousand",
-            "chineseLegalSimplified",
-            "chosung",
-            "decimal",
-            "decimalEnclosedCircle",
-            "decimalEnclosedCircleChinese",
-            "decimalEnclosedFullstop",
-            "decimalEnclosedParen",
-            "decimalFullWidth",
-            "decimalFullWidth2",
-            "decimalHalfWidth",
-            "decimalZero",
-            "dollarText",
-            "ganada",
-            "hebrew1",
-            "hebrew2",
-            "hex",
-            "hindiConsonants",
-            "hindiCounting",
-            "hindiNumbers",
-            "hindiVowels",
-            "ideographDigital",
-            "ideographEnclosedCircle",
-            "ideographLegalTraditional",
-            "ideographTraditional",
-            "ideographZodiac",
-            "ideographZodiacTraditional",
-            "iroha",
-            "irohaFullWidth",
-            "japaneseCounting",
-            "japaneseDigitalTenThousand",
-            "japaneseLegal",
-            "koreanCounting",
-            "koreanDigital",
-            "koreanDigital2",
-            "koreanLegal",
-            "lowerLetter",
-            "lowerRoman",
-            "none",
-            "numberInDash",
-            "ordinal",
-            "ordinalText",
-            "russianLower",
-            "russianUpper",
-            "taiwaneseCounting",
-            "taiwaneseCountingThousand",
-            "taiwaneseDigital",
-            "thaiCounting",
-            "thaiLetters",
-            "thaiNumbers",
-            "upperLetter",
-            "upperRoman",
-            "vietnameseCounting"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/DocumentFootnotePropertiesOptions/properties/numFmt"
         },
         "pos": {
           "description": "Caption position",
@@ -2220,8 +2051,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "verticalMerge": {
           "description": "Merge state this revision sets: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
@@ -2250,8 +2080,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         }
       },
       "required": ["author", "date"],
@@ -3017,33 +2846,20 @@
       "additionalProperties": false,
       "properties": {
         "autoTitleDeleted": {
-          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/autoTitleDeleted"
         },
         "axes": {
-          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
-          "items": {
-            "$ref": "#/definitions/AxisOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/axes"
         },
         "axisIds": {
-          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/axisIds"
         },
         "backWall": {
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D back wall (c:backWall)."
         },
         "bandFormats": {
-          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
-          "items": {
-            "$ref": "#/definitions/BandFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/bandFormats"
         },
         "bubbleScale": {
           "description": "Bubble scale as percent of default size (c:bubbleScale).",
@@ -3056,69 +2872,20 @@
           "type": "array"
         },
         "categoryFormatCode": {
-          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
-          "type": "string"
+          "$ref": "#/definitions/ChartOptions/properties/categoryFormatCode"
         },
         "categoryFormula": {
           "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
           "type": "string"
         },
         "categoryLabels": {
-          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/categoryLabels"
         },
         "colorMappingOverride": {
-          "additionalProperties": false,
-          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
-          "properties": {
-            "accent1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent3": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent4": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent5": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent6": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "followedHyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "hyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ChartOptions/properties/colorMappingOverride"
         },
         "customSplitPoints": {
-          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/customSplitPoints"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions",
@@ -3129,32 +2896,20 @@
           "description": "Plot-area data table (c:dTable)."
         },
         "date1904": {
-          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/date1904"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
-          "enum": ["transitional", "strict"],
-          "type": "string"
+          "$ref": "#/definitions/ChartOptions/properties/dialect"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Drop lines (c:dropLines, line/area/stock)."
+          "$ref": "#/definitions/ChartOptions/properties/dropLines"
         },
         "ext": {
-          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
-          "type": "string"
+          "$ref": "#/definitions/ChartOptions/properties/ext"
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -3181,41 +2936,20 @@
           "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
         },
         "highLowLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
+          "$ref": "#/definitions/ChartOptions/properties/highLowLines"
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
         "lang": {
-          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
-          "type": "string"
+          "$ref": "#/definitions/ChartOptions/properties/lang"
         },
         "legendEntries": {
-          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
-          "items": {
-            "$ref": "#/definitions/LegendEntryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/legendEntries"
         },
         "legendLayout": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ManualLayoutOptions"
-            }
-          ],
-          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+          "$ref": "#/definitions/ChartOptions/properties/legendLayout"
         },
         "legendOverlay": {
           "description": "Legend overlaps the plot (c:overlay).",
@@ -3234,22 +2968,13 @@
           "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/markers"
         },
         "multiLevelCategories": {
-          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
-          "items": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/multiLevelCategories"
         },
         "numericCategories": {
-          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/numericCategories"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -3260,11 +2985,7 @@
           "type": "number"
         },
         "pivotFormats": {
-          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
-          "items": {
-            "$ref": "#/definitions/ChartPivotFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/pivotFormats"
         },
         "pivotSource": {
           "$ref": "#/definitions/PivotSourceOptions",
@@ -3279,8 +3000,7 @@
           "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
-          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/plotVisOnly"
         },
         "printSettings": {
           "$ref": "#/definitions/PrintSettingsOptions",
@@ -3295,52 +3015,19 @@
           "description": "Radar variant (c:radarStyle, default \"standard\")."
         },
         "roundedCorners": {
-          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/roundedCorners"
         },
         "secondPieSize": {
-          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
-          "type": ["number", "string"]
+          "$ref": "#/definitions/ChartOptions/properties/secondPieSize"
         },
         "secondaryGroups": {
-          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
-          "items": {
-            "$ref": "#/definitions/SecondaryChartGroupOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/secondaryGroups"
         },
         "series": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/definitions/ChartSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/ScatterSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/BubbleSeriesData"
-              },
-              "type": "array"
-            }
-          ]
+          "$ref": "#/definitions/ChartOptions/properties/series"
         },
         "seriesLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
+          "$ref": "#/definitions/ChartOptions/properties/seriesLines"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -3370,8 +3057,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/smooth"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
@@ -3396,15 +3082,7 @@
           "type": "boolean"
         },
         "title": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/ChartTitleOptions"
-            }
-          ],
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
+          "$ref": "#/definitions/ChartOptions/properties/title"
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -3414,16 +3092,13 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/ChartOptions/properties/upDownBarsGapWidth"
         },
         "userShapes": {
-          "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
-          "type": "string"
+          "$ref": "#/definitions/ChartOptions/properties/userShapes"
         },
         "varyColors": {
-          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartOptions/properties/varyColors"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"
@@ -3719,18 +3394,10 @@
       "description": "dgm:colorsDef — the colors part root.",
       "properties": {
         "categories": {
-          "description": "Gallery categories (dgm:catLst).",
-          "items": {
-            "$ref": "#/definitions/DiagramCategoryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/categories"
         },
         "descriptions": {
-          "description": "Localized descriptions (dgm:desc*).",
-          "items": {
-            "$ref": "#/definitions/DiagramDescriptionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
         "ext": {
           "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
@@ -3748,11 +3415,7 @@
           "type": "array"
         },
         "titles": {
-          "description": "Localized titles (dgm:title*).",
-          "items": {
-            "$ref": "#/definitions/DiagramNameOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/titles"
         },
         "uniqueId": {
           "description": "Color-transform identity URI (dgm:colorsDef `@uniqueId`).",
@@ -4776,60 +4439,10 @@
           "description": "Black-and-white mode (`@bwMode`)."
         },
         "nonVisualProperties": {
-          "additionalProperties": false,
-          "description": "Non-visual content part properties (cNvPr + cNvContentPartPr).",
-          "properties": {
-            "contentPart": {
-              "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
-            },
-            "creationId": {
-              "$ref": "#/definitions/Guid",
-              "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
-            },
-            "description": {
-              "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-              "type": "string"
-            },
-            "ext": {
-              "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-              "type": "string"
-            },
-            "hidden": {
-              "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
-              "type": "boolean"
-            },
-            "id": {
-              "type": "number"
-            },
-            "name": {
-              "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-              "type": "string"
-            },
-            "pictureLocks": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/PictureLockingOptions"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none (round-trips as a bare pic:cNvPicPr); omitted = authoring default (noChangeAspect=\"1\", matching Word's fresh-insert behavior); an object = explicit lock flags."
-            },
-            "preferRelativeResize": {
-              "description": "From the sibling pic:cNvPicPr. Omitted = Word's default (true); only `false` is emitted as preferRelativeResize=\"0\" because Word never writes the default value explicitly.",
-              "type": "boolean"
-            },
-            "title": {
-              "description": "XSD `@title`.",
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/GroupChildMediaData/anyOf/5/properties/nonVisualProperties"
         },
         "referenceId": {
-          "description": "Relationship id from the source document (r:id, round-trip passthrough).",
-          "type": "string"
+          "$ref": "#/definitions/GroupChildMediaData/anyOf/5/properties/referenceId"
         },
         "transformation": {
           "$ref": "#/definitions/MediaDataTransformation",
@@ -5969,77 +5582,10 @@
           "type": "string"
         },
         "numFmt": {
-          "description": "Number format (w:numFmt)",
-          "enum": [
-            "aiueo",
-            "aiueoFullWidth",
-            "arabicAbjad",
-            "arabicAlpha",
-            "bahtText",
-            "bullet",
-            "cardinalText",
-            "chicago",
-            "chineseCounting",
-            "chineseCountingThousand",
-            "chineseLegalSimplified",
-            "chosung",
-            "decimal",
-            "decimalEnclosedCircle",
-            "decimalEnclosedCircleChinese",
-            "decimalEnclosedFullstop",
-            "decimalEnclosedParen",
-            "decimalFullWidth",
-            "decimalFullWidth2",
-            "decimalHalfWidth",
-            "decimalZero",
-            "dollarText",
-            "ganada",
-            "hebrew1",
-            "hebrew2",
-            "hex",
-            "hindiConsonants",
-            "hindiCounting",
-            "hindiNumbers",
-            "hindiVowels",
-            "ideographDigital",
-            "ideographEnclosedCircle",
-            "ideographLegalTraditional",
-            "ideographTraditional",
-            "ideographZodiac",
-            "ideographZodiacTraditional",
-            "iroha",
-            "irohaFullWidth",
-            "japaneseCounting",
-            "japaneseDigitalTenThousand",
-            "japaneseLegal",
-            "koreanCounting",
-            "koreanDigital",
-            "koreanDigital2",
-            "koreanLegal",
-            "lowerLetter",
-            "lowerRoman",
-            "none",
-            "numberInDash",
-            "ordinal",
-            "ordinalText",
-            "russianLower",
-            "russianUpper",
-            "taiwaneseCounting",
-            "taiwaneseCountingThousand",
-            "taiwaneseDigital",
-            "thaiCounting",
-            "thaiLetters",
-            "thaiNumbers",
-            "upperLetter",
-            "upperRoman",
-            "vietnameseCounting"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/DocumentFootnotePropertiesOptions/properties/numFmt"
         },
         "numRestart": {
-          "description": "When to restart numbering (w:numRestart)",
-          "enum": ["continuous", "eachSect", "eachPage"],
-          "type": "string"
+          "$ref": "#/definitions/DocumentFootnotePropertiesOptions/properties/numRestart"
         },
         "numStart": {
           "description": "Starting number",
@@ -6935,77 +6481,10 @@
           "type": "string"
         },
         "formatType": {
-          "description": "Numbering format: \"arabic\" 1,2,3…, \"lowerLetter\"/\"upperLetter\" a,b,c…, \"lowerRoman\"/\"upperRoman\" i,ii…, \"chicago\", \"aiueo\" Japanese kana, \"chineseCounting\" and other script-specific counters, \"bullet\", \"none\".",
-          "enum": [
-            "aiueo",
-            "aiueoFullWidth",
-            "arabicAbjad",
-            "arabicAlpha",
-            "bahtText",
-            "bullet",
-            "cardinalText",
-            "chicago",
-            "chineseCounting",
-            "chineseCountingThousand",
-            "chineseLegalSimplified",
-            "chosung",
-            "decimal",
-            "decimalEnclosedCircle",
-            "decimalEnclosedCircleChinese",
-            "decimalEnclosedFullstop",
-            "decimalEnclosedParen",
-            "decimalFullWidth",
-            "decimalFullWidth2",
-            "decimalHalfWidth",
-            "decimalZero",
-            "dollarText",
-            "ganada",
-            "hebrew1",
-            "hebrew2",
-            "hex",
-            "hindiConsonants",
-            "hindiCounting",
-            "hindiNumbers",
-            "hindiVowels",
-            "ideographDigital",
-            "ideographEnclosedCircle",
-            "ideographLegalTraditional",
-            "ideographTraditional",
-            "ideographZodiac",
-            "ideographZodiacTraditional",
-            "iroha",
-            "irohaFullWidth",
-            "japaneseCounting",
-            "japaneseDigitalTenThousand",
-            "japaneseLegal",
-            "koreanCounting",
-            "koreanDigital",
-            "koreanDigital2",
-            "koreanLegal",
-            "lowerLetter",
-            "lowerRoman",
-            "none",
-            "numberInDash",
-            "ordinal",
-            "ordinalText",
-            "russianLower",
-            "russianUpper",
-            "taiwaneseCounting",
-            "taiwaneseCountingThousand",
-            "taiwaneseDigital",
-            "thaiCounting",
-            "thaiLetters",
-            "thaiNumbers",
-            "upperLetter",
-            "upperRoman",
-            "vietnameseCounting"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/FootnotePropertiesOptions/properties/formatType"
         },
         "numRestart": {
-          "description": "Restart rule: \"continuous\" never, \"eachSect\" per section, \"eachPage\" per page.",
-          "enum": ["continuous", "eachSect", "eachPage"],
-          "type": "string"
+          "$ref": "#/definitions/FootnotePropertiesOptions/properties/numRestart"
         },
         "numStart": {
           "type": "number"
@@ -8054,13 +7533,10 @@
                   "description": "Transformation settings for display"
                 },
                 "type": {
-                  "description": "Image format type",
-                  "enum": ["jpg", "png", "gif", "bmp", "tif", "ico", "emf", "wmf"],
-                  "type": "string"
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/type"
                 },
                 "useLocalDpi": {
-                  "description": "Blip extension `a14:useLocalDpi` (val=\"0\" = use document DPI, not a local override). Word emits this as a rendering hint on a:blip; carried verbatim for round-trip fidelity. Omitted when absent (Word's default behavior).",
-                  "type": "boolean"
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpi"
                 }
               },
               "required": ["data", "fileName", "transformation", "type"],
@@ -8097,8 +7573,7 @@
               "type": "string"
             },
             "useLocalDpi": {
-              "description": "Blip extension `a14:useLocalDpi` (val=\"0\" = use document DPI, not a local override). Word emits this as a rendering hint on a:blip; carried verbatim for round-trip fidelity. Omitted when absent (Word's default behavior).",
-              "type": "boolean"
+              "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpi"
             }
           },
           "required": ["data", "fallback", "fileName", "transformation", "type"],
@@ -8211,12 +7686,10 @@
                   "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
                 },
                 "description": {
-                  "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-                  "type": "string"
+                  "$ref": "#/definitions/DocPropertiesOptions/properties/description"
                 },
                 "ext": {
-                  "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-                  "type": "string"
+                  "$ref": "#/definitions/DocPropertiesOptions/properties/ext"
                 },
                 "hidden": {
                   "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -8226,23 +7699,13 @@
                   "type": "number"
                 },
                 "name": {
-                  "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-                  "type": "string"
+                  "$ref": "#/definitions/NonVisualPropertiesOptions/properties/name"
                 },
                 "pictureLocks": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/definitions/PictureLockingOptions"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "description": "Picture locks from pic:cNvPicPr/a:picLocks. `null` = source carried none (round-trips as a bare pic:cNvPicPr); omitted = authoring default (noChangeAspect=\"1\", matching Word's fresh-insert behavior); an object = explicit lock flags."
+                  "$ref": "#/definitions/NonVisualPropertiesOptions/properties/pictureLocks"
                 },
                 "preferRelativeResize": {
-                  "description": "From the sibling pic:cNvPicPr. Omitted = Word's default (true); only `false` is emitted as preferRelativeResize=\"0\" because Word never writes the default value explicitly.",
-                  "type": "boolean"
+                  "$ref": "#/definitions/NonVisualPropertiesOptions/properties/preferRelativeResize"
                 },
                 "title": {
                   "description": "XSD `@title`.",
@@ -8305,23 +7768,14 @@
           "$ref": "#/definitions/Floating"
         },
         "graphicFrameLocks": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLocksOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
         },
         "groupShapeLocks": {
           "$ref": "#/definitions/GroupShapeLocksOptions",
           "description": "Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip."
         },
         "lastRenderedPageBreak": {
-          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
-          "type": "boolean"
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/lastRenderedPageBreak"
         },
         "mcChoiceRequires": {
           "description": "mc:Choice Requires attribute (e.g. \"wpg\") used to regenerate the AlternateContent wrapper.",
@@ -8335,15 +7789,10 @@
           "$ref": "#/definitions/MediaTransformation"
         },
         "vmlFallback": {
-          "description": "Raw XML of the mc:Fallback (VML equivalent) — carried verbatim so the full mc:AlternateContent round-trips. Round-trip channel: captured from a parsed source document — do not hand-author.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/vmlFallback"
         },
         "vmlFallbackMedia": {
-          "description": "Media referenced by `vmlFallback` `{fileName}` placeholders, registered on generate.",
-          "items": {
-            "$ref": "#/definitions/BackgroundRawMediaOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ShapeOptions/properties/vmlFallbackMedia"
         }
       },
       "required": ["children", "transformation"],
@@ -9037,30 +8486,13 @@
           "type": "boolean"
         },
         "alignment": {
-          "description": "Paragraph text alignment (left, right, center, justified, etc.)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/alignment"
         },
         "autoSpaceDE": {
-          "description": "Whether to automatically add space between East Asian and Latin text",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceDE"
         },
         "autoSpaceEastAsianText": {
-          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceEastAsianText"
         },
         "bidirectional": {
           "description": "Whether to render text right-to-left for bidirectional languages",
@@ -9071,8 +8503,7 @@
           "description": "Conditional formatting style for table rows/cells"
         },
         "contextualSpacing": {
-          "description": "Whether to ignore spacing before/after when adjacent paragraphs have the same style",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -9087,12 +8518,10 @@
           "description": "Indentation settings for the paragraph"
         },
         "keepLines": {
-          "description": "Specifies that all lines of the paragraph are to be kept on a single page when possible.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepLines"
         },
         "keepNext": {
-          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepNext"
         },
         "kinsoku": {
           "description": "Whether to use Kinsoku forbidden character overflow rules",
@@ -9103,8 +8532,7 @@
           "type": "number"
         },
         "mirrorIndents": {
-          "description": "Whether to swap left and right indent positions on odd pages for mirrored layouts",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/mirrorIndents"
         },
         "outlineLevel": {
           "description": "Outline level for table of contents and document outline (0-9)",
@@ -9143,38 +8571,26 @@
           "type": "boolean"
         },
         "tabStops": {
-          "description": "Custom tab stop positions and alignments",
-          "items": {
-            "$ref": "#/definitions/TabStopDefinition"
-          },
-          "type": "array"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/tabStops"
         },
         "textAlignment": {
-          "description": "Vertical text alignment within the paragraph",
-          "enum": ["top", "center", "baseline", "bottom", "auto"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textAlignment"
         },
         "textDirection": {
-          "description": "Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV)",
-          "enum": ["lr", "rl", "tb", "tbV", "rlV", "lrV"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textDirection"
         },
         "textboxTightWrap": {
-          "description": "Textbox tight wrap setting",
-          "enum": ["none", "allLines", "firstAndLastLine", "firstLineOnly", "lastLineOnly"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textboxTightWrap"
         },
         "thematicBreak": {
-          "description": "Whether to display a horizontal line (thematic break) below the paragraph",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/thematicBreak"
         },
         "topLinePunct": {
           "description": "Whether to compress punctuation at the start of a line",
           "type": "boolean"
         },
         "widowControl": {
-          "description": "Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/widowControl"
         },
         "wordWrap": {
           "description": "Whether to allow word wrapping",
@@ -10114,8 +9530,7 @@
                   "type": "array"
                 },
                 "superScriptArgumentSize": {
-                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
-                  "type": "number"
+                  "$ref": "#/definitions/MathInput/anyOf/4/properties/superScript/properties/superScriptArgumentSize"
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -10163,8 +9578,7 @@
                   "type": "array"
                 },
                 "superScriptArgumentSize": {
-                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
-                  "type": "number"
+                  "$ref": "#/definitions/MathInput/anyOf/4/properties/superScript/properties/superScriptArgumentSize"
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -10254,36 +9668,7 @@
           "additionalProperties": false,
           "properties": {
             "integral": {
-              "additionalProperties": false,
-              "properties": {
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
-                "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
-                  "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
-                },
-                "properties": {
-                  "$ref": "#/definitions/MathNaryProperties"
-                },
-                "subScript": {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
-                "superScript": {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                }
-              },
-              "required": ["children"],
-              "type": "object"
+              "$ref": "#/definitions/MathInput/anyOf/9/properties/sum"
             }
           },
           "required": ["integral"],
@@ -10473,39 +9858,7 @@
           "additionalProperties": false,
           "properties": {
             "curlyBrackets": {
-              "anyOf": [
-                {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "children": {
-                      "items": {
-                        "$ref": "#/definitions/MathInput"
-                      },
-                      "type": "array"
-                    },
-                    "elements": {
-                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
-                      "items": {
-                        "items": {
-                          "$ref": "#/definitions/MathInput"
-                        },
-                        "type": "array"
-                      },
-                      "type": "array"
-                    },
-                    "properties": {
-                      "$ref": "#/definitions/MathDelimiterProperties"
-                    }
-                  },
-                  "type": "object"
-                }
-              ]
+              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
             }
           },
           "required": ["curlyBrackets"],
@@ -10516,39 +9869,7 @@
           "additionalProperties": false,
           "properties": {
             "angledBrackets": {
-              "anyOf": [
-                {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "children": {
-                      "items": {
-                        "$ref": "#/definitions/MathInput"
-                      },
-                      "type": "array"
-                    },
-                    "elements": {
-                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
-                      "items": {
-                        "items": {
-                          "$ref": "#/definitions/MathInput"
-                        },
-                        "type": "array"
-                      },
-                      "type": "array"
-                    },
-                    "properties": {
-                      "$ref": "#/definitions/MathDelimiterProperties"
-                    }
-                  },
-                  "type": "object"
-                }
-              ]
+              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
             }
           },
           "required": ["angledBrackets"],
@@ -10559,39 +9880,7 @@
           "additionalProperties": false,
           "properties": {
             "squareBrackets": {
-              "anyOf": [
-                {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
-                {
-                  "additionalProperties": false,
-                  "properties": {
-                    "children": {
-                      "items": {
-                        "$ref": "#/definitions/MathInput"
-                      },
-                      "type": "array"
-                    },
-                    "elements": {
-                      "description": "Multiple delimited elements (m:e+), separator-split groups.",
-                      "items": {
-                        "items": {
-                          "$ref": "#/definitions/MathInput"
-                        },
-                        "type": "array"
-                      },
-                      "type": "array"
-                    },
-                    "properties": {
-                      "$ref": "#/definitions/MathDelimiterProperties"
-                    }
-                  },
-                  "type": "object"
-                }
-              ]
+              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
             }
           },
           "required": ["squareBrackets"],
@@ -11077,35 +10366,13 @@
           "type": "object"
         },
         "flip": {
-          "additionalProperties": false,
-          "description": "Optional flip transformations",
-          "properties": {
-            "horizontal": {
-              "description": "Whether to flip the image horizontally",
-              "type": "boolean"
-            },
-            "vertical": {
-              "description": "Whether to flip the image vertically",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/MediaTransformation/properties/flip"
         },
         "offset": {
           "additionalProperties": false,
           "properties": {
             "emus": {
-              "additionalProperties": false,
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y"],
-              "type": "object"
+              "$ref": "#/definitions/MediaDataTransformation/properties/offset/properties/pixels"
             },
             "pixels": {
               "additionalProperties": false,
@@ -11411,12 +10678,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/DocPropertiesOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/DocPropertiesOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -11875,15 +11140,7 @@
       "additionalProperties": false,
       "properties": {
         "data": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/DataType"
-            },
-            {
-              "type": "string"
-            }
-          ],
-          "description": "OLE container binary — registered as word/embeddings/oleObjectN.bin."
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/data"
         },
         "drawAspect": {
           "description": "Draw aspect — how the object displays.",
@@ -11895,29 +11152,24 @@
           "type": "string"
         },
         "fileName": {
-          "description": "Source embeddings file basename (round-trip, e.g. \"Microsoft_Excel_Worksheet1.xlsx\"). Pinning it keeps the original extension and its [Content_Types] Default entry instead of renaming everything to oleObjectN.bin.",
-          "type": "string"
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/fileName"
         },
         "lockedField": {
           "description": "Whether the field is locked.",
           "type": "boolean"
         },
         "objectId": {
-          "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
-          "type": "string"
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/objectId"
         },
         "progId": {
           "description": "OLE program id (e.g. \"Excel.Sheet.12\").",
           "type": "string"
         },
         "relationshipType": {
-          "description": "Source relationship kind (round-trip): \"package\" (embedded xlsx/docx as a native OPC package) vs \"oleObject\" (OLE compound binary). Not derivable from the file name; re-emitted as captured.",
-          "enum": ["oleObject", "package"],
-          "type": "string"
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/relationshipType"
         },
         "shapeId": {
-          "description": "Shape id (o:OLEObject/`@ShapeID`). Defaults to the preview shape's id.",
-          "type": "string"
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/shapeId"
         },
         "updateMode": {
           "description": "Update mode (required for links).",
@@ -12040,15 +11292,7 @@
           "description": "Shadow alignment"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -12645,8 +11889,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
                 }
               },
               "required": ["author", "children", "date"],
@@ -12661,29 +11904,7 @@
           "additionalProperties": false,
           "properties": {
             "deletion": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "description": "Name of the author who made the change",
-                  "type": "string"
-                },
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/TrackChangeChild"
-                  },
-                  "type": "array"
-                },
-                "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
-                },
-                "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
-                }
-              },
-              "required": ["author", "children", "date"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
             }
           },
           "required": ["deletion"],
@@ -12927,29 +12148,7 @@
           "additionalProperties": false,
           "properties": {
             "movedFrom": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "description": "Name of the author who made the change",
-                  "type": "string"
-                },
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/TrackChangeChild"
-                  },
-                  "type": "array"
-                },
-                "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
-                },
-                "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
-                }
-              },
-              "required": ["author", "children", "date"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
             }
           },
           "required": ["movedFrom"],
@@ -12960,29 +12159,7 @@
           "additionalProperties": false,
           "properties": {
             "movedTo": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "description": "Name of the author who made the change",
-                  "type": "string"
-                },
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/TrackChangeChild"
-                  },
-                  "type": "array"
-                },
-                "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
-                },
-                "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
-                }
-              },
-              "required": ["author", "children", "date"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
             }
           },
           "required": ["movedTo"],
@@ -13050,20 +12227,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlDelRangeStart": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "type": "string"
-                },
-                "date": {
-                  "type": "string"
-                },
-                "id": {
-                  "type": "number"
-                }
-              },
-              "required": ["id"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlDelRangeStart"],
@@ -13085,20 +12249,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveFromRangeStart": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "type": "string"
-                },
-                "date": {
-                  "type": "string"
-                },
-                "id": {
-                  "type": "number"
-                }
-              },
-              "required": ["id"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveFromRangeStart"],
@@ -13120,20 +12271,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveToRangeStart": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "type": "string"
-                },
-                "date": {
-                  "type": "string"
-                },
-                "id": {
-                  "type": "number"
-                }
-              },
-              "required": ["id"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveToRangeStart"],
@@ -13255,28 +12393,7 @@
           "additionalProperties": false,
           "properties": {
             "bdo": {
-              "additionalProperties": false,
-              "properties": {
-                "children": {
-                  "items": {
-                    "anyOf": [
-                      {
-                        "$ref": "#/definitions/ParagraphChild"
-                      },
-                      {
-                        "type": "string"
-                      }
-                    ]
-                  },
-                  "type": "array"
-                },
-                "val": {
-                  "enum": ["ltr", "rtl"],
-                  "type": "string"
-                }
-              },
-              "required": ["val"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/49/properties/dir"
             }
           },
           "required": ["bdo"],
@@ -13472,30 +12589,13 @@
           "type": "boolean"
         },
         "alignment": {
-          "description": "Paragraph text alignment (left, right, center, justified, etc.)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/alignment"
         },
         "autoSpaceDE": {
-          "description": "Whether to automatically add space between East Asian and Latin text",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceDE"
         },
         "autoSpaceEastAsianText": {
-          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceEastAsianText"
         },
         "bidirectional": {
           "description": "Whether to render text right-to-left for bidirectional languages",
@@ -13506,16 +12606,7 @@
           "description": "Border settings for the paragraph"
         },
         "bullet": {
-          "additionalProperties": false,
-          "description": "Bullet list configuration",
-          "properties": {
-            "level": {
-              "description": "Indentation level for the bullet (0-8)",
-              "type": "number"
-            }
-          },
-          "required": ["level"],
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/bullet"
         },
         "children": {
           "description": "Array of child elements.",
@@ -13536,8 +12627,7 @@
           "description": "Conditional formatting style for table rows/cells"
         },
         "contextualSpacing": {
-          "description": "Whether to ignore spacing before/after when adjacent paragraphs have the same style",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "defaultRunRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -13552,8 +12642,7 @@
           "type": "number"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
@@ -13569,12 +12658,10 @@
           "description": "Indentation settings for the paragraph"
         },
         "keepLines": {
-          "description": "Specifies that all lines of the paragraph are to be kept on a single page when possible.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepLines"
         },
         "keepNext": {
-          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepNext"
         },
         "kinsoku": {
           "description": "Whether to use Kinsoku forbidden character overflow rules",
@@ -13585,140 +12672,10 @@
           "type": "number"
         },
         "mirrorIndents": {
-          "description": "Whether to swap left and right indent positions on odd pages for mirrored layouts",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/mirrorIndents"
         },
         "numbering": {
-          "anyOf": [
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "none": {
-                  "const": true,
-                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["none"],
-              "title": "none",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "autoStyle": {
-                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
-                  "type": "boolean"
-                },
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "instance": {
-                  "description": "Instance number for multiple lists with same reference",
-                  "type": "number"
-                },
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
-                  "type": "number"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "description": "Author of the change",
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime",
-                      "description": "Date of the change"
-                    },
-                    "id": {
-                      "description": "Revision ID",
-                      "type": "string"
-                    },
-                    "original": {
-                      "description": "Original numbering value",
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "reference": {
-                  "description": "Reference ID of the numbering definition to use",
-                  "type": "string"
-                }
-              },
-              "required": ["reference"],
-              "title": "reference",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "levelOnly": {
-                  "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
-                  "type": "boolean"
-                }
-              },
-              "required": ["levelOnly"],
-              "title": "levelOnly",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "original": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "revisionOnly": {
-                  "const": true,
-                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["revisionOnly"],
-              "title": "revisionOnly",
-              "type": "object"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Numbering configuration for lists, or false to remove numbering"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/numbering"
         },
         "outlineLevel": {
           "description": "Outline level for table of contents and document outline (0-9)",
@@ -13784,46 +12741,34 @@
           "type": "boolean"
         },
         "tabStops": {
-          "description": "Custom tab stop positions and alignments",
-          "items": {
-            "$ref": "#/definitions/TabStopDefinition"
-          },
-          "type": "array"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/tabStops"
         },
         "text": {
           "description": "Simple text content for the paragraph. Creates a single TextRun.",
           "type": "string"
         },
         "textAlignment": {
-          "description": "Vertical text alignment within the paragraph",
-          "enum": ["top", "center", "baseline", "bottom", "auto"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textAlignment"
         },
         "textDirection": {
-          "description": "Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV)",
-          "enum": ["lr", "rl", "tb", "tbV", "rlV", "lrV"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textDirection"
         },
         "textId": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Paragraph text identifier (w14:textId, 8-digit hex string)."
         },
         "textboxTightWrap": {
-          "description": "Textbox tight wrap setting",
-          "enum": ["none", "allLines", "firstAndLastLine", "firstLineOnly", "lastLineOnly"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textboxTightWrap"
         },
         "thematicBreak": {
-          "description": "Whether to display a horizontal line (thematic break) below the paragraph",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/thematicBreak"
         },
         "topLinePunct": {
           "description": "Whether to compress punctuation at the start of a line",
           "type": "boolean"
         },
         "widowControl": {
-          "description": "Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/widowControl"
         },
         "wordWrap": {
           "description": "Whether to allow word wrapping",
@@ -13840,34 +12785,17 @@
           "type": "boolean"
         },
         "alignment": {
-          "description": "Paragraph text alignment (left, right, center, justified, etc.)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/alignment"
         },
         "author": {
           "description": "Name of the author who made the change",
           "type": "string"
         },
         "autoSpaceDE": {
-          "description": "Whether to automatically add space between East Asian and Latin text",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceDE"
         },
         "autoSpaceEastAsianText": {
-          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceEastAsianText"
         },
         "bidirectional": {
           "description": "Whether to render text right-to-left for bidirectional languages",
@@ -13878,24 +12806,14 @@
           "description": "Border settings for the paragraph"
         },
         "bullet": {
-          "additionalProperties": false,
-          "description": "Bullet list configuration",
-          "properties": {
-            "level": {
-              "description": "Indentation level for the bullet (0-8)",
-              "type": "number"
-            }
-          },
-          "required": ["level"],
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/bullet"
         },
         "cnfStyle": {
           "$ref": "#/definitions/CnfConditionalOptions",
           "description": "Conditional formatting style for table rows/cells"
         },
         "contextualSpacing": {
-          "description": "Whether to ignore spacing before/after when adjacent paragraphs have the same style",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "date": {
           "$ref": "#/definitions/DateTime",
@@ -13906,33 +12824,27 @@
           "type": "number"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
           "description": "Frame properties for positioning the paragraph"
         },
         "heading": {
-          "description": "Heading level (Heading1, Heading2, etc.) - applies predefined heading style",
-          "enum": ["Heading1", "Heading2", "Heading3", "Heading4", "Heading5", "Heading6", "Title"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphOptions/properties/heading"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "indent": {
           "$ref": "#/definitions/IndentProperties",
           "description": "Indentation settings for the paragraph"
         },
         "keepLines": {
-          "description": "Specifies that all lines of the paragraph are to be kept on a single page when possible.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepLines"
         },
         "keepNext": {
-          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepNext"
         },
         "kinsoku": {
           "description": "Whether to use Kinsoku forbidden character overflow rules",
@@ -13943,140 +12855,10 @@
           "type": "number"
         },
         "mirrorIndents": {
-          "description": "Whether to swap left and right indent positions on odd pages for mirrored layouts",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/mirrorIndents"
         },
         "numbering": {
-          "anyOf": [
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "none": {
-                  "const": true,
-                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["none"],
-              "title": "none",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "autoStyle": {
-                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
-                  "type": "boolean"
-                },
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "instance": {
-                  "description": "Instance number for multiple lists with same reference",
-                  "type": "number"
-                },
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
-                  "type": "number"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "description": "Author of the change",
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime",
-                      "description": "Date of the change"
-                    },
-                    "id": {
-                      "description": "Revision ID",
-                      "type": "string"
-                    },
-                    "original": {
-                      "description": "Original numbering value",
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "reference": {
-                  "description": "Reference ID of the numbering definition to use",
-                  "type": "string"
-                }
-              },
-              "required": ["reference"],
-              "title": "reference",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "levelOnly": {
-                  "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
-                  "type": "boolean"
-                }
-              },
-              "required": ["levelOnly"],
-              "title": "levelOnly",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "original": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "revisionOnly": {
-                  "const": true,
-                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["revisionOnly"],
-              "title": "revisionOnly",
-              "type": "object"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Numbering configuration for lists, or false to remove numbering"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/numbering"
         },
         "outlineLevel": {
           "description": "Outline level for table of contents and document outline (0-9)",
@@ -14127,38 +12909,26 @@
           "type": "boolean"
         },
         "tabStops": {
-          "description": "Custom tab stop positions and alignments",
-          "items": {
-            "$ref": "#/definitions/TabStopDefinition"
-          },
-          "type": "array"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/tabStops"
         },
         "textAlignment": {
-          "description": "Vertical text alignment within the paragraph",
-          "enum": ["top", "center", "baseline", "bottom", "auto"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textAlignment"
         },
         "textDirection": {
-          "description": "Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV)",
-          "enum": ["lr", "rl", "tb", "tbV", "rlV", "lrV"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textDirection"
         },
         "textboxTightWrap": {
-          "description": "Textbox tight wrap setting",
-          "enum": ["none", "allLines", "firstAndLastLine", "firstLineOnly", "lastLineOnly"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textboxTightWrap"
         },
         "thematicBreak": {
-          "description": "Whether to display a horizontal line (thematic break) below the paragraph",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/thematicBreak"
         },
         "topLinePunct": {
           "description": "Whether to compress punctuation at the start of a line",
           "type": "boolean"
         },
         "widowControl": {
-          "description": "Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/widowControl"
         },
         "wordWrap": {
           "description": "Whether to allow word wrapping",
@@ -14809,30 +13579,13 @@
           "type": "boolean"
         },
         "alignment": {
-          "description": "Paragraph text alignment (left, right, center, justified, etc.)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/alignment"
         },
         "autoSpaceDE": {
-          "description": "Whether to automatically add space between East Asian and Latin text",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceDE"
         },
         "autoSpaceEastAsianText": {
-          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/autoSpaceEastAsianText"
         },
         "bidirectional": {
           "description": "Whether to render text right-to-left for bidirectional languages",
@@ -14847,16 +13600,14 @@
           "description": "Conditional formatting style for table rows/cells"
         },
         "contextualSpacing": {
-          "description": "Whether to ignore spacing before/after when adjacent paragraphs have the same style",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
           "$ref": "#/definitions/FrameOptions",
@@ -14872,12 +13623,10 @@
           "description": "Indentation settings for the paragraph"
         },
         "keepLines": {
-          "description": "Specifies that all lines of the paragraph are to be kept on a single page when possible.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepLines"
         },
         "keepNext": {
-          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/keepNext"
         },
         "kinsoku": {
           "description": "Whether to use Kinsoku forbidden character overflow rules",
@@ -14888,140 +13637,10 @@
           "type": "number"
         },
         "mirrorIndents": {
-          "description": "Whether to swap left and right indent positions on odd pages for mirrored layouts",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/mirrorIndents"
         },
         "numbering": {
-          "anyOf": [
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "none": {
-                  "const": true,
-                  "description": "numId=0 with a pinned level: cancels the numbering inherited from the style chain while keeping w:ilvl (false covers the level-less form — a bare `<w:numId w:val=\"0\"/>`).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["none"],
-              "title": "none",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "autoStyle": {
-                  "description": "Whether the ListParagraph style is auto-applied (default true). Set false when the paragraph style is authored explicitly (e.g. round-tripped documents whose styles.xml may not define it).",
-                  "type": "boolean"
-                },
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "instance": {
-                  "description": "Instance number for multiple lists with same reference",
-                  "type": "number"
-                },
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8). Omitted when the source w:numPr carried only w:numId (no w:ilvl) — the element then inherits the level instead of pinning one.",
-                  "type": "number"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "description": "Author of the change",
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime",
-                      "description": "Date of the change"
-                    },
-                    "id": {
-                      "description": "Revision ID",
-                      "type": "string"
-                    },
-                    "original": {
-                      "description": "Original numbering value",
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "reference": {
-                  "description": "Reference ID of the numbering definition to use",
-                  "type": "string"
-                }
-              },
-              "required": ["reference"],
-              "title": "reference",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "level": {
-                  "description": "Level in the numbering hierarchy (0-8).",
-                  "type": "number"
-                },
-                "levelOnly": {
-                  "const": true,
-                  "description": "Level-only numPr: the source carried w:ilvl with no w:numId — the numbering definition inherits from the style chain while this element overrides the level. Emits `<w:numPr>` with only the w:ilvl.",
-                  "type": "boolean"
-                }
-              },
-              "required": ["levelOnly"],
-              "title": "levelOnly",
-              "type": "object"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "insertion": {
-                  "$ref": "#/definitions/NumberingInsertionOptions",
-                  "description": "Numbering applied as a revision (w:numPr/w:ins)"
-                },
-                "numberingChange": {
-                  "additionalProperties": false,
-                  "description": "Numbering change tracking",
-                  "properties": {
-                    "author": {
-                      "type": "string"
-                    },
-                    "date": {
-                      "$ref": "#/definitions/DateTime"
-                    },
-                    "id": {
-                      "type": "string"
-                    },
-                    "original": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["original", "id", "author"],
-                  "type": "object"
-                },
-                "revisionOnly": {
-                  "const": true,
-                  "description": "Track-change-only numPr: the source carried no w:numId — the whole numbering property set is a tracked insertion whose numbering resolves through the style chain. Emits `<w:numPr>` with only the revision markers (no w:ilvl/w:numId).",
-                  "type": "boolean"
-                }
-              },
-              "required": ["revisionOnly"],
-              "title": "revisionOnly",
-              "type": "object"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Numbering configuration for lists, or false to remove numbering"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/numbering"
         },
         "outlineLevel": {
           "description": "Outline level for table of contents and document outline (0-9)",
@@ -15068,38 +13687,26 @@
           "type": "boolean"
         },
         "tabStops": {
-          "description": "Custom tab stop positions and alignments",
-          "items": {
-            "$ref": "#/definitions/TabStopDefinition"
-          },
-          "type": "array"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/tabStops"
         },
         "textAlignment": {
-          "description": "Vertical text alignment within the paragraph",
-          "enum": ["top", "center", "baseline", "bottom", "auto"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textAlignment"
         },
         "textDirection": {
-          "description": "Text direction for the paragraph (lr, rl, tb, tbV, rlV, lrV)",
-          "enum": ["lr", "rl", "tb", "tbV", "rlV", "lrV"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textDirection"
         },
         "textboxTightWrap": {
-          "description": "Textbox tight wrap setting",
-          "enum": ["none", "allLines", "firstAndLastLine", "firstLineOnly", "lastLineOnly"],
-          "type": "string"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textboxTightWrap"
         },
         "thematicBreak": {
-          "description": "Whether to display a horizontal line (thematic break) below the paragraph",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/thematicBreak"
         },
         "topLinePunct": {
           "description": "Whether to compress punctuation at the start of a line",
           "type": "boolean"
         },
         "widowControl": {
-          "description": "Whether to prevent single lines at top/bottom of page (widow/orphan control), defaults to true",
-          "type": "boolean"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/widowControl"
         },
         "wordWrap": {
           "description": "Whether to allow word wrapping",
@@ -15586,8 +14193,7 @@
                   "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
                 },
                 "fileName": {
-                  "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
-                  "type": "string"
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/fileName"
                 },
                 "type": {
                   "enum": ["jpg", "png", "gif", "bmp", "tif", "ico", "emf", "wmf"],
@@ -15608,19 +14214,10 @@
               "$ref": "#/definitions/Floating"
             },
             "graphicFrameLocks": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/GraphicFrameLocksOptions"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
             },
             "lastRenderedPageBreak": {
-              "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
-              "type": "boolean"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/lastRenderedPageBreak"
             },
             "nonVisualProperties": {
               "$ref": "#/definitions/NonVisualPropertiesOptions",
@@ -16216,15 +14813,7 @@
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "preset": {
           "$ref": "#/definitions/PresetShadow",
@@ -16368,30 +14957,14 @@
           "type": "string"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "direction": {
           "description": "Direction angle in degrees (0–360).",
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "endAlpha": {
           "description": "End opacity as integer percent",
@@ -16708,260 +15281,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
-          "items": {
-            "anyOf": [
-              {
-                "const": "CURRENT",
-                "type": "string"
-              },
-              {
-                "const": "TOTAL_PAGES",
-                "type": "string"
-              },
-              {
-                "const": "TOTAL_PAGES_IN_SECTION",
-                "type": "string"
-              },
-              {
-                "const": "SECTION",
-                "type": "string"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "tab": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["tab"],
-                "title": "tab",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "noBreakHyphen": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["noBreakHyphen"],
-                "title": "noBreakHyphen",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "softHyphen": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["softHyphen"],
-                "title": "softHyphen",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "dayShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["dayShort"],
-                "title": "dayShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "monthShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["monthShort"],
-                "title": "monthShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "yearShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["yearShort"],
-                "title": "yearShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "dayLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["dayLong"],
-                "title": "dayLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "monthLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["monthLong"],
-                "title": "monthLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "yearLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["yearLong"],
-                "title": "yearLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "annotationRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["annotationRef"],
-                "title": "annotationRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "footnoteRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["footnoteRef"],
-                "title": "footnoteRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "endnoteRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["endnoteRef"],
-                "title": "endnoteRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "separator": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["separator"],
-                "title": "separator",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "continuationSeparator": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["continuationSeparator"],
-                "title": "continuationSeparator",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "pgNum": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["pgNum"],
-                "title": "pgNum",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "carriageReturn": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["carriageReturn"],
-                "title": "carriageReturn",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "lastRenderedPageBreak": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["lastRenderedPageBreak"],
-                "title": "lastRenderedPageBreak",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "object": {
-                    "$ref": "#/definitions/ObjectElementOptions"
-                  }
-                },
-                "required": ["object"],
-                "title": "object",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "ruby": {
-                    "$ref": "#/definitions/RubyOptions"
-                  }
-                },
-                "required": ["ruby"],
-                "title": "ruby",
-                "type": "object"
-              },
-              {
-                "$ref": "#/definitions/ParagraphChild"
-              }
-            ]
-          },
-          "type": "array"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/children"
         },
         "color": {
           "anyOf": [
@@ -16991,107 +15311,31 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
-          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
-          "enum": [
-            "blinkBackground",
-            "lights",
-            "antsBlack",
-            "antsRed",
-            "shimmer",
-            "sparkle",
-            "none"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/effect"
         },
         "emboss": {
           "type": "boolean"
         },
         "emphasisMark": {
-          "additionalProperties": false,
-          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
-          "properties": {
-            "type": {
-              "enum": ["none", "comma", "circle", "dot", "underDot"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emphasisMark"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
         "endnoteReference": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
-            }
-          ],
-          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/endnoteReference"
         },
         "fitText": {
           "type": "number"
         },
         "font": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "hint": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"],
-              "title": "name",
-              "type": "object"
-            },
-            {
-              "$ref": "#/definitions/FontProperties"
-            }
-          ]
+          "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
         "footnoteReference": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
-            }
-          ],
-          "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
         "highlight": {
-          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
-          "enum": [
-            "black",
-            "blue",
-            "cyan",
-            "darkBlue",
-            "darkCyan",
-            "darkGray",
-            "darkGreen",
-            "darkMagenta",
-            "darkRed",
-            "darkYellow",
-            "green",
-            "lightGray",
-            "magenta",
-            "none",
-            "red",
-            "white",
-            "yellow"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
         "imprint": {
           "type": "boolean"
@@ -17103,15 +15347,7 @@
           "type": "boolean"
         },
         "kern": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Kerning threshold in points (w:kern, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -17126,15 +15362,7 @@
           "type": "boolean"
         },
         "position": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -17156,12 +15384,10 @@
           "type": "boolean"
         },
         "size": {
-          "description": "Font size in points. Internally stored as half-points in XML (×2).",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/size"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/sizeComplexScript"
         },
         "smallCaps": {
           "type": "boolean"
@@ -17183,49 +15409,16 @@
           "type": "string"
         },
         "underline": {
-          "additionalProperties": false,
-          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/HexColorOrAuto"
-            },
-            "type": {
-              "enum": [
-                "single",
-                "words",
-                "double",
-                "thick",
-                "dotted",
-                "dottedHeavy",
-                "dash",
-                "dashedHeavy",
-                "dashLong",
-                "dashLongHeavy",
-                "dotDash",
-                "dashDotHeavy",
-                "dotDotDash",
-                "dashDotDotHeavy",
-                "wave",
-                "wavyHeavy",
-                "wavyDouble",
-                "none"
-              ],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
         },
         "vanish": {
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
-          "enum": ["baseline", "subscript", "superscript"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/verticalAlign"
         },
         "w14RawXml": {
-          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/w14RawXml"
         },
         "webHidden": {
           "type": "boolean"
@@ -17291,85 +15484,25 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
-          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
-          "enum": [
-            "blinkBackground",
-            "lights",
-            "antsBlack",
-            "antsRed",
-            "shimmer",
-            "sparkle",
-            "none"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/effect"
         },
         "emboss": {
           "type": "boolean"
         },
         "emphasisMark": {
-          "additionalProperties": false,
-          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
-          "properties": {
-            "type": {
-              "enum": ["none", "comma", "circle", "dot", "underDot"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emphasisMark"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
         "fitText": {
           "type": "number"
         },
         "font": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "hint": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"],
-              "title": "name",
-              "type": "object"
-            },
-            {
-              "$ref": "#/definitions/FontProperties"
-            }
-          ]
+          "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
         "highlight": {
-          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
-          "enum": [
-            "black",
-            "blue",
-            "cyan",
-            "darkBlue",
-            "darkCyan",
-            "darkGray",
-            "darkGreen",
-            "darkMagenta",
-            "darkRed",
-            "darkYellow",
-            "green",
-            "lightGray",
-            "magenta",
-            "none",
-            "red",
-            "white",
-            "yellow"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
         "id": {
           "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
@@ -17385,15 +15518,7 @@
           "type": "boolean"
         },
         "kern": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Kerning threshold in points (w:kern, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -17408,15 +15533,7 @@
           "type": "boolean"
         },
         "position": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -17434,12 +15551,10 @@
           "type": "boolean"
         },
         "size": {
-          "description": "Font size in points. Internally stored as half-points in XML (×2).",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/size"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/sizeComplexScript"
         },
         "smallCaps": {
           "type": "boolean"
@@ -17458,49 +15573,16 @@
           "type": "string"
         },
         "underline": {
-          "additionalProperties": false,
-          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/HexColorOrAuto"
-            },
-            "type": {
-              "enum": [
-                "single",
-                "words",
-                "double",
-                "thick",
-                "dotted",
-                "dottedHeavy",
-                "dash",
-                "dashedHeavy",
-                "dashLong",
-                "dashLongHeavy",
-                "dotDash",
-                "dashDotHeavy",
-                "dotDotDash",
-                "dashDotDotHeavy",
-                "wave",
-                "wavyHeavy",
-                "wavyDouble",
-                "none"
-              ],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
         },
         "vanish": {
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
-          "enum": ["baseline", "subscript", "superscript"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/verticalAlign"
         },
         "w14RawXml": {
-          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/w14RawXml"
         },
         "webHidden": {
           "type": "boolean"
@@ -17559,85 +15641,25 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
-          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
-          "enum": [
-            "blinkBackground",
-            "lights",
-            "antsBlack",
-            "antsRed",
-            "shimmer",
-            "sparkle",
-            "none"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/effect"
         },
         "emboss": {
           "type": "boolean"
         },
         "emphasisMark": {
-          "additionalProperties": false,
-          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
-          "properties": {
-            "type": {
-              "enum": ["none", "comma", "circle", "dot", "underDot"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emphasisMark"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
         "fitText": {
           "type": "number"
         },
         "font": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "hint": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"],
-              "title": "name",
-              "type": "object"
-            },
-            {
-              "$ref": "#/definitions/FontProperties"
-            }
-          ]
+          "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
         "highlight": {
-          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
-          "enum": [
-            "black",
-            "blue",
-            "cyan",
-            "darkBlue",
-            "darkCyan",
-            "darkGray",
-            "darkGreen",
-            "darkMagenta",
-            "darkRed",
-            "darkYellow",
-            "green",
-            "lightGray",
-            "magenta",
-            "none",
-            "red",
-            "white",
-            "yellow"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
         "imprint": {
           "type": "boolean"
@@ -17649,15 +15671,7 @@
           "type": "boolean"
         },
         "kern": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Kerning threshold in points (w:kern, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -17672,15 +15686,7 @@
           "type": "boolean"
         },
         "position": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -17698,12 +15704,10 @@
           "type": "boolean"
         },
         "size": {
-          "description": "Font size in points. Internally stored as half-points in XML (×2).",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/size"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/sizeComplexScript"
         },
         "smallCaps": {
           "type": "boolean"
@@ -17722,49 +15726,16 @@
           "type": "string"
         },
         "underline": {
-          "additionalProperties": false,
-          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/HexColorOrAuto"
-            },
-            "type": {
-              "enum": [
-                "single",
-                "words",
-                "double",
-                "thick",
-                "dotted",
-                "dottedHeavy",
-                "dash",
-                "dashedHeavy",
-                "dashLong",
-                "dashLongHeavy",
-                "dotDash",
-                "dashDotHeavy",
-                "dotDotDash",
-                "dashDotDotHeavy",
-                "wave",
-                "wavyHeavy",
-                "wavyDouble",
-                "none"
-              ],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
         },
         "vanish": {
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
-          "enum": ["baseline", "subscript", "superscript"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/verticalAlign"
         },
         "w14RawXml": {
-          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/w14RawXml"
         },
         "webHidden": {
           "type": "boolean"
@@ -17822,85 +15793,25 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
-          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
-          "enum": [
-            "blinkBackground",
-            "lights",
-            "antsBlack",
-            "antsRed",
-            "shimmer",
-            "sparkle",
-            "none"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/effect"
         },
         "emboss": {
           "type": "boolean"
         },
         "emphasisMark": {
-          "additionalProperties": false,
-          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
-          "properties": {
-            "type": {
-              "enum": ["none", "comma", "circle", "dot", "underDot"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emphasisMark"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
         "fitText": {
           "type": "number"
         },
         "font": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "hint": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"],
-              "title": "name",
-              "type": "object"
-            },
-            {
-              "$ref": "#/definitions/FontProperties"
-            }
-          ]
+          "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
         "highlight": {
-          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
-          "enum": [
-            "black",
-            "blue",
-            "cyan",
-            "darkBlue",
-            "darkCyan",
-            "darkGray",
-            "darkGreen",
-            "darkMagenta",
-            "darkRed",
-            "darkYellow",
-            "green",
-            "lightGray",
-            "magenta",
-            "none",
-            "red",
-            "white",
-            "yellow"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
         "imprint": {
           "type": "boolean"
@@ -17912,15 +15823,7 @@
           "type": "boolean"
         },
         "kern": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Kerning threshold in points (w:kern, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
         },
         "language": {
           "$ref": "#/definitions/LanguageOptions"
@@ -17935,15 +15838,7 @@
           "type": "boolean"
         },
         "position": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -17961,12 +15856,10 @@
           "type": "boolean"
         },
         "size": {
-          "description": "Font size in points. Internally stored as half-points in XML (×2).",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/size"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/sizeComplexScript"
         },
         "smallCaps": {
           "type": "boolean"
@@ -17981,49 +15874,16 @@
           "type": "boolean"
         },
         "underline": {
-          "additionalProperties": false,
-          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/HexColorOrAuto"
-            },
-            "type": {
-              "enum": [
-                "single",
-                "words",
-                "double",
-                "thick",
-                "dotted",
-                "dottedHeavy",
-                "dash",
-                "dashedHeavy",
-                "dashLong",
-                "dashLongHeavy",
-                "dotDash",
-                "dashDotHeavy",
-                "dotDotDash",
-                "dashDotDotHeavy",
-                "wave",
-                "wavyHeavy",
-                "wavyDouble",
-                "none"
-              ],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
         },
         "vanish": {
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
-          "enum": ["baseline", "subscript", "superscript"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/verticalAlign"
         },
         "w14RawXml": {
-          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/w14RawXml"
         },
         "webHidden": {
           "type": "boolean"
@@ -18081,11 +15941,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -18095,20 +15951,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -18119,16 +15972,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -18157,8 +16007,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -18675,8 +16524,7 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/ChartOptions/properties/upDownBarsGapWidth"
         },
         "varyColors": {
           "description": "Vary data-point colors (group-level c:varyColors).",
@@ -19640,20 +17488,10 @@
           "type": "boolean"
         },
         "grid": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/DocGridProperties"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Document grid. Omitted = fresh generation emits Word's CJK default line grid (linePitch 312, type \"lines\"); a DocGridProperties object emits the provided values; false = explicit off (emit nothing)."
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/grid"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "lineNumberType": {
           "$ref": "#/definitions/LineNumberProperties"
@@ -19666,44 +17504,17 @@
           "description": "Page borders (w:pgBorders)."
         },
         "pageMargin": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PageMarginProperties"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Page margins in twips (w:pgMar). Three states: omitted (fresh generation defaults to Word's standard margins); a PageMarginProperties object; or false (a parsed source with no w:pgMar is preserved by emitting nothing)."
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/pageMargin"
         },
         "pageNumberType": {
           "$ref": "#/definitions/PageNumberTypeProperties",
           "description": "Page numbering (w:pgNumType)."
         },
         "pageSize": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PageSizeProperties"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ],
-          "description": "Page size (w:pgSz). Three states: omitted (fresh generation defaults to A4 portrait); a PageSizeProperties object (emits provided values); or false (a parsed source with no w:pgSz is preserved by emitting nothing)."
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/pageSize"
         },
         "paperSrc": {
-          "additionalProperties": false,
-          "properties": {
-            "first": {
-              "type": "number"
-            },
-            "other": {
-              "type": "number"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/paperSrc"
         },
         "rtlGutter": {
           "type": "boolean"
@@ -19715,17 +17526,13 @@
           "$ref": "#/definitions/LongHexNumber"
         },
         "textDirection": {
-          "description": "Section text flow direction (w:textDirection).",
-          "enum": ["lrTb", "tbRl"],
-          "type": "string"
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/textDirection"
         },
         "titlePage": {
           "type": "boolean"
         },
         "type": {
-          "description": "Section-break placement: \"nextPage\"/\"nextColumn\" start there, \"continuous\" flows on, \"evenPage\"/\"oddPage\" next even/odd page.",
-          "enum": ["nextPage", "nextColumn", "continuous", "evenPage", "oddPage"],
-          "type": "string"
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/type"
         },
         "verticalAlign": {
           "$ref": "#/definitions/SectionVerticalAlign"
@@ -20631,11 +18438,7 @@
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
         "children": {
-          "description": "Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep their established shorthand; wrapped paragraphs and other block elements use SectionChild variants.",
-          "items": {
-            "$ref": "#/definitions/ShapeTextBoxChild"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ShapeOptions/properties/children"
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
@@ -20647,37 +18450,19 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "extensions": {
-          "description": "Shape-property extensions (wps:spPr/a:extLst/a:ext).",
-          "items": {
-            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ShapeOptions/properties/extensions"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
         "linkedTextBox": {
-          "additionalProperties": false,
-          "description": "Linked text box chain (wps:linkedTxbx) — the shape's text lives in the linked part instead of inline w:txbxContent. XSD choice: exclusive with inline text content.",
-          "properties": {
-            "id": {
-              "description": "Chain id shared by all boxes in the link (`@id`, required).",
-              "type": "number"
-            },
-            "sequence": {
-              "description": "Position of this box in the chain (`@seq`, required).",
-              "type": "number"
-            }
-          },
-          "required": ["id", "sequence"],
-          "type": "object"
+          "$ref": "#/definitions/ShapeOptions/properties/linkedTextBox"
         },
         "nonVisualProperties": {
           "$ref": "#/definitions/NonVisualShapePropertiesOptions"
         },
         "normalEastAsianFlow": {
-          "description": "East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false).",
-          "type": "boolean"
+          "$ref": "#/definitions/ShapeOptions/properties/normalEastAsianFlow"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
@@ -20808,19 +18593,10 @@
           "$ref": "#/definitions/Floating"
         },
         "graphicFrameLocks": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLocksOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Graphic frame locks (wp:cNvGraphicFramePr) for round-trip."
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
         },
         "lastRenderedPageBreak": {
-          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing.",
-          "type": "boolean"
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/lastRenderedPageBreak"
         },
         "linkedTextBox": {
           "additionalProperties": false,
@@ -21762,18 +19538,10 @@
       "description": "dgm:styleDef — the quickStyle part root.",
       "properties": {
         "categories": {
-          "description": "Gallery categories (dgm:catLst).",
-          "items": {
-            "$ref": "#/definitions/DiagramCategoryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/categories"
         },
         "descriptions": {
-          "description": "Localized descriptions (dgm:desc*).",
-          "items": {
-            "$ref": "#/definitions/DiagramDescriptionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
         "ext": {
           "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
@@ -21795,11 +19563,7 @@
           "type": "array"
         },
         "titles": {
-          "description": "Localized titles (dgm:title*).",
-          "items": {
-            "$ref": "#/definitions/DiagramNameOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/titles"
         },
         "uniqueId": {
           "description": "Style identity URI (dgm:styleDef `@uniqueId`).",
@@ -22151,260 +19915,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
-          "items": {
-            "anyOf": [
-              {
-                "const": "CURRENT",
-                "type": "string"
-              },
-              {
-                "const": "TOTAL_PAGES",
-                "type": "string"
-              },
-              {
-                "const": "TOTAL_PAGES_IN_SECTION",
-                "type": "string"
-              },
-              {
-                "const": "SECTION",
-                "type": "string"
-              },
-              {
-                "type": "string"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "tab": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["tab"],
-                "title": "tab",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "noBreakHyphen": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["noBreakHyphen"],
-                "title": "noBreakHyphen",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "softHyphen": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["softHyphen"],
-                "title": "softHyphen",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "dayShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["dayShort"],
-                "title": "dayShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "monthShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["monthShort"],
-                "title": "monthShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "yearShort": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["yearShort"],
-                "title": "yearShort",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "dayLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["dayLong"],
-                "title": "dayLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "monthLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["monthLong"],
-                "title": "monthLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "yearLong": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["yearLong"],
-                "title": "yearLong",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "annotationRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["annotationRef"],
-                "title": "annotationRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "footnoteRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["footnoteRef"],
-                "title": "footnoteRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "endnoteRef": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["endnoteRef"],
-                "title": "endnoteRef",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "separator": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["separator"],
-                "title": "separator",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "continuationSeparator": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["continuationSeparator"],
-                "title": "continuationSeparator",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "pgNum": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["pgNum"],
-                "title": "pgNum",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "carriageReturn": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["carriageReturn"],
-                "title": "carriageReturn",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "lastRenderedPageBreak": {
-                    "const": true,
-                    "type": "boolean"
-                  }
-                },
-                "required": ["lastRenderedPageBreak"],
-                "title": "lastRenderedPageBreak",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "object": {
-                    "$ref": "#/definitions/ObjectElementOptions"
-                  }
-                },
-                "required": ["object"],
-                "title": "object",
-                "type": "object"
-              },
-              {
-                "additionalProperties": false,
-                "properties": {
-                  "ruby": {
-                    "$ref": "#/definitions/RubyOptions"
-                  }
-                },
-                "required": ["ruby"],
-                "title": "ruby",
-                "type": "object"
-              },
-              {
-                "$ref": "#/definitions/ParagraphChild"
-              }
-            ]
-          },
-          "type": "array"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/children"
         },
         "color": {
           "anyOf": [
@@ -22434,107 +19945,31 @@
           "$ref": "#/definitions/EastAsianLayoutOptions"
         },
         "effect": {
-          "description": "Animated text effect: \"antsBlack\"/\"antsRed\" marching ants, \"blinkBackground\" flashing background, \"shimmer\"/\"sparkle\", \"lights\", \"none\".",
-          "enum": [
-            "blinkBackground",
-            "lights",
-            "antsBlack",
-            "antsRed",
-            "shimmer",
-            "sparkle",
-            "none"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/effect"
         },
         "emboss": {
           "type": "boolean"
         },
         "emphasisMark": {
-          "additionalProperties": false,
-          "description": "Emphasis mark glyph above/below the run: comma, circle, dot, underDot.",
-          "properties": {
-            "type": {
-              "enum": ["none", "comma", "circle", "dot", "underDot"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emphasisMark"
         },
         "emptyProperties": {
-          "description": "The source carried a bare `<w:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
-          "type": "boolean"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/emptyProperties"
         },
         "endnoteReference": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
-            }
-          ],
-          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/endnoteReference"
         },
         "fitText": {
           "type": "number"
         },
         "font": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "additionalProperties": false,
-              "properties": {
-                "hint": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                }
-              },
-              "required": ["name"],
-              "title": "name",
-              "type": "object"
-            },
-            {
-              "$ref": "#/definitions/FontProperties"
-            }
-          ]
+          "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
         "footnoteReference": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
-            }
-          ],
-          "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
         "highlight": {
-          "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
-          "enum": [
-            "black",
-            "blue",
-            "cyan",
-            "darkBlue",
-            "darkCyan",
-            "darkGray",
-            "darkGreen",
-            "darkMagenta",
-            "darkRed",
-            "darkYellow",
-            "green",
-            "lightGray",
-            "magenta",
-            "none",
-            "red",
-            "white",
-            "yellow"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
         "imprint": {
           "type": "boolean"
@@ -22546,15 +19981,7 @@
           "type": "boolean"
         },
         "kern": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Kerning threshold in points (w:kern, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
         },
         "kind": {
           "description": "Symbol element vocabulary; omitted emits the standard w:sym element.",
@@ -22574,15 +20001,7 @@
           "type": "boolean"
         },
         "position": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Raised/lowered text position in points (w:position, half-points in XML)."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -22604,12 +20023,10 @@
           "type": "boolean"
         },
         "size": {
-          "description": "Font size in points. Internally stored as half-points in XML (×2).",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/size"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
-          "type": "number"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/sizeComplexScript"
         },
         "smallCaps": {
           "type": "boolean"
@@ -22635,49 +20052,16 @@
           "type": "string"
         },
         "underline": {
-          "additionalProperties": false,
-          "description": "Underline: \"words\" underlines words only, \"dashLong\"/\"dashLongHeavy\" long dashes, \"*Heavy\" variants thicken the pattern.",
-          "properties": {
-            "color": {
-              "$ref": "#/definitions/HexColorOrAuto"
-            },
-            "type": {
-              "enum": [
-                "single",
-                "words",
-                "double",
-                "thick",
-                "dotted",
-                "dottedHeavy",
-                "dash",
-                "dashedHeavy",
-                "dashLong",
-                "dashLongHeavy",
-                "dotDash",
-                "dashDotHeavy",
-                "dotDotDash",
-                "dashDotDotHeavy",
-                "wave",
-                "wavyHeavy",
-                "wavyDouble",
-                "none"
-              ],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
         },
         "vanish": {
           "type": "boolean"
         },
         "verticalAlign": {
-          "description": "Vertical alignment of the run (w:vertAlign). \"baseline\" explicitly clears an inherited subscript/superscript — it is only meaningful in style chains, but round-trips verbatim.",
-          "enum": ["baseline", "subscript", "superscript"],
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/verticalAlign"
         },
         "w14RawXml": {
-          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
-          "type": "string"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/w14RawXml"
         },
         "webHidden": {
           "type": "boolean"
@@ -23022,11 +20406,7 @@
           "type": "boolean"
         },
         "headers": {
-          "description": "Header cells associated with this cell (headers)",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/TableCellOptions/properties/headers"
         },
         "hideMark": {
           "description": "Whether the cell end mark is hidden (hideMark)",
@@ -23038,8 +20418,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "insertion": {
           "$ref": "#/definitions/ChangedProperties"
@@ -23109,11 +20488,7 @@
           "type": "boolean"
         },
         "headers": {
-          "description": "Header cells associated with this cell (headers)",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/TableCellOptions/properties/headers"
         },
         "hideMark": {
           "description": "Whether the cell end mark is hidden (hideMark)",
@@ -23474,16 +20849,13 @@
           "$ref": "#/definitions/TableFloatOptions"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "indent": {
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
-          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
-          "enum": ["autofit", "fixed"],
-          "type": "string"
+          "$ref": "#/definitions/TableOptions/properties/layout"
         },
         "margins": {
           "$ref": "#/definitions/TableCellMarginOptions"
@@ -23547,9 +20919,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
-          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
-          "enum": ["autofit", "fixed"],
-          "type": "string"
+          "$ref": "#/definitions/TableOptions/properties/layout"
         },
         "margins": {
           "$ref": "#/definitions/TableCellMarginOptions"
@@ -23564,8 +20934,7 @@
           "type": "string"
         },
         "styleColBandSize": {
-          "description": "Number of columns in each band for table style (tblStyleColBandSize)",
-          "type": "number"
+          "$ref": "#/definitions/TablePropertiesChangeOptions/properties/styleColBandSize"
         },
         "styleRowBandSize": {
           "description": "Number of rows in each band for table style (tblStyleRowBandSize)",
@@ -23595,8 +20964,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         }
       },
       "required": ["author", "date"],
@@ -23620,9 +20988,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         },
         "layout": {
-          "description": "Column sizing: \"autofit\" let content resize columns, \"fixed\" honor column widths.",
-          "enum": ["autofit", "fixed"],
-          "type": "string"
+          "$ref": "#/definitions/TableOptions/properties/layout"
         },
         "margins": {
           "$ref": "#/definitions/TableCellMarginOptions"
@@ -23881,58 +21247,20 @@
           "type": "number"
         },
         "height": {
-          "additionalProperties": false,
-          "description": "Row height configuration (trHeight)",
-          "properties": {
-            "rule": {
-              "description": "Height rule determining how the height value is applied",
-              "enum": ["auto", "atLeast", "exact"],
-              "type": "string"
-            },
-            "value": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/PositiveUniversalMeasure"
-                }
-              ],
-              "description": "Height value in twips or as a PositiveUniversalMeasure"
-            }
-          },
-          "required": ["value"],
-          "type": "object"
+          "$ref": "#/definitions/TableRowOptions/properties/height"
         },
         "hidden": {
           "description": "Whether the row is hidden (hidden)",
           "type": "boolean"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-          "type": "number"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         },
         "rowAlignment": {
-          "description": "Row alignment (jc)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableRowOptions/properties/rowAlignment"
         },
         "tableHeader": {
-          "description": "Whether the row should be repeated as a header row on each page (tblHeader)",
-          "type": "boolean"
+          "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
         },
         "widthAfter": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -23978,28 +21306,7 @@
           "type": "number"
         },
         "height": {
-          "additionalProperties": false,
-          "description": "Row height configuration (trHeight)",
-          "properties": {
-            "rule": {
-              "description": "Height rule determining how the height value is applied",
-              "enum": ["auto", "atLeast", "exact"],
-              "type": "string"
-            },
-            "value": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/PositiveUniversalMeasure"
-                }
-              ],
-              "description": "Height value in twips or as a PositiveUniversalMeasure"
-            }
-          },
-          "required": ["value"],
-          "type": "object"
+          "$ref": "#/definitions/TableRowOptions/properties/height"
         },
         "hidden": {
           "description": "Whether the row is hidden (hidden)",
@@ -24012,26 +21319,10 @@
           "$ref": "#/definitions/TableRowPropertiesChangeOptions"
         },
         "rowAlignment": {
-          "description": "Row alignment (jc)",
-          "enum": [
-            "start",
-            "center",
-            "end",
-            "both",
-            "mediumKashida",
-            "distribute",
-            "numericTab",
-            "highKashida",
-            "lowKashida",
-            "thaiDistribute",
-            "left",
-            "right"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/TableRowOptions/properties/rowAlignment"
         },
         "tableHeader": {
-          "description": "Whether the row should be repeated as a header row on each page (tblHeader)",
-          "type": "boolean"
+          "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
         },
         "widthAfter": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -24744,8 +22035,7 @@
           "type": "string"
         },
         "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/baseline"
         },
         "bold": {
           "type": "boolean"
@@ -24804,35 +22094,16 @@
           "type": "boolean"
         },
         "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/outline"
         },
         "rightToLeft": {
           "type": "boolean"
         },
         "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/shadow"
         },
         "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/size"
         },
         "smartTagId": {
           "description": "`@smtId` — smart tag id.",
@@ -24856,28 +22127,10 @@
           "$ref": "#/definitions/UnderlineStyle"
         },
         "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineFill"
         },
         "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineLine"
         }
       },
       "type": "object"
@@ -25235,29 +22488,7 @@
           "additionalProperties": false,
           "properties": {
             "insertion": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "description": "Name of the author who made the change",
-                  "type": "string"
-                },
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/TrackChangeChild"
-                  },
-                  "type": "array"
-                },
-                "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
-                },
-                "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
-                }
-              },
-              "required": ["author", "children", "date"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
             }
           },
           "required": ["insertion"],
@@ -25268,29 +22499,7 @@
           "additionalProperties": false,
           "properties": {
             "deletion": {
-              "additionalProperties": false,
-              "properties": {
-                "author": {
-                  "description": "Name of the author who made the change",
-                  "type": "string"
-                },
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/TrackChangeChild"
-                  },
-                  "type": "array"
-                },
-                "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
-                },
-                "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
-                  "type": "number"
-                }
-              },
-              "required": ["author", "children", "date"],
-              "type": "object"
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
             }
           },
           "required": ["deletion"],
@@ -25732,8 +22941,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -25746,8 +22954,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -26436,8 +23643,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -26450,8 +23656,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -27037,8 +24242,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -27051,8 +24255,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -27489,8 +24692,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -27503,8 +24705,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -27778,8 +24979,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -27792,8 +24992,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -28107,8 +25306,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -28121,8 +25319,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -28423,8 +25620,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -28440,8 +25636,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -28681,8 +25876,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -28695,8 +25889,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -28968,8 +26161,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -28982,8 +26174,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -29584,8 +26775,7 @@
           "type": "string"
         },
         "path": {
-          "description": "AG_Path attribute — path data overriding the referenced shapetype's geometry.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
           "$ref": "#/definitions/VmlPathOptions",
@@ -29598,8 +26788,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
-          "type": "string"
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/rawChildrenXml"
         },
         "regroupid": {
           "type": "number"
@@ -30337,8 +27526,7 @@
           "type": "string"
         },
         "relationshipId": {
-          "description": "Relationship reference; callers bridge media via the placeholder form.",
-          "type": "string"
+          "$ref": "#/definitions/VmlFillOptions/properties/relationshipId"
         },
         "rightStroke": {
           "$ref": "#/definitions/VmlStrokeChildOptions"
@@ -30763,27 +27951,21 @@
           "type": "string"
         },
         "cryptoAlgorithmClass": {
-          "description": "Cryptographic algorithm class (w:cryptAlgorithmClass, s:)",
-          "enum": ["hash", "custom"],
-          "type": "string"
+          "$ref": "#/definitions/DocumentProtectionOptions/properties/cryptoAlgorithmClass"
         },
         "cryptoAlgorithmSid": {
           "description": "Cryptographic algorithm SID",
           "type": "number"
         },
         "cryptoAlgorithmType": {
-          "description": "Cryptographic algorithm type (w:cryptAlgorithmType, s:)",
-          "enum": ["typeAny", "custom"],
-          "type": "string"
+          "$ref": "#/definitions/DocumentProtectionOptions/properties/cryptoAlgorithmType"
         },
         "cryptoProvider": {
           "description": "Cryptographic provider",
           "type": "string"
         },
         "cryptoProviderType": {
-          "description": "Cryptographic provider type (w:cryptProviderType, s:)",
-          "enum": ["rsaAES", "rsaFull", "custom"],
-          "type": "string"
+          "$ref": "#/definitions/DocumentProtectionOptions/properties/cryptoProviderType"
         },
         "cryptoProviderTypeExtension": {
           "description": "Cryptographic provider type extension",
@@ -30806,8 +27988,7 @@
           "description": "Cryptographic hash of the password"
         },
         "password": {
-          "description": "Plaintext password — automatically hashed to hashValue/saltValue when provided",
-          "type": "string"
+          "$ref": "#/definitions/DocumentProtectionOptions/properties/password"
         },
         "recommended": {
           "description": "Whether write protection is recommended (default true when options provided)",

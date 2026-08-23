@@ -4,6 +4,7 @@ import { generateToFile, parseInput } from "./generate";
 import {
   SCHEMA_ENTRIES,
   UnknownDefinitionError,
+  renderSliceTypeText,
   sliceDocumentSchema,
   validateDocumentInput,
 } from "./schemas";
@@ -122,7 +123,7 @@ const schemaIndexCommand = defineCommand({
       console.log(`  ${entry.name.padEnd(44)} ${entry.summary}`);
     }
     console.log();
-    console.log(`Slice a definition's JSON schema:`);
+    console.log(`Slice a definition's fields (--json for the raw schema):`);
     console.log(`  office-open schema slice ${format} <Definition> [more...]`);
     console.log(`List every definition name:`);
     console.log(`  office-open schema index ${format} --all`);
@@ -132,7 +133,7 @@ const schemaIndexCommand = defineCommand({
 const schemaSliceCommand = defineCommand({
   meta: {
     name: "slice",
-    description: "Print the JSON schema slice for one or more definitions",
+    description: "Print a definition slice as type definitions (--json for the raw JSON schema)",
   },
   args: {
     format: { type: "positional", description: "docx | pptx | xlsx", required: true },
@@ -141,6 +142,7 @@ const schemaSliceCommand = defineCommand({
       description: "One or more definition names (variadic)",
       required: true,
     },
+    json: { type: "boolean", description: "Emit the raw draft-07 JSON schema instead" },
   },
   run({ args }) {
     // citty does not type variadic positionals; args._ keeps every raw positional
@@ -154,7 +156,12 @@ const schemaSliceCommand = defineCommand({
       return;
     }
     try {
-      console.log(JSON.stringify(sliceDocumentSchema(format, definitions), null, 2));
+      const slice = sliceDocumentSchema(format, definitions);
+      console.log(
+        args.json
+          ? JSON.stringify(slice, null, 2)
+          : renderSliceTypeText(format, definitions, slice),
+      );
     } catch (error) {
       if (error instanceof UnknownDefinitionError) {
         console.error(`${error.message}`);

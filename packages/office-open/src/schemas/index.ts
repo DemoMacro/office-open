@@ -5,5 +5,7 @@
  */
 export * from "./schemas";
 export * from "./entries";
+export * from "./pointer";
 export * from "./slice";
 export * from "./skeleton";
+export * from "./type-text";

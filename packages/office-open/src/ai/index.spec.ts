@@ -48,15 +48,19 @@ describe("officeOpenTools", () => {
 });
 
 describe("schemaLookupTool", () => {
-  it("returns the requested definitions with their closure", async () => {
-    const execute = schemaLookupTool.execute as (input: {
+  it("returns the requested definitions with their closure as type text", async () => {
+    const execute = schemaLookupTool.execute as unknown as (input: {
       type: "docx" | "pptx" | "xlsx";
       definitions: string[];
-    }) => Promise<{ type: string; requested: string[]; definitions: Record<string, unknown> }>;
+    }) => Promise<{ type: string; requested: string[]; typeText: string }>;
     const result = await execute({ type: "docx", definitions: ["ParagraphOptions"] });
     expect(result.requested).toEqual(["ParagraphOptions"]);
-    expect(result.definitions.ParagraphOptions).toBeDefined();
-    expect(result.definitions.RunOptions).toBeDefined();
+    expect(result.typeText).toContain("ParagraphOptions {");
+    // closure renders dependencies; cataloged boundaries (and defs demoted by
+    // the slice size cap, ParagraphChild being the largest) stay stubs
+    expect(result.typeText).toContain("CnfConditionalOptions {");
+    expect(result.typeText).toContain("RunOptions // stub");
+    expect(result.typeText).toContain("ParagraphChild // stub");
   });
 
   it("returns suggestions (not a throw) for unknown names", async () => {

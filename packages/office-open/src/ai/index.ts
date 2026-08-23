@@ -20,7 +20,12 @@ export { formatToolError } from "./error";
 import { lintWorkbookFormulas } from "@office-open/xlsx";
 
 import { generate } from "../generate";
-import { getSkeletonSchema, sliceDocumentSchema, validateDocumentInput } from "../schemas";
+import {
+  getSkeletonSchema,
+  renderSliceTypeText,
+  sliceDocumentSchema,
+  validateDocumentInput,
+} from "../schemas";
 import type { DocumentType } from "../schemas/schemas";
 import { UnknownDefinitionError } from "../schemas/slice";
 import { formatToolError } from "./error";
@@ -144,13 +149,14 @@ export const xlsxTool = tool({
 
 export const schemaLookupTool = tool({
   description:
-    "Fetch the precise JSON Schema (draft-07) for office-open option definitions on demand. " +
+    "Fetch the precise type definitions for office-open option fields on demand. " +
     "Use it before filling complex objects into the generate tools: the generate input schemas are " +
     "skeletons whose stubs name the definition to look up here. " +
     "Valid names come from the skeleton stubs, or list indexed entries with " +
     "`npx office-open schema index <type>` (all names with --all). " +
-    "Returns the requested definitions plus their dependency closure; cataloged domains not " +
-    "requested stay as expandable stubs, so request each domain root you need (e.g. " +
+    "Returns the requested definitions plus their dependency closure as type-definition text " +
+    '(field types, "a" | "b" value enums, optional markers, one-line comments); cataloged ' +
+    "domains not requested stay as stubs, so request each domain root you need (e.g. " +
     "['ParagraphOptions', 'RunOptions', 'TableOptions']).",
   inputSchema: jsonSchema<SchemaLookupInput>({
     type: "object",
@@ -176,7 +182,11 @@ export const schemaLookupTool = tool({
   execute: async ({ type, definitions }) => {
     try {
       const slice = sliceDocumentSchema(type, definitions);
-      return { type, requested: definitions, definitions: slice.definitions };
+      return {
+        type,
+        requested: definitions,
+        typeText: renderSliceTypeText(type, definitions, slice),
+      };
     } catch (error) {
       if (error instanceof UnknownDefinitionError) {
         // Data, not a throw: lets the model self-correct from the suggestions.

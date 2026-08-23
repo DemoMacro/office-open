@@ -201,14 +201,25 @@ const DEFINITION_OVERRIDES: Record<string, Record<string, unknown>> = {
 
 // ── Post-processing ──
 
-/** P0: every $ref in the schema must resolve to a definition. */
-function assertRefsResolve(schema: unknown, definitions: Set<string>, at = "$") {
-  if (Array.isArray(schema)) {
-    for (const item of schema) assertRefsResolve(item, definitions, at);
+/** Resolve one pointer segment: raw key first, then URI-decoded (~0/~1 last). */
+function pointerChild(container: Record<string, unknown>, segment: string): unknown {
+  if (segment in container) return container[segment];
+  try {
+    return container[decodeURIComponent(segment.replace(/~1/g, "/").replace(/~0/g, "~"))];
+  } catch {
+    return undefined;
+  }
+}
+
+/** P0: every $ref in the schema must resolve — name refs to a definition,
+ * property-sharing pointers all the way to their target node. */
+function assertRefsResolve(node: unknown, definitions: Set<string>, root: unknown, at = "$") {
+  if (Array.isArray(node)) {
+    for (const item of node) assertRefsResolve(item, definitions, root, at);
     return;
   }
-  if (schema && typeof schema === "object") {
-    const obj = schema as Record<string, unknown>;
+  if (node && typeof node === "object") {
+    const obj = node as Record<string, unknown>;
     const ref = obj.$ref;
     if (typeof ref === "string") {
       if (!ref.startsWith("#/definitions/")) {
@@ -223,12 +234,26 @@ function assertRefsResolve(schema: unknown, definitions: Set<string>, at = "$") 
       // Generic types produce definition keys like "Foo<Bar>"; the $ref is a
       // JSON-pointer fragment, so the angle brackets arrive percent-encoded.
       const name = decodeURIComponent(ref.slice("#/definitions/".length));
-      if (!definitions.has(name)) {
+      if (name.includes("/")) {
+        // P8 property pointer: walk it from the document root so a broken
+        // anchor fails generation here, not in a consumer at runtime.
+        let target: unknown = root;
+        for (const segment of ref.slice(2).split("/")) {
+          target =
+            target && typeof target === "object"
+              ? pointerChild(target as Record<string, unknown>, segment)
+              : undefined;
+          if (target === undefined) break;
+        }
+        if (target === undefined) {
+          throw new Error(`Dangling $ref "${ref}" at ${at} — pointer target missing`);
+        }
+      } else if (!definitions.has(name)) {
         throw new Error(`Dangling $ref "${ref}" at ${at} — definition was likely overwritten`);
       }
     }
     for (const [key, value] of Object.entries(obj)) {
-      assertRefsResolve(value, definitions, `${at}.${key}`);
+      assertRefsResolve(value, definitions, root, `${at}.${key}`);
     }
   }
 }
@@ -389,6 +414,8 @@ function postProcess(schema: Record<string, unknown>) {
     }
   }
 
+  const shared = shareDuplicatedProperties(definitions);
+
   return {
     definitions: Object.keys(definitions).length,
     totalProperties,
@@ -396,25 +423,98 @@ function postProcess(schema: Record<string, unknown>) {
     descriptionCoverage:
       totalProperties > 0 ? +((describedProperties / totalProperties) * 100).toFixed(1) : 0,
     maxAnyOfBranches,
+    ...shared,
   };
+}
+
+/**
+ * P8: share identically-shaped property schemas beyond their first occurrence
+ * via `#/definitions/<Def>/properties/<name>` pointers.
+ *
+ * tsj's extends handling deep-merges base-class properties into every subclass
+ * definition, so shared groups (cNvPr name/id fields, revision dates, …) are
+ * duplicated across dozens of definitions — measured at ~30% of the docx
+ * schema. JSON Schema permits $ref to any subschema and ajv resolves internal
+ * pointers, so each duplicate collapses to a pointer at the first occurrence.
+ * draft-07 ignores $ref siblings, which is what sharing needs: the description
+ * lives once, at the anchor, instead of echoing per copy.
+ */
+const SHARED_PROPERTY_MIN_BYTES = 100;
+
+function shareDuplicatedProperties(definitions: Record<string, Record<string, unknown>>): {
+  sharedProperties: number;
+  sharedPropertyBytes: number;
+} {
+  const anchors = new Map<string, string>();
+  let sharedProperties = 0;
+  let sharedPropertyBytes = 0;
+  const escapeSegment = (segment: string) => encodeURIComponent(segment);
+
+  // Top-down per property: a replaced parent detaches its nested properties,
+  // so the walk stops there — nested anchors only ever live under first
+  // occurrences, which are never replaced.
+  const walkProperties = (node: Record<string, unknown>, path: string) => {
+    const properties = node.properties;
+    if (properties && typeof properties === "object") {
+      for (const [name, schema] of Object.entries(properties as Record<string, unknown>)) {
+        if (!schema || typeof schema !== "object") continue;
+        const child = schema as Record<string, unknown>;
+        if (typeof child.$ref === "string") continue; // already shared
+        const childPath = `${path}/properties/${escapeSegment(name)}`;
+        const canonical = JSON.stringify(sortKeys(child));
+        if (canonical.length >= SHARED_PROPERTY_MIN_BYTES) {
+          const anchor = anchors.get(canonical);
+          if (anchor !== undefined) {
+            sharedProperties++;
+            sharedPropertyBytes += canonical.length;
+            (properties as Record<string, unknown>)[name] = { $ref: anchor };
+            continue; // subtree is gone; its duplicates ride the parent's ref
+          }
+          anchors.set(canonical, `#${childPath}`);
+        }
+        walkProperties(child, childPath);
+      }
+    }
+    // union branches and array items also carry properties containers —
+    // walk them as containers (not as shareable properties themselves)
+    const branches = (node.anyOf ?? node.oneOf) as unknown[] | undefined;
+    if (Array.isArray(branches)) {
+      branches.forEach((branch, i) => {
+        if (branch && typeof branch === "object")
+          walkProperties(branch as Record<string, unknown>, `${path}/anyOf/${i}`);
+      });
+    }
+    const items = node.items;
+    if (items && typeof items === "object")
+      walkProperties(items as Record<string, unknown>, `${path}/items`);
+  };
+
+  for (const [name, def] of Object.entries(definitions)) {
+    walkProperties(def, `/definitions/${escapeSegment(name)}`);
+  }
+  return { sharedProperties, sharedPropertyBytes };
+}
+
+/** Recursively sort object keys; shared by canonical serialization and the
+ * canonical keys of P8 property sharing (key order must never decide whether
+ * two schemas are "identical"). */
+function sortKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortKeys);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([k, item]) => [k, sortKeys(item)]),
+    );
+  }
+  return value;
 }
 
 /** Deterministic serialization: recursively sort object keys. Byte-stable, so
  * the --check mode can diff this against the committed file re-serialized the
  * same way — formatting differences never count as drift. */
 function canonicalJson(value: unknown): string {
-  const sort = (v: unknown): unknown => {
-    if (Array.isArray(v)) return v.map(sort);
-    if (v && typeof v === "object") {
-      return Object.fromEntries(
-        Object.entries(v as Record<string, unknown>)
-          .sort(([a], [b]) => (a < b ? -1 : 1))
-          .map(([k, item]) => [k, sort(item)]),
-      );
-    }
-    return v;
-  };
-  return JSON.stringify(sort(value), null, 2) + "\n";
+  return JSON.stringify(sortKeys(value), null, 2) + "\n";
 }
 
 // ── Main ──
@@ -445,12 +545,12 @@ function generateFormat(config: FormatConfig): FormatResult {
 
   const definitions = (schema.definitions ?? {}) as Record<string, unknown>;
   // P0: collision detection via ref resolution
-  assertRefsResolve(schema, new Set(Object.keys(definitions)));
+  assertRefsResolve(schema, new Set(Object.keys(definitions)), schema);
 
   const metrics = postProcess(schema);
-  // P0 again after post-processing: P4b rewrites nodes into DataType refs,
-  // and those must resolve just like the generator-produced ones.
-  assertRefsResolve(schema, new Set(Object.keys(definitions as Record<string, unknown>)));
+  // P0 again after post-processing: P4b rewrites nodes into DataType refs and
+  // P8 introduces property pointers — both must resolve like generator refs.
+  assertRefsResolve(schema, new Set(Object.keys(definitions as Record<string, unknown>)), schema);
 
   // P3: envelope — consumer-facing only; no repo-workflow wording here
   schema.$schema = "http://json-schema.org/draft-07/schema#";
@@ -476,7 +576,9 @@ function main() {
     process.stderr.write(
       ` ${result.metrics.definitions} definitions, ` +
         `${result.metrics.descriptionCoverage}% described, ` +
-        `max anyOf ${result.metrics.maxAnyOfBranches}\n`,
+        `max anyOf ${result.metrics.maxAnyOfBranches}, ` +
+        `${result.metrics.sharedProperties} shared properties ` +
+        `(−${Math.round(result.metrics.sharedPropertyBytes / 1024)} KB)\n`,
     );
   }
 

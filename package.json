@@ -40,7 +40,6 @@
     "models:generate": "tsx scripts/xsd-content-model.ts",
     "models:check": "tsx scripts/xsd-content-model.ts --check",
     "corpus:check": "tsx scripts/corpus-check.ts",
-    "bump": "pnpm --filter \"./packages/**\" -r exec basis version",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
     "postinstall": "pnpm build && vp config && basis git setup",

@@ -863,9 +863,7 @@
           "type": "string"
         },
         "additive": {
-          "description": "Additive mode: \"base\", \"sum\", \"repl\", \"mult\", \"none\".",
-          "enum": ["base", "sum", "repl", "mult", "none"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/additive"
         },
         "advanceAfterTime": {
           "description": "Automatically advance time.",
@@ -918,38 +916,10 @@
           "type": "string"
         },
         "colorByHsl": {
-          "additionalProperties": false,
-          "description": "Color by HSL transform (p:by → p:hsl).",
-          "properties": {
-            "h": {
-              "type": "string"
-            },
-            "l": {
-              "type": "string"
-            },
-            "s": {
-              "type": "string"
-            }
-          },
-          "required": ["h", "s", "l"],
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/colorByHsl"
         },
         "colorByRgb": {
-          "additionalProperties": false,
-          "description": "Color by RGB transform (p:by → p:rgb).",
-          "properties": {
-            "b": {
-              "type": "string"
-            },
-            "g": {
-              "type": "string"
-            },
-            "r": {
-              "type": "string"
-            }
-          },
-          "required": ["r", "g", "b"],
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/colorByRgb"
         },
         "colorFrom": {
           "description": "Color animation from (a:srgbClr hex).",
@@ -968,9 +938,7 @@
           "type": "string"
         },
         "commandType": {
-          "description": "Command kind (p:cmd `@type`): \"call\" invoke a macro, \"evt\" fire an event, \"verb\" OLE verb.",
-          "enum": ["call", "evt", "verb"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/commandType"
         },
         "deceleration": {
           "description": "Deceleration as integer percent (default 0).",
@@ -997,11 +965,7 @@
           "$ref": "#/definitions/EmphasisType"
         },
         "endConditions": {
-          "description": "End conditions list (p:endCondLst).",
-          "items": {
-            "$ref": "#/definitions/EndConditionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/AnimationEntry/properties/endConditions"
         },
         "endSyncCondition": {
           "$ref": "#/definitions/EndConditionOptions",
@@ -1026,55 +990,7 @@
           "type": "boolean"
         },
         "graphicElement": {
-          "additionalProperties": false,
-          "description": "Graphic element target (p:graphicEl → a:dgm / a:chart).",
-          "properties": {
-            "chart": {
-              "additionalProperties": false,
-              "description": "Chart element (a:chart).",
-              "properties": {
-                "buildStep": {
-                  "description": "Build step (required)",
-                  "enum": [
-                    "category",
-                    "ptInCategory",
-                    "series",
-                    "ptInSeries",
-                    "allPts",
-                    "gridLegend"
-                  ],
-                  "type": "string"
-                },
-                "categoryIndex": {
-                  "description": "Category index (a:chart `@categoryIdx`, default -1)",
-                  "type": "number"
-                },
-                "seriesIndex": {
-                  "description": "Series index (a:chart `@seriesIdx`, default -1)",
-                  "type": "number"
-                }
-              },
-              "required": ["buildStep"],
-              "type": "object"
-            },
-            "diagram": {
-              "additionalProperties": false,
-              "description": "Diagram element (a:dgm).",
-              "properties": {
-                "buildStep": {
-                  "description": "Build step (a:dgm `@bldStep`, default \"sp\")",
-                  "enum": ["sp", "bg"],
-                  "type": "string"
-                },
-                "id": {
-                  "description": "Diagram node GUID (a:dgm `@id`)",
-                  "type": "string"
-                }
-              },
-              "type": "object"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/graphicElement"
         },
         "groupId": {
           "type": "number"
@@ -1087,60 +1003,19 @@
           "type": "boolean"
         },
         "iterate": {
-          "additionalProperties": false,
-          "properties": {
-            "backwards": {
-              "type": "boolean"
-            },
-            "interval": {
-              "type": "number"
-            },
-            "iteratePercentage": {
-              "description": "Iterate step as integer percent (0–100).",
-              "type": "number"
-            },
-            "type": {
-              "enum": ["element", "word", "letter"],
-              "type": "string"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/iterate"
         },
         "masterRelation": {
-          "description": "Master relationship: \"sameClick\", \"lastClick\", \"nextClick\".",
-          "enum": ["sameClick", "lastClick", "nextClick"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/masterRelation"
         },
         "mediaType": {
           "$ref": "#/definitions/MediaAnimationType"
         },
         "motionFrom": {
-          "additionalProperties": false,
-          "description": "Motion path from point (p:from).",
-          "properties": {
-            "x": {
-              "type": "string"
-            },
-            "y": {
-              "type": "string"
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/motionFrom"
         },
         "motionRotationCenter": {
-          "additionalProperties": false,
-          "description": "Motion path rotation center (p:rCtr).",
-          "properties": {
-            "x": {
-              "type": "string"
-            },
-            "y": {
-              "type": "string"
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/motionRotationCenter"
         },
         "mute": {
           "type": "boolean"
@@ -1156,14 +1031,10 @@
           "type": "number"
         },
         "oleChartElementType": {
-          "description": "OLE chart element type (p:oleChartEl `@type`).",
-          "enum": ["gridLegend", "series", "category", "ptInSeries", "ptInCategory"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/oleChartElementType"
         },
         "override": {
-          "description": "Override mode: \"normal\", \"childStyle\".",
-          "enum": ["normal", "childStyle"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/override"
         },
         "paragraphRange": {
           "items": {
@@ -1201,9 +1072,7 @@
           "type": "string"
         },
         "restart": {
-          "description": "Restart behavior: \"always\", \"whenNotActive\", \"never\".",
-          "enum": ["always", "whenNotActive", "never"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/restart"
         },
         "rotationAngle": {
           "description": "Rotation angle in degrees (p:animMotion `@rAng`, in the XML).",
@@ -1214,22 +1083,7 @@
           "type": "string"
         },
         "setBehavior": {
-          "additionalProperties": false,
-          "properties": {
-            "attributeName": {
-              "type": "string"
-            },
-            "toType": {
-              "description": "How to interpret toValue when written to the attribute.",
-              "enum": ["string", "number"],
-              "type": "string"
-            },
-            "toValue": {
-              "type": "string"
-            }
-          },
-          "required": ["attributeName", "toValue"],
-          "type": "object"
+          "$ref": "#/definitions/AnimationEntry/properties/setBehavior"
         },
         "showWhenStopped": {
           "description": "Show when stopped (for media).",
@@ -1248,16 +1102,10 @@
           "type": "number"
         },
         "subTimeNodes": {
-          "description": "Sub time nodes (p:subTnLst).",
-          "items": {
-            "$ref": "#/definitions/AnimationOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/AnimationEntry/properties/subTimeNodes"
         },
         "syncBehavior": {
-          "description": "Sync behavior: \"canSlip\", \"locked\".",
-          "enum": ["canSlip", "locked"],
-          "type": "string"
+          "$ref": "#/definitions/AnimationEntry/properties/syncBehavior"
         },
         "timeFilter": {
           "description": "Time filter string.",
@@ -1568,16 +1416,13 @@
           "description": "Audio bytes — required for file-based audio, omitted for CD audio"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fileName": {
-          "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
-          "type": "string"
+          "$ref": "#/definitions/VideoFrameOptions/properties/fileName"
         },
         "height": {
           "anyOf": [
@@ -1597,12 +1442,10 @@
           "type": "number"
         },
         "mediaAction": {
-          "description": "Click-to-play hyperlink (a:hlinkClick `action=\"ppaction://media\"` on p:cNvPr) — Office emits it on media frames.",
-          "type": "boolean"
+          "$ref": "#/definitions/VideoFrameOptions/properties/mediaAction"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "poster": {
           "$ref": "#/definitions/DataType",
@@ -2106,9 +1949,7 @@
       "description": "Blend effect — blends with nested container.",
       "properties": {
         "blend": {
-          "description": "Blend mode (required)",
-          "enum": ["over", "multiply", "screen", "darken", "lighten"],
-          "type": "string"
+          "$ref": "#/definitions/FillOverlayEffectOptions/properties/blend"
         },
         "container": {
           "$ref": "#/definitions/EffectDagOptions",
@@ -2407,11 +2248,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -2421,20 +2258,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -2445,16 +2279,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -2483,8 +2314,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -2521,15 +2351,7 @@
       "additionalProperties": false,
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -2547,8 +2369,7 @@
           "$ref": "#/definitions/AutoNumberFormat"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -2623,15 +2444,7 @@
       "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -2646,8 +2459,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -2686,15 +2498,7 @@
       "description": "Picture bullet (a:buBlip r:embed). `embed` is the image relationship id.",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -2712,8 +2516,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -3057,8 +2860,7 @@
           "type": "boolean"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "dialect": {
           "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
@@ -3187,23 +2989,14 @@
           "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "locking": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLockingOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+          "$ref": "#/definitions/TableOptions/properties/locking"
         },
         "markers": {
           "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
           "type": "boolean"
         },
         "modId": {
-          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/modId"
         },
         "multiLevelCategories": {
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
@@ -3216,8 +3009,7 @@
           "type": "array"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "numericCategories": {
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
@@ -3764,18 +3556,10 @@
       "description": "dgm:colorsDef — the colors part root.",
       "properties": {
         "categories": {
-          "description": "Gallery categories (dgm:catLst).",
-          "items": {
-            "$ref": "#/definitions/DiagramCategoryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/categories"
         },
         "descriptions": {
-          "description": "Localized descriptions (dgm:desc*).",
-          "items": {
-            "$ref": "#/definitions/DiagramDescriptionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
         "ext": {
           "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
@@ -3793,11 +3577,7 @@
           "type": "array"
         },
         "titles": {
-          "description": "Localized titles (dgm:title*).",
-          "items": {
-            "$ref": "#/definitions/DiagramNameOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/titles"
         },
         "uniqueId": {
           "description": "Color-transform identity URI (dgm:colorsDef `@uniqueId`).",
@@ -3845,46 +3625,7 @@
           "additionalProperties": false,
           "properties": {
             "colorMapping": {
-              "additionalProperties": false,
-              "properties": {
-                "accent1": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "accent2": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "accent3": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "accent4": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "accent5": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "accent6": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "background1": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "background2": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "followedHyperlink": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "hyperlink": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "text1": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                },
-                "text2": {
-                  "$ref": "#/definitions/ColorSchemeIndex"
-                }
-              },
-              "type": "object"
+              "$ref": "#/definitions/ExtraColorSchemeOptions/properties/colorMapping"
             },
             "kind": {
               "const": "override",
@@ -4212,8 +3953,7 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
@@ -4224,8 +3964,7 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -4253,8 +3992,7 @@
           "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
@@ -4619,17 +4357,7 @@
           "type": "string"
         },
         "slides": {
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "rId": {
-                "type": "string"
-              }
-            },
-            "required": ["rId"],
-            "type": "object"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
         }
       },
       "required": ["name", "slides"],
@@ -4640,27 +4368,10 @@
       "description": "Customer data on the presentation (p:custDataLst — r:id part references).",
       "properties": {
         "data": {
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "rId": {
-                "type": "string"
-              }
-            },
-            "required": ["rId"],
-            "type": "object"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
         },
         "tags": {
-          "additionalProperties": false,
-          "properties": {
-            "rId": {
-              "type": "string"
-            }
-          },
-          "required": ["rId"],
-          "type": "object"
+          "$ref": "#/definitions/SlideChild/anyOf/12/properties/contentPart"
         }
       },
       "type": "object"
@@ -6195,16 +5906,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Group-level effects (EG_EffectProperties on grpSpPr)."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions",
@@ -6247,8 +5956,7 @@
           "description": "Group shape locks (a:grpSpLocks inside cNvGrpSpPr) — the one shared field beyond cNvPr. null keeps an explicit empty element (Office often emits `<a:grpSpLocks/>`); see the module docstring for why grpSpPr content and children stay per-package."
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -6553,8 +6261,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip (captured from a parsed source; do not hand-author).",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/cSldExt"
         },
         "children": {
           "items": {
@@ -6585,8 +6292,7 @@
           "type": "array"
         },
         "ext": {
-          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author).",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/ext"
         },
         "headerFooter": {
           "$ref": "#/definitions/SlideHeaderFooterOptions"
@@ -7157,16 +6863,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -7183,8 +6887,7 @@
           "description": "Shape locks (a:spLocks inside p:cNvSpPr)."
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
@@ -7282,12 +6985,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -7315,23 +7016,13 @@
           "type": "boolean"
         },
         "locking": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLockingOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+          "$ref": "#/definitions/TableOptions/properties/locking"
         },
         "modId": {
-          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/modId"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
@@ -7404,15 +7095,10 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML. Prefer `extensions` for structured shape-property extensions; retained for existing callers and unmodeled payloads.",
-          "type": "string"
+          "$ref": "#/definitions/ShapePropertiesOptions/properties/ext"
         },
         "extensions": {
-          "description": "Shape-property extensions (a:extLst/a:ext).",
-          "items": {
-            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ShapePropertiesOptions/properties/extensions"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -7984,11 +7670,7 @@
           "description": "Background (p:bg); defaults to the MS Office bgRef idx=\"1001\"."
         },
         "children": {
-          "description": "Custom spTree shapes (p:spTree children after the group header).",
-          "items": {
-            "$ref": "#/definitions/SlideChild"
-          },
-          "type": "array"
+          "$ref": "#/definitions/HandoutMasterOptions/properties/children"
         },
         "colorMapping": {
           "additionalProperties": false,
@@ -8034,8 +7716,7 @@
           "type": "object"
         },
         "ext": {
-          "description": "Trailing p:extLst inner XML (e.g. p14:creationId) — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/HandoutMasterOptions/properties/ext"
         },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions",
@@ -8196,16 +7877,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "embed": {
           "$ref": "#/definitions/OleEmbedOptions",
           "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with `link` — p:oleObj's content model is a required choice between p:embed and p:link."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -8249,23 +7928,13 @@
           "description": "Linked OLE object (external source URL, no bytes in the package); mutually exclusive with embed."
         },
         "locking": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLockingOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+          "$ref": "#/definitions/TableOptions/properties/locking"
         },
         "modId": {
-          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/modId"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
@@ -8365,15 +8034,7 @@
           "description": "Shadow alignment"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -8882,8 +8543,7 @@
           "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries `sourceUrl` instead."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
@@ -8964,8 +8624,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions",
@@ -9111,15 +8770,13 @@
           "$ref": "#/definitions/CustomGeometryOptions"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions"
@@ -9149,8 +8806,7 @@
           "type": "boolean"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
@@ -10012,15 +9668,7 @@
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "preset": {
           "$ref": "#/definitions/PresetShadow",
@@ -10176,30 +9824,14 @@
           "type": "string"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "direction": {
           "description": "Direction angle in degrees (0–360).",
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "endAlpha": {
           "description": "End opacity as integer percent",
@@ -10379,11 +10011,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -10393,20 +10021,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -10417,16 +10042,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -10455,8 +10077,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -10628,8 +10249,7 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/ChartOptions/properties/upDownBarsGapWidth"
         },
         "varyColors": {
           "description": "Vary data-point colors (group-level c:varyColors).",
@@ -11586,8 +11206,7 @@
           "$ref": "#/definitions/BackgroundOptions"
         },
         "cSldExt": {
-          "description": "Raw inner XML of the p:extLst inside p:cSld — verbatim round-trip (captured from a parsed source; do not hand-author).",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/cSldExt"
         },
         "children": {
           "items": {
@@ -11612,21 +11231,10 @@
           "type": "array"
         },
         "customerData": {
-          "items": {
-            "additionalProperties": false,
-            "properties": {
-              "rId": {
-                "type": "string"
-              }
-            },
-            "required": ["rId"],
-            "type": "object"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
         },
         "ext": {
-          "description": "Raw extLst inner XML — verbatim round-trip for unmodeled extensions (captured from a parsed source; do not hand-author).",
-          "type": "string"
+          "$ref": "#/definitions/MasterDefinition/properties/ext"
         },
         "headerFooter": {
           "$ref": "#/definitions/SlideHeaderFooterOptions"
@@ -11782,12 +11390,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -11826,23 +11432,13 @@
           "description": "Built-in layout ID (\"default\", \"process1\") or a custom layout definition."
         },
         "locking": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/GraphicFrameLockingOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
+          "$ref": "#/definitions/TableOptions/properties/locking"
         },
         "modId": {
-          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/modId"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "nodes": {
           "description": "Tree-shaped data for the diagram content.",
@@ -12005,18 +11601,10 @@
       "description": "dgm:styleDef — the quickStyle part root.",
       "properties": {
         "categories": {
-          "description": "Gallery categories (dgm:catLst).",
-          "items": {
-            "$ref": "#/definitions/DiagramCategoryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/categories"
         },
         "descriptions": {
-          "description": "Localized descriptions (dgm:desc*).",
-          "items": {
-            "$ref": "#/definitions/DiagramDescriptionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
         "ext": {
           "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
@@ -12038,11 +11626,7 @@
           "type": "array"
         },
         "titles": {
-          "description": "Localized titles (dgm:title*).",
-          "items": {
-            "$ref": "#/definitions/DiagramNameOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/titles"
         },
         "uniqueId": {
           "description": "Style identity URI (dgm:styleDef `@uniqueId`).",
@@ -12468,12 +12052,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "firstCol": {
           "type": "boolean"
@@ -12525,12 +12107,10 @@
           "description": "Frame locking (a:graphicFrameLocks). undefined = fresh default (noGrp=\"1\"); null = empty cNvGraphicFramePr; object = explicit flags."
         },
         "modId": {
-          "description": "p14:modId `@val` from the nvPr extension list — Office's collaboration modification stamp, the sole known p:nvPr ext content.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/modId"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
@@ -13287,8 +12867,7 @@
           "type": "string"
         },
         "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/baseline"
         },
         "bold": {
           "type": "boolean"
@@ -13347,35 +12926,16 @@
           "type": "boolean"
         },
         "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/outline"
         },
         "rightToLeft": {
           "type": "boolean"
         },
         "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/shadow"
         },
         "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/size"
         },
         "smartTagId": {
           "description": "`@smtId` — smart tag id.",
@@ -13399,28 +12959,10 @@
           "$ref": "#/definitions/UnderlineStyle"
         },
         "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineFill"
         },
         "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineLine"
         }
       },
       "type": "object"
@@ -13997,12 +13539,10 @@
           "$ref": "#/definitions/DataType"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",
@@ -14030,8 +13570,7 @@
           "type": "boolean"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/name"
         },
         "poster": {
           "$ref": "#/definitions/DataType"

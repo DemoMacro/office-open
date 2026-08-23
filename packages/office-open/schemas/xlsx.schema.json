@@ -753,9 +753,7 @@
       "description": "Blend effect — blends with nested container.",
       "properties": {
         "blend": {
-          "description": "Blend mode (required)",
-          "enum": ["over", "multiply", "screen", "darken", "lighten"],
-          "type": "string"
+          "$ref": "#/definitions/FillOverlayEffectOptions/properties/blend"
         },
         "container": {
           "$ref": "#/definitions/EffectDagOptions",
@@ -1140,11 +1138,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -1154,20 +1148,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -1178,16 +1169,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -1216,8 +1204,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -1254,15 +1241,7 @@
       "additionalProperties": false,
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1280,8 +1259,7 @@
           "$ref": "#/definitions/AutoNumberFormat"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -1356,15 +1334,7 @@
       "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1379,8 +1349,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -1419,15 +1388,7 @@
       "description": "Picture bullet (a:buBlip r:embed). `embed` is the image relationship id.",
       "properties": {
         "color": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/SolidFillOptions"
-            }
-          ],
-          "description": "a:buClr — hex shorthand (srgbClr) or a full color choice (schemeClr with transforms, sysClr, …)."
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
         },
         "colorFollowsText": {
           "description": "a:buClrTx — bullet color follows the text run color.",
@@ -1445,8 +1406,7 @@
           "type": "boolean"
         },
         "size": {
-          "description": "a:buSzPct — bullet size as a percentage of the text size (60 = 60%).",
-          "type": "number"
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
         },
         "sizeFollowsText": {
           "description": "a:buSzTx — bullet size follows the text run size.",
@@ -2322,33 +2282,20 @@
       "additionalProperties": false,
       "properties": {
         "autoTitleDeleted": {
-          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/autoTitleDeleted"
         },
         "axes": {
-          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
-          "items": {
-            "$ref": "#/definitions/AxisOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/axes"
         },
         "axisIds": {
-          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/axisIds"
         },
         "backWall": {
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D back wall (c:backWall)."
         },
         "bandFormats": {
-          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
-          "items": {
-            "$ref": "#/definitions/BandFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/bandFormats"
         },
         "bubbleScale": {
           "description": "Bubble scale as percent of default size (c:bubbleScale).",
@@ -2361,69 +2308,20 @@
           "type": "array"
         },
         "categoryFormatCode": {
-          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/categoryFormatCode"
         },
         "categoryFormula": {
           "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
           "type": "string"
         },
         "categoryLabels": {
-          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/categoryLabels"
         },
         "colorMappingOverride": {
-          "additionalProperties": false,
-          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
-          "properties": {
-            "accent1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent3": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent4": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent5": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent6": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "followedHyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "hyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/colorMappingOverride"
         },
         "customSplitPoints": {
-          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/customSplitPoints"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions",
@@ -2434,32 +2332,20 @@
           "description": "Plot-area data table (c:dTable)."
         },
         "date1904": {
-          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/date1904"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
-          "enum": ["transitional", "strict"],
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/dialect"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Drop lines (c:dropLines, line/area/stock)."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/dropLines"
         },
         "ext": {
-          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/ext"
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -2486,41 +2372,20 @@
           "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
         },
         "highLowLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/highLowLines"
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
         "lang": {
-          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/lang"
         },
         "legendEntries": {
-          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
-          "items": {
-            "$ref": "#/definitions/LegendEntryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/legendEntries"
         },
         "legendLayout": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ManualLayoutOptions"
-            }
-          ],
-          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/legendLayout"
         },
         "legendOverlay": {
           "description": "Legend overlaps the plot (c:overlay).",
@@ -2539,22 +2404,13 @@
           "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/markers"
         },
         "multiLevelCategories": {
-          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
-          "items": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/multiLevelCategories"
         },
         "numericCategories": {
-          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/numericCategories"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -2565,11 +2421,7 @@
           "type": "number"
         },
         "pivotFormats": {
-          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
-          "items": {
-            "$ref": "#/definitions/ChartPivotFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/pivotFormats"
         },
         "pivotSource": {
           "$ref": "#/definitions/PivotSourceOptions",
@@ -2584,8 +2436,7 @@
           "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
-          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/plotVisOnly"
         },
         "printSettings": {
           "$ref": "#/definitions/PrintSettingsOptions",
@@ -2600,52 +2451,19 @@
           "description": "Radar variant (c:radarStyle, default \"standard\")."
         },
         "roundedCorners": {
-          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/roundedCorners"
         },
         "secondPieSize": {
-          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
-          "type": ["number", "string"]
+          "$ref": "#/definitions/WorksheetChartOptions/properties/secondPieSize"
         },
         "secondaryGroups": {
-          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
-          "items": {
-            "$ref": "#/definitions/SecondaryChartGroupOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/secondaryGroups"
         },
         "series": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/definitions/ChartSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/ScatterSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/BubbleSeriesData"
-              },
-              "type": "array"
-            }
-          ]
+          "$ref": "#/definitions/WorksheetChartOptions/properties/series"
         },
         "seriesLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/seriesLines"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -2675,8 +2493,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/smooth"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
@@ -2701,15 +2518,7 @@
           "type": "boolean"
         },
         "title": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/ChartTitleOptions"
-            }
-          ],
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/title"
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -2719,16 +2528,13 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/upDownBarsGapWidth"
         },
         "userShapes": {
-          "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
-          "type": "string"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/userShapes"
         },
         "varyColors": {
-          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
-          "type": "boolean"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/varyColors"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"
@@ -2929,30 +2735,14 @@
           "description": "Orientation"
         },
         "paperHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/PositiveUniversalMeasure"
-            }
-          ],
-          "description": "Paper height"
+          "$ref": "#/definitions/PageSetupOptions/properties/paperHeight"
         },
         "paperSize": {
           "description": "Paper size (1=Letter, 9=A4, etc.)",
           "type": "number"
         },
         "paperWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/PositiveUniversalMeasure"
-            }
-          ],
-          "description": "Paper width"
+          "$ref": "#/definitions/PageSetupOptions/properties/paperWidth"
         },
         "printerSettingsRId": {
           "description": "Relationship ID for the printer settings part",
@@ -3715,26 +3505,10 @@
       "description": "Anchored connector (xdr:cxnSp): line/arrow geometry via spPr.",
       "properties": {
         "absoluteX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute X in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteX"
         },
         "absoluteY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute Y in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteY"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -3745,23 +3519,14 @@
           "type": "number"
         },
         "colOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Column offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
@@ -3772,30 +3537,13 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "extentCx": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
         },
         "extentCy": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -3818,8 +3566,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -3830,15 +3577,7 @@
           "type": "number"
         },
         "rowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Row offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
@@ -3865,34 +3604,17 @@
           "type": "number"
         },
         "toColOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell column offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toColOffset"
         },
         "toRow": {
           "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
           "type": "number"
         },
         "toRowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell row offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toRowOffset"
         },
         "zOrder": {
-          "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
-          "type": "number"
+          "$ref": "#/definitions/ShapeOptions/properties/zOrder"
         }
       },
       "required": ["col", "row", "spPr"],
@@ -6779,16 +6501,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -6806,8 +6526,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions"
@@ -6860,26 +6579,10 @@
       "description": "Anchored group (xdr:grpSp): group transform + nested shapes/connectors.",
       "properties": {
         "absoluteX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute X in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteX"
         },
         "absoluteY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute Y in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteY"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -6890,15 +6593,7 @@
           "type": "number"
         },
         "colOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Column offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "connectors": {
           "description": "Nested connectors.",
@@ -6912,38 +6607,20 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "extentCx": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
         },
         "extentCy": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "grpSpPr": {
           "$ref": "#/definitions/GroupTransform2DOptions",
@@ -6973,8 +6650,7 @@
           "type": "boolean"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -6985,15 +6661,7 @@
           "type": "number"
         },
         "rowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Row offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
@@ -7015,34 +6683,17 @@
           "type": "number"
         },
         "toColOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell column offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toColOffset"
         },
         "toRow": {
           "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
           "type": "number"
         },
         "toRowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell row offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toRowOffset"
         },
         "zOrder": {
-          "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
-          "type": "number"
+          "$ref": "#/definitions/ShapeOptions/properties/zOrder"
         }
       },
       "required": ["col", "grpSpPr", "row"],
@@ -7057,12 +6708,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -7080,8 +6729,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "spPr": {
           "$ref": "#/definitions/ShapePropertiesOptions"
@@ -7094,8 +6742,7 @@
           "$ref": "#/definitions/TextBodyOptions"
         },
         "textBox": {
-          "description": "Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it.",
-          "type": "boolean"
+          "$ref": "#/definitions/ShapeOptions/properties/textBox"
         },
         "textlink": {
           "type": "string"
@@ -7979,11 +7626,7 @@
           "type": "string"
         },
         "stringIndexes": {
-          "description": "Member name string indexes (n children)",
-          "items": {
-            "$ref": "#/definitions/MetadataStringIndexOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/MdxTupleOptions/properties/stringIndexes"
         }
       },
       "required": ["namespaceCount"],
@@ -8593,15 +8236,7 @@
           "description": "Shadow alignment"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
@@ -11145,15 +10780,7 @@
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "preset": {
           "$ref": "#/definitions/PresetShadow",
@@ -11514,30 +11141,14 @@
           "type": "string"
         },
         "blurRadius": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Blur radius in EMUs (number) or UniversalMeasure (mm/cm/in/pt/pc/pi/px)."
+          "$ref": "#/definitions/InnerShadowEffectOptions/properties/blurRadius"
         },
         "direction": {
           "description": "Direction angle in degrees (0–360).",
           "type": "number"
         },
         "distance": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Distance from shape in EMUs (number) or UniversalMeasure."
+          "$ref": "#/definitions/OuterShadowEffectOptions/properties/distance"
         },
         "endAlpha": {
           "description": "End opacity as integer percent",
@@ -12303,11 +11914,7 @@
       "description": "Cell move.",
       "properties": {
         "children": {
-          "description": "Nested undo/rcc/rfmt children (optional).",
-          "items": {
-            "$ref": "#/definitions/RevisionNestedChild"
-          },
-          "type": "array"
+          "$ref": "#/definitions/RevisionRowColumnOptions/properties/children"
         },
         "destination": {
           "description": "Destination range (required).",
@@ -12831,11 +12438,7 @@
           "$ref": "#/definitions/DataLabelsOptions"
         },
         "dataPoints": {
-          "description": "Per-point overrides (c:dPt), emitted after spPr in ser order.",
-          "items": {
-            "$ref": "#/definitions/DataPointOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSeriesData/properties/dataPoints"
         },
         "errorBars": {
           "$ref": "#/definitions/ErrorBarOptions"
@@ -12845,20 +12448,17 @@
           "type": "number"
         },
         "ext": {
-          "description": "Raw inner XML of the series' trailing c:extLst — verbatim round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
           "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
           "type": "string"
         },
         "index": {
-          "description": "Series index across ALL groups of the chart (c:idx, unique chart-wide — combo charts number secondary-group series into the same space). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/index"
         },
         "invertIfNegative": {
-          "description": "Invert fill for negative values (c:invertIfNegative, bar/bubble).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/invertIfNegative"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions",
@@ -12869,16 +12469,13 @@
           "type": "string"
         },
         "nameFormula": {
-          "description": "Series name reference formula (c:tx > c:strRef > c:f) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameFormula"
         },
         "nameLiteral": {
-          "description": "Series name is an inline literal (c:tx > c:v, no strRef wrapper) — the dominant Excel form; parse sets this when the source carried a bare c:v.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/nameLiteral"
         },
         "order": {
-          "description": "Display order across the chart's series (c:order). Omit to number by array position.",
-          "type": "number"
+          "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
           "$ref": "#/definitions/PictureOptionsOptions",
@@ -12907,8 +12504,7 @@
           "type": "string"
         },
         "valueLiteral": {
-          "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
         },
         "xValues": {
           "items": {
@@ -13193,8 +12789,7 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/upDownBarsGapWidth"
         },
         "varyColors": {
           "description": "Vary data-point colors (group-level c:varyColors).",
@@ -13322,26 +12917,10 @@
       "description": "Anchored shape (xdr:sp): geometry + optional text body.",
       "properties": {
         "absoluteX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute X in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteX"
         },
         "absoluteY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute Y in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteY"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -13352,53 +12931,27 @@
           "type": "number"
         },
         "colOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Column offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "extentCx": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
         },
         "extentCy": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -13421,8 +12974,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -13433,15 +12985,7 @@
           "type": "number"
         },
         "rowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Row offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
@@ -13476,30 +13020,14 @@
           "type": "number"
         },
         "toColOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell column offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toColOffset"
         },
         "toRow": {
           "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
           "type": "number"
         },
         "toRowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell row offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toRowOffset"
         },
         "zOrder": {
           "description": "Document-order position of this anchor inside the drawing part — the z-order when objects overlap. Round-trip only: stringify emits anchors in this order; fresh authoring keeps the per-type bucket order.",
@@ -15372,8 +14900,7 @@
           "type": "string"
         },
         "baseline": {
-          "description": "Baseline offset as integer percent (positive = superscript, negative = subscript).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/baseline"
         },
         "bold": {
           "type": "boolean"
@@ -15432,35 +14959,16 @@
           "type": "boolean"
         },
         "outline": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "a:ln. `true` emits a sane default; a full OutlineOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/outline"
         },
         "rightToLeft": {
           "type": "boolean"
         },
         "shadow": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/EffectListOptions"
-            }
-          ],
-          "description": "a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/shadow"
         },
         "size": {
-          "description": "Font size in points. Serialized as OOXML a:sz (hundredths of a point).",
-          "type": "number"
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/size"
         },
         "smartTagId": {
           "description": "`@smtId` — smart tag id.",
@@ -15484,28 +14992,10 @@
           "$ref": "#/definitions/UnderlineStyle"
         },
         "underlineFill": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/FillOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineFill — underline fill. `true` = a:uFillTx (follow the text fill); a FillOptions = a:uFill."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineFill"
         },
         "underlineLine": {
-          "anyOf": [
-            {
-              "const": true,
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/OutlineOptions"
-            }
-          ],
-          "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/underlineLine"
         }
       },
       "type": "object"
@@ -16814,26 +16304,10 @@
       "description": "Chart anchored to a worksheet. `title` stays the chart title (c:title); the graphicFrame's cNvPr `@title` is too weak to justify a name clash, so only name/description/hidden flow through to the drawing's cNvPr.",
       "properties": {
         "absoluteX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute X in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteX"
         },
         "absoluteY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute Y in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteY"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -16898,15 +16372,7 @@
           "type": "number"
         },
         "colOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Column offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "colorMappingOverride": {
           "additionalProperties": false,
@@ -16975,8 +16441,7 @@
           "type": "boolean"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "dialect": {
           "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
@@ -17007,26 +16472,10 @@
           "type": "string"
         },
         "extentCx": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
         },
         "extentCy": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -17140,8 +16589,7 @@
           "type": "array"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "numericCategories": {
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
@@ -17203,15 +16651,7 @@
           "type": "number"
         },
         "rowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Row offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
@@ -17330,30 +16770,14 @@
           "type": "number"
         },
         "toColOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell column offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toColOffset"
         },
         "toRow": {
           "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
           "type": "number"
         },
         "toRowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell row offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toRowOffset"
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -17707,26 +17131,10 @@
       "description": "SmartArt anchored in the sheet. The four diagram parts travel as passthrough parts; their package-absolute paths (as resolved from the source drawing rels) wire the frame to them — passthrough paths never move, so they stay valid verbatim.",
       "properties": {
         "absoluteX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute X in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteX"
         },
         "absoluteY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Absolute Y in EMU (absoluteAnchor)."
+          "$ref": "#/definitions/PictureOptions/properties/absoluteY"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -17737,15 +17145,7 @@
           "type": "number"
         },
         "colOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Column offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "colorsPath": {
           "description": "Diagram colors part (dgm:relIds",
@@ -17760,38 +17160,20 @@
           "type": "string"
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/ext"
         },
         "extentCx": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent width in EMU (oneCell/absoluteAnchor ext, default 400000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
         },
         "extentCy": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Anchor extent height in EMU (oneCell/absoluteAnchor ext, default 300000)."
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
@@ -17814,8 +17196,7 @@
           "type": "string"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/PictureOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -17830,15 +17211,7 @@
           "type": "number"
         },
         "rowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "Row offset in EMU (default 0)"
+          "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
@@ -17853,34 +17226,17 @@
           "type": "number"
         },
         "toColOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell column offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toColOffset"
         },
         "toRow": {
           "description": "To cell row (1-based) for twoCellAnchor. Defaults to row + 1.",
           "type": "number"
         },
         "toRowOffset": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ],
-          "description": "To cell row offset in EMU."
+          "$ref": "#/definitions/PictureOptions/properties/toRowOffset"
         },
         "zOrder": {
-          "description": "Document-order position inside the drawing part (round-trip only).",
-          "type": "number"
+          "$ref": "#/definitions/WorksheetChartOptions/properties/zOrder"
         }
       },
       "required": ["col", "colorsPath", "dataPath", "layoutPath", "quickStylePath", "row"],

@@ -10,12 +10,15 @@
  * disclosure, the same pattern Agent Skills use for reference files.
  *
  * The slice is a pure subgraph extraction: field names, descriptions, and
- * enums are kept verbatim; the source schema is never mutated.
+ * enums are kept verbatim; the source schema is never mutated. Property-
+ * sharing pointers from the generator are resolved against the source and
+ * inlined, so a slice never depends on a definition outside its closure.
  *
  * @module
  */
 
 import { entryNames } from "./entries";
+import { isPropertyPointer, resolvePointer } from "./pointer";
 import { SCHEMAS, type DocumentType, type JsonSchema } from "./schemas";
 
 /** Error thrown for unknown definition names; carries did-you-mean suggestions. */
@@ -28,10 +31,20 @@ export class UnknownDefinitionError extends Error {
   }
 }
 
-/** Definition names referenced (directly or transitively) by one definition. */
+/**
+ * Definition names referenced (directly or transitively) by one definition.
+ * Property-sharing pointers do not enqueue their host definition — the host
+ * is not needed in the slice; `inlineDanglingPointers` copies the pointed-at
+ * schema in, so a shared property never drags a whole definition along.
+ */
 function refsOf(def: unknown): string[] {
-  const refs = JSON.stringify(def)?.match(/#\/definitions\/([A-Za-z0-9_%.$-]+)/g) ?? [];
-  return [...new Set(refs.map((r) => decodeURIComponent(r.slice(14))))];
+  const text = JSON.stringify(def) ?? "";
+  const refs = text.match(/#\/definitions\/[A-Za-z0-9_%.$-]+(?:\/[A-Za-z0-9_%.$-]+)*/g) ?? [];
+  return [
+    ...new Set(
+      refs.filter((r) => !isPropertyPointer(r)).map((r) => decodeURIComponent(r.slice(14))),
+    ),
+  ];
 }
 
 /**
@@ -94,6 +107,7 @@ export function sliceSchema(
 
   const expanded = new Set<string>();
   const stubbed = new Set<string>();
+  const out: Record<string, unknown> = {};
   const queue = [...definitions];
   while (queue.length > 0) {
     const name = queue.pop()!;
@@ -103,13 +117,17 @@ export function sliceSchema(
       continue;
     }
     expanded.add(name);
-    for (const ref of refsOf(all[name])) {
+    const clone: Record<string, unknown> = structuredClone(all[name]);
+    // Pointers are resolved against the source and inlined before refs are
+    // collected, so name refs introduced by an inlined property (its host
+    // definition is not part of the closure) still enter the walk.
+    inlinePropertyPointers(clone, all);
+    out[name] = clone;
+    for (const ref of refsOf(clone)) {
       if (ref in all) queue.push(ref);
     }
   }
 
-  const out: Record<string, unknown> = {};
-  for (const name of expanded) out[name] = structuredClone(all[name]);
   for (const name of stubbed) out[name] = buildStub(name, all[name], format);
 
   // Size backstop: demote the largest non-requested definitions to stubs
@@ -144,6 +162,36 @@ export function sliceDocumentSchema(
   definitions: readonly string[],
 ): JsonSchema {
   return sliceSchema(SCHEMAS[type], definitions, type);
+}
+
+/**
+ * Replace every `#/definitions/<Def>/properties/<name>` pointer in `node`
+ * with a clone of the pointed-at schema, resolved against the source schema.
+ * A slice is a self-contained subgraph and the pointer's host definition is
+ * deliberately not part of it (a shared property never drags its host along),
+ * so pointers are inlined before refs are collected. Nested pointers inside
+ * an inlined clone are picked up by the same walk.
+ */
+function inlinePropertyPointers(
+  node: unknown,
+  source: Record<string, Record<string, unknown>>,
+): void {
+  if (Array.isArray(node)) {
+    for (const item of node) inlinePropertyPointers(item, source);
+    return;
+  }
+  if (!node || typeof node !== "object") return;
+  const obj = node as Record<string, unknown>;
+  const ref = typeof obj.$ref === "string" ? obj.$ref : "";
+  if (isPropertyPointer(ref)) {
+    const target = resolvePointer({ definitions: source }, ref);
+    if (target) {
+      const clone = structuredClone(target);
+      for (const key of Object.keys(obj)) delete obj[key];
+      Object.assign(obj, clone);
+    }
+  }
+  for (const value of Object.values(obj)) inlinePropertyPointers(value, source);
 }
 
 /** Throw {@link UnknownDefinitionError} for names missing from the format's schema. */

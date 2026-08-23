@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { SCHEMA_ENTRIES } from "./entries";
 import { SCHEMAS } from "./index";
+import { isPropertyPointer, resolvePointer } from "./pointer";
 import {
   UnknownDefinitionError,
   assertKnownDefinitions,
@@ -11,12 +12,19 @@ import {
   sliceSchema,
 } from "./slice";
 
-/** Every internal $ref inside `node` resolves (after percent-decoding) inside `definitions`. */
+/**
+ * Every internal $ref inside `node` resolves inside `definitions`: name refs
+ * to a definition, property pointers all the way to their target node.
+ */
 function assertNoDanglingRefs(node: unknown, definitions: Record<string, unknown>): void {
-  const refs = JSON.stringify(node)?.match(/#\/definitions\/([A-Za-z0-9_%.$-]+)/g) ?? [];
+  const refs =
+    JSON.stringify(node)?.match(/#\/definitions\/[A-Za-z0-9_%.$-]+(?:\/[A-Za-z0-9_%.$-]+)*/g) ?? [];
   for (const ref of refs) {
-    const name = decodeURIComponent(ref.slice(14));
-    expect(definitions).toHaveProperty(name);
+    if (isPropertyPointer(ref)) {
+      expect(resolvePointer({ definitions }, ref)).toBeDefined();
+    } else {
+      expect(definitions).toHaveProperty(decodeURIComponent(ref.slice(14)));
+    }
   }
 }
 

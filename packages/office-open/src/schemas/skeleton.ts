@@ -16,6 +16,7 @@
  * @module
  */
 
+import { isPropertyPointer, resolvePointer } from "./pointer";
 import { SCHEMAS, type DocumentType, type JsonSchema } from "./schemas";
 
 /** Definitions expanded in the skeleton, outermost first. */
@@ -75,6 +76,16 @@ function convertProperty(
 ): Node {
   const ref = typeof prop.$ref === "string" ? prop.$ref : undefined;
   if (ref) {
+    if (isPropertyPointer(ref)) {
+      // property-sharing pointer: resolve to the target property schema and
+      // keep converting — the skeleton must stay $ref-free
+      if (visited.has(ref)) return buildStub(ref);
+      const target = resolvePointer({ definitions: definitionsOf(format) }, ref);
+      if (target) {
+        return convertProperty(structuredClone(target), format, spine, new Set([...visited, ref]));
+      }
+      return buildStub(ref);
+    }
     const name = decodeURIComponent(ref.slice("#/definitions/".length));
     const target = definitionsOf(format)[name];
     if (visited.has(name)) return buildStub(name);
