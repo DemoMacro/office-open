@@ -521,10 +521,21 @@ function stringifyEndParaRPr(opts: TextCharacterPropertiesOptions, ctx: WriteCon
   return stringifyRunProperties("a:endParaRPr", opts, ctx) || "<a:endParaRPr/>";
 }
 
+// PowerPoint refuses to open a file whose a:fld carries a nil GUID (reports
+// the whole package as corrupt even though the XSD allows any ST_Guid), so an
+// unspecified id falls back to a stable non-zero one derived from a call
+// counter — same options, same call order, same output.
+let nextFieldId = 0;
+
+function fallbackFieldGuid(): string {
+  nextFieldId += 1;
+  return `{5BCAD085-E8A6-8845-BD4E-CB4CCA05${(nextFieldId % 0x10000).toString(16).padStart(4, "0")}}`;
+}
+
 function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
-  // id is a required GUID on CT_TextField; fall back to a nil UUID so a
-  // user-authored field still produces valid OOXML.
-  const id = opts.id ?? "{00000000-0000-0000-0000-000000000000}";
+  // id is a required GUID on CT_TextField; the fallback keeps user-authored
+  // fields PowerPoint-openable (see fallbackFieldGuid).
+  const id = opts.id ?? fallbackFieldGuid();
   const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
   // CT_TextField sequence: rPr?, pPr?, t? — a bare <a:pPr/> placeholder (empty
   // options object) still round-trips, so fall back to the empty element.
