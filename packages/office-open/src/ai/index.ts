@@ -33,22 +33,28 @@ export interface SchemaLookupInput {
 }
 
 const SKELETON_GUIDANCE =
-  "This input schema is a skeleton (top-level shape + child wrapper keys only). " +
-  "Stubs name the definition they stand for — before filling paragraph/table/chart/style details, " +
-  "call the office-open-schema-lookup tool, e.g. { type: 'docx', definitions: ['ParagraphOptions', 'RunOptions'] }. " +
-  "Invalid structures are rejected with instance-path errors; fix and retry.";
+  "This schema is a skeleton — stubs name the definition they stand for. Fetch real fields with the " +
+  "office-open-schema-lookup tool, e.g. { type: 'docx', definitions: ['ParagraphOptions', 'RunOptions'] }. " +
+  "Invalid input is rejected with instance-path errors; fix and retry.";
+
+/**
+ * The generate tools return the file as base64 for the client UI, but the
+ * model only needs the outcome — full base64 in the model context would burn
+ * thousands of tokens per document.
+ */
+function documentGeneratedSummary(output: { base64: string; mimeType: string }): string {
+  const kb = Math.ceil((output.base64.length * 3) / 4 / 1024);
+  return `Document generated and all validations passed (${output.mimeType}, ${kb} KB).`;
+}
 
 export const docxTool = tool({
   description:
     "Generate a .docx Word document. " +
     "The input is the document options directly — must include a 'sections' array. " +
-    "Each section has 'children' (paragraphs, tables, etc.). " +
-    "IMPORTANT: " +
-    "Section children must use wrapper keys: { paragraph: {...} }, { table: {...} }, { toc: {...} }, { textbox: {...} }. " +
-    "Paragraph children must use: { text: '...', bold?: true, italic?: true, size?: number, ... }. " +
-    "The 'text' key is required in run objects. Plain strings are also accepted. " +
-    "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
-    "Optional metadata: title, creator, subject, styles, numbering, comments, footnotes, endnotes, background, features. " +
+    "Conventions: " +
+    "section children are wrapper-key objects ({ paragraph: {...} }, { table: {...} }, …); " +
+    "run objects require a 'text' key (plain strings also accepted); " +
+    "colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     SKELETON_GUIDANCE,
   inputSchema: jsonSchema<DocumentOptions>(getSkeletonSchema("docx")),
   execute: async (options) => {
@@ -67,20 +73,17 @@ export const docxTool = tool({
       throw new Error(formatToolError("docx", error));
     }
   },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
 export const pptxTool = tool({
   description:
     "Generate a .pptx PowerPoint presentation. " +
     "The input is the presentation options directly — must include a 'slides' array. " +
-    "Each slide has 'children' (shapes, pictures, tables, charts, groups, etc.). " +
-    "Slide children use wrapper keys: { shape: {...} }, { picture: {...} }, { table: {...} }, { chart: {...} }, etc. " +
-    "Shapes use { shape: { x, y, width, height, textBody?, fill?, ... } }. " +
-    "IMPORTANT: " +
-    "Shape positions (x, y, width, height) are in pixels. " +
-    "Colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
-    "Fill can be a hex color string or a fill object: '4472C4' or { type: 'solidFill', color: '4472C4' }. " +
-    "Optional: size ('16:9' or '4:3' or { width, height }), title, creator, masters, show. " +
+    "Conventions: " +
+    "shape x/y/width/height take UniversalMeasure strings ('2cm', '1in', '96px') or raw EMU numbers (914400 = 1 inch); " +
+    "fills are hex color strings or fill objects ('4472C4' or { type: 'solidFill', color: '4472C4' }); " +
+    "colors are hex WITHOUT '#': 'FF0000', not '#FF0000'. " +
     SKELETON_GUIDANCE,
   inputSchema: jsonSchema<PresentationOptions>(getSkeletonSchema("pptx")),
   execute: async (options) => {
@@ -99,18 +102,16 @@ export const pptxTool = tool({
       throw new Error(formatToolError("pptx", error));
     }
   },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
 export const xlsxTool = tool({
   description:
     "Generate a .xlsx Excel spreadsheet. " +
     "The input is the workbook options directly — must include a 'worksheets' array. " +
-    "Each worksheet has 'rows' — an array of row objects, each with 'cells'. " +
-    "Cell values: string, number, boolean, null. Use 'style' for formatting. " +
-    "IMPORTANT: " +
-    "Cells can be shorthand values (string, number, boolean) or objects: { value: 'hello', style: { ... } }. " +
-    "Column widths use 'width' as a number. " +
-    "Optional: columns, mergeCells, freezePanes, autoFilter, images, charts, dataValidations, conditionalFormats. " +
+    "Conventions: " +
+    "cells are shorthand values (string, number, boolean, null) or { value, style } objects; " +
+    "column 'width' is in Excel character units. " +
     SKELETON_GUIDANCE,
   inputSchema: jsonSchema<WorkbookOptions>(getSkeletonSchema("xlsx")),
   execute: async (options) => {
@@ -138,6 +139,7 @@ export const xlsxTool = tool({
       throw new Error(formatToolError("xlsx", error));
     }
   },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
 export const schemaLookupTool = tool({

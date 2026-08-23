@@ -24,10 +24,10 @@ describe("officeOpenTools", () => {
     }
   });
 
-  it("each tool should have a description with IMPORTANT rules", () => {
+  it("each tool should have a description with conventions", () => {
     for (const [name, tool] of Object.entries(officeOpenTools)) {
       if (name === "office-open-schema-lookup") continue;
-      expect(tool.description).toContain("IMPORTANT:");
+      expect(tool.description).toContain("Conventions:");
     }
   });
 
