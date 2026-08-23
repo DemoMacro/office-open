@@ -415,6 +415,7 @@ function postProcess(schema: Record<string, unknown>) {
   }
 
   const shared = shareDuplicatedProperties(definitions);
+  const guarded = applyChoiceGuards(definitions);
 
   return {
     definitions: Object.keys(definitions).length,
@@ -423,8 +424,55 @@ function postProcess(schema: Record<string, unknown>) {
     descriptionCoverage:
       totalProperties > 0 ? +((describedProperties / totalProperties) * 100).toFixed(1) : 0,
     maxAnyOfBranches,
+    guardedChoices: guarded,
     ...shared,
   };
+}
+
+/**
+ * XSD choice arms the emit layer resolves with a fallback ("customGeometry
+ * wins") are accepted input with defined semantics and stay out of the
+ * schema. This table carries the choices with no fallback, where a
+ * contradiction would silently drop fields: c:dLbls is
+ * choice(c:delete | Group_DLbls), so `delete: true` alongside shared
+ * settings discards them — reject that combination up front.
+ */
+const CHOICE_GUARDS: Record<string, { is: Record<string, unknown>; notTogether: string[] }> = {
+  DataLabelsOptions: {
+    is: { properties: { delete: { const: true } }, required: ["delete"] },
+    notTogether: [
+      "numberFormat",
+      "shapeProperties",
+      "textProperties",
+      "position",
+      "showLegendKey",
+      "showVal",
+      "showCatName",
+      "showSerName",
+      "showPercent",
+      "showBubbleSize",
+      "separator",
+      "showLeaderLines",
+      "leaderLines",
+    ],
+  },
+};
+
+/** Append `if delete is true, none of the fellow-arm fields may be set` guards. */
+function applyChoiceGuards(definitions: Record<string, Record<string, unknown>>): number {
+  let guarded = 0;
+  for (const [name, guard] of Object.entries(CHOICE_GUARDS)) {
+    const def = definitions[name];
+    if (!def) continue;
+    guarded++;
+    const allOf = Array.isArray(def.allOf) ? (def.allOf as unknown[]) : [];
+    allOf.push({
+      if: guard.is,
+      then: { not: { anyOf: guard.notTogether.map((field) => ({ required: [field] })) } },
+    });
+    def.allOf = allOf;
+  }
+  return guarded;
 }
 
 /**

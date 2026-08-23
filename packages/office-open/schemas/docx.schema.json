@@ -4792,9 +4792,66 @@
     },
     "DataLabelsOptions": {
       "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "delete": {
+                "const": true
+              }
+            },
+            "required": ["delete"]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["numberFormat"]
+                },
+                {
+                  "required": ["shapeProperties"]
+                },
+                {
+                  "required": ["textProperties"]
+                },
+                {
+                  "required": ["position"]
+                },
+                {
+                  "required": ["showLegendKey"]
+                },
+                {
+                  "required": ["showVal"]
+                },
+                {
+                  "required": ["showCatName"]
+                },
+                {
+                  "required": ["showSerName"]
+                },
+                {
+                  "required": ["showPercent"]
+                },
+                {
+                  "required": ["showBubbleSize"]
+                },
+                {
+                  "required": ["separator"]
+                },
+                {
+                  "required": ["showLeaderLines"]
+                },
+                {
+                  "required": ["leaderLines"]
+                }
+              ]
+            }
+          }
+        }
+      ],
       "properties": {
         "delete": {
-          "description": "Labels deleted at the group level (c:delete inside c:dLbls) — Office writes val=\"0\" explicitly to keep labels on; round-trips the attribute.",
+          "description": "Drop every label for this series (c:delete). Choice vs the shared settings below: `true` ignores them all; `false` keeps labels on and emits its element only when no setting is set (round-trip).",
           "type": "boolean"
         },
         "labels": {

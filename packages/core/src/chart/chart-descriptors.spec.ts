@@ -424,6 +424,63 @@ describe("chartSpaceDesc", () => {
     expect((result.series[0] as ChartSeriesData).dataLabels?.leaderLines).toBe(true);
   });
 
+  it("resolves the dLbls choice arm: a true delete drops every shared setting", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          dataLabels: {
+            delete: true,
+            showVal: true,
+            showPercent: true,
+            labels: [{ index: 0, delete: true }],
+          },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:delete val="1"/>');
+    expect(xml).not.toContain("c:showVal");
+    expect(xml).not.toContain("c:showPercent");
+    // per-point c:dLbl overrides sit outside the choice and survive
+    expect(xml).toContain('c:idx val="0"');
+  });
+
+  it("keeps delete:false plus shared settings on the settings arm", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          dataLabels: { delete: false, showVal: true, showLeaderLines: true },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    // a delete element alongside settings would occupy both choice arms
+    expect(xml).not.toContain("c:delete");
+    expect(xml).toContain("c:showVal");
+    expect(xml).toContain("c:showLeaderLines");
+  });
+
+  it("round-trips a bare delete:false element", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2], dataLabels: { delete: false } }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:delete val="0"/>');
+
+    const result = roundTrip(opts);
+    expect((result.series[0] as ChartSeriesData).dataLabels?.delete).toBe(false);
+  });
+
   // ── Axes (EG_AxShared + CT_CatAx/CT_ValAx/CT_DateAx/CT_SerAx) ──
 
   it("emits and parses back default axes for a column chart", () => {

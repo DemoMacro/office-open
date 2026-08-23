@@ -248,13 +248,36 @@ function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   return `<c:dLbl><c:idx val="${opts.index}"/>${inner.join("")}</c:dLbl>`;
 }
 
+// Group_DLbls members — present in any of these, the choice resolves to the
+// shared-settings arm (CT_DLbls is choice(c:delete | Group_DLbls))
+const DATA_LABELS_SHARED_KEYS = [
+  "numberFormat",
+  "shapeProperties",
+  "textProperties",
+  "position",
+  "showLegendKey",
+  "showVal",
+  "showCatName",
+  "showSerName",
+  "showPercent",
+  "showBubbleSize",
+  "separator",
+  "showLeaderLines",
+  "leaderLines",
+] as const;
+
 function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string {
-  const parts: string[] = [];
-  // CT_DLbls: per-point overrides (c:dLbl) precede the shared Group_DLbls settings.
-  if (opts.labels) {
-    for (const lbl of opts.labels) parts.push(stringifyDataLabel(lbl, ctx));
+  const head = opts.labels?.map((lbl) => stringifyDataLabel(lbl, ctx)).join("") ?? "";
+  // CT_DLbls choice arms: c:dLbl overrides sit outside the choice; then either
+  // the delete arm or the shared-settings arm — never both. A true delete
+  // drops every shared setting (mirrors the per-point early return); an
+  // explicit delete:false keeps its element only when no shared setting rides
+  // along — alongside settings it would occupy both arms at once.
+  const hasShared = DATA_LABELS_SHARED_KEYS.some((key) => opts[key] !== undefined);
+  if (opts.delete === true || (opts.delete !== undefined && !hasShared)) {
+    return `<c:dLbls>${head}<c:delete val="${opts.delete ? 1 : 0}"/></c:dLbls>`;
   }
-  if (opts.delete !== undefined) parts.push(`<c:delete${boolVal(opts.delete)}/>`);
+  const parts: string[] = [];
   if (opts.numberFormat !== undefined)
     parts.push(`<c:numFmt formatCode="${escapeXml(opts.numberFormat)}" sourceLinked="0"/>`);
   parts.push(chartSpPr(opts.shapeProperties, ctx));
@@ -272,15 +295,11 @@ function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string
     parts.push(`<c:showBubbleSize${boolVal(opts.showBubbleSize)}/>`);
   if (opts.separator !== undefined)
     parts.push(`<c:separator>${escapeXml(opts.separator)}</c:separator>`);
-  // CT_DLbls is a choice: delete OR the shared-settings group (which carries
-  // showLeaderLines/leaderLines). The tail pair only rides along with the group.
-  if (opts.delete === undefined) {
-    if (opts.showLeaderLines !== undefined)
-      parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
-    // CT_ChartLines (leaderLines); an empty element is XSD-valid.
-    if (opts.leaderLines) parts.push(emptyEl("c:leaderLines"));
-  }
-  return `<c:dLbls>${parts.join("")}</c:dLbls>`;
+  // CT_ChartLines (leaderLines); an empty element is XSD-valid.
+  if (opts.showLeaderLines !== undefined)
+    parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
+  if (opts.leaderLines) parts.push(emptyEl("c:leaderLines"));
+  return `<c:dLbls>${head}${parts.join("")}</c:dLbls>`;
 }
 
 // ── 3D view XML (CT_View3D) ──
@@ -1641,7 +1660,8 @@ function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions 
   if (lblEls.length > 0) {
     opts.labels = lblEls.map((el): DataLabelOptions => {
       const result: DataLabelOptions = { index: readValNum(el, "c:idx") ?? 0 };
-      if (findChild(el, "c:delete")) result.delete = true;
+      const labelDelete = readBoolAttr(el, "c:delete");
+      if (labelDelete !== undefined) result.delete = labelDelete;
       const layoutEl = findChild(el, "c:layout");
       if (layoutEl) result.layout = readManualLayout(layoutEl) ?? true;
       const richEl = findChild(findChild(el, "c:tx"), "c:rich");

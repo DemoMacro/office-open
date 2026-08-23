@@ -198,8 +198,9 @@ export interface DataLabelOptions {
 
 export interface DataLabelsOptions {
   /**
-   * Labels deleted at the group level (c:delete inside c:dLbls) — Office
-   * writes val="0" explicitly to keep labels on; round-trips the attribute.
+   * Drop every label for this series (c:delete). Choice vs the shared
+   * settings below: `true` ignores them all; `false` keeps labels on and
+   * emits its element only when no setting is set (round-trip).
    */
   delete?: boolean;
   /** Label number format (c:numFmt formatCode, before the position). */
