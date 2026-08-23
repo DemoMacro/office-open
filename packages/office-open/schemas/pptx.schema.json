@@ -290,6 +290,7 @@
           "description": "Sub-element build (p:bldSub) — a:bldDgm or a:bldChart; required unless graphicBuildAsOne."
         },
         "groupId": {
+          "description": "Build group id — must match the paired animation entry's groupId: the SDK validates bldP/bldDgm",
           "type": "number"
         },
         "oleChartAnimateBackground": {
@@ -1746,7 +1747,7 @@
           "$ref": "#/definitions/TimeUnit"
         },
         "crossAxisId": {
-          "description": "c:crossAx target id (required).",
+          "description": "c:crossAx target id; defaults to the default axis slot's pairing.",
           "type": "number"
         },
         "crossBetween": {
@@ -1766,7 +1767,7 @@
           "$ref": "#/definitions/DisplayUnitsOptions"
         },
         "id": {
-          "description": "c:axId (required).",
+          "description": "c:axId. Pure internal wiring — the axis pair references each other, so a fresh document may omit it and inherit the default axis slot's id.",
           "type": "number"
         },
         "kind": {
@@ -1867,7 +1868,7 @@
           "description": "Axis title (c:title) — plain text or the full object form."
         }
       },
-      "required": ["kind", "id", "crossAxisId"],
+      "required": ["kind"],
       "type": "object"
     },
     "AxisOrientation": {
@@ -4602,6 +4603,7 @@
       "description": "Custom slide show (p:custShowLst entry — a named subset and order of slides).",
       "properties": {
         "id": {
+          "description": "p:custShow",
           "type": "number"
         },
         "name": {
@@ -4621,7 +4623,7 @@
           "type": "array"
         }
       },
-      "required": ["name", "id", "slides"],
+      "required": ["name", "slides"],
       "type": "object"
     },
     "CustomerDataOptions": {

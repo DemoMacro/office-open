@@ -796,7 +796,7 @@
           "$ref": "#/definitions/TimeUnit"
         },
         "crossAxisId": {
-          "description": "c:crossAx target id (required).",
+          "description": "c:crossAx target id; defaults to the default axis slot's pairing.",
           "type": "number"
         },
         "crossBetween": {
@@ -816,7 +816,7 @@
           "$ref": "#/definitions/DisplayUnitsOptions"
         },
         "id": {
-          "description": "c:axId (required).",
+          "description": "c:axId. Pure internal wiring — the axis pair references each other, so a fresh document may omit it and inherit the default axis slot's id.",
           "type": "number"
         },
         "kind": {
@@ -917,7 +917,7 @@
           "description": "Axis title (c:title) — plain text or the full object form."
         }
       },
-      "required": ["kind", "id", "crossAxisId"],
+      "required": ["kind"],
       "type": "object"
     },
     "AxisOrientation": {
@@ -2220,7 +2220,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "verticalMerge": {
@@ -2234,7 +2234,7 @@
           "type": "string"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "ChangedProperties": {
@@ -2250,11 +2250,11 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         }
       },
-      "required": ["id", "author", "date"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "CharacterStyleOptions": {
@@ -11547,11 +11547,11 @@
           "description": "Date of the change"
         },
         "id": {
-          "description": "Revision ID",
-          "type": "string"
+          "description": "Revision ID (document-unique; omit for a library-assigned value)",
+          "type": ["string", "number"]
         }
       },
-      "required": ["id", "author"],
+      "required": ["author"],
       "type": "object"
     },
     "NumberingOptions": {
@@ -12645,11 +12645,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },
@@ -12678,11 +12678,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },
@@ -12944,11 +12944,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },
@@ -12977,11 +12977,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },
@@ -13919,7 +13919,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "indent": {
@@ -14165,7 +14165,7 @@
           "type": "boolean"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "ParagraphRunOptions": {
@@ -15347,11 +15347,10 @@
           "type": "string"
         },
         "id": {
-          "description": "Unique identifier for this permission range (typically a number)",
+          "description": "Unique identifier for this permission range — document-unique only, so fresh input may omit it and get a library-assigned value",
           "type": ["string", "number"]
         }
       },
-      "required": ["id"],
       "type": "object"
     },
     "PersonOptions": {
@@ -17373,7 +17372,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "imprint": {
@@ -17507,7 +17506,7 @@
           "type": "boolean"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "RunPropertiesOptions": {
@@ -19653,7 +19652,7 @@
           "description": "Document grid. Three states: omitted (fresh generation emits Word's CJK default line grid — linePitch 312, type \"lines\"); a DocGridProperties object (emits provided values, e.g. from a parsed source); or false (explicit off — a parsed source with no w:docGrid is preserved by emitting nothing)."
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "lineNumberType": {
@@ -19732,7 +19731,7 @@
           "$ref": "#/definitions/SectionVerticalAlign"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "SectionPropertiesOptions": {
@@ -23050,7 +23049,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "insertion": {
@@ -23091,7 +23090,7 @@
           "description": "Width specification for the cell"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "TableCellPropertiesOptions": {
@@ -23486,7 +23485,7 @@
           "$ref": "#/definitions/TableFloatOptions"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "indent": {
@@ -23527,7 +23526,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "TablePropertiesOptions": {
@@ -23607,11 +23606,11 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "TablePropertyExOptions": {
@@ -23921,7 +23920,7 @@
           "type": "boolean"
         },
         "id": {
-          "description": "Unique identifier for this change (must be unique within the document)",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "rowAlignment": {
@@ -23955,7 +23954,7 @@
           "description": "Preferred width before the row (wBefore)"
         }
       },
-      "required": ["author", "date", "id"],
+      "required": ["author", "date"],
       "type": "object"
     },
     "TableRowPropertiesOptions": {
@@ -25264,11 +25263,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },
@@ -25297,11 +25296,11 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Unique identifier for this change (must be unique within the document)",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
-              "required": ["author", "children", "date", "id"],
+              "required": ["author", "children", "date"],
               "type": "object"
             }
           },

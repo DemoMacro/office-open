@@ -426,7 +426,7 @@
           "$ref": "#/definitions/TimeUnit"
         },
         "crossAxisId": {
-          "description": "c:crossAx target id (required).",
+          "description": "c:crossAx target id; defaults to the default axis slot's pairing.",
           "type": "number"
         },
         "crossBetween": {
@@ -446,7 +446,7 @@
           "$ref": "#/definitions/DisplayUnitsOptions"
         },
         "id": {
-          "description": "c:axId (required).",
+          "description": "c:axId. Pure internal wiring — the axis pair references each other, so a fresh document may omit it and inherit the default axis slot's id.",
           "type": "number"
         },
         "kind": {
@@ -547,7 +547,7 @@
           "description": "Axis title (c:title) — plain text or the full object form."
         }
       },
-      "required": ["kind", "id", "crossAxisId"],
+      "required": ["kind"],
       "type": "object"
     },
     "AxisOrientation": {
@@ -10155,7 +10155,7 @@
           "type": "number"
         },
         "id": {
-          "description": "Filter ID — unique within this pivot table (required)",
+          "description": "Filter ID — unique within this pivot table; omit for auto (list index)",
           "type": "number"
         },
         "mpFld": {
@@ -10179,7 +10179,7 @@
           "description": "Filter type (required)"
         }
       },
-      "required": ["fld", "type", "id"],
+      "required": ["fld", "type"],
       "type": "object"
     },
     "PivotFilterType": {
@@ -14575,6 +14575,14 @@
     "TableOptions": {
       "additionalProperties": false,
       "properties": {
+        "altText": {
+          "description": "Table alternate-text (x14:table `@altText` inside the trailing extLst). Structured counterpart of  {@link  ext }  — emit builds the x14:table extension from it when ext itself is absent.",
+          "type": "string"
+        },
+        "altTextSummary": {
+          "description": "Table alternate-text summary (x14:table `@altTextSummary`).",
+          "type": "string"
+        },
         "autoFilter": {
           "anyOf": [
             {
@@ -14634,7 +14642,7 @@
           "type": "number"
         },
         "id": {
-          "description": "Unique table id (1-based, must be unique across the workbook)",
+          "description": "Unique table id (1-based across the workbook); omit for auto-numbering",
           "type": "number"
         },
         "insertRow": {
@@ -14690,7 +14698,7 @@
           "type": "boolean"
         }
       },
-      "required": ["id", "displayName", "ref", "columns"],
+      "required": ["displayName", "ref", "columns"],
       "type": "object"
     },
     "TableStyleElementOptions": {
