@@ -32,8 +32,9 @@ export type EditGroup = (typeof EditGroupType)[keyof typeof EditGroupType];
  * Options for creating a permission start marker.
  */
 export interface PermStartOptions {
-  /** Unique identifier for this permission range (typically a number) */
-  id: string | number;
+  /** Unique identifier for this permission range — document-unique only, so
+   * fresh input may omit it and get a library-assigned value */
+  id?: string | number;
   /** Editing group that can edit this range */
   editGroup?: EditGroup;
   /** Individual user who can edit this range (CT_PermStart `@ed`) */

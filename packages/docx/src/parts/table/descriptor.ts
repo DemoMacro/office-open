@@ -62,6 +62,7 @@ import { parseBorderSide } from "@shared/border";
 import type { SectionChild } from "@shared/section";
 import { parseShading, type ShadingProperties } from "@shared/shading";
 import type { CellMergeAttributes } from "@shared/track-revision";
+import { autoRevisionId } from "@shared/track-revision/track-revision";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import type { BodyContext, DocxReadContext } from "../../context";
@@ -110,7 +111,7 @@ function buildTableGridXml(
 
   if (revision) {
     const revCols = revision.columnWidths.map(gridCol).join("");
-    return `<w:tblGrid>${cols}<w:tblGridChange w:id="${revision.id}"><w:tblGrid>${revCols}</w:tblGrid></w:tblGridChange></w:tblGrid>`;
+    return `<w:tblGrid>${cols}<w:tblGridChange w:id="${revision.id ?? autoRevisionId()}"><w:tblGrid>${revCols}</w:tblGrid></w:tblGridChange></w:tblGrid>`;
   }
 
   return `<w:tblGrid>${cols}</w:tblGrid>`;

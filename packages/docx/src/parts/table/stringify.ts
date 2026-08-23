@@ -37,6 +37,7 @@ import type {
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { WidthType, widthPctToFiftieths } from "@parts/table/table-width";
 import type { CellMergeAttributes } from "@shared/track-revision";
+import { autoRevisionId } from "@shared/track-revision/track-revision";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
 import { borderStr, onOff, shadingStr } from "../paragraph/stringify";
@@ -198,7 +199,7 @@ function changeAttrStr(tag: string, opts: ChangedProperties): string {
   const a = attrsRaw({
     "w:author": escapeXml(opts.author),
     "w:date": escapeXml(opts.date),
-    "w:id": opts.id,
+    "w:id": opts.id ?? autoRevisionId(),
   });
   return `<${tag}${a}/>`;
 }
@@ -209,7 +210,7 @@ function cellMergeStr(opts: CellMergeAttributes): string {
   const attrs: Record<string, string | number | boolean | undefined> = {
     "w:author": escapeXml(opts.author),
     "w:date": escapeXml(opts.date),
-    "w:id": opts.id,
+    "w:id": opts.id ?? autoRevisionId(),
   };
   if (opts.verticalMerge !== undefined) {
     attrs["w:vMerge"] = xsdVerticalMergeRev.to(opts.verticalMerge);
@@ -240,7 +241,7 @@ function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptio
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id,
+    "w:id": options.id ?? autoRevisionId(),
   });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;
 }
@@ -347,7 +348,7 @@ function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChang
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id,
+    "w:id": options.id ?? autoRevisionId(),
   });
   return `<w:trPrChange ${a}><w:trPr>${inner}</w:trPr></w:trPrChange>`;
 }
@@ -448,7 +449,7 @@ function stringifyTableCellPropertiesChangeInner(
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id,
+    "w:id": options.id ?? autoRevisionId(),
   });
   return `<w:tcPrChange ${a}><w:tcPr>${inner}</w:tcPr></w:tcPrChange>`;
 }
@@ -606,7 +607,7 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
     const a = attrsRaw({
       "w:author": escapeXml(change.author),
       "w:date": escapeXml(change.date),
-      "w:id": change.id,
+      "w:id": change.id ?? autoRevisionId(),
     });
     // CT_TblPrExChange requires a tblPrEx child holding the previous (pre-change) values.
     const revInner = stringifyTablePropertyExceptionsInner(change);

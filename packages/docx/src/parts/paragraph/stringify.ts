@@ -43,6 +43,7 @@ import type { FontProperties } from "@parts/paragraph/run/run-fonts";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { ShadingProperties } from "@shared/shading";
+import { autoRevisionId } from "@shared/track-revision/track-revision";
 
 // ── Inline helpers ──
 
@@ -495,11 +496,15 @@ export function stringifyParagraphProperties(
       const extra: string[] = [];
       if (runOpts.insertion) {
         const { id, author, date } = runOpts.insertion;
-        extra.push(`<w:ins w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
+        extra.push(
+          `<w:ins w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
+        );
       }
       if (runOpts.deletion) {
         const { id, author, date } = runOpts.deletion;
-        extra.push(`<w:del w:id="${id}" w:author="${escapeXml(author)}" w:date="${date}"/>`);
+        extra.push(
+          `<w:del w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
+        );
       }
       // CT_ParaRPr sequence: ins/del/moveFrom/moveTo lead, then EG_RPrBase.
       const body = extra.join("") + (inner ?? "");
@@ -514,7 +519,7 @@ export function stringifyParagraphProperties(
     // serializing the pre-change properties.
     const { author: _a, date: _d, id: _i, run: _r, ...originalProps } = rev;
     const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true });
-    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
+    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId()}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }
 
   const body = s;
@@ -674,7 +679,7 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
     const rev = opts.revision as RunPropertiesChangeOptions;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions);
-    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId()}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — raw passthrough, emitted last (EG_RPrBase extension slot)

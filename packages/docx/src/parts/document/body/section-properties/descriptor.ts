@@ -39,6 +39,7 @@ import type { HeaderFooterReference } from "@parts/header-footer";
 import type { BorderOptions } from "@shared/border";
 import { NumberFormat } from "@shared/constants";
 import type { BodyContext } from "@shared/index";
+import { autoRevisionId } from "@shared/track-revision/track-revision";
 
 /** Valid page-number `@w:fmt` values (ST_NumberFormat). */
 const PAGE_NUMBER_FORMATS = Object.values(NumberFormat) as readonly string[];
@@ -224,7 +225,7 @@ function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions):
   // what the source carried. Injecting the fresh-document defaults (pgSz,
   // pgMar, docGrid) would fabricate elements the revision never had.
   const innerXml = stringifySectionPropertiesInner(inner, true);
-  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
+  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id ?? autoRevisionId()}"><w:sectPr>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──

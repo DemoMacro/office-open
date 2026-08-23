@@ -21,8 +21,8 @@ import type { ParagraphRunOptions } from "./run/run";
 
 /** Numbering applied as a revision (w:numPr/w:ins, CT_TrackChange). */
 export interface NumberingInsertionOptions {
-  /** Revision ID */
-  id: string;
+  /** Revision ID (document-unique; omit for a library-assigned value) */
+  id?: string | number;
   /** Author of the change */
   author: string;
   /** Date of the change */
