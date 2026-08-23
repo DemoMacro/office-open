@@ -1422,7 +1422,10 @@ export interface WorksheetOptions {
   rowBreaks?: PageBreakOptions[];
   /** Column page breaks (CT_PageBreaks) */
   colBreaks?: PageBreakOptions[];
-  /** Custom sheet views (CT_CustomSheetViews) */
+  /**
+   * Custom sheet views (CT_CustomSheetViews). Each guid needs a same-guid
+   * workbook-level customWorkbookViews entry — Excel refuses orphans.
+   */
   customSheetViews?: CustomSheetViewOptions[];
   /** Cell watches (CT_CellWatches) */
   cellWatches?: CellWatchOptions[];

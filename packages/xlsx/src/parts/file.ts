@@ -113,6 +113,10 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   metadata?: MetadataOptions;
   /** XML mappings (xl/xmlMaps.xml) */
   xmlMaps?: MapInfoOptions;
+  /**
+   * Workbook-level custom view snapshots. Excel requires one entry per
+   * sheet-level customSheetViews guid (matched by guid).
+   */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */
   fileRecoveryPr?: FileRecoveryPropertiesOptions;

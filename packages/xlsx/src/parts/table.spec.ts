@@ -45,10 +45,14 @@ describe("tableDesc round-trip", () => {
     expect(result.id).toBe(1);
     expect(result.displayName).toBe("Table1");
     expect(result.ref).toBe("A1:D4");
+    // Ref spans 4 columns — missing declarations pad with default ColumnN
+    // names (Excel requires the count to match the ref width).
     const columns = result.columns!;
-    expect(columns).toHaveLength(2);
+    expect(columns).toHaveLength(4);
     expect(columns[0]?.name).toBe("Col1");
     expect(columns[1]?.name).toBe("Col2");
+    expect(columns[2]?.name).toBe("Column3");
+    expect(columns[3]?.name).toBe("Column4");
   });
 
   it("round-trips table with name", () => {

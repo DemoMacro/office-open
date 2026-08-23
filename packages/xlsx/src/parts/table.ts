@@ -19,8 +19,22 @@ import {
   stringifyElement,
 } from "@office-open/xml";
 
+import { letterToColumn } from "../util/index";
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
 import type { AutoFilterOptions } from "./worksheet";
+
+// Width in columns of a table ref range ("A1:F2" → 6); undefined when the
+// ref cannot be parsed. Excel requires exactly one tableColumn per column
+// spanned by the ref — a mismatch is an open-blocking repair even though
+// the XSD validates.
+function tableRefWidth(ref: string): number | undefined {
+  const sep = ref.indexOf(":");
+  const first = (sep === -1 ? ref : ref.slice(0, sep)).trim();
+  const last = sep === -1 ? first : ref.slice(sep + 1).trim();
+  const toCol = (cell: string) => letterToColumn(cell.replace(/[^A-Za-z]/g, "").toUpperCase());
+  const width = toCol(last) - toCol(first) + 1;
+  return width >= 1 ? width : undefined;
+}
 
 // ── Totals row function (ST_TotalsRowFunction) ──
 
@@ -118,7 +132,10 @@ export interface TableOptions {
   comment?: string;
   /** Data range, e.g. "A1:D10" */
   ref: string;
-  /** Column definitions */
+  /**
+   * Column definitions. Excel requires one per column spanned by `ref`;
+   * missing ones auto-fill with default ColumnN names, extras are dropped.
+   */
   columns: TableColumnOptions[];
   /** Number of header rows (default: 1) */
   headerRowCount?: number;
@@ -230,9 +247,20 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       p.push(stringifyAutoFilter(o.autoFilter));
     }
 
-    // tableColumns (required)
-    p.push(`<tableColumns count="${o.columns.length}">`);
-    for (const [i, col] of o.columns.entries()) {
+    // tableColumns (required). Pad missing declarations with Excel's default
+    // "ColumnN" names and drop extras so the count always matches the ref
+    // width — the same thing Excel does when a table is resized.
+    const width = tableRefWidth(o.ref);
+    const columns =
+      width !== undefined && o.columns.length !== width
+        ? o.columns.slice(0, width).concat(
+            Array.from({ length: width - o.columns.length }, (_, i): TableColumnOptions => ({
+              name: `Column${o.columns.length + i + 1}`,
+            })),
+          )
+        : o.columns;
+    p.push(`<tableColumns count="${columns.length}">`);
+    for (const [i, col] of columns.entries()) {
       const colAttrs: Record<string, string | number | boolean | undefined> = {
         id: i + 1,
         name: col.name,

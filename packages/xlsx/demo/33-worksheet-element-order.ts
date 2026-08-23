@@ -16,6 +16,18 @@ const png1x1 = new Uint8Array([
 const buffer = await generateWorkbook({
   calcPr: { calcId: 191029 },
   oleSize: "A1:D10",
+  // Excel requires every sheet-level customSheetView guid to have a
+  // same-guid workbook-level customWorkbookView — orphaned sheet views
+  // make Excel refuse the file outright.
+  customWorkbookViews: [
+    {
+      name: "Snapshot",
+      guid: "{11111111-2222-3333-4444-555555555555}",
+      windowWidth: 1936,
+      windowHeight: 1048,
+      activeSheetId: 1,
+    },
+  ],
   worksheets: [
     {
       name: "Everything",
@@ -27,7 +39,18 @@ const buffer = await generateWorkbook({
       sheetFormatPr: { defaultRowHeight: 16, outlineLevelRow: 1 },
       columns: [{ min: 1, max: 6, width: 12 }],
       rows: [
-        { cells: [{ value: "Header" }] },
+        // Header cells must cover every table column — Excel refuses the
+        // file when a tableColumn name has no matching header cell value.
+        {
+          cells: [
+            { value: "Header" },
+            { value: "Column2" },
+            { value: "Column3" },
+            { value: "Column4" },
+            { value: "Column5" },
+            { value: "Column6" },
+          ],
+        },
         {
           rowNumber: 2,
           cells: [{ value: 1 }, { value: 2 }],
@@ -37,7 +60,9 @@ const buffer = await generateWorkbook({
       protection: { sheet: true, formatCells: false },
       protectedRanges: [{ sqref: "A5:C7", name: "Locked" }],
       scenarios: { scenarios: [{ name: "Base", inputCells: [{ reference: "B2", val: 2 }] }] },
-      autoFilter: { ref: "A1:F12", columns: [{ colId: 0, filters: { values: ["Header"] } }] },
+      // Sheet-level autoFilter must not overlap the table range below —
+      // Excel refuses the file on any autoFilter×table range intersection.
+      autoFilter: { ref: "H1:J12", columns: [{ colId: 0, filters: { values: ["Header"] } }] },
       dataConsolidate: { function: "sum", refs: ["A2:F12"] },
       customSheetViews: [{ guid: "{11111111-2222-3333-4444-555555555555}", scale: 80 }],
       mergeCells: [{ ref: "D5:E5" }],
@@ -81,7 +106,14 @@ const buffer = await generateWorkbook({
           name: "AllTable",
           displayName: "AllTable",
           ref: "A1:F2",
-          columns: [{ name: "Header" }],
+          columns: [
+            { name: "Header" },
+            { name: "Column2" },
+            { name: "Column3" },
+            { name: "Column4" },
+            { name: "Column5" },
+            { name: "Column6" },
+          ],
         },
       ],
     },
