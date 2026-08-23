@@ -27,7 +27,8 @@ describe("fontTableDesc round-trip", () => {
     });
     expect(result.fonts).toHaveLength(1);
     expect(result.fonts[0]?.name).toBe("Arial");
-    expect(result.fonts[0]?.fontKey).toBe("abc-123");
+    // The key is canonicalized to uppercase on emit (ST_Guid canonical form)
+    expect(result.fonts[0]?.fontKey).toBe("ABC-123");
   });
 
   it("round-trips multiple fonts", () => {
@@ -92,7 +93,7 @@ describe("fontTableDesc round-trip", () => {
         { name: "TestFont", fontKey: "some-key-value", data: Buffer.from([]), embedRid: "rId1" },
       ],
     });
-    expect(result.fonts[0]?.fontKey).toBe("some-key-value");
+    expect(result.fonts[0]?.fontKey).toBe("SOME-KEY-VALUE");
   });
 
   it("round-trips empty fonts", () => {

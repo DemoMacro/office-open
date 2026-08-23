@@ -126,7 +126,9 @@ const createFontRelationship = (
 ): string => {
   const attrs: Record<string, string | undefined> = { "r:id": id };
   if (fontKey) {
-    attrs["w:fontKey"] = `{${fontKey}}`;
+    // ST_Guid's pattern requires uppercase hex — normalize what callers pass
+    // (obfuscation itself is case-insensitive, so only the attribute cares).
+    attrs["w:fontKey"] = `{${fontKey.toUpperCase()}}`;
   }
   const children = subsetted ? [`<w:subsetted/>`] : undefined;
   return element(name, attrs, children);

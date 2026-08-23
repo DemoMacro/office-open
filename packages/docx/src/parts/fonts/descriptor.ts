@@ -78,7 +78,9 @@ function fontXml(font: EmbeddedFontOptionsWithKey): string {
     );
   }
   if (font.embedRid) {
-    const embedAttrs = [`r:id="${font.embedRid}"`, `w:fontKey="{${font.fontKey}}"`];
+    // ST_Guid is uppercase in canonical form — the SDK validator rejects a
+    // lowercase fontKey even though ISO's lexical space allows both cases.
+    const embedAttrs = [`r:id="${font.embedRid}"`, `w:fontKey="{${font.fontKey.toUpperCase()}}"`];
     if (font.subsetted !== undefined) embedAttrs.push(`w:subsetted="${font.subsetted ? 1 : 0}"`);
     parts.push(`<w:embedRegular ${embedAttrs.join(" ")}/>`);
   }
