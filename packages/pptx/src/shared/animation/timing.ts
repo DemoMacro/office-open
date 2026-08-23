@@ -370,17 +370,21 @@ function buildEmphasisEffects(
           tgtEl,
         ]),
       ];
-      // p:by (color animation by value — rgb or hsl)
+      // p:by (color animation by value — rgb or hsl). p:rgb/p:hsl channels are
+      // ST_Percentage: Office writes per-mille integers, and the SDK's schema
+      // only accepts that form — normalize "N%" strings to N×1000.
+      const pct = (s: string): string =>
+        s.endsWith("%") ? String(Math.round(parseFloat(s) * 1000)) : s;
       if (options.colorByRgb) {
         animClrChildren.push(
           buildXml("p:by", undefined, [
-            `<p:rgb r="${options.colorByRgb.r}" g="${options.colorByRgb.g}" b="${options.colorByRgb.b}"/>`,
+            `<p:rgb r="${pct(options.colorByRgb.r)}" g="${pct(options.colorByRgb.g)}" b="${pct(options.colorByRgb.b)}"/>`,
           ]),
         );
       } else if (options.colorByHsl) {
         animClrChildren.push(
           buildXml("p:by", undefined, [
-            `<p:hsl h="${options.colorByHsl.h}" s="${options.colorByHsl.s}" l="${options.colorByHsl.l}"/>`,
+            `<p:hsl h="${pct(options.colorByHsl.h)}" s="${pct(options.colorByHsl.s)}" l="${pct(options.colorByHsl.l)}"/>`,
           ]),
         );
       }

@@ -534,6 +534,8 @@ const options: PresentationOptions = {
         },
         {
           shapeId: 3,
+          // groupId pairs this animation with the bldP entry in the build list
+          groupId: 1,
           class: "emphasis",
           emphasisType: "colorChange",
           colorFrom: "FFC000",
@@ -543,6 +545,8 @@ const options: PresentationOptions = {
         },
         {
           shapeId: 4,
+          // groupId pairs this animation with the bldDgm entry in the build list
+          groupId: 2,
           pathType: "arc",
           duration: 1000,
           motionFrom: { x: "0", y: "0" },
