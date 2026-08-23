@@ -795,18 +795,22 @@ function buildBuildList(builds: AnimationBuildOptions[], nextId: () => number): 
           bldAttrs.autoUpdateAnimBg = bld.autoUpdateAnimateBackground ? 1 : 0;
         if (bld.rev) bldAttrs.rev = 1;
         if (bld.advanceAuto !== undefined) bldAttrs.advAuto = bld.advanceAuto;
-        // Templates (tmplLst)
+        // Templates (tmplLst) — p:tnLst requires at least one p:par, so a
+        // template with no children is dropped rather than emitted empty
         if (bld.templates && bld.templates.length > 0) {
-          const tmplChildren = bld.templates.map((tmpl) => {
-            const tmplAttrs: Record<string, string | number | undefined> = {};
-            if (tmpl.lvl !== undefined) tmplAttrs.lvl = tmpl.lvl;
-            const tnLstChildren = tmpl.children.map(() => {
-              const tid = nextId();
-              return buildXml("p:par", undefined, [`<p:cTn id="${tid}"/>`]);
+          const tmplChildren = bld.templates
+            .filter((tmpl) => tmpl.children.length > 0)
+            .map((tmpl) => {
+              const tmplAttrs: Record<string, string | number | undefined> = {};
+              if (tmpl.lvl !== undefined) tmplAttrs.lvl = tmpl.lvl;
+              const tnLstChildren = tmpl.children.map(() => {
+                const tid = nextId();
+                return buildXml("p:par", undefined, [`<p:cTn id="${tid}"/>`]);
+              });
+              return buildXml("p:tmpl", tmplAttrs, [buildXml("p:tnLst", undefined, tnLstChildren)]);
             });
-            return buildXml("p:tmpl", tmplAttrs, [buildXml("p:tnLst", undefined, tnLstChildren)]);
-          });
-          bldChildrenInner.push(buildXml("p:tmplLst", undefined, tmplChildren));
+          if (tmplChildren.length > 0)
+            bldChildrenInner.push(buildXml("p:tmplLst", undefined, tmplChildren));
         }
         break;
       }

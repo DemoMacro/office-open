@@ -322,23 +322,22 @@ function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string 
   txParts.push(createBodyProperties({}));
   txParts.push("<a:lstStyle/>");
 
-  // Paragraphs
+  // Paragraphs — a:txBody requires at least one a:p, so an empty children
+  // array (or paragraphs that stringify to nothing) falls back to a bare one
+  const paragraphs: string[] = [];
   if (cell.children) {
     for (const c of cell.children) {
-      if (typeof c === "string") {
-        const pXml = paragraphDesc.stringify({ children: [{ text: c }] }, ctx);
-        if (pXml) txParts.push(pXml);
-      } else {
-        const pXml = paragraphDesc.stringify(c, ctx);
-        if (pXml) txParts.push(pXml);
-      }
+      const pXml =
+        typeof c === "string"
+          ? paragraphDesc.stringify({ children: [{ text: c }] }, ctx)
+          : paragraphDesc.stringify(c, ctx);
+      if (pXml) paragraphs.push(pXml);
     }
   } else if (cell.text !== undefined) {
     const pXml = paragraphDesc.stringify({ children: [{ text: cell.text }] }, ctx);
-    if (pXml) txParts.push(pXml);
-  } else {
-    txParts.push("<a:p/>");
+    if (pXml) paragraphs.push(pXml);
   }
+  txParts.push(paragraphs.length > 0 ? paragraphs.join("") : "<a:p/>");
 
   return `<a:txBody>${txParts.join("")}</a:txBody>`;
 }

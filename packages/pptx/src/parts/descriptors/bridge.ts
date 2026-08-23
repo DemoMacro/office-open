@@ -72,6 +72,9 @@ export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): 
     return lockedCanvasDesc.stringify(child.lockedCanvas, ctx);
   }
   if ("contentPart" in child && child.contentPart) {
+    // r:id must name an external relationship the caller owns — without one
+    // there is nothing to reference, so the element is skipped
+    if (!child.contentPart.rId) return "";
     return `<p:contentPart r:id="${child.contentPart.rId}"/>`;
   }
   if ("rawXml" in child && child.rawXml) {

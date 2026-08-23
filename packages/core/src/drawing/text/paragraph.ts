@@ -193,7 +193,11 @@ function stringifyBullet(options: BulletOptions): string[] {
     if (options.startAt !== undefined) buAttrs.push(`startAt="${options.startAt}"`);
     parts.push(`<a:buAutoNum ${buAttrs.join(" ")}/>`);
   } else if (options.type === "picture") {
-    parts.push(`<a:buBlip><a:blip r:embed="${options.embed}"/></a:buBlip>`);
+    // a:blip @r:embed must name a relationship the host part owns — without
+    // one there is no image to bullet with, so the element is skipped
+    if (options.embed) {
+      parts.push(`<a:buBlip><a:blip r:embed="${options.embed}"/></a:buBlip>`);
+    }
   }
 
   return parts;
