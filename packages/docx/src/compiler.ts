@@ -146,6 +146,10 @@ function documentSourceRids(
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
 
+/** Chart part → user-shapes part relationship (c:userShapes bridge). */
+const CHART_USER_SHAPES_REL =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes";
+
 /** Extension → MIME for media/font/embedding Default entries. Declared only
  * for extensions actually present in the package. */
 const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
@@ -975,45 +979,61 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       : {}),
     ...(ctx.charts.array.length > 0
       ? {
-          Charts: ctx.charts.array.map((chartData, i) => ({
-            data: XML_DECL + chartData.chartSpaceXml,
-            path: `word/charts/chart${i + 1}.xml`,
-          })),
-          // Embedded workbooks behind c:externalData: each chart's own rels
-          // part plus the word/embeddings binary. The relationship id is
-          // carried verbatim so the re-emitted r:id resolves without rewriting.
-          ...(ctx.charts.array.some((c) => c.embedding)
-            ? {
-                ChartRels: ctx.charts.array.flatMap((chartData, i) => {
-                  const e = chartData.embedding;
-                  if (!e) return [];
-                  const relsXml =
-                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
-                    `<Relationship Id="${escapeXml(e.relationshipId)}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="../embeddings/${escapeXml(e.fileName)}"/>` +
-                    "</Relationships>";
-                  return [
-                    {
-                      data: XML_DECL + relsXml,
-                      path: `word/charts/_rels/chart${i + 1}.xml.rels`,
-                    },
-                  ];
-                }),
-                ChartEmbeddings: (() => {
-                  const seen = new Set<string>();
-                  const parts: { data: Uint8Array; path: string }[] = [];
-                  for (const c of ctx.charts.array) {
-                    const e = c.embedding;
-                    if (!e || seen.has(e.fileName)) continue;
-                    seen.add(e.fileName);
-                    parts.push({
-                      data: toUint8Array(e.data),
-                      path: `word/embeddings/${e.fileName}`,
-                    });
-                  }
-                  return parts;
-                })(),
-              }
-            : {}),
+          Charts: ctx.charts.array.flatMap((chartData, i) => {
+            const parts: Array<{ data: string; path: string }> = [
+              {
+                data: XML_DECL + chartData.chartSpaceXml,
+                path: `word/charts/chart${i + 1}.xml`,
+              },
+            ];
+            // User-shapes part behind c:userShapes: the chart's own rels
+            // entry plus the body part (chartUserShapes, same directory).
+            if (chartData.userShapes) {
+              parts.push({
+                data: XML_DECL + chartData.userShapes.xml,
+                path: `word/charts/userShapes${i + 1}.xml`,
+              });
+            }
+            // Embedded workbook behind c:externalData rides in the same rels
+            // part. Relationship ids are carried verbatim so the re-emitted
+            // r:ids resolve without rewriting.
+            const e = chartData.embedding;
+            const rels = [
+              ...(e
+                ? [
+                    `<Relationship Id="${escapeXml(e.relationshipId)}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="../embeddings/${escapeXml(e.fileName)}"/>`,
+                  ]
+                : []),
+              ...(chartData.userShapes
+                ? [
+                    `<Relationship Id="${escapeXml(chartData.userShapes.relationshipId)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/>`,
+                  ]
+                : []),
+            ];
+            if (rels.length > 0) {
+              parts.push({
+                data:
+                  XML_DECL +
+                  `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join("")}</Relationships>`,
+                path: `word/charts/_rels/chart${i + 1}.xml.rels`,
+              });
+            }
+            return parts;
+          }),
+          ChartEmbeddings: (() => {
+            const seen = new Set<string>();
+            const parts: { data: Uint8Array; path: string }[] = [];
+            for (const c of ctx.charts.array) {
+              const e = c.embedding;
+              if (!e || seen.has(e.fileName)) continue;
+              seen.add(e.fileName);
+              parts.push({
+                data: toUint8Array(e.data),
+                path: `word/embeddings/${e.fileName}`,
+              });
+            }
+            return parts;
+          })(),
         }
       : {}),
     ...(ctx.smartArts.array.length > 0

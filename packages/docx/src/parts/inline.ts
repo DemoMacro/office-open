@@ -13,7 +13,7 @@
 import { encodeBase64, hpsMeasureValue, imageTypeFromPath, toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import { TargetModeType } from "@office-open/core";
-import { chartSpaceDesc } from "@office-open/core/chart";
+import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
 import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { escapeXml } from "@office-open/xml";
@@ -916,6 +916,7 @@ export function stringifyChildDispatch(
             },
           }
         : {}),
+      ...(chartSpace.userShapes ? { userShapes: buildUserShapesData(chartSpace.userShapes) } : {}),
     });
 
     const drawingXml = drawingDesc.stringify(
@@ -1080,6 +1081,9 @@ export function stringifyChildDispatch(
                       data: externalData.data,
                     },
                   }
+                : {}),
+              ...(c.chartOptions.userShapes
+                ? { userShapes: buildUserShapesData(c.chartOptions.userShapes) }
                 : {}),
             });
           }

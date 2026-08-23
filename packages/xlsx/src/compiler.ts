@@ -28,7 +28,7 @@ import {
   type XmlifyedFile,
   type Zippable,
 } from "@office-open/core";
-import { chartSpaceDesc } from "@office-open/core/chart";
+import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import { buildThemeXml } from "@office-open/core/theme";
 import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
@@ -117,6 +117,11 @@ function bindMediaPlaceholders(
 /** XLSX part path → content type, derived from the part registry. Matches
  * actual file paths, so the dense/sequential xlsx part naming is handled. */
 const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
+
+/** Chart part → user-shapes part relationship (c:userShapes bridge). */
+const CHART_USER_SHAPES_REL =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes";
+const PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships";
 
 /** Extension → MIME for image and VML Default entries. Declared only for
  * extensions actually present in the package. VML backs legacy comment
@@ -482,6 +487,21 @@ export function compileWorkbook(
       data: XML_DECL + chartData.chartSpaceXml,
       path: `xl/charts/chart${i + 1}.xml`,
     };
+    // User-shapes part behind c:userShapes: the chart part's own rels entry
+    // plus the body part (chartUserShapes relationship, same directory).
+    if (chartData.userShapes) {
+      const rid = chartData.userShapes.relationshipId;
+      mapping[`ChartUserShapes${i}`] = {
+        data: XML_DECL + chartData.userShapes.xml,
+        path: `xl/charts/userShapes${i + 1}.xml`,
+      };
+      mapping[`ChartRels${i}`] = {
+        data:
+          XML_DECL +
+          `<Relationships xmlns="${PKG_REL_NS}"><Relationship Id="${escapeXml(rid)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/></Relationships>`,
+        path: `xl/charts/_rels/chart${i + 1}.xml.rels`,
+      };
+    }
   }
 
   // Calculation chain — round-trips preserve the parsed chain verbatim (the
@@ -757,9 +777,11 @@ function compileWorksheetPart(
     // Process charts
     for (const chart of chartOpts) {
       const chartKey = `chart_${state.globalChartIdx}`;
+      const userShapes = chart.userShapes ? buildUserShapesData(chart.userShapes) : undefined;
       ctx.charts.addChart(chartKey, {
         key: chartKey,
         chartSpaceXml: chartSpaceDesc.stringify(chart, ctx) ?? "",
+        ...(userShapes ? { userShapes } : {}),
       });
 
       drawingRels.addRelationship(
@@ -1270,9 +1292,11 @@ function compileChartsheets(
     if (!chartDef) continue;
     const csChartGlobalIdx = ctx.charts.array.length;
     const csChartKey = `cs_chart_${csChartGlobalIdx}`;
+    const csUserShapes = chartDef.userShapes ? buildUserShapesData(chartDef.userShapes) : undefined;
     ctx.charts.addChart(csChartKey, {
       key: csChartKey,
       chartSpaceXml: chartSpaceDesc.stringify(chartDef, ctx) ?? "",
+      ...(csUserShapes ? { userShapes: csUserShapes } : {}),
     });
 
     // Chartsheet relationships: drawing (required)

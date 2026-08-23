@@ -17,6 +17,14 @@ export interface ChartData {
     fileName: string;
     data: DataType;
   };
+  /**
+   * User-shapes part behind c:userShapes (both directions). The compiler
+   * emits the chart part's own rels entry plus the shapes part body.
+   */
+  userShapes?: {
+    relationshipId: string;
+    xml: string;
+  };
 }
 
 export class ChartCollection {

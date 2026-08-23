@@ -178,6 +178,11 @@ export const DOCX_PARTS = {
       presence: { kind: "repeated", countFrom: "chartCount" },
     },
     {
+      path: "word/charts/userShapes${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.drawingml.chartUserShapes+xml",
+      presence: { kind: "repeated", countFrom: "charts with user shapes" },
+    },
+    {
       path: "word/diagrams/data${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
       presence: { kind: "repeated", countFrom: "smartArtCount" },
@@ -376,6 +381,11 @@ export const PPTX_PARTS = {
       presence: { kind: "repeated", countFrom: "charts" },
     },
     {
+      path: "ppt/charts/userShapes${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.drawingml.chartUserShapes+xml",
+      presence: { kind: "repeated", countFrom: "charts with user shapes" },
+    },
+    {
       path: "ppt/diagrams/data${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
       presence: { kind: "repeated", countFrom: "smartArts" },
@@ -503,6 +513,11 @@ export const XLSX_PARTS = {
       path: "xl/charts/chart${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawingml.chart+xml",
       presence: { kind: "repeated", countFrom: "charts" },
+    },
+    {
+      path: "xl/charts/userShapes${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.drawingml.chartUserShapes+xml",
+      presence: { kind: "repeated", countFrom: "charts with user shapes" },
     },
     {
       path: "xl/pivotTables/pivotTable${i}.xml",

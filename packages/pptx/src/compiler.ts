@@ -54,7 +54,7 @@ import {
   stringifyLayoutDefinitionPart,
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
-import { OOXML_XML_DECLARATION } from "@office-open/xml";
+import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
 import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
@@ -618,6 +618,10 @@ export function buildCommentData(
  * actual file paths, so dense (slides) and sparse (slide-indexed comments)
  * naming are both handled. */
 const PPTX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(PPTX_PARTS);
+
+/** Chart part → user-shapes part relationship (c:userShapes bridge). */
+const CHART_USER_SHAPES_REL =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes";
 
 /** Extension → MIME for media Default entries (image/video/audio). Declared
  * only for extensions actually present in the package. */
@@ -1537,11 +1541,27 @@ export function compilePresentation(
     ...charts.array.map((c) => ({
       key: c.key,
       xml: XML_DECL + c.chartSpaceXml,
+      userShapes: c.userShapes,
     })),
-    ...descCtx.charts.map((c) => ({ key: c.key, xml: c.chartSpaceXml })),
+    ...descCtx.charts.map((c) => ({
+      key: c.key,
+      xml: c.chartSpaceXml,
+      userShapes: c.userShapes,
+    })),
   ];
   for (const [i, chart] of allCharts.entries()) {
     files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(chart.xml);
+    // User-shapes part behind c:userShapes: the chart's own rels entry plus
+    // the body part (chartUserShapes relationship, same directory).
+    if (chart.userShapes) {
+      files[`ppt/charts/userShapes${i + 1}.xml`] = encoder.encode(chart.userShapes.xml);
+      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = encoder.encode(
+        XML_DECL +
+          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+          `<Relationship Id="${escapeXml(chart.userShapes.relationshipId)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/>` +
+          `</Relationships>`,
+      );
+    }
   }
 
   // SmartArt parts

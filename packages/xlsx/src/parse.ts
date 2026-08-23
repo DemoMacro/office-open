@@ -21,7 +21,7 @@ import {
   toUint8Array,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import { chartSpaceDesc } from "@office-open/core/chart";
+import { chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
@@ -110,6 +110,28 @@ function sortByNumber(paths: string[]): string[] {
 }
 
 /**
+ * Fill a parsed chart's userShapes anchors from the companion part body —
+ * chartSpaceDesc reads only the c:userShapes r:id; the body hangs off the
+ * chart part's own rels (chartUserShapes relationship).
+ */
+function readChartUserShapes(
+  chartPath: string | undefined,
+  chart: { userShapes?: { relationshipId?: string; anchors: unknown[] } },
+  readContext: XlsxReadContext,
+  doc: XlsxDocument["doc"],
+): void {
+  const rid = chart.userShapes?.relationshipId;
+  if (rid === undefined || chartPath === undefined) return;
+  const rel = readContext
+    .getWorksheetRelsByType(chartPath, "/chartUserShapes")
+    .find((r) => r.rId === rid);
+  const bodyEl = rel ? doc.get(rel.target) : undefined;
+  if (!bodyEl) return;
+  const body = userShapesDesc.parse(bodyEl, readContext);
+  chart.userShapes = { ...chart.userShapes, anchors: body.anchors };
+}
+
+/**
  * Worksheet parts read with sheetData deferred — the XML parser captures the
  * container's inner XML verbatim and `parseSheetDataRows` walks it directly.
  */
@@ -152,7 +174,10 @@ export function parseXlsx(data: DataType): XlsxDocument {
 
   // Scan for drawings, charts, media
   drawings.push(...doc.keys("xl/drawings/").filter((k) => k.endsWith(".xml")));
-  charts.push(...doc.keys("xl/charts/").filter((k) => k.endsWith(".xml")));
+  // userShapes companions of chart parts are not chart parts themselves
+  charts.push(
+    ...doc.keys("xl/charts/").filter((k) => k.endsWith(".xml") && !/userShapes\d+\.xml$/.test(k)),
+  );
   media.push(...doc.keys("xl/media/"));
   sortByNumber(drawings);
   sortByNumber(charts);
@@ -506,6 +531,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
           if (!chartEl) continue;
           const chartSpace = chartSpaceDesc.parse(chartEl, readContext);
+          readChartUserShapes(chartPath, chartSpace, readContext, xlsx.doc);
           // cNvPr @title stays unbridged (same rule as the compiler leg):
           // WorksheetChartOptions.title is the chart title, not the frame's.
           const chartCnvPr = pickNonVisualDrawingProperties(anchor);
@@ -663,6 +689,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
           // projection dropped chartSpace-level fidelity (c:lang, c:date1904,
           // axis/plot formatting, …) on round-trip.
           csData.chart = chartSpaceDesc.parse(chartEl, readContext);
+          readChartUserShapes(chartPath, csData.chart, readContext, xlsx.doc);
           if (anchor.macro !== undefined) csData.macro = anchor.macro;
           if (anchor.frameLocks) csData.frameLocks = anchor.frameLocks;
           // Anchor geometry is the rendered chart size on the sheet — Excel

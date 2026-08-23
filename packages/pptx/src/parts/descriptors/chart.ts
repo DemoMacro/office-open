@@ -8,8 +8,9 @@
  * @module
  */
 
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
 import { convertToEmu } from "@office-open/core";
-import { chartSpaceDesc } from "@office-open/core/chart";
+import { buildUserShapesData, chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
@@ -45,7 +46,11 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     // Register chart data with context
     const chartXml = stringify(chartSpaceDesc, opts as ChartSpaceOptions, ctx);
     if (chartXml) {
-      pptxCtx.addChart(chartKey, { key: chartKey, chartSpaceXml: chartXml });
+      pptxCtx.addChart(chartKey, {
+        key: chartKey,
+        chartSpaceXml: chartXml,
+        ...(opts.userShapes ? { userShapes: buildUserShapesData(opts.userShapes) } : {}),
+      });
     }
 
     const x = convertToEmu(opts.x ?? 0);
@@ -104,6 +109,23 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
           const chartXml = _ctx.getPart(chartPath);
           if (chartXml) {
             Object.assign(result, chartSpaceDesc.parse(chartXml, _ctx));
+            // c:userShapes body hangs off the chart part's own rels — the
+            // core descriptor reads the r:id only, fill the anchors here
+            const us = result.userShapes;
+            if (us && us.anchors.length === 0) {
+              const relsEl = _ctx.getPart(partPathToRelsPath(chartPath));
+              const rel = relsEl?.elements?.find(
+                (e) =>
+                  e.name === "Relationship" &&
+                  attr(e, "Id") === (us.relationshipId ?? "") &&
+                  (attr(e, "Type") ?? "").endsWith("/chartUserShapes"),
+              );
+              const target = rel ? attr(rel, "Target") : undefined;
+              const bodyEl = target
+                ? _ctx.getPart(resolveRelationshipTarget(chartPath, target))
+                : undefined;
+              if (bodyEl) us.anchors = userShapesDesc.parse(bodyEl, _ctx).anchors;
+            }
           }
         }
       }

@@ -3,6 +3,23 @@
   "$ref": "#/definitions/PresentationOptions",
   "$schema": "http://json-schema.org/draft-07/schema#",
   "definitions": {
+    "AbsoluteSizeAnchorOptions": {
+      "additionalProperties": false,
+      "description": "Absolute anchor (cdr:absSizeAnchor): fixed EMU size at the `from` marker.",
+      "properties": {
+        "extent": {
+          "$ref": "#/definitions/UserShapeExtentOptions"
+        },
+        "from": {
+          "$ref": "#/definitions/UserShapeMarkerOptions"
+        },
+        "object": {
+          "$ref": "#/definitions/UserShapeObjectOptions"
+        }
+      },
+      "required": ["from", "extent", "object"],
+      "type": "object"
+    },
     "AdjustHandle": {
       "anyOf": [
         {
@@ -2046,6 +2063,33 @@
       },
       "type": "object"
     },
+    "BlipFillOptions": {
+      "additionalProperties": false,
+      "description": "Options for blip fill properties.",
+      "properties": {
+        "blipEffects": {
+          "$ref": "#/definitions/BlipEffectsOptions",
+          "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+        },
+        "dpi": {
+          "description": "DPI of the image",
+          "type": "number"
+        },
+        "rotWithShape": {
+          "description": "Whether the fill rotates with the shape",
+          "type": "boolean"
+        },
+        "sourceRectangle": {
+          "$ref": "#/definitions/SourceRectangleOptions",
+          "description": "Source rectangle for cropping"
+        },
+        "tile": {
+          "$ref": "#/definitions/TileOptions",
+          "description": "Tile fill mode (if omitted, defaults to stretch)"
+        }
+      },
+      "type": "object"
+    },
     "BlurEffectOptions": {
       "additionalProperties": false,
       "description": "Blur effect options.",
@@ -3202,8 +3246,8 @@
           "type": "boolean"
         },
         "userShapes": {
-          "description": "User-drawn shapes relationship id (c:userShapes r:id, after printSettings).",
-          "type": "string"
+          "$ref": "#/definitions/ChartUserShapesOptions",
+          "description": "User-drawn shapes layered over the chart (c:userShapes, after printSettings)."
         },
         "varyColors": {
           "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
@@ -3503,6 +3547,32 @@
         "ofPie"
       ],
       "type": "string"
+    },
+    "ChartUserShapesOptions": {
+      "additionalProperties": false,
+      "description": "User-drawn shapes layered over a chart: the c:userShapes reference on the chart space plus the companion part body the format compilers register.",
+      "properties": {
+        "anchors": {
+          "description": "Anchored shapes (the cdr:userShapes part body).",
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/RelativeSizeAnchorOptions"
+              },
+              {
+                "$ref": "#/definitions/AbsoluteSizeAnchorOptions"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "relationshipId": {
+          "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
+          "type": "string"
+        }
+      },
+      "required": ["anchors"],
+      "type": "object"
     },
     "ChildOrder": {
       "description": "(dgm:layoutNode `@chOrder`).",
@@ -6057,6 +6127,118 @@
       "required": ["children"],
       "type": "object"
     },
+    "GroupShapePropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Group shape properties. Field order follows the XSD content model. The transform fields come from {@link GroupTransform2DOptions } (flat x/y/width/height/flip/rotation/childOffset/childExtent); the serializer emits them as a single a:xfrm group transform. The container-only `@bwMode` attribute and the wrapping tag are the caller's responsibility (mirrors shapePropertiesDesc).",
+      "properties": {
+        "childExtentHeight": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "childExtentWidth": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "childOffsetX": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "childOffsetY": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions",
+          "description": "EG_EffectProperties (choice: a:effectDag | a:effectLst)."
+        },
+        "fill": {
+          "$ref": "#/definitions/FillOptions",
+          "description": "EG_FillProperties."
+        },
+        "flipHorizontal": {
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "type": "boolean"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions",
+          "description": "a:scene3d."
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "Guid": {
       "description": "GUID in braced upper-case form (ST_Guid).",
       "examples": ["{1DF903F5-8FC7-4C6A-9DF9-2AB1D10E6D84}"],
@@ -7650,6 +7832,34 @@
         },
         "spinValue": {
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "NonVisualDrawingPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Mirrors a: — name/descr/title/hidden. id is runtime; hyperlinks stay package-side.",
+      "properties": {
+        "creationId": {
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+        },
+        "description": {
+          "$ref": "#/definitions/ShapeOptions/properties/description"
+        },
+        "ext": {
+          "$ref": "#/definitions/PictureOptions/properties/ext"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
+        "name": {
+          "$ref": "#/definitions/ShapeOptions/properties/name"
+        },
+        "title": {
+          "description": "XSD `@title`.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -9969,6 +10179,23 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "RelativeSizeAnchorOptions": {
+      "additionalProperties": false,
+      "description": "Relative anchor (cdr:relSizeAnchor): the object spans from `from` to `to`.",
+      "properties": {
+        "from": {
+          "$ref": "#/definitions/UserShapeMarkerOptions"
+        },
+        "object": {
+          "$ref": "#/definitions/UserShapeObjectOptions"
+        },
+        "to": {
+          "$ref": "#/definitions/UserShapeMarkerOptions"
+        }
+      },
+      "required": ["from", "to", "object"],
       "type": "object"
     },
     "ResizeHandles": {
@@ -13278,6 +13505,62 @@
       },
       "type": "object"
     },
+    "Transform2DOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "flipHorizontal": {
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "type": "boolean"
+        },
+        "height": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (e.g., 45 = 45°).",
+          "type": "number"
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "x": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        },
+        "y": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "TransformEffectOptions": {
       "additionalProperties": false,
       "description": "Transform effect — scale, skew, translate.",
@@ -13492,6 +13775,252 @@
       "examples": ["1.5cm", "0.75in", "12pt"],
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
       "type": "string"
+    },
+    "UserShapeConnectorOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "cNvPr drawing id (schema-required)",
+          "type": "number"
+        },
+        "macro": {
+          "description": "Macro reference (`@macro`)",
+          "type": "string"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "published": {
+          "description": "Published as a server-side shape (`@fPublished`, default false)",
+          "type": "boolean"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions"
+        },
+        "type": {
+          "const": "connector",
+          "type": "string"
+        }
+      },
+      "required": ["id", "shapeProperties", "type"],
+      "type": "object"
+    },
+    "UserShapeExtentOptions": {
+      "additionalProperties": false,
+      "description": "Anchor extent (a:ext): width/height in EMU.",
+      "properties": {
+        "height": {
+          "type": "number"
+        },
+        "width": {
+          "type": "number"
+        }
+      },
+      "required": ["width", "height"],
+      "type": "object"
+    },
+    "UserShapeGraphicFrameOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "graphic": {
+          "description": "Verbatim a:graphic XML payload. The graphic contents (chart/table references) are package-wired; the part body carries them unchanged.",
+          "type": "string"
+        },
+        "graphicFrameLocks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLockingOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Frame locking flags (cdr:cNvGraphicFramePr)"
+        },
+        "id": {
+          "description": "cNvPr drawing id (schema-required)",
+          "type": "number"
+        },
+        "macro": {
+          "description": "Macro reference (`@macro`)",
+          "type": "string"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "published": {
+          "description": "Published as a server-side shape (`@fPublished`, default false)",
+          "type": "boolean"
+        },
+        "transform": {
+          "$ref": "#/definitions/Transform2DOptions",
+          "description": "Placement transform (cdr:xfrm)"
+        },
+        "type": {
+          "const": "graphicFrame",
+          "type": "string"
+        }
+      },
+      "required": ["graphic", "id", "transform", "type"],
+      "type": "object"
+    },
+    "UserShapeGroupOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "children": {
+          "items": {
+            "$ref": "#/definitions/UserShapeObjectOptions"
+          },
+          "type": "array"
+        },
+        "groupShapeProperties": {
+          "$ref": "#/definitions/GroupShapePropertiesOptions"
+        },
+        "id": {
+          "description": "cNvPr drawing id (schema-required)",
+          "type": "number"
+        },
+        "macro": {
+          "description": "Macro reference (`@macro`)",
+          "type": "string"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "published": {
+          "description": "Published as a server-side shape (`@fPublished`, default false)",
+          "type": "boolean"
+        },
+        "type": {
+          "const": "group",
+          "type": "string"
+        }
+      },
+      "required": ["children", "groupShapeProperties", "id", "type"],
+      "type": "object"
+    },
+    "UserShapeMarkerOptions": {
+      "additionalProperties": false,
+      "description": "Anchor marker: x/y as 0.0–1.0 fractions of the chart area.",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": ["x", "y"],
+      "type": "object"
+    },
+    "UserShapeObjectOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/UserShapeShapeOptions"
+        },
+        {
+          "$ref": "#/definitions/UserShapeConnectorOptions"
+        },
+        {
+          "$ref": "#/definitions/UserShapePictureOptions"
+        },
+        {
+          "$ref": "#/definitions/UserShapeGraphicFrameOptions"
+        },
+        {
+          "$ref": "#/definitions/UserShapeGroupOptions"
+        }
+      ]
+    },
+    "UserShapePictureOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "blipFill": {
+          "$ref": "#/definitions/BlipFillOptions"
+        },
+        "id": {
+          "description": "cNvPr drawing id (schema-required)",
+          "type": "number"
+        },
+        "macro": {
+          "description": "Macro reference (`@macro`)",
+          "type": "string"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "published": {
+          "description": "Published as a server-side shape (`@fPublished`, default false)",
+          "type": "boolean"
+        },
+        "referenceId": {
+          "description": "Image reference key (a:blip r:embed via the relationship placeholder)",
+          "type": "string"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions"
+        },
+        "type": {
+          "const": "picture",
+          "type": "string"
+        }
+      },
+      "required": ["id", "referenceId", "shapeProperties", "type"],
+      "type": "object"
+    },
+    "UserShapeShapeOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "cNvPr drawing id (schema-required)",
+          "type": "number"
+        },
+        "locksText": {
+          "description": "Text locking (`@fLocksText`, default true)",
+          "type": "boolean"
+        },
+        "macro": {
+          "description": "Macro reference (`@macro`)",
+          "type": "string"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions",
+          "description": "cNvPr — id is required by the schema"
+        },
+        "published": {
+          "description": "Published as a server-side shape (`@fPublished`, default false)",
+          "type": "boolean"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions"
+        },
+        "textBody": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "textBox": {
+          "description": "Text-box marker (cdr:cNvSpPr `@txBox`)",
+          "type": "boolean"
+        },
+        "textLink": {
+          "description": "Formula linking the text to a cell (`@textlink`)",
+          "type": "string"
+        },
+        "type": {
+          "const": "shape",
+          "type": "string"
+        }
+      },
+      "required": ["id", "shapeProperties", "type"],
+      "type": "object"
     },
     "VariableListOptions": {
       "additionalProperties": false,

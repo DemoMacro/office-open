@@ -44,6 +44,9 @@ describe("userShapesDesc", () => {
     expect(xml).toContain('txBox="1"');
     expect(xml).toContain('textlink="Sheet1!$A$1"');
     expect(xml).toContain('fLocksText="0"');
+    // the text body rides inside a cdr:txBody wrapper, not spread bare
+    // into cdr:sp (CT_Shape content model)
+    expect(xml).toContain("<cdr:txBody><a:bodyPr");
 
     const anchor = result.anchors[0]!;
     expect("to" in anchor && anchor.to).toEqual({ x: 0.9, y: 0.8 });
@@ -53,6 +56,7 @@ describe("userShapesDesc", () => {
       expect(anchor.object.textBox).toBe(true);
       expect(anchor.object.textLink).toBe("Sheet1!$A$1");
       expect(anchor.object.locksText).toBe(false);
+      expect(anchor.object.textBody?.paragraphs).toHaveLength(1);
     } else {
       throw new Error("expected a shape object");
     }

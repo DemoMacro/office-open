@@ -188,8 +188,10 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
         `<cdr:cNvSpPr${obj.textBox ? ' txBox="1"' : ""}/></cdr:nvSpPr>`;
       const spPrXml = stringify(shapePropertiesDesc, obj.shapeProperties, DIRECT_CTX) ?? "";
       const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX) : "";
+      // textBodyDesc yields the bare bodyPr/lstStyle/p sequence — the chart-
+      // drawing wrapper element is cdr:txBody (same pattern as c:txPr)
       const txBodyXml = obj.textBody
-        ? (stringify(textBodyDesc, obj.textBody, DIRECT_CTX) ?? "")
+        ? `<cdr:txBody>${stringify(textBodyDesc, obj.textBody, DIRECT_CTX) ?? ""}</cdr:txBody>`
         : "";
       return (
         `<cdr:sp${commonAttrs(obj)}${textLinkAttr}${locksTextAttr}>` +
@@ -514,4 +516,19 @@ function readAnchorObject(
     if (object) return object;
   }
   return undefined;
+}
+
+/**
+ * Companion part entry the format compilers register alongside the chart
+ * space: the serialized body plus the relationship id the c:userShapes
+ * reference carries (same rId1 default as the chart-space reference).
+ */
+export function buildUserShapesData(userShapes: {
+  relationshipId?: string;
+  anchors: UserShapesOptions["anchors"];
+}): { relationshipId: string; xml: string } {
+  return {
+    relationshipId: userShapes.relationshipId ?? "rId1",
+    xml: userShapesDesc.stringify({ anchors: userShapes.anchors }, DIRECT_CTX) ?? "",
+  };
 }

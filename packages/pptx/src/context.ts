@@ -41,6 +41,11 @@ export interface MediaEntry extends BaseMediaEntry {
 export interface ChartEntry {
   key: string;
   chartSpaceXml: string;
+  /** User-shapes part behind c:userShapes (body + the chart's own rels id). */
+  userShapes?: {
+    relationshipId: string;
+    xml: string;
+  };
 }
 
 export interface SmartArtEntry {

@@ -11,6 +11,10 @@ import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import type { TextBodyOptions } from "../drawing/text/text-body";
 import type { ColorMappingOptions } from "../theme/theme-options";
 import type { DataType } from "../util/data-type";
+import type {
+  AbsoluteSizeAnchorOptions,
+  RelativeSizeAnchorOptions,
+} from "./user-shapes/user-shapes";
 
 // ── Series common (CT_Ser shared children) ──
 
@@ -516,13 +520,28 @@ export interface ChartSpaceOptions {
   legendTextProperties?: TextBodyOptions;
   /** Legend entry overrides (c:legendEntry, inside c:legend). */
   legendEntries?: readonly LegendEntryOptions[];
-  /** User-drawn shapes relationship id (c:userShapes r:id, after printSettings). */
-  userShapes?: string;
+  /** User-drawn shapes layered over the chart (c:userShapes, after printSettings). */
+  userShapes?: ChartUserShapesOptions;
   /**
    * Raw inner XML of the chart-space trailing c:extLst (after userShapes —
    * c14:pivotOptions' home). Round-trip only, same contract as series ext.
    */
   ext?: string;
+}
+
+/**
+ * User-drawn shapes layered over a chart: the c:userShapes reference on the
+ * chart space plus the companion part body the format compilers register.
+ */
+export interface ChartUserShapesOptions {
+  /**
+   * Chart-part relationship id of the shapes part. Round-trips verbatim;
+   * fresh authoring omits it and the reference defaults to rId1 — set an
+   * unused id when the same chart also carries externalData.
+   */
+  relationshipId?: string;
+  /** Anchored shapes (the cdr:userShapes part body). */
+  anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
 }
 
 // ── 3D view ──

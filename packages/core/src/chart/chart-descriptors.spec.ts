@@ -1140,7 +1140,7 @@ describe("chartSpaceDesc", () => {
       series: [{ name: "S", values: [1, 2] }],
       pivotSource: { name: "PivotTable1", formatId: 42 },
       pivotFormats: [{ index: 0, marker: { symbol: "circle", size: 7 } }],
-      userShapes: "rId9",
+      userShapes: { relationshipId: "rId9", anchors: [] },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
     expect(xml).toContain('<c:pivotSource><c:name>PivotTable1</c:name><c:fmtId val="42"/>');
@@ -1150,7 +1150,30 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect(result.pivotSource).toEqual({ name: "PivotTable1", formatId: 42 });
     expect(result.pivotFormats).toEqual([{ index: 0, marker: { symbol: "circle", size: 7 } }]);
-    expect(result.userShapes).toBe("rId9");
+    expect(result.userShapes).toEqual({ relationshipId: "rId9", anchors: [] });
+  });
+
+  it("defaults the userShapes reference to rId1 for fresh authoring", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [{ name: "S", values: [1, 2] }],
+      userShapes: {
+        anchors: [
+          {
+            from: { x: 0.1, y: 0.1 },
+            to: { x: 0.4, y: 0.3 },
+            object: {
+              type: "shape",
+              id: 1,
+              shapeProperties: { geometry: "rect", fill: { type: "solid", color: "FF0000" } },
+            },
+          },
+        ],
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:userShapes r:id="rId1"/>');
   });
 
   it("round-trips surface band formats", () => {

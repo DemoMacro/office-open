@@ -22,7 +22,7 @@ import {
   presetGeometryDesc,
   shapePropertiesDesc,
 } from "@office-open/core";
-import { chartSpaceDesc } from "@office-open/core/chart";
+import { chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
 import {
   connectorLockingDesc,
   scene3DDesc,
@@ -1056,6 +1056,33 @@ function bridgeChartExternalData(
 }
 
 /**
+ * Fill the chart's userShapes anchors from the companion part body —
+ * chartSpaceDesc reads only the c:userShapes r:id; the body hangs off the
+ * chart part's own rels (chartUserShapes relationship).
+ */
+function bridgeChartUserShapes(
+  chartPath: string,
+  chartOpts: ChartSpaceOptions,
+  ctx: DocxReadContext,
+): void {
+  const us = chartOpts.userShapes;
+  if (!us || us.anchors.length > 0) return;
+  const relsEl = ctx.docx.doc.get(partPathToRelsPath(chartPath));
+  if (!relsEl) return;
+  const rel = relsEl.elements?.find(
+    (e) =>
+      e.name === "Relationship" &&
+      attr(e, "Id") === (us.relationshipId ?? "") &&
+      (attr(e, "Type") ?? "").endsWith("/chartUserShapes"),
+  );
+  const target = rel ? attr(rel, "Target") : undefined;
+  if (!target) return;
+  const bodyEl = ctx.docx.doc.get(resolveRelationshipTarget(chartPath, target));
+  if (!bodyEl) return;
+  us.anchors = userShapesDesc.parse(bodyEl, ctx).anchors;
+}
+
+/**
  * Parse a wpg:graphicFrame group child (CT_GraphicFrame). Charts are the
  * payload Word produces in groups; the chart part is re-registered on
  * generate from the parsed chartOptions.
@@ -1074,6 +1101,7 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   const chartOpts = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartOpts.type) return undefined;
   bridgeChartExternalData(chartPath, chartOpts as ChartSpaceOptions, ctx);
+  bridgeChartUserShapes(chartPath, chartOpts as ChartSpaceOptions, ctx);
 
   const md: ChartMediaData = {
     type: "chart",
@@ -1299,6 +1327,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   const chartSpace = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartSpace.type) return undefined;
   bridgeChartExternalData(chartPath, chartSpace as ChartSpaceOptions, ctx);
+  bridgeChartUserShapes(chartPath, chartSpace as ChartSpaceOptions, ctx);
 
   // Anchor wrapper fields: extent, alt text, frame locks, floating position.
   const info = parseAnchorOrInline(el, ctx);

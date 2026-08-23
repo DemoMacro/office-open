@@ -2574,7 +2574,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (opts.printSettings) parts.push(stringifyPrintSettings(opts.printSettings));
     // CT_ChartSpace: printSettings → userShapes → extLst
     if (opts.userShapes !== undefined)
-      parts.push(`<c:userShapes r:id="${escapeXml(opts.userShapes)}"/>`);
+      parts.push(`<c:userShapes r:id="${escapeXml(opts.userShapes.relationshipId ?? "rId1")}"/>`);
     if (opts.ext) parts.push(`<c:extLst>${opts.ext}</c:extLst>`);
 
     parts.push("</c:chartSpace>");
@@ -2879,7 +2879,9 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     const userShapesEl = findChild(el, "c:userShapes");
     if (userShapesEl) {
       const rid = attr(userShapesEl, "r:id");
-      if (rid !== undefined) result.userShapes = rid;
+      // anchors stay empty here — the format parsers resolve the companion
+      // part body from the chart part's own rels and fill it in
+      if (rid !== undefined) result.userShapes = { relationshipId: rid, anchors: [] };
     }
     const spaceExtLst = findChild(el, "c:extLst");
     if (spaceExtLst) {
