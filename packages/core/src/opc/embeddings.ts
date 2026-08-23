@@ -33,6 +33,8 @@ export interface EmbeddingData {
 export class EmbeddingCollection {
   private map = new Map<string, EmbeddingData>();
   private counter = 0;
+  /** Cached `array` snapshot — invalidated on add. */
+  private cachedArray: EmbeddingData[] | undefined;
 
   /** Allocate the next sequential embedding file name (oleObject1.bin, …). */
   public nextEmbeddingName(): string {
@@ -67,16 +69,19 @@ export class EmbeddingCollection {
       const fallbackName = this.nextEmbeddingName();
       const entry: EmbeddingData = { fileName: fallbackName, data, ...extras };
       this.map.set(fallbackName, entry);
+      this.cachedArray = undefined;
       return entry;
     }
     const entry: EmbeddingData = { fileName: requested, data, ...extras };
     this.map.set(requested, entry);
+    this.cachedArray = undefined;
     return entry;
   }
 
-  /** All registered embeddings in insertion order. */
+  /** All registered embeddings in insertion order (snapshot; stable between adds). */
   public get array(): EmbeddingData[] {
-    return [...this.map.values()];
+    if (this.cachedArray === undefined) this.cachedArray = [...this.map.values()];
+    return this.cachedArray;
   }
 
   private byteEqual(a: Uint8Array, b: Uint8Array): boolean {

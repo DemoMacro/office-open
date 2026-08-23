@@ -48,6 +48,9 @@ export class Media<T extends BaseMediaEntry> {
   /** Memoized result per input buffer — the repeated-reference hot path. */
   private readonly verified = new WeakMap<Uint8Array, string>();
   private counter = 0;
+  /** Cached `array` snapshot — invalidated on add so compilers reading it per
+   * part stop paying a fresh array copy per access. */
+  private cachedArray: T[] | undefined;
 
   /**
    * Register media, reusing the existing entry when the bytes already exist.
@@ -96,6 +99,7 @@ export class Media<T extends BaseMediaEntry> {
     const finalName = this.map.has(resolvedName) ? this.nextName(type) : resolvedName;
     const entry = build(finalName);
     this.map.set(finalName, entry);
+    this.cachedArray = undefined;
     this.byContent.set(key, finalName);
     this.verified.set(data, finalName);
     return entry;
@@ -143,8 +147,9 @@ export class Media<T extends BaseMediaEntry> {
     return true;
   }
 
-  /** All registered media entries. */
+  /** All registered media entries (snapshot; stable between adds). */
   public get array(): T[] {
-    return [...this.map.values()];
+    if (this.cachedArray === undefined) this.cachedArray = [...this.map.values()];
+    return this.cachedArray;
   }
 }

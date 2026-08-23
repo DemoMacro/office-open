@@ -29,6 +29,8 @@ export interface ChartData {
 
 export class ChartCollection {
   private map: Map<string, ChartData>;
+  /** Cached `array` snapshot — invalidated on add. */
+  private cachedArray: ChartData[] | undefined;
 
   public constructor() {
     this.map = new Map<string, ChartData>();
@@ -36,9 +38,11 @@ export class ChartCollection {
 
   public addChart(key: string, chartData: ChartData): void {
     this.map.set(key, chartData);
+    this.cachedArray = undefined;
   }
 
   public get array(): ChartData[] {
-    return [...this.map.values()];
+    if (this.cachedArray === undefined) this.cachedArray = [...this.map.values()];
+    return this.cachedArray;
   }
 }

@@ -100,6 +100,9 @@ export function getReferencedMedia(
   xml: string,
   mediaArray: { fileName: string }[],
 ): { fileName: string }[] {
+  // Substring search, not brace-pair scanning: callers pass JSON.stringify
+  // output (the patch path) where nested object braces would derail a
+  // brace-pair walk past the actual placeholder tokens.
   return mediaArray.filter((image) => xml.includes(`{${image.fileName}}`));
 }
 

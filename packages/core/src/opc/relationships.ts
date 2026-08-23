@@ -104,6 +104,14 @@ interface RelationshipEntry {
  */
 export class Relationships {
   private entries: RelationshipEntry[] = [];
+  // Max numeric id across entries, maintained on every mutation so the next
+  // free id is O(1) instead of a full scan per read.
+  private maxId = 0;
+
+  private trackId(rid: string): void {
+    const n = /^rId(\d+)$/.exec(rid);
+    if (n) this.maxId = Math.max(this.maxId, Number(n[1]));
+  }
 
   public addRelationship(
     id: number | string,
@@ -111,7 +119,9 @@ export class Relationships {
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): void {
-    this.entries.push({ id: `rId${id}`, type, target, targetMode });
+    const rid = `rId${id}`;
+    this.trackId(rid);
+    this.entries.push({ id: rid, type, target, targetMode });
   }
 
   /**
@@ -131,7 +141,8 @@ export class Relationships {
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): number {
-    const id = this.nextRelationshipId;
+    const id = this.maxId + 1;
+    this.maxId = id;
     this.entries.push({ id: `rId${id}`, type, target, targetMode });
     return id;
   }
@@ -143,12 +154,7 @@ export class Relationships {
   /** The next free numeric id (max existing + 1) — the safe offset base when
    * externally-determined ids (passthrough source ids) leave gaps below it. */
   public get nextRelationshipId(): number {
-    let max = 0;
-    for (const e of this.entries) {
-      const n = /^rId(\d+)$/.exec(e.id);
-      if (n) max = Math.max(max, Number(n[1]));
-    }
-    return max + 1;
+    return this.maxId + 1;
   }
 
   /** Rename the first entry matching `type` to `newId` — used to promote a
@@ -157,7 +163,10 @@ export class Relationships {
   public renameEntryByType(type: string, newId: number): void {
     if (this.hasId(`rId${newId}`)) return;
     const entry = this.entries.find((e) => e.type === type);
-    if (entry) entry.id = `rId${newId}`;
+    if (entry) {
+      entry.id = `rId${newId}`;
+      this.maxId = Math.max(this.maxId, newId);
+    }
   }
 
   /** Numeric id of the first entry matching `kind` (last segment of the type

@@ -65,6 +65,8 @@ export function definitionId(definition: { uniqueId?: string }): string {
  */
 export class SmartArtCollection {
   private map: Map<string, SmartArtData>;
+  /** Cached `array` snapshot — invalidated on add. */
+  private cachedArray: SmartArtData[] | undefined;
 
   public constructor() {
     this.map = new Map<string, SmartArtData>();
@@ -72,9 +74,11 @@ export class SmartArtCollection {
 
   public addSmartArt(key: string, data: SmartArtData): void {
     this.map.set(key, data);
+    this.cachedArray = undefined;
   }
 
   public get array(): SmartArtData[] {
-    return [...this.map.values()];
+    if (this.cachedArray === undefined) this.cachedArray = [...this.map.values()];
+    return this.cachedArray;
   }
 }
