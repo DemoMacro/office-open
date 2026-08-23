@@ -66,7 +66,8 @@ export interface EmbeddedFontOptions {
 /** Custom slide show (p:custShowLst entry — a named subset and order of slides). */
 export interface CustomShowOptions {
   name: string;
-  id: number;
+  /** p:custShow @id — list-unique, nothing references it; omit for auto. */
+  id?: number;
   slides: { rId: string }[];
 }
 

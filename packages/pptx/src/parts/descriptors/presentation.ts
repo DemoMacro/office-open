@@ -156,8 +156,13 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
   // custShowLst
   if (opts.customShows && opts.customShows.length > 0) {
     parts.push("<p:custShowLst>");
+    // @id only needs to be unique within the list — assign max+1 for entries a
+    // fresh document didn't number (round-tripped sources keep theirs).
+    let maxShowId = 0;
+    for (const cs of opts.customShows)
+      if (cs.id !== undefined && cs.id > maxShowId) maxShowId = cs.id;
     for (const cs of opts.customShows) {
-      parts.push(`<p:custShow name="${cs.name}" id="${cs.id}">`);
+      parts.push(`<p:custShow name="${cs.name}" id="${cs.id ?? ++maxShowId}">`);
       parts.push("<p:sldLst>");
       for (const sl of cs.slides) {
         parts.push(`<p:sld r:id="${sl.rId}"/>`);
