@@ -288,9 +288,21 @@ function stringifySectionPropertiesInner(
     parts.push(pageSizeXml(pgW, pgH, orientation, code));
   }
 
-  // Page margin — same three states as the page size.
+  // Page margin — same three states as the page size. UniversalMeasure
+  // ("2.5cm") normalizes to plain twip numbers, matching w:pgSz above (the
+  // destructured defaults above keep every argument non-undefined).
   if (opts.pageMargin !== false && (!omitDefaults || opts.pageMargin !== undefined)) {
-    parts.push(pageMarginXml(top, right, bottom, left, header, footer, gutter));
+    parts.push(
+      pageMarginXml(
+        convertToTwip(top),
+        convertToTwip(right),
+        convertToTwip(bottom),
+        convertToTwip(left),
+        convertToTwip(header),
+        convertToTwip(footer),
+        convertToTwip(gutter),
+      ),
+    );
   }
 
   // Paper source — EG_SectPrContents order: … pgMar, paperSrc, pgBorders …

@@ -192,7 +192,7 @@ describe("ruby annotation parse", () => {
 
     const xml = stringifyParagraph(opts as never, writeCtx);
     expect(xml).toContain("<w:r><w:ruby><w:rubyPr>");
-    expect(xml).toContain('<w:dirty w:val="0"/>');
+    expect(xml).toContain('<w:dirty w:val="off"/>');
     expect(xml).toContain(
       '<w:rt><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">fu</w:t></w:r>' +
         '<w:r><w:t xml:space="preserve">ri</w:t></w:r></w:rt>',

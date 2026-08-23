@@ -15,6 +15,7 @@ import {
   eighthPointMeasureValue,
   hexColorValue,
   hpsMeasureValue,
+  mapOptional,
   pointMeasureValue,
   uCharHexNumber,
   xsdJcAlignment,
@@ -47,7 +48,10 @@ import type { ShadingProperties } from "@shared/shading";
 
 /** On/off: `<w:name/>` for true, `<w:name w:val="0"/>` for false */
 export function onOff(name: string, val: boolean): string {
-  return val ? `<${name}/>` : `<${name} w:val="0"/>`;
+  // "off" is the only negative spelling both validators accept: ISO's
+  // s:ST_OnOff allows all six spellings, but tblHeader/cantSplit bind
+  // CT_OnOffOnly in the SDK's stricter schema (enumeration: on/off only).
+  return val ? `<${name}/>` : `<${name} w:val="off"/>`;
 }
 
 // ── Border ──
@@ -165,6 +169,8 @@ function cnfStyleStr(opts: CnfConditionalOptions): string {
 function framePrStr(opts: FrameOptions): string {
   const alignment = (opts as { alignment?: { x?: string; y?: string } }).alignment;
   const position = (opts as { position?: { x?: number; y?: number } }).position;
+  // Twip-measured attributes normalize UniversalMeasure to plain integers
+  // (same rule as w:pgSz/w:pgMar in section properties).
   const a = attrsRaw({
     "w:xAlign": alignment?.x,
     "w:yAlign": alignment?.y,
@@ -172,12 +178,12 @@ function framePrStr(opts: FrameOptions): string {
     "w:anchorLock": opts.anchorLock,
     "w:vAnchor": opts.anchor?.vertical,
     "w:dropCap": opts.dropCap,
-    "w:h": opts.height,
+    "w:h": mapOptional(opts.height, convertToTwip),
     "w:lines": opts.lines,
     "w:hRule": opts.rule,
-    "w:hSpace": opts.space?.horizontal,
-    "w:vSpace": opts.space?.vertical,
-    "w:w": opts.width,
+    "w:hSpace": mapOptional(opts.space?.horizontal, convertToTwip),
+    "w:vSpace": mapOptional(opts.space?.vertical, convertToTwip),
+    "w:w": mapOptional(opts.width, convertToTwip),
     "w:wrap": opts.wrap,
     "w:x": position?.x,
     "w:y": position?.y,
