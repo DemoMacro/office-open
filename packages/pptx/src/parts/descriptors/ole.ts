@@ -9,7 +9,7 @@
 import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
-import { attr, attrBool, attrNum, escapeXml, findChild, type Element } from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
@@ -176,7 +176,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       // iconImage: read the picture bytes back through the blip relationship
       const pic = findChild(oleObj, "p:pic");
       if (pic) {
-        const blip = findChildDeep(pic, "a:blip");
+        const blip = findFirst(pic, "a:blip");
         const blipRId = blip ? attr(blip, "r:embed") : undefined;
         const imagePath = blipRId ? ctx.resolveRelationship(blipRId) : undefined;
         const raw = imagePath ? ctx.getRaw(imagePath) : undefined;
@@ -188,13 +188,3 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     return result as OleOptions;
   },
 };
-
-/** Find a descendant element by name at any depth. */
-function findChildDeep(el: Element, name: string): Element | undefined {
-  for (const child of el.elements ?? []) {
-    if (child.name === name) return child;
-    const found = findChildDeep(child, name);
-    if (found) return found;
-  }
-  return undefined;
-}

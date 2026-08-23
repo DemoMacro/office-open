@@ -1003,7 +1003,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:styleLockQFSet", opts.styleLockQFSet));
 
     // defaultTabStop — optional (CT_Settings minOccurs=0); emit only when set
-    if (opts.defaultTabStop !== undefined) p.push(numVal("w:defaultTabStop", opts.defaultTabStop)!);
+    p.push(numVal("w:defaultTabStop", opts.defaultTabStop));
 
     // hyphenation — sibling CT_Settings elements, flattened onto the root
     p.push(onOff("w:autoHyphenation", opts.autoHyphenation));
@@ -1155,12 +1155,12 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Word 2010/2013 document identifiers — CT_Settings trailing sequence
     // (decimalSymbol → listSeparator → w14:docId → w15:chartTrackingRefBased → w15:docId).
     // Preserved verbatim for round-trip fidelity; val attribute is namespace-scoped.
-    if (opts.w14DocId !== undefined) p.push(strVal("w14:docId", opts.w14DocId));
+    p.push(strVal("w14:docId", opts.w14DocId));
     p.push(onOff("w14:discardImageEditingData", opts.w14DiscardImageEditingData));
     if (opts.w14DefaultImageDpi !== undefined)
       p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
-    if (opts.w15DocId !== undefined) p.push(strVal("w15:docId", opts.w15DocId));
+    p.push(strVal("w15:docId", opts.w15DocId));
 
     const body = p.join("");
     return `<w:settings ${SETTINGS_NS}>${body}</w:settings>`;

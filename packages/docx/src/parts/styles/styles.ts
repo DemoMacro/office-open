@@ -174,7 +174,7 @@ export class Styles {
 
     const attrParts: string[] = [];
     for (const [k, v] of Object.entries(merged)) {
-      if (v !== undefined && v !== null) attrParts.push(` ${k}="${v}"`);
+      if (v != null) attrParts.push(` ${k}="${v}"`);
     }
 
     const attrs = attrParts.join("");

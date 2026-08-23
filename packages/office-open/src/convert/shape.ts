@@ -73,7 +73,7 @@ export function pickContent<T extends ShapeContent>(source: T): PickedContent {
   // pptx carries fill: null for a source spPr with no fill child; the target
   // packages express the same "emit no fill" as an absent field, so null maps
   // to skipped rather than copied.
-  if (source.fill !== undefined && source.fill !== null) out.fill = source.fill;
+  if (source.fill != null) out.fill = source.fill;
   if (source.outline !== undefined) out.outline = source.outline;
   if (source.effects !== undefined) out.effects = source.effects;
   if (source.effectDag !== undefined) out.effectDag = source.effectDag;
