@@ -25,13 +25,8 @@ import type { ShortHexNumber } from "@office-open/core";
  * @module
  */
 /**
- * Options for configuring table look conditional formatting.
- *
- * These options control which conditional formatting styles are applied
- * to the table. Field names and polarity match the base table 6-flags
- * (firstRow/lastRow/firstCol/lastCol/bandRow/bandCol) so the same concept
- * reads the same everywhere; the serializer maps them onto the XML
- * attributes, inverting banding (w:noHBand = !bandRow).
+ * Table look conditional formatting flags (firstRow/lastRow/firstCol/lastCol/
+ * bandRow/bandCol). The serializer inverts banding (w:noHBand = !bandRow).
  */
 export interface TableLookOptions {
   /**

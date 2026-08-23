@@ -1,10 +1,6 @@
 /**
- * Frameset and Frame type definitions for webSettings.xml.
- *
- * Framesets define a frames-based layout within a Word document (web layout).
- * XML generation is handled by the descriptor at compile/descriptors/web-settings.ts.
- *
- * Reference: OOXML transitional, wml.xsd, CT_Frameset / CT_Frame
+ * Frameset and Frame type definitions for webSettings.xml — a frames-based
+ * web layout within a Word document.
  *
  * @module
  */

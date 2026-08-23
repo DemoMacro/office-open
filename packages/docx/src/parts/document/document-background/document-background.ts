@@ -41,11 +41,9 @@ export interface DocumentBackgroundOptions {
   /** Background image rendered as a full-page VML fill */
   image?: BackgroundImageOptions;
   /**
-   * Verbatim `<w:background>` XML for backgrounds that don't fit the structured
-   * model (e.g. VML pattern fills with texture images). `r:id` references are
-   * rewritten to `{fileName}` placeholders resolved by the compiler; the
-   * referenced media is carried in `rawMedia` for registration. Round-trip
-   * channel: captured from a parsed source document — do not hand-author.
+   * Verbatim `<w:background>` XML for backgrounds the structured model cannot
+   * express (e.g. VML pattern fills). `r:id` refs become `{fileName}`
+   * placeholders (media in `rawMedia`). Round-trip only — do not hand-author.
    */
   rawXml?: string;
   /** Media referenced by `rawXml` placeholders, registered on generate. */

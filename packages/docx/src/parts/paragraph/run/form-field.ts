@@ -98,12 +98,9 @@ export interface TextInputOptions {
    */
   default?: string;
   /**
-   * Current value the user typed into the field (the result-run text between
-   * the `separate` and `end` fldChars).
-   *
-   * Unlike {@link default} this is NOT stored in `w:ffData`; it is captured on
-   * parse for round-trip fidelity. On stringify it is rendered as the field
-   * result, falling back to {@link default} when unset.
+   * Current user-typed value (the result-run text between `separate` and
+   * `end`). Not stored in w:ffData — parse-only capture; stringify renders it
+   * as the field result, falling back to `default`.
    */
   value?: string;
   /** Maximum character length */

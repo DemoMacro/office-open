@@ -37,11 +37,9 @@ export interface TextHyperlinkOptions {
   /** External URL target (mutually exclusive with slide). */
   url?: string;
   /**
-   * Internal slide target, 1-based slide number (mutually exclusive with url).
-   * Emitted as r:id → slideN.xml + action="ppaction://hlinksldjump".
-   *
-   * PPTX only — slides exist in no other format. Formats without slides
-   * reject the field at generate time instead of silently dropping it.
+   * Internal slide target, 1-based slide number (mutually exclusive with url);
+   * emitted as r:id → slideN.xml + action="ppaction://hlinksldjump". PPTX
+   * only — other formats reject the field at generate time.
    */
   slide?: number;
   /** Internal placeholder key ("{hlink:N}" → "N"); preserved across parse → stringify. */

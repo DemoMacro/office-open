@@ -172,10 +172,8 @@ export interface VmlBaseShapeFields
   clientData?: VmlClientDataOptions;
   textdata?: VmlTextDataOptions;
   /**
-   * Verbatim XML of children this parser does not model — e.g. the office:word
-   * border elements re-prefixed by Word exporters (`wvml:bordertop` for
-   * `w10:bordertop`). Re-emitted as-is after the modeled children; CT_Shape's
-   * content model is an unordered repeating choice, so the tail is valid.
+   * Verbatim XML of unmodeled children (e.g. Word's re-prefixed
+   * `wvml:bordertop` border elements), re-emitted after the modeled children.
    */
   rawChildrenXml?: string;
 }

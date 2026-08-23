@@ -139,7 +139,7 @@ export interface TableOptions {
   ext?: string;
   /**
    * Table alternate-text (x14:table `@altText` inside the trailing extLst).
-   * Structured counterpart of {@link ext} — emit builds the x14:table
+   * Structured counterpart of `ext` — emit builds the x14:table
    * extension from it when ext itself is absent.
    */
   altText?: string;

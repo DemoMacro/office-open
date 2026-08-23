@@ -27,16 +27,8 @@ import type { TableWidthProperties } from "./table-width";
 /**
  * Options for creating a Table element.
  *
- * Note: 0-width columns don't get rendered correctly, so we need
- * to give them some value. A reasonable default would be
- * ~6in / numCols, but if we do that it becomes very hard
- * to resize the table using setWidth, unless the layout
- * algorithm is set to 'fixed'. Instead, the approach here
- * means even in 'auto' layout, setting a width on the
- * table will make it look reasonable, as the layout
- * algorithm will expand columns to fit its content.
- *
- * @see {@link Table}
+ * Avoid 0-width columns — they render incorrectly; the layout algorithm
+ * expands columns to fit content even in 'auto' layout.
  */
 export interface TableOptions extends BaseTableOptions<
   TableRowOptions | { sdt: SdtRowOptions } | { customXml: CustomXmlRowOptions }

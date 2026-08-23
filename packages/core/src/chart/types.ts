@@ -333,10 +333,9 @@ export interface SecondaryChartGroupOptions {
 
 export interface ChartSpaceOptions {
   /**
-   * Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict,
-   * purl.oclc.org) source package rejects a chart re-serialized with
-   * transitional namespaces — parse records the dialect from the root element
-   * and stringify re-declares the matching namespace set.
+   * Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict)
+   * source rejects transitional namespaces. Parse records the dialect;
+   * stringify re-declares the matching namespace set.
    */
   dialect?: "transitional" | "strict";
   /**

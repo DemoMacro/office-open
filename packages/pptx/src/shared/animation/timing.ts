@@ -898,9 +898,8 @@ export interface ResolvedAnimationEntry extends AnimationEntry {
 
 /**
  * The slide timing tree: structured animation entries, or the verbatim inner
- * XML of p:timing when the source tree exceeds what the structured model can
- * rebuild (parse falls back to verbatim so exotic timing content survives
- * round-trip instead of being silently reorganized).
+ * XML of p:timing when the source exceeds what the model rebuilds (so exotic
+ * timing survives round-trip).
  */
 export type AnimationsOptions = AnimationEntry[] | string;
 

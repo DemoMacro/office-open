@@ -48,7 +48,7 @@ export type SlideSize =
 
 /** Placeholder slot map — `false` hides the slot, a definition overrides its
  * position and facets, omitted shows the default. Same value shape as
- * {@link MasterPlaceholderOptions}. */
+ * `MasterPlaceholderOptions`. */
 export interface LayoutPlaceholderOptions {
   title?: PlaceholderDefinition | false;
   body?: PlaceholderDefinition | false;
@@ -128,10 +128,9 @@ export interface SlideOptions {
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
   notes?: string | NotesSlideOptions;
   /**
-   * Slide transition. The structured form covers the plain p:transition
-   * element; a string is the verbatim markup-compatibility block a source
-   * emits when the transition carries reader-version extensions (mc:Choice
-   * p14:dur with an mc:Fallback twin) — re-emitted as written.
+   * Slide transition. Structured form covers plain p:transition; a string is
+   * the verbatim mc block a source emits for reader-version extensions
+   * (mc:Choice p14:dur + mc:Fallback), re-emitted as written.
    */
   transition?: TransitionOptions | string;
   headerFooter?: SlideHeaderFooterOptions;
@@ -180,11 +179,9 @@ export interface ShowOptions {
 export interface PresentationOptions extends CorePropertiesOptions {
   size?: SlideSize;
   /**
-   * The source file is an encrypted OOXML package (OLE2/CFB container).
-   * Round-trip only: the plaintext needs the password, so the original bytes
-   * are carried verbatim and generate() re-emits them unchanged — every
-   * other field stays empty. Mixing slides is rejected — it would be
-   * silently dropped.
+   * Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only:
+   * original bytes carried verbatim and re-emitted unchanged; every other
+   * field stays empty — mixing slides is rejected.
    */
   encrypted?: EncryptedContainerOptions;
   masters?: MasterDefinition[];
@@ -232,8 +229,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   presentationPropertiesExt?: string;
   /**
    * Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside
-   * the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) —
-   * verbatim round-trip (captured from a parsed source; do not hand-author). Same slot naming as SlideOptions.ext.
+   * the modeled sectionLst extension (e.g. p15:sldGuideLst) — verbatim
+   * round-trip, do not hand-author. Same slot as SlideOptions.ext.
    */
   ext?: string;
   /** Extended properties (docProps/app.xml) */
@@ -251,21 +248,15 @@ export interface PresentationOptions extends CorePropertiesOptions {
    */
   customProperties?: CustomPropertyOptions[];
   /**
-   * Parts carried verbatim from the source that generate() does not rebuild
-   * (handout masters, customXml, any unknown extension part). Collected
-   * wholesale by the core passthrough pipeline — everything the model did not
-   * absorb survives with bytes and content-type declaration intact. Parts the
-   * compiler happens to rebuild under the same path win over the passthrough
-   * copy (assembly order), so media/charts/notes need no exclusion here.
-   * Round-trip channel: captured from a parsed source document — do not
-   * hand-author.
+   * Parts generate() does not rebuild (handout masters, customXml, unknown
+   * extension parts), carried verbatim from a parsed source with bytes and
+   * content-type intact — do not hand-author.
    */
   rawParts?: { path: string; data: DataType; contentType?: string }[];
   /**
-   * Relationships from rebuilt parts' source .rels that point at rawParts
-   * (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target
-   * unchanged (passthrough paths never move), fresh rId. Round-trip channel:
-   * captured from a parsed source document — do not hand-author.
+   * Source .rels relationships from rebuilt parts that point at rawParts
+   * (e.g. presentation.xml → handoutMaster). Re-emitted verbatim, fresh rId.
+   * Round-trip only — do not hand-author.
    */
   passthroughRelationships?: {
     source: string;

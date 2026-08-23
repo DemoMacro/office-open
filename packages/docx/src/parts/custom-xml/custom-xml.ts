@@ -38,10 +38,8 @@ export interface CustomXmlPropertiesOptions {
  * the w:customXml element name + optional namespace URI + optional properties.
  * Each level extends this with its own `children` content type.
  *
- * Microsoft Word removed `w:customXml` inline markup support on 2010-01-10
- * (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this
- * type exists for round-tripping documents that still carry them. Use content
- * controls (`w:sdt`) or customXml parts for new content.
+ * Word deletes inline `w:customXml` markup on open — round-trip only; use
+ * content controls (`w:sdt`) or customXml parts for new content.
  */
 export interface CustomXmlRunOptions {
   /** XML element name (required) */
@@ -53,13 +51,9 @@ export interface CustomXmlRunOptions {
 }
 
 /**
- * Options for block-level custom XML (CT_CustomXmlBlock).
- * Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts.
- *
- * Microsoft Word removed `w:customXml` inline markup support on 2010-01-10
- * (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this
- * type exists for round-tripping documents that still carry them. Use content
- * controls (`w:sdt`) or customXml parts for new content.
+ * Block-level custom XML (CT_CustomXmlBlock), wrapping paragraphs/tables.
+ * Word deletes inline w:customXml on open — round-trip only; use `w:sdt`
+ * for new content.
  */
 export type CustomXmlBlockOptions = CustomXmlRunOptions & {
   /** Block content (paragraphs, tables, etc.) — no altChunk (XSD EG_ContentBlockContent). */
@@ -67,13 +61,9 @@ export type CustomXmlBlockOptions = CustomXmlRunOptions & {
 };
 
 /**
- * Options for row-level custom XML (CT_CustomXmlRow).
- * Wraps one or more table rows; lives in EG_ContentRowContent alongside w:tr.
- *
- * Microsoft Word removed `w:customXml` inline markup support on 2010-01-10
- * (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this
- * type exists for round-tripping documents that still carry them. Use content
- * controls (`w:sdt`) or customXml parts for new content.
+ * Row-level custom XML (CT_CustomXmlRow), wrapping table rows.
+ * Word deletes inline w:customXml on open — round-trip only; use `w:sdt`
+ * for new content.
  */
 export type CustomXmlRowOptions = CustomXmlRunOptions & {
   /** Row content (TableRow children) */
@@ -81,13 +71,9 @@ export type CustomXmlRowOptions = CustomXmlRunOptions & {
 };
 
 /**
- * Options for cell-level custom XML (CT_CustomXmlCell).
- * Wraps one or more table cells; lives in EG_ContentCellContent alongside w:tc.
- *
- * Microsoft Word removed `w:customXml` inline markup support on 2010-01-10
- * (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this
- * type exists for round-tripping documents that still carry them. Use content
- * controls (`w:sdt`) or customXml parts for new content.
+ * Cell-level custom XML (CT_CustomXmlCell), wrapping table cells.
+ * Word deletes inline w:customXml on open — round-trip only; use `w:sdt`
+ * for new content.
  */
 export type CustomXmlCellOptions = CustomXmlRunOptions & {
   /** Cell content (TableCell children) */

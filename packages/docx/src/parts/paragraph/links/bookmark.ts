@@ -18,13 +18,9 @@ import type { RunOptions } from "@parts/paragraph/run/run";
 export type DisplacedByCustomXml = "next" | "prev";
 
 /**
- * Options for a CT_MarkupRange end marker — `@id` + `@displacedByCustomXml`.
- *
- * Shared by every range end marker that derives from CT_MarkupRange:
- * w:bookmarkEnd, w:commentRangeStart/End, w:moveFromRangeEnd, w:moveToRangeEnd.
- * None of these carry a name or column range (only the start markers do).
- *
- * Reference: wml.xsd CT_MarkupRange, EG_RangeMarkupElements
+ * Range end marker (`@id` + `@displacedByCustomXml`), shared by w:bookmarkEnd,
+ * w:commentRangeStart/End, and w:moveFrom/ToRangeEnd. End markers carry no name
+ * or column range (only start markers do).
  */
 export interface MarkupRangeOptions {
   /** Marker identifier (CT_Markup `@w:id`, required). */
@@ -39,8 +35,6 @@ export interface MarkupRangeOptions {
  * Maps to CT_Bookmark = CT_BookmarkRange (colFirst/colLast) + name. The column
  * range scopes a bookmark to specific table columns so Word preserves the exact
  * cell span on round-trip rather than recomputing it.
- *
- * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange
  */
 export interface BookmarkStartOptions extends MarkupRangeOptions {
   /** Bookmark name used for reference (CT_Bookmark `@w:name`, required). */
@@ -52,13 +46,9 @@ export interface BookmarkStartOptions extends MarkupRangeOptions {
 }
 
 /**
- * Options for a move revision range start (w:moveFromRangeStart / w:moveToRangeStart).
- *
- * Maps to CT_MoveBookmark = CT_Bookmark (name, colFirst, colLast,
- * displacedByCustomXml) + author + date. `name` is optional in practice:
- * Word does not always emit one for auto-generated move ranges.
- *
- * Reference: wml.xsd CT_MoveBookmark, EG_RangeMarkupElements
+ * Move revision range start (w:moveFromRangeStart / w:moveToRangeStart):
+ * CT_Bookmark + author + date. `name` is optional in practice — Word does not
+ * always emit one for auto-generated move ranges.
  */
 export interface MoveRangeStartOptions {
   /** Move range identifier (CT_Markup `@w:id`, required). */
@@ -78,15 +68,9 @@ export interface MoveRangeStartOptions {
 }
 
 /**
- * A bookmark authored as a single inline paragraph child. The library allocates
- * the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared
- * id — the caller never touches an id or pairs markers.
- *
- * `wrap` is the anchored document content the bookmark range wraps (inline
- * runs/text, emitted between the markers). Bookmarks are pure markup: they add
- * no part or relationship, only the two markers in document.xml.
- *
- * Reference: wml.xsd CT_Bookmark, CT_BookmarkRange, EG_RangeMarkupElements.
+ * Inline bookmark sugar: the library allocates the id and emits the paired
+ * bookmarkStart/bookmarkEnd markers around `wrap` (the anchored inline content).
+ * Pure markup — adds no part or relationship.
  */
 export interface BookmarkOptions {
   /** Bookmark name used for reference (CT_Bookmark `@w:name`, required). */
@@ -102,18 +86,11 @@ export interface BookmarkOptions {
 }
 
 /**
- * A move revision authored as a single inline paragraph child. The library
- * allocates the range id and the move-run id, then emits the paired range
- * markers with the moved run between them — the caller never touches an id.
- *
- * Used by both the `{ moveFrom }` (source) and `{ moveTo }` (destination)
- * sugars. `wrap` is the moved content carried by the move run. `author` and
- * `date` apply to both the range start (CT_MoveBookmark) and the move run
- * (CT_TrackChange). `name` is required by XSD (CT_Bookmark); the source
- * (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name
- * so Word pairs them as a single move.
- *
- * Reference: wml.xsd CT_MoveBookmark, CT_TrackChange, EG_RangeMarkupElements.
+ * Move revision sugar for `{ moveFrom }`/`{ moveTo }`: the library allocates
+ * all ids and emits the paired range markers with the moved run between them.
+ * `name` is required and MUST be shared by the source/destination pair so Word
+ * links them into one move; `wrap` is the moved content; `author`/`date` apply
+ * to both the range start and the move run.
  */
 export interface MoveRangeOptions {
   /** Author of the move (CT_MoveBookmark + move run `@w:author`, required). */

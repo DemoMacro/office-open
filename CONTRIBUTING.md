@@ -329,6 +329,29 @@ When XSD uses abbreviations, mapping is centralized in `packages/core/src/util/m
 
 When XSD uses full words (e.g. `"center"`), no mapping needed.
 
+## JSDoc Density
+
+Public-type JSDoc is the single source of the schema `description`s that AI tools read: it is extracted verbatim into `schemas/*.schema.json`, and every on-demand slice multiplies those bytes into the model's context. Information density is a correctness requirement, not a style preference — the bar is OpenAI's "intern test": a reader with nothing but the description can fill the field correctly.
+
+**One-line summary first.** The first sentence states what the field does plus its unit/format, with a value example inlined: `/** Page width in twips (15840 = 11"). */`. Details that earn their tokens follow on separate lines.
+
+**Keep** — what the reader cannot guess:
+
+- Unit and scale with a concrete example (`twips (15840 = 11")`, `×4096 (40960 = +10 pt)`)
+- Defaults, value ranges, mutual exclusion (`slide` and `url` are mutually exclusive)
+- Behavior contracts (`round-trip only — do not hand-author`, `parsed but never re-emitted`, `auto-generated when omitted`)
+- Cross-package facts that steer lookup (`core shared model`)
+
+**Never copy from the OOXML spec verbatim.** Spec-legalese and scaffolding multiply tokens without adding fill-value information:
+
+- "shall be specified by…", "The possible values … are defined by the … simple type (§…)"
+- `## Heading` / `### Example` sections and XML example blocks
+- c-rex.net / officeopenxml.com URLs, `xsd:complexType` blocks
+- `{@link X }` syntax (dead text in JSON — write the plain name `X`)
+- Library-internal architecture notes ("the single source of truth for both the entry and the descriptor")
+
+**Budget:** aim for ≤200 characters per description. Above 250, the description must be carrying several distinct contracts — or it is carrying prose that belongs in this documentation instead.
+
 ## Running Demos
 
 ```bash

@@ -331,13 +331,9 @@ export interface FreezePaneOptions {
 }
 
 /**
- * Picture anchored to a worksheet cell.
- *
- * Extends the cross-format {@link BasePictureOptions} (binary data + non-visual
- * drawing properties) with the full spreadsheet-drawing anchor
- * {@link DrawingAnchorOptions} (1-based from/to cell corners, anchor type,
- * extent). The base cNvPr fields (name/description/title/hidden) flow through
- * to the drawing's cNvPr.
+ * Picture anchored to a worksheet cell. Extends BasePictureOptions (binary
+ * data + cNvPr) with the spreadsheet-drawing anchor DrawingAnchorOptions
+ * (1-based from/to cell corners, anchor type, extent).
  */
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
   /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
@@ -580,13 +576,10 @@ export interface ObjectAnchorOptions {
 }
 
 /**
- * Comment property (CT_CommentPr).
- *
- * Parsed but never re-emitted: a commentPr alongside the sheet's legacy VML
- * note drawing produces a file Excel refuses to open — commentPr and the VML
- * note shape are rival property systems for the same note, and Excel reads
- * note properties from the shape's x:ClientData. The fields survive parse so
- * callers can inspect them; stringify always drops them.
+ * Comment property (CT_CommentPr). Parsed but never re-emitted: commentPr
+ * beside the sheet's VML note drawing makes Excel refuse to open the file
+ * (rival property systems; Excel reads note properties from the shape's
+ * x:ClientData). Fields survive parse for inspection; stringify drops them.
  */
 export interface CommentPropertiesOptions {
   locked?: boolean;
@@ -1320,13 +1313,10 @@ export interface DataConsolidateOptions {
 }
 
 /**
- * Drawing in header/footer (CT_DrawingHF).
- *
- * The 18 counters are XML attribute names verbatim: first letter l/c/r is the
- * header/footer section (left/center/right), second h/f is header vs footer,
- * third o/e/f is the page flavor (odd/even/first). Each holds the 1-based
- * picture number within that slot (e.g. `lho` = 2nd picture in the left
- * section of the header on odd pages).
+ * Drawing in header/footer (CT_DrawingHF). The 18 counters are XML attribute
+ * names verbatim: l/c/r = section (left/center/right), h/f = header vs footer,
+ * o/e/f = page flavor (odd/even/first); each holds the 1-based picture number
+ * in that slot (`lho` = 2nd picture, left header, odd pages).
  */
 export interface DrawingHfOptions {
   /**
@@ -1446,11 +1436,10 @@ export interface WorksheetOptions {
    */
   legacyDrawingHF?: string;
   /**
-   * Drawing reference r:id (CT_Worksheet `<drawing>`). Round-trip only: a
-   * drawing part whose anchors the bridge does not map onto options (e.g. OLE
-   * object shape representations) passes through verbatim, so the original
-   * reference stays valid. Absent on freshly authored worksheets — the
-   * compiler derives the reference from images/charts/shapes.
+   * Drawing reference r:id (CT_Worksheet `<drawing>`). Round-trip only: drawing
+   * parts the bridge cannot map onto options (e.g. OLE shape representations)
+   * pass through verbatim; fresh worksheets derive the reference from
+   * images/charts/shapes.
    */
   drawingRid?: string;
   /**

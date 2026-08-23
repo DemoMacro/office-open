@@ -36,11 +36,9 @@ export interface NumberingOptions {
     reference: string;
     properties?: AbstractNumberingPropertiesOptions;
     /**
-     * Numbering instances (w:num) to emit for this definition up front,
-     * independent of body references. Fresh authoring omits it (instances
-     * are created on demand as paragraphs reference the definition);
-     * round-trip sets 1 so instances the body never references (styles-only
-     * or dead definitions) keep their w:num element.
+     * Numbering instances (w:num) to emit up front, independent of body
+     * references — fresh authoring omits it (instances are created on demand);
+     * round-trip sets 1 so unreferenced instances keep their w:num element.
      */
     instanceCount?: number;
     /**
@@ -50,10 +48,9 @@ export interface NumberingOptions {
      */
     overrideLevels?: LevelOverrideOptions[];
     /**
-     * Additional references (other source w:num ids) pointing at the same
-     * abstract definition with identical overrides. Word documents routinely
-     * reference one w:abstractNum from several w:num; without the aliases
-     * each would emit its own copy of the definition.
+     * Additional source w:num ids pointing at the same abstract definition
+     * with identical overrides, so each does not emit its own copy of the
+     * definition.
      */
     aliases?: string[];
     /**

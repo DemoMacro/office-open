@@ -11,7 +11,7 @@ import type { StyleDefinitionOptions } from "./style-definition";
 
 /**
  * Verbatim source parts for byte-exact SmartArt round-trip. When set on a
- * {@link SmartArtData} entry, the compiler re-emits these bytes under the
+ * `SmartArtData` entry, the compiler re-emits these bytes under the
  * diagram part names instead of rebuilding from the modeled XML.
  */
 export interface SmartArtRawParts {

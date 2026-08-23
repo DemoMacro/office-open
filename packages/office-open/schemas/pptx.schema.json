@@ -1381,7 +1381,7 @@
           "type": "string"
         }
       ],
-      "description": "The slide timing tree: structured animation entries, or the verbatim inner XML of p:timing when the source tree exceeds what the structured model can rebuild (parse falls back to verbatim so exotic timing content survives round-trip instead of being silently reorganized)."
+      "description": "The slide timing tree: structured animation entries, or the verbatim inner XML of p:timing when the source exceeds what the model rebuilds (so exotic timing survives round-trip)."
     },
     "AppPropertiesOptions": {
       "additionalProperties": false,
@@ -1428,7 +1428,7 @@
           "type": "number"
         },
         "hlinks": {
-          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (id/position/flags integers and anchor strings, six entries per link). Round-trip only: the record fields are undocumented, so the flat variant values are carried as-is rather than named.",
+          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: fields are undocumented, so the flat variant values are carried as-is.",
           "items": {
             "$ref": "#/definitions/VariantValue"
           },
@@ -1572,7 +1572,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fileName": {
@@ -2930,7 +2930,7 @@
     },
     "ChartOptions": {
       "additionalProperties": false,
-      "description": "Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace). The chart payload comes from  {@link  ChartSpaceOptions }  (core shared model, identical XML across packages); the cNvPr fields from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.\n\n`title` is the chart title (c:title) inherited from ChartSpaceOptions — the cNvPr `@title` attribute is deliberately not exposed here so one JSON key cannot mean two XML attributes (alt text goes in `description`).",
+      "description": "Chart frame (p:graphicFrame → c:chartSpace): chart payload from ChartSpaceOptions (core shared model), cNvPr from NonVisualDrawingPropertiesOptions. `title` is c:title; alt text in `description`.",
       "properties": {
         "autoTitleDeleted": {
           "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
@@ -3061,7 +3061,7 @@
           "type": "string"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
           "enum": ["transitional", "strict"],
           "type": "string"
         },
@@ -4009,7 +4009,7 @@
     },
     "ColorTransformOptions": {
       "additionalProperties": false,
-      "description": "Options for color transforms.\n\nPercent fields take integer percent (e.g., `40` = 40%); the library scales to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean fields emit value-less switch elements.\n\nReference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform",
+      "description": "Options for color transforms. Percent fields take integer percent (`40` = 40%), angle fields (`hue`/`hueOff`) take degrees; the library applies the XSD scaling. Booleans emit value-less switch elements.",
       "properties": {
         "alpha": {
           "description": "Alpha: sets transparency (0-100, where 0 = transparent)",
@@ -4205,7 +4205,7 @@
     },
     "ConnectorOptions": {
       "additionalProperties": false,
-      "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from  {@link  BaseConnectorOptions } ; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
+      "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from `BaseConnectorOptions`; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
       "properties": {
         "creationId": {
           "$ref": "#/definitions/Guid",
@@ -4224,7 +4224,7 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fill": {
@@ -5371,7 +5371,7 @@
     },
     "EncryptedContainerOptions": {
       "additionalProperties": false,
-      "description": "Verbatim payload of a source file whose OOXML package is encrypted.\n\nRound-trip only: the plaintext needs the password, so these bytes are the only faithful representation. Every other options field stays empty — there is no content to model until the file is decrypted.",
+      "description": "Verbatim payload of a source file whose OOXML package is encrypted. Round-trip only: the bytes are the only faithful representation until the file is decrypted; every other options field stays empty.",
       "properties": {
         "data": {
           "$ref": "#/definitions/DataType",
@@ -6122,7 +6122,7 @@
     },
     "GroupOptions": {
       "additionalProperties": false,
-      "description": "Group shape options for pptx slides (p:grpSp). The cNvPr fields (name/description/title/hidden) come from  {@link  BaseGroupOptions } ; the rest is the pptx flat positioning model plus the group's children. The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "Group shape (p:grpSp) for pptx slides. cNvPr fields from BaseGroupOptions; the rest is the pptx flat positioning model plus the group's children.",
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
@@ -6203,7 +6203,7 @@
           "description": "Group-level effects (EG_EffectProperties on grpSpPr)."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fill": {
@@ -6851,7 +6851,7 @@
     },
     "LayoutPlaceholderOptions": {
       "additionalProperties": false,
-      "description": "Placeholder slot map — `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Same value shape as  {@link  MasterPlaceholderOptions  } .",
+      "description": "Placeholder slot map — `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Same value shape as `MasterPlaceholderOptions`.",
       "properties": {
         "body": {
           "anyOf": [
@@ -7165,7 +7165,7 @@
           "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fill": {
@@ -7269,7 +7269,7 @@
     },
     "LockedCanvasFrameOptions": {
       "additionalProperties": false,
-      "description": "Locked canvas frame options for pptx slides (p:graphicFrame with lc:lockedCanvas). The cNvPr fields (name/description/title/hidden) come from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "Locked canvas frame (p:graphicFrame with lc:lockedCanvas) for pptx slides. cNvPr fields (name/description/title/hidden) from NonVisualDrawingPropertiesOptions.",
       "properties": {
         "children": {
           "items": {
@@ -7286,7 +7286,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hasCustomPrompt": {
@@ -8189,7 +8189,7 @@
     },
     "OleOptions": {
       "additionalProperties": false,
-      "description": "OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The cNvPr fields (name/description/title/hidden) come from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "OLE object frame (p:graphicFrame with p:oleObj) for pptx slides. cNvPr fields (name/description/title/hidden) from NonVisualDrawingPropertiesOptions.",
       "properties": {
         "creationId": {
           "$ref": "#/definitions/Guid",
@@ -8201,10 +8201,10 @@
         },
         "embed": {
           "$ref": "#/definitions/OleEmbedOptions",
-          "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with  {@link  link }  — p:oleObj's content model is a required choice between p:embed and p:link."
+          "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with `link` — p:oleObj's content model is a required choice between p:embed and p:link."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hasCustomPrompt": {
@@ -8439,7 +8439,7 @@
               "type": "string"
             }
           ],
-          "description": "Color definition (required when type is \"solidFill\"). A bare string is an sRGB hex convenience sugar (e.g. `\"FF0000\"`); stringify coerces it to `{ value }` and infers `type: \"solidFill\"` when `type` is omitted. Parse always emits the normalized `{ value }` form."
+          "description": "Color definition (required when type is \"solidFill\"). A bare string is sRGB hex sugar (`\"FF0000\"`); stringify coerces it to `{ value }` and infers \"solidFill\"; parse always emits the normalized form."
         },
         "compoundLine": {
           "$ref": "#/definitions/CompoundLine",
@@ -8863,7 +8863,7 @@
     },
     "PictureOptions": {
       "additionalProperties": false,
-      "description": "Picture (p:pic) options for PPTX slides.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with absolute EMU positioning and optional shape-level effects. The base cNvPr fields (name/description/title/hidden) flow straight through to p:cNvPr. The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "Picture (p:pic) for pptx slides. Extends cross-format BasePictureOptions (binary data + cNvPr name/description/title/hidden → p:cNvPr) with absolute EMU positioning and optional shape-level effects.",
       "properties": {
         "blipEffects": {
           "$ref": "#/definitions/BlipEffectsOptions",
@@ -8879,7 +8879,7 @@
         },
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries  {@link  sourceUrl }  instead."
+          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries `sourceUrl` instead."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -8890,7 +8890,7 @@
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fileName": {
@@ -9101,7 +9101,7 @@
     },
     "PlaceholderDefinition": {
       "additionalProperties": false,
-      "description": "A complete placeholder template on a master/layout: position, inheritable facets the source defined, and the cNvPr fields (a16:creationId etc.) so a re-emitted placeholder keeps its identity. Backward-compatible with the old position-only input shape (flat x/y/width/height).",
+      "description": "Complete placeholder template on a master/layout: position, inheritable facets, and cNvPr fields (a16:creationId) so a re-emitted placeholder keeps its identity. Accepts the old flat x/y/width/height shape.",
       "properties": {
         "creationId": {
           "$ref": "#/definitions/Guid",
@@ -9118,7 +9118,7 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fill": {
@@ -9510,10 +9510,10 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty. Mixing slides is rejected — it would be silently dropped."
+          "description": "Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only: original bytes carried verbatim and re-emitted unchanged; every other field stays empty — mixing slides is rejected."
         },
         "ext": {
-          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst slide guides) — verbatim round-trip (captured from a parsed source; do not hand-author). Same slot naming as SlideOptions.ext.",
+          "description": "Raw `<p:ext>` entries of ppt/presentation.xml's trailing extLst outside the modeled sectionLst extension (e.g. p15:sldGuideLst) — verbatim round-trip, do not hand-author. Same slot as SlideOptions.ext.",
           "type": "string"
         },
         "firstSlideNum": {
@@ -9571,7 +9571,7 @@
           "$ref": "#/definitions/NotesMasterOptions"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Source .rels relationships from rebuilt parts that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim, fresh rId. Round-trip only — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -9608,7 +9608,7 @@
           "$ref": "#/definitions/PrintPropertiesOptions"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (handout masters, customXml, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/charts/notes need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Parts generate() does not rebuild (handout masters, customXml, unknown extension parts), carried verbatim from a parsed source with bytes and content-type intact — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -11681,7 +11681,7 @@
               "type": "string"
             }
           ],
-          "description": "Slide transition. The structured form covers the plain p:transition element; a string is the verbatim markup-compatibility block a source emits when the transition carries reader-version extensions (mc:Choice p14:dur with an mc:Fallback twin) — re-emitted as written."
+          "description": "Slide transition. Structured form covers plain p:transition; a string is the verbatim mc block a source emits for reader-version extensions (mc:Choice p14:dur + mc:Fallback), re-emitted as written."
         }
       },
       "type": "object"
@@ -11764,7 +11764,7 @@
     },
     "SmartArtOptions": {
       "additionalProperties": false,
-      "description": "Options for a SmartArt diagram (p:graphicFrame).\n\nThe single source of truth for both the public slide-child entry and the descriptor — extends  {@link  NonVisualDrawingPropertiesOptions }  so the drawing's cNvPr (name/description/title/hidden) is authored uniformly with every other drawing and survives a cross-format copy. `id`/`smartArtKey` are auto-generated by the descriptor when omitted.",
+      "description": "SmartArt diagram (p:graphicFrame). Extends NonVisualDrawingPropertiesOptions (cNvPr authored like every drawing, survives cross-format copy); `id`/`smartArtKey` auto-generated when omitted.",
       "properties": {
         "color": {
           "anyOf": [
@@ -11786,7 +11786,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hasCustomPrompt": {
@@ -12416,7 +12416,7 @@
     },
     "TableOptions": {
       "additionalProperties": false,
-      "description": "Table options for pptx slides (p:graphicFrame with a:tbl). The structural base (rows/columnWidths/6-flags) comes from  {@link  BaseTableOptions } ; the cNvPr fields (name/description/title/hidden) from  {@link  NonVisualDrawingPropertiesOptions } . The single source of truth for both the public slide-child entry and the descriptor.",
+      "description": "Table (p:graphicFrame with a:tbl) for pptx slides. Structural base (rows/columnWidths/6-flags) from BaseTableOptions; cNvPr fields from NonVisualDrawingPropertiesOptions.",
       "properties": {
         "bandCol": {
           "type": "boolean"
@@ -12443,7 +12443,7 @@
           "type": "object"
         },
         "columnIds": {
-          "description": "Office 2014 column stamps (a16:colId per a:gridCol extension list), parallel to  {@link  BaseTableOptions.columnWidths }  — round-trip.",
+          "description": "Office 2014 column stamps (a16:colId per a:gridCol extension list), parallel to `BaseTableOptions.columnWidths` — round-trip.",
           "items": {
             "type": "string"
           },
@@ -12472,7 +12472,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "firstCol": {
@@ -12767,7 +12767,7 @@
       "properties": {
         "anchor": {
           "$ref": "#/definitions/VerticalAnchor",
-          "description": "Convenience sugar — merged into  {@link  bodyProperties }  on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
+          "description": "Convenience sugar — merged into `bodyProperties` on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
         },
         "autoFit": {
           "description": "Sugar → `bodyProperties.normAutofit` (`\"normal\"`) / `spAutoFit` (`\"shape\"`).",
@@ -13135,7 +13135,7 @@
           "type": "string"
         },
         "slide": {
-          "description": "Internal slide target, 1-based slide number (mutually exclusive with url). Emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\".\n\nPPTX only — slides exist in no other format. Formats without slides reject the field at generate time instead of silently dropping it.",
+          "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
         },
         "tooltip": {
@@ -14001,7 +14001,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "fileName": {

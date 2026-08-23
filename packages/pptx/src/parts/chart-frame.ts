@@ -7,15 +7,10 @@ import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 
 /**
- * Chart frame options for pptx slides (p:graphicFrame referencing a c:chartSpace).
- * The chart payload comes from {@link ChartSpaceOptions} (core shared model,
- * identical XML across packages); the cNvPr fields from
- * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
- * both the public slide-child entry and the descriptor.
- *
- * `title` is the chart title (c:title) inherited from ChartSpaceOptions — the
- * cNvPr `@title` attribute is deliberately not exposed here so one JSON key
- * cannot mean two XML attributes (alt text goes in `description`).
+ * Chart frame (p:graphicFrame → c:chartSpace): chart payload from
+ * ChartSpaceOptions (core shared model), cNvPr from
+ * NonVisualDrawingPropertiesOptions. `title` is c:title; alt text in
+ * `description`.
  */
 export interface ChartOptions
   extends

@@ -18,7 +18,7 @@ export interface BasePictureOptions extends NonVisualDrawingPropertiesOptions {
   /**
    * Image binary (base64 string, data URL, or Uint8Array). Absent on a
    * linked-only picture whose source is an external URL (no bytes in the
-   * package) — that shape carries {@link sourceUrl} instead.
+   * package) — that shape carries `sourceUrl` instead.
    */
   data?: DataType;
   /**

@@ -12,11 +12,9 @@ import type { CellBorderOptions } from "./table-cell-properties";
 import type { TableRowOptions } from "./table-row";
 
 /**
- * Table options for pptx slides (p:graphicFrame with a:tbl). The structural
- * base (rows/columnWidths/6-flags) comes from {@link BaseTableOptions}; the
- * cNvPr fields (name/description/title/hidden) from
- * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
- * both the public slide-child entry and the descriptor.
+ * Table (p:graphicFrame with a:tbl) for pptx slides. Structural base
+ * (rows/columnWidths/6-flags) from BaseTableOptions; cNvPr fields from
+ * NonVisualDrawingPropertiesOptions.
  */
 export interface TableOptions
   extends
@@ -38,7 +36,7 @@ export interface TableOptions
   tableStyle?: TableStyleOptions;
   /**
    * Office 2014 column stamps (a16:colId per a:gridCol extension list),
-   * parallel to {@link BaseTableOptions.columnWidths} — round-trip.
+   * parallel to `BaseTableOptions.columnWidths` — round-trip.
    */
   columnIds?: string[];
   borders?: {

@@ -16,7 +16,7 @@ import type { TableCellPropertiesOptions } from "./table-cell-properties";
 /**
  * Options for creating a TableCell element.
  *
- * Extends {@link BaseTableCellOptions} for the cross-format cell contract
+ * Extends `BaseTableCellOptions` for the cross-format cell contract
  * (span + vertical-align); shading/borders/margins/content stay docx-specific.
  *
  * @see {@link TableCell}

@@ -225,7 +225,7 @@
           "type": "number"
         },
         "hlinks": {
-          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (id/position/flags integers and anchor strings, six entries per link). Round-trip only: the record fields are undocumented, so the flat variant values are carried as-is rather than named.",
+          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: fields are undocumented, so the flat variant values are carried as-is.",
           "items": {
             "$ref": "#/definitions/VariantValue"
           },
@@ -1959,7 +1959,7 @@
     },
     "CellStyleXfOptions": {
       "additionalProperties": false,
-      "description": "Named cell-style template — a cellStyleXfs entry. Structured (font/fill/border/numFmt definitions, not indices) so the compiler can re-register each definition against its rebuilt tables when round-tripping; cellStyle.xfId references stay stable because entries keep their source order. Alignment/protection and the applyXxx flags are preserved verbatim (named-style fidelity), unlike cellXfs which derives applyXxx.",
+      "description": "Named cell-style template — a cellStyleXfs entry. Structured definitions (not indices); source order keeps cellStyle.xfId stable on round-trip. Alignment/protection and applyXxx flags preserved verbatim, unlike cellXfs which derives applyXxx.",
       "properties": {
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
@@ -2438,7 +2438,7 @@
           "type": "boolean"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
           "enum": ["transitional", "strict"],
           "type": "string"
         },
@@ -3142,7 +3142,7 @@
     },
     "ColorTransformOptions": {
       "additionalProperties": false,
-      "description": "Options for color transforms.\n\nPercent fields take integer percent (e.g., `40` = 40%); the library scales to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean fields emit value-less switch elements.\n\nReference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform",
+      "description": "Options for color transforms. Percent fields take integer percent (`40` = 40%), angle fields (`hue`/`hueOff`) take degrees; the library applies the XSD scaling. Booleans emit value-less switch elements.",
       "properties": {
         "alpha": {
           "description": "Alpha: sets transparency (0-100, where 0 = transparent)",
@@ -3370,7 +3370,7 @@
     },
     "CommentPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Comment property. Parsed but never re-emitted: a commentPr alongside the sheet's legacy VML note drawing produces a file Excel refuses to open — commentPr and the VML note shape are rival property systems for the same note, and Excel reads note properties from the shape's x:ClientData. The fields survive parse so callers can inspect them; stringify always drops them.",
+      "description": "Comment property. Parsed but never re-emitted: commentPr beside the sheet's VML note drawing makes Excel refuse to open the file (rival property systems; Excel reads note properties from the shape's x:ClientData). Fields survive parse for inspection; stringify drops them.",
       "properties": {
         "altText": {
           "type": "string"
@@ -3772,7 +3772,7 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "extentCx": {
@@ -5193,7 +5193,7 @@
     },
     "DrawingHfOptions": {
       "additionalProperties": false,
-      "description": "Drawing in header/footer. The 18 counters are XML attribute names verbatim: first letter l/c/r is the header/footer section (left/center/right), second h/f is header vs footer, third o/e/f is the page flavor (odd/even/first). Each holds the 1-based picture number within that slot (e.g. `lho` = 2nd picture in the left section of the header on odd pages).",
+      "description": "Drawing in header/footer. The 18 counters are XML attribute names verbatim: l/c/r = section (left/center/right), h/f = header vs footer, o/e/f = page flavor (odd/even/first); each holds the 1-based picture number in that slot (`lho` = 2nd picture, left header, odd pages).",
       "properties": {
         "cfe": {
           "description": "Picture number, center footer even pages (`@cfe`)",
@@ -5307,7 +5307,7 @@
     },
     "DxfOptions": {
       "additionalProperties": false,
-      "description": "Differential format — used by conditional formatting to specify what changes. Example: `{ font: { color: \"9C0006\", bold: true }, fill: { color: \"C6EFCE\" } }`.",
+      "description": "Differential format — conditional formatting changes, e.g. `{ font: { color: \"9C0006\", bold: true }, fill: { color: \"C6EFCE\" } }`.",
       "properties": {
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
@@ -5645,7 +5645,7 @@
     },
     "EncryptedContainerOptions": {
       "additionalProperties": false,
-      "description": "Verbatim payload of a source file whose OOXML package is encrypted.\n\nRound-trip only: the plaintext needs the password, so these bytes are the only faithful representation. Every other options field stays empty — there is no content to model until the file is decrypted.",
+      "description": "Verbatim payload of a source file whose OOXML package is encrypted. Round-trip only: the bytes are the only faithful representation until the file is decrypted; every other options field stays empty.",
       "properties": {
         "data": {
           "$ref": "#/definitions/DataType",
@@ -6787,7 +6787,7 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -6920,7 +6920,7 @@
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "extentCx": {
@@ -7061,7 +7061,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -7475,7 +7475,7 @@
     },
     "IndexedXfEntry": {
       "additionalProperties": false,
-      "description": "Indexed XF reference produced by  {@link  stylesDesc  } .parse — index-based (fontId/fillId/…) rather than resolved objects, consumed by callers that resolve indices into fonts/fills/borders arrays.",
+      "description": "Indexed XF reference produced by `stylesDesc`.parse — index-based (fontId/fillId/…) rather than resolved objects, consumed by callers that resolve indices into fonts/fills/borders arrays.",
       "properties": {
         "alignment": {
           "$ref": "#/definitions/AlignmentOptions"
@@ -8667,7 +8667,7 @@
               "type": "string"
             }
           ],
-          "description": "Color definition (required when type is \"solidFill\"). A bare string is an sRGB hex convenience sugar (e.g. `\"FF0000\"`); stringify coerces it to `{ value }` and infers `type: \"solidFill\"` when `type` is omitted. Parse always emits the normalized `{ value }` form."
+          "description": "Color definition (required when type is \"solidFill\"). A bare string is sRGB hex sugar (`\"FF0000\"`); stringify coerces it to `{ value }` and infers \"solidFill\"; parse always emits the normalized form."
         },
         "compoundLine": {
           "$ref": "#/definitions/CompoundLine",
@@ -9345,7 +9345,7 @@
     },
     "PictureOptions": {
       "additionalProperties": false,
-      "description": "Picture anchored to a worksheet cell.\n\nExtends the cross-format  {@link  BasePictureOptions }  (binary data + non-visual drawing properties) with the full spreadsheet-drawing anchor  {@link  DrawingAnchorOptions }  (1-based from/to cell corners, anchor type, extent). The base cNvPr fields (name/description/title/hidden) flow through to the drawing's cNvPr.",
+      "description": "Picture anchored to a worksheet cell. Extends BasePictureOptions (binary data + cNvPr) with the spreadsheet-drawing anchor DrawingAnchorOptions (1-based from/to cell corners, anchor type, extent).",
       "properties": {
         "absoluteX": {
           "anyOf": [
@@ -9406,7 +9406,7 @@
         },
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries  {@link  sourceUrl }  instead."
+          "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries `sourceUrl` instead."
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -9417,7 +9417,7 @@
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "extentCx": {
@@ -13375,7 +13375,7 @@
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "extentCx": {
@@ -14576,7 +14576,7 @@
       "additionalProperties": false,
       "properties": {
         "altText": {
-          "description": "Table alternate-text (x14:table `@altText` inside the trailing extLst). Structured counterpart of  {@link  ext }  — emit builds the x14:table extension from it when ext itself is absent.",
+          "description": "Table alternate-text (x14:table `@altText` inside the trailing extLst). Structured counterpart of `ext` — emit builds the x14:table extension from it when ext itself is absent.",
           "type": "string"
         },
         "altTextSummary": {
@@ -14788,7 +14788,7 @@
       "properties": {
         "anchor": {
           "$ref": "#/definitions/VerticalAnchor",
-          "description": "Convenience sugar — merged into  {@link  bodyProperties }  on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
+          "description": "Convenience sugar — merged into `bodyProperties` on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
         },
         "autoFit": {
           "description": "Sugar → `bodyProperties.normAutofit` (`\"normal\"`) / `spAutoFit` (`\"shape\"`).",
@@ -15156,7 +15156,7 @@
           "type": "string"
         },
         "slide": {
-          "description": "Internal slide target, 1-based slide number (mutually exclusive with url). Emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\".\n\nPPTX only — slides exist in no other format. Formats without slides reject the field at generate time instead of silently dropping it.",
+          "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
         },
         "tooltip": {
@@ -16366,7 +16366,7 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty. Mixing sheet content is rejected — it would be silently dropped."
+          "description": "Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the original bytes are re-emitted verbatim; all other fields stay empty — mixing sheet content is rejected."
         },
         "extensions": {
           "description": "Trailing extension list (workbook > extLst > ext) — round-trip only.",
@@ -16398,7 +16398,7 @@
           "type": "array"
         },
         "fonts": {
-          "description": "Fonts section of xl/styles.xml, in source order — round-trip only. Present together with fills/borders/cellXfs, these adopt the parsed style table wholesale (cells keep raw style indices instead of resolved definitions, matching the source's own numbering).",
+          "description": "Fonts section of xl/styles.xml, in source order — round-trip only. With fills/borders/cellXfs present, the parsed style table is adopted wholesale (cells keep raw style indices, matching the source's numbering).",
           "items": {
             "$ref": "#/definitions/FontOptions"
           },
@@ -16448,7 +16448,7 @@
           "type": "string"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. workbook.xml → externalLink). Re-emitted verbatim with fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -16496,7 +16496,7 @@
           "type": "array"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (drawings, VML, external links, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so model-driven parts need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Parts carried verbatim from the source that generate() does not rebuild (drawings, VML, external links, unknown parts) — bytes and content type intact; compiler-rebuilt parts under the same path win. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -16527,7 +16527,7 @@
           "description": "Coauthoring revision state (xr:revisionPtr) — round-trip only."
         },
         "sharedStrings": {
-          "description": "Shared string table (xl/sharedStrings.xml), in table order. Parse fills it so generate() can seed the write context from the source entries — cells referencing rich-text si values keep their structure and index instead of collapsing to flattened text. Fresh documents omit it and register strings from cell values as they stringify.",
+          "description": "Shared string table (xl/sharedStrings.xml), in table order. Round-trip only: parse fills it so rich-text si entries keep their structure and index; fresh documents omit it and strings register from cell values on stringify.",
           "items": {
             "anyOf": [
               {
@@ -16979,7 +16979,7 @@
           "type": "string"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
           "enum": ["transitional", "strict"],
           "type": "string"
         },
@@ -17497,7 +17497,7 @@
           "description": "Drawing in header/footer"
         },
         "drawingRid": {
-          "description": "Drawing reference r:id. Round-trip only: a drawing part whose anchors the bridge does not map onto options (e.g. OLE object shape representations) passes through verbatim, so the original reference stays valid. Absent on freshly authored worksheets — the compiler derives the reference from images/charts/shapes.",
+          "description": "Drawing reference r:id. Round-trip only: drawing parts the bridge cannot map onto options (e.g. OLE shape representations) pass through verbatim; fresh worksheets derive the reference from images/charts/shapes.",
           "type": "string"
         },
         "ext": {
@@ -17768,7 +17768,7 @@
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "extentCx": {

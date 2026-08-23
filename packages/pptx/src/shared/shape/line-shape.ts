@@ -41,7 +41,7 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
 
 /**
  * Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint
- * connection fields come from {@link BaseConnectorOptions}; the rest is the
+ * connection fields come from `BaseConnectorOptions`; the rest is the
  * pptx two-endpoint positioning model plus line fill/outline.
  */
 export interface ConnectorOptions extends BaseConnectorOptions {

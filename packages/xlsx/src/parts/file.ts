@@ -57,11 +57,9 @@ import type { MapInfoOptions } from "./xml-mapping";
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
   /**
-   * The source file is an encrypted OOXML package (OLE2/CFB container).
-   * Round-trip only: the plaintext needs the password, so the original bytes
-   * are carried verbatim and generate() re-emits them unchanged — every
-   * other field stays empty. Mixing sheet content is rejected — it would be
-   * silently dropped.
+   * Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip
+   * only: the original bytes are re-emitted verbatim; all other fields stay
+   * empty — mixing sheet content is rejected.
    */
   encrypted?: EncryptedContainerOptions;
   /**
@@ -80,10 +78,9 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Pre-defined differential formats for conditional formatting */
   dxfs?: DxfOptions[];
   /**
-   * Fonts section of xl/styles.xml, in source order — round-trip only.
-   * Present together with fills/borders/cellXfs, these adopt the parsed
-   * style table wholesale (cells keep raw style indices instead of resolved
-   * definitions, matching the source's own numbering).
+   * Fonts section of xl/styles.xml, in source order — round-trip only. With
+   * fills/borders/cellXfs present, the parsed style table is adopted wholesale
+   * (cells keep raw style indices, matching the source's numbering).
    */
   fonts?: FontOptions[];
   /** Fills section of xl/styles.xml, in source order — round-trip only. */
@@ -150,11 +147,9 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Pivot cache records — parse-only (CT-layer) */
   pivotCacheRecords?: PivotCacheRecordsParseResult[];
   /**
-   * Shared string table (xl/sharedStrings.xml), in table order. Parse fills
-   * it so generate() can seed the write context from the source entries —
-   * cells referencing rich-text si values keep their structure and index
-   * instead of collapsing to flattened text. Fresh documents omit it and
-   * register strings from cell values as they stringify.
+   * Shared string table (xl/sharedStrings.xml), in table order. Round-trip only:
+   * parse fills it so rich-text si entries keep their structure and index; fresh
+   * documents omit it and strings register from cell values on stringify.
    */
   sharedStrings?: (string | RichTextOptions)[];
   /** Extended properties (docProps/app.xml) */
@@ -171,20 +166,16 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   contentTypes?: ContentTypesInput;
   /**
    * Parts carried verbatim from the source that generate() does not rebuild
-   * (drawings, VML, external links, any unknown extension part). Collected
-   * wholesale by the core passthrough pipeline — everything the model did not
-   * absorb survives with bytes and content-type declaration intact. Parts the
-   * compiler happens to rebuild under the same path win over the passthrough
-   * copy (assembly order), so model-driven parts need no exclusion here.
-   * Round-trip channel: captured from a parsed source document — do not
-   * hand-author.
+   * (drawings, VML, external links, unknown parts) — bytes and content type
+   * intact; compiler-rebuilt parts under the same path win. Round-trip channel:
+   * captured from a parsed source document — do not hand-author.
    */
   rawParts?: { path: string; data: DataType; contentType?: string }[];
   /**
    * Relationships from rebuilt parts' source .rels that point at rawParts
-   * (e.g. workbook.xml → externalLink/pivotCache). Re-emitted verbatim —
-   * target unchanged (passthrough paths never move), fresh rId. Round-trip
-   * channel: captured from a parsed source document — do not hand-author.
+   * (e.g. workbook.xml → externalLink). Re-emitted verbatim with fresh rId.
+   * Round-trip channel: captured from a parsed source document — do not
+   * hand-author.
    */
   passthroughRelationships?: {
     source: string;

@@ -54,12 +54,10 @@ export interface FootnoteEndnoteReferenceOptions {
 }
 
 /**
- * A complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without
- * w:ffData). `instruction` is the raw field code (incl. surrounding spaces);
- * `result` is the cached result-run text, if any. `rPrXml` is the verbatim
- * run-properties of the control runs (begin/instrText/separate/end);
- * `resultRPrXml` is that of the result run(s) — carried so field formatting
- * survives round-trip (Word writes the same rPr across a field's runs).
+ * A complex field (PAGE/DATE/TOC/HYPERLINK — any fldChar field without
+ * w:ffData). `instruction` is the raw field code incl. surrounding spaces;
+ * `result` is the cached result text; `rPrXml`/`resultRPrXml` carry the
+ * control/result run properties for round-trip fidelity.
  */
 export interface ComplexFieldOptions {
   instruction: string;

@@ -24,7 +24,7 @@ export interface ChangedProperties {
   /**
    * Revision marker id, unique within the document. No other element or
    * attribute references it, so fresh input may omit it — the library
-   * assigns one ({@link autoRevisionId}); explicit duplicates still get
+   * assigns one (`autoRevisionId`); explicit duplicates still get
    * renumbered by the body emit pass.
    */
   id?: number;

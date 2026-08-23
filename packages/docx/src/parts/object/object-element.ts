@@ -42,10 +42,9 @@ export interface ObjectEmbedOptions {
   /** OLE program id (e.g. "Excel.Sheet.12"). */
   progId?: string;
   /**
-   * Source relationship kind (round-trip): "package" when the source related
-   * the part as a native OPC package (embedded xlsx/docx), "oleObject" for an
-   * OLE compound binary. Not derivable from the file name, so it is captured
-   * for the relationship to re-emit with the same type.
+   * Source relationship kind (round-trip): "package" (embedded xlsx/docx as a
+   * native OPC package) vs "oleObject" (OLE compound binary). Not derivable
+   * from the file name; re-emitted as captured.
    */
   relationshipType?: "oleObject" | "package";
   /** Draw aspect — how the object displays. */

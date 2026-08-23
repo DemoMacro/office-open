@@ -63,9 +63,8 @@ export interface AppPropertiesOptions {
   hyperlinkBase?: string;
   /**
    * Hyperlink metadata vector (HLinks) — Word's internal per-link records
-   * (id/position/flags integers and anchor strings, six entries per link).
-   * Round-trip only: the record fields are undocumented, so the flat variant
-   * values are carried as-is rather than named.
+   * (six entries per link). Round-trip only: fields are undocumented, so the
+   * flat variant values are carried as-is.
    */
   hlinks?: VariantValue[];
   /** Application name */

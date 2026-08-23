@@ -12,14 +12,9 @@
 import { emitAngle, emitPercent } from "../../util/converters";
 
 /**
- * Options for color transforms.
- *
- * Percent fields take integer percent (e.g., `40` = 40%); the library scales
- * to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take
- * degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean
- * fields emit value-less switch elements.
- *
- * Reference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform
+ * Options for color transforms. Percent fields take integer percent (`40` =
+ * 40%), angle fields (`hue`/`hueOff`) take degrees; the library applies the
+ * XSD scaling. Booleans emit value-less switch elements.
  */
 export interface ColorTransformOptions {
   /** Tint: moves color toward white (0-100, where 100 = full white) */

@@ -244,8 +244,8 @@ export interface DxfNumFmtOptions {
 }
 
 /**
- * Differential format — used by conditional formatting to specify what changes.
- * Example: `{ font: { color: "9C0006", bold: true }, fill: { color: "C6EFCE" } }`.
+ * Differential format — conditional formatting changes, e.g.
+ * `{ font: { color: "9C0006", bold: true }, fill: { color: "C6EFCE" } }`.
  */
 export interface DxfOptions {
   font?: FontOptions;
@@ -353,12 +353,10 @@ export interface CellXfEntry {
 }
 
 /**
- * Named cell-style template — a cellStyleXfs entry (CT_Xf in the cellStyleXfs
- * context). Structured (font/fill/border/numFmt definitions, not indices) so
- * the compiler can re-register each definition against its rebuilt tables when
- * round-tripping; cellStyle.xfId references stay stable because entries keep
- * their source order. Alignment/protection and the applyXxx flags are preserved
- * verbatim (named-style fidelity), unlike cellXfs which derives applyXxx.
+ * Named cell-style template — a cellStyleXfs entry. Structured definitions
+ * (not indices); source order keeps cellStyle.xfId stable on round-trip.
+ * Alignment/protection and applyXxx flags preserved verbatim, unlike cellXfs
+ * which derives applyXxx.
  */
 export interface CellStyleXfOptions {
   font?: FontOptions;
@@ -392,7 +390,7 @@ export interface StylesState {
 }
 
 /**
- * Indexed XF reference produced by {@link stylesDesc}.parse — index-based
+ * Indexed XF reference produced by `stylesDesc`.parse — index-based
  * (fontId/fillId/…) rather than resolved objects, consumed by callers that
  * resolve indices into fonts/fills/borders arrays.
  */

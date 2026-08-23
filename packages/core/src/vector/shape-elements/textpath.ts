@@ -17,7 +17,7 @@ import {
 
 /**
  * v:textpath style vocabulary — font-centric CSS, distinct from the layout
- * vocabulary of {@link VmlShapeStyle}. Values stay strings: font sizes carry
+ * vocabulary of `VmlShapeStyle`. Values stay strings: font sizes carry
  * units ("24pt"), families carry quotes, weights may be named or numeric.
  */
 export interface VmlTextPathStyle {

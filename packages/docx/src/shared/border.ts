@@ -43,10 +43,9 @@ import type { Element } from "@office-open/xml";
  */
 export interface BorderOptions {
   /**
-   * Border pattern (ST_Border): "dashSmallGap" dashed with small gaps,
-   * "dashDotStroked"/"dotDotDash" mixed dot-dash strokes, "doubleWave"/"wave"
-   * wavy lines, "inset"/"outset" pseudo-3D ridges, "pctN" dotted density,
-   * "thickThinSmallGap"/"thinThickThinSmallGap" (…) compound lines, "nil" none.
+   * Border pattern (ST_Border). Token jargon: "wave"/"doubleWave" wavy,
+   * "inset"/"outset" pseudo-3D, "thickThin*"/"thinThickThin*" compound lines,
+   * "pctN" dotted density, "nil" none.
    */
   style: (typeof BorderStyle)[keyof typeof BorderStyle];
   /** Border color, "auto" or hex (eg 'FF00AA') */

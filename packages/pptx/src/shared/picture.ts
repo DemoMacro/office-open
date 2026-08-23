@@ -18,13 +18,9 @@ import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
 import type { ShapeStyleOptions } from "@shared/shape/shape";
 
 /**
- * Picture (p:pic) options for PPTX slides.
- *
- * Extends the cross-format {@link BasePictureOptions} (binary data + non-visual
- * drawing properties) with absolute EMU positioning and optional shape-level
- * effects. The base cNvPr fields (name/description/title/hidden) flow straight
- * through to p:cNvPr. The single source of truth for both the public
- * slide-child entry and the descriptor.
+ * Picture (p:pic) for pptx slides. Extends cross-format BasePictureOptions
+ * (binary data + cNvPr name/description/title/hidden → p:cNvPr) with absolute
+ * EMU positioning and optional shape-level effects.
  */
 export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptions {
   /** Picture id (p:cNvPr `@id`). Auto-generated if omitted. */

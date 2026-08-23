@@ -44,9 +44,9 @@ export class StyleLevel {
  */
 export interface TableOfContentsOptions {
   /**
-   * \a option - Includes captioned items, but omits caption labels and numbers.
-   * The identifier designated by text in this switch's field-argument corresponds to the caption label.
-   * Use captionLabelIncludingNumbers (\c) to build a table of captions with labels and numbers.
+   * \a option — include captioned items (SEQ-numbered), omitting the caption
+   * label and number. Argument is the caption-label identifier. Use \c
+   * (captionLabelIncludingNumbers) to keep labels and numbers.
    */
   captionLabel?: string;
 
@@ -57,10 +57,9 @@ export interface TableOfContentsOptions {
   entriesFromBookmark?: string;
 
   /**
-   * \c option -  Includes figures, tables, charts, and other items that are numbered
-   * by a SEQ field (§17.16.5.56). The sequence identifier designated by text in this switch's
-   * field-argument, which corresponds to the caption label, shall match the identifier in the
-   * corresponding SEQ field.
+   * \c option — include figures/tables/charts numbered by a SEQ field, with
+   * caption labels and numbers. Argument is the caption-label/sequence
+   * identifier and must match the SEQ field's identifier.
    */
   captionLabelIncludingNumbers?: string;
 
@@ -82,10 +81,9 @@ export interface TableOfContentsOptions {
   hyperlink?: boolean;
 
   /**
-   * \l option - Includes TC fields that assign entries to one of the levels specified
-   * by text in this switch's field-argument as a range having the form startLevel-endLevel,
-   * where startLevel and endLevel are integers, and startLevel has a value equal-to or less-than endLevel.
-   * TC fields that assign entries to lower levels are skipped.
+   * \l option — include TC fields that assign entries to levels in the
+   * argument range `startLevel-endLevel` (integers, start ≤ end). TC fields
+   * assigning lower levels are skipped.
    */
   tcFieldLevelRange?: string;
 
@@ -97,11 +95,9 @@ export interface TableOfContentsOptions {
   pageNumbersEntryLevelsRange?: string;
 
   /**
-   * \o option -  Uses paragraphs formatted with all or the specified range of builtin
-   * heading styles. Headings in a style range are specified by text in this switch's
-   * field-argument using the notation specified as for \l, where each integer corresponds
-   * to the style with a style ID of HeadingX (e.g. 1 corresponds to Heading1).
-   * If no heading range is specified, all heading levels used in the document are listed.
+   * \o option — build entries from paragraphs in built-in heading styles.
+   * Argument is a level range as for \l (e.g. "1-3"; 1 = Heading1); empty or
+   * omitted lists all heading levels used in the document.
    */
   headingStyleRange?: string;
 
@@ -112,17 +108,15 @@ export interface TableOfContentsOptions {
   entryAndPageNumberSeparator?: string;
 
   /**
-   * \s option - For entries numbered with a SEQ field (§17.16.5.56), adds a prefix to the page number.
-   * The prefix depends on the type of entry. text in this switch's field-argument shall match the
+   * \s option - For entries numbered with a SEQ field, adds a prefix to the page number.
+   * The prefix depends on the type of entry; the field-argument text must match the
    * identifier in the SEQ field.
    */
   seqFieldIdentifierForPrefix?: string;
 
   /**
-   * \t field-argument Uses paragraphs formatted with styles other than the built-in heading styles.
-   * Text in this switch's field-argument specifies those styles as a set of comma-separated doublets,
-   * with each doublet being a comma-separated set of style name and table of content level.
-   * \t can be combined with \o.
+   * \t option — include paragraphs in non-heading styles, each mapped to a TOC
+   * level. Combinable with \o (headingStyleRange).
    */
   stylesWithLevels?: StyleLevel[];
 
@@ -147,13 +141,10 @@ export interface TableOfContentsOptions {
   hideTabAndPageNumbersInWebView?: boolean;
 
   /**
-   * Rendered TOC entries — the paragraph content between the field's `separate`
-   * and `end` markers. Round-tripped structurally (each entry is a TOC-style
-   * paragraph carrying a HYPERLINK field, tab leader, and PAGEREF page number)
-   * so both MS Office and WPS display the existing TOC without regenerating.
-   *
-   * Omit on fresh generation — the field is then emitted `dirty` so the
-   * consuming application builds the entries from headings on open.
+   * Rendered TOC entries — the paragraphs between the field's `separate` and
+   * `end` markers, round-tripped structurally (HYPERLINK field, tab leader,
+   * PAGEREF page number) so Office/WPS display them without regenerating.
+   * Omit on fresh generation (field is emitted `dirty`).
    */
   entries?: SectionChild[];
 
@@ -179,18 +170,16 @@ export interface TableOfContentsOptions {
   bare?: boolean;
 
   /**
-   * The field-end marker lives in a body paragraph that follows the rendered
-   * entries (Word drops it into the next heading when it updates the field).
-   * That paragraph round-trips on its own — the stringify path must not
-   * inject another end run into the last entry (round-trip only).
+   * The field-end marker lives in a following body paragraph that round-trips
+   * on its own — stringify must not inject another end run into the last
+   * entry (round-trip only).
    */
   endInBody?: boolean;
 
   /**
-   * Verbatim XML of the field's begin→separate control runs, as serialized
-   * `<w:r>…</w:r>` sequences (round-trip only; Word splits the instruction
-   * across runs — leading space / text / trailing space, each with its own
-   * rPr — and the split must survive instead of collapsing to one run).
+   * Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs
+   * (round-trip only; Word splits the instruction across runs and the split
+   * must survive).
    */
   headRunsXml?: string;
 

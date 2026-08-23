@@ -170,10 +170,9 @@ export interface OutlineFillProperties {
   /** Fill type */
   type?: "noFill" | "solidFill" | "gradFill" | "pattFill";
   /**
-   * Color definition (required when type is "solidFill"). A bare string is an
-   * sRGB hex convenience sugar (e.g. `"FF0000"`); stringify coerces it to
-   * `{ value }` and infers `type: "solidFill"` when `type` is omitted. Parse
-   * always emits the normalized `{ value }` form.
+   * Color definition (required when type is "solidFill"). A bare string is
+   * sRGB hex sugar (`"FF0000"`); stringify coerces it to `{ value }` and
+   * infers "solidFill"; parse always emits the normalized form.
    */
   color?: SolidFillOptions | string;
   /** Gradient fill options (required when type is "gradFill") */

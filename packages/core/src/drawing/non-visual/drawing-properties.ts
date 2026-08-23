@@ -40,7 +40,7 @@ export interface NonVisualDrawingPropertiesOptions {
   /**
    * Verbatim `a:extLst` inner XML for extensions beyond creationId (a14
    * picture effects, useLocalDpi, …). Round-trip only: takes precedence over
-   * {@link creationId}, which it subsumes when the source list carries both.
+   * `creationId`, which it subsumes when the source list carries both.
    */
   ext?: string;
 }

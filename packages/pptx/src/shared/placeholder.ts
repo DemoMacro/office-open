@@ -66,10 +66,9 @@ export interface PlaceholderFacets {
 }
 
 /**
- * A complete placeholder template on a master/layout: position, inheritable
- * facets the source defined, and the cNvPr fields (a16:creationId etc.) so a
- * re-emitted placeholder keeps its identity. Backward-compatible with the old
- * position-only input shape (flat x/y/width/height).
+ * Complete placeholder template on a master/layout: position, inheritable
+ * facets, and cNvPr fields (a16:creationId) so a re-emitted placeholder keeps
+ * its identity. Accepts the old flat x/y/width/height shape.
  */
 export interface PlaceholderDefinition
   extends PlaceholderPosition, PlaceholderFacets, NonVisualDrawingPropertiesOptions {}

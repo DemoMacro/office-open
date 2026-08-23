@@ -477,7 +477,7 @@
           "type": "number"
         },
         "hlinks": {
-          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (id/position/flags integers and anchor strings, six entries per link). Round-trip only: the record fields are undocumented, so the flat variant values are carried as-is rather than named.",
+          "description": "Hyperlink metadata vector (HLinks) — Word's internal per-link records (six entries per link). Round-trip only: fields are undocumented, so the flat variant values are carried as-is.",
           "items": {
             "$ref": "#/definitions/VariantValue"
           },
@@ -1463,7 +1463,7 @@
     },
     "BookmarkOptions": {
       "additionalProperties": false,
-      "description": "A bookmark authored as a single inline paragraph child. The library allocates the bookmark id and emits the paired bookmarkStart/bookmarkEnd with one shared id — the caller never touches an id or pairs markers. `wrap` is the anchored document content the bookmark range wraps (inline runs/text, emitted between the markers). Bookmarks are pure markup: they add no part or relationship, only the two markers in document.xml. Reference: wml.xsd,, EG_RangeMarkupElements.",
+      "description": "Inline bookmark sugar: the library allocates the id and emits the paired bookmarkStart/bookmarkEnd markers around `wrap` (the anchored inline content). Pure markup — adds no part or relationship.",
       "properties": {
         "colFirst": {
           "description": "First column of a table-cell bookmark scope.",
@@ -1501,7 +1501,7 @@
     },
     "BookmarkStartOptions": {
       "additionalProperties": false,
-      "description": "Options for a bookmark start (w:bookmarkStart). Maps to = (colFirst/colLast) + name. The column range scopes a bookmark to specific table columns so Word preserves the exact cell span on round-trip rather than recomputing it. Reference: wml.xsd,",
+      "description": "Options for a bookmark start (w:bookmarkStart). Maps to = (colFirst/colLast) + name. The column range scopes a bookmark to specific table columns so Word preserves the exact cell span on round-trip rather than recomputing it.",
       "properties": {
         "colFirst": {
           "description": "First column of a table-cell bookmark scope.",
@@ -1552,7 +1552,7 @@
           "type": "number"
         },
         "style": {
-          "description": "Border pattern: \"dashSmallGap\" dashed with small gaps, \"dashDotStroked\"/\"dotDotDash\" mixed dot-dash strokes, \"doubleWave\"/\"wave\" wavy lines, \"inset\"/\"outset\" pseudo-3D ridges, \"pctN\" dotted density, \"thickThinSmallGap\"/\"thinThickThinSmallGap\" (…) compound lines, \"nil\" none.",
+          "description": "Border pattern. Token jargon: \"wave\"/\"doubleWave\" wavy, \"inset\"/\"outset\" pseudo-3D, \"thickThin*\"/\"thinThickThin*\" compound lines, \"pctN\" dotted density, \"nil\" none.",
           "enum": [
             "single",
             "dashDotStroked",
@@ -2220,7 +2220,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "verticalMerge": {
@@ -2250,7 +2250,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         }
       },
@@ -2502,7 +2502,7 @@
           "type": "boolean"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
           "enum": ["transitional", "strict"],
           "type": "string"
         },
@@ -3133,7 +3133,7 @@
           "type": "boolean"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part. A strict (ISO/IEC 29500 Strict, purl.oclc.org) source package rejects a chart re-serialized with transitional namespaces — parse records the dialect from the root element and stringify re-declares the matching namespace set.",
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
           "enum": ["transitional", "strict"],
           "type": "string"
         },
@@ -3868,7 +3868,7 @@
     },
     "ColorTransformOptions": {
       "additionalProperties": false,
-      "description": "Options for color transforms.\n\nPercent fields take integer percent (e.g., `40` = 40%); the library scales to the XSD 1/1000th-of-a-percent unit. Angle fields (`hue`/`hueOff`) take degrees; the library scales to the XSD 1/60000th-of-a-degree unit. Boolean fields emit value-less switch elements.\n\nReference: ISO/IEC 29500-4, dml-main.xsd, EG_ColorTransform",
+      "description": "Options for color transforms. Percent fields take integer percent (`40` = 40%), angle fields (`hue`/`hueOff`) take degrees; the library applies the XSD scaling. Booleans emit value-less switch elements.",
       "properties": {
         "alpha": {
           "description": "Alpha: sets transparency (0-100, where 0 = transparent)",
@@ -4049,7 +4049,7 @@
     },
     "CommentChildOptions": {
       "additionalProperties": false,
-      "description": "A comment authored as a single inline paragraph child. The library allocates the comment id, emits the range markers + reference, and registers the comment entry in word/comments.xml — the caller never touches an id or pairs markers. `children` is the comment reply (stored in the comments part, same shape as {@link CommentOptions.children }); `wrap` is the anchored document content the comment range wraps (inline runs/text, emitted between the range markers). Reference: wml.xsd,, EG_RangeMarkupElements.",
+      "description": "Inline comment sugar: the library allocates the id, emits the range markers + reference, and registers the entry in word/comments.xml. `children` is the comment reply (same shape as CommentOptions.children); `wrap` is the anchored content the comment range wraps.",
       "properties": {
         "author": {
           "description": "Comment author.",
@@ -4279,7 +4279,7 @@
           "type": "boolean"
         },
         "compatSettings": {
-          "description": "Additional w:compatSetting entries beyond the named sugar fields above.\n\nEach maps to `<w:compatSetting w:name w:uri w:val/>`. Use this for newer Word compatibility flags (e.g. differentiateMultirowTableHeaders, useWord2013TrackBottomHyphenation) that lack a dedicated boolean field. Names already covered by sugar fields (compatibilityMode via version, overrideTableStyleFontSizeAndJustification, enableOpenTypeFeatures, doNotFlipMirrorIndents) are de-duplicated on stringify.",
+          "description": "Additional `<w:compatSetting w:name w:uri w:val/>` entries for flags with no dedicated boolean field above (e.g. differentiateMultirowTableHeaders). Names covered by sugar fields are de-duplicated on stringify.",
           "items": {
             "$ref": "#/definitions/CompatSettingOptions"
           },
@@ -4533,7 +4533,7 @@
     },
     "ComplexFieldOptions": {
       "additionalProperties": false,
-      "description": "A complex field (PAGE/DATE/TOC/HYPERLINK... — any fldChar field without w:ffData). `instruction` is the raw field code (incl. surrounding spaces); `result` is the cached result-run text, if any. `rPrXml` is the verbatim run-properties of the control runs (begin/instrText/separate/end); `resultRPrXml` is that of the result run(s) — carried so field formatting survives round-trip (Word writes the same rPr across a field's runs).",
+      "description": "A complex field (PAGE/DATE/TOC/HYPERLINK — any fldChar field without w:ffData). `instruction` is the raw field code incl. surrounding spaces; `result` is the cached result text; `rPrXml`/`resultRPrXml` carry the control/result run properties for round-trip fidelity.",
       "properties": {
         "endRPrXml": {
           "description": "Verbatim run-properties of the end fldChar run (may differ from the control rPr — Word styles the end run like the result).",
@@ -4769,7 +4769,7 @@
     },
     "ContentPartOptions": {
       "additionalProperties": false,
-      "description": "Content part options — references an opaque part via r:id. The relationship is not re-registered on generate; the source r:id is passed through verbatim. At run level this serializes as the form (w:contentPart, referenceId only); the placement and non-visual fields apply only to the wpg:contentPart form nested inside a group child.",
+      "description": "References an opaque part via r:id — the source r:id passes through verbatim (relationship not re-registered). At run level only `referenceId` serializes (w:contentPart); placement/non-visual fields apply to the wpg:contentPart group-child form.",
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
@@ -4791,7 +4791,7 @@
               "type": "string"
             },
             "ext": {
-              "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+              "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
               "type": "string"
             },
             "hidden": {
@@ -4981,7 +4981,7 @@
     },
     "CustomXmlBlockOptions": {
       "additionalProperties": false,
-      "description": "Options for block-level custom XML. Wraps block content (paragraphs, tables, …); lives in EG_BlockLevelElts. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Block-level custom XML, wrapping paragraphs/tables. Word deletes inline w:customXml on open — round-trip only; use `w:sdt` for new content.",
       "properties": {
         "children": {
           "description": "Block content (paragraphs, tables, etc.) — no altChunk (XSD EG_ContentBlockContent).",
@@ -5008,7 +5008,7 @@
     },
     "CustomXmlCellOptions": {
       "additionalProperties": false,
-      "description": "Options for cell-level custom XML. Wraps one or more table cells; lives in EG_ContentCellContent alongside w:tc. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Cell-level custom XML, wrapping table cells. Word deletes inline w:customXml on open — round-trip only; use `w:sdt` for new content.",
       "properties": {
         "children": {
           "description": "Cell content (TableCell children)",
@@ -5053,7 +5053,7 @@
     },
     "CustomXmlRowOptions": {
       "additionalProperties": false,
-      "description": "Options for row-level custom XML. Wraps one or more table rows; lives in EG_ContentRowContent alongside w:tr. Microsoft Word removed `w:customXml` inline markup support on 2010-01-10 (i4i Inc. v. Microsoft ruling) and deletes these elements on open; this type exists for round-tripping documents that still carry them. Use content controls (`w:sdt`) or customXml parts for new content.",
+      "description": "Row-level custom XML, wrapping table rows. Word deletes inline w:customXml on open — round-trip only; use `w:sdt` for new content.",
       "properties": {
         "children": {
           "description": "Row content (TableRow children)",
@@ -5702,15 +5702,15 @@
       "additionalProperties": false,
       "properties": {
         "charSpace": {
-          "description": "Specifies the number of characters to be allowed on the document grid for each line in this section. This attribute's value shall be specified by multiplying the difference between the desired character pitch and the character pitch for that character in the font size of the Normal font by 4096. This value shall then be used to add the character pitch for the specified point size to each character in the section [: This results in text in the Normal style having a specific number of characters per line. ] The `charSpace` attribute specifies a value of 40960, which means that the delta between the character pitch of each character in the grid and the Normal font is 10 points, resulting in a character pitch of 11+10 = 21 points for all characters in this section. ] Individual runs of text can override the line pitch information specified for the document grid by specifying that the run text shall not snap to the document grid via the <snapToGrid> element (§2.3.2.32). The possible values for this attribute are defined by the `` simple type (§2.18.16).",
+          "description": "Character-pitch delta over the Normal font, encoded ×4096 (40960 = +10 pt over the Normal pitch). Runs opt out via snapToGrid.",
           "type": "number"
         },
         "linePitch": {
-          "description": "Specifies the number of lines to be allowed on the document grid for the current page assuming all lines have equal line pitch applied to them. This line pitch shall not be added to any line which appears within a table cell unless the <adjustLineHeightInTable> element (§2.15.3.1) is present in the document's compatibility settings. This attribute is specified in twentieths of a point, and defines the pitch for each line of text on this page such that the desired number of single spaced lines of text fits on the current page. The `linePitch` attribute specifies that 34.2 points is to the amount of pitch allowed for each line on this page in order to maintain the specific document grid. ] Individual paragraphs can override the line pitch information specified for the document grid by either: Specifying an exact line spacing value using the `lineRule` attribute of value exact on the <spacing> element (§2.3.1.33). Specifying that the paragraph text shall not snap to the document grid via the <snapToGrid> element (§2.3.1.32). The possible values for this attribute are defined by the simple type (§2.18.16).",
+          "description": "Line pitch in twentieths of a point (684 = 34.2 pt). Paragraphs opt out via snapToGrid or exact lineRule spacing.",
           "type": "number"
         },
         "type": {
-          "description": "Specifies the type of the current document grid, which defines the grid behavior.\n\nThe grid can define a grid which snaps all East Asian characters to grid positions, but leaves Latin text with its default spacing; a grid which adds the specified character pitch to each character on each row; or a grid which affects only the line pitch for the current section.",
+          "description": "Grid behavior — see  {@link  DocumentGridType }  values.",
           "enum": ["default", "lines", "linesAndChars", "snapToChars"],
           "type": "string"
         }
@@ -5863,7 +5863,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -5909,7 +5909,7 @@
           "type": "array"
         },
         "rawXml": {
-          "description": "Verbatim `<w:background>` XML for backgrounds that don't fit the structured model (e.g. VML pattern fills with texture images). `r:id` references are rewritten to `{fileName}` placeholders resolved by the compiler; the referenced media is carried in `rawMedia` for registration. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Verbatim `<w:background>` XML for backgrounds the structured model cannot express (e.g. VML pattern fills). `r:id` refs become `{fileName}` placeholders (media in `rawMedia`). Round-trip only — do not hand-author.",
           "type": "string"
         },
         "themeColor": {
@@ -6155,7 +6155,7 @@
     },
     "DocumentOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring document properties.\n\nAll settings.xml content is configured through the single  {@link  settings }  entry (SettingsOptions) — mirroring the OOXML part structure, where word/settings.xml is a standalone part and the document body carries none of it.",
+      "description": "Options for configuring document properties.\n\nAll settings.xml content lives under the single `settings` entry (SettingsOptions), mirroring the OOXML part structure.",
       "properties": {
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
@@ -6224,7 +6224,7 @@
         },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
-          "description": "The source file is an encrypted OOXML package (OLE2/CFB container). Round-trip only: the plaintext needs the password, so the original bytes are carried verbatim and generate() re-emits them unchanged — every other field stays empty (`sections: []`). Mixing real content is rejected — it would be silently dropped."
+          "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author."
         },
         "endnoteSeparators": {
           "additionalProperties": false,
@@ -6339,7 +6339,7 @@
           "$ref": "#/definitions/NumberingOptions"
         },
         "passthroughRelationships": {
-          "description": "Relationships from rebuilt parts' source .rels that point at rawParts (e.g. document.xml → theme/customXml). Re-emitted verbatim — target unchanged (passthrough paths never move), fresh rId. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Source .rels relationships from rebuilt parts pointing at rawParts (e.g. document.xml → theme/customXml); re-emitted verbatim with a fresh rId. Round-trip only — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -6373,7 +6373,7 @@
           "type": "array"
         },
         "rawParts": {
-          "description": "Parts carried verbatim from the source that generate() does not rebuild (e.g. word/theme/*, customXml/*, any unknown extension part). Collected wholesale by the core passthrough pipeline — everything the model did not absorb survives with bytes and content-type declaration intact. Parts the compiler happens to rebuild under the same path win over the passthrough copy (assembly order), so media/fonts/headers need no exclusion here. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Source parts generate() does not rebuild (word/theme/*, customXml/*, unknown extension parts), carried verbatim with bytes and content-type intact; compiler-rebuilt paths win over the passthrough copy. Round-trip only — do not hand-author.",
           "items": {
             "additionalProperties": false,
             "properties": {
@@ -6812,7 +6812,7 @@
     },
     "EmbeddedFontOptions": {
       "additionalProperties": false,
-      "description": "An embedded font (fontTable.xml w:font with w:embedRegular parts). When authoring, set name/data and leave the internal round-trip fields (rawOdttf/odttfPath/fontKey/subsetted) unset — they carry source-file obfuscation state that fresh generation must not fake.",
+      "description": "An embedded font (fontTable.xml w:font with w:embedRegular parts). Author with name/data only; the round-trip fields (rawOdttf/odttfPath/fontKey/ subsetted) carry source-file obfuscation state — do not hand-author.",
       "properties": {
         "altName": {
           "description": "Alternative font name",
@@ -6901,7 +6901,7 @@
     },
     "EncryptedContainerOptions": {
       "additionalProperties": false,
-      "description": "Verbatim payload of a source file whose OOXML package is encrypted.\n\nRound-trip only: the plaintext needs the password, so these bytes are the only faithful representation. Every other options field stays empty — there is no content to model until the file is decrypted.",
+      "description": "Verbatim payload of a source file whose OOXML package is encrypted. Round-trip only: the bytes are the only faithful representation until the file is decrypted; every other options field stays empty.",
       "properties": {
         "data": {
           "$ref": "#/definitions/DataType",
@@ -8215,7 +8215,7 @@
                   "type": "string"
                 },
                 "ext": {
-                  "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+                  "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
                   "type": "string"
                 },
                 "hidden": {
@@ -9006,7 +9006,7 @@
           "$ref": "#/definitions/RelativeMeasure"
         }
       ],
-      "description": "Represents a length unit value for VML shape styling.\n\nLength units can be specified in multiple formats:\n- \"auto\" - Automatically calculated by the application\n- number - Numeric value (typically in points)\n- Percentage - Percentage-based measurement\n- UniversalMeasure - Measurement with explicit units (pt, cm, in, etc.)\n- RelativeMeasure - Relative measurement units"
+      "description": "Length value for VML style properties: \"auto\" (application-calculated), number (typically points), percentage string, explicit-unit string (\"1cm\"), or relative measure."
     },
     "LevelOverrideOptions": {
       "additionalProperties": false,
@@ -9059,7 +9059,7 @@
           "type": "boolean"
         },
         "autoSpaceEastAsianText": {
-          "description": "This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph. This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.",
+          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
           "type": "boolean"
         },
         "bidirectional": {
@@ -9091,7 +9091,7 @@
           "type": "boolean"
         },
         "keepNext": {
-          "description": "Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.",
+          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
           "type": "boolean"
         },
         "kinsoku": {
@@ -9466,7 +9466,7 @@
       "additionalProperties": false,
       "properties": {
         "countBy": {
-          "description": "Specifies the line number increments to be displayed in the current document. Although each line has an associated line number, only lines which are an even multiple of this value shall be displayed. ### Example This setting ensures that only lines whose number is a multiple of (e.g. 5, 10, and 15) will have a line number displayed. ] The possible values for this attribute are defined by the simple type (§2.18.16).",
+          "description": "Display a number only on lines whose count is a multiple of this (e.g., 5 → numbers on lines 5, 10, 15).",
           "type": "number"
         },
         "distance": {
@@ -9478,15 +9478,15 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "Specifies the distance between the text margin and the edge of any line numbers appearing in that section. The possible values for this attribute are defined by the simple type (§2.18.105)."
+          "description": "Gap between the text margin and the line-number edge, in twips."
         },
         "restart": {
-          "description": "## Line Numbering Restart Setting Specifies when the line numbering in this section shall be reset to the line number specified by the `start` attribute's value. The line numbering increments for each line (even if it is not displayed) until it reaches the restart point specified by this element. ### Example The value of `newPage` specifies that the line numbers shall restart at the top of each page to the value specified by the `start` attribute. In this case, `newPage` is the default, so this value could have been omitted entirely. The possible values for this attribute are defined by the simple type (§2.18.54).",
+          "description": "Restart point for the numbering (default \"newPage\").",
           "enum": ["newPage", "newSection", "continuous"],
           "type": "string"
         },
         "start": {
-          "description": "## Line Numbering Starting Value Specifies the starting value used for the first line whenever the line numbering is restarted by use of the `restart` attribute. ### Example The `start` attribute specifies that line numbers shall be counted starting from the number 3. The possible values for this attribute are defined by the simple type (§2.18.16).",
+          "description": "First line number used after each restart (default 1).",
           "type": "number"
         }
       },
@@ -9757,7 +9757,7 @@
     },
     "MarkupRangeOptions": {
       "additionalProperties": false,
-      "description": "Options for a end marker — `@id` + `@displacedByCustomXml`. Shared by every range end marker that derives from: w:bookmarkEnd, w:commentRangeStart/End, w:moveFromRangeEnd, w:moveToRangeEnd. None of these carry a name or column range (only the start markers do). Reference: wml.xsd, EG_RangeMarkupElements",
+      "description": "Range end marker (`@id` + `@displacedByCustomXml`), shared by w:bookmarkEnd, w:commentRangeStart/End, and w:moveFrom/ToRangeEnd. End markers carry no name or column range (only start markers do).",
       "properties": {
         "displacedByCustomXml": {
           "$ref": "#/definitions/DisplacedByCustomXml",
@@ -11308,7 +11308,7 @@
     },
     "MoveRangeOptions": {
       "additionalProperties": false,
-      "description": "A move revision authored as a single inline paragraph child. The library allocates the range id and the move-run id, then emits the paired range markers with the moved run between them — the caller never touches an id. Used by both the `{ moveFrom }` (source) and `{ moveTo }` (destination) sugars. `wrap` is the moved content carried by the move run. `author` and `date` apply to both the range start and the move run. `name` is required by XSD; the source (`moveFrom`) and destination (`moveTo`) of one logical move MUST share a name so Word pairs them as a single move. Reference: wml.xsd,, EG_RangeMarkupElements.",
+      "description": "Move revision sugar for `{ moveFrom }`/`{ moveTo }`: the library allocates all ids and emits the paired range markers with the moved run between them. `name` is required and MUST be shared by the source/destination pair so Word links them into one move; `wrap` is the moved content; `author`/`date` apply to both the range start and the move run.",
       "properties": {
         "author": {
           "description": "Author of the move.",
@@ -11354,7 +11354,7 @@
     },
     "MoveRangeStartOptions": {
       "additionalProperties": false,
-      "description": "Options for a move revision range start (w:moveFromRangeStart / w:moveToRangeStart). Maps to = (name, colFirst, colLast, displacedByCustomXml) + author + date. `name` is optional in practice: Word does not always emit one for auto-generated move ranges. Reference: wml.xsd, EG_RangeMarkupElements",
+      "description": "Move revision range start (w:moveFromRangeStart / w:moveToRangeStart): + author + date. `name` is optional in practice — Word does not always emit one for auto-generated move ranges.",
       "properties": {
         "author": {
           "description": "Author of the move.",
@@ -11415,7 +11415,7 @@
           "type": "string"
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over  {@link  creationId } , which it subsumes when the source list carries both.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
         },
         "hidden": {
@@ -11564,14 +11564,14 @@
             "additionalProperties": false,
             "properties": {
               "aliases": {
-                "description": "Additional references (other source w:num ids) pointing at the same abstract definition with identical overrides. Word documents routinely reference one w:abstractNum from several w:num; without the aliases each would emit its own copy of the definition.",
+                "description": "Additional source w:num ids pointing at the same abstract definition with identical overrides, so each does not emit its own copy of the definition.",
                 "items": {
                   "type": "string"
                 },
                 "type": "array"
               },
               "instanceCount": {
-                "description": "Numbering instances (w:num) to emit for this definition up front, independent of body references. Fresh authoring omits it (instances are created on demand as paragraphs reference the definition); round-trip sets 1 so instances the body never references (styles-only or dead definitions) keep their w:num element.",
+                "description": "Numbering instances (w:num) to emit up front, independent of body references — fresh authoring omits it (instances are created on demand); round-trip sets 1 so unreferenced instances keep their w:num element.",
                 "type": "number"
               },
               "levels": {
@@ -11829,7 +11829,7 @@
           "type": "string"
         },
         "relationshipType": {
-          "description": "Source relationship kind (round-trip): \"package\" when the source related the part as a native OPC package (embedded xlsx/docx), \"oleObject\" for an OLE compound binary. Not derivable from the file name, so it is captured for the relationship to re-emit with the same type.",
+          "description": "Source relationship kind (round-trip): \"package\" (embedded xlsx/docx as a native OPC package) vs \"oleObject\" (OLE compound binary). Not derivable from the file name; re-emitted as captured.",
           "enum": ["oleObject", "package"],
           "type": "string"
         },
@@ -11911,7 +11911,7 @@
           "type": "string"
         },
         "relationshipType": {
-          "description": "Source relationship kind (round-trip): \"package\" when the source related the part as a native OPC package (embedded xlsx/docx), \"oleObject\" for an OLE compound binary. Not derivable from the file name, so it is captured for the relationship to re-emit with the same type.",
+          "description": "Source relationship kind (round-trip): \"package\" (embedded xlsx/docx as a native OPC package) vs \"oleObject\" (OLE compound binary). Not derivable from the file name; re-emitted as captured.",
           "enum": ["oleObject", "package"],
           "type": "string"
         },
@@ -12114,7 +12114,7 @@
               "type": "string"
             }
           ],
-          "description": "Color definition (required when type is \"solidFill\"). A bare string is an sRGB hex convenience sugar (e.g. `\"FF0000\"`); stringify coerces it to `{ value }` and infers `type: \"solidFill\"` when `type` is omitted. Parse always emits the normalized `{ value }` form."
+          "description": "Color definition (required when type is \"solidFill\"). A bare string is sRGB hex sugar (`\"FF0000\"`); stringify coerces it to `{ value }` and infers \"solidFill\"; parse always emits the normalized form."
         },
         "compoundLine": {
           "$ref": "#/definitions/CompoundLine",
@@ -12397,7 +12397,7 @@
       "additionalProperties": false,
       "properties": {
         "code": {
-          "description": "## Printer Paper Code Specifies a printer-specific paper code for the paper type, which shall be used by the printer for pages in this section. This code is stored to ensure the proper paper type is chosen if the specified paper size matches the sizes of multiple paper types supported by the current printer. It will be sent to the printer and used by the printer to determine the appropriate paper type to use when printing. This value is not interpreted or modified other than storing it as specified by the printer. The possible values for this attribute are defined by the `` simple type (§2.18.16).",
+          "description": "Printer-specific paper code, stored verbatim (printer picks the tray/paper type).",
           "type": "number"
         },
         "height": {
@@ -12409,10 +12409,10 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "## Page Height Specifies the height (in twentieths of a point) for all pages in the current section. ### Example All pages in this section are displayed on a page that is `12240` twentieths of a point (`8.5\"`) tall. The possible values for this attribute are defined by the `` simple type (§2.18.105)."
+          "description": "Page height in twips (12240 = 8.5\")."
         },
         "orientation": {
-          "description": "## Page Orientation Specifies the orientation of all pages in this section. This information is used to determine the actual paper size to use on the printer. This implies that the actual paper size width and height are reversed for pages in this section. If this attribute is omitted, then portrait shall be implied. ### Example Although the page width is 11\", and page height is 8.5\", according to the `w` and `h` attributes, because the `orient` attribute is set to landscape, pages in this section are printed on 8.5x11\" paper in landscape mode. The possible values for this attribute are defined by the `` simple type (§2.18.71).",
+          "description": "Page orientation; when landscape, width/height are printed swapped on the paper. Default portrait.",
           "enum": ["portrait", "landscape"],
           "type": "string"
         },
@@ -12425,7 +12425,7 @@
               "$ref": "#/definitions/PositiveUniversalMeasure"
             }
           ],
-          "description": "## Page Width This attribute indicates the width (in twentieths of a point) for all pages in the current section. ### Example All pages in this section are displayed on a page that is 15840 twentieths of a point (11\") wide. The possible values for this attribute are defined by the simple type (§2.18.105)."
+          "description": "Page width in twips (15840 = 11\")."
         }
       },
       "type": "object"
@@ -12645,7 +12645,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -12678,7 +12678,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -12944,7 +12944,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -12977,7 +12977,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -13494,7 +13494,7 @@
           "type": "boolean"
         },
         "autoSpaceEastAsianText": {
-          "description": "This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph. This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.",
+          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
           "type": "boolean"
         },
         "bidirectional": {
@@ -13573,7 +13573,7 @@
           "type": "boolean"
         },
         "keepNext": {
-          "description": "Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.",
+          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
           "type": "boolean"
         },
         "kinsoku": {
@@ -13749,7 +13749,7 @@
         },
         "run": {
           "$ref": "#/definitions/ParagraphRunOptions",
-          "description": "Run properties to apply to all runs in the paragraph. Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29."
+          "description": "Run properties to apply to all runs in the paragraph."
         },
         "runPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -13866,7 +13866,7 @@
           "type": "boolean"
         },
         "autoSpaceEastAsianText": {
-          "description": "This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph. This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.",
+          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
           "type": "boolean"
         },
         "bidirectional": {
@@ -13919,7 +13919,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "indent": {
@@ -13931,7 +13931,7 @@
           "type": "boolean"
         },
         "keepNext": {
-          "description": "Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.",
+          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
           "type": "boolean"
         },
         "kinsoku": {
@@ -14096,7 +14096,7 @@
         },
         "run": {
           "$ref": "#/definitions/ParagraphRunOptions",
-          "description": "Run properties to apply to all runs in the paragraph. Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29."
+          "description": "Run properties to apply to all runs in the paragraph."
         },
         "shading": {
           "$ref": "#/definitions/ShadingProperties",
@@ -14204,7 +14204,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
+          "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -14718,7 +14718,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -14831,7 +14831,7 @@
           "type": "boolean"
         },
         "autoSpaceEastAsianText": {
-          "description": "This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph. This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.",
+          "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
           "type": "boolean"
         },
         "bidirectional": {
@@ -14876,7 +14876,7 @@
           "type": "boolean"
         },
         "keepNext": {
-          "description": "Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.",
+          "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
           "type": "boolean"
         },
         "kinsoku": {
@@ -15410,7 +15410,7 @@
           "type": "array"
         },
         "vmlFallback": {
-          "description": "Serialized mc:Fallback element from parse — carried when the source wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback = a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on stringify (drawing vmlFallback pattern). Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "description": "Serialized mc:Fallback element carried when the source wrapped this pict in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on stringify); round-trip only — do not hand-author.",
           "type": "string"
         },
         "w14AnchorId": {
@@ -16708,7 +16708,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
+          "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -17224,7 +17224,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -17372,7 +17372,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "imprint": {
@@ -17499,7 +17499,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -17763,7 +17763,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -17774,7 +17774,7 @@
     },
     "RunStylePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Run style properties options.\n\nThese properties define the formatting that can be applied to a run of text, including font, size, bold, italic, underline, color, and other character formatting.\n\nReference: http://officeopenxml.com/WPtextFormatting.php",
+      "description": "Run style properties — character formatting for a run of text: font, size, bold/italic, underline, color, and other character formatting.",
       "properties": {
         "allCaps": {
           "type": "boolean"
@@ -18022,7 +18022,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -18731,11 +18731,11 @@
                   "type": "boolean"
                 },
                 "captionLabel": {
-                  "description": "\\a option - Includes captioned items, but omits caption labels and numbers. The identifier designated by text in this switch's field-argument corresponds to the caption label. Use captionLabelIncludingNumbers (\\c) to build a table of captions with labels and numbers.",
+                  "description": "\\a option — include captioned items (SEQ-numbered), omitting the caption label and number. Argument is the caption-label identifier. Use \\c (captionLabelIncludingNumbers) to keep labels and numbers.",
                   "type": "string"
                 },
                 "captionLabelIncludingNumbers": {
-                  "description": "\\c option -  Includes figures, tables, charts, and other items that are numbered by a SEQ field (§17.16.5.56). The sequence identifier designated by text in this switch's field-argument, which corresponds to the caption label, shall match the identifier in the corresponding SEQ field.",
+                  "description": "\\c option — include figures/tables/charts numbered by a SEQ field, with caption labels and numbers. Argument is the caption-label/sequence identifier and must match the SEQ field's identifier.",
                   "type": "string"
                 },
                 "docPartUnique": {
@@ -18743,7 +18743,7 @@
                   "type": "boolean"
                 },
                 "endInBody": {
-                  "description": "The field-end marker lives in a body paragraph that follows the rendered entries (Word drops it into the next heading when it updates the field). That paragraph round-trips on its own — the stringify path must not inject another end run into the last entry (round-trip only).",
+                  "description": "The field-end marker lives in a following body paragraph that round-trips on its own — stringify must not inject another end run into the last entry (round-trip only).",
                   "type": "boolean"
                 },
                 "endProperties": {
@@ -18755,7 +18755,7 @@
                   "type": "string"
                 },
                 "entries": {
-                  "description": "Rendered TOC entries — the paragraph content between the field's `separate` and `end` markers. Round-tripped structurally (each entry is a TOC-style paragraph carrying a HYPERLINK field, tab leader, and PAGEREF page number) so both MS Office and WPS display the existing TOC without regenerating.\n\nOmit on fresh generation — the field is then emitted `dirty` so the consuming application builds the entries from headings on open.",
+                  "description": "Rendered TOC entries — the paragraphs between the field's `separate` and `end` markers, round-tripped structurally (HYPERLINK field, tab leader, PAGEREF page number) so Office/WPS display them without regenerating. Omit on fresh generation (field is emitted `dirty`).",
                   "items": {
                     "$ref": "#/definitions/SectionChild"
                   },
@@ -18770,11 +18770,11 @@
                   "type": "string"
                 },
                 "headRunsXml": {
-                  "description": "Verbatim XML of the field's begin→separate control runs, as serialized `<w:r>…</w:r>` sequences (round-trip only; Word splits the instruction across runs — leading space / text / trailing space, each with its own rPr — and the split must survive instead of collapsing to one run).",
+                  "description": "Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs (round-trip only; Word splits the instruction across runs and the split must survive).",
                   "type": "string"
                 },
                 "headingStyleRange": {
-                  "description": "\\o option -  Uses paragraphs formatted with all or the specified range of builtin heading styles. Headings in a style range are specified by text in this switch's field-argument using the notation specified as for \\l, where each integer corresponds to the style with a style ID of HeadingX (e.g. 1 corresponds to Heading1). If no heading range is specified, all heading levels used in the document are listed.",
+                  "description": "\\o option — build entries from paragraphs in built-in heading styles. Argument is a level range as for \\l (e.g. \"1-3\"; 1 = Heading1); empty or omitted lists all heading levels used in the document.",
                   "type": "string"
                 },
                 "hideTabAndPageNumbersInWebView": {
@@ -18817,7 +18817,7 @@
                   "description": "Run properties of the SDT start mark — sdtPr's leading w:rPr element (round-trip only; Word parks the TOC style's font overrides there)."
                 },
                 "seqFieldIdentifierForPrefix": {
-                  "description": "\\s option - For entries numbered with a SEQ field (§17.16.5.56), adds a prefix to the page number. The prefix depends on the type of entry. text in this switch's field-argument shall match the identifier in the SEQ field.",
+                  "description": "\\s option - For entries numbered with a SEQ field, adds a prefix to the page number. The prefix depends on the type of entry; the field-argument text must match the identifier in the SEQ field.",
                   "type": "string"
                 },
                 "sequenceAndPageNumbersSeparator": {
@@ -18825,7 +18825,7 @@
                   "type": "string"
                 },
                 "stylesWithLevels": {
-                  "description": "\\t field-argument Uses paragraphs formatted with styles other than the built-in heading styles. Text in this switch's field-argument specifies those styles as a set of comma-separated doublets, with each doublet being a comma-separated set of style name and table of content level. \\t can be combined with \\o.",
+                  "description": "\\t option — include paragraphs in non-heading styles, each mapped to a TOC level. Combinable with \\o (headingStyleRange).",
                   "items": {
                     "$ref": "#/definitions/StyleLevel"
                   },
@@ -18836,7 +18836,7 @@
                   "type": "string"
                 },
                 "tcFieldLevelRange": {
-                  "description": "\\l option - Includes TC fields that assign entries to one of the levels specified by text in this switch's field-argument as a range having the form startLevel-endLevel, where startLevel and endLevel are integers, and startLevel has a value equal-to or less-than endLevel. TC fields that assign entries to lower levels are skipped.",
+                  "description": "\\l option — include TC fields that assign entries to levels in the argument range `startLevel-endLevel` (integers, start ≤ end). TC fields assigning lower levels are skipped.",
                   "type": "string"
                 },
                 "trailing": {
@@ -18895,7 +18895,7 @@
                   "type": "boolean"
                 },
                 "autoSpaceEastAsianText": {
-                  "description": "This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph. This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.",
+                  "description": "Auto-adjust inter-character spacing between numeric and East Asian text regions. Microsoft Word extension — not part of ECMA-376.",
                   "type": "boolean"
                 },
                 "bidirectional": {
@@ -19162,7 +19162,7 @@
                   "type": "boolean"
                 },
                 "keepNext": {
-                  "description": "Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.",
+                  "description": "Keep this paragraph on the same page as the next one when possible; a kept-together set exceeding a page starts on a new page instead.",
                   "type": "boolean"
                 },
                 "kinsoku": {
@@ -19338,7 +19338,7 @@
                 },
                 "run": {
                   "$ref": "#/definitions/ParagraphRunOptions",
-                  "description": "Run properties to apply to all runs in the paragraph. Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29."
+                  "description": "Run properties to apply to all runs in the paragraph."
                 },
                 "runPropertiesRsid": {
                   "$ref": "#/definitions/LongHexNumber",
@@ -19649,10 +19649,10 @@
               "type": "boolean"
             }
           ],
-          "description": "Document grid. Three states: omitted (fresh generation emits Word's CJK default line grid — linePitch 312, type \"lines\"); a DocGridProperties object (emits provided values, e.g. from a parsed source); or false (explicit off — a parsed source with no w:docGrid is preserved by emitting nothing)."
+          "description": "Document grid. Omitted = fresh generation emits Word's CJK default line grid (linePitch 312, type \"lines\"); a DocGridProperties object emits the provided values; false = explicit off (emit nothing)."
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "lineNumberType": {
@@ -19768,7 +19768,7 @@
               "type": "boolean"
             }
           ],
-          "description": "Document grid. Three states: omitted (fresh generation emits Word's CJK default line grid — linePitch 312, type \"lines\"); a DocGridProperties object (emits provided values, e.g. from a parsed source); or false (explicit off — a parsed source with no w:docGrid is preserved by emitting nothing)."
+          "description": "Document grid. Omitted = fresh generation emits Word's CJK default line grid (linePitch 312, type \"lines\"); a DocGridProperties object emits the provided values; false = explicit off (emit nothing)."
         },
         "lineNumberType": {
           "$ref": "#/definitions/LineNumberProperties"
@@ -20770,7 +20770,7 @@
     },
     "ShapeOptions": {
       "additionalProperties": false,
-      "description": "Shape options for docx (wps:wsp). The shape body comes from  {@link  ShapeCoreOptions } ; the rest is the docx run-level shape model (transformation, floating, altText, run wrapping).",
+      "description": "Shape options for docx (wps:wsp). The shape body comes from `ShapeCoreOptions`; the rest is the docx run-level shape model (transformation, floating, altText, run wrapping).",
       "properties": {
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
@@ -21363,7 +21363,7 @@
         },
         "raw": {
           "$ref": "#/definitions/SmartArtRawParts",
-          "description": "Verbatim source-part bytes for byte-exact round-trip. When present, generate re-emits these bytes under the diagrams part names instead of rebuilding from nodes/layout/style/color (which stay populated and readable); dropping raw rebuilds from the structured fields as usual."
+          "description": "Verbatim source-part bytes for byte-exact round-trip: when present, generate re-emits them instead of rebuilding (nodes/layout/style/color stay populated and readable)."
         },
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
@@ -21390,7 +21390,7 @@
     },
     "SmartArtRawParts": {
       "additionalProperties": false,
-      "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a  {@link  SmartArtData }  entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
+      "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a `SmartArtData` entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
       "properties": {
         "color": {
           "$ref": "#/definitions/DataType",
@@ -22151,7 +22151,7 @@
           ]
         },
         "children": {
-          "description": "Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing and content children). The empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via  {@link  EMPTY_RUN_ELEMENTS } ; paragraph-level child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
+          "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
           "items": {
             "anyOf": [
               {
@@ -22676,7 +22676,7 @@
           "type": "string"
         },
         "w14RawXml": {
-          "description": "Raw XML for w14:* text-effect children (glow/shadow/reflection/props3d/...) located in the EG_RPrBase extension slot at the end of rPr. Low-frequency complex subtrees kept verbatim for round-trip fidelity; the rPr backbone stays structured and editable.",
+          "description": "Raw XML of w14:* text-effect children (glow/shadow/reflection/props3d/…) in the rPr extension slot — verbatim for round-trip fidelity.",
           "type": "string"
         },
         "webHidden": {
@@ -22861,7 +22861,7 @@
     },
     "TableCellMarginOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table cell margins. Each side is an independent ({ size, type }), mirroring TableWidthProperties / TableCellSpacingProperties. This is faithful to the XSD, which models as a sequence of six elements — every side carries its own width and unit type (no shared `marginUnitType`).",
+      "description": "Table cell margins. Each side is an independent ({ size, type }) — no shared `marginUnitType`.",
       "properties": {
         "bottom": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -22892,7 +22892,7 @@
     },
     "TableCellOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a TableCell element.\n\nExtends  {@link  BaseTableCellOptions }  for the cross-format cell contract (span + vertical-align); shading/borders/margins/content stay docx-specific.",
+      "description": "Options for creating a TableCell element.\n\nExtends `BaseTableCellOptions` for the cross-format cell contract (span + vertical-align); shading/borders/margins/content stay docx-specific.",
       "properties": {
         "borders": {
           "$ref": "#/definitions/TableCellBordersOptions",
@@ -23038,7 +23038,7 @@
           "type": "string"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "insertion": {
@@ -23276,7 +23276,7 @@
     },
     "TableLookOptions": {
       "additionalProperties": false,
-      "description": "Options for configuring table look conditional formatting.\n\nThese options control which conditional formatting styles are applied to the table. Field names and polarity match the base table 6-flags (firstRow/lastRow/firstCol/lastCol/bandRow/bandCol) so the same concept reads the same everywhere; the serializer maps them onto the XML attributes, inverting banding (w:noHBand = !bandRow).",
+      "description": "Table look conditional formatting flags (firstRow/lastRow/firstCol/lastCol/ bandRow/bandCol). The serializer inverts banding (w:noHBand = !bandRow).",
       "properties": {
         "bandCol": {
           "description": "Apply vertical column banding.",
@@ -23311,7 +23311,7 @@
     },
     "TableOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a Table element.\n\nNote: 0-width columns don't get rendered correctly, so we need to give them some value. A reasonable default would be ~6in / numCols, but if we do that it becomes very hard to resize the table using setWidth, unless the layout algorithm is set to 'fixed'. Instead, the approach here means even in 'auto' layout, setting a width on the table will make it look reasonable, as the layout algorithm will expand columns to fit its content.",
+      "description": "Options for creating a Table element.\n\nAvoid 0-width columns — they render incorrectly; the layout algorithm expands columns to fit content even in 'auto' layout.",
       "properties": {
         "alignment": {
           "$ref": "#/definitions/TableJustification",
@@ -23474,7 +23474,7 @@
           "$ref": "#/definitions/TableFloatOptions"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "indent": {
@@ -23595,7 +23595,7 @@
           "description": "Date and time when the change was made (ISO 8601 format)"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         }
       },
@@ -23909,7 +23909,7 @@
           "type": "boolean"
         },
         "id": {
-          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+          "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
           "type": "number"
         },
         "rowAlignment": {
@@ -24200,7 +24200,7 @@
       "properties": {
         "anchor": {
           "$ref": "#/definitions/VerticalAnchor",
-          "description": "Convenience sugar — merged into  {@link  bodyProperties }  on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
+          "description": "Convenience sugar — merged into `bodyProperties` on stringify (explicit `bodyProperties` fields take precedence). Input-only: parse always emits the normalized `bodyProperties` form. Mirrors the `fill` descriptor's string-sugar convention."
         },
         "autoFit": {
           "description": "Sugar → `bodyProperties.normAutofit` (`\"normal\"`) / `spAutoFit` (`\"shape\"`).",
@@ -24564,7 +24564,7 @@
           "type": "string"
         },
         "slide": {
-          "description": "Internal slide target, 1-based slide number (mutually exclusive with url). Emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\".\n\nPPTX only — slides exist in no other format. Formats without slides reject the field at generate time instead of silently dropping it.",
+          "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
         },
         "tooltip": {
@@ -24599,7 +24599,7 @@
           "type": "string"
         },
         "value": {
-          "description": "Current value the user typed into the field (the result-run text between the `separate` and `end` fldChars).\n\nUnlike  {@link  default }  this is NOT stored in `w:ffData`; it is captured on parse for round-trip fidelity. On stringify it is rendered as the field result, falling back to  {@link  default }  when unset.",
+          "description": "Current user-typed value (the result-run text between `separate` and `end`). Not stored in w:ffData — parse-only capture; stringify renders it as the field result, falling back to `default`.",
           "type": "string"
         }
       },
@@ -25252,7 +25252,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -25285,7 +25285,7 @@
                   "description": "Date and time when the change was made (ISO 8601 format)"
                 },
                 "id": {
-                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one ( {@link  autoRevisionId } ); explicit duplicates still get renumbered by the body emit pass.",
+                  "description": "Revision marker id, unique within the document. No other element or attribute references it, so fresh input may omit it — the library assigns one (`autoRevisionId`); explicit duplicates still get renumbered by the body emit pass.",
                   "type": "number"
                 }
               },
@@ -25746,7 +25746,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -26450,7 +26450,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -27051,7 +27051,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -27503,7 +27503,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -27792,7 +27792,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -28121,7 +28121,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -28440,7 +28440,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -28695,7 +28695,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -28982,7 +28982,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -29598,7 +29598,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -29992,7 +29992,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "rawChildrenXml": {
-          "description": "Verbatim XML of children this parser does not model — e.g. the office:word border elements re-prefixed by Word exporters (`wvml:bordertop` for `w10:bordertop`). Re-emitted as-is after the modeled children; 's content model is an unordered repeating choice, so the tail is valid.",
+          "description": "Verbatim XML of unmodeled children (e.g. Word's re-prefixed `wvml:bordertop` border elements), re-emitted after the modeled children.",
           "type": "string"
         },
         "regroupid": {
@@ -30409,7 +30409,7 @@
     },
     "VmlTextPathStyle": {
       "additionalProperties": false,
-      "description": "v:textpath style vocabulary — font-centric CSS, distinct from the layout vocabulary of  {@link  VmlShapeStyle  } . Values stay strings: font sizes carry units (\"24pt\"), families carry quotes, weights may be named or numeric.",
+      "description": "v:textpath style vocabulary — font-centric CSS, distinct from the layout vocabulary of `VmlShapeStyle`. Values stay strings: font sizes carry units (\"24pt\"), families carry quotes, weights may be named or numeric.",
       "properties": {
         "fontFamily": {
           "type": "string"
@@ -30536,7 +30536,7 @@
     },
     "WebFrameOptions": {
       "additionalProperties": false,
-      "description": "Frameset and Frame type definitions for webSettings.xml. Framesets define a frames-based layout within a Word document (web layout). XML generation is handled by the descriptor at compile/descriptors/web-settings.ts. Reference: OOXML transitional, wml.xsd, /",
+      "description": "Frameset and Frame type definitions for webSettings.xml — a frames-based web layout within a Word document.",
       "properties": {
         "linkedToFile": {
           "type": "boolean"

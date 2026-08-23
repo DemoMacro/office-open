@@ -30,10 +30,8 @@ import type { WebSettingsOptions } from "./web-settings";
 /**
  * Options for configuring document properties.
  *
- * All settings.xml content is configured through the single {@link settings}
- * entry (SettingsOptions) — mirroring the OOXML part structure, where
- * word/settings.xml is a standalone part and the document body carries none
- * of it.
+ * All settings.xml content lives under the single `settings` entry
+ * (SettingsOptions), mirroring the OOXML part structure.
  *
  * @property sections - Document section configurations
  * @property title - Document title
@@ -59,11 +57,9 @@ import type { WebSettingsOptions } from "./web-settings";
 export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
   /**
-   * The source file is an encrypted OOXML package (OLE2/CFB container).
-   * Round-trip only: the plaintext needs the password, so the original bytes
-   * are carried verbatim and generate() re-emits them unchanged — every
-   * other field stays empty (`sections: []`). Mixing real content is
-   * rejected — it would be silently dropped.
+   * Encrypted source (OLE2/CFB container). Round-trip only: the original
+   * bytes are re-emitted unchanged, every other field stays empty (`sections:
+   * []`); mixing real content is rejected. Do not hand-author.
    */
   encrypted?: EncryptedContainerOptions;
   styles?: StylesOptions;
@@ -119,21 +115,16 @@ export interface DocumentOptions extends CorePropertiesOptions {
   /** Content types from [Content_Types].xml (parse path only) */
   contentTypes?: ContentTypesInput;
   /**
-   * Parts carried verbatim from the source that generate() does not rebuild
-   * (e.g. word/theme/*, customXml/*, any unknown extension part). Collected
-   * wholesale by the core passthrough pipeline — everything the model did not
-   * absorb survives with bytes and content-type declaration intact. Parts the
-   * compiler happens to rebuild under the same path win over the passthrough
-   * copy (assembly order), so media/fonts/headers need no exclusion here.
-   * Round-trip channel: captured from a parsed source document — do not
-   * hand-author.
+   * Source parts generate() does not rebuild (word/theme/*, customXml/*,
+   * unknown extension parts), carried verbatim with bytes and content-type
+   * intact; compiler-rebuilt paths win over the passthrough copy. Round-trip
+   * only — do not hand-author.
    */
   rawParts?: { path: string; data: DataType; contentType?: string }[];
   /**
-   * Relationships from rebuilt parts' source .rels that point at rawParts
-   * (e.g. document.xml → theme/customXml). Re-emitted verbatim — target
-   * unchanged (passthrough paths never move), fresh rId. Round-trip channel:
-   * captured from a parsed source document — do not hand-author.
+   * Source .rels relationships from rebuilt parts pointing at rawParts (e.g.
+   * document.xml → theme/customXml); re-emitted verbatim with a fresh rId.
+   * Round-trip only — do not hand-author.
    */
   passthroughRelationships?: {
     source: string;

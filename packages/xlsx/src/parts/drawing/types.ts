@@ -166,8 +166,8 @@ export interface DrawingPictureOptions
   /**
    * Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi
    * (a14 imgProps artistic effects, …). Round-trip only; subsumes
-   * {@link useLocalDpi} when the source list carries both. Named blipExt to
-   * avoid colliding with the inherited cNvPr {@link ext} channel.
+   * `useLocalDpi` when the source list carries both. Named blipExt to
+   * avoid colliding with the inherited cNvPr `ext` channel.
    */
   blipExt?: string;
 }

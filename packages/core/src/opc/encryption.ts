@@ -19,10 +19,8 @@ const CFB_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1] as const;
 
 /**
  * Verbatim payload of a source file whose OOXML package is encrypted.
- *
- * Round-trip only: the plaintext needs the password, so these bytes are the
- * only faithful representation. Every other options field stays empty —
- * there is no content to model until the file is decrypted.
+ * Round-trip only: the bytes are the only faithful representation until the
+ * file is decrypted; every other options field stays empty.
  */
 export interface EncryptedContainerOptions {
   /** Complete source file bytes (OLE2/CFB container). */

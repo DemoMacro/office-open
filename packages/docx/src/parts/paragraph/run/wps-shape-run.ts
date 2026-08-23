@@ -43,7 +43,7 @@ interface ShapeRunOptions {
 
 /**
  * Shape options for docx (wps:wsp). The shape body comes from
- * {@link ShapeCoreOptions}; the rest is the docx run-level shape model
+ * `ShapeCoreOptions`; the rest is the docx run-level shape model
  * (transformation, floating, altText, run wrapping).
  *
  * @publicApi

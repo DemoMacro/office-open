@@ -17,10 +17,9 @@ export interface LockedCanvasShapeOptions extends ShapePropertiesOptions {
 }
 
 /**
- * Locked canvas frame options for pptx slides (p:graphicFrame with
- * lc:lockedCanvas). The cNvPr fields (name/description/title/hidden) come from
- * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
- * both the public slide-child entry and the descriptor.
+ * Locked canvas frame (p:graphicFrame with lc:lockedCanvas) for pptx slides.
+ * cNvPr fields (name/description/title/hidden) from
+ * NonVisualDrawingPropertiesOptions.
  */
 export interface LockedCanvasFrameOptions
   extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {

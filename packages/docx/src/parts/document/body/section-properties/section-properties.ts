@@ -61,10 +61,9 @@ export interface SectionPropertiesOptionsBase {
   /** Section text flow direction (w:textDirection). */
   textDirection?: (typeof PageTextDirectionType)[keyof typeof PageTextDirectionType];
   /**
-   * Document grid. Three states: omitted (fresh generation emits Word's CJK
-   * default line grid — linePitch 312, type "lines"); a DocGridProperties object
-   * (emits provided values, e.g. from a parsed source); or false (explicit off —
-   * a parsed source with no w:docGrid is preserved by emitting nothing).
+   * Document grid. Omitted = fresh generation emits Word's CJK default line
+   * grid (linePitch 312, type "lines"); a DocGridProperties object emits the
+   * provided values; false = explicit off (emit nothing).
    */
   grid?: DocGridProperties | false;
   lineNumberType?: LineNumberProperties;

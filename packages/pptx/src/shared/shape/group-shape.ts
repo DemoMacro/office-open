@@ -3,10 +3,8 @@ import type { BlackWhiteMode, EffectListOptions, FillOptions } from "@office-ope
 import type { SlideChild } from "@parts/slide/slide-child";
 
 /**
- * Group shape options for pptx slides (p:grpSp). The cNvPr fields
- * (name/description/title/hidden) come from {@link BaseGroupOptions}; the rest
- * is the pptx flat positioning model plus the group's children. The single
- * source of truth for both the public slide-child entry and the descriptor.
+ * Group shape (p:grpSp) for pptx slides. cNvPr fields from BaseGroupOptions;
+ * the rest is the pptx flat positioning model plus the group's children.
  */
 export interface GroupOptions extends BaseGroupOptions {
   /** Group id (p:cNvPr `@id`). Auto-generated if omitted. */

@@ -25,12 +25,8 @@
 import type { TableWidthProperties } from "@parts/table/table-width";
 
 /**
- * Options for configuring table cell margins (CT_TblCellMar).
- *
- * Each side is an independent CT_TblWidth ({ size, type }), mirroring
- * TableWidthProperties / TableCellSpacingProperties. This is faithful to the
- * XSD, which models CT_TblCellMar as a sequence of six CT_TblWidth elements —
- * every side carries its own width and unit type (no shared `marginUnitType`).
+ * Table cell margins (CT_TblCellMar). Each side is an independent
+ * CT_TblWidth ({ size, type }) — no shared `marginUnitType`.
  */
 export interface TableCellMarginOptions {
   /** Top cell margin. */

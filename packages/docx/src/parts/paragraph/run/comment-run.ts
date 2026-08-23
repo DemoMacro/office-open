@@ -41,15 +41,10 @@ export interface CommentOptions {
 }
 
 /**
- * A comment authored as a single inline paragraph child. The library allocates
- * the comment id, emits the range markers + reference, and registers the comment
- * entry in word/comments.xml — the caller never touches an id or pairs markers.
- *
- * `children` is the comment reply (stored in the comments part, same shape as
- * {@link CommentOptions.children}); `wrap` is the anchored document content the
- * comment range wraps (inline runs/text, emitted between the range markers).
- *
- * Reference: wml.xsd CT_Markup, CT_Comment, EG_RangeMarkupElements.
+ * Inline comment sugar: the library allocates the id, emits the range markers +
+ * reference, and registers the entry in word/comments.xml. `children` is the
+ * comment reply (same shape as CommentOptions.children); `wrap` is the anchored
+ * content the comment range wraps.
  */
 export interface CommentChildOptions {
   /** Comment author (CT_Comment `@w:author` — required by XSD, defaults to ""). */

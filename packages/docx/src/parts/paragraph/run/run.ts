@@ -68,11 +68,9 @@ export const EMPTY_RUN_ELEMENTS: Record<string, string> = {
 
 interface RunOptionsBase {
   /**
-   * Inline content children (EG_RunInnerContent plus the JSON-dispatch drawing
-   * and content children). The empty run elements are single-key markers
-   * (`{ tab: true }`, `{ noBreakHyphen: true }`, …) emitted via
-   * {@link EMPTY_RUN_ELEMENTS}; paragraph-level child shapes (pictures, charts,
-   * hyperlinks, …) dispatch through the same JSON pipeline.
+   * Inline content children. Empty run elements are single-key markers
+   * (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures,
+   * charts, hyperlinks, …) dispatch through the same JSON pipeline.
    */
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]

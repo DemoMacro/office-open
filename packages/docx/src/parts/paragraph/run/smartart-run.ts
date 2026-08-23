@@ -55,10 +55,9 @@ export interface SmartArtOptions {
   /** Word's pagination hint sharing the drawing run (round-trip fidelity). */
   lastRenderedPageBreak?: boolean;
   /**
-   * Verbatim source-part bytes for byte-exact round-trip. When present,
-   * generate re-emits these bytes under the diagrams part names instead of
-   * rebuilding from nodes/layout/style/color (which stay populated and
-   * readable); dropping raw rebuilds from the structured fields as usual.
+   * Verbatim source-part bytes for byte-exact round-trip: when present,
+   * generate re-emits them instead of rebuilding (nodes/layout/style/color
+   * stay populated and readable).
    */
   raw?: SmartArtRawParts;
 }

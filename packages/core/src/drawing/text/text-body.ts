@@ -27,7 +27,7 @@ export interface TextBodyOptions {
   paragraphs?: (ParagraphDescriptorOptions | string)[];
 
   /**
-   * Convenience sugar — merged into {@link bodyProperties} on stringify (explicit
+   * Convenience sugar — merged into `bodyProperties` on stringify (explicit
    * `bodyProperties` fields take precedence). Input-only: parse always emits
    * the normalized `bodyProperties` form. Mirrors the `fill` descriptor's
    * string-sugar convention.

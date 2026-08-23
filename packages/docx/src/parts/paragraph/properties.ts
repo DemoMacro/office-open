@@ -98,7 +98,8 @@ export interface LevelParagraphStylePropertiesOptions {
   /** Spacing before/after paragraph and between lines */
   spacing?: SpacingProperties;
   /**
-   * Specifies that the paragraph (or at least part of it) should be rendered on the same page as the next paragraph when possible. If multiple paragraphs are to be kept together but they exceed a page, then the set of paragraphs begin on a new page and page breaks are used thereafter as needed.
+   * Keep this paragraph on the same page as the next one when possible; a
+   * kept-together set exceeding a page starts on a new page instead.
    */
   keepNext?: boolean;
   /**
@@ -114,8 +115,8 @@ export interface LevelParagraphStylePropertiesOptions {
   /** Whether to allow punctuation to extend beyond text margins */
   overflowPunctuation?: boolean;
   /**
-   * This element specifies whether inter-character spacing shall automatically be adjusted between regions of numbers and regions of East Asian text in the current paragraph. These regions shall be determined by the Unicode character values of the text content within the paragraph.
-   * This only works in Microsoft Word. It is not part of the ECMA-376 OOXML standard.
+   * Auto-adjust inter-character spacing between numeric and East Asian text
+   * regions. Microsoft Word extension — not part of ECMA-376.
    */
   autoSpaceEastAsianText?: boolean;
   /** Whether to prevent text frames from overlapping */
@@ -256,7 +257,6 @@ export type ParagraphPropertiesOptionsBase = {
   };
   /**
    * Run properties to apply to all runs in the paragraph.
-   * Reference: ECMA-376, 3rd Edition (June, 2011), Fundamentals and Markup Language Reference § 17.3.1.29.
    */
   run?: ParagraphRunOptions;
 } & ParagraphStylePropertiesOptions;

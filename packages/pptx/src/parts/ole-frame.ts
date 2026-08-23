@@ -39,10 +39,9 @@ export interface OleIconImageOptions {
 }
 
 /**
- * OLE Object frame options for pptx slides (p:graphicFrame with p:oleObj). The
- * cNvPr fields (name/description/title/hidden) come from
- * {@link NonVisualDrawingPropertiesOptions}. The single source of truth for
- * both the public slide-child entry and the descriptor.
+ * OLE object frame (p:graphicFrame with p:oleObj) for pptx slides. cNvPr
+ * fields (name/description/title/hidden) from
+ * NonVisualDrawingPropertiesOptions.
  */
 export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default
@@ -65,7 +64,7 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlace
   imageHeight?: number;
   /**
    * Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin).
-   * Mutually exclusive with {@link link} — p:oleObj's content model is a
+   * Mutually exclusive with `link` — p:oleObj's content model is a
    * required choice between p:embed and p:link.
    */
   embed?: OleEmbedOptions;

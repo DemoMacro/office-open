@@ -40,11 +40,9 @@ export interface PictOptions {
    *  textbox content (round-trip; authoring supplies media entries and
    *  matching placeholders). */
   media?: PictMediaOptions[];
-  /** Serialized mc:Fallback element from parse — carried when the source
-   *  wrapped this pict in mc:AlternateContent (Choice = this pict, Fallback =
-   *  a compatibility copy). Round-trips verbatim; the wrapper is rebuilt on
-   *  stringify (drawing vmlFallback pattern). Round-trip channel: captured
-   *  from a parsed source document — do not hand-author. */
+  /** Serialized mc:Fallback element carried when the source wrapped this pict
+   *  in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on
+   *  stringify); round-trip only — do not hand-author. */
   vmlFallback?: string;
   /** mc:Choice @Requires namespace prefix; defaults to "w14" on stringify. */
   mcChoiceRequires?: string;

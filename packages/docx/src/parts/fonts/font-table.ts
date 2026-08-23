@@ -39,10 +39,9 @@ export interface FontSignature {
  * embed and must still round-trip into fontTable.xml.
  */
 /**
- * An embedded font (fontTable.xml w:font with w:embedRegular parts). When
- * authoring, set name/data and leave the internal round-trip fields
- * (rawOdttf/odttfPath/fontKey/subsetted) unset — they carry source-file
- * obfuscation state that fresh generation must not fake.
+ * An embedded font (fontTable.xml w:font with w:embedRegular parts). Author
+ * with name/data only; the round-trip fields (rawOdttf/odttfPath/fontKey/
+ * subsetted) carry source-file obfuscation state — do not hand-author.
  */
 export interface EmbeddedFontOptions {
   /** Font family name */
