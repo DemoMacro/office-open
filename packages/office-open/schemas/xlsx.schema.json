@@ -8006,7 +8006,7 @@
       "description": "Options for xl/metadata.xml.",
       "properties": {
         "cellMetadata": {
-          "description": "Cell metadata blocks (cellMetadata)",
+          "description": "Cell metadata blocks (cellMetadata). Round-trip only — Excel 365 refuses files carrying these fresh, with or without cell references.",
           "items": {
             "$ref": "#/definitions/MetadataBlockOptions"
           },
@@ -8041,7 +8041,7 @@
           "type": "array"
         },
         "valueMetadata": {
-          "description": "Value metadata blocks (valueMetadata)",
+          "description": "Value metadata blocks (valueMetadata). Round-trip only — Excel 365 refuses files carrying these fresh, with or without cell references.",
           "items": {
             "$ref": "#/definitions/MetadataBlockOptions"
           },
@@ -14408,7 +14408,7 @@
           "description": "Auto-filter (ref shorthand or structured filter columns/sort state)"
         },
         "columns": {
-          "description": "Column definitions",
+          "description": "Column definitions. Excel requires one per column spanned by `ref`; missing ones auto-fill with default ColumnN names, extras are dropped.",
           "items": {
             "$ref": "#/definitions/TableColumnOptions"
           },
@@ -16407,6 +16407,7 @@
           "type": "array"
         },
         "customWorkbookViews": {
+          "description": "Workbook-level custom view snapshots. Excel requires one entry per sheet-level customSheetViews guid (matched by guid).",
           "items": {
             "$ref": "#/definitions/CustomWorkbookViewOptions"
           },
@@ -17479,7 +17480,7 @@
           "type": "array"
         },
         "customSheetViews": {
-          "description": "Custom sheet views",
+          "description": "Custom sheet views. Each guid needs a same-guid workbook-level customWorkbookViews entry — Excel refuses orphans.",
           "items": {
             "$ref": "#/definitions/CustomSheetViewOptions"
           },
