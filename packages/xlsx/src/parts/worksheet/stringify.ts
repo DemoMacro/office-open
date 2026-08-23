@@ -24,6 +24,7 @@ import type {
   CfvoOptions,
   FormulaOptions,
   HeaderFooterOptions,
+  PageBreakOptions,
   PageSetupOptions,
   PivotSelectionOptions,
   PrintOptions,
@@ -34,6 +35,23 @@ import type {
   WorksheetContext,
   WorksheetOptions,
 } from "./types";
+
+/** CT_Break list under rowBreaks/colBreaks — identical shape, only the tag differs. */
+function breaksXml(tag: "rowBreaks" | "colBreaks", list: PageBreakOptions[]): string {
+  let manualCount = 0;
+  const brkParts = list.map((b) => {
+    const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
+    if (b.min !== undefined) bAttrs.min = b.min;
+    if (b.max !== undefined) bAttrs.max = b.max;
+    if (b.manual) {
+      bAttrs.man = 1;
+      manualCount++;
+    }
+    if (b.pivot) bAttrs.pt = 1;
+    return `<brk${attrs(bAttrs)}/>`;
+  });
+  return `<${tag} count="${list.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</${tag}>`;
+}
 
 /**
  * Build the complete worksheet XML string.
@@ -274,11 +292,10 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       prAttrs.saltValue = pr.saltValue ?? prDerived?.saltValue;
       if (pr.spinCount !== undefined) prAttrs.spinCount = pr.spinCount;
       else if (prDerived) prAttrs.spinCount = prDerived.spinCount;
-      if (pr.securityDescriptor) prAttrs.securityDescriptor = pr.securityDescriptor;
-      const hasSecurityDescriptor = !!pr.securityDescriptor;
-      if (hasSecurityDescriptor) {
+      if (pr.securityDescriptor) {
+        prAttrs.securityDescriptor = pr.securityDescriptor;
         prParts.push(
-          `<protectedRange${attrs(prAttrs)}><securityDescriptor>${escapeXml(pr.securityDescriptor!)}</securityDescriptor></protectedRange>`,
+          `<protectedRange${attrs(prAttrs)}><securityDescriptor>${escapeXml(pr.securityDescriptor)}</securityDescriptor></protectedRange>`,
         );
       } else {
         prParts.push(selfCloseElement("protectedRange", attrs(prAttrs)));
@@ -577,43 +594,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (hfXml) p.push(hfXml);
   }
 
-  // Row breaks (after headerFooter per XSD sequence)
-  if (rowBreaks.length > 0) {
-    let manualCount = 0;
-    const brkParts = rowBreaks.map((b) => {
-      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
-      if (b.min !== undefined) bAttrs.min = b.min;
-      if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) {
-        bAttrs.man = 1;
-        manualCount++;
-      }
-      if (b.pivot) bAttrs.pt = 1;
-      return `<brk${attrs(bAttrs)}/>`;
-    });
-    p.push(
-      `<rowBreaks count="${rowBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</rowBreaks>`,
-    );
-  }
-
-  // Column breaks
-  if (colBreaks.length > 0) {
-    let manualCount = 0;
-    const brkParts = colBreaks.map((b) => {
-      const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
-      if (b.min !== undefined) bAttrs.min = b.min;
-      if (b.max !== undefined) bAttrs.max = b.max;
-      if (b.manual) {
-        bAttrs.man = 1;
-        manualCount++;
-      }
-      if (b.pivot) bAttrs.pt = 1;
-      return `<brk${attrs(bAttrs)}/>`;
-    });
-    p.push(
-      `<colBreaks count="${colBreaks.length}" manualBreakCount="${manualCount}">${brkParts.join("")}</colBreaks>`,
-    );
-  }
+  // Row breaks (after headerFooter per XSD sequence), then column breaks
+  if (rowBreaks.length > 0) p.push(breaksXml("rowBreaks", rowBreaks));
+  if (colBreaks.length > 0) p.push(breaksXml("colBreaks", colBreaks));
 
   // Custom properties (CT_CustomProperties, after colBreaks per XSD sequence)
   if (customProperties.length > 0) {
@@ -695,28 +678,31 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(`<legacyDrawingHF r:id="${escapeXml(opts.legacyDrawingHF)}"/>`);
   }
 
-  // Drawing in header/footer (after legacyDrawingHF per XSD sequence)
+  // Drawing in header/footer (after legacyDrawingHF per XSD sequence); attrs()
+  // drops undefined so unset position fields stay absent.
   if (opts.drawingHF) {
     const dhf = opts.drawingHF;
-    const dhfAttrs: Record<string, string | number | boolean | undefined> = { "r:id": dhf.rId };
-    if (dhf.lho !== undefined) dhfAttrs.lho = dhf.lho;
-    if (dhf.lhe !== undefined) dhfAttrs.lhe = dhf.lhe;
-    if (dhf.lhf !== undefined) dhfAttrs.lhf = dhf.lhf;
-    if (dhf.cho !== undefined) dhfAttrs.cho = dhf.cho;
-    if (dhf.che !== undefined) dhfAttrs.che = dhf.che;
-    if (dhf.chf !== undefined) dhfAttrs.chf = dhf.chf;
-    if (dhf.rho !== undefined) dhfAttrs.rho = dhf.rho;
-    if (dhf.rhe !== undefined) dhfAttrs.rhe = dhf.rhe;
-    if (dhf.rhf !== undefined) dhfAttrs.rhf = dhf.rhf;
-    if (dhf.lfo !== undefined) dhfAttrs.lfo = dhf.lfo;
-    if (dhf.lfe !== undefined) dhfAttrs.lfe = dhf.lfe;
-    if (dhf.lff !== undefined) dhfAttrs.lff = dhf.lff;
-    if (dhf.cfo !== undefined) dhfAttrs.cfo = dhf.cfo;
-    if (dhf.cfe !== undefined) dhfAttrs.cfe = dhf.cfe;
-    if (dhf.cff !== undefined) dhfAttrs.cff = dhf.cff;
-    if (dhf.rfo !== undefined) dhfAttrs.rfo = dhf.rfo;
-    if (dhf.rfe !== undefined) dhfAttrs.rfe = dhf.rfe;
-    if (dhf.rff !== undefined) dhfAttrs.rff = dhf.rff;
+    const dhfAttrs: Record<string, string | number | boolean | undefined> = {
+      "r:id": dhf.rId,
+      lho: dhf.lho,
+      lhe: dhf.lhe,
+      lhf: dhf.lhf,
+      cho: dhf.cho,
+      che: dhf.che,
+      chf: dhf.chf,
+      rho: dhf.rho,
+      rhe: dhf.rhe,
+      rhf: dhf.rhf,
+      lfo: dhf.lfo,
+      lfe: dhf.lfe,
+      lff: dhf.lff,
+      cfo: dhf.cfo,
+      cfe: dhf.cfe,
+      cff: dhf.cff,
+      rfo: dhf.rfo,
+      rfe: dhf.rfe,
+      rff: dhf.rff,
+    };
     p.push(selfCloseElement("drawingHF", attrs(dhfAttrs)));
   }
 

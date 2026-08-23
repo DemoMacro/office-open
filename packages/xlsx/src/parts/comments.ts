@@ -20,7 +20,7 @@ import { findChild, attr, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
-import { letterToColumn } from "../util/index";
+import { parseA1Cell } from "../util/index";
 import { buildRstXml, parseRPr, tElement } from "./shared-strings";
 import type {
   AnchorMarkerOptions,
@@ -346,9 +346,8 @@ function parseMarker(el: XmlElement): AnchorMarkerOptions {
 
 // VML anchors use 0-based column/row; cell refs are 1-based uppercase letters + digits.
 function cellRefToVmlCoords(ref: string): { col: number; row: number } {
-  let i = 0;
-  while (i < ref.length && ref.charCodeAt(i) >= 65 && ref.charCodeAt(i) <= 90) i++;
-  return { col: letterToColumn(ref.slice(0, i)) - 1, row: parseInt(ref.slice(i), 10) - 1 };
+  const cell = parseA1Cell(ref);
+  return { col: (cell?.col ?? 1) - 1, row: (cell?.row ?? 1) - 1 };
 }
 
 /** Parse rich text element into a plain string or rich runs. */

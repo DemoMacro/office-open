@@ -71,7 +71,7 @@ import {
 } from "@parts/worksheet";
 import type { RowOptions, WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
-import { columnToLetter, letterToColumn } from "@util/index";
+import { columnToLetter, parseA1Cell } from "@util/index";
 
 import { XlsxWriteContext } from "./context";
 
@@ -438,7 +438,7 @@ export function compileWorkbook(
   }
 
   mapping["Workbook"] = {
-    data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${wbXml}`,
+    data: XML_DECL + wbXml,
     path: "xl/workbook.xml",
   };
 
@@ -451,7 +451,7 @@ export function compileWorkbook(
     );
     const ssXml = sharedStringsDesc.stringify(ctx.sharedStrings.toDescriptorOptions(), ctx);
     mapping["SharedStrings"] = {
-      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${ssXml}`,
+      data: XML_DECL + ssXml,
       path: "xl/sharedStrings.xml",
     };
   }
@@ -459,7 +459,7 @@ export function compileWorkbook(
   // Styles (via descriptor — delegates to Styles.toXml internally)
   const stylesXml = stylesDesc.stringify({ styles: ctx.styles }, ctx);
   mapping["Styles"] = {
-    data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${stylesXml}`,
+    data: XML_DECL + stylesXml,
     path: "xl/styles.xml",
   };
 
@@ -884,7 +884,7 @@ function compileWorksheetPart(
     resolvedDrawingXml = bindMediaPlaceholders(resolvedDrawingXml, ctx.media, drawingRels);
     const drawingIdx = i + 1;
     mapping[`Drawing${i}`] = {
-      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${resolvedDrawingXml}`,
+      data: XML_DECL + resolvedDrawingXml,
       path: `xl/drawings/drawing${drawingIdx}.xml`,
     };
 
@@ -917,14 +917,14 @@ function compileWorksheetPart(
     // Comments XML (via descriptor)
     const commentsXml = commentsDesc.stringify({ comments: commentOpts }, ctx);
     mapping[`Comments${i}`] = {
-      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentsXml}`,
+      data: XML_DECL + commentsXml,
       path: `xl/comments${commentsIdx}.xml`,
     };
 
     // VML drawing (via descriptor)
     const vmlXml = vmlNotesDesc.stringify({ comments: commentOpts }, ctx);
     mapping[`VmlDrawing${i}`] = {
-      data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${vmlXml}`,
+      data: XML_DECL + vmlXml,
       path: `xl/drawings/vmlDrawing${commentsIdx}.vml`,
     };
 
@@ -1049,7 +1049,7 @@ function compileWorksheetPart(
         );
 
         const cacheDefXml =
-          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+          XML_DECL +
           pivotCacheDefDesc.stringify(
             {
               sourceRef: pt.source.split(":")[0] ? pt.source : "A1",
@@ -1070,9 +1070,7 @@ function compileWorksheetPart(
         };
 
         // Generate pivotCacheRecords
-        const cacheRecordsXml =
-          '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-          pivotCacheRecordsDesc.stringify({ sourceData }, ctx);
+        const cacheRecordsXml = XML_DECL + pivotCacheRecordsDesc.stringify({ sourceData }, ctx);
         mapping[`PivotCacheRecords${cacheIdx}`] = {
           data: cacheRecordsXml,
           path: `xl/pivotCache/pivotCacheRecords${cacheIdx}.xml`,
@@ -1130,9 +1128,7 @@ function compileWorksheetPart(
       if (!tbl.columns?.length) continue;
 
       // Generate table XML
-      const tableXmlStr =
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-        tableDesc.stringify({ ...tbl, id: tbl.id ?? tableIdx }, ctx);
+      const tableXmlStr = XML_DECL + tableDesc.stringify({ ...tbl, id: tbl.id ?? tableIdx }, ctx);
       mapping[`Table${tableIdx}`] = {
         data: tableXmlStr,
         path: `xl/tables/table${tableIdx}.xml`,
@@ -1518,16 +1514,16 @@ function hasMetadataContent(metadata: MetadataOptions): boolean {
 
 function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSourceData {
   const parts = sourceRef.split(":");
-  const startMatch = parts[0]?.match(/^([A-Z]+)(\d+)$/);
-  const endMatch = parts[1]?.match(/^([A-Z]+)(\d+)$/);
-  if (!startMatch) {
+  const start = parseA1Cell(parts[0] ?? "");
+  if (!start) {
     return { fieldNames: [], records: [] };
   }
+  const end = parts[1] !== undefined ? parseA1Cell(parts[1]) : undefined;
 
-  const startRow = parseInt(startMatch[2] ?? "1", 10) - 1;
-  const endRow = endMatch ? parseInt(endMatch[2] ?? "1", 10) - 1 : startRow;
-  const startCol = letterToColumn(startMatch[1] ?? "A") - 1;
-  const endCol = endMatch ? letterToColumn(endMatch[1] ?? "A") - 1 : startCol;
+  const startRow = start.row - 1;
+  const endRow = (end?.row ?? start.row) - 1;
+  const startCol = start.col - 1;
+  const endCol = (end?.col ?? start.col) - 1;
   const colCount = endCol - startCol + 1;
 
   // First row is headers
@@ -1593,11 +1589,11 @@ function renderPivotSheetData(
 
   for (const pt of pivotOpts) {
     const location = pt.location ?? "A3";
-    const locMatch = location.match(/^([A-Z]+)(\d+)$/);
-    if (!locMatch) continue;
+    const loc = parseA1Cell(location);
+    if (!loc) continue;
 
-    const startCol = letterToColumn(locMatch[1] ?? "A") - 1;
-    const startRow = parseInt(locMatch[2] ?? "1", 10);
+    const startCol = loc.col - 1;
+    const startRow = loc.row;
     const rowFieldNames = pt.rows;
     const dataFields = pt.data;
 

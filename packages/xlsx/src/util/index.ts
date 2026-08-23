@@ -31,6 +31,17 @@ export function letterToColumn(letters: string): number {
   return col;
 }
 
+const A1_CELL = /^([A-Z]+)(\d+)$/;
+
+/**
+ * Parse a single A1 cell reference ("B12") into 1-based column/row numbers.
+ * Returns undefined when the reference is not letters-then-digits.
+ */
+export function parseA1Cell(ref: string): { col: number; row: number } | undefined {
+  const m = ref.match(A1_CELL);
+  return m ? { col: letterToColumn(m[1]!), row: parseInt(m[2]!, 10) } : undefined;
+}
+
 /**
  * Convert a JavaScript Date to an Excel serial number.
  * Excel epoch: January 1, 1900 = 1 (with the 1900 leap year bug).

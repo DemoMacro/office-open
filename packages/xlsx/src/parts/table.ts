@@ -19,7 +19,7 @@ import {
   stringifyElement,
 } from "@office-open/xml";
 
-import { letterToColumn } from "../util/index";
+import { parseA1Cell } from "../util/index";
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
 import type { AutoFilterOptions } from "./worksheet";
 
@@ -29,10 +29,18 @@ import type { AutoFilterOptions } from "./worksheet";
 // the XSD validates.
 function tableRefWidth(ref: string): number | undefined {
   const sep = ref.indexOf(":");
-  const first = (sep === -1 ? ref : ref.slice(0, sep)).trim();
-  const last = sep === -1 ? first : ref.slice(sep + 1).trim();
-  const toCol = (cell: string) => letterToColumn(cell.replace(/[^A-Za-z]/g, "").toUpperCase());
-  const width = toCol(last) - toCol(first) + 1;
+  const first = (sep === -1 ? ref : ref.slice(0, sep)).trim().toUpperCase();
+  const last =
+    sep === -1
+      ? first
+      : ref
+          .slice(sep + 1)
+          .trim()
+          .toUpperCase();
+  const startCol = parseA1Cell(first)?.col;
+  const endCol = parseA1Cell(last)?.col;
+  if (startCol === undefined || endCol === undefined) return undefined;
+  const width = endCol - startCol + 1;
   return width >= 1 ? width : undefined;
 }
 

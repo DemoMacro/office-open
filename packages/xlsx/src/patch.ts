@@ -495,10 +495,7 @@ function rebuildSharedStrings(xmlMap: Map<string, Element>): SharedStrings {
 /** Re-serialize the shared-strings part (called after worksheets are built). */
 function rewriteSharedStrings(xmlMap: Map<string, Element>, ss: SharedStrings): void {
   if (ss.count === 0) return;
-  xmlMap.set(
-    "xl/sharedStrings.xml",
-    toJson(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${ss.serialize()}`),
-  );
+  xmlMap.set("xl/sharedStrings.xml", toJson(OOXML_XML_DECLARATION + ss.serialize()));
 }
 
 /**
@@ -784,14 +781,11 @@ function appendCommentsToMap(
 
   const commentsXml = commentsDesc.stringify({ comments: merged }, STUB_WRITE_CTX);
   if (commentsXml) {
-    xmlMap.set(
-      commentsPath,
-      toJson(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${commentsXml}`),
-    );
+    xmlMap.set(commentsPath, toJson(OOXML_XML_DECLARATION + commentsXml));
   }
   const vmlXml = vmlNotesDesc.stringify({ comments: merged }, STUB_WRITE_CTX);
   if (vmlXml) {
-    vmlFiles.set(vmlPath, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>${vmlXml}`);
+    vmlFiles.set(vmlPath, OOXML_XML_DECLARATION + vmlXml);
   }
 
   // Worksheet relationships — added only when the part is newly introduced.

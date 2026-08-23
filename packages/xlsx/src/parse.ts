@@ -101,12 +101,14 @@ export interface XlsxDocument {
   customProps?: string;
 }
 
+const LEADING_PATH_NUMBER = /(\d+)/;
+
 function sortByNumber(paths: string[]): string[] {
-  return paths.sort((a, b) => {
-    const numA = parseInt(a.match(/(\d+)/)?.[1] ?? "0", 10);
-    const numB = parseInt(b.match(/(\d+)/)?.[1] ?? "0", 10);
-    return numA - numB;
-  });
+  // Decorate-sort: extract each path's number once instead of per comparison.
+  return paths
+    .map((p) => ({ p, n: parseInt(p.match(LEADING_PATH_NUMBER)?.[1] ?? "0", 10) }))
+    .sort((a, b) => a.n - b.n)
+    .map(({ p }) => p);
 }
 
 /**

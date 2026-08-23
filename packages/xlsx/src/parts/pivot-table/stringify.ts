@@ -6,7 +6,7 @@
 
 import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml } from "@office-open/xml";
-import { columnToLetter, letterToColumn } from "@util/index";
+import { columnToLetter, parseA1Cell } from "@util/index";
 
 import { collectUniqueValues } from "../pivot/pivot-utils";
 import type {
@@ -483,10 +483,8 @@ function computeLocationRef(
   dataFields: PivotDataField[],
 ): string {
   const startCell = location.split(":")[0] ?? location;
-  const match = startCell.match(/^([A-Z]+)(\d+)$/);
-  if (!match) return location;
-  const startCol = match[1] ?? "";
-  const startRow = parseInt(match[2] ?? "0", 10);
+  const start = parseA1Cell(startCell);
+  if (!start) return location;
 
   let rowCount = 1;
   const rowFieldIndex0 = rowFieldIndices[0];
@@ -504,9 +502,9 @@ function computeLocationRef(
   }
   colCount += 1;
 
-  const endCol = columnToLetter(letterToColumn(startCol) + colCount - 1);
-  const endRow = startRow + rowCount - 1;
-  return `${startCol}${startRow}:${endCol}${endRow}`;
+  const endCol = columnToLetter(start.col + colCount - 1);
+  const endRow = start.row + rowCount - 1;
+  return `${startCell}:${endCol}${endRow}`;
 }
 
 function buildPivotHierarchies(hierarchies: PivotHierarchyOptions[]): string {
