@@ -131,11 +131,12 @@ export default defineEventHandler(async (event) => {
   const isExternalUrl = mcpServer.startsWith("http://") || mcpServer.startsWith("https://");
   const appBaseURL = config.app?.baseURL?.replace(/\/$/, "") || "";
 
+  // Local MCP server: route through event.fetch (nitro's local dispatcher) —
+  // no network round-trip, and no port assumption (the dev server does not
+  // have to sit on :3000; external URLs fetch directly).
   let transport: Parameters<typeof createMCPClient>[0]["transport"];
   if (isExternalUrl) {
     transport = { type: "http", url: mcpServer };
-  } else if (import.meta.dev) {
-    transport = { type: "http", url: `http://localhost:3000${appBaseURL}${mcpServer}` };
   } else {
     transport = {
       type: "http",
