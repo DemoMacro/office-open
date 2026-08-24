@@ -165,11 +165,12 @@ Then follow the workflow: code to the project standards, run `pnpm build && pnpm
 ## Support & Community
 
 - [Documentation](https://www.office-open.com) — guides, API reference, and AI integration docs
-- [Report Issues](https://github.com/DemoMacro/office-open/issues)
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](./LICENSE) file for details.
 
 ---
 

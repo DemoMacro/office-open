@@ -71,6 +71,14 @@ const buffer = await generatePresentation({
 writeFileSync("presentation.pptx", buffer);
 ```
 
+## API
+
+- `generatePresentation(options)` — generate a `.pptx` file; `generatePresentationSync` and `generatePresentationStream` cover sync and streaming output
+- `parsePresentation(bytes)` — read a `.pptx` back into `PresentationOptions`
+- `patchPresentation(input)` — patch an existing `.pptx` template by placeholder replacement
+
+Every input is a plain JSON object (`PresentationOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/pptx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice pptx PresentationOptions`.
+
 ## Parsing
 
 Read existing `.pptx` files and re-create them as `PresentationOptions`:
@@ -140,8 +148,22 @@ generatePresentationStream(options);
 
 ## Examples
 
-Check the [demo folder](./demo) for working examples covering every feature.
+Check the [demo folder](https://github.com/DemoMacro/office-open/tree/main/packages/pptx/demo) for working examples covering every feature.
+
+## Documentation
+
+- [Documentation](https://www.office-open.com/en/pptx/) — guides, API reference, and examples
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
+- [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
+- [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
+- [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
 
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

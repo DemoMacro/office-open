@@ -85,10 +85,25 @@ gen(); // → 1, 2, 3, ...
 | `@office-open/core/util`       | Validators, converters, ID generators, mappings, crypto, base64           |
 | `@office-open/core/chart`      | Chart types, series data, chart collection, title                         |
 | `@office-open/core/smartart`   | SmartArt data model, tree-to-model, definitions                           |
-| `@office-open/core/drawingml`  | DrawingML fills, outlines, effects, geometry, text body                   |
+| `@office-open/core/drawing`    | DrawingML fills, outlines, effects, geometry, text body                   |
+| `@office-open/core/vector`     | Structured VML vocabulary (shapes, strokes, legacy anchors)               |
 | `@office-open/core/patch`      | Template patching utilities (replacer, traverser, token replacer)         |
 | `@office-open/core/theme`      | Theme definitions and color schemes                                       |
 
+## Documentation
+
+- [Documentation](https://www.office-open.com/en/core/) — guides, API reference, and examples
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
+- [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
+- [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
+- [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
+
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

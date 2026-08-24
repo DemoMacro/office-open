@@ -9,7 +9,7 @@
 ## Features
 
 - **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`; no Microsoft Office required
-- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, ready for AI agents and chatbots
+- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, with schema-validated retries
 - **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
 - **Generate Function** — Type-agnostic `generate()` for dynamic document creation
@@ -58,7 +58,7 @@ npx office-open docx document.json "output.docx"
 npx office-open pptx slides.json "output.pptx"
 npx office-open xlsx spreadsheet.json "output.xlsx"
 
-# Consult the JSON schemas (for AI agents and humans)
+# Inspect the option schemas on demand
 npx office-open schema index docx                        # indexed lookup entries by domain
 npx office-open schema index docx --all                   # every definition name
 npx office-open schema slice docx ParagraphOptions RunOptions   # sub-schema for those types
@@ -155,6 +155,21 @@ import { parse, stringify } from "office-open/xml";
 }
 ```
 
+## Documentation
+
+- [Documentation](https://www.office-open.com) — getting started, per-format guides, and AI integration
+- [AI Integration Guide](https://www.office-open.com/en/getting-started/ai-integration) — MCP server, Agent Skill, and schema slicing
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
+- [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
+- [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
+- [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
+
 ## License
 
-MIT
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

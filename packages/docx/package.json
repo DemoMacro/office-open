@@ -1,6 +1,6 @@
 {
   "name": "@office-open/docx",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "AI-native Word (.docx) generation, parsing, and patching from plain JSON — fully typed TypeScript, 100% OOXML coverage, no Microsoft Office required",
   "keywords": [
     "ai",
@@ -33,7 +33,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DemoMacro/office-open.git"
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/docx"
   },
   "files": [
     "dist"

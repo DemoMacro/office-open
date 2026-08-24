@@ -1,6 +1,6 @@
 {
   "name": "@office-open/pptx",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "description": "AI-native PowerPoint (.pptx) generation, parsing, and patching from plain JSON — fully typed TypeScript, 100% OOXML coverage, no Microsoft Office required",
   "keywords": [
     "ai",
@@ -8,6 +8,7 @@
     "generate",
     "json",
     "llm",
+    "microsoft-powerpoint",
     "office",
     "office-open",
     "ooxml",
@@ -33,7 +34,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DemoMacro/office-open.git"
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/pptx"
   },
   "files": [
     "dist"

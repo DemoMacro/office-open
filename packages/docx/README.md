@@ -71,9 +71,32 @@ const buffer = await generateDocument({
 writeFileSync("My Document.docx", buffer);
 ```
 
+## API
+
+- `generateDocument(options)` — generate a `.docx` file; `generateDocumentSync` and `generateDocumentStream` cover sync and streaming output
+- `parseDocument(bytes)` — read a `.docx` back into `DocumentOptions`
+- `patchDocument(input)` — patch an existing `.docx` template by placeholder replacement
+
+Every input is a plain JSON object (`DocumentOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/docx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice docx DocumentOptions`.
+
+## Parsing
+
+Read existing `.docx` files and re-create them as `DocumentOptions`:
+
+```typescript
+import { parseDocument, generateDocument } from "@office-open/docx";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const opts = parseDocument(new Uint8Array(readFileSync("input.docx")));
+
+// Modify parsed data, then re-generate
+const buffer = await generateDocument(opts);
+writeFileSync("output.docx", buffer);
+```
+
 ## Examples
 
-Check the [demo folder](./demo) for 100+ working examples covering every feature.
+Check the [demo folder](https://github.com/DemoMacro/office-open/tree/main/packages/docx/demo) for 100+ working examples covering every feature.
 
 ## Benchmark
 
@@ -125,6 +148,20 @@ generateDocumentStream(options);
 
 **Stream** = `generateDocumentStream` (default compression, fully drained). Under Node the archive is deflated in parallel on the libuv thread pool; under Bun and browsers it deflates inline / off-thread via fflate.
 
+## Documentation
+
+- [Documentation](https://www.office-open.com/en/docx/) — guides, API reference, and examples
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
+- [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
+- [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
+- [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
+
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

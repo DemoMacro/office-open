@@ -63,9 +63,32 @@ const buffer = await generateWorkbook({
 writeFileSync("workbook.xlsx", buffer);
 ```
 
+## API
+
+- `generateWorkbook(options)` — generate a `.xlsx` file; `generateWorkbookSync` and `generateWorkbookStream` cover sync and streaming output
+- `parseWorkbook(bytes)` — read a `.xlsx` back into `WorkbookOptions`
+- `patchWorkbook(input)` — patch an existing `.xlsx` template by placeholder replacement
+
+Every input is a plain JSON object (`WorkbookOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/xlsx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice xlsx WorkbookOptions`.
+
+## Parsing
+
+Read existing `.xlsx` files and re-create them as `WorkbookOptions`:
+
+```typescript
+import { parseWorkbook, generateWorkbook } from "@office-open/xlsx";
+import { readFileSync, writeFileSync } from "node:fs";
+
+const opts = parseWorkbook(new Uint8Array(readFileSync("input.xlsx")));
+
+// Modify parsed data, then re-generate
+const buffer = await generateWorkbook(opts);
+writeFileSync("output.xlsx", buffer);
+```
+
 ## Examples
 
-Check the [demo folder](./demo) for working examples covering every feature.
+Check the [demo folder](https://github.com/DemoMacro/office-open/tree/main/packages/xlsx/demo) for working examples covering every feature.
 
 ## Benchmark
 
@@ -113,6 +136,20 @@ generateWorkbookStream(options);
 
 **Stream** = `generateWorkbookStream` (default compression, fully drained). Plain-data workbooks stream through a constant-memory path — at 1M rows × 3 cols, peak RSS is +177 MB streamed vs +810 MB buffered. Scenarios with images fall back to the full-memory stream.
 
+## Documentation
+
+- [Documentation](https://www.office-open.com/en/xlsx/) — guides, API reference, and examples
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
+- [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
+- [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
+- [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
+- [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
+
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)

@@ -98,6 +98,20 @@ txml skips entity encoding by default (`encodeEntities: false`), which emits inv
 | complex OOXML  | Node 24 | 583,811 ops/s    | 447,274 ops/s   | 1,326,397 ops/s | 130,335 ops/s | 172,258 ops/s | —                 |
 |                | Bun 1.4 | 510,448 ops/s    | 528,375 ops/s   | 2,303,173 ops/s | 226,645 ops/s | 292,534 ops/s | 251,444 ops/s     |
 
+## Documentation
+
+- [Documentation](https://www.office-open.com/en/xml/) — guides, API reference, and examples
+- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
+- [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Related Packages
+
+- [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
+- [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
+- [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
+- [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
+
 ## License
 
-- [MIT](LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
+- [MIT](https://github.com/DemoMacro/office-open/blob/main/LICENSE) &copy; [Demo Macro](https://www.demomacro.com/)
