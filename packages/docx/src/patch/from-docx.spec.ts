@@ -9,6 +9,8 @@ vi.mock("fflate", () => ({
       (_data: unknown, _opts: unknown, cb: (err: null, data: Uint8Array) => void) =>
         cb(null, new Uint8Array(0)),
     ),
+  // zip-native.ts extends this at module scope; a bare class keeps the mock loadable.
+  ZipPassThrough: class {},
 }));
 
 import { unzipSync } from "@office-open/core";

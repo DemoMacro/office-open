@@ -86,22 +86,22 @@ generateWorkbookStream(options);
 
 | Scenario         | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | hucre       |
 | ---------------- | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ----------- |
-| Simple (3 rows)  | Node 24 | 1,992 ops/s  | 1,821 ops/s   | 16,644 ops/s   | 18,069 ops/s    | 21.9 ops/s     | 826 ops/s   |
+| Simple (3 rows)  | Node 24 | 1,992 ops/s  | 1,821 ops/s   | 16,644 ops/s   | 18,069 ops/s    | 781 ops/s      | 826 ops/s   |
 |                  | Bun 1.4 | 9,862 ops/s  | 993 ops/s     | 32,644 ops/s   | 31,071 ops/s    | 1,005 ops/s    | 1,128 ops/s |
-| Styled rows (20) | Node 24 | 1,819 ops/s  | 1,859 ops/s   | 16,499 ops/s   | 13,662 ops/s    | 21.6 ops/s     | 842 ops/s   |
+| Styled rows (20) | Node 24 | 1,819 ops/s  | 1,859 ops/s   | 16,499 ops/s   | 13,662 ops/s    | 834 ops/s      | 842 ops/s   |
 |                  | Bun 1.4 | 9,072 ops/s  | 916 ops/s     | 23,892 ops/s   | 22,729 ops/s    | 1,092 ops/s    | 835 ops/s   |
-| Table (10x5)     | Node 24 | 1,812 ops/s  | 2,084 ops/s   | 16,471 ops/s   | 13,092 ops/s    | 21.4 ops/s     | 766 ops/s   |
+| Table (10x5)     | Node 24 | 1,812 ops/s  | 2,084 ops/s   | 16,471 ops/s   | 13,092 ops/s    | 842 ops/s      | 766 ops/s   |
 |                  | Bun 1.4 | 8,891 ops/s  | 935 ops/s     | 23,550 ops/s   | 21,559 ops/s    | 1,164 ops/s    | 806 ops/s   |
 
 **Large Files — Create + toBuffer / toStream**
 
 | Scenario                      | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | hucre      |
 | ----------------------------- | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ---------- |
-| 2000 rows + 10 images         | Node 24 | 117 ops/s    | 116 ops/s     | 142 ops/s      | 139 ops/s       | 11.8 ops/s     | 41.4 ops/s |
+| 2000 rows + 10 images         | Node 24 | 117 ops/s    | 116 ops/s     | 142 ops/s      | 139 ops/s       | 125 ops/s      | 41.4 ops/s |
 |                               | Bun 1.4 | 213 ops/s    | 192 ops/s     | 260 ops/s      | 243 ops/s       | 50.1 ops/s     | 44.0 ops/s |
-| 200x10 table                  | Node 24 | 838 ops/s    | 985 ops/s     | 1,374 ops/s    | 1,129 ops/s     | 21.3 ops/s     | 263 ops/s  |
+| 200x10 table                  | Node 24 | 838 ops/s    | 985 ops/s     | 1,374 ops/s    | 1,129 ops/s     | 470 ops/s      | 263 ops/s  |
 |                               | Bun 1.4 | 1,157 ops/s  | 609 ops/s     | 1,636 ops/s    | 1,549 ops/s     | 373 ops/s      | 270 ops/s  |
-| 20 sheets × 100 rows + 20 img | Node 24 | 73.3 ops/s   | 70.0 ops/s    | 97.5 ops/s     | 97.1 ops/s      | 2.22 ops/s     | 23.5 ops/s |
+| 20 sheets × 100 rows + 20 img | Node 24 | 73.3 ops/s   | 70.0 ops/s    | 97.5 ops/s     | 97.1 ops/s      | 72.7 ops/s     | 23.5 ops/s |
 |                               | Bun 1.4 | 158 ops/s    | 74.0 ops/s    | 160 ops/s      | 166 ops/s       | 28.2 ops/s     | 24.3 ops/s |
 
 **Large Data — 100,000 rows × 20 columns (2M cells)**

@@ -13,7 +13,10 @@
  * @module
  */
 
-import type { Zippable, ZipOptions } from "fflate";
+import type * as ZlibNode from "node:zlib";
+
+import { ZipPassThrough } from "fflate";
+import type { FlateError, Zippable, ZipOptions } from "fflate";
 
 // ── CRC-32 lookup table ──
 
@@ -45,6 +48,7 @@ let _nativeDeflate: DeflateFn | undefined;
 let _nativeDeflateAsync: AsyncDeflateFn | undefined;
 let _nativeInflate: InflateFn | undefined;
 let _nativeCrc32: Crc32Fn | undefined;
+let _zlibModule: typeof ZlibNode | undefined;
 
 // Bun-specific fast path: Bun.deflateSync/Bun.inflateSync emit/accept RAW
 // deflate (bit-identical to deflateRawSync output) but skip the node:zlib
@@ -78,6 +82,7 @@ try {
   // rejects (or yields a stub without it) on incomplete polyfills.
   const zlib = await import("node:zlib");
   if (typeof zlib.deflateRawSync !== "function") throw new Error("no native deflate");
+  _zlibModule = zlib;
   if (_nativeDeflate === undefined) {
     _nativeDeflate = (data: Uint8Array, level: number): Uint8Array =>
       zlib.deflateRawSync(data, { level });
@@ -105,18 +110,26 @@ export const hasNativeDeflate = (): boolean => _nativeDeflate !== undefined;
 export const hasNativeInflate = (): boolean => _nativeInflate !== undefined;
 
 // fflate's async zip entries hand every chunk to a dedicated worker via
-// postMessage with a transfer list. On Bun that worker pool hurts: teardown
-// lags creation, so back-to-back stream generations accumulate cost (measured
-// 0.4s → 4.4s per drain on a 130-part deck) and embedded pools crash outright
-// (vitest bench: "Worker exited unexpectedly"). Main-thread deflate is the
-// better trade there; Node keeps the worker path for its parallel libuv pool.
-const _prefersMainThreadDeflate = typeof bunApi?.deflateSync === "function";
+// postMessage with a transfer list — one thread spawn per part (~5-10ms each
+// on Node's worker_threads), which dominates the many-small-parts OPC shape.
+// Bun additionally measured worker teardown lag on back-to-back generations
+// (0.4s → 4.4s per drain on a 130-part deck) and embedded-pool crashes.
+// Where a native zlib resolved (Node/Bun), deflate inline on the main thread;
+// only browsers/Deno keep the workers, where spawn is cheap and off-thread
+// deflate keeps the UI responsive.
+/**
+ * True when incremental DEFLATE should run on the main thread instead of
+ * fflate's per-entry workers (Node/Bun). See {@link ZipStreamWriter} in
+ * packer.ts.
+ */
+export const prefersMainThreadDeflate = (): boolean => _nativeDeflate !== undefined;
 
 /**
- * True when DEFLATE work should run on the main thread instead of fflate's
- * per-entry workers (Bun). See {@link createZipStream} in packer.ts.
+ * True under Bun. Used to keep Bun off `nativeZipAsync`-backed paths: its
+ * node:zlib compat layer schedules async calls poorly (bench: async ~1/3 of
+ * its sync throughput), so fflate main-thread deflate is the better trade.
  */
-export const prefersMainThreadDeflate = (): boolean => _prefersMainThreadDeflate;
+export const isBunRuntime = (): boolean => typeof bunApi?.deflateSync === "function";
 
 /**
  * Synchronous native CRC-32 (`zlib.crc32`, Node/Bun only) — undefined where no
@@ -327,6 +340,35 @@ export async function nativeZipAsync(files: Zippable, level: number = 6): Promis
   return writeZipBuffer(entries);
 }
 
+// Fixed-size chunks fed to the ReadableStream — large enough to amortize the
+// per-enqueue cost, small enough to keep an interactive consumer's first read.
+const STREAM_CHUNK_SIZE = 1 << 16;
+
+/**
+ * Streaming counterpart of {@link nativeZipAsync}: compresses on the libuv
+ * thread pool, then emits the finished archive through a `ReadableStream` in
+ * fixed-size chunks. Node only — Bun and browsers keep fflate's incremental
+ * path (see {@link prefersMainThreadDeflate}). The memory shape matches the
+ * fflate stream (entries are fully resident post-compile either way); the win
+ * is dropping fflate's per-entry worker spawn, which costs milliseconds per
+ * part on Node's worker_threads and dominates small-package streams.
+ */
+export function nativeZipStream(files: Zippable, level: number = 6): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        const buf = await nativeZipAsync(files, level);
+        for (let o = 0; o < buf.length; o += STREAM_CHUNK_SIZE) {
+          controller.enqueue(buf.subarray(o, Math.min(o + STREAM_CHUNK_SIZE, buf.length)));
+        }
+        controller.close();
+      } catch (err) {
+        controller.error(err instanceof Error ? err : new Error(String(err)));
+      }
+    },
+  });
+}
+
 // ── LE read helpers (ZIP parsing) ──
 
 function rU16(b: Uint8Array, o: number): number {
@@ -413,4 +455,56 @@ export function nativeUnzip(buf: Uint8Array): Record<string, Uint8Array> {
     out[e.name] = dec;
   }
   return out;
+}
+
+// ── Native streaming DEFLATE entry ──
+
+/**
+ * Streaming DEFLATE ZIP entry backed by `zlib.createDeflateRaw` instead of
+ * fflate's JS engine or per-entry worker — Node only (constructor throws when
+ * no native zlib resolved; callers pick the fflate entries elsewhere).
+ *
+ * Implements fflate's Zip entry contract by subclassing `ZipPassThrough` and
+ * overriding `process` — fflate's documented subclassing point — to feed a
+ * libuv-pool deflate stream: zero thread spawn (AsyncZipDeflate costs ~5-10ms
+ * per part on worker_threads, dominating the many-small-parts OPC shape) while
+ * compression still runs off the main thread, so chunked generation overlaps
+ * with deflate. `compression`/`flag` mirror what ZipDeflate sets (flag = the
+ * same deflate-level hint bits fflate computes), which Zip reads for the
+ * local header.
+ */
+export class NativeZipDeflate extends ZipPassThrough {
+  /** General-purpose flag bits, mirroring ZipDeflate's level hint. */
+  readonly flag: 0 | 1 | 2 | 3;
+  private readonly z: ZlibNode.DeflateRaw;
+
+  constructor(filename: string, opts?: { level?: ZipOptions["level"] }) {
+    super(filename);
+    if (_zlibModule === undefined) throw new Error("Native deflate not available");
+    const level = opts?.level;
+    this.flag = level === 1 ? 3 : level !== undefined && level < 6 ? 2 : level === 9 ? 1 : 0;
+    this.compression = 8;
+    this.z = _zlibModule.createDeflateRaw({ level });
+    // 'data' arrives on the microtask queue after each libuv-pool flush; Zip
+    // buffers entry output until its own ordering pass, so async ondata is
+    // contract-legal (AsyncZipDeflate delivers the same way). 'end' fires
+    // after the final 'data', closing the entry with an empty final chunk.
+    // zlib chunks are never shared-memory buffers; the cast only widens the
+    // declared ArrayBufferLike to fflate's ArrayBuffer parameter type.
+    this.z.on("data", (dat: Uint8Array) =>
+      this.ondata(null, dat as Uint8Array<ArrayBuffer>, false),
+    );
+    this.z.on("error", (err: Error) => this.ondata(err as FlateError, new Uint8Array(0), true));
+    this.z.on("end", () => this.ondata(null, new Uint8Array(0), true));
+  }
+
+  /** Feed a source chunk; `final` ends the deflate stream. */
+  protected process(chunk: Uint8Array<ArrayBuffer>, final: boolean): void {
+    // write() backpressure is ignored on purpose: the producer is a
+    // synchronous serialize loop, and zlib's internal buffer is bounded by
+    // how fast the pool drains — the same regime the worker path had.
+    this.z.write(chunk);
+    if (final) this.z.end();
+    else this.z.flush(); // Z_SYNC_FLUSH — emit each chunk's bytes promptly
+  }
 }

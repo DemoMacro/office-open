@@ -20,8 +20,11 @@ import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
 import {
   hasNativeDeflate,
+  isBunRuntime,
+  NativeZipDeflate,
   nativeZip,
   nativeZipAsync,
+  nativeZipStream,
   prefersMainThreadDeflate,
 } from "./zip-native";
 
@@ -163,9 +166,18 @@ export const createZipStream = (
   files: Zippable,
   defaultLevel: number = ZIP_DEFLATE_LEVEL,
 ): ReadableStream<Uint8Array> => {
-  // Bun's worker teardown lags creation, so per-entry workers accumulate cost
-  // across back-to-back generations — see prefersMainThreadDeflate(). Node
-  // keeps AsyncZipDeflate for its parallel libuv thread pool.
+  // Node's native zlib compresses the entries in parallel on the libuv pool —
+  // vastly faster than fflate's per-entry workers, whose spawn cost dominates
+  // small packages (~20 vs ~2700 ops/s on a 12-part stream, measured). Bun
+  // stays on fflate main-thread deflate (see isBunRuntime), browsers/Deno on
+  // the worker paths below.
+  if (hasNativeDeflate() && !isBunRuntime()) {
+    return nativeZipStream(files, defaultLevel);
+  }
+  // Remaining runtimes: Bun deflates on the main thread (its worker teardown
+  // lags creation, accumulating cost across back-to-back generations — see
+  // prefersMainThreadDeflate); browsers/Deno keep AsyncZipDeflate, where web
+  // workers are cheap to spawn and deflate off the main thread for real.
   const mainThread = prefersMainThreadDeflate();
   return new ReadableStream<Uint8Array>({
     start(controller) {
@@ -238,7 +250,11 @@ export interface ZipPartSink {
  */
 export class ZipStreamWriter {
   private readonly zip: Zip;
-  private current: AsyncZipDeflate | ZipDeflate | ZipPassThrough | undefined;
+  private current: AsyncZipDeflate | NativeZipDeflate | ZipDeflate | ZipPassThrough | undefined;
+  // Node streams each part through a native zlib DeflateRaw on the libuv pool
+  // (no spawn, compression overlaps with chunk production). Bun deflates on
+  // the main thread; browsers/Deno use fflate's per-entry workers.
+  private readonly nativeEntry = hasNativeDeflate() && !isBunRuntime();
   private readonly mainThread = prefersMainThreadDeflate();
 
   constructor(
@@ -251,10 +267,12 @@ export class ZipStreamWriter {
   /** Add a part and return its incremental sink. `end()` the previous first. */
   addPart(name: string, level: number = this.defaultLevel): ZipPartSink {
     if (this.current) throw new Error(`ZipStreamWriter: previous part not finalized`);
-    const workerPath = level !== ZIP_STORED_LEVEL && !this.mainThread;
-    const entry =
-      level === ZIP_STORED_LEVEL
-        ? new ZipPassThrough(name)
+    const deflatePath = level !== ZIP_STORED_LEVEL;
+    const workerPath = deflatePath && !this.mainThread;
+    const entry = !deflatePath
+      ? new ZipPassThrough(name)
+      : this.nativeEntry
+        ? new NativeZipDeflate(name, { level: level as ZipOptions["level"] })
         : workerPath
           ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
           : new ZipDeflate(name, { level: level as ZipOptions["level"] });

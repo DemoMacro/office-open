@@ -94,24 +94,24 @@ generateDocumentStream(options);
 
 | Scenario                       | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | docx       |
 | ------------------------------ | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ---------- |
-| Simple (2p + 1 img)            | Node 24 | 905 ops/s    | 1,311 ops/s   | 2,478 ops/s    | 2,985 ops/s     | 10.1 ops/s     | 91.2 ops/s |
+| Simple (2p + 1 img)            | Node 24 | 905 ops/s    | 1,311 ops/s   | 2,478 ops/s    | 2,985 ops/s     | 1,477 ops/s    | 91.2 ops/s |
 |                                | Bun 1.4 | 2,471 ops/s  | 758 ops/s     | 5,323 ops/s    | 5,246 ops/s     | 384 ops/s      | 63.7 ops/s |
-| Styled paragraphs (20) + 1 img | Node 24 | 1,065 ops/s  | 1,405 ops/s   | 2,765 ops/s    | 2,752 ops/s     | 14.2 ops/s     | 91.1 ops/s |
+| Styled paragraphs (20) + 1 img | Node 24 | 1,065 ops/s  | 1,405 ops/s   | 2,765 ops/s    | 2,752 ops/s     | 1,365 ops/s    | 91.1 ops/s |
 |                                | Bun 1.4 | 2,994 ops/s  | 692 ops/s     | 4,567 ops/s    | 4,627 ops/s     | 443 ops/s      | 72.2 ops/s |
-| Table (10x5)                   | Node 24 | 1,301 ops/s  | 1,286 ops/s   | 3,154 ops/s    | 3,163 ops/s     | 14.3 ops/s     | 196 ops/s  |
+| Table (10x5)                   | Node 24 | 1,301 ops/s  | 1,286 ops/s   | 3,154 ops/s    | 3,163 ops/s     | 1,571 ops/s    | 196 ops/s  |
 |                                | Bun 1.4 | 2,791 ops/s  | 691 ops/s     | 5,107 ops/s    | 4,882 ops/s     | 543 ops/s      | 252 ops/s  |
-| Full featured + 2 imgs         | Node 24 | 763 ops/s    | 1,031 ops/s   | 1,671 ops/s    | 1,576 ops/s     | 12.7 ops/s     | 54.2 ops/s |
+| Full featured + 2 imgs         | Node 24 | 763 ops/s    | 1,031 ops/s   | 1,671 ops/s    | 1,576 ops/s     | 972 ops/s      | 54.2 ops/s |
 |                                | Bun 1.4 | 1,646 ops/s  | 575 ops/s     | 2,630 ops/s    | 2,456 ops/s     | 330 ops/s      | 41.1 ops/s |
 
 **Large Files — Create + toBuffer / toStream**
 
 | Scenario                       | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | docx       |
 | ------------------------------ | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ---------- |
-| 2000 paragraphs + 20 images    | Node 24 | 104.5 ops/s  | 109.4 ops/s   | 111.6 ops/s    | 114.9 ops/s     | 11.3 ops/s     | 2.85 ops/s |
+| 2000 paragraphs + 20 images    | Node 24 | 104.5 ops/s  | 109.4 ops/s   | 111.6 ops/s    | 114.9 ops/s     | 104 ops/s      | 2.85 ops/s |
 |                                | Bun 1.4 | 148.8 ops/s  | 126.5 ops/s   | 168.0 ops/s    | 164.9 ops/s     | 37.4 ops/s     | 2.18 ops/s |
-| 200x10 table                   | Node 24 | 252.4 ops/s  | 247.3 ops/s   | 282.1 ops/s    | 288.7 ops/s     | 13.7 ops/s     | 35.6 ops/s |
+| 200x10 table                   | Node 24 | 252.4 ops/s  | 247.3 ops/s   | 282.1 ops/s    | 288.7 ops/s     | 253 ops/s      | 35.6 ops/s |
 |                                | Bun 1.4 | 372.0 ops/s  | 272.4 ops/s   | 441.5 ops/s    | 405.6 ops/s     | 169 ops/s      | 44.5 ops/s |
-| 20 sections x 100p + 40 images | Node 24 | 89.6 ops/s   | 94.5 ops/s    | 103.6 ops/s    | 103.7 ops/s     | 3.53 ops/s     | 1.73 ops/s |
+| 20 sections x 100p + 40 images | Node 24 | 89.6 ops/s   | 94.5 ops/s    | 103.6 ops/s    | 103.7 ops/s     | 93 ops/s       | 1.73 ops/s |
 |                                | Bun 1.4 | 141.9 ops/s  | 90.9 ops/s    | 163.7 ops/s    | 170.4 ops/s     | 33.2 ops/s     | 1.15 ops/s |
 
 **Large File (~100MB) — Mixed Content**
@@ -120,10 +120,10 @@ generateDocumentStream(options);
 
 | Scenario                 | Runtime | Default sync | Default async | All STORE sync | All STORE async | Default stream | docx       |
 | ------------------------ | ------- | ------------ | ------------- | -------------- | --------------- | -------------- | ---------- |
-| Mixed (500p+38img+50x10) | Node 24 | 23.1 ops/s   | 21.2 ops/s    | 23.7 ops/s     | 23.9 ops/s      | 3.56 ops/s     | 0.28 ops/s |
+| Mixed (500p+38img+50x10) | Node 24 | 23.1 ops/s   | 21.2 ops/s    | 23.7 ops/s     | 23.9 ops/s      | 20.5 ops/s     | 0.28 ops/s |
 |                          | Bun 1.4 | 38.8 ops/s   | 32.5 ops/s    | 36.5 ops/s     | 30.7 ops/s      | 5.27 ops/s     | 0.21 ops/s |
 
-**Stream** = `generateDocumentStream` (default compression, fully drained) — it targets piping and a flat memory profile, not peak throughput.
+**Stream** = `generateDocumentStream` (default compression, fully drained). Under Node the archive is deflated in parallel on the libuv thread pool; under Bun and browsers it deflates inline / off-thread via fflate.
 
 ## License
 
