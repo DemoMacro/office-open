@@ -1046,8 +1046,10 @@ export function stringifyChildDispatch(
     const mediaData: GroupMediaData = {
       children: opts.children,
       transformation: createTransformation(opts.transformation),
-      childOffset: opts.childOffset,
-      childExtent: opts.childExtent,
+      childOffsetX: opts.childOffsetX,
+      childOffsetY: opts.childOffsetY,
+      childExtentWidth: opts.childExtentWidth,
+      childExtentHeight: opts.childExtentHeight,
       fill: opts.fill,
       effects: opts.effects,
       groupShapeLocks: opts.groupShapeLocks,

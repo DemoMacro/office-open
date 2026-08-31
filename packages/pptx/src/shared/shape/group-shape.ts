@@ -1,27 +1,21 @@
-import type { BaseGroupOptions, UniversalMeasure } from "@office-open/core";
-import type { BlackWhiteMode, EffectListOptions, FillOptions } from "@office-open/core/drawing";
+import type { BaseGroupOptions } from "@office-open/core";
+import type {
+  BlackWhiteMode,
+  EffectListOptions,
+  FillOptions,
+  GroupTransform2DOptions,
+} from "@office-open/core/drawing";
 import type { SlideChild } from "@parts/slide/slide-child";
 
 /**
  * Group shape (p:grpSp) for pptx slides. cNvPr fields from BaseGroupOptions;
- * the rest is the pptx flat positioning model plus the group's children.
+ * transform fields (incl. the child coordinate system, a:chOff/a:chExt) from
+ * GroupTransform2DOptions — an unset chOff/chExt stringifies to the group
+ * offset/extent. The rest is the group-level paint plus the children.
  */
-export interface GroupOptions extends BaseGroupOptions {
+export interface GroupOptions extends BaseGroupOptions, GroupTransform2DOptions {
   /** Group id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Rotation angle in degrees (e.g., 45 = 45°). */
-  rotation?: number;
-  flipHorizontal?: boolean;
-  /** Flip vertically (a:xfrm `@flipV`). */
-  flipVertical?: boolean;
-  /** Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted. */
-  childOffset?: { x: number | UniversalMeasure; y: number | UniversalMeasure };
-  /** Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted. */
-  childExtent?: { cx: number | UniversalMeasure; cy: number | UniversalMeasure };
   /** Group-level fill (EG_FillProperties on grpSpPr). */
   fill?: FillOptions;
   /** Group-level effects (EG_EffectProperties on grpSpPr). */

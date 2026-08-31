@@ -75,7 +75,6 @@ import type {
   RelativeSizeOptions,
   VerticalPositionOptions,
 } from "./floating";
-import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
 import { parseBodyProperties } from "./inline/graphic/graphic-data/wps/body-properties";
 import type { NonVisualShapePropertiesOptions } from "./inline/graphic/graphic-data/wps/non-visual-shape-properties";
 import type {
@@ -951,7 +950,8 @@ function parseWpgGroupDrawing(
 
   const info = parseAnchorOrInline(el, ctx) ?? {};
   const grpSpPr = findChild(wgp, "wpg:grpSpPr");
-  const { childOffset, childExtent } = readGroupCoords(grpSpPr);
+  const { childOffsetX, childOffsetY, childExtentWidth, childExtentHeight } =
+    readGroupCoords(grpSpPr);
 
   const group: GroupOptions = {
     children: parseGroupChildren(wgp, ctx),
@@ -961,8 +961,10 @@ function parseWpgGroupDrawing(
       ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
-  if (childOffset) group.childOffset = childOffset;
-  if (childExtent) group.childExtent = childExtent;
+  if (childOffsetX !== undefined) group.childOffsetX = childOffsetX;
+  if (childOffsetY !== undefined) group.childOffsetY = childOffsetY;
+  if (childExtentWidth !== undefined) group.childExtentWidth = childExtentWidth;
+  if (childExtentHeight !== undefined) group.childExtentHeight = childExtentHeight;
   if (info.floating) group.floating = info.floating;
   if (info.altText) group.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) group.graphicFrameLocks = info.graphicFrameLocks;
@@ -984,23 +986,31 @@ function parseWpgGroupDrawing(
  * Shared by the top-level wpg:wgp and nested wpg:grpSp.
  */
 function readGroupCoords(grpSpPr: Element | undefined): {
-  childOffset?: ChildOffset;
-  childExtent?: ChildExtent;
+  childOffsetX?: number;
+  childOffsetY?: number;
+  childExtentWidth?: number;
+  childExtentHeight?: number;
 } {
   if (!grpSpPr) return {};
   const xfrm = findChild(grpSpPr, "a:xfrm");
   if (!xfrm) return {};
-  let childOffset: ChildOffset | undefined;
-  let childExtent: ChildExtent | undefined;
+  const result: {
+    childOffsetX?: number;
+    childOffsetY?: number;
+    childExtentWidth?: number;
+    childExtentHeight?: number;
+  } = {};
   const off = findChild(xfrm, "a:chOff");
   if (off?.attributes) {
-    childOffset = { x: Number(off.attributes["x"] ?? 0), y: Number(off.attributes["y"] ?? 0) };
+    result.childOffsetX = Number(off.attributes["x"] ?? 0);
+    result.childOffsetY = Number(off.attributes["y"] ?? 0);
   }
   const ext = findChild(xfrm, "a:chExt");
   if (ext?.attributes) {
-    childExtent = { cx: Number(ext.attributes["cx"] ?? 0), cy: Number(ext.attributes["cy"] ?? 0) };
+    result.childExtentWidth = Number(ext.attributes["cx"] ?? 0);
+    result.childExtentHeight = Number(ext.attributes["cy"] ?? 0);
   }
-  return { childOffset, childExtent };
+  return result;
 }
 
 /**
@@ -1176,14 +1186,17 @@ interface NonVisualContentPartNv extends NonVisualPropertiesOptions {
  */
 function parseNestedGroup(grpSpEl: Element, ctx: DocxReadContext): GroupMediaData {
   const grpSpPr = findChild(grpSpEl, "wpg:grpSpPr");
-  const { childOffset, childExtent } = readGroupCoords(grpSpPr);
+  const { childOffsetX, childOffsetY, childExtentWidth, childExtentHeight } =
+    readGroupCoords(grpSpPr);
   const result: GroupMediaData = {
     type: "wpg",
     transformation: readChildTransformation(grpSpPr),
     children: parseGroupChildren(grpSpEl, ctx),
   };
-  if (childOffset) result.childOffset = childOffset;
-  if (childExtent) result.childExtent = childExtent;
+  if (childOffsetX !== undefined) result.childOffsetX = childOffsetX;
+  if (childOffsetY !== undefined) result.childOffsetY = childOffsetY;
+  if (childExtentWidth !== undefined) result.childExtentWidth = childExtentWidth;
+  if (childExtentHeight !== undefined) result.childExtentHeight = childExtentHeight;
   const grpSpLocks = readGrpSpLocks(findChild(grpSpEl, "wpg:cNvGrpSpPr"));
   if (grpSpLocks) result.groupShapeLocks = grpSpLocks;
   if (grpSpPr) {

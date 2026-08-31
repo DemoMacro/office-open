@@ -46,9 +46,13 @@ export interface Transform2DOptions {
 // </xsd:complexType>
 
 export interface GroupTransform2DOptions extends Transform2DOptions {
+  /** Child coordinate system offset X (a:chOff @x). */
   childOffsetX?: number | UniversalMeasure;
+  /** Child coordinate system offset Y (a:chOff @y). */
   childOffsetY?: number | UniversalMeasure;
+  /** Child coordinate system extent width (a:chExt @cx). */
   childExtentWidth?: number | UniversalMeasure;
+  /** Child coordinate system extent height (a:chExt @cy). */
   childExtentHeight?: number | UniversalMeasure;
 }
 

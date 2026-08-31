@@ -67,7 +67,6 @@ import { parseDrawingRun } from "./drawing-parse";
 import type { Floating, HorizontalPositionOptions, VerticalPositionOptions } from "./floating";
 import type { Margins } from "./floating";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "./floating";
-import type { ChildOffset, ChildExtent } from "./inline/graphic/graphic-data/wpg/wpg-group";
 // wpg/wps types only
 import {
   createBodyProperties,
@@ -562,8 +561,10 @@ function stringifyWpgGroup(
   opts: {
     children: readonly GroupChildMediaData[];
     transformation: MediaDataTransformation;
-    childOffset?: ChildOffset;
-    childExtent?: ChildExtent;
+    childOffsetX?: number;
+    childOffsetY?: number;
+    childExtentWidth?: number;
+    childExtentHeight?: number;
     fill?: FillOptions;
     effects?: EffectListOptions;
     groupShapeLocks?: GroupShapeLocksOptions | null;
@@ -581,10 +582,10 @@ function stringifyWpgGroup(
         flipHorizontal: transform.flip?.horizontal,
         flipVertical: transform.flip?.vertical,
         rotation: transform.rotation,
-        childOffsetX: opts.childOffset?.x,
-        childOffsetY: opts.childOffset?.y,
-        childExtentWidth: opts.childExtent?.cx,
-        childExtentHeight: opts.childExtent?.cy,
+        childOffsetX: opts.childOffsetX,
+        childOffsetY: opts.childOffsetY,
+        childExtentWidth: opts.childExtentWidth,
+        childExtentHeight: opts.childExtentHeight,
         fill: opts.fill,
         effects: opts.effects,
       },
@@ -753,10 +754,10 @@ function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
         flipHorizontal: grp.transformation.flip?.horizontal,
         flipVertical: grp.transformation.flip?.vertical,
         rotation: grp.transformation.rotation,
-        childOffsetX: grp.childOffset?.x,
-        childOffsetY: grp.childOffset?.y,
-        childExtentWidth: grp.childExtent?.cx,
-        childExtentHeight: grp.childExtent?.cy,
+        childOffsetX: grp.childOffsetX,
+        childOffsetY: grp.childOffsetY,
+        childExtentWidth: grp.childExtentWidth,
+        childExtentHeight: grp.childExtentHeight,
         fill: grp.fill,
         effects: grp.effects,
       },
@@ -821,8 +822,10 @@ function stringifyGraphicDataContent(
       {
         children: md.children,
         transformation: transform,
-        childOffset: md.childOffset,
-        childExtent: md.childExtent,
+        childOffsetX: md.childOffsetX,
+        childOffsetY: md.childOffsetY,
+        childExtentWidth: md.childExtentWidth,
+        childExtentHeight: md.childExtentHeight,
         fill: md.fill,
         effects: md.effects,
         groupShapeLocks: md.groupShapeLocks,

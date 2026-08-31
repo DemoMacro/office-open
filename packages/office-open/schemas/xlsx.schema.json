@@ -6902,7 +6902,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent height (a:chExt"
         },
         "childExtentWidth": {
           "anyOf": [
@@ -6912,7 +6913,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent width (a:chExt"
         },
         "childOffsetX": {
           "anyOf": [
@@ -6922,7 +6924,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset X (a:chOff"
         },
         "childOffsetY": {
           "anyOf": [
@@ -6932,7 +6935,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset Y (a:chOff"
         },
         "effectDag": {
           "$ref": "#/definitions/EffectDagOptions"
@@ -7006,44 +7010,16 @@
       "additionalProperties": false,
       "properties": {
         "childExtentHeight": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentHeight"
         },
         "childExtentWidth": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentWidth"
         },
         "childOffsetX": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetX"
         },
         "childOffsetY": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/UniversalMeasure"
-            }
-          ]
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetY"
         },
         "flipHorizontal": {
           "type": "boolean"

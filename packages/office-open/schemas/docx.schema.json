@@ -3301,34 +3301,6 @@
       },
       "type": "object"
     },
-    "ChildExtent": {
-      "additionalProperties": false,
-      "description": "Child coordinate extent.",
-      "properties": {
-        "cx": {
-          "type": "number"
-        },
-        "cy": {
-          "type": "number"
-        }
-      },
-      "required": ["cx", "cy"],
-      "type": "object"
-    },
-    "ChildOffset": {
-      "additionalProperties": false,
-      "description": "Child coordinate offset.",
-      "properties": {
-        "x": {
-          "type": "number"
-        },
-        "y": {
-          "type": "number"
-        }
-      },
-      "required": ["x", "y"],
-      "type": "object"
-    },
     "ChildOrder": {
       "description": "(dgm:layoutNode `@chOrder`).",
       "enum": ["b", "t"],
@@ -7739,13 +7711,21 @@
         {
           "additionalProperties": false,
           "properties": {
-            "childExtent": {
-              "$ref": "#/definitions/ChildExtent",
-              "description": "Child coordinate extent"
+            "childExtentHeight": {
+              "description": "Child coordinate system extent height (a:chExt",
+              "type": "number"
             },
-            "childOffset": {
-              "$ref": "#/definitions/ChildOffset",
-              "description": "Child coordinate offset"
+            "childExtentWidth": {
+              "description": "Child coordinate system extent width (a:chExt",
+              "type": "number"
+            },
+            "childOffsetX": {
+              "description": "Child coordinate system offset X (a:chOff",
+              "type": "number"
+            },
+            "childOffsetY": {
+              "description": "Child coordinate system offset Y (a:chOff",
+              "type": "number"
             },
             "children": {
               "items": {
@@ -7899,13 +7879,21 @@
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
         },
-        "childExtent": {
-          "$ref": "#/definitions/ChildExtent",
-          "description": "Child coordinate extent (chExt)"
+        "childExtentHeight": {
+          "description": "Child coordinate system extent height (a:chExt",
+          "type": "number"
         },
-        "childOffset": {
-          "$ref": "#/definitions/ChildOffset",
-          "description": "Child coordinate offset (chOff)"
+        "childExtentWidth": {
+          "description": "Child coordinate system extent width (a:chExt",
+          "type": "number"
+        },
+        "childOffsetX": {
+          "description": "Child coordinate system offset X (a:chOff",
+          "type": "number"
+        },
+        "childOffsetY": {
+          "description": "Child coordinate system offset Y (a:chOff",
+          "type": "number"
         },
         "children": {
           "items": {
@@ -7995,7 +7983,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent height (a:chExt"
         },
         "childExtentWidth": {
           "anyOf": [
@@ -8005,7 +7994,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent width (a:chExt"
         },
         "childOffsetX": {
           "anyOf": [
@@ -8015,7 +8005,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset X (a:chOff"
         },
         "childOffsetY": {
           "anyOf": [
@@ -8025,7 +8016,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset Y (a:chOff"
         },
         "effectDag": {
           "$ref": "#/definitions/EffectDagOptions"

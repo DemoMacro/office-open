@@ -5962,67 +5962,23 @@
     },
     "GroupOptions": {
       "additionalProperties": false,
-      "description": "Group shape (p:grpSp) for pptx slides. cNvPr fields from BaseGroupOptions; the rest is the pptx flat positioning model plus the group's children.",
+      "description": "Group shape (p:grpSp) for pptx slides. cNvPr fields from BaseGroupOptions; transform fields (incl. the child coordinate system, a:chOff/a:chExt) from GroupTransform2DOptions — an unset chOff/chExt stringifies to the group offset/extent. The rest is the group-level paint plus the children.",
       "properties": {
         "blackWhiteMode": {
           "$ref": "#/definitions/BlackWhiteMode",
           "description": "`@bwMode` on `p:grpSpPr` — how the group renders in black-and-white mode."
         },
-        "childExtent": {
-          "additionalProperties": false,
-          "description": "Child coordinate system extent (a:chExt). Defaults to {width,height} when omitted.",
-          "properties": {
-            "cx": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ]
-            },
-            "cy": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ]
-            }
-          },
-          "required": ["cx", "cy"],
-          "type": "object"
+        "childExtentHeight": {
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentHeight"
         },
-        "childOffset": {
-          "additionalProperties": false,
-          "description": "Child coordinate system offset (a:chOff). Defaults to {x,y} when omitted.",
-          "properties": {
-            "x": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ]
-            },
-            "y": {
-              "anyOf": [
-                {
-                  "type": "number"
-                },
-                {
-                  "$ref": "#/definitions/UniversalMeasure"
-                }
-              ]
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
+        "childExtentWidth": {
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childExtentWidth"
+        },
+        "childOffsetX": {
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetX"
+        },
+        "childOffsetY": {
+          "$ref": "#/definitions/GroupShapePropertiesOptions/properties/childOffsetY"
         },
         "children": {
           "items": {
@@ -6052,7 +6008,6 @@
           "type": "boolean"
         },
         "flipVertical": {
-          "description": "Flip vertically (a:xfrm `@flipV`).",
           "type": "boolean"
         },
         "height": {
@@ -6141,7 +6096,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent height (a:chExt"
         },
         "childExtentWidth": {
           "anyOf": [
@@ -6151,7 +6107,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system extent width (a:chExt"
         },
         "childOffsetX": {
           "anyOf": [
@@ -6161,7 +6118,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset X (a:chOff"
         },
         "childOffsetY": {
           "anyOf": [
@@ -6171,7 +6129,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Child coordinate system offset Y (a:chOff"
         },
         "effectDag": {
           "$ref": "#/definitions/EffectDagOptions"

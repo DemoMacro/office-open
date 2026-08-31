@@ -51,10 +51,12 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
           ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
           ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
           // chOff/chExt default to off/ext when the child coordinate system is unchanged.
-          childOffsetX: opts.childOffset ? convertToEmu(opts.childOffset.x) : x,
-          childOffsetY: opts.childOffset ? convertToEmu(opts.childOffset.y) : y,
-          childExtentWidth: opts.childExtent ? convertToEmu(opts.childExtent.cx) : w,
-          childExtentHeight: opts.childExtent ? convertToEmu(opts.childExtent.cy) : h,
+          childOffsetX: opts.childOffsetX !== undefined ? convertToEmu(opts.childOffsetX) : x,
+          childOffsetY: opts.childOffsetY !== undefined ? convertToEmu(opts.childOffsetY) : y,
+          childExtentWidth:
+            opts.childExtentWidth !== undefined ? convertToEmu(opts.childExtentWidth) : w,
+          childExtentHeight:
+            opts.childExtentHeight !== undefined ? convertToEmu(opts.childExtentHeight) : h,
           ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
           ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
         },
@@ -115,11 +117,11 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
       if (props.rotation !== undefined) result.rotation = props.rotation;
       if (props.flipHorizontal) result.flipHorizontal = true;
       if (props.flipVertical) result.flipVertical = true;
-      if (props.childOffsetX !== undefined && props.childOffsetY !== undefined) {
-        result.childOffset = { x: props.childOffsetX, y: props.childOffsetY };
-      }
-      if (props.childExtentWidth !== undefined && props.childExtentHeight !== undefined) {
-        result.childExtent = { cx: props.childExtentWidth, cy: props.childExtentHeight };
+      if (props.childOffsetX !== undefined) result.childOffsetX = props.childOffsetX;
+      if (props.childOffsetY !== undefined) result.childOffsetY = props.childOffsetY;
+      if (props.childExtentWidth !== undefined) result.childExtentWidth = props.childExtentWidth;
+      if (props.childExtentHeight !== undefined) {
+        result.childExtentHeight = props.childExtentHeight;
       }
       if (props.fill !== undefined) result.fill = props.fill;
       if (props.effects !== undefined) result.effects = props.effects;

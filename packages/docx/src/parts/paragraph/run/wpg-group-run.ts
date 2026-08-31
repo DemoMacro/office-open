@@ -11,11 +11,6 @@ import type { GroupChildMediaData, MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
 import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "../../drawing/descriptor";
-import type {
-  ChildOffset,
-  ChildExtent,
-} from "../../drawing/inline/graphic/graphic-data/wpg/wpg-group";
-
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 
 /**
@@ -27,10 +22,14 @@ export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 export interface GroupOptions {
   children: GroupChildMediaData[];
   transformation: MediaTransformation;
-  /** Child coordinate offset (chOff) */
-  childOffset?: ChildOffset;
-  /** Child coordinate extent (chExt) */
-  childExtent?: ChildExtent;
+  /** Child coordinate system offset X (a:chOff @x, EMU). */
+  childOffsetX?: number;
+  /** Child coordinate system offset Y (a:chOff @y, EMU). */
+  childOffsetY?: number;
+  /** Child coordinate system extent width (a:chExt @cx, EMU). */
+  childExtentWidth?: number;
+  /** Child coordinate system extent height (a:chExt @cy, EMU). */
+  childExtentHeight?: number;
   /** Group fill */
   fill?: FillOptions;
   /** Group effects */
