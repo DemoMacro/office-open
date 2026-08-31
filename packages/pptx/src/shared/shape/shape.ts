@@ -1,21 +1,10 @@
-import type {
-  NonVisualDrawingPropertiesOptions,
-  ShapeLockingOptions,
-  UniversalMeasure,
-} from "@office-open/core";
+import type { NonVisualDrawingPropertiesOptions, ShapeLockingOptions } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import type {
-  PresetGeometryOptions,
-  CustomGeometryOptions,
+  ShapePropertiesOptions,
+  Transform2DOptions,
   TextBodyOptions,
-  OutlineOptions,
-  EffectListOptions,
-  Scene3DOptions,
-  Shape3DOptions,
-  ShapePropertiesExtensionOptions,
-  FillOptions,
   BlackWhiteMode,
-  ShapeType,
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { parseColorChoice, isPlainRgbColor } from "@office-open/core/drawing";
@@ -83,34 +72,16 @@ export interface ShapeStyleOptions {
   fontReference?: { collection: "major" | "minor" | "none"; color?: StyleReferenceColor };
 }
 
-export interface ShapeOptions extends NonVisualDrawingPropertiesOptions {
+export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transform2DOptions {
   id?: number;
-  x?: number | UniversalMeasure;
-  y?: number | UniversalMeasure;
-  width?: number | UniversalMeasure;
-  height?: number | UniversalMeasure;
-  /** Preset geometry token or full geometry (a:prstGeom `@prst`, ST_ShapeType) */
-  geometry?: ShapeType | PresetGeometryOptions;
-  customGeometry?: CustomGeometryOptions;
   /**
-   * `null` marks a source spPr with no fill child — absence is the fidelity
-   * (the shape inherits its fill), so stringify emits nothing instead of the
-   * fresh-authoring noFill default.
+   * Shape properties (a:spPr children): geometry/fill/outline/effects/3D and
+   * the spPr extension list. Transform fields stay top-level on the shape.
+   * `fill: null` marks a source spPr with no fill child — absence is the
+   * fidelity (the shape inherits its fill), so stringify emits nothing instead
+   * of the fresh-authoring noFill default.
    */
-  fill?: FillOptions | null;
-  outline?: OutlineOptions;
-  effects?: EffectListOptions;
-  scene3d?: Scene3DOptions;
-  shape3d?: Shape3DOptions;
-  /** Shape-property extensions (p:spPr/a:extLst/a:ext). */
-  extensions?: ShapePropertiesExtensionOptions[];
-  /** Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions. */
-  ext?: string;
-  flipHorizontal?: boolean;
-  /** Flip vertically (a:xfrm `@flipV`). */
-  flipVertical?: boolean;
-  /** Rotation angle in degrees (e.g., 45 = 45°). */
-  rotation?: number;
+  properties?: Omit<ShapePropertiesOptions, keyof Transform2DOptions>;
   textBody?: TextBodyOptions;
   locking?: ShapeLockingOptions;
   /** CT_Placeholder `@type` — ST_PlaceholderType. */

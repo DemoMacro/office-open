@@ -16,7 +16,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Slide 1 - Introduction" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -26,7 +28,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Welcome to the presentation!" },
-            fill: "D9E2F3",
+            properties: {
+              fill: "D9E2F3",
+            },
           },
         },
       ],
@@ -42,7 +46,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Slide 2 - Key Points" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -52,7 +58,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Point 1: Architecture\nPoint 2: Implementation\nPoint 3: Testing" },
-            fill: "FBE5D6",
+            properties: {
+              fill: "FBE5D6",
+            },
           },
         },
       ],
@@ -68,7 +76,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Slide 3 - No Notes" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
       ],

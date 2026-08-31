@@ -18,8 +18,11 @@ const options: PresentationOptions = {
             y: "3cm",
             width: "3cm",
             height: "3cm",
-            geometry: "rect",
-            fill: "4472C4",
+            properties: {
+              geometry: "rect",
+
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -28,8 +31,11 @@ const options: PresentationOptions = {
             y: "3cm",
             width: "3cm",
             height: "3cm",
-            geometry: "rect",
-            fill: "ED7D31",
+            properties: {
+              geometry: "rect",
+
+              fill: "ED7D31",
+            },
           },
         },
         {

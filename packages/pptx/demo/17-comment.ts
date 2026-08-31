@@ -17,7 +17,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Slide with Comments" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -27,7 +29,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Content to review" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
       ],
@@ -60,7 +64,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Another Slide" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
       ],
@@ -85,7 +91,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "No Comments Here" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],

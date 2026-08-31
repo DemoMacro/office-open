@@ -80,12 +80,12 @@ describe("lineShapeDesc round-trip", () => {
   it("round-trips line with outline", () => {
     const opts: LineShapeOptions = {
       id: 4,
-      outline: { type: "solidFill", color: { value: "FF0000" }, width: 2 },
+      properties: { outline: { type: "solidFill", color: { value: "FF0000" }, width: 2 } },
     };
     const result = roundTripLine(opts);
 
-    expect(result.outline).toBeDefined();
-    const outline = result.outline as Record<string, unknown>;
+    expect(result.properties?.outline).toBeDefined();
+    const outline = result.properties!.outline as Record<string, unknown>;
     expect(outline.width).toBe(2);
   });
 });
@@ -117,26 +117,28 @@ describe("connectorShapeDesc round-trip", () => {
       y1: 0,
       x2: 100,
       y2: 0,
-      outline: {
-        headEnd: { type: "triangle" },
-        tailEnd: { type: "arrow" },
+      properties: {
+        outline: {
+          headEnd: { type: "triangle" },
+          tailEnd: { type: "arrow" },
+        },
       },
     };
     const result = roundTripConnector(opts);
 
-    expect(result.outline?.headEnd?.type).toBe("triangle");
-    expect(result.outline?.tailEnd?.type).toBe("arrow");
+    expect(result.properties?.outline?.headEnd?.type).toBe("triangle");
+    expect(result.properties?.outline?.tailEnd?.type).toBe("arrow");
   });
 
   it("round-trips connector with outline", () => {
     const opts: ConnectorOptions = {
       id: 22,
-      outline: { type: "solidFill", color: { value: "00FF00" }, width: 3 },
+      properties: { outline: { type: "solidFill", color: { value: "00FF00" }, width: 3 } },
     };
     const result = roundTripConnector(opts);
 
-    expect(result.outline).toBeDefined();
-    const outline = result.outline as Record<string, unknown>;
+    expect(result.properties?.outline).toBeDefined();
+    const outline = result.properties!.outline as Record<string, unknown>;
     expect(outline.width).toBe(3);
   });
 });

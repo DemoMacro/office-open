@@ -16,7 +16,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Shape Effects Demo" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -26,13 +28,16 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Outer Shadow" },
-            fill: "ED7D31",
-            effects: {
-              outerShadow: {
-                blurRadius: "4pt",
-                distance: "3pt",
-                direction: 90,
-                color: { value: "000000", transforms: { alpha: 50 } },
+            properties: {
+              fill: "ED7D31",
+
+              effects: {
+                outerShadow: {
+                  blurRadius: "4pt",
+                  distance: "3pt",
+                  direction: 90,
+                  color: { value: "000000", transforms: { alpha: 50 } },
+                },
               },
             },
           },
@@ -44,9 +49,12 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Glow" },
-            fill: "70AD47",
-            effects: {
-              glow: { radius: 152400, color: { value: "92D050", transforms: { alpha: 60 } } },
+            properties: {
+              fill: "70AD47",
+
+              effects: {
+                glow: { radius: 152400, color: { value: "92D050", transforms: { alpha: 60 } } },
+              },
             },
           },
         },
@@ -57,14 +65,17 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Reflection" },
-            fill: "FFC000",
-            effects: {
-              reflection: {
-                blurRadius: 6350,
-                distance: 38100,
-                direction: 90,
-                startAlpha: 90,
-                endAlpha: 0,
+            properties: {
+              fill: "FFC000",
+
+              effects: {
+                reflection: {
+                  blurRadius: 6350,
+                  distance: 38100,
+                  direction: 90,
+                  startAlpha: 90,
+                  endAlpha: 0,
+                },
               },
             },
           },
@@ -76,13 +87,16 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Inner Shadow" },
-            fill: "5B9BD5",
-            effects: {
-              innerShadow: {
-                blurRadius: 40000,
-                distance: 30000,
-                direction: 90,
-                color: { value: "000000", transforms: { alpha: 40 } },
+            properties: {
+              fill: "5B9BD5",
+
+              effects: {
+                innerShadow: {
+                  blurRadius: 40000,
+                  distance: 30000,
+                  direction: 90,
+                  color: { value: "000000", transforms: { alpha: 40 } },
+                },
               },
             },
           },
@@ -94,9 +108,12 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Soft Edge" },
-            fill: "BF8F00",
-            effects: {
-              softEdge: 50800,
+            properties: {
+              fill: "BF8F00",
+
+              effects: {
+                softEdge: 50800,
+              },
             },
           },
         },
@@ -107,15 +124,18 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "3.2cm",
             textBody: { text: "Shadow + Glow" },
-            fill: "7030A0",
-            effects: {
-              outerShadow: {
-                blurRadius: 40000,
-                distance: 30000,
-                direction: 45,
-                color: { value: "000000", transforms: { alpha: 40 } },
+            properties: {
+              fill: "7030A0",
+
+              effects: {
+                outerShadow: {
+                  blurRadius: 40000,
+                  distance: 30000,
+                  direction: 45,
+                  color: { value: "000000", transforms: { alpha: 40 } },
+                },
+                glow: { radius: 101600, color: { value: "B381E7", transforms: { alpha: 35 } } },
               },
-              glow: { radius: 101600, color: { value: "B381E7", transforms: { alpha: 35 } } },
             },
           },
         },
@@ -131,7 +151,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: { text: "3D Rotation & Extrusion" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -141,10 +163,13 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { text: "X=30 Y=0" },
-            fill: "4472C4",
-            scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 30, lon: 0, rev: 0 } },
-              lightRig: { rig: "threePt", direction: "top" },
+            properties: {
+              fill: "4472C4",
+
+              scene3d: {
+                camera: { preset: "orthographicFront", rotation: { lat: 30, lon: 0, rev: 0 } },
+                lightRig: { rig: "threePt", direction: "top" },
+              },
             },
           },
         },
@@ -155,10 +180,13 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { text: "X=0 Y=45" },
-            fill: "ED7D31",
-            scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 0, lon: 45, rev: 0 } },
-              lightRig: { rig: "threePt", direction: "top" },
+            properties: {
+              fill: "ED7D31",
+
+              scene3d: {
+                camera: { preset: "orthographicFront", rotation: { lat: 0, lon: 45, rev: 0 } },
+                lightRig: { rig: "threePt", direction: "top" },
+              },
             },
           },
         },
@@ -169,14 +197,17 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { text: "X=20 Y=30 Z=10" },
-            fill: "70AD47",
-            scene3d: {
-              camera: {
-                preset: "legacyPerspectiveFront",
-                rotation: { lat: 20, lon: 30, rev: 10 },
-                fov: 10,
+            properties: {
+              fill: "70AD47",
+
+              scene3d: {
+                camera: {
+                  preset: "legacyPerspectiveFront",
+                  rotation: { lat: 20, lon: 30, rev: 10 },
+                  fov: 10,
+                },
+                lightRig: { rig: "threePt", direction: "top" },
               },
-              lightRig: { rig: "threePt", direction: "top" },
             },
           },
         },
@@ -187,15 +218,19 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "4.0cm",
             textBody: { text: "Extruded" },
-            fill: "FFC000",
-            scene3d: {
-              camera: {
-                preset: "orthographicFront",
-                rotation: { lat: 25, lon: 15, rev: 0 },
+            properties: {
+              fill: "FFC000",
+
+              scene3d: {
+                camera: {
+                  preset: "orthographicFront",
+                  rotation: { lat: 25, lon: 15, rev: 0 },
+                },
+                lightRig: { rig: "threePt", direction: "top" },
               },
-              lightRig: { rig: "threePt", direction: "top" },
+
+              shape3d: { extrusionH: 50000, prstMaterial: "plastic" },
             },
-            shape3d: { extrusionH: 50000, prstMaterial: "plastic" },
           },
         },
         {
@@ -205,12 +240,16 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "4.0cm",
             textBody: { text: "Bevel Top" },
-            fill: "7030A0",
-            scene3d: {
-              camera: { preset: "orthographicFront", rotation: { lat: 20, lon: 0, rev: 0 } },
-              lightRig: { rig: "threePt", direction: "top" },
+            properties: {
+              fill: "7030A0",
+
+              scene3d: {
+                camera: { preset: "orthographicFront", rotation: { lat: 20, lon: 0, rev: 0 } },
+                lightRig: { rig: "threePt", direction: "top" },
+              },
+
+              shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 25000, prstMaterial: "metal" },
             },
-            shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 25000, prstMaterial: "metal" },
           },
         },
       ],

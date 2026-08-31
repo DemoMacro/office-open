@@ -182,8 +182,7 @@ const buildFullFeaturedPres = (): PresentationOptions => ({
                 },
               ],
             },
-            geometry: "rect",
-            fill: "4472C4",
+            properties: { geometry: "rect", fill: "4472C4" },
           },
         },
         ...SHAPE_TEXTS.map(

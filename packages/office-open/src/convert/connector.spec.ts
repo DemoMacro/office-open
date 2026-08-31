@@ -11,7 +11,9 @@ describe("toXlsxConnector (pptx → xlsx)", () => {
       y1: 0,
       x2: 1219200,
       y2: 381000,
-      outline: { type: "solidFill", color: { value: "000000" }, width: 9525 },
+      properties: {
+        outline: { type: "solidFill", color: { value: "000000" }, width: 9525 },
+      },
     };
     const x = toXlsxConnector(pptx);
     expect(x.col).toBe(1);
@@ -72,14 +74,20 @@ describe("round-trip pptx → xlsx → pptx", () => {
       y1: 0,
       x2: 1219200,
       y2: 381000,
-      outline: { type: "solidFill", color: { value: "000000" }, width: 9525 },
+      properties: {
+        outline: { type: "solidFill", color: { value: "000000" }, width: 9525 },
+      },
     };
     const back = toPptxConnector(toXlsxConnector(pptx));
     expect(back.x1).toBe(0);
     expect(back.y1).toBe(0);
     expect(back.x2).toBe(1219200);
     expect(back.y2).toBe(381000);
-    expect(back.outline).toEqual({ type: "solidFill", color: { value: "000000" }, width: 9525 });
+    expect(back.properties?.outline).toEqual({
+      type: "solidFill",
+      color: { value: "000000" },
+      width: 9525,
+    });
   });
 });
 

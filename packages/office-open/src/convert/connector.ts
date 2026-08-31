@@ -7,8 +7,7 @@
  * fields (cNvPr name/description/title/hidden + locking + endpoint connections)
  * pass straight through via pickConnectorBase; only positioning (pptx two
  * endpoints ↔ xlsx cell-anchor bounding box, with flip flags encoding draw
- * direction) and the line fill/outline (pptx top-level convenience ↔ xlsx
- * nested in spPr) are adapted per leg.
+ * direction) is adapted per leg — paint travels in `properties` on both sides.
  *
  * docx has no standalone connector element (Word embeds connectors as wps
  * shapes flagged with a connector marker), so converting a connector to docx
@@ -24,6 +23,7 @@ import type { ConnectorOptions as XlsxConnectorOptions } from "@office-open/xlsx
 
 import { boxFromXlsxAnchor, boxToXlsx, toEmu } from "./position";
 import type { AbsoluteBox } from "./position";
+import { pickContent } from "./shape";
 
 /** pptx two endpoints → absolute box; flip flags encode the draw direction. */
 export function endpointsToBox(
@@ -92,8 +92,7 @@ export function toPptxConnector(source: XlsxConnectorOptions): PptxConnectorOpti
     y1,
     x2,
     y2,
-    ...(spPr.outline !== undefined ? { outline: spPr.outline } : {}),
-    ...(spPr.fill !== undefined ? { fill: spPr.fill } : {}),
+    properties: pickContent(spPr),
     // cNvPr + locking + endpoint connections pass straight through.
     ...pickConnectorBase(source),
   };
@@ -112,8 +111,7 @@ export function toXlsxConnector(source: PptxConnectorOptions): XlsxConnectorOpti
     height: box.height,
     // A connector renders as a line; carry the preset so xlsx emits prstGeom="line".
     geometry: "line",
-    ...(source.outline !== undefined ? { outline: source.outline } : {}),
-    ...(source.fill !== undefined ? { fill: source.fill } : {}),
+    ...pickContent(source.properties ?? {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(box.flipVertical ? { flipVertical: true } : {}),
   };

@@ -92,9 +92,9 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      fill: { type: "solid", color: "4472C4" },
+      properties: { fill: { type: "solid", color: "4472C4" } },
     });
-    const fill = result.fill! as { type: string; color: { value: string } };
+    const fill = result.properties!.fill! as { type: string; color: { value: string } };
     expect(fill.type).toBe("solid");
     expect(fill.color.value).toBe("4472C4");
   });
@@ -105,9 +105,9 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      geometry: "ellipse",
+      properties: { geometry: "ellipse" },
     });
-    expect(result.geometry).toBe("ellipse");
+    expect(result.properties?.geometry).toBe("ellipse");
   });
 
   it("round-trips shape with placeholder", () => {
@@ -229,9 +229,9 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      outline: { type: "solidFill", color: { value: "000000" }, width: 12700 },
+      properties: { outline: { type: "solidFill", color: { value: "000000" }, width: 12700 } },
     });
-    const outline = result.outline as {
+    const outline = result.properties!.outline as {
       type: string;
       color: { value: string };
       width: number;
@@ -390,26 +390,28 @@ describe("shapeDesc round-trip", () => {
       y: 0,
       width: 100,
       height: 100,
-      effects: {
-        reflection: {
-          blurRadius: 12700,
-          distance: 50000,
-          direction: 90,
-          startAlpha: 60,
-          startPosition: 10,
-          endAlpha: 0,
-          endPosition: 90,
-          fadeDirection: 90,
-          scaleX: 50,
-          scaleY: 75,
-          skewX: 45,
-          skewY: 30,
-          alignment: "bottomLeft",
-          rotWithShape: false,
+      properties: {
+        effects: {
+          reflection: {
+            blurRadius: 12700,
+            distance: 50000,
+            direction: 90,
+            startAlpha: 60,
+            startPosition: 10,
+            endAlpha: 0,
+            endPosition: 90,
+            fadeDirection: 90,
+            scaleX: 50,
+            scaleY: 75,
+            skewX: 45,
+            skewY: 30,
+            alignment: "bottomLeft",
+            rotWithShape: false,
+          },
         },
       },
     });
-    const reflection = result.effects!.reflection as ReflectionEffectOptions;
+    const reflection = result.properties!.effects!.reflection as ReflectionEffectOptions;
     expect(reflection.blurRadius).toBe(12700);
     expect(reflection.distance).toBe(50000);
     expect(reflection.direction).toBe(90);

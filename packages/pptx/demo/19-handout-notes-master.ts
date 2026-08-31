@@ -49,7 +49,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.6cm",
             textBody: { text: "Parameterized Master Demo" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
       ],

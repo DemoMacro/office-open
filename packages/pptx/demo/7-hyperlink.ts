@@ -16,7 +16,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Hyperlinks in PPTX" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -67,7 +69,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            fill: "F2F2F2",
+            properties: {
+              fill: "F2F2F2",
+            },
           },
         },
       ],

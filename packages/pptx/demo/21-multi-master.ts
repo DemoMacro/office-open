@@ -22,8 +22,11 @@ const options: PresentationOptions = {
             y: "18.4cm",
             width: "33.9cm",
             height: "0.7cm",
-            geometry: "rect",
-            fill: "4472C4",
+            properties: {
+              geometry: "rect",
+
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -54,8 +57,11 @@ const options: PresentationOptions = {
             y: "18.4cm",
             width: "33.9cm",
             height: "0.7cm",
-            geometry: "rect",
-            fill: "FFC000",
+            properties: {
+              geometry: "rect",
+
+              fill: "FFC000",
+            },
           },
         },
       ],
@@ -81,7 +87,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "5.3cm",
             textBody: { text: "Slide on Light Master" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -97,7 +105,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "5.3cm",
             textBody: { text: "Slide on Dark Master" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],
@@ -113,7 +123,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Blank Layout on Light" },
-            fill: "E8E8E8",
+            properties: {
+              fill: "E8E8E8",
+            },
           },
         },
       ],
@@ -129,7 +141,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Content Layout on Dark" },
-            fill: "2C3E50",
+            properties: {
+              fill: "2C3E50",
+            },
           },
         },
       ],

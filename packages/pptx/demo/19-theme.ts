@@ -39,8 +39,11 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Custom Theme" },
-            geometry: "rect",
-            fill: "0F3460",
+            properties: {
+              geometry: "rect",
+
+              fill: "0F3460",
+            },
           },
         },
         {
@@ -50,8 +53,11 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "2.6cm",
             textBody: { text: "Accent2 highlight" },
-            geometry: "rect",
-            fill: "E94560",
+            properties: {
+              geometry: "rect",
+
+              fill: "E94560",
+            },
           },
         },
       ],

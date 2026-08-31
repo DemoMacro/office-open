@@ -16,7 +16,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Slide 1 - Default footer" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -31,7 +33,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Slide 2 - No date" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
       ],
@@ -46,7 +50,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Slide 3 - Only slide number" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
       ],
@@ -61,7 +67,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Slide 4 - No header/footer" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],

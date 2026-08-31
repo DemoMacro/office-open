@@ -13,9 +13,11 @@ const RECT_PPTX: PptxShapeOptions = {
   y: 190500,
   width: 1219200,
   height: 381000,
-  geometry: "rect",
-  fill: "4472C4",
-  outline: { type: "solidFill", color: { value: "ED7D31" }, width: 9525 },
+  properties: {
+    geometry: "rect",
+    fill: "4472C4",
+    outline: { type: "solidFill", color: { value: "ED7D31" }, width: 9525 },
+  },
   textBody: { text: "Hello" },
   name: "My Shape",
 };
@@ -70,8 +72,8 @@ describe("toPptxShape (xlsx → pptx)", () => {
     expect(p.y).toBe(190500);
     expect(p.width).toBe(1219200);
     expect(p.height).toBe(381000);
-    expect(p.geometry).toBe("rect");
-    expect(p.fill).toBe("4472C4");
+    expect(p.properties?.geometry).toBe("rect");
+    expect(p.properties?.fill).toBe("4472C4");
   });
 });
 
@@ -98,8 +100,8 @@ describe("toPptxShape (docx → pptx)", () => {
     expect(back.y).toBe(190500);
     expect(back.width).toBe(1219200);
     expect(back.height).toBe(381000);
-    expect(back.geometry).toEqual({ preset: "rect" });
-    expect(back.fill).toBe("4472C4");
+    expect(back.properties?.geometry).toEqual({ preset: "rect" });
+    expect(back.properties?.fill).toBe("4472C4");
     expect(back.textBody?.paragraphs?.[0]).toBe("Hello");
   });
 
@@ -128,9 +130,13 @@ describe("round-trip pptx → xlsx → pptx", () => {
     expect(back.y).toBe(190500);
     expect(back.width).toBe(1219200);
     expect(back.height).toBe(381000);
-    expect(back.geometry).toBe("rect");
-    expect(back.fill).toBe("4472C4");
-    expect(back.outline).toEqual({ type: "solidFill", color: { value: "ED7D31" }, width: 9525 });
+    expect(back.properties?.geometry).toBe("rect");
+    expect(back.properties?.fill).toBe("4472C4");
+    expect(back.properties?.outline).toEqual({
+      type: "solidFill",
+      color: { value: "ED7D31" },
+      width: 9525,
+    });
     expect(back.textBody).toEqual({ text: "Hello" });
     expect(back.name).toBe("My Shape");
   });
@@ -143,9 +149,9 @@ describe("round-trip pptx → docx → pptx", () => {
     expect(back.y).toBe(190500);
     expect(back.width).toBe(1219200);
     expect(back.height).toBe(381000);
-    expect(back.fill).toBe("4472C4");
+    expect(back.properties?.fill).toBe("4472C4");
     expect(back.textBody?.paragraphs?.[0]).toBe("Hello");
     // geometry string → docx preset → pptx preset object (lossless value, different shape)
-    expect(back.geometry).toEqual({ preset: "rect" });
+    expect(back.properties?.geometry).toEqual({ preset: "rect" });
   });
 });

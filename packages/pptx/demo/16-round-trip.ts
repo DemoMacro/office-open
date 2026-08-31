@@ -152,7 +152,9 @@ const slides: SlideOptions[] = [
           y: "0.8cm",
           width: "19.8cm",
           height: "1.6cm",
-          fill: "1B2A4A",
+          properties: {
+            fill: "1B2A4A",
+          },
           textBody: {
             paragraphs: [
               {
@@ -173,17 +175,22 @@ const slides: SlideOptions[] = [
           width: "5.8cm",
           height: "3.4cm",
           textBody: { text: "Shadow + Glow" },
-          geometry: "roundRect",
-          fill: "4472C4",
-          outline: { type: "solidFill", color: { value: "2F5496" }, width: 12700 },
-          effects: {
-            outerShadow: {
-              blurRadius: 50800,
-              distance: 38100,
-              direction: 45,
-              color: { value: "000000", transforms: { alpha: 40 } },
+          properties: {
+            geometry: "roundRect",
+
+            fill: "4472C4",
+
+            outline: { type: "solidFill", color: { value: "2F5496" }, width: 12700 },
+
+            effects: {
+              outerShadow: {
+                blurRadius: 50800,
+                distance: 38100,
+                direction: 45,
+                color: { value: "000000", transforms: { alpha: 40 } },
+              },
+              glow: { radius: 76200, color: { value: "4472C4", transforms: { alpha: 50 } } },
             },
-            glow: { radius: 76200, color: { value: "4472C4", transforms: { alpha: 50 } } },
           },
         },
       },
@@ -195,14 +202,17 @@ const slides: SlideOptions[] = [
           width: "5.8cm",
           height: "3.4cm",
           textBody: { text: "Gradient" },
-          geometry: "chevron",
-          fill: {
-            type: "gradient",
-            angle: 90,
-            stops: [
-              { position: 0, color: "ED7D31" },
-              { position: 100, color: "FFC000" },
-            ],
+          properties: {
+            geometry: "chevron",
+
+            fill: {
+              type: "gradient",
+              angle: 90,
+              stops: [
+                { position: 0, color: "ED7D31" },
+                { position: 100, color: "FFC000" },
+              ],
+            },
           },
         },
       },
@@ -238,7 +248,9 @@ const slides: SlideOptions[] = [
           y: "7.1cm",
           width: "9.0cm",
           height: "4.2cm",
-          outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700, dash: "dash" },
+          properties: {
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700, dash: "dash" },
+          },
           textBody: {
             paragraphs: [
               {
@@ -265,16 +277,21 @@ const slides: SlideOptions[] = [
           width: "6.6cm",
           height: "2.6cm",
           textBody: { text: "3D" },
-          geometry: "roundRect",
-          fill: "70AD47",
-          scene3d: {
-            camera: {
-              preset: "orthographicFront",
-              rotation: { lat: 20, lon: 10, rev: 5 },
+          properties: {
+            geometry: "roundRect",
+
+            fill: "70AD47",
+
+            scene3d: {
+              camera: {
+                preset: "orthographicFront",
+                rotation: { lat: 20, lon: 10, rev: 5 },
+              },
+              lightRig: { rig: "threePt", direction: "top" },
             },
-            lightRig: { rig: "threePt", direction: "top" },
+
+            shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 30000, prstMaterial: "plastic" },
           },
-          shape3d: { bevelT: { w: 8, h: 8 }, extrusionH: 30000, prstMaterial: "plastic" },
         },
       },
       // Alignment + line spacing + super/subscript
@@ -320,7 +337,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Table" },
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
         },
       },
       {
@@ -372,7 +391,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Chart" },
-          fill: "ED7D31",
+          properties: {
+            fill: "ED7D31",
+          },
         },
       },
       {
@@ -405,7 +426,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "SmartArt" },
-          fill: "70AD47",
+          properties: {
+            fill: "70AD47",
+          },
         },
       },
       {
@@ -438,7 +461,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Lines & Connectors" },
-          fill: "7030A0",
+          properties: {
+            fill: "7030A0",
+          },
         },
       },
       {
@@ -447,7 +472,9 @@ const slides: SlideOptions[] = [
           y1: "2.6cm",
           x2: "19.8cm",
           y2: "2.6cm",
-          outline: { type: "solidFill", color: { value: "4472C4" }, width: 25400 },
+          properties: {
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: 25400 },
+          },
         },
       },
       {
@@ -456,12 +483,14 @@ const slides: SlideOptions[] = [
           y1: "4.0cm",
           x2: "15.9cm",
           y2: "9.3cm",
-          outline: {
-            type: "solidFill",
-            color: { value: "ED7D31" },
-            width: 25400,
-            headEnd: { type: "triangle" },
-            tailEnd: { type: "oval" },
+          properties: {
+            outline: {
+              type: "solidFill",
+              color: { value: "ED7D31" },
+              width: 25400,
+              headEnd: { type: "triangle" },
+              tailEnd: { type: "oval" },
+            },
           },
         },
       },
@@ -478,7 +507,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Group" },
-          fill: "FFC000",
+          properties: {
+            fill: "FFC000",
+          },
         },
       },
       {
@@ -496,7 +527,9 @@ const slides: SlideOptions[] = [
                 width: "7.7cm",
                 height: "4.8cm",
                 textBody: { text: "A" },
-                fill: "4472C4",
+                properties: {
+                  fill: "4472C4",
+                },
               },
             },
             {
@@ -506,7 +539,9 @@ const slides: SlideOptions[] = [
                 width: "7.7cm",
                 height: "4.8cm",
                 textBody: { text: "B" },
-                fill: "ED7D31",
+                properties: {
+                  fill: "ED7D31",
+                },
               },
             },
           ],
@@ -565,7 +600,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Animation" },
-          fill: "C00000",
+          properties: {
+            fill: "C00000",
+          },
         },
       },
       {
@@ -576,7 +613,9 @@ const slides: SlideOptions[] = [
           width: "6.6cm",
           height: "2.6cm",
           textBody: { text: "Fly In" },
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
         },
       },
       {
@@ -587,7 +626,9 @@ const slides: SlideOptions[] = [
           width: "6.6cm",
           height: "2.6cm",
           textBody: { text: "Appear" },
-          fill: "70AD47",
+          properties: {
+            fill: "70AD47",
+          },
         },
       },
       {
@@ -598,7 +639,9 @@ const slides: SlideOptions[] = [
           width: "6.6cm",
           height: "2.6cm",
           textBody: { text: "Fade Exit" },
-          fill: "ED7D31",
+          properties: {
+            fill: "ED7D31",
+          },
         },
       },
     ],
@@ -621,7 +664,9 @@ const slides: SlideOptions[] = [
           width: "10.6cm",
           height: "1.6cm",
           textBody: { text: "Notes + Header/Footer slide" },
-          fill: "F2F2F2",
+          properties: {
+            fill: "F2F2F2",
+          },
         },
       },
     ],
@@ -638,7 +683,9 @@ const slides: SlideOptions[] = [
           y: "2.6cm",
           width: "20.1cm",
           height: "10.6cm",
-          fill: "F2F2F2",
+          properties: {
+            fill: "F2F2F2",
+          },
           textBody: { text: "Light theme slide" },
         },
       },
@@ -656,7 +703,9 @@ const slides: SlideOptions[] = [
           y: "2.6cm",
           width: "20.1cm",
           height: "10.6cm",
-          fill: "2D4A7A",
+          properties: {
+            fill: "2D4A7A",
+          },
           textBody: {
             paragraphs: [
               {
@@ -680,7 +729,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Picture + Fill Types" },
-          fill: "7030A0",
+          properties: {
+            fill: "7030A0",
+          },
         },
       },
       // Picture element
@@ -702,11 +753,13 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "5.3cm",
           height: "4.0cm",
-          fill: {
-            type: "pattern",
-            pattern: "diagonalCross",
-            foregroundColor: "4472C4",
-            backgroundColor: "FFFFFF",
+          properties: {
+            fill: {
+              type: "pattern",
+              pattern: "diagonalCross",
+              foregroundColor: "4472C4",
+              backgroundColor: "FFFFFF",
+            },
           },
           textBody: { text: "Pattern" },
         },
@@ -718,8 +771,11 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "5.3cm",
           height: "4.0cm",
-          fill: { type: "none" },
-          outline: { type: "solidFill", color: { value: "ED7D31" }, width: 25400 },
+          properties: {
+            fill: { type: "none" },
+
+            outline: { type: "solidFill", color: { value: "ED7D31" }, width: 25400 },
+          },
           textBody: { text: "No Fill" },
         },
       },
@@ -730,13 +786,15 @@ const slides: SlideOptions[] = [
           y: "7.4cm",
           width: "5.3cm",
           height: "4.0cm",
-          fill: {
-            type: "gradient",
-            path: "circle",
-            stops: [
-              { position: 0, color: "FFFFFF" },
-              { position: 100, color: "4472C4" },
-            ],
+          properties: {
+            fill: {
+              type: "gradient",
+              path: "circle",
+              stops: [
+                { position: 0, color: "FFFFFF" },
+                { position: 100, color: "4472C4" },
+              ],
+            },
           },
           textBody: { text: "Radial" },
         },
@@ -748,7 +806,9 @@ const slides: SlideOptions[] = [
           y: "7.4cm",
           width: "5.3cm",
           height: "4.0cm",
-          fill: { type: "solid", color: "FF0000" },
+          properties: {
+            fill: { type: "solid", color: "FF0000" },
+          },
           textBody: { text: "Solid" },
         },
       },
@@ -765,7 +825,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "More Effects" },
-          fill: "44546A",
+          properties: {
+            fill: "44546A",
+          },
         },
       },
       // Inner shadow
@@ -775,16 +837,19 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "6.6cm",
           height: "4.0cm",
-          fill: "FFC000",
-          textBody: { text: "Inner Shadow" },
-          effects: {
-            innerShadow: {
-              blurRadius: 40000,
-              distance: 30000,
-              direction: 90,
-              color: { value: "000000", transforms: { alpha: 40 } },
+          properties: {
+            fill: "FFC000",
+
+            effects: {
+              innerShadow: {
+                blurRadius: 40000,
+                distance: 30000,
+                direction: 90,
+                color: { value: "000000", transforms: { alpha: 40 } },
+              },
             },
           },
+          textBody: { text: "Inner Shadow" },
         },
       },
       // Reflection
@@ -794,17 +859,20 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "6.6cm",
           height: "4.0cm",
-          fill: "4472C4",
-          textBody: { text: "Reflection" },
-          effects: {
-            reflection: {
-              blurRadius: 6350,
-              distance: 38100,
-              direction: 90,
-              startAlpha: 90,
-              endAlpha: 0,
+          properties: {
+            fill: "4472C4",
+
+            effects: {
+              reflection: {
+                blurRadius: 6350,
+                distance: 38100,
+                direction: 90,
+                startAlpha: 90,
+                endAlpha: 0,
+              },
             },
           },
+          textBody: { text: "Reflection" },
         },
       },
       // Soft edge
@@ -814,9 +882,12 @@ const slides: SlideOptions[] = [
           y: "7.4cm",
           width: "6.6cm",
           height: "4.0cm",
-          fill: "70AD47",
+          properties: {
+            fill: "70AD47",
+
+            effects: { softEdge: 50800 },
+          },
           textBody: { text: "Soft Edge" },
-          effects: { softEdge: 50800 },
         },
       },
       // Multiple effects combined
@@ -826,19 +897,23 @@ const slides: SlideOptions[] = [
           y: "7.4cm",
           width: "6.6cm",
           height: "4.0cm",
-          fill: "ED7D31",
-          geometry: "ellipse",
-          textBody: { text: "Combined" },
-          effects: {
-            outerShadow: {
-              blurRadius: 38100,
-              distance: 25400,
-              direction: 90,
-              color: { value: "000000", transforms: { alpha: 50 } },
+          properties: {
+            fill: "ED7D31",
+
+            geometry: "ellipse",
+
+            effects: {
+              outerShadow: {
+                blurRadius: 38100,
+                distance: 25400,
+                direction: 90,
+                color: { value: "000000", transforms: { alpha: 50 } },
+              },
+              reflection: { startAlpha: 80, endAlpha: 0 },
+              glow: { radius: 50000, color: { value: "ED7D31", transforms: { alpha: 40 } } },
             },
-            reflection: { startAlpha: 80, endAlpha: 0 },
-            glow: { radius: 50000, color: { value: "ED7D31", transforms: { alpha: 40 } } },
           },
+          textBody: { text: "Combined" },
         },
       },
     ],
@@ -854,7 +929,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "0.8cm",
           textBody: { text: "Chart Types" },
-          fill: "ED7D31",
+          properties: {
+            fill: "ED7D31",
+          },
         },
       },
       {
@@ -911,7 +988,9 @@ const slides: SlideOptions[] = [
           width: "10.6cm",
           height: "1.1cm",
           textBody: { text: "Enhanced Table" },
-          fill: "44546A",
+          properties: {
+            fill: "44546A",
+          },
         },
       },
       {
@@ -995,7 +1074,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Comments + Hyperlink" },
-          fill: "7030A0",
+          properties: {
+            fill: "7030A0",
+          },
         },
       },
       {
@@ -1035,7 +1116,9 @@ const slides: SlideOptions[] = [
           width: "10.6cm",
           height: "1.1cm",
           textBody: { text: "Transitions + Emphasis" },
-          fill: "C00000",
+          properties: {
+            fill: "C00000",
+          },
         },
       },
       {
@@ -1046,7 +1129,9 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "2.6cm",
           textBody: { text: "Grow" },
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
         },
       },
       {
@@ -1057,7 +1142,9 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "2.6cm",
           textBody: { text: "Spin" },
-          fill: "70AD47",
+          properties: {
+            fill: "70AD47",
+          },
         },
       },
       {
@@ -1068,7 +1155,9 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "2.6cm",
           textBody: { text: "Color" },
-          fill: "ED7D31",
+          properties: {
+            fill: "ED7D31",
+          },
         },
       },
       {
@@ -1079,7 +1168,9 @@ const slides: SlideOptions[] = [
           width: "5.3cm",
           height: "2.6cm",
           textBody: { text: "Pulse" },
-          fill: "7030A0",
+          properties: {
+            fill: "7030A0",
+          },
         },
       },
     ],
@@ -1107,7 +1198,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Video" },
-          fill: "2D4A7A",
+          properties: {
+            fill: "2D4A7A",
+          },
         },
       },
       {
@@ -1136,7 +1229,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Audio" },
-          fill: "44546A",
+          properties: {
+            fill: "44546A",
+          },
         },
       },
       {
@@ -1163,7 +1258,9 @@ const slides: SlideOptions[] = [
           width: "7.9cm",
           height: "1.1cm",
           textBody: { text: "Geometry" },
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
         },
       },
       {
@@ -1173,7 +1270,9 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "rect" },
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
         },
       },
       {
@@ -1183,8 +1282,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "ellipse" },
-          fill: "ED7D31",
-          geometry: "ellipse",
+          properties: {
+            fill: "ED7D31",
+
+            geometry: "ellipse",
+          },
         },
       },
       {
@@ -1194,8 +1296,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "diamond" },
-          fill: "70AD47",
-          geometry: "diamond",
+          properties: {
+            fill: "70AD47",
+
+            geometry: "diamond",
+          },
         },
       },
       {
@@ -1205,8 +1310,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "triangle" },
-          fill: "FFC000",
-          geometry: "triangle",
+          properties: {
+            fill: "FFC000",
+
+            geometry: "triangle",
+          },
         },
       },
       {
@@ -1216,8 +1324,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "pentagon" },
-          fill: "7030A0",
-          geometry: "pentagon",
+          properties: {
+            fill: "7030A0",
+
+            geometry: "pentagon",
+          },
         },
       },
       {
@@ -1227,8 +1338,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "hexagon" },
-          fill: "C00000",
-          geometry: "hexagon",
+          properties: {
+            fill: "C00000",
+
+            geometry: "hexagon",
+          },
         },
       },
       {
@@ -1238,8 +1352,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "star" },
-          fill: "44546A",
-          geometry: "star5",
+          properties: {
+            fill: "44546A",
+
+            geometry: "star5",
+          },
         },
       },
       {
@@ -1249,8 +1366,11 @@ const slides: SlideOptions[] = [
           width: "4.0cm",
           height: "4.0cm",
           textBody: { text: "plus" },
-          fill: "2D4A7A",
-          geometry: "plus",
+          properties: {
+            fill: "2D4A7A",
+
+            geometry: "plus",
+          },
         },
       },
     ],
@@ -1266,7 +1386,9 @@ const slides: SlideOptions[] = [
           width: "10.6cm",
           height: "1.1cm",
           textBody: { text: "Text Body Options" },
-          fill: "44546A",
+          properties: {
+            fill: "44546A",
+          },
         },
       },
       // Vertical text
@@ -1276,7 +1398,9 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "2.6cm",
           height: "7.9cm",
-          fill: "4472C4",
+          properties: {
+            fill: "4472C4",
+          },
           textBody: { bodyProperties: { vertical: "vertical" }, text: "Vertical" },
         },
       },
@@ -1287,8 +1411,11 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "5.3cm",
           height: "7.9cm",
-          fill: "F2F2F2",
-          outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700 },
+          properties: {
+            fill: "F2F2F2",
+
+            outline: { type: "solidFill", color: { value: "4472C4" }, width: 12700 },
+          },
           textBody: { bodyProperties: { anchor: "bottom" }, text: "Anchored Bottom" },
         },
       },
@@ -1299,7 +1426,9 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "5.3cm",
           height: "2.6cm",
-          fill: "E8F0FE",
+          properties: {
+            fill: "E8F0FE",
+          },
           textBody: {
             bodyProperties: { normAutofit: {} },
             text: "AutoFit Shrink Text To Fit Shape",
@@ -1313,7 +1442,9 @@ const slides: SlideOptions[] = [
           y: "2.1cm",
           width: "4.0cm",
           height: "2.6cm",
-          fill: "ED7D31",
+          properties: {
+            fill: "ED7D31",
+          },
           textBody: { text: "Flipped" },
           flipHorizontal: true,
         },
@@ -1355,7 +1486,17 @@ const options: PresentationOptions = {
         },
       },
       children: [
-        { shape: { x: "0.0cm", y: "16.9cm", width: "25.4cm", height: "1.1cm", fill: "4472C4" } },
+        {
+          shape: {
+            x: "0.0cm",
+            y: "16.9cm",
+            width: "25.4cm",
+            height: "1.1cm",
+            properties: {
+              fill: "4472C4",
+            },
+          },
+        },
       ],
     },
     {
@@ -1381,7 +1522,17 @@ const options: PresentationOptions = {
         },
       },
       children: [
-        { shape: { x: "0.0cm", y: "16.9cm", width: "25.4cm", height: "1.1cm", fill: "ED7D31" } },
+        {
+          shape: {
+            x: "0.0cm",
+            y: "16.9cm",
+            width: "25.4cm",
+            height: "1.1cm",
+            properties: {
+              fill: "ED7D31",
+            },
+          },
+        },
       ],
     },
   ],

@@ -22,7 +22,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Axes — scaling, units, gridlines, ticks, title" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -91,7 +93,9 @@ const options: PresentationOptions = {
             textBody: {
               text: "Series — marker, smooth, data points, trendline, error bars, labels",
             },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -136,7 +140,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "3D view, walls, floor, manual layout, bar shape" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -184,7 +190,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Up/down bars, hi-low lines, drop lines, data table" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -241,7 +249,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Pie first slice + explosion, doughnut hole size" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -291,7 +301,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Bubble scale, size represents, negative bubbles" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
         {
@@ -328,7 +340,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Surface wireframe" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -361,7 +375,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Bar-of-pie: split type, position, second pie size" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -393,7 +409,9 @@ const options: PresentationOptions = {
             width: "16cm",
             height: "1.1cm",
             textBody: { text: "Multi-level categories" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -426,7 +444,9 @@ const options: PresentationOptions = {
             textBody: {
               text: "ChartSpace: blanks, color map override, protection, print settings",
             },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {

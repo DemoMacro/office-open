@@ -17,7 +17,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Column Chart" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -50,7 +52,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Pie Chart" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -77,7 +81,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Line Chart" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -108,7 +114,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Scatter Chart" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -140,7 +148,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Area Chart" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -170,7 +180,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Bubble Chart" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
         {
@@ -212,7 +224,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Doughnut Chart" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -240,7 +254,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Radar Chart" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -271,7 +287,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Stock Chart" },
-            fill: "FF0000",
+            properties: {
+              fill: "FF0000",
+            },
           },
         },
         {
@@ -303,7 +321,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Surface Chart" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -335,7 +355,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "3D Column Chart" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -368,7 +390,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "3D Pie Chart" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -396,7 +420,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "3D Line Chart" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {

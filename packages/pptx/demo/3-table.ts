@@ -38,7 +38,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Table Demo" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -119,7 +121,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Vertical Align & Cell Margins" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -172,7 +176,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Merged Cells" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -224,7 +230,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Custom Table Style" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {

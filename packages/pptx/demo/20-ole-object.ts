@@ -66,7 +66,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.1cm",
             textBody: { text: "OLE Object Demo" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {

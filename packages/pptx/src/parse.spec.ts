@@ -25,7 +25,7 @@ describe("parsePresentation", () => {
                 width: 600,
                 height: 400,
                 textBody: { text: "Hello" },
-                fill: "4472C4",
+                properties: { fill: "4472C4" },
               },
             },
           ],
@@ -343,8 +343,10 @@ describe("raw fidelity fallbacks", () => {
       xml.replace(/<p:spPr>/, (m) => `${m}${ext}`),
     );
     const parsed = parsePresentation(mutated);
-    const shape = parsed.slides![0]?.children?.[0] as { shape?: { ext?: string } };
-    expect(shape.shape?.ext).to.contain("{SP-TEST}");
+    const shape = parsed.slides![0]?.children?.[0] as {
+      shape?: { properties?: { ext?: string } };
+    };
+    expect(shape.shape?.properties?.ext).to.contain("{SP-TEST}");
 
     const regenerated = await generatePresentation(parsed);
     const slideXml = decodeEntry(regenerated, "ppt/slides/slide1.xml");

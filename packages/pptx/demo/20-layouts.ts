@@ -18,8 +18,11 @@ const options: PresentationOptions = {
             y: "18.4cm",
             width: "33.9cm",
             height: "0.7cm",
-            geometry: "rect",
-            fill: "4472C4",
+            properties: {
+              geometry: "rect",
+
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -53,8 +56,11 @@ const options: PresentationOptions = {
                 y: "0.0cm",
                 width: "33.9cm",
                 height: "7.4cm",
-                geometry: "rect",
-                fill: "4472C4",
+                properties: {
+                  geometry: "rect",
+
+                  fill: "4472C4",
+                },
               },
             },
           ],
@@ -93,8 +99,11 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "5.3cm",
             textBody: { text: "Title Slide Layout" },
-            geometry: "rect",
-            fill: "0F3460",
+            properties: {
+              geometry: "rect",
+
+              fill: "0F3460",
+            },
           },
         },
       ],
@@ -109,7 +118,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "2.6cm",
             textBody: { text: "Title and Content Layout" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -119,7 +130,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "5.3cm",
             textBody: { text: "Content area" },
-            fill: "E8E8E8",
+            properties: {
+              fill: "E8E8E8",
+            },
           },
         },
       ],
@@ -134,7 +147,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "2.6cm",
             textBody: { text: "Two Column Layout" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
       ],
@@ -149,7 +164,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "7.9cm",
             textBody: { text: "Blank Layout" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],
@@ -164,7 +181,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "2.6cm",
             textBody: { text: "Title Only Layout" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
       ],
@@ -179,7 +198,9 @@ const options: PresentationOptions = {
             width: "28.6cm",
             height: "4.8cm",
             textBody: { text: "Custom Hero Layout" },
-            fill: "2E75B6",
+            properties: {
+              fill: "2E75B6",
+            },
           },
         },
         {
@@ -191,7 +212,9 @@ const options: PresentationOptions = {
             textBody: {
               text: "This slide uses a custom layout with decorative header bar and custom placeholder positions.",
             },
-            fill: "E8E8E8",
+            properties: {
+              fill: "E8E8E8",
+            },
           },
         },
       ],

@@ -125,8 +125,9 @@ function docxChildMediaToBox(t: MediaDataTransformation): AbsoluteBox {
 
 // ── shape-child spPr bridge ──
 
-/** pptx shape top-level → core spPr (group-child position is absolute). */
+/** pptx shape → core spPr (group-child position is absolute). */
 function pptxShapeToSpPr(shape: PptxShapeOptions): ShapePropertiesOptions {
+  const paint = shape.properties ?? {};
   return {
     x: shape.x,
     y: shape.y,
@@ -134,13 +135,13 @@ function pptxShapeToSpPr(shape: PptxShapeOptions): ShapePropertiesOptions {
     height: shape.height,
     ...(shape.rotation !== undefined ? { rotation: shape.rotation } : {}),
     ...(shape.flipHorizontal ? { flipHorizontal: true } : {}),
-    ...(shape.geometry !== undefined ? { geometry: shape.geometry } : {}),
-    ...(shape.customGeometry !== undefined ? { customGeometry: shape.customGeometry } : {}),
-    ...pickContent(shape),
+    ...(paint.geometry !== undefined ? { geometry: paint.geometry } : {}),
+    ...(paint.customGeometry !== undefined ? { customGeometry: paint.customGeometry } : {}),
+    ...pickContent(paint),
   };
 }
 
-/** core spPr → pptx shape top-level fields. */
+/** core spPr → pptx shape (transform top-level, paint nested in `properties`). */
 function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
   return {
     x: spPr.x,
@@ -150,9 +151,11 @@ function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
     ...(spPr.rotation !== undefined ? { rotation: spPr.rotation } : {}),
     ...(spPr.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(spPr.flipVertical ? { flipVertical: true } : {}),
-    ...(spPr.geometry !== undefined ? { geometry: spPr.geometry } : {}),
-    ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
-    ...pickContent(spPr),
+    properties: {
+      ...(spPr.geometry !== undefined ? { geometry: spPr.geometry } : {}),
+      ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
+      ...pickContent(spPr),
+    },
   };
 }
 
@@ -196,8 +199,7 @@ function xlsxConnectorChildToPptx(c: GroupConnectorChildOptions): PptxConnectorO
     y1,
     x2,
     y2,
-    ...(c.properties.outline !== undefined ? { outline: c.properties.outline } : {}),
-    ...(c.properties.fill !== undefined ? { fill: c.properties.fill } : {}),
+    properties: pickContent(c.properties),
     ...(c.locking ? { locking: c.locking } : {}),
     ...(c.startConnection ? { startConnection: c.startConnection } : {}),
     ...(c.endConnection ? { endConnection: c.endConnection } : {}),
@@ -428,8 +430,7 @@ function pptxConnectorToXlsxChild(c: PptxConnectorOptions): GroupConnectorChildO
     width: box.width,
     height: box.height,
     geometry: "line",
-    ...(c.outline !== undefined ? { outline: c.outline } : {}),
-    ...(c.fill !== undefined ? { fill: c.fill } : {}),
+    ...pickContent(c.properties ?? {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(box.flipVertical ? { flipVertical: true } : {}),
   };

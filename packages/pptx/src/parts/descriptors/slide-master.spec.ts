@@ -102,7 +102,9 @@ describe("slideMasterDesc round-trip", () => {
 
   it("round-trips custom children shapes", () => {
     const result = roundTrip({
-      children: [{ shape: { x: 100, y: 100, width: 200, height: 200, fill: "FF0000" } }],
+      children: [
+        { shape: { x: 100, y: 100, width: 200, height: 200, properties: { fill: "FF0000" } } },
+      ],
     });
     expect(result.children?.length).toBe(1);
   });

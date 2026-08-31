@@ -200,6 +200,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
     };
   }
   // pptx → docx
+  const spPr = source.properties ?? {};
   const box = boxFromPptx(
     source.x,
     source.y,
@@ -208,12 +209,12 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
     source.rotation,
     source.flipHorizontal,
   );
-  const preset = toPresetGeometry(source.geometry);
+  const preset = toPresetGeometry(spPr.geometry);
   return {
     data: {
       children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
-      ...pickContent(source),
-      ...(source.customGeometry !== undefined ? { customGeometry: source.customGeometry } : {}),
+      ...pickContent(spPr),
+      ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
       ...(preset !== undefined ? { presetGeometry: preset } : {}),
       ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
     },
@@ -250,9 +251,11 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
     );
     const result: PptxShapeOptions = {
       ...boxToPptx(box),
-      ...pickContent(spPr),
-      ...(spPr.geometry !== undefined ? { geometry: spPr.geometry } : {}),
-      ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
+      properties: {
+        ...pickContent(spPr),
+        ...(spPr.geometry !== undefined ? { geometry: spPr.geometry } : {}),
+        ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
+      },
       ...(source.textBody ? { textBody: source.textBody } : {}),
       ...pickNonVisualDrawingProperties(source),
     };
@@ -263,12 +266,14 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
   const textBody = docxToTextBody(source.children, source.bodyProperties);
   const result: PptxShapeOptions = {
     ...boxToPptx(box),
-    ...pickContent(source),
-    ...(source.presetGeometry !== undefined
-      ? { geometry: source.presetGeometry }
-      : source.customGeometry !== undefined
-        ? { customGeometry: source.customGeometry }
-        : {}),
+    properties: {
+      ...pickContent(source),
+      ...(source.presetGeometry !== undefined
+        ? { geometry: source.presetGeometry }
+        : source.customGeometry !== undefined
+          ? { customGeometry: source.customGeometry }
+          : {}),
+    },
     ...(textBody ? { textBody } : {}),
     ...pickNonVisualDrawingProperties(source.nonVisualProperties),
   };
@@ -310,6 +315,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     };
   }
   // pptx → xlsx
+  const paint = source.properties ?? {};
   const box = boxFromPptx(
     source.x,
     source.y,
@@ -324,9 +330,9 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     y: pos.xfrmY,
     width: box.width,
     height: box.height,
-    ...pickContent(source),
-    ...(source.geometry !== undefined ? { geometry: source.geometry } : {}),
-    ...(source.customGeometry !== undefined ? { customGeometry: source.customGeometry } : {}),
+    ...pickContent(paint),
+    ...(paint.geometry !== undefined ? { geometry: paint.geometry } : {}),
+    ...(paint.customGeometry !== undefined ? { customGeometry: paint.customGeometry } : {}),
     ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
     ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
   };

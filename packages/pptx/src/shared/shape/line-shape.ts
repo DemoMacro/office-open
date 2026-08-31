@@ -4,18 +4,26 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type {
-  EffectListOptions,
-  OutlineOptions,
   PresetGeometryOptions,
-  Scene3DOptions,
-  Shape3DOptions,
   ShapeLockingOptions,
+  ShapePropertiesOptions,
   ShapeType,
   TextBodyOptions,
 } from "@office-open/core/drawing";
-import type { FillOptions } from "@shared/drawing/fill";
 
 import type { ShapeStyleOptions } from "./shape";
+
+/** spPr paint children carried by endpoint-model shapes (p:sp line, p:cxnSp). */
+export type EndpointShapeProperties = Pick<
+  ShapePropertiesOptions,
+  "fill" | "outline" | "effects" | "scene3d" | "shape3d"
+>;
+
+/** Connector paint adds the preset geometry to the shared endpoint paint. */
+export type ConnectorShapeProperties = EndpointShapeProperties & {
+  /** Connector preset geometry (a:prstGeom @prst with adjustment guides). */
+  geometry?: ShapeType | PresetGeometryOptions;
+};
 
 export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
@@ -27,43 +35,33 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
   y2?: number | UniversalMeasure;
-  fill?: FillOptions;
-  outline?: OutlineOptions;
-  /** Effect list (a:effectLst) inside spPr. An empty object emits the bare element. */
-  effects?: EffectListOptions;
-  /** 3D scene (a:scene3d) inside spPr. */
-  scene3d?: Scene3DOptions;
-  /** 3D shape properties (a:sp3d) inside spPr. */
-  shape3d?: Shape3DOptions;
+  /**
+   * Line paint (a:spPr children): fill/outline/effects/3D. Endpoints stay
+   * top-level — direction is encoded as xfrm flip, not an owner transform.
+   */
+  properties?: EndpointShapeProperties;
   /** Shape style matrix reference (p:style). */
   style?: ShapeStyleOptions;
 }
 
 /**
  * Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint
- * connection fields come from `BaseConnectorOptions`; the rest is the
- * pptx two-endpoint positioning model plus line fill/outline.
+ * connection fields come from `BaseConnectorOptions`; the rest is the pptx
+ * two-endpoint positioning model plus the connector paint.
  */
 export interface ConnectorOptions extends BaseConnectorOptions {
   id?: number;
   /**
-   * Connector preset geometry (a:prstGeom @prst with optional adjustment
-   * guides). The endpoint model defaults to "line"; source connectors often
-   * use bentConnector/elbowConnector forms with adjusted values.
+   * Connector paint (a:spPr children): geometry/fill/outline/effects/3D. The
+   * endpoint model defaults to "line"; source connectors often use
+   * bentConnector/elbowConnector forms with adjusted values. Endpoints stay
+   * top-level.
    */
-  geometry?: ShapeType | PresetGeometryOptions;
+  properties?: ConnectorShapeProperties;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
   y2?: number | UniversalMeasure;
-  fill?: FillOptions;
-  outline?: OutlineOptions;
-  /** Effect list (a:effectLst) inside spPr. An empty object emits the bare element. */
-  effects?: EffectListOptions;
-  /** 3D scene (a:scene3d) inside spPr. */
-  scene3d?: Scene3DOptions;
-  /** 3D shape properties (a:sp3d) inside spPr. */
-  shape3d?: Shape3DOptions;
   /** Shape style matrix reference (p:style). */
   style?: ShapeStyleOptions;
 }

@@ -18,7 +18,9 @@ const options: PresentationOptions = {
             width: "18cm",
             height: "1.5cm",
             textBody: { text: "Tab stops" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {

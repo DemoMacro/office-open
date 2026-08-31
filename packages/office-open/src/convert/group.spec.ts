@@ -20,8 +20,7 @@ const PPTX_GROUP: PptxGroupOptions = {
         y: 190500,
         width: 1219200,
         height: 381000,
-        geometry: "rect",
-        fill: "4472C4",
+        properties: { geometry: "rect", fill: "4472C4" },
         textBody: { text: "Child" },
       },
     },
@@ -77,8 +76,8 @@ describe("round-trip pptx → xlsx → pptx", () => {
     expect(back.height).toBe(762000);
     expect(back.children).toHaveLength(1);
     const shape = (back.children[0] as { shape: PptxShapeOptions }).shape;
-    expect(shape.geometry).toBe("rect");
-    expect(shape.fill).toBe("4472C4");
+    expect(shape.properties?.geometry).toBe("rect");
+    expect(shape.properties?.fill).toBe("4472C4");
     expect(shape.textBody).toEqual({ text: "Child" });
   });
 });
@@ -92,7 +91,7 @@ describe("round-trip pptx → docx → pptx", () => {
     expect(back.height).toBe(762000);
     expect(back.children).toHaveLength(1);
     const shape = (back.children[0] as { shape: PptxShapeOptions }).shape;
-    expect(shape.fill).toBe("4472C4");
+    expect(shape.properties?.fill).toBe("4472C4");
     expect(shape.textBody?.paragraphs?.[0]).toBe("Child");
   });
 });

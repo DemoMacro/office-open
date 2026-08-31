@@ -63,8 +63,10 @@ export interface ShapePropertiesOptions {
   // string geometry is shorthand for { preset: "<name>" }.
   geometry?: ShapeType | PresetGeometryOptions;
   customGeometry?: CustomGeometryOptions;
-  // EG_FillProperties
-  fill?: FillOptions;
+  // EG_FillProperties. `null` marks a source spPr with no fill child — the
+  // shape inherits its fill, so stringify emits nothing instead of applying a
+  // fresh-authoring default.
+  fill?: FillOptions | null;
   // a:ln
   outline?: OutlineOptions;
   // EG_EffectProperties (choice: a:effectDag | a:effectLst)
@@ -126,8 +128,8 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
       if (g) parts.push(g);
     }
 
-    // EG_FillProperties
-    if (opts.fill !== undefined) {
+    // EG_FillProperties — null (inherited fill) emits nothing
+    if (opts.fill) {
       const f = fillDesc.stringify(opts.fill, ctx);
       if (f) parts.push(f);
     }

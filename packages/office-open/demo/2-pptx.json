@@ -77,8 +77,10 @@
                 }
               ]
             },
-            "fill": "4472C4",
-            "outline": { "color": "2F5496", "width": 1 }
+            "properties": {
+              "fill": "4472C4",
+              "outline": { "color": "2F5496", "width": 1 }
+            }
           }
         },
         {
@@ -95,7 +97,7 @@
                 }
               ]
             },
-            "fill": "ED7D31"
+            "properties": { "fill": "ED7D31" }
           }
         },
         {
@@ -112,12 +114,14 @@
                 }
               ]
             },
-            "fill": {
-              "type": "gradient",
-              "stops": [
-                { "position": 0, "color": "4472C4" },
-                { "position": 1, "color": "ED7D31" }
-              ]
+            "properties": {
+              "fill": {
+                "type": "gradient",
+                "stops": [
+                  { "position": 0, "color": "4472C4" },
+                  { "position": 1, "color": "ED7D31" }
+                ]
+              }
             }
           }
         },
@@ -135,7 +139,7 @@
                 }
               ]
             },
-            "outline": { "color": "4472C4", "width": 2 }
+            "properties": { "outline": { "color": "4472C4", "width": 2 } }
           }
         },
         {
@@ -144,7 +148,7 @@
             "y1": 340,
             "x2": 760,
             "y2": 340,
-            "outline": { "color": "B0C4DE", "width": 1 }
+            "properties": { "outline": { "color": "B0C4DE", "width": 1 } }
           }
         }
       ]
@@ -172,8 +176,10 @@
                 }
               ]
             },
-            "fill": "4472C4",
-            "outline": { "color": "2F5496", "width": 1 }
+            "properties": {
+              "fill": "4472C4",
+              "outline": { "color": "2F5496", "width": 1 }
+            }
           }
         },
         {
@@ -211,12 +217,14 @@
             "y1": 200,
             "x2": 550,
             "y2": 200,
-            "outline": {
-              "type": "solidFill",
-              "color": { "value": "FFC000" },
-              "width": 2,
-              "headEnd": { "type": "triangle" },
-              "tailEnd": { "type": "oval" }
+            "properties": {
+              "outline": {
+                "type": "solidFill",
+                "color": { "value": "FFC000" },
+                "width": 2,
+                "headEnd": { "type": "triangle" },
+                "tailEnd": { "type": "oval" }
+              }
             }
           }
         },
@@ -226,11 +234,13 @@
             "y1": 200,
             "x2": 550,
             "y2": 380,
-            "outline": {
-              "type": "solidFill",
-              "color": { "value": "FFC000" },
-              "width": 2,
-              "headEnd": { "type": "triangle" }
+            "properties": {
+              "outline": {
+                "type": "solidFill",
+                "color": { "value": "FFC000" },
+                "width": 2,
+                "headEnd": { "type": "triangle" }
+              }
             }
           }
         }
@@ -259,8 +269,10 @@
                 }
               ]
             },
-            "fill": "4472C4",
-            "outline": { "color": "2F5496", "width": 1 }
+            "properties": {
+              "fill": "4472C4",
+              "outline": { "color": "2F5496", "width": 1 }
+            }
           }
         },
         {
@@ -284,7 +296,7 @@
                       }
                     ]
                   },
-                  "fill": "4472C4"
+                  "properties": { "fill": "4472C4" }
                 }
               },
               {
@@ -301,7 +313,7 @@
                       }
                     ]
                   },
-                  "fill": "ED7D31"
+                  "properties": { "fill": "ED7D31" }
                 }
               },
               {
@@ -318,7 +330,7 @@
                       }
                     ]
                   },
-                  "fill": "70AD47"
+                  "properties": { "fill": "70AD47" }
                 }
               }
             ]
@@ -350,8 +362,10 @@
                 }
               ]
             },
-            "fill": "4472C4",
-            "outline": { "color": "2F5496", "width": 1 }
+            "properties": {
+              "fill": "4472C4",
+              "outline": { "color": "2F5496", "width": 1 }
+            }
           }
         },
         {

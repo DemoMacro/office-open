@@ -206,7 +206,9 @@ const options: PresentationOptions = {
             y: "9.3cm",
             width: "15.9cm",
             height: "1.1cm",
-            fill: "333333",
+            properties: {
+              fill: "333333",
+            },
             textBody: {
               paragraphs: [
                 {
@@ -248,7 +250,9 @@ const options: PresentationOptions = {
             y: "11.1cm",
             width: "15.9cm",
             height: "3.2cm",
-            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -283,7 +287,9 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -312,7 +318,9 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -346,7 +354,9 @@ const options: PresentationOptions = {
             y: "18.8cm",
             width: "7.4cm",
             height: "5.3cm",
-            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -381,7 +391,9 @@ const options: PresentationOptions = {
             y: "14.8cm",
             width: "7.4cm",
             height: "3.2cm",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -407,7 +419,9 @@ const options: PresentationOptions = {
             y: "14.8cm",
             width: "7.4cm",
             height: "3.2cm",
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {

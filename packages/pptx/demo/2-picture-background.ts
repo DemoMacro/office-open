@@ -17,9 +17,18 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "2.6cm",
             textBody: { text: "With Outline" },
-            geometry: "roundRect",
-            fill: "FFFFFF",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: 25400, dash: "dash" },
+            properties: {
+              geometry: "roundRect",
+
+              fill: "FFFFFF",
+
+              outline: {
+                type: "solidFill",
+                color: { value: "4472C4" },
+                width: 25400,
+                dash: "dash",
+              },
+            },
           },
         },
         {
@@ -29,13 +38,15 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "2.6cm",
             textBody: { text: "Gradient Fill" },
-            fill: {
-              type: "gradient",
-              angle: 0,
-              stops: [
-                { position: 0, color: "4472C4" },
-                { position: 100, color: "ED7D31" },
-              ],
+            properties: {
+              fill: {
+                type: "gradient",
+                angle: 0,
+                stops: [
+                  { position: 0, color: "4472C4" },
+                  { position: 100, color: "ED7D31" },
+                ],
+              },
             },
           },
         },
@@ -60,8 +71,11 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "5.3cm",
             textBody: { text: "On Gradient BG" },
-            fill: "FFFFFF",
-            outline: { type: "solidFill", color: { value: "FFC000" }, width: 12700 },
+            properties: {
+              fill: "FFFFFF",
+
+              outline: { type: "solidFill", color: { value: "FFC000" }, width: 12700 },
+            },
           },
         },
       ],
@@ -86,7 +100,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "2.1cm",
             textBody: { text: "Background with Shadow Effect" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -111,7 +127,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "2.1cm",
             textBody: { text: "Background with shadeToTitle" },
-            fill: "FFFFFF",
+            properties: {
+              fill: "FFFFFF",
+            },
           },
         },
       ],

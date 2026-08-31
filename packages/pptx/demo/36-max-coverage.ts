@@ -31,8 +31,11 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Maximum coverage deck" },
-            geometry: "rect",
-            fill: "4472C4",
+            properties: {
+              geometry: "rect",
+
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -123,7 +126,9 @@ const options: PresentationOptions = {
                   width: "3.9cm",
                   height: "2.6cm",
                   textBody: { text: "Grouped A" },
-                  geometry: "ellipse",
+                  properties: {
+                    geometry: "ellipse",
+                  },
                 },
               },
               {
@@ -133,7 +138,9 @@ const options: PresentationOptions = {
                   width: "3.9cm",
                   height: "2.6cm",
                   textBody: { text: "Grouped B" },
-                  geometry: "triangle",
+                  properties: {
+                    geometry: "triangle",
+                  },
                 },
               },
             ],

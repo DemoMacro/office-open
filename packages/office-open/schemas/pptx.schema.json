@@ -1436,7 +1436,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "fileName": {
           "$ref": "#/definitions/VideoFrameOptions/properties/fileName"
@@ -4034,7 +4034,7 @@
     },
     "ConnectorOptions": {
       "additionalProperties": false,
-      "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from `BaseConnectorOptions`; the rest is the pptx two-endpoint positioning model plus line fill/outline.",
+      "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from `BaseConnectorOptions`; the rest is the pptx two-endpoint positioning model plus the connector paint.",
       "properties": {
         "creationId": {
           "$ref": "#/definitions/Guid",
@@ -4043,30 +4043,12 @@
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
-        "effects": {
-          "$ref": "#/definitions/EffectListOptions",
-          "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
-        },
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
-        },
-        "geometry": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ShapeType"
-            },
-            {
-              "$ref": "#/definitions/PresetGeometryOptions"
-            }
-          ],
-          "description": "Connector preset geometry (a:prstGeom"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -4082,16 +4064,9 @@
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
         },
-        "outline": {
-          "$ref": "#/definitions/OutlineOptions"
-        },
-        "scene3d": {
-          "$ref": "#/definitions/Scene3DOptions",
-          "description": "3D scene (a:scene3d) inside spPr."
-        },
-        "shape3d": {
-          "$ref": "#/definitions/Shape3DOptions",
-          "description": "3D shape properties (a:sp3d) inside spPr."
+        "properties": {
+          "$ref": "#/definitions/ConnectorShapeProperties",
+          "description": "Connector paint (a:spPr children): geometry/fill/outline/effects/3D. The endpoint model defaults to \"line\"; source connectors often use bentConnector/elbowConnector forms with adjusted values. Endpoints stay top-level."
         },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
@@ -4144,6 +4119,46 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        }
+      },
+      "type": "object"
+    },
+    "ConnectorShapeProperties": {
+      "additionalProperties": false,
+      "description": "Connector paint adds the preset geometry to the shared endpoint paint.",
+      "properties": {
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geometry": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ShapeType"
+            },
+            {
+              "$ref": "#/definitions/PresetGeometryOptions"
+            }
+          ],
+          "description": "Connector preset geometry (a:prstGeom"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions"
         }
       },
       "type": "object"
@@ -5287,6 +5302,35 @@
       "required": ["id", "index"],
       "type": "object"
     },
+    "EndpointShapeProperties": {
+      "additionalProperties": false,
+      "description": "spPr paint children carried by endpoint-model shapes (p:sp line, p:cxnSp).",
+      "properties": {
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions"
+        }
+      },
+      "type": "object"
+    },
     "ErrorBarDirection": {
       "description": "Which axes the error bars span: both, x only, or y only.",
       "enum": ["x", "y"],
@@ -5998,7 +6042,7 @@
           "description": "Group-level effects (EG_EffectProperties on grpSpPr)."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "fill": {
           "$ref": "#/definitions/FillOptions",
@@ -7065,15 +7109,8 @@
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
-        "effects": {
-          "$ref": "#/definitions/EffectListOptions",
-          "description": "Effect list (a:effectLst) inside spPr. An empty object emits the bare element."
-        },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
-        },
-        "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -7089,16 +7126,9 @@
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
         },
-        "outline": {
-          "$ref": "#/definitions/OutlineOptions"
-        },
-        "scene3d": {
-          "$ref": "#/definitions/Scene3DOptions",
-          "description": "3D scene (a:scene3d) inside spPr."
-        },
-        "shape3d": {
-          "$ref": "#/definitions/Shape3DOptions",
-          "description": "3D shape properties (a:sp3d) inside spPr."
+        "properties": {
+          "$ref": "#/definitions/EndpointShapeProperties",
+          "description": "Line paint (a:spPr children): fill/outline/effects/3D. Endpoints stay top-level — direction is encoded as xfrm flip, not an owner transform."
         },
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions",
@@ -7188,7 +7218,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -7295,13 +7325,20 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "$ref": "#/definitions/ShapePropertiesOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/ext"
         },
         "extensions": {
-          "$ref": "#/definitions/ShapePropertiesOptions/properties/extensions"
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/extensions"
         },
         "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "flipHorizontal": {
           "type": "boolean"
@@ -7809,7 +7846,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -8112,7 +8149,7 @@
           "description": "Embedded OLE object (binary registered as ppt/embeddings/oleObjectN.bin). Mutually exclusive with `link` — p:oleObj's content model is a required choice between p:embed and p:link."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -8778,8 +8815,7 @@
           "description": "Shape-level effects on p:spPr (e.g. shadow/reflection)."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the shape name.",
@@ -8981,10 +9017,17 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "geometry": {
           "anyOf": [
@@ -10581,55 +10624,19 @@
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
-        "customGeometry": {
-          "$ref": "#/definitions/CustomGeometryOptions"
-        },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
           "type": "string"
         },
-        "effects": {
-          "$ref": "#/definitions/EffectListOptions"
-        },
         "ext": {
-          "description": "Raw a:extLst inner XML — verbatim round-trip for unmodeled extensions.",
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
           "type": "string"
-        },
-        "extensions": {
-          "description": "Shape-property extensions (p:spPr/a:extLst/a:ext).",
-          "items": {
-            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
-          },
-          "type": "array"
-        },
-        "fill": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/FillOptions"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "`null` marks a source spPr with no fill child — absence is the fidelity (the shape inherits its fill), so stringify emits nothing instead of the fresh-authoring noFill default."
         },
         "flipHorizontal": {
           "type": "boolean"
         },
         "flipVertical": {
-          "description": "Flip vertically (a:xfrm `@flipV`).",
           "type": "boolean"
-        },
-        "geometry": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/ShapeType"
-            },
-            {
-              "$ref": "#/definitions/PresetGeometryOptions"
-            }
-          ],
-          "description": "Preset geometry token or full geometry (a:prstGeom `@prst`)"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -10665,9 +10672,6 @@
           "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
           "type": "string"
         },
-        "outline": {
-          "$ref": "#/definitions/OutlineOptions"
-        },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
           "description": "`@type` —."
@@ -10685,15 +10689,65 @@
           "enum": ["full", "half", "quarter"],
           "type": "string"
         },
+        "properties": {
+          "additionalProperties": false,
+          "description": "Shape properties (a:spPr children): geometry/fill/outline/effects/3D and the spPr extension list. Transform fields stay top-level on the shape. `fill: null` marks a source spPr with no fill child — absence is the fidelity (the shape inherits its fill), so stringify emits nothing instead of the fresh-authoring noFill default.",
+          "properties": {
+            "customGeometry": {
+              "$ref": "#/definitions/CustomGeometryOptions"
+            },
+            "effectDag": {
+              "$ref": "#/definitions/EffectDagOptions"
+            },
+            "effects": {
+              "$ref": "#/definitions/EffectListOptions"
+            },
+            "ext": {
+              "description": "Raw a:extLst inner XML. Prefer `extensions` for structured shape-property extensions; retained for existing callers and unmodeled payloads.",
+              "type": "string"
+            },
+            "extensions": {
+              "description": "Shape-property extensions (a:extLst/a:ext).",
+              "items": {
+                "$ref": "#/definitions/ShapePropertiesExtensionOptions"
+              },
+              "type": "array"
+            },
+            "fill": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/FillOptions"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "geometry": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ShapeType"
+                },
+                {
+                  "$ref": "#/definitions/PresetGeometryOptions"
+                }
+              ]
+            },
+            "outline": {
+              "$ref": "#/definitions/OutlineOptions"
+            },
+            "scene3d": {
+              "$ref": "#/definitions/Scene3DOptions"
+            },
+            "shape3d": {
+              "$ref": "#/definitions/Shape3DOptions"
+            }
+          },
+          "type": "object"
+        },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
           "type": "number"
-        },
-        "scene3d": {
-          "$ref": "#/definitions/Scene3DOptions"
-        },
-        "shape3d": {
-          "$ref": "#/definitions/Shape3DOptions"
         },
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions"
@@ -10775,18 +10829,20 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "description": "Raw a:extLst inner XML. Prefer `extensions` for structured shape-property extensions; retained for existing callers and unmodeled payloads.",
-          "type": "string"
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/ext"
         },
         "extensions": {
-          "description": "Shape-property extensions (a:extLst/a:ext).",
-          "items": {
-            "$ref": "#/definitions/ShapePropertiesExtensionOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/extensions"
         },
         "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "flipHorizontal": {
           "type": "boolean"
@@ -11615,7 +11671,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "hasCustomPrompt": {
           "type": "boolean"
@@ -12277,7 +12333,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "firstCol": {
           "type": "boolean"
@@ -14061,7 +14117,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
         "fileName": {
           "description": "Media file name inside the package (ppt/media/<fileName>). Round-trip keeps the source name; fresh generation derives it from the frame name.",

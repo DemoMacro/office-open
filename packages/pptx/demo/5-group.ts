@@ -16,7 +16,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Group Shape Demo" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -33,7 +35,9 @@ const options: PresentationOptions = {
                   width: "3.7cm",
                   height: "2.4cm",
                   textBody: { text: "Shape A" },
-                  fill: "ED7D31",
+                  properties: {
+                    fill: "ED7D31",
+                  },
                 },
               },
               {
@@ -43,7 +47,9 @@ const options: PresentationOptions = {
                   width: "3.7cm",
                   height: "2.4cm",
                   textBody: { text: "Shape B" },
-                  fill: "70AD47",
+                  properties: {
+                    fill: "70AD47",
+                  },
                 },
               },
               {
@@ -53,7 +59,9 @@ const options: PresentationOptions = {
                   width: "7.9cm",
                   height: "2.4cm",
                   textBody: { text: "Shape C (wide)" },
-                  fill: "5B9BD5",
+                  properties: {
+                    fill: "5B9BD5",
+                  },
                 },
               },
             ],
@@ -73,7 +81,9 @@ const options: PresentationOptions = {
                   y: "0.0cm",
                   width: "6.6cm",
                   height: "5.3cm",
-                  fill: "FFC000",
+                  properties: {
+                    fill: "FFC000",
+                  },
                 },
               },
               {
@@ -83,7 +93,9 @@ const options: PresentationOptions = {
                   width: "5.3cm",
                   height: "4.0cm",
                   textBody: { text: "Rotated Group" },
-                  fill: "FFFFFF",
+                  properties: {
+                    fill: "FFFFFF",
+                  },
                 },
               },
             ],
@@ -101,7 +113,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.6cm",
             textBody: { text: "Nested Groups" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
         {
@@ -125,7 +139,9 @@ const options: PresentationOptions = {
                         width: "3.4cm",
                         height: "4.2cm",
                         textBody: { text: "Inner A" },
-                        fill: "4472C4",
+                        properties: {
+                          fill: "4472C4",
+                        },
                       },
                     },
                     {
@@ -135,7 +151,9 @@ const options: PresentationOptions = {
                         width: "3.4cm",
                         height: "4.2cm",
                         textBody: { text: "Inner B" },
-                        fill: "ED7D31",
+                        properties: {
+                          fill: "ED7D31",
+                        },
                       },
                     },
                   ],
@@ -155,7 +173,9 @@ const options: PresentationOptions = {
                         width: "7.9cm",
                         height: "4.2cm",
                         textBody: { text: "Right Top" },
-                        fill: "70AD47",
+                        properties: {
+                          fill: "70AD47",
+                        },
                       },
                     },
                     {
@@ -165,7 +185,9 @@ const options: PresentationOptions = {
                         width: "3.7cm",
                         height: "4.5cm",
                         textBody: { text: "RT Bot L" },
-                        fill: "FFC000",
+                        properties: {
+                          fill: "FFC000",
+                        },
                       },
                     },
                     {
@@ -175,7 +197,9 @@ const options: PresentationOptions = {
                         width: "3.7cm",
                         height: "4.5cm",
                         textBody: { text: "RT Bot R" },
-                        fill: "5B9BD5",
+                        properties: {
+                          fill: "5B9BD5",
+                        },
                       },
                     },
                   ],

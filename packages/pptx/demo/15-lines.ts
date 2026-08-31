@@ -17,7 +17,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.3cm",
             textBody: { text: "Lines & Connectors" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // Horizontal line
@@ -27,7 +29,9 @@ const options: PresentationOptions = {
             y1: "3.2cm",
             x2: "21.2cm",
             y2: "3.2cm",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
+            },
           },
         },
         // Vertical line
@@ -37,7 +41,9 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "5.3cm",
             y2: "11.9cm",
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "2pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "2pt" },
+            },
           },
         },
         // Diagonal line
@@ -47,7 +53,9 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "19.8cm",
             y2: "11.9cm",
-            outline: { type: "solidFill", color: { value: "70AD47" }, width: "3pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "70AD47" }, width: "3pt" },
+            },
           },
         },
         // Reverse diagonal
@@ -57,7 +65,9 @@ const options: PresentationOptions = {
             y1: "4.0cm",
             x2: "6.6cm",
             y2: "11.9cm",
-            outline: { type: "solidFill", color: { value: "FFC000" }, width: "2pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "FFC000" }, width: "2pt" },
+            },
           },
         },
       ],
@@ -72,7 +82,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "1.3cm",
             textBody: { text: "Connectors with Arrowheads" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // Left-to-right arrow
@@ -82,11 +94,13 @@ const options: PresentationOptions = {
             y1: "3.4cm",
             x2: "10.6cm",
             y2: "3.4cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "4472C4" },
-              width: "2pt",
-              headEnd: { type: "triangle" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "4472C4" },
+                width: "2pt",
+                headEnd: { type: "triangle" },
+              },
             },
           },
         },
@@ -97,12 +111,14 @@ const options: PresentationOptions = {
             y1: "5.3cm",
             x2: "10.6cm",
             y2: "5.3cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "ED7D31" },
-              width: "2pt",
-              headEnd: { type: "triangle" },
-              tailEnd: { type: "triangle" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "ED7D31" },
+                width: "2pt",
+                headEnd: { type: "triangle" },
+                tailEnd: { type: "triangle" },
+              },
             },
           },
         },
@@ -113,11 +129,13 @@ const options: PresentationOptions = {
             y1: "7.1cm",
             x2: "10.6cm",
             y2: "7.1cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "70AD47" },
-              width: "2pt",
-              headEnd: { type: "stealth" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "70AD47" },
+                width: "2pt",
+                headEnd: { type: "stealth" },
+              },
             },
           },
         },
@@ -128,11 +146,13 @@ const options: PresentationOptions = {
             y1: "9.0cm",
             x2: "10.6cm",
             y2: "9.0cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "FFC000" },
-              width: "2pt",
-              headEnd: { type: "diamond" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "FFC000" },
+                width: "2pt",
+                headEnd: { type: "diamond" },
+              },
             },
           },
         },
@@ -143,11 +163,13 @@ const options: PresentationOptions = {
             y1: "10.8cm",
             x2: "10.6cm",
             y2: "10.8cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "7030A0" },
-              width: "2pt",
-              headEnd: { type: "oval" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "7030A0" },
+                width: "2pt",
+                headEnd: { type: "oval" },
+              },
             },
           },
         },
@@ -158,11 +180,13 @@ const options: PresentationOptions = {
             y1: "3.4cm",
             x2: "21.2cm",
             y2: "3.4cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "C00000" },
-              width: "2pt",
-              headEnd: { type: "arrow" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "C00000" },
+                width: "2pt",
+                headEnd: { type: "arrow" },
+              },
             },
           },
         },
@@ -173,11 +197,13 @@ const options: PresentationOptions = {
             y1: "5.3cm",
             x2: "21.2cm",
             y2: "9.3cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "4472C4" },
-              width: "2pt",
-              headEnd: { type: "stealth" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "4472C4" },
+                width: "2pt",
+                headEnd: { type: "stealth" },
+              },
             },
           },
         },
@@ -188,11 +214,13 @@ const options: PresentationOptions = {
             y1: "10.8cm",
             x2: "21.2cm",
             y2: "10.8cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "ED7D31" },
-              width: "2pt",
-              headEnd: { type: "triangle", width: "large", length: "large" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "ED7D31" },
+                width: "2pt",
+                headEnd: { type: "triangle", width: "large", length: "large" },
+              },
             },
           },
         },

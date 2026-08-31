@@ -37,7 +37,11 @@ import {
   buildHyperlinkElement,
   readHyperlink,
 } from "@office-open/core/drawing";
-import type { BlipCompression, SourceRectangleOptions } from "@office-open/core/drawing";
+import type {
+  BlipCompression,
+  SourceRectangleOptions,
+  Transform2DOptions,
+} from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, attrNum, attr } from "@office-open/xml";
 import { imageTypeFromPath } from "@shared/media/image-type";
@@ -121,10 +125,17 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
       Object.assign(result, readNvSpPr(nvSpPr, ctx));
     }
 
-    // p:spPr
+    // p:spPr — transform goes top-level, paint fields land on `properties`;
+    // @bwMode is a container attribute so it stays top-level too.
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
-      Object.assign(result, readSpPr(spPr, ctx));
+      const { properties, ...transform } = readSpPr(spPr, ctx);
+      Object.assign(result, transform);
+      result.properties = properties;
+      const bwMode = spPr.attributes?.["bwMode"];
+      if (bwMode !== undefined) {
+        result.blackWhiteMode = String(bwMode) as ShapeOptions["blackWhiteMode"];
+      }
     }
 
     // p:style
@@ -433,14 +444,15 @@ function buildLockAttrs(opts: ShapeLockingOptions): string[] {
 
 function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   const pptx = ctx as PptxWriteContext;
+  const sp = opts.properties ?? {};
 
   // Blip fill: pre-register via addImage so the deduped canonical keeps the
   // pinned source name on round-trip (imageType normalization like jpeg→jpg
   // would otherwise fork a second media part); fresh fills get the
   // pptx-local image_blip.<type>. shapePropertiesDesc's fillDesc re-registers
   // via addMedia, deduped to the same canonical.
-  if (opts.fill && typeof opts.fill !== "string" && opts.fill.type === "blip" && opts.fill.data) {
-    const blipFill = opts.fill;
+  if (sp.fill && typeof sp.fill !== "string" && sp.fill.type === "blip" && sp.fill.data) {
+    const blipFill = sp.fill;
     const raw = toUint8Array(blipFill.data!, { encoding: "base64" });
     const fileName = blipFill.fileName ?? `image_blip.${blipFill.imageType ?? "png"}`;
     pptx.addImage(fileName, {
@@ -457,22 +469,22 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
   // and noFill. A p:ph with no @type (idx-only) is still a placeholder —
   // placeholderIndex alone carries its identity.
   const isPlaceholder = !!opts.placeholder || opts.placeholderIndex !== undefined;
-  const geometry = opts.customGeometry
+  const geometry = sp.customGeometry
     ? undefined
     : isPlaceholder
-      ? opts.geometry
-      : (opts.geometry ?? "rect");
+      ? sp.geometry
+      : (sp.geometry ?? "rect");
   // A shape whose p:style carries a fillRef inherits its fill from the style
   // matrix — an explicit noFill would override that, so leave the spPr fill
   // unset unless the source (or the fresh caller) says otherwise. `fill: null`
   // marks a parsed source with no fill child — emit nothing there too.
   const styleOwnsFill = opts.style?.fillReference !== undefined;
   const fill =
-    opts.fill === null
+    sp.fill === null
       ? undefined
       : isPlaceholder || styleOwnsFill
-        ? opts.fill
-        : (opts.fill ?? ({ type: "none" } as const));
+        ? sp.fill
+        : (sp.fill ?? ({ type: "none" } as const));
 
   const spPrContent = shapePropertiesDesc.stringify(
     {
@@ -483,15 +495,9 @@ function stringifySpPr(opts: ShapeOptions, ctx: WriteContext): string {
       flipHorizontal: opts.flipHorizontal,
       flipVertical: opts.flipVertical,
       rotation: opts.rotation,
-      customGeometry: opts.customGeometry,
+      ...sp,
       geometry,
       fill,
-      outline: opts.outline,
-      effects: opts.effects,
-      scene3d: opts.scene3d,
-      shape3d: opts.shape3d,
-      extensions: opts.extensions,
-      ext: opts.ext,
     },
     ctx,
   );
@@ -698,31 +704,40 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
   return result;
 }
 
-/** Parse p:spPr via the shared core descriptor. */
-function readSpPr(spPr: XmlElement, ctx: ReadContext): ShapeOptions {
-  const result = parse(shapePropertiesDesc, spPr, ctx) as ShapeOptions;
+/** Parse p:spPr via the shared core descriptor: transform top-level, paint into
+ * `properties` (fill absence marked null so stringify skips the fresh default). */
+function readSpPr(
+  spPr: XmlElement,
+  ctx: ReadContext,
+): Transform2DOptions & { properties: NonNullable<ShapeOptions["properties"]> } {
+  const parsed = parse(shapePropertiesDesc, spPr, ctx);
+  const { x, y, width, height, flipHorizontal, flipVertical, rotation, ...paint } = parsed;
 
   // A source spPr with no fill child inherits its fill — mark the absence so
   // stringify does not apply the fresh-authoring noFill default.
-  if (result.fill === undefined) result.fill = null;
-
-  // @bwMode lives on the spPr container, not the p:sp root.
-  const bwMode = spPr.attributes?.["bwMode"];
-  if (bwMode !== undefined) {
-    result.blackWhiteMode = String(bwMode) as ShapeOptions["blackWhiteMode"];
-  }
+  if (paint.fill === undefined) paint.fill = null;
 
   // Collapse a preset geometry without adjustment values to the bare string
   // shorthand the public options accept.
-  const geometry = result.geometry;
+  const geometry = paint.geometry;
   if (
     typeof geometry === "object" &&
     (!geometry.adjustmentValues || geometry.adjustmentValues.length === 0) &&
     geometry.preset
   ) {
-    result.geometry = geometry.preset;
+    paint.geometry = geometry.preset;
   }
-  return result;
+
+  return {
+    x,
+    y,
+    width,
+    height,
+    flipHorizontal,
+    flipVertical,
+    rotation,
+    properties: paint,
+  };
 }
 
 /** Read x/y/width/height (in EMU) from an a:xfrm element. */

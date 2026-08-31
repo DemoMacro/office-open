@@ -34,7 +34,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: { text: "Video Auto-Play" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
       ],
@@ -53,7 +55,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: { text: "Opacity Property Animation" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -64,7 +68,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.6cm",
             textBody: { text: "Fade Me" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],
@@ -91,7 +97,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.3cm",
             textBody: { text: "Text-Level Animation" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -111,7 +119,9 @@ const options: PresentationOptions = {
             y: "4.0cm",
             width: "7.9cm",
             height: "2.6cm",
-            fill: "FFF2CC",
+            properties: {
+              fill: "FFF2CC",
+            },
           },
         },
       ],

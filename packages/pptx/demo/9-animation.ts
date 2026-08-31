@@ -18,7 +18,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Entrance Animations" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -29,7 +31,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Appear" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -40,7 +44,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Fly In (from left)" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -51,7 +57,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Wipe (down)" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -62,7 +70,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Dissolve" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -73,7 +83,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Zoom In" },
-            fill: "BF8F00",
+            properties: {
+              fill: "BF8F00",
+            },
           },
         },
         {
@@ -84,7 +96,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Split (horizontal)" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
       ],
@@ -109,7 +123,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Exit Animations" },
-            fill: "C00000",
+            properties: {
+              fill: "C00000",
+            },
           },
         },
         {
@@ -120,7 +136,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Fade Out" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -131,7 +149,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Fly Out (right)" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -142,7 +162,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Wipe Out (up)" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -153,7 +175,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Dissolve Out" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -164,7 +188,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Zoom Out" },
-            fill: "BF8F00",
+            properties: {
+              fill: "BF8F00",
+            },
           },
         },
         {
@@ -175,7 +201,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Split Out" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
       ],
@@ -199,7 +227,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Emphasis Animations" },
-            fill: "548235",
+            properties: {
+              fill: "548235",
+            },
           },
         },
         {
@@ -210,7 +240,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Grow/Shrink" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -221,7 +253,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Spin" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -232,7 +266,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Color Change" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -243,7 +279,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Transparency" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         {
@@ -254,7 +292,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Pulse" },
-            fill: "BF8F00",
+            properties: {
+              fill: "BF8F00",
+            },
           },
         },
         {
@@ -265,7 +305,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Bold Flash" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
       ],
@@ -301,7 +343,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Path Animations" },
-            fill: "2F5496",
+            properties: {
+              fill: "2F5496",
+            },
           },
         },
         {
@@ -312,7 +356,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.1cm",
             textBody: { text: "Line Path" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         {
@@ -323,7 +369,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.1cm",
             textBody: { text: "Arc Path" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -334,7 +382,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.1cm",
             textBody: { text: "Circle Path" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
         {
@@ -345,7 +395,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.1cm",
             textBody: { text: "Custom Path" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
       ],
@@ -374,7 +426,9 @@ const options: PresentationOptions = {
             width: "13.2cm",
             height: "1.6cm",
             textBody: { text: "Extended: Set / Iterate / Command" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // setBehavior: instantly set opacity to 0.5, then fade in
@@ -387,7 +441,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "Set + Fade" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         // Iterate: animate text per-character
@@ -399,7 +455,9 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "2.1cm",
             textBody: { text: "Per-character animation" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         // Command: generic call command
@@ -411,7 +469,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "Command" },
-            fill: "FFC000",
+            properties: {
+              fill: "FFC000",
+            },
           },
         },
       ],
@@ -460,7 +520,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.6cm",
             textBody: { text: "Build / Sub-Time / Variant Values" },
-            fill: "2F5496",
+            properties: {
+              fill: "2F5496",
+            },
           },
         },
         // Color change with colorFrom/colorTo and colorByRgb
@@ -472,7 +534,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "Color From/To" },
-            fill: "ED7D31",
+            properties: {
+              fill: "ED7D31",
+            },
           },
         },
         // Motion path with from/rCtr
@@ -484,7 +548,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "2.1cm",
             textBody: { text: "Motion From/RCtr" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         // Property animation with variant values (boolVal, intVal, fltVal)
@@ -496,7 +562,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "Variant Int" },
-            fill: "5B9BD5",
+            properties: {
+              fill: "5B9BD5",
+            },
           },
         },
         // Animation with endConditions and subTimeNodes
@@ -508,7 +576,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "End Cond / SubTN" },
-            fill: "BF8F00",
+            properties: {
+              fill: "BF8F00",
+            },
           },
         },
         // Animation with exclusive mode and iterate percentage
@@ -520,7 +590,9 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "2.1cm",
             textBody: { text: "Excl + tmPct" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
       ],

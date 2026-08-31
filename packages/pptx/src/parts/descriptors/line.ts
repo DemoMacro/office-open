@@ -57,15 +57,14 @@ function stringifyLineXfrmGeometry(
   );
 }
 
-/** Parse endpoints + fill/outline from p:spPr of a line/connector. */
+/** Parse endpoints (off/ext + flip) + paint from p:spPr of a line/connector. */
 function parseLineSpPr(
   spPr: Element,
   ctx: ReadContext,
-): Pick<
-  LineShapeOptions,
-  "x1" | "y1" | "x2" | "y2" | "fill" | "outline" | "effects" | "scene3d" | "shape3d"
-> {
-  const result: ReturnType<typeof parseLineSpPr> = {};
+): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2"> & {
+  properties: NonNullable<LineShapeOptions["properties"]>;
+} {
+  const result: ReturnType<typeof parseLineSpPr> = { properties: {} };
 
   const xfrm = findChild(spPr, "a:xfrm");
   if (xfrm) {
@@ -87,18 +86,20 @@ function parseLineSpPr(
     }
   }
 
+  const paint = result.properties;
+
   // Only parse fill when a fill child exists — fillDesc returns
   // { type: "none" } for an empty spPr, which would spuriously emit <a:noFill/>.
   const fillChild = findFillChild(spPr);
-  if (fillChild) result.fill = parse(fillDesc, fillChild, ctx);
+  if (fillChild) paint.fill = parse(fillDesc, fillChild, ctx);
   const ln = findChild(spPr, "a:ln");
-  if (ln) result.outline = parse(outlineDesc, ln, ctx);
+  if (ln) paint.outline = parse(outlineDesc, ln, ctx);
   const effectLst = findChild(spPr, "a:effectLst");
-  if (effectLst) result.effects = parse(effectListDesc, effectLst, ctx);
+  if (effectLst) paint.effects = parse(effectListDesc, effectLst, ctx);
   const scene3d = findChild(spPr, "a:scene3d");
-  if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
+  if (scene3d) paint.scene3d = scene3DDesc.parse(scene3d, ctx);
   const sp3d = findChild(spPr, "a:sp3d");
-  if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
+  if (sp3d) paint.shape3d = shape3DDesc.parse(sp3d, ctx);
 
   return result;
 }
@@ -128,25 +129,26 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     );
 
     // p:spPr
+    const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
     spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2));
 
     // Fill
-    if (opts.fill !== undefined) {
-      const fillXml = stringify(fillDesc, opts.fill, ctx);
+    if (sp.fill !== undefined) {
+      const fillXml = stringify(fillDesc, sp.fill, ctx);
       if (fillXml) spPrParts.push(fillXml);
     }
 
     // Outline
-    if (opts.outline) {
-      const outlineXml = stringify(outlineDesc, opts.outline, ctx);
+    if (sp.outline) {
+      const outlineXml = stringify(outlineDesc, sp.outline, ctx);
       if (outlineXml) spPrParts.push(outlineXml);
     }
 
     // Effects (a:effectLst after a:ln per CT_ShapeProperties)
-    if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
-    if (opts.scene3d) spPrParts.push(scene3DDesc.stringify(opts.scene3d, ctx) ?? "");
-    if (opts.shape3d) spPrParts.push(shape3DDesc.stringify(opts.shape3d, ctx) ?? "");
+    if (sp.effects) spPrParts.push(stringify(effectListDesc, sp.effects, ctx) ?? "");
+    if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
+    if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
 
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
 
@@ -211,9 +213,11 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
 
     // Preset geometry: bent/elbow connectors carry their own form + guides.
     const geomXml =
-      opts.geometry !== undefined
+      opts.properties?.geometry !== undefined
         ? (presetGeometryDesc.stringify(
-            typeof opts.geometry === "string" ? { preset: opts.geometry } : opts.geometry,
+            typeof opts.properties.geometry === "string"
+              ? { preset: opts.properties.geometry }
+              : opts.properties.geometry,
             ctx,
           ) ?? "")
         : undefined;
@@ -240,25 +244,26 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     );
 
     // p:spPr
+    const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
     spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml));
 
     // Fill
-    if (opts.fill !== undefined) {
-      const fillXml = stringify(fillDesc, opts.fill, ctx);
+    if (sp.fill !== undefined) {
+      const fillXml = stringify(fillDesc, sp.fill, ctx);
       if (fillXml) spPrParts.push(fillXml);
     }
 
     // Outline (arrowheads live inside the outline as headEnd/tailEnd)
-    if (opts.outline) {
-      const outlineXml = stringify(outlineDesc, opts.outline, ctx);
+    if (sp.outline) {
+      const outlineXml = stringify(outlineDesc, sp.outline, ctx);
       if (outlineXml) spPrParts.push(outlineXml);
     }
 
     // Effects (a:effectLst after a:ln per CT_ShapeProperties)
-    if (opts.effects) spPrParts.push(stringify(effectListDesc, opts.effects, ctx) ?? "");
-    if (opts.scene3d) spPrParts.push(scene3DDesc.stringify(opts.scene3d, ctx) ?? "");
-    if (opts.shape3d) spPrParts.push(shape3DDesc.stringify(opts.shape3d, ctx) ?? "");
+    if (sp.effects) spPrParts.push(stringify(effectListDesc, sp.effects, ctx) ?? "");
+    if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
+    if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
 
     parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
 
@@ -298,16 +303,18 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       }
     }
 
-    // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
+    // p:spPr → endpoints (off/ext + flip) + geometry/fill/outline/effects
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
-      Object.assign(result, parseLineSpPr(spPr, _ctx));
+      const { properties, ...endpoints } = parseLineSpPr(spPr, _ctx);
+      Object.assign(result, endpoints);
+      result.properties = properties;
       // Non-line presets or adjusted guides must survive the round-trip.
       const prstGeom = findChild(spPr, "a:prstGeom");
       if (prstGeom) {
         const geom = presetGeometryDesc.parse(prstGeom, _ctx);
         if (geom.preset !== undefined && (geom.preset !== "line" || geom.adjustmentValues)) {
-          result.geometry = geom;
+          result.properties.geometry = geom;
         }
       }
     }

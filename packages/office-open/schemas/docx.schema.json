@@ -18994,7 +18994,14 @@
           "type": "array"
         },
         "fill": {
-          "$ref": "#/definitions/FillOptions"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "flipHorizontal": {
           "type": "boolean"

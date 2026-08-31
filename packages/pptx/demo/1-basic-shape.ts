@@ -30,8 +30,11 @@ const options: PresentationOptions = {
             width: "8cm",
             height: "4cm",
             textBody: { text: "Hello World" },
-            geometry: "rect",
-            fill: "4472C4",
+            properties: {
+              geometry: "rect",
+
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -55,7 +58,9 @@ const options: PresentationOptions = {
             width: "17cm",
             height: "9cm",
             textBody: { text: "Slide 2 - Full Width" },
-            geometry: "rect",
+            properties: {
+              geometry: "rect",
+            },
           },
         },
       ],
@@ -70,7 +75,9 @@ const options: PresentationOptions = {
             width: "12cm",
             height: "1cm",
             textBody: { text: "Vertical Text" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -93,7 +100,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            },
           },
         },
         {
@@ -111,7 +120,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
           },
         },
         {
@@ -129,7 +140,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            },
           },
         },
       ],
@@ -144,7 +157,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Text Anchor & Auto-Fit" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // Top anchor
@@ -155,7 +170,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { bodyProperties: { anchor: "top" }, text: "Top anchored text" },
-            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            },
           },
         },
         // Center anchor
@@ -166,7 +183,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { bodyProperties: { anchor: "center" }, text: "Center anchored text" },
-            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            },
           },
         },
         // Bottom anchor
@@ -177,7 +196,9 @@ const options: PresentationOptions = {
             width: "5.3cm",
             height: "5.3cm",
             textBody: { bodyProperties: { anchor: "bottom" }, text: "Bottom anchored text" },
-            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            },
           },
         },
         // Auto-fit normal
@@ -191,7 +212,9 @@ const options: PresentationOptions = {
               bodyProperties: { normAutofit: {} },
               text: "This is a very long text that should auto-fit to shrink within the shape bounds",
             },
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            },
           },
         },
         // Auto-fit shape
@@ -202,7 +225,9 @@ const options: PresentationOptions = {
             width: "6.6cm",
             height: "2.1cm",
             textBody: { bodyProperties: { spAutoFit: true }, text: "Shape auto-fit text" },
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
           },
         },
       ],
@@ -217,7 +242,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Text Margins & Columns" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // Default margins
@@ -227,7 +254,9 @@ const options: PresentationOptions = {
             y: "3.2cm",
             width: "9.3cm",
             height: "4.0cm",
-            outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "999999" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -266,7 +295,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
           },
         },
         // 2 columns
@@ -290,7 +321,9 @@ const options: PresentationOptions = {
                 },
               ],
             },
-            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            },
           },
         },
       ],
@@ -305,7 +338,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Blip Fill & Gradient Path" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -315,12 +350,14 @@ const options: PresentationOptions = {
             width: "10.6cm",
             height: "5.3cm",
             textBody: { text: "Image Fill" },
-            fill: {
-              type: "blip",
-              data: new Uint8Array(
-                fs.readFileSync(path.resolve(__dirname, "assets/test-poster.png")),
-              ),
-              imageType: "png",
+            properties: {
+              fill: {
+                type: "blip",
+                data: new Uint8Array(
+                  fs.readFileSync(path.resolve(__dirname, "assets/test-poster.png")),
+                ),
+                imageType: "png",
+              },
             },
           },
         },
@@ -331,13 +368,15 @@ const options: PresentationOptions = {
             width: "7.9cm",
             height: "5.3cm",
             textBody: { text: "Radial Gradient" },
-            fill: {
-              type: "gradient",
-              path: "circle",
-              stops: [
-                { position: 0, color: "FFFFFF" },
-                { position: 100, color: "4472C4" },
-              ],
+            properties: {
+              fill: {
+                type: "gradient",
+                path: "circle",
+                stops: [
+                  { position: 0, color: "FFFFFF" },
+                  { position: 100, color: "4472C4" },
+                ],
+              },
             },
           },
         },
@@ -353,7 +392,9 @@ const options: PresentationOptions = {
             width: "15.9cm",
             height: "1.3cm",
             textBody: { text: "Shape Locking" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         // Locked shape: cannot select, move, resize, or edit text
@@ -364,7 +405,9 @@ const options: PresentationOptions = {
             width: "9.3cm",
             height: "2.6cm",
             textBody: { text: "Locked: no select, move, resize, text edit" },
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
             locking: {
               noSelect: true,
               noMove: true,
@@ -381,7 +424,9 @@ const options: PresentationOptions = {
             width: "9.3cm",
             height: "2.6cm",
             textBody: { text: "Aspect locked: ratio is fixed" },
-            outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "70AD47" }, width: "1pt" },
+            },
             locking: {
               noChangeAspect: true,
             },

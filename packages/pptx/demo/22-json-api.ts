@@ -66,11 +66,13 @@ const pres: PresentationOptions = {
             y1: "7.9cm",
             x2: "15.3cm",
             y2: "7.9cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "FFC000" },
-              width: "2pt",
-              headEnd: { type: "triangle" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "FFC000" },
+                width: "2pt",
+                headEnd: { type: "triangle" },
+              },
             },
           },
         },
@@ -87,7 +89,9 @@ const pres: PresentationOptions = {
             width: "10.6cm",
             height: "1.3cm",
             textBody: { text: "Table (JSON API)" },
-            fill: "4472C4",
+            properties: {
+              fill: "4472C4",
+            },
           },
         },
         {
@@ -180,7 +184,9 @@ const pres: PresentationOptions = {
             width: "7.9cm",
             height: "1.1cm",
             textBody: { text: "Lines & Connectors" },
-            fill: "70AD47",
+            properties: {
+              fill: "70AD47",
+            },
           },
         },
         {
@@ -189,7 +195,9 @@ const pres: PresentationOptions = {
             y1: "2.1cm",
             x2: "21.2cm",
             y2: "2.1cm",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "2pt" },
+            },
           },
         },
         {
@@ -198,7 +206,9 @@ const pres: PresentationOptions = {
             y1: "2.6cm",
             x2: "10.6cm",
             y2: "7.9cm",
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "3pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "3pt" },
+            },
           },
         },
         {
@@ -207,11 +217,13 @@ const pres: PresentationOptions = {
             y1: "2.6cm",
             x2: "21.2cm",
             y2: "7.9cm",
-            outline: {
-              type: "solidFill",
-              color: { value: "70AD47" },
-              width: "2pt",
-              headEnd: { type: "stealth" },
+            properties: {
+              outline: {
+                type: "solidFill",
+                color: { value: "70AD47" },
+                width: "2pt",
+                headEnd: { type: "stealth" },
+              },
             },
           },
         },
@@ -222,7 +234,9 @@ const pres: PresentationOptions = {
             width: "9.3cm",
             height: "1.3cm",
             textBody: { text: "\u2190 Line        Connector \u2192" },
-            fill: "F2F2F2",
+            properties: {
+              fill: "F2F2F2",
+            },
           },
         },
       ],
@@ -238,7 +252,9 @@ const pres: PresentationOptions = {
             width: "10.6cm",
             height: "1.3cm",
             textBody: { text: "Group Shapes (JSON)" },
-            fill: "7030A0",
+            properties: {
+              fill: "7030A0",
+            },
           },
         },
         {
@@ -255,7 +271,9 @@ const pres: PresentationOptions = {
                   width: "4.2cm",
                   height: "2.4cm",
                   textBody: { text: "A" },
-                  fill: "4472C4",
+                  properties: {
+                    fill: "4472C4",
+                  },
                 },
               },
               {
@@ -265,7 +283,9 @@ const pres: PresentationOptions = {
                   width: "4.2cm",
                   height: "2.4cm",
                   textBody: { text: "B" },
-                  fill: "ED7D31",
+                  properties: {
+                    fill: "ED7D31",
+                  },
                 },
               },
               {
@@ -275,7 +295,9 @@ const pres: PresentationOptions = {
                   width: "9.3cm",
                   height: "2.4cm",
                   textBody: { text: "C (wide)" },
-                  fill: "70AD47",
+                  properties: {
+                    fill: "70AD47",
+                  },
                 },
               },
             ],
@@ -290,7 +312,15 @@ const pres: PresentationOptions = {
             rotation: 15,
             children: [
               {
-                shape: { x: "0.0cm", y: "0.0cm", width: "7.9cm", height: "5.3cm", fill: "FFC000" },
+                shape: {
+                  x: "0.0cm",
+                  y: "0.0cm",
+                  width: "7.9cm",
+                  height: "5.3cm",
+                  properties: {
+                    fill: "FFC000",
+                  },
+                },
               },
               {
                 shape: {
@@ -299,7 +329,9 @@ const pres: PresentationOptions = {
                   width: "6.3cm",
                   height: "3.2cm",
                   textBody: { text: "Rotated Group" },
-                  fill: "FFFFFF",
+                  properties: {
+                    fill: "FFFFFF",
+                  },
                 },
               },
             ],
@@ -384,7 +416,9 @@ const pres: PresentationOptions = {
             y: "4.8cm",
             width: "7.9cm",
             height: "4.0cm",
-            outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "4472C4" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -410,7 +444,9 @@ const pres: PresentationOptions = {
             y: "4.8cm",
             width: "7.9cm",
             height: "4.0cm",
-            outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            properties: {
+              outline: { type: "solidFill", color: { value: "ED7D31" }, width: "1pt" },
+            },
             textBody: {
               paragraphs: [
                 {
@@ -437,12 +473,14 @@ const pres: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Gradient Fill" },
-            fill: {
-              type: "gradient",
-              stops: [
-                { position: 0, color: "4472C4" },
-                { position: 100, color: "ED7D31" },
-              ],
+            properties: {
+              fill: {
+                type: "gradient",
+                stops: [
+                  { position: 0, color: "4472C4" },
+                  { position: 100, color: "ED7D31" },
+                ],
+              },
             },
           },
         },
@@ -454,13 +492,15 @@ const pres: PresentationOptions = {
             width: "7.9cm",
             height: "2.6cm",
             textBody: { text: "Radial Gradient" },
-            fill: {
-              type: "gradient",
-              path: "circle",
-              stops: [
-                { position: 0, color: "FFFFFF" },
-                { position: 100, color: "70AD47" },
-              ],
+            properties: {
+              fill: {
+                type: "gradient",
+                path: "circle",
+                stops: [
+                  { position: 0, color: "FFFFFF" },
+                  { position: 100, color: "70AD47" },
+                ],
+              },
             },
           },
         },
