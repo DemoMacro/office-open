@@ -877,7 +877,7 @@ async function main() {
           customXml: {
             element: "myElement",
             uri: "http://example.com/ns",
-            customXmlPr: {
+            properties: {
               placeholder: "Enter value",
               attributes: [{ name: "status", val: "draft" }],
             },
@@ -973,11 +973,11 @@ async function main() {
   assert("customXml uri parsed", customXmlChild?.customXml?.uri === "http://example.com/ns");
   assert(
     "customXml placeholder parsed",
-    customXmlChild?.customXml?.customXmlPr?.placeholder === "Enter value",
+    customXmlChild?.customXml?.properties?.placeholder === "Enter value",
   );
   assert(
     "customXml attributes parsed",
-    customXmlChild?.customXml?.customXmlPr?.attributes?.[0]?.name === "status",
+    customXmlChild?.customXml?.properties?.attributes?.[0]?.name === "status",
   );
 
   // Verify section properties textDirection

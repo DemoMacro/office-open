@@ -790,10 +790,10 @@ describe("Worksheet", () => {
       const opts: WorksheetOptions = {
         rows: [{ cells: [{ value: "A" }] }],
         columns: [{ min: 1, max: 1, outlineLevel: 1 }],
-        sheetPr: { outlineSummaryBelow: false, outlineSummaryRight: false },
+        properties: { outlineSummaryBelow: false, outlineSummaryRight: false },
       };
       const result = roundTrip(opts);
-      const sp = result.sheetPr!;
+      const sp = result.properties!;
 
       expect(sp.outlineSummaryBelow).toBe(false);
       expect(sp.outlineSummaryRight).toBe(false);
@@ -961,7 +961,7 @@ describe("Worksheet", () => {
             shapeId: 1,
             progId: "Excel.Sheet.12",
             rId: "rId1",
-            objectPr: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
+            properties: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
           },
         ],
         controls: [{ shapeId: 2, rId: "rId2", name: "Button1", locked: false, linkedCell: "A1" }],
@@ -972,7 +972,7 @@ describe("Worksheet", () => {
           shapeId: 1,
           progId: "Excel.Sheet.12",
           rId: "rId1",
-          objectPr: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
+          properties: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
         },
       ]);
       expect(result.controls).toEqual([
@@ -989,7 +989,7 @@ describe("Worksheet", () => {
             progId: "Paint.Picture",
             rId: "rId4",
             alternateContent: true,
-            objectPr: {
+            properties: {
               defaultSize: false,
               iconRid: "rId5",
               anchor: {
@@ -1042,10 +1042,10 @@ describe("Worksheet", () => {
       expect(result.oleObjects).toEqual([
         {
           ...opts.oleObjects![0]!,
-          objectPr: {
-            ...opts.oleObjects![0]!.objectPr!,
+          properties: {
+            ...opts.oleObjects![0]!.properties!,
             anchor: {
-              ...opts.oleObjects![0]!.objectPr!.anchor!,
+              ...opts.oleObjects![0]!.properties!.anchor!,
               from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
             },
           },
@@ -1121,9 +1121,9 @@ describe("Worksheet", () => {
     it("round-trips sheetPr published/enableFormatConditionsCalculation = false (XSD default true)", () => {
       const result = roundTrip({
         rows: [{ cells: [{ value: "A" }] }],
-        sheetPr: { published: false, enableFormatConditionsCalculation: false },
+        properties: { published: false, enableFormatConditionsCalculation: false },
       });
-      expect(result.sheetPr).toEqual({
+      expect(result.properties).toEqual({
         published: false,
         enableFormatConditionsCalculation: false,
       });

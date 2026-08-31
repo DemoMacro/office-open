@@ -35,7 +35,7 @@ export function parseCustomXmlBlock(
   // Parse w:customXmlPr
   const xmlPr = findChild(el, "w:customXmlPr");
   if (xmlPr) {
-    opts.customXmlPr = parseCustomXmlProperties(xmlPr);
+    opts.properties = parseCustomXmlProperties(xmlPr);
   }
 
   // Parse block-level children

@@ -77,10 +77,10 @@ describe("singleXmlCellsDesc", () => {
             id: 1,
             reference: "A1",
             connectionId: 2,
-            xmlCellPr: {
+            properties: {
               id: 1,
               uniqueName: "PriceCell",
-              xmlPr: { mapId: 1, xpath: "/catalog/item/price", xmlDataType: "double" },
+              mapping: { mapId: 1, xpath: "/catalog/item/price", xmlDataType: "double" },
             },
           },
         ],
@@ -90,8 +90,8 @@ describe("singleXmlCellsDesc", () => {
     const parsed = singleXmlCellsDesc.parse(parseRoot(xml), readCtx);
     expect(parsed.cells).toHaveLength(1);
     expect(parsed.cells[0]).toMatchObject({ id: 1, reference: "A1", connectionId: 2 });
-    expect(parsed.cells[0]!.xmlCellPr).toMatchObject({ id: 1, uniqueName: "PriceCell" });
-    expect(parsed.cells[0]!.xmlCellPr.xmlPr).toEqual({
+    expect(parsed.cells[0]!.properties).toMatchObject({ id: 1, uniqueName: "PriceCell" });
+    expect(parsed.cells[0]!.properties.mapping).toEqual({
       mapId: 1,
       xpath: "/catalog/item/price",
       xmlDataType: "double",

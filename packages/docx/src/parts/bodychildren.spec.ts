@@ -298,7 +298,7 @@ describe("customXmlBlockDesc round-trip", () => {
   it("round-trips customXml with customXmlPr", () => {
     const result = roundTripCustomXml({
       element: "item",
-      customXmlPr: {
+      properties: {
         placeholder: "Enter text",
         attributes: [
           { name: "attr1", val: "val1" },
@@ -306,11 +306,11 @@ describe("customXmlBlockDesc round-trip", () => {
         ],
       },
     });
-    expect(result.customXmlPr).toBeDefined();
-    expect(result.customXmlPr!.placeholder).toBe("Enter text");
-    expect(result.customXmlPr!.attributes).toHaveLength(2);
-    expect(result.customXmlPr!.attributes![0]?.name).toBe("attr1");
-    expect(result.customXmlPr!.attributes![1]?.uri).toBe("http://example.com");
+    expect(result.properties).toBeDefined();
+    expect(result.properties!.placeholder).toBe("Enter text");
+    expect(result.properties!.attributes).toHaveLength(2);
+    expect(result.properties!.attributes![0]?.name).toBe("attr1");
+    expect(result.properties!.attributes![1]?.uri).toBe("http://example.com");
   });
 });
 

@@ -28,7 +28,7 @@ const buffer = await generateWorkbook({
       showSheetTabs: true,
     },
   ],
-  fileRecoveryPr: {
+  fileRecovery: {
     autoRecover: true,
     crashSave: true,
     dataExtractLoad: false,

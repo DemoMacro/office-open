@@ -66,8 +66,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   }
 
   // Workbook properties
-  if (opts.workbookPr) {
-    const wbPr = opts.workbookPr;
+  if (opts.properties) {
+    const wbPr = opts.properties;
     const wbPrAttrs: string[] = [];
     if (wbPr.date1904) wbPrAttrs.push('date1904="1"');
     if (wbPr.defaultThemeVersion !== undefined)
@@ -250,8 +250,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   }
 
   // Calculation properties
-  if (opts.calcPr) {
-    const cp = opts.calcPr;
+  if (opts.calculation) {
+    const cp = opts.calculation;
     const cpAttrs: string[] = [];
     cpAttrs.push(`calcId="${cp.calcId ?? 191029}"`);
     if (cp.calcMode) cpAttrs.push(`calcMode="${escapeXml(cp.calcMode)}"`);
@@ -322,8 +322,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   }
 
   // Smart tag properties (after pivotCaches, before smartTagTypes per XSD sequence)
-  if (opts.smartTagPr) {
-    const stp = opts.smartTagPr;
+  if (opts.smartTag) {
+    const stp = opts.smartTag;
     const stpAttrs: string[] = [];
     if (stp.embed) stpAttrs.push('embed="1"');
     if (stp.show && stp.show !== "all") stpAttrs.push(`show="${stp.show}"`);
@@ -364,8 +364,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   }
 
   // File recovery properties (after webPublishing per XSD sequence)
-  if (opts.fileRecoveryPr) {
-    const frp = opts.fileRecoveryPr;
+  if (opts.fileRecovery) {
+    const frp = opts.fileRecovery;
     const frpAttrs: string[] = [];
     if (frp.autoRecover === false) frpAttrs.push('autoRecover="0"');
     if (frp.crashSave) frpAttrs.push('crashSave="1"');

@@ -10,7 +10,7 @@ const buffer = await generateWorkbook({
     readOnlyRecommended: true,
     userName: "Analyst",
   },
-  fileRecoveryPr: {
+  fileRecovery: {
     autoRecover: true,
     crashSave: true,
   },
@@ -49,7 +49,7 @@ const buffer = await generateWorkbook({
         { sqref: "D2:D4", evalError: true },
       ],
       // Phonetic properties for CJK text (Japanese furigana)
-      phoneticPr: {
+      phonetic: {
         fontId: 0,
         type: "Hiragana",
         alignment: "left",

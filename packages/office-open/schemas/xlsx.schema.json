@@ -3215,7 +3215,7 @@
           "description": "Cell reference, e.g. \"A1\"",
           "type": "string"
         },
-        "commentPr": {
+        "properties": {
           "$ref": "#/definitions/CommentPropertiesOptions",
           "description": "Comment properties — parsed but never re-emitted (see CommentPropertiesOptions)"
         },
@@ -3461,7 +3461,7 @@
           "description": "Credentials method: \"integrated\" | \"none\" | \"stored\" | \"prompt\" (default \"integrated\")",
           "type": "string"
         },
-        "dbPr": {
+        "database": {
           "$ref": "#/definitions/DatabasePropertiesOptions",
           "description": "Database properties"
         },
@@ -3501,7 +3501,7 @@
           "description": "ODC file path",
           "type": "string"
         },
-        "olapPr": {
+        "olap": {
           "$ref": "#/definitions/OLAPPropertiesOptions",
           "description": "OLAP properties"
         },
@@ -3544,7 +3544,7 @@
           "description": "Source file path",
           "type": "string"
         },
-        "textPr": {
+        "text": {
           "$ref": "#/definitions/TextPropertiesOptions",
           "description": "Text import properties"
         },
@@ -3552,7 +3552,7 @@
           "description": "Source type code (ECMA 18.13.1; Excel-verified: 6 = text file source — Office writes it for textPr connections. Excel rejects a type-2 dbPr connection whose provider string it cannot resolve.)",
           "type": "number"
         },
-        "webPr": {
+        "web": {
           "$ref": "#/definitions/WebPropertiesOptions",
           "description": "Web query properties"
         }
@@ -8404,10 +8404,6 @@
           "description": "Linked source",
           "type": "string"
         },
-        "objectPr": {
-          "$ref": "#/definitions/OleObjectPropertiesOptions",
-          "description": "Object properties"
-        },
         "oleUpdate": {
           "description": "OLE update mode",
           "enum": ["OLEUPDATE_ALWAYS", "OLEUPDATE_ONCALL"],
@@ -8416,6 +8412,10 @@
         "progId": {
           "description": "Program ID",
           "type": "string"
+        },
+        "properties": {
+          "$ref": "#/definitions/OleObjectPropertiesOptions",
+          "description": "Object properties"
         },
         "rId": {
           "description": "Relationship ID. Round-trip only: the embedded object part is not re-emitted, so the id is not resolvable in a freshly generated workbook.",
@@ -13923,16 +13923,16 @@
           "description": "Table ID (required)",
           "type": "number"
         },
+        "properties": {
+          "$ref": "#/definitions/XmlCellPropertiesOptions",
+          "description": "Cell properties (required)"
+        },
         "reference": {
           "description": "Cell reference, e.g. \"A1\"",
           "type": "string"
-        },
-        "xmlCellPr": {
-          "$ref": "#/definitions/XmlCellPropertiesOptions",
-          "description": "Cell properties (required)"
         }
       },
-      "required": ["id", "reference", "connectionId", "xmlCellPr"],
+      "required": ["id", "reference", "connectionId", "properties"],
       "type": "object"
     },
     "SizeRepresents": {
@@ -14302,6 +14302,10 @@
           "description": "Header row differential format index",
           "type": "number"
         },
+        "mapping": {
+          "$ref": "#/definitions/XmlColumnPropertiesOptions",
+          "description": "XML mapping — binds the column to an XML map"
+        },
         "name": {
           "description": "Column name (used in header row)",
           "type": "string"
@@ -14336,10 +14340,6 @@
         "uniqueName": {
           "description": "Unique column name for structured references",
           "type": "string"
-        },
-        "xmlColumnPr": {
-          "$ref": "#/definitions/XmlColumnPrOptions",
-          "description": "XML mapping — binds the column to an XML map"
         }
       },
       "required": ["name"],
@@ -16293,7 +16293,7 @@
           },
           "type": "array"
         },
-        "calcPr": {
+        "calculation": {
           "$ref": "#/definitions/CalculationPropertiesOptions",
           "description": "Calculation properties"
         },
@@ -16420,7 +16420,7 @@
           },
           "type": "array"
         },
-        "fileRecoveryPr": {
+        "fileRecovery": {
           "$ref": "#/definitions/FileRecoveryPropertiesOptions",
           "description": "File recovery properties"
         },
@@ -16533,6 +16533,10 @@
           },
           "type": "array"
         },
+        "properties": {
+          "$ref": "#/definitions/WorkbookPropertiesOptions",
+          "description": "Workbook properties — includes defaultThemeVersion, which Excel requires when the package carries a theme (dropping it makes the file unopenable)"
+        },
         "rawParts": {
           "description": "Parts carried verbatim from the source that generate() does not rebuild (drawings, VML, external links, unknown parts) — bytes and content type intact; compiler-rebuilt parts under the same path win. Round-trip channel: captured from a parsed source document — do not hand-author.",
           "items": {
@@ -16623,10 +16627,6 @@
         "webPublishing": {
           "$ref": "#/definitions/WebPublishingOptions",
           "description": "Web publishing properties"
-        },
-        "workbookPr": {
-          "$ref": "#/definitions/WorkbookPropertiesOptions",
-          "description": "Workbook properties — includes defaultThemeVersion, which Excel requires when the package carries a theme (dropping it makes the file unopenable)"
         },
         "workbookProtection": {
           "$ref": "#/definitions/WorkbookProtectionOptions",
@@ -17380,6 +17380,10 @@
           "$ref": "#/definitions/SheetBackgroundImageOptions",
           "description": "Background image for the worksheet"
         },
+        "calculation": {
+          "$ref": "#/definitions/SheetCalculationPropertiesOptions",
+          "description": "Sheet calc properties"
+        },
         "cellWatches": {
           "description": "Cell watches",
           "items": {
@@ -17539,7 +17543,7 @@
         "pageSetup": {
           "$ref": "#/definitions/PageSetupOptions"
         },
-        "phoneticPr": {
+        "phonetic": {
           "$ref": "#/definitions/PhoneticPropertiesOptions",
           "description": "Phonetic properties for CJK text"
         },
@@ -17556,6 +17560,10 @@
         "printOptions": {
           "$ref": "#/definitions/PrintOptions",
           "description": "Print options"
+        },
+        "properties": {
+          "$ref": "#/definitions/SheetPropertiesOptions",
+          "description": "Sheet extended properties"
         },
         "protectedRanges": {
           "description": "Named protected ranges within this sheet",
@@ -17605,21 +17613,13 @@
           },
           "type": "array"
         },
-        "sheetCalcPr": {
-          "$ref": "#/definitions/SheetCalculationPropertiesOptions",
-          "description": "Sheet calc properties"
-        },
-        "sheetFormatPr": {
+        "sheetFormat": {
           "$ref": "#/definitions/SheetFormatPropertiesOptions",
           "description": "Sheet format properties"
         },
         "sheetId": {
           "description": "Workbook sheet id — unique but not necessarily sequential.",
           "type": "number"
-        },
-        "sheetPr": {
-          "$ref": "#/definitions/SheetPropertiesOptions",
-          "description": "Sheet extended properties"
         },
         "sheetView": {
           "$ref": "#/definitions/SheetViewOptions"
@@ -17831,32 +17831,32 @@
           "description": "Table ID (required)",
           "type": "number"
         },
+        "mapping": {
+          "$ref": "#/definitions/XmlPropertiesOptions",
+          "description": "XML properties (required)"
+        },
         "uniqueName": {
           "description": "Unique name",
           "type": "string"
-        },
-        "xmlPr": {
-          "$ref": "#/definitions/XmlPropertiesOptions",
-          "description": "XML properties (required)"
         }
       },
-      "required": ["id", "xmlPr"],
+      "required": ["id", "mapping"],
       "type": "object"
     },
-    "XmlColumnPrOptions": {
+    "XmlColumnPropertiesOptions": {
       "additionalProperties": false,
-      "description": "XML column properties.",
+      "description": "Table column XML mapping — lives on table columns, not this part.",
       "properties": {
         "denormalized": {
-          "description": "Denormalized (default false)",
+          "description": "Denormalized",
           "type": "boolean"
         },
         "mapId": {
-          "description": "XML map id (required, indexes xl/xmlMaps.xml Map entries)",
+          "description": "Owning map ID (required)",
           "type": "number"
         },
         "xmlDataType": {
-          "description": "XML schema data type (required)",
+          "description": "XML data type (required)",
           "type": "string"
         },
         "xpath": {
@@ -17864,7 +17864,7 @@
           "type": "string"
         }
       },
-      "required": ["mapId", "xpath", "xmlDataType"],
+      "required": ["xpath", "xmlDataType", "mapId"],
       "type": "object"
     },
     "XmlPropertiesOptions": {

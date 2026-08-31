@@ -4669,13 +4669,13 @@
           },
           "type": "array"
         },
-        "customXmlPr": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
-        },
         "element": {
           "description": "XML element name (required)",
           "type": "string"
+        },
+        "properties": {
+          "$ref": "#/definitions/CustomXmlPropertiesOptions",
+          "description": "Properties (placeholder, data binding, attributes)"
         },
         "uri": {
           "description": "Namespace URI",
@@ -4696,13 +4696,13 @@
           },
           "type": "array"
         },
-        "customXmlPr": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
-        },
         "element": {
           "description": "XML element name (required)",
           "type": "string"
+        },
+        "properties": {
+          "$ref": "#/definitions/CustomXmlPropertiesOptions",
+          "description": "Properties (placeholder, data binding, attributes)"
         },
         "uri": {
           "description": "Namespace URI",
@@ -4741,13 +4741,13 @@
           },
           "type": "array"
         },
-        "customXmlPr": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
-        },
         "element": {
           "description": "XML element name (required)",
           "type": "string"
+        },
+        "properties": {
+          "$ref": "#/definitions/CustomXmlPropertiesOptions",
+          "description": "Properties (placeholder, data binding, attributes)"
         },
         "uri": {
           "description": "Namespace URI",
@@ -12763,13 +12763,13 @@
                   },
                   "type": "array"
                 },
-                "customXmlPr": {
-                  "$ref": "#/definitions/CustomXmlPropertiesOptions",
-                  "description": "Properties (placeholder, data binding, attributes)"
-                },
                 "element": {
                   "description": "XML element name (required)",
                   "type": "string"
+                },
+                "properties": {
+                  "$ref": "#/definitions/CustomXmlPropertiesOptions",
+                  "description": "Properties (placeholder, data binding, attributes)"
                 },
                 "uri": {
                   "description": "Namespace URI",

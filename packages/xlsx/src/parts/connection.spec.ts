@@ -32,7 +32,7 @@ describe("connectionsDesc", () => {
           interval: 5,
           savePassword: true,
           credentials: "stored",
-          dbPr: {
+          database: {
             connection: "Provider=SQLOLEDB;Data Source=db",
             command: "SELECT * FROM t",
             serverCommand: "SELECT * FROM v",
@@ -65,7 +65,7 @@ describe("connectionsDesc", () => {
       savePassword: true,
       credentials: "stored",
     });
-    expect(c.dbPr).toMatchObject({
+    expect(c.database).toMatchObject({
       connection: "Provider=SQLOLEDB;Data Source=db",
       command: "SELECT * FROM t",
       serverCommand: "SELECT * FROM v",
@@ -88,7 +88,7 @@ describe("connectionsDesc", () => {
           name: "Web",
           type: 4,
           refreshedVersion: 6,
-          webPr: {
+          web: {
             url: "https://example.com/table",
             firstRow: true,
             htmlTables: true,
@@ -100,7 +100,7 @@ describe("connectionsDesc", () => {
     };
     const xml = connectionsDesc.stringify(opts, writeCtx);
     const parsed = connectionsDesc.parse(parseRoot(xml), readCtx);
-    const w = parsed.connections[0]!.webPr!;
+    const w = parsed.connections[0]!.web!;
     expect(w.url).toBe("https://example.com/table");
     expect(w.firstRow).toBe(true);
     expect(w.htmlTables).toBe(true);
@@ -116,7 +116,7 @@ describe("connectionsDesc", () => {
           name: "Text",
           type: 5,
           refreshedVersion: 6,
-          textPr: {
+          text: {
             fileType: "dos" as const,
             codePage: 65001,
             firstRow: 2,
@@ -130,7 +130,7 @@ describe("connectionsDesc", () => {
     };
     const xml = connectionsDesc.stringify(opts, writeCtx);
     const parsed = connectionsDesc.parse(parseRoot(xml), readCtx);
-    const t = parsed.connections[0]!.textPr!;
+    const t = parsed.connections[0]!.text!;
     expect(t.fileType).toBe("dos");
     expect(t.codePage).toBe(65001);
     expect(t.firstRow).toBe(2);

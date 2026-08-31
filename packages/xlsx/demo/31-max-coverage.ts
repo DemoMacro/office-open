@@ -14,8 +14,8 @@ const png1x1 = new Uint8Array([
 ]);
 
 const buffer = await generateWorkbook({
-  workbookPr: { defaultThemeVersion: 202300, date1904: false },
-  calcPr: { calcId: 191029 },
+  properties: { defaultThemeVersion: 202300, date1904: false },
+  calculation: { calcId: 191029 },
   bookView: { xWindow: 120, yWindow: 120, windowWidth: 20000, windowHeight: 12000 },
   customProperties: [{ name: "Reviewed", value: true }],
   definedNames: [{ name: "_xlnm.Print_Area", value: "Data!$A$1:$D$8", localSheetId: 0 }],

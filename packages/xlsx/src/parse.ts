@@ -355,14 +355,14 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
     // Workbook-level properties
     if (wbData.protection) opts.workbookProtection = wbData.protection;
     if (wbData.bookView) opts.bookView = wbData.bookView;
-    if (wbData.calcPr) opts.calcPr = wbData.calcPr;
+    if (wbData.calculation) opts.calculation = wbData.calculation;
     if (wbData.oleSize) opts.oleSize = wbData.oleSize;
     if (wbData.customViews) opts.customWorkbookViews = wbData.customViews;
-    if (wbData.fileRecoveryPr) opts.fileRecoveryPr = wbData.fileRecoveryPr;
+    if (wbData.fileRecovery) opts.fileRecovery = wbData.fileRecovery;
     if (wbData.functionGroups) opts.functionGroups = wbData.functionGroups;
     if (wbData.webPublishing) opts.webPublishing = wbData.webPublishing;
     if (wbData.fileSharing) opts.fileSharing = wbData.fileSharing;
-    if (wbData.workbookPr) opts.workbookPr = wbData.workbookPr;
+    if (wbData.properties) opts.properties = wbData.properties;
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
     if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;

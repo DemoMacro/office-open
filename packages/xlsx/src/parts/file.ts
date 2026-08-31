@@ -119,7 +119,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    */
   customWorkbookViews?: CustomWorkbookViewOptions[];
   /** File recovery properties */
-  fileRecoveryPr?: FileRecoveryPropertiesOptions;
+  fileRecovery?: FileRecoveryPropertiesOptions;
   /** Custom VBA function group names */
   functionGroups?: string[];
   /** Web publishing properties */
@@ -135,12 +135,12 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Workbook view (CT_BookView) */
   bookView?: WorkbookViewOptions;
   /** Calculation properties (CT_CalcPr) */
-  calcPr?: CalculationPropertiesOptions;
+  calculation?: CalculationPropertiesOptions;
   /** OLE embedded range (CT_OleSize) — workbook-level, after calcPr */
   oleSize?: string;
   /** Workbook properties (CT_WorkbookPr) — includes defaultThemeVersion, which Excel
    * requires when the package carries a theme (dropping it makes the file unopenable) */
-  workbookPr?: WorkbookPropertiesOptions;
+  properties?: WorkbookPropertiesOptions;
   /** Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler
    * round-trips them verbatim and rebuilds from formula cells only when absent */
   calcChain?: CalcCell[];

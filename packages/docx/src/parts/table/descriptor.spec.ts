@@ -570,7 +570,7 @@ describe("tableDesc round-trip", () => {
               customXml: {
                 element: "taggedCell",
                 uri: "http://ns",
-                customXmlPr: { attributes: [{ name: "k", val: "v" }] },
+                properties: { attributes: [{ name: "k", val: "v" }] },
                 children: [{ children: [{ paragraph: "wrapped" }] }],
               },
             },
@@ -585,7 +585,7 @@ describe("tableDesc round-trip", () => {
     if (cellEntry && "customXml" in cellEntry) {
       expect(cellEntry.customXml.element).toBe("taggedCell");
       expect(cellEntry.customXml.uri).toBe("http://ns");
-      expect(cellEntry.customXml.customXmlPr?.attributes).toEqual([{ name: "k", val: "v" }]);
+      expect(cellEntry.customXml.properties?.attributes).toEqual([{ name: "k", val: "v" }]);
       expect(cellEntry.customXml.children).toHaveLength(1);
     }
   });

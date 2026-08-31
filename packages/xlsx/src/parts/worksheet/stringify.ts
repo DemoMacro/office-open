@@ -91,7 +91,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   // Sheet properties (tabColor, outlinePr go here)
   const hasTabColor = !!opts.tabColor;
   const hasOutline = columns.some((c) => c.outlineLevel !== undefined);
-  const sp = opts.sheetPr;
+  const sp = opts.properties;
   const hasSheetPrAttrs =
     sp &&
     (sp.codeName ||
@@ -205,8 +205,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   // Sheet format — default row height
-  if (opts.sheetFormatPr) {
-    const sfp = opts.sheetFormatPr;
+  if (opts.sheetFormat) {
+    const sfp = opts.sheetFormat;
     const sfpAttrs: Record<string, string | number | boolean | undefined> = {};
     if (sfp.baseColWidth !== undefined) sfpAttrs.baseColWidth = sfp.baseColWidth;
     if (sfp.defaultColWidth !== undefined) sfpAttrs.defaultColWidth = sfp.defaultColWidth;
@@ -262,9 +262,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   p.push("</sheetData>");
 
   // Sheet calc properties (after sheetData per XSD sequence)
-  if (opts.sheetCalcPr) {
+  if (opts.calculation) {
     const scAttrs: string[] = [];
-    if (opts.sheetCalcPr.fullCalcOnLoad) scAttrs.push('fullCalcOnLoad="1"');
+    if (opts.calculation.fullCalcOnLoad) scAttrs.push('fullCalcOnLoad="1"');
     p.push(`<sheetCalcPr${scAttrs.length ? " " + scAttrs.join(" ") : ""}/>`);
   }
 
@@ -403,8 +403,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   // Phonetic properties (after mergeCells per XSD sequence)
-  if (opts.phoneticPr) {
-    const pp = opts.phoneticPr;
+  if (opts.phonetic) {
+    const pp = opts.phonetic;
     const ppAttrs: Record<string, string | number> = { fontId: pp.fontId };
     if (pp.type && pp.type !== "fullwidthKatakana") ppAttrs.type = pp.type;
     if (pp.alignment && pp.alignment !== "left") ppAttrs.alignment = pp.alignment;
@@ -768,8 +768,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (ole.rId) oleAttrs.push(`r:id="${escapeXml(ole.rId)}"`);
       // objectPr (CT_ObjectPr, optional child)
       let innerXml: string;
-      if (ole.objectPr) {
-        const opr = ole.objectPr;
+      if (ole.properties) {
+        const opr = ole.properties;
         const oprAttrs: string[] = [];
         if (opr.locked === false) oprAttrs.push('locked="0"');
         if (opr.defaultSize === false) oprAttrs.push('defaultSize="0"');

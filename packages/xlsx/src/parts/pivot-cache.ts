@@ -387,8 +387,8 @@ function stringifyPivotCacheDef(
         if (fg.parent !== undefined) fgParts.push(` par="${fg.parent}"`);
         if (fg.base !== undefined) fgParts.push(` base="${fg.base}"`);
         fgParts.push(">");
-        if (fg.rangePr) {
-          const rp = fg.rangePr;
+        if (fg.range) {
+          const rp = fg.range;
           const rpAttrs: string[] = [];
           if (rp.autoStart === false) rpAttrs.push('autoStart="0"');
           if (rp.autoEnd === false) rpAttrs.push('autoEnd="0"');
@@ -400,9 +400,9 @@ function stringifyPivotCacheDef(
           if (rp.groupInterval !== undefined) rpAttrs.push(`groupInterval="${rp.groupInterval}"`);
           fgParts.push(`<rangePr${rpAttrs.length ? " " + rpAttrs.join(" ") : ""}/>`);
         }
-        if (fg.discretePr && fg.discretePr.length > 0) {
-          fgParts.push(`<discretePr count="${fg.discretePr.length}">`);
-          for (const idx of fg.discretePr) fgParts.push(`<x v="${idx}"/>`);
+        if (fg.discrete && fg.discrete.length > 0) {
+          fgParts.push(`<discretePr count="${fg.discrete.length}">`);
+          for (const idx of fg.discrete) fgParts.push(`<x v="${idx}"/>`);
           fgParts.push("</discretePr>");
         }
         if (fg.groupItems && fg.groupItems.length > 0) {
@@ -425,7 +425,7 @@ function stringifyPivotCacheDef(
   }
 
   // olapPr
-  const olapPrXml = cacheDefOpts?.olapPr ? stringifyOlapPr(cacheDefOpts.olapPr) : "";
+  const olapPrXml = cacheDefOpts?.olap ? stringifyOlapPr(cacheDefOpts.olap) : "";
   if (olapPrXml) p.push(olapPrXml);
 
   // cacheHierarchies

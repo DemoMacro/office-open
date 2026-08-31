@@ -94,7 +94,7 @@ export interface XmlCellPropertiesOptions {
   /** Unique name (CT_XmlCellPr `@uniqueName`) */
   uniqueName?: string;
   /** XML properties (required) */
-  xmlPr: XmlPropertiesOptions;
+  mapping: XmlPropertiesOptions;
 }
 
 /** Single-cell XML table entry (CT_SingleXmlCell). */
@@ -106,7 +106,7 @@ export interface SingleXmlCellOptions {
   /** Connection ID (required) */
   connectionId: number;
   /** Cell properties (required) */
-  xmlCellPr: XmlCellPropertiesOptions;
+  properties: XmlCellPropertiesOptions;
 }
 
 /** Options for xl/tables/tableSingleCells{n}.xml (CT_SingleXmlCells). */
@@ -235,16 +235,16 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
       '<singleXmlCells xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
     ];
     for (const c of opts.cells) {
-      const pr = c.xmlCellPr;
+      const pr = c.properties;
       const prAttrs: string[] = [`id="${pr.id}"`];
       if (pr.uniqueName !== undefined) prAttrs.push(`uniqueName="${escapeXml(pr.uniqueName)}"`);
       // x:xmlPr @mapId is a required UInt32 (CT_XmlPr) — without a usable map
       // id the cell has nothing to bind to, so drop the whole xmlCellPr branch
-      if (typeof pr.xmlPr.mapId !== "number") continue;
+      if (typeof pr.mapping.mapId !== "number") continue;
       p.push(
         `<singleXmlCell id="${c.id}" r="${escapeXml(c.reference)}" connectionId="${c.connectionId}">` +
           `<xmlCellPr ${prAttrs.join(" ")}>` +
-          `<xmlPr mapId="${pr.xmlPr.mapId}" xpath="${escapeXml(pr.xmlPr.xpath)}" xmlDataType="${escapeXml(pr.xmlPr.xmlDataType)}"/>` +
+          `<xmlPr mapId="${pr.mapping.mapId}" xpath="${escapeXml(pr.mapping.xpath)}" xmlDataType="${escapeXml(pr.mapping.xmlDataType)}"/>` +
           `</xmlCellPr></singleXmlCell>`,
       );
     }
@@ -262,7 +262,7 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
       if (!xmlPrEl) continue;
       const pr: Partial<XmlCellPropertiesOptions> = { id: attrNum(prEl, "id") ?? 0 };
       if (attr(prEl, "uniqueName") !== undefined) pr.uniqueName = attr(prEl, "uniqueName");
-      pr.xmlPr = {
+      pr.mapping = {
         mapId: attrNum(xmlPrEl, "mapId") ?? 0,
         xpath: attr(xmlPrEl, "xpath") ?? "",
         xmlDataType: attr(xmlPrEl, "xmlDataType") ?? "",
@@ -271,7 +271,7 @@ export const singleXmlCellsDesc: CustomDescriptor<SingleXmlCellsOptions> = {
         id: attrNum(cEl, "id") ?? 0,
         reference: attr(cEl, "r") ?? "",
         connectionId: attrNum(cEl, "connectionId") ?? 0,
-        xmlCellPr: pr as XmlCellPropertiesOptions,
+        properties: pr as XmlCellPropertiesOptions,
       });
     }
     return { cells };

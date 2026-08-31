@@ -152,7 +152,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           psup.autoPageBreaks = parseOnOff(attr(pageSetUpPr, "autoPageBreaks")) ?? true;
         if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
       }
-      if (Object.keys(sp).length > 0) result.sheetPr = sp;
+      if (Object.keys(sp).length > 0) result.properties = sp;
 
       // Tab color
       const tabColorEl = findChild(sheetPrEl, "tabColor");
@@ -288,7 +288,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (olr !== undefined) sfp.outlineLevelRow = olr;
       const olc = attrNum(sfpEl, "outlineLevelCol");
       if (olc !== undefined) sfp.outlineLevelCol = olc;
-      result.sheetFormatPr = sfp;
+      result.sheetFormat = sfp;
     }
 
     // Dimension
@@ -633,7 +633,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (ppType) pp.type = ppType as PhoneticPropertiesOptions["type"];
       const ppAlign = attr(ppEl, "alignment");
       if (ppAlign) pp.alignment = ppAlign as PhoneticPropertiesOptions["alignment"];
-      result.phoneticPr = pp;
+      result.phonetic = pp;
     }
 
     // Sheet calc properties
@@ -641,7 +641,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     if (scEl) {
       const sc: SheetCalculationPropertiesOptions = {};
       if (parseOnOff(attr(scEl, "fullCalcOnLoad"))) sc.fullCalcOnLoad = true;
-      result.sheetCalcPr = sc;
+      result.calculation = sc;
     }
 
     // Sheet data (rows and cells) — parsed by the dedicated sheetData scanner.
@@ -917,7 +917,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             const anchor = readEmbeddedAnchor(anchorEl);
             if (anchor) opr.anchor = anchor;
           }
-          if (Object.keys(opr).length > 0) oo.objectPr = opr;
+          if (Object.keys(opr).length > 0) oo.properties = opr;
         }
         oleObjects.push(oo);
       }

@@ -477,7 +477,7 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
 export interface CustomXmlBlockDescriptorOptions {
   element: string;
   uri?: string;
-  customXmlPr?: CustomXmlPropertiesOptions;
+  properties?: CustomXmlPropertiesOptions;
   children?: BlockContentChild[];
 }
 
@@ -510,12 +510,12 @@ function buildCustomXmlPropertiesXml(pr: CustomXmlPropertiesOptions): string {
  * Prefer content controls (`w:sdt`) or a `customXml` part for new content.
  */
 export function stringifyCustomXmlShell(
-  opts: { element: string; uri?: string; customXmlPr?: CustomXmlPropertiesOptions },
+  opts: { element: string; uri?: string; properties?: CustomXmlPropertiesOptions },
   contentXml: string,
 ): string {
   const attrs: string[] = [`w:element="${escapeXml(opts.element)}"`];
   if (opts.uri !== undefined) attrs.push(`w:uri="${escapeXml(opts.uri)}"`);
-  const prXml = opts.customXmlPr ? buildCustomXmlPropertiesXml(opts.customXmlPr) : "";
+  const prXml = opts.properties ? buildCustomXmlPropertiesXml(opts.properties) : "";
   return `<w:customXml ${attrs.join(" ")}>${prXml}${contentXml}</w:customXml>`;
 }
 
@@ -545,7 +545,7 @@ export const customXmlBlockDesc: CustomDescriptor<CustomXmlBlockDescriptorOption
     // Parse w:customXmlPr
     const xmlPr = findChild(el, "w:customXmlPr");
     if (xmlPr) {
-      opts.customXmlPr = parseCustomXmlProperties(xmlPr);
+      opts.properties = parseCustomXmlProperties(xmlPr);
     }
 
     // Parse block-level children

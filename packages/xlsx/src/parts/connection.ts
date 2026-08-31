@@ -178,13 +178,13 @@ export interface ConnectionOptions {
   /** Single sign-on ID (CT_Connection `@singleSignOnId`) */
   singleSignOnId?: string;
   /** Database properties (CT_DbPr) */
-  dbPr?: DatabasePropertiesOptions;
+  database?: DatabasePropertiesOptions;
   /** OLAP properties (CT_OlapPr) */
-  olapPr?: OLAPPropertiesOptions;
+  olap?: OLAPPropertiesOptions;
   /** Web query properties (CT_WebPr) */
-  webPr?: WebPropertiesOptions;
+  web?: WebPropertiesOptions;
   /** Text import properties (CT_TextPr) */
-  textPr?: TextPropertiesOptions;
+  text?: TextPropertiesOptions;
   /** Parameters (CT_Parameters) */
   parameters?: ParameterOptions[];
 }
@@ -236,17 +236,19 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         cAttrs.push(`singleSignOnId="${escapeXml(c.singleSignOnId)}"`);
 
       const inner: string[] = [];
-      if (c.dbPr) {
-        const dAttrs: string[] = [`connection="${escapeXml(c.dbPr.connection)}"`];
-        if (c.dbPr.command !== undefined) dAttrs.push(`command="${escapeXml(c.dbPr.command)}"`);
-        if (c.dbPr.serverCommand !== undefined)
-          dAttrs.push(`serverCommand="${escapeXml(c.dbPr.serverCommand)}"`);
-        if (c.dbPr.commandType !== undefined) dAttrs.push(`commandType="${c.dbPr.commandType}"`);
+      if (c.database) {
+        const dAttrs: string[] = [`connection="${escapeXml(c.database.connection)}"`];
+        if (c.database.command !== undefined)
+          dAttrs.push(`command="${escapeXml(c.database.command)}"`);
+        if (c.database.serverCommand !== undefined)
+          dAttrs.push(`serverCommand="${escapeXml(c.database.serverCommand)}"`);
+        if (c.database.commandType !== undefined)
+          dAttrs.push(`commandType="${c.database.commandType}"`);
         inner.push(`<dbPr ${dAttrs.join(" ")}/>`);
       }
-      if (c.olapPr) inner.push(stringifyOlapPr(c.olapPr));
-      if (c.webPr) {
-        const w = c.webPr;
+      if (c.olap) inner.push(stringifyOlapPr(c.olap));
+      if (c.web) {
+        const w = c.web;
         const wAttrs: string[] = [];
         if (w.xml) wAttrs.push('xml="1"');
         if (w.sourceData) wAttrs.push('sourceData="1"');
@@ -276,8 +278,8 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         if (tablesXml) inner.push(`<webPr ${wAttrs.join(" ")}>${tablesXml}</webPr>`);
         else inner.push(`<webPr ${wAttrs.join(" ")}/>`);
       }
-      if (c.textPr) {
-        const t = c.textPr;
+      if (c.text) {
+        const t = c.text;
         const tAttrs: string[] = [];
         if (t.prompt === false) tAttrs.push('prompt="0"');
         if (t.fileType !== undefined) tAttrs.push(`fileType="${t.fileType}"`);
@@ -370,7 +372,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
 
       const dbEl = findChild(cEl, "dbPr");
       if (dbEl) {
-        c.dbPr = {
+        c.database = {
           connection: attr(dbEl, "connection") ?? "",
           command: attr(dbEl, "command"),
           serverCommand: attr(dbEl, "serverCommand"),
@@ -380,7 +382,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
       const olapEl = findChild(cEl, "olapPr");
       if (olapEl) {
         const ol = parseOlapPr(olapEl);
-        if (ol) c.olapPr = ol;
+        if (ol) c.olap = ol;
       }
       const webEl = findChild(cEl, "webPr");
       if (webEl) {
@@ -409,7 +411,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
           }
           if (tables.length > 0) w.tables = tables;
         }
-        c.webPr = w as WebPropertiesOptions;
+        c.web = w as WebPropertiesOptions;
       }
       const textEl = findChild(cEl, "textPr");
       if (textEl) {
@@ -449,7 +451,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
           }
           if (fields.length > 0) t.textFields = fields;
         }
-        c.textPr = t as TextPropertiesOptions;
+        c.text = t as TextPropertiesOptions;
       }
       const paramsEl = findChild(cEl, "parameters");
       if (paramsEl) {

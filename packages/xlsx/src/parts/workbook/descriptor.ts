@@ -175,7 +175,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (id !== undefined) calc.iterateDelta = id;
       if (String(attr(calcPrEl, "fullPrecision")) === "0") calc.fullPrecision = false;
       if (parseOnOff(attr(calcPrEl, "calcCompleted"))) calc.calcCompleted = true;
-      result.calcPr = calc;
+      result.calculation = calc;
     }
 
     // OLE size (after calcPr, before customWorkbookViews per XSD sequence)
@@ -277,7 +277,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(fileRecoveryEl, "crashSave"))) frp.crashSave = true;
       if (parseOnOff(attr(fileRecoveryEl, "dataExtractLoad"))) frp.dataExtractLoad = true;
       if (parseOnOff(attr(fileRecoveryEl, "repairLoad"))) frp.repairLoad = true;
-      result.fileRecoveryPr = frp;
+      result.fileRecovery = frp;
     }
 
     // Workbook properties
@@ -307,7 +307,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(wbPrEl, "checkCompatibility"))) wbPr.checkCompatibility = true;
       if (String(attr(wbPrEl, "autoCompressPictures")) === "0") wbPr.autoCompressPictures = false;
       if (parseOnOff(attr(wbPrEl, "refreshAllConnections"))) wbPr.refreshAllConnections = true;
-      result.workbookPr = wbPr;
+      result.properties = wbPr;
     }
 
     // AbsPath rides in an mc:AlternateContent between workbookPr and bookViews
@@ -427,7 +427,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(smartTagPrEl, "embed"))) stp.embed = true;
       const show = attr(smartTagPrEl, "show");
       if (show && show !== "all") stp.show = show as SmartTagShow;
-      result.smartTagPr = stp;
+      result.smartTag = stp;
     }
 
     // Smart tag types (CT_SmartTagTypes → smartTagType[])

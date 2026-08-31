@@ -22,6 +22,7 @@ import {
 import { parseA1Cell } from "../util/index";
 import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
 import type { AutoFilterOptions } from "./worksheet";
+import type { XmlColumnPropertiesOptions } from "./xml-mapping";
 
 // Width in columns of a table ref range ("A1:F2" → 6); undefined when the
 // ref cannot be parsed. Excel requires exactly one tableColumn per column
@@ -114,19 +115,7 @@ export interface TableColumnOptions {
   /** Totals row cell style name */
   totalsRowCellStyle?: string;
   /** XML mapping (CT_XmlColumnPr) — binds the column to an XML map */
-  xmlColumnPr?: XmlColumnPrOptions;
-}
-
-/** XML column properties (CT_XmlColumnPr — table column bound to an XML map). */
-export interface XmlColumnPrOptions {
-  /** XML map id (required, indexes xl/xmlMaps.xml Map entries) */
-  mapId: number;
-  /** XPath expression (required) */
-  xpath: string;
-  /** Denormalized (default false) */
-  denormalized?: boolean;
-  /** XML schema data type (required, ST_XmlDataType) */
-  xmlDataType: string;
+  mapping?: XmlColumnPropertiesOptions;
 }
 
 export interface TableOptions {
@@ -309,8 +298,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
       // x:xmlColumnPr @mapId is a required UInt32 — skip the whole element when
       // no usable map id exists (nothing to bind the column to)
-      if (col.xmlColumnPr && typeof col.xmlColumnPr.mapId === "number") {
-        const xp = col.xmlColumnPr;
+      if (col.mapping && typeof col.mapping.mapId === "number") {
+        const xp = col.mapping;
         const xpAttrs = [`mapId="${xp.mapId}"`, `xpath="${escapeXml(xp.xpath)}"`];
         if (xp.denormalized) xpAttrs.push('denormalized="1"');
         xpAttrs.push(`xmlDataType="${escapeXml(xp.xmlDataType)}"`);
@@ -428,12 +417,12 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
           col.totalsRowCellStyle = attr(colEl, "totalsRowCellStyle");
         const xcpEl = findChild(colEl, "xmlColumnPr");
         if (xcpEl) {
-          col.xmlColumnPr = {
+          col.mapping = {
             mapId: attrNum(xcpEl, "mapId") ?? 0,
             xpath: attr(xcpEl, "xpath") ?? "",
             xmlDataType: attr(xcpEl, "xmlDataType") ?? "",
           };
-          if (parseOnOff(attr(xcpEl, "denormalized"))) col.xmlColumnPr.denormalized = true;
+          if (parseOnOff(attr(xcpEl, "denormalized"))) col.mapping.denormalized = true;
         }
         columns.push(col as TableColumnOptions);
       }

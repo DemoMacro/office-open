@@ -57,7 +57,7 @@ const buffer = await generateWorkbook({
       // without a live provider, so the demo queries a CSV-style text source.
       type: 6,
       refreshedVersion: 8,
-      textPr: {
+      text: {
         prompt: false,
         sourceFile: "prices.csv",
         textFields: [{}],

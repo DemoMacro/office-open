@@ -14,7 +14,7 @@ const png1x1 = new Uint8Array([
 ]);
 
 const buffer = await generateWorkbook({
-  calcPr: { calcId: 191029 },
+  calculation: { calcId: 191029 },
   oleSize: "A1:D10",
   // Excel requires every sheet-level customSheetView guid to have a
   // same-guid workbook-level customWorkbookView — orphaned sheet views
@@ -31,12 +31,12 @@ const buffer = await generateWorkbook({
   worksheets: [
     {
       name: "Everything",
-      sheetPr: { published: false, enableFormatConditionsCalculation: false },
+      properties: { published: false, enableFormatConditionsCalculation: false },
       tabColor: { rgb: "FF4472C4" },
       dimension: "A1:F12",
       sheetView: { showGridLines: false, zoomScale: 90 },
       selection: [{ activeCell: "B2", sqref: "B2" }],
-      sheetFormatPr: { defaultRowHeight: 16, outlineLevelRow: 1 },
+      sheetFormat: { defaultRowHeight: 16, outlineLevelRow: 1 },
       columns: [{ min: 1, max: 6, width: 12 }],
       rows: [
         // Header cells must cover every table column — Excel refuses the
@@ -56,7 +56,7 @@ const buffer = await generateWorkbook({
           cells: [{ value: 1 }, { value: 2 }],
         },
       ],
-      sheetCalcPr: { fullCalcOnLoad: true },
+      calculation: { fullCalcOnLoad: true },
       protection: { sheet: true, formatCells: false },
       protectedRanges: [{ sqref: "A5:C7", name: "Locked" }],
       scenarios: { scenarios: [{ name: "Base", inputCells: [{ reference: "B2", val: 2 }] }] },
@@ -66,7 +66,7 @@ const buffer = await generateWorkbook({
       dataConsolidate: { function: "sum", refs: ["A2:F12"] },
       customSheetViews: [{ guid: "{11111111-2222-3333-4444-555555555555}", scale: 80 }],
       mergeCells: [{ ref: "D5:E5" }],
-      phoneticPr: { fontId: 1 },
+      phonetic: { fontId: 1 },
       conditionalFormats: [
         { sqref: "F2:F12", rules: [{ type: "cellIs", operator: "greaterThan", formulas: ["10"] }] },
       ],

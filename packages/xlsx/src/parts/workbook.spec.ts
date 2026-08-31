@@ -84,7 +84,7 @@ describe("workbookDesc round-trip", () => {
   it("round-trips smartTagPr and smartTagTypes", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
-      smartTagPr: { embed: true, show: "noIndicator" },
+      smartTag: { embed: true, show: "noIndicator" },
       smartTagTypes: [
         {
           namespaceUri: "http://schemas.example.com/addr",
@@ -96,7 +96,7 @@ describe("workbookDesc round-trip", () => {
     };
     const result = roundTrip(opts);
 
-    expect(result.smartTagPr).toEqual({ embed: true, show: "noIndicator" });
+    expect(result.smartTag).toEqual({ embed: true, show: "noIndicator" });
     expect(result.smartTagTypes).toEqual([
       {
         namespaceUri: "http://schemas.example.com/addr",
@@ -112,7 +112,7 @@ describe("workbookDesc round-trip", () => {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
     };
     const result = roundTrip(opts);
-    expect(result.smartTagPr).toBeUndefined();
+    expect(result.smartTag).toBeUndefined();
     expect(result.smartTagTypes).toBeUndefined();
   });
 
@@ -163,24 +163,24 @@ describe("workbookDesc round-trip", () => {
   it("round-trips calc properties", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
-      calcPr: { calcId: 162913, calcMode: "auto", fullCalcOnLoad: true, refMode: "A1" },
+      calculation: { calcId: 162913, calcMode: "auto", fullCalcOnLoad: true, refMode: "A1" },
     };
     const result = roundTrip(opts);
 
-    expect(result.calcPr?.calcId).toBe(162913);
-    expect(result.calcPr?.calcMode).toBe("auto");
-    expect(result.calcPr?.fullCalcOnLoad).toBe(true);
-    expect(result.calcPr?.refMode).toBe("A1");
+    expect(result.calculation?.calcId).toBe(162913);
+    expect(result.calculation?.calcMode).toBe("auto");
+    expect(result.calculation?.fullCalcOnLoad).toBe(true);
+    expect(result.calculation?.refMode).toBe("A1");
   });
 
   it("round-trips workbookPr with date1904", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
-      workbookPr: { date1904: true },
+      properties: { date1904: true },
     };
     const result = roundTrip(opts);
 
-    expect(result.workbookPr?.date1904).toBe(true);
+    expect(result.properties?.date1904).toBe(true);
   });
 
   it("round-trips pivot caches", () => {
@@ -222,12 +222,12 @@ describe("workbookDesc round-trip", () => {
   it("round-trips file recovery properties", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
-      fileRecoveryPr: { autoRecover: false, crashSave: true },
+      fileRecovery: { autoRecover: false, crashSave: true },
     };
     const result = roundTrip(opts);
 
-    expect(result.fileRecoveryPr?.autoRecover).toBe(false);
-    expect(result.fileRecoveryPr?.crashSave).toBe(true);
+    expect(result.fileRecovery?.autoRecover).toBe(false);
+    expect(result.fileRecovery?.crashSave).toBe(true);
   });
 
   it("round-trips defined names with full attribute set", () => {
@@ -272,7 +272,7 @@ describe("workbookDesc round-trip", () => {
       {
         sheets: [{ name: "S", sheetId: 1, rId: "rId1" }],
         definedNames: [{ name: "X", value: "1" }],
-        calcPr: { calcId: 1 },
+        calculation: { calcId: 1 },
       },
       writeCtx,
     )!;

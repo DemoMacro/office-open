@@ -312,7 +312,10 @@ describe("xml mapping round-trip", () => {
               id: 1,
               reference: "B2",
               connectionId: 1,
-              xmlCellPr: { id: 1, xmlPr: { mapId: 1, xpath: "/root/name", xmlDataType: "string" } },
+              properties: {
+                id: 1,
+                mapping: { mapId: 1, xpath: "/root/name", xmlDataType: "string" },
+              },
             },
           ],
         },
@@ -330,7 +333,7 @@ describe("xml mapping round-trip", () => {
     expect(parsed.xmlMaps?.maps![0]).toMatchObject({ id: 1, name: "M1", rootElement: "root" });
     const cell = parsed.worksheets![0]!.singleXmlCells![0]!;
     expect(cell).toMatchObject({ id: 1, reference: "B2", connectionId: 1 });
-    expect(cell.xmlCellPr.xmlPr).toMatchObject({ mapId: 1, xpath: "/root/name" });
+    expect(cell.properties.mapping).toMatchObject({ mapId: 1, xpath: "/root/name" });
   });
 });
 

@@ -97,7 +97,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
           author: authors[authorId] ?? "",
           text,
         };
-        if (commentPrEl) comment.commentPr = parseCommentPr(commentPrEl);
+        if (commentPrEl) comment.properties = parseCommentPr(commentPrEl);
         comments.push(comment);
       }
     }

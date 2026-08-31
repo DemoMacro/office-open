@@ -1436,7 +1436,7 @@ function parseCustomXmlInline(
   if (pr) {
     const parsed = parseCustomXmlProperties(pr);
     if (parsed.placeholder !== undefined || parsed.attributes !== undefined) {
-      cx.customXmlPr = parsed;
+      cx.properties = parsed;
     }
   }
   const content = parseContainerChildren(el, ctx);

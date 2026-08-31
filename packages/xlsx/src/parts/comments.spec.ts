@@ -161,7 +161,7 @@ describe("commentsDesc round-trip", () => {
             cell: "A1",
             author: "Alice",
             text: "note",
-            commentPr: { locked: false, print: false, textHAlign: "center" },
+            properties: { locked: false, print: false, textHAlign: "center" },
           },
         ],
       },
@@ -182,7 +182,7 @@ describe("commentsDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = commentsDesc.parse(el, readCtx);
-    const pr = result.comments[0]!.commentPr!;
+    const pr = result.comments[0]!.properties!;
     expect(pr.locked).toBe(false);
     expect(pr.print).toBe(false);
     expect(pr.textHAlign).toBe("center");

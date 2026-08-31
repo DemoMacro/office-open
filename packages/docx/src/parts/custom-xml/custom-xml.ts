@@ -47,7 +47,7 @@ export interface CustomXmlRunOptions {
   /** Namespace URI */
   uri?: string;
   /** Properties (placeholder, data binding, attributes) */
-  customXmlPr?: CustomXmlPropertiesOptions;
+  properties?: CustomXmlPropertiesOptions;
 }
 
 /**

@@ -641,9 +641,9 @@ export interface FieldGroupOptions {
   /** Base field index */
   base?: number;
   /** Range properties */
-  rangePr?: RangePropertiesOptions;
+  range?: RangePropertiesOptions;
   /** Discrete properties */
-  discretePr?: number[];
+  discrete?: number[];
   /** Group items names */
   groupItems?: string[];
 }
@@ -1097,5 +1097,5 @@ export interface PivotCacheDefinitionOptions {
   /** Per-field cache field overrides (mapped by field index) */
   cacheFieldOverrides?: ReadonlyMap<number, CacheFieldExtraAttrs>;
   /** OLAP properties (CT_OlapPr) */
-  olapPr?: OLAPPropertiesOptions;
+  olap?: OLAPPropertiesOptions;
 }

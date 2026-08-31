@@ -609,7 +609,7 @@ export interface CommentOptions {
   /** Comment text (plain string or rich text) */
   text: string | RichTextOptions;
   /** Comment properties (CT_CommentPr) — parsed but never re-emitted (see CommentPropertiesOptions) */
-  commentPr?: CommentPropertiesOptions;
+  properties?: CommentPropertiesOptions;
   /**
    * Note shape anchor (x:Anchor in the VML part): from/to cell corners,
    * 0-based. Absent → the default 2×2-cell offset anchored at the comment's
@@ -1409,15 +1409,15 @@ export interface WorksheetOptions {
   /** Ignored errors — suppress specific Excel error checks for cell ranges */
   ignoredErrors?: IgnoredErrorOptions[];
   /** Phonetic properties for CJK text */
-  phoneticPr?: PhoneticPropertiesOptions;
+  phonetic?: PhoneticPropertiesOptions;
   /** Background image for the worksheet */
   backgroundImage?: SheetBackgroundImageOptions;
   /** Print options (CT_PrintOptions) */
   printOptions?: PrintOptions;
   /** Sheet format properties (CT_SheetFormatPr) */
-  sheetFormatPr?: SheetFormatPropertiesOptions;
+  sheetFormat?: SheetFormatPropertiesOptions;
   /** Sheet extended properties (CT_SheetPr attributes) */
-  sheetPr?: SheetPropertiesOptions;
+  properties?: SheetPropertiesOptions;
   /** Row page breaks (CT_PageBreaks) */
   rowBreaks?: PageBreakOptions[];
   /** Column page breaks (CT_PageBreaks) */
@@ -1461,7 +1461,7 @@ export interface WorksheetOptions {
   /** Single-cell XML tables on this sheet (xl/tables/tableSingleCellsN.xml) */
   singleXmlCells?: SingleXmlCellOptions[];
   /** Sheet calc properties (CT_SheetCalcPr) */
-  sheetCalcPr?: SheetCalculationPropertiesOptions;
+  calculation?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */
   ext?: string;
   /** Control objects (CT_Controls) */
@@ -1571,7 +1571,7 @@ export interface OleObjectOptions {
    */
   rId?: string;
   /** Object properties (CT_ObjectPr) */
-  objectPr?: OleObjectPropertiesOptions;
+  properties?: OleObjectPropertiesOptions;
   /**
    * Source wrapped the oleObject in mc:AlternateContent (Excel 2010+ form:
    * Choice carries the full element, Fallback the bare one). Re-emit the

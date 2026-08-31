@@ -82,7 +82,7 @@ describe("inline metadata parse", () => {
       uri: "http://ns.example.com/cust",
     });
     const cxOpts = cx!.customXml as Record<string, unknown>;
-    expect(cxOpts.customXmlPr).toEqual({
+    expect(cxOpts.properties).toEqual({
       placeholder: "Enter customer",
       attributes: [{ name: "id", val: "42" }],
     });

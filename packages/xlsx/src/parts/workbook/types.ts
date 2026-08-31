@@ -437,15 +437,15 @@ export interface WorkbookDescriptorOptions {
   protection?: WorkbookProtectionOptions;
   customViews?: CustomWorkbookViewOptions[];
   /** CT_SmartTagPr — workbook-level smart tag embed/display policy. */
-  smartTagPr?: SmartTagPropertiesOptions;
+  smartTag?: SmartTagPropertiesOptions;
   /** CT_SmartTagTypes — recognized smart tag namespaces (smartTagType[]). */
   smartTagTypes?: SmartTagTypeOptions[];
-  fileRecoveryPr?: FileRecoveryPropertiesOptions;
+  fileRecovery?: FileRecoveryPropertiesOptions;
   functionGroups?: string[];
   webPublishing?: WebPublishingOptions;
   fileSharing?: FileSharingOptions;
-  workbookPr?: WorkbookPropertiesOptions;
-  calcPr?: CalculationPropertiesOptions;
+  properties?: WorkbookPropertiesOptions;
+  calculation?: CalculationPropertiesOptions;
   /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
   oleSize?: string;
   bookView?: WorkbookViewOptions;

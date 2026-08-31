@@ -1190,7 +1190,7 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
       if (xmlPr) {
         const parsed = parseCustomXmlProperties(xmlPr);
         if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
-          cx.customXmlPr = parsed;
+          cx.properties = parsed;
       }
       const cxCells: TableCellOptions[] = [];
       for (const sub of child.elements ?? []) {
@@ -1269,7 +1269,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
       if (xmlPr) {
         const parsed = parseCustomXmlProperties(xmlPr);
         if (parsed.placeholder !== undefined || parsed.attributes !== undefined)
-          cx.customXmlPr = parsed;
+          cx.properties = parsed;
       }
       const cxRows: TableRowOptions[] = [];
       for (const sub of child.elements ?? []) {

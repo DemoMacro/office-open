@@ -36,7 +36,7 @@ const buffer = await generateDocument({
                 customXml: {
                   element: "price",
                   uri: "http://example.com/ns",
-                  customXmlPr: { attributes: [{ name: "currency", val: "USD" }] },
+                  properties: { attributes: [{ name: "currency", val: "USD" }] },
                   children: ["99.99"],
                 },
               },
@@ -62,7 +62,7 @@ const buffer = await generateDocument({
           customXml: {
             element: "invoiceItems",
             uri: "http://example.com/ns",
-            customXmlPr: {
+            properties: {
               placeholder: "Invoice items",
               attributes: [
                 { name: "status", val: "draft" },
@@ -104,7 +104,7 @@ const buffer = await generateDocument({
                     customXml: {
                       element: "taggedCell",
                       uri: "http://example.com/ns",
-                      customXmlPr: { attributes: [{ name: "locked", val: "true" }] },
+                      properties: { attributes: [{ name: "locked", val: "true" }] },
                       children: [{ children: [{ paragraph: "Cell wrapped by custom XML" }] }],
                     },
                   },
