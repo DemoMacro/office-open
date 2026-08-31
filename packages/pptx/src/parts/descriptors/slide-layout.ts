@@ -72,7 +72,10 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     ctx.beginShapeScope();
 
     // Root attributes (CT_SlideLayout: type/matchingName/preserve/userDrawn + AG_ChildSlide).
-    const attrs: string[] = [`type="${xsdSlideLayoutType.to(opts.type ?? "custom")}"`];
+    // @type omitted when unset — the XSD default is "cust" (ST_SlideLayoutType has
+    // no "custom" token), matching python-pptx / Open XML SDK output.
+    const attrs: string[] = [];
+    if (opts.type !== undefined) attrs.push(`type="${xsdSlideLayoutType.to(opts.type)}"`);
     if (opts.matchingName !== undefined) attrs.push(`matchingName="${opts.matchingName}"`);
     attrs.push(`preserve="${opts.preserve ? 1 : 0}"`);
     if (opts.userDrawn) attrs.push('userDrawn="1"');

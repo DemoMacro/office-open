@@ -1,5 +1,5 @@
 import type { ReadContext } from "@office-open/core/descriptor";
-import { parse as parseXml } from "@office-open/xml";
+import { attr, parse as parseXml } from "@office-open/xml";
 import type { LayoutDefinition } from "@shared/file";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -138,6 +138,18 @@ describe("slideLayoutDesc stringify/parse", () => {
   it("derives type from cSld name when @type is absent", () => {
     const result = parseXmlDef(`<p:sldLayout ${NS}><p:cSld name="Blank"/></p:sldLayout>`);
     expect(result.type).toBe("blank");
+  });
+
+  it("omits @type when unset — XSD default is cust and 'custom' is not an ST token", () => {
+    const xml = slideLayoutDesc.stringify({}, writeCtx)!;
+    const root = parseXml(xml).elements![0];
+    expect(attr(root, "type")).toBeUndefined();
+    // Round-trip preserves the absence instead of inventing a type.
+    expect(roundTrip({}).type).toBeUndefined();
+  });
+
+  it("round-trips the raw cust token identity-style", () => {
+    expect(roundTrip({ type: "cust" }).type).toBe("cust");
   });
 
   it("edits to children take effect on stringify (verbatim bypass broken)", () => {

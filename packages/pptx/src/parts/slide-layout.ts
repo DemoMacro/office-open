@@ -378,8 +378,8 @@ function positionedSldNumPlaceholder(
 
 export function buildCustomLayoutXml(def: LayoutDefinition): string {
   const ph = def.placeholders ?? {};
-  const layoutType = (def.type ?? "blank") as SlideLayoutType;
-  const displayName = def.name ?? LAYOUT_DEFS[layoutType]?.name ?? layoutType;
+  const displayName =
+    def.name ?? LAYOUT_DEFS[def.type as SlideLayoutType]?.name ?? def.type ?? "Custom";
 
   const shapes: string[] = [];
   let nextId = 2;
@@ -442,6 +442,9 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
     }
   }
 
+  // @type omitted when unset — the XSD default "cust" applies (ST_SlideLayoutType
+  // has no "custom" token); slideLayoutDesc preserves the absence on re-emit.
+  const typeAttr = def.type !== undefined ? ` type="${def.type}"` : "";
   const matchingAttr = def.matchingName !== undefined ? ` matchingName="${def.matchingName}"` : "";
-  return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+  return `<p:sldLayout ${NS}${typeAttr} preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }
