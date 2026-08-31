@@ -19,7 +19,7 @@ const options: WorkbookOptions = {
           row: 2,
           toCol: 8,
           toRow: 6,
-          spPr: { geometry: "line" },
+          properties: { geometry: "line" },
           locking: { noAdjustHandles: true, noChangeShapeType: true },
           startConnection: { id: 1, index: 0 },
           endConnection: { id: 2, index: 3 },

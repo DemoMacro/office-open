@@ -27,16 +27,20 @@ describe("toXlsxShape (pptx → xlsx)", () => {
     expect(x.row).toBe(2);
     expect(x.toCol).toBe(4);
     expect(x.toRow).toBe(4);
-    expect(x.spPr.width).toBe(1219200);
-    expect(x.spPr.height).toBe(381000);
-    expect(x.spPr.geometry).toBe("rect");
-    expect(x.spPr.fill).toBe("4472C4");
+    expect(x.properties.width).toBe(1219200);
+    expect(x.properties.height).toBe(381000);
+    expect(x.properties.geometry).toBe("rect");
+    expect(x.properties.fill).toBe("4472C4");
     expect(x.name).toBe("My Shape");
   });
 
   it("carries the outline verbatim onto spPr", () => {
     const x = toXlsxShape(RECT_PPTX);
-    expect(x.spPr.outline).toEqual({ type: "solidFill", color: { value: "ED7D31" }, width: 9525 });
+    expect(x.properties.outline).toEqual({
+      type: "solidFill",
+      color: { value: "ED7D31" },
+      width: 9525,
+    });
   });
 
   it("passes the text body through (a:p shared by pptx/xlsx)", () => {
@@ -52,7 +56,7 @@ describe("toPptxShape (xlsx → pptx)", () => {
       row: 2,
       toCol: 4,
       toRow: 4,
-      spPr: {
+      properties: {
         x: 0,
         y: 0,
         width: 1219200,

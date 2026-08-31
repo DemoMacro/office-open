@@ -176,9 +176,9 @@ const hasCnvPr = (source: NonVisualDrawingPropertiesOptions): boolean => {
  * full MediaDataTransformation; the caller runs it through createTransformation).
  */
 export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): DocxShapeParts {
-  if ("spPr" in source) {
-    // xlsx → docx
-    const spPr = source.spPr;
+  if ("col" in source) {
+    // xlsx (cell-anchored: required col/row markers; pptx shapes have none) → docx
+    const spPr = source.properties;
     const box = boxFromXlsxAnchor(
       source,
       spPr.width,
@@ -237,9 +237,9 @@ export function toPptxShape(source: DocxShapeOptions): PptxShapeOptions;
 /** Convert an xlsx shape to a pptx shape. */
 export function toPptxShape(source: XlsxShapeOptions): PptxShapeOptions;
 export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxShapeOptions {
-  if ("spPr" in source) {
-    // xlsx → pptx
-    const spPr = source.spPr;
+  if ("col" in source) {
+    // xlsx (cell-anchored: required col/row markers; pptx shapes have none) → pptx
+    const spPr = source.properties;
     const box = boxFromXlsxAnchor(
       source,
       spPr.width,
@@ -304,7 +304,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
     };
     return {
       ...pos.anchor,
-      spPr,
+      properties: spPr,
       ...(textBody ? { textBody } : {}),
       ...pickNonVisualDrawingProperties(source.nonVisualProperties),
     };
@@ -332,7 +332,7 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
   };
   return {
     ...pos.anchor,
-    spPr,
+    properties: spPr,
     ...(source.textBody ? { textBody: source.textBody } : {}),
     ...pickNonVisualDrawingProperties(source),
   };

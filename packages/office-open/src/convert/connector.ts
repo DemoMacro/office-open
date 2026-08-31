@@ -77,7 +77,7 @@ export function toDocxConnector(_source: PptxConnectorOptions | XlsxConnectorOpt
 
 /** Convert an xlsx connector to a pptx connector. */
 export function toPptxConnector(source: XlsxConnectorOptions): PptxConnectorOptions {
-  const spPr = source.spPr;
+  const spPr = source.properties;
   const box = boxFromXlsxAnchor(
     source,
     spPr.width,
@@ -119,7 +119,7 @@ export function toXlsxConnector(source: PptxConnectorOptions): XlsxConnectorOpti
   };
   return {
     ...pos.anchor,
-    spPr,
+    properties: spPr,
     // cNvPr + locking + endpoint connections pass straight through.
     ...pickConnectorBase(source),
   };

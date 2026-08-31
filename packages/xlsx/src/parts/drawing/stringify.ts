@@ -126,8 +126,8 @@ function picXml(
   // Round-tripped spPr (rotation/flip/bwMode/fill) wins; fresh pictures get
   // the position-only standard form.
   const spPr =
-    (img.spPr
-      ? shapePropertiesDesc.stringify(img.spPr, ctx)
+    (img.properties
+      ? shapePropertiesDesc.stringify(img.properties, ctx)
       : shapePropertiesDesc.stringify(
           { x: 0, y: 0, width: cx, height: cy, geometry: "rect" },
           ctx,
@@ -340,7 +340,7 @@ export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContex
     shape,
     id,
     `Shape ${id}`,
-    shape.spPr,
+    shape.properties,
     shape.textBody,
     ctx,
     macroTextlinkAttrs(shape),
@@ -354,7 +354,7 @@ export function stringifyConnector(conn: ConnectorOptions, id: number, ctx: Writ
     conn,
     id,
     `Connector ${id}`,
-    conn.spPr,
+    conn.properties,
     ctx,
     macroTextlinkAttrs(conn),
     conn,
@@ -372,7 +372,7 @@ export function buildGroup(
   id: number,
   ctx: WriteContext,
 ): { xml: string; nextId: number } {
-  const grpSpPrXml = groupShapePropertiesDesc.stringify(grp.grpSpPr, ctx) ?? "";
+  const grpSpPrXml = groupShapePropertiesDesc.stringify(grp.properties, ctx) ?? "";
   let childId = id + 1;
   const children: string[] = [];
   for (const childShape of grp.shapes ?? []) {
@@ -381,7 +381,7 @@ export function buildGroup(
         childShape,
         childId,
         `Shape ${childId}`,
-        childShape.spPr,
+        childShape.properties,
         childShape.textBody,
         ctx,
         macroTextlinkAttrs(childShape),
@@ -396,7 +396,7 @@ export function buildGroup(
         childConn,
         childId,
         `Connector ${childId}`,
-        childConn.spPr,
+        childConn.properties,
         ctx,
         macroTextlinkAttrs(childConn),
         childConn,

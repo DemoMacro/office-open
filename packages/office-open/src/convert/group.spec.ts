@@ -33,11 +33,11 @@ describe("toXlsxGroup (pptx → xlsx)", () => {
     const x = toXlsxGroup(PPTX_GROUP);
     expect(x.col).toBe(2);
     expect(x.row).toBe(2);
-    expect(x.grpSpPr.width).toBe(2438400);
-    expect(x.grpSpPr.height).toBe(762000);
+    expect(x.properties.width).toBe(2438400);
+    expect(x.properties.height).toBe(762000);
     expect(x.shapes).toHaveLength(1);
-    expect(x.shapes?.[0].spPr.geometry).toBe("rect");
-    expect(x.shapes?.[0].spPr.fill).toBe("4472C4");
+    expect(x.shapes?.[0].properties.geometry).toBe("rect");
+    expect(x.shapes?.[0].properties.fill).toBe("4472C4");
     expect(x.shapes?.[0].textBody).toEqual({ text: "Child" });
   });
 
@@ -211,7 +211,7 @@ describe("cross-format child cNvPr preservation", () => {
       ...(x as XlsxGroupOptions),
       shapes: [
         {
-          spPr: x.shapes![0].spPr,
+          properties: x.shapes![0].properties,
           name: childName,
           description: childDescription,
           title: childTitle,

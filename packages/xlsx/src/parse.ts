@@ -479,7 +479,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
                 description: image.description,
                 title: image.title,
                 hidden: image.hidden,
-                ...(image.spPr ? { spPr: image.spPr } : {}),
+                ...(image.properties ? { properties: image.properties } : {}),
                 ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
                 ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
                 ...(image.preferRelativeResize !== undefined
@@ -509,7 +509,7 @@ export function parseWorkbook(data: DataType): WorkbookOptions {
             description: image.description,
             title: image.title,
             hidden: image.hidden,
-            ...(image.spPr ? { spPr: image.spPr } : {}),
+            ...(image.properties ? { properties: image.properties } : {}),
             ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
             ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
             ...(image.preferRelativeResize !== undefined

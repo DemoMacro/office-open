@@ -123,7 +123,7 @@ const buffer = await generateWorkbook({
           toCol: 4,
           toRow: 10,
           name: "Rectangle",
-          spPr: { geometry: "rect", fill: { type: "solid", color: "4472C4" } },
+          properties: { geometry: "rect", fill: { type: "solid", color: "4472C4" } },
         },
         {
           col: 5,
@@ -131,7 +131,7 @@ const buffer = await generateWorkbook({
           toCol: 8,
           toRow: 10,
           name: "Ellipse",
-          spPr: {
+          properties: {
             geometry: "ellipse",
             fill: { type: "solid", color: "ED7D31" },
             outline: { width: 12700, color: "000000" },
@@ -144,7 +144,7 @@ const buffer = await generateWorkbook({
           row: 8,
           toCol: 5,
           toRow: 10,
-          spPr: { geometry: "line" },
+          properties: { geometry: "line" },
           locking: { noAdjustHandles: true },
         },
       ],

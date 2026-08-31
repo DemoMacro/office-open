@@ -18,16 +18,16 @@ describe("toXlsxConnector (pptx → xlsx)", () => {
     expect(x.row).toBe(1);
     expect(x.toCol).toBe(3);
     expect(x.toRow).toBe(3);
-    expect(x.spPr.geometry).toBe("line");
-    expect(x.spPr.width).toBe(1219200);
-    expect(x.spPr.height).toBe(381000);
-    expect(x.spPr.outline?.color).toEqual({ value: "000000" });
+    expect(x.properties.geometry).toBe("line");
+    expect(x.properties.width).toBe(1219200);
+    expect(x.properties.height).toBe(381000);
+    expect(x.properties.outline?.color).toEqual({ value: "000000" });
   });
 
   it("encodes a reversed horizontal line as flipHorizontal", () => {
     const x = toXlsxConnector({ x1: 1219200, y1: 0, x2: 0, y2: 0 });
-    expect(x.spPr.flipHorizontal).toBe(true);
-    expect(x.spPr.width).toBe(1219200);
+    expect(x.properties.flipHorizontal).toBe(true);
+    expect(x.properties.width).toBe(1219200);
   });
 
   it("carries locking + endpoint glue verbatim", () => {
@@ -119,7 +119,7 @@ describe("cross-format cNvPr + locking + endpoint preservation", () => {
     const xlsx: XlsxConnectorOptions = {
       col: 1,
       row: 1,
-      spPr: { geometry: "line", width: 100, height: 100 },
+      properties: { geometry: "line", width: 100, height: 100 },
       name,
       description,
       title,

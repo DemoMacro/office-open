@@ -142,7 +142,7 @@ export interface DrawingPictureOptions
    * position-only default emission would drop. When absent, stringify emits
    * the standard xfrm + rect geometry.
    */
-  spPr?: ShapePropertiesOptions;
+  properties?: ShapePropertiesOptions;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.
@@ -218,7 +218,7 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   /** Shape locks (cNvSpPr/a:spLocks, CT_ShapeLocking). */
   locking?: ShapeLockingOptions;
   /** Shape properties (a:CT_ShapeProperties). */
-  spPr: ShapePropertiesOptions;
+  properties: ShapePropertiesOptions;
   /** Text body (a:CT_TextBody). */
   textBody?: TextBodyOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
@@ -239,7 +239,7 @@ export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOpt
    */
   hyperlink?: TextHyperlinkOptions;
   /** Shape properties (a:CT_ShapeProperties, typically prstGeom="line"). */
-  spPr: ShapePropertiesOptions;
+  properties: ShapePropertiesOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
   /** macro attribute (CT_Connector). */
@@ -253,7 +253,7 @@ export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOption
    * jump to a URL when the object is clicked.
    */
   hyperlink?: TextHyperlinkOptions;
-  spPr: ShapePropertiesOptions;
+  properties: ShapePropertiesOptions;
   textBody?: TextBodyOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
@@ -272,7 +272,7 @@ export interface GroupConnectorChildOptions extends BaseConnectorOptions {
    * jump to a URL when the object is clicked.
    */
   hyperlink?: TextHyperlinkOptions;
-  spPr: ShapePropertiesOptions;
+  properties: ShapePropertiesOptions;
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
   macro?: string;
@@ -286,7 +286,7 @@ export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
    */
   hyperlink?: TextHyperlinkOptions;
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
-  grpSpPr: GroupTransform2DOptions;
+  properties: GroupTransform2DOptions;
   /** Nested shapes. */
   shapes?: GroupShapeChildOptions[];
   /** Nested connectors. */

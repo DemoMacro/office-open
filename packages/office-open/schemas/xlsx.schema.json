@@ -3666,6 +3666,10 @@
           "description": "Print with sheet (default true)",
           "type": "boolean"
         },
+        "properties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Shape properties (a:, typically prstGeom=\"line\")."
+        },
         "row": {
           "description": "1-based row (from marker)",
           "type": "number"
@@ -3676,10 +3680,6 @@
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
           "type": "number"
-        },
-        "spPr": {
-          "$ref": "#/definitions/ShapePropertiesOptions",
-          "description": "Shape properties (a:, typically prstGeom=\"line\")."
         },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
@@ -3711,7 +3711,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/zOrder"
         }
       },
-      "required": ["col", "row", "spPr"],
+      "required": ["col", "properties", "row"],
       "type": "object"
     },
     "ConsolidateFunction": {
@@ -6663,7 +6663,7 @@
         "name": {
           "$ref": "#/definitions/PictureOptions/properties/name"
         },
-        "spPr": {
+        "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
         },
         "startConnection": {
@@ -6679,7 +6679,7 @@
           "type": "string"
         }
       },
-      "required": ["spPr"],
+      "required": ["properties"],
       "type": "object"
     },
     "GroupLockingOptions": {
@@ -6757,10 +6757,6 @@
         "extentCy": {
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
-        "grpSpPr": {
-          "$ref": "#/definitions/GroupTransform2DOptions",
-          "description": "Group shape properties (a:: group xfrm + fill/ln)."
-        },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
@@ -6790,6 +6786,10 @@
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
           "type": "boolean"
+        },
+        "properties": {
+          "$ref": "#/definitions/GroupTransform2DOptions",
+          "description": "Group shape properties (a:: group xfrm + fill/ln)."
         },
         "row": {
           "description": "1-based row (from marker)",
@@ -6831,7 +6831,7 @@
           "$ref": "#/definitions/ShapeOptions/properties/zOrder"
         }
       },
-      "required": ["col", "grpSpPr", "row"],
+      "required": ["col", "properties", "row"],
       "type": "object"
     },
     "GroupShapeChildOptions": {
@@ -6866,7 +6866,7 @@
         "name": {
           "$ref": "#/definitions/PictureOptions/properties/name"
         },
-        "spPr": {
+        "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
         },
         "style": {
@@ -6887,7 +6887,7 @@
           "type": "string"
         }
       },
-      "required": ["spPr"],
+      "required": ["properties"],
       "type": "object"
     },
     "GroupShapePropertiesOptions": {
@@ -9356,6 +9356,10 @@
           "description": "Print with sheet (default true)",
           "type": "boolean"
         },
+        "properties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position)."
+        },
         "row": {
           "description": "1-based row (from marker)",
           "type": "number"
@@ -9382,10 +9386,6 @@
         "sourceUrl": {
           "description": "External image source URL (a:blip",
           "type": "string"
-        },
-        "spPr": {
-          "$ref": "#/definitions/ShapePropertiesOptions",
-          "description": "Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position)."
         },
         "title": {
           "description": "XSD `@title`.",
@@ -13225,6 +13225,10 @@
           "description": "Print with sheet (default true)",
           "type": "boolean"
         },
+        "properties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Shape properties (a:)."
+        },
         "row": {
           "description": "1-based row (from marker)",
           "type": "number"
@@ -13235,10 +13239,6 @@
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
           "type": "number"
-        },
-        "spPr": {
-          "$ref": "#/definitions/ShapePropertiesOptions",
-          "description": "Shape properties (a:)."
         },
         "style": {
           "$ref": "#/definitions/DefaultShapeStyleOptions",
@@ -13279,7 +13279,7 @@
           "type": "number"
         }
       },
-      "required": ["col", "row", "spPr"],
+      "required": ["col", "properties", "row"],
       "type": "object"
     },
     "ShapePropertiesExtensionOptions": {

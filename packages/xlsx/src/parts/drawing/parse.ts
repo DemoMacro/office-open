@@ -204,7 +204,7 @@ export function parseImageAnchor(
   // is a container attribute the descriptor leaves to the caller.
   const spPrEl = findXdr(pic, "spPr");
   if (spPrEl) {
-    result.spPr = shapePropertiesDesc.parse(spPrEl, ctx);
+    result.properties = shapePropertiesDesc.parse(spPrEl, ctx);
     const bwMode = spPrEl.attributes?.["bwMode"];
     if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
   }
@@ -321,7 +321,7 @@ export function parseShapeAnchor(
   name: string,
   ctx: ReadContext,
 ): ShapeOptions {
-  const result = { col: 1, row: 1, spPr: {} } as ShapeOptions;
+  const result = { col: 1, row: 1, properties: {} } as ShapeOptions;
   readAnchorFields(anchor, name, result);
 
   Object.assign(result, readCNvPr(sp, "nvSpPr", ctx));
@@ -333,7 +333,7 @@ export function parseShapeAnchor(
   if (spLocks) result.locking = shapeLockingDesc.parse(spLocks, ctx);
 
   const spPr = findXdr(sp, "spPr");
-  if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
+  if (spPr) result.properties = shapePropertiesDesc.parse(spPr, ctx);
 
   const styleEl = findXdr(sp, "style");
   if (styleEl) {
@@ -387,13 +387,13 @@ export function parseConnectorAnchor(
   name: string,
   ctx: ReadContext,
 ): ConnectorOptions {
-  const result = { col: 1, row: 1, spPr: {} } as ConnectorOptions;
+  const result = { col: 1, row: 1, properties: {} } as ConnectorOptions;
   readAnchorFields(anchor, name, result);
 
   Object.assign(result, readCNvPr(cxnSp, "nvCxnSpPr", ctx));
 
   const spPr = findXdr(cxnSp, "spPr");
-  if (spPr) result.spPr = shapePropertiesDesc.parse(spPr, ctx);
+  if (spPr) result.properties = shapePropertiesDesc.parse(spPr, ctx);
 
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
 
@@ -412,14 +412,14 @@ export function parseGroupAnchor(
   name: string,
   ctx: ReadContext,
 ): GroupOptions {
-  const result = { col: 1, row: 1, grpSpPr: {} } as GroupOptions;
+  const result = { col: 1, row: 1, properties: {} } as GroupOptions;
   readAnchorFields(anchor, name, result);
 
   Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr", ctx));
 
   const grpSpPrEl = findXdr(grpSp, "grpSpPr");
   if (grpSpPrEl) {
-    result.grpSpPr = groupShapePropertiesDesc.parse(grpSpPrEl, ctx);
+    result.properties = groupShapePropertiesDesc.parse(grpSpPrEl, ctx);
   }
 
   const shapes: GroupShapeChildOptions[] = [];
@@ -431,7 +431,7 @@ export function parseGroupAnchor(
     if (local === "sp") {
       const spPr = findXdr(child, "spPr");
       const childShape = {
-        spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
+        properties: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
       Object.assign(childShape, readCNvPr(child, "nvSpPr", ctx));
       const childNvSpPr = findXdr(child, "nvSpPr");
@@ -455,7 +455,7 @@ export function parseGroupAnchor(
     } else if (local === "cxnSp") {
       const spPr = findXdr(child, "spPr");
       const childConn = {
-        spPr: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
+        properties: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupConnectorChildOptions;
       Object.assign(childConn, readCNvPr(child, "nvCxnSpPr", ctx));
       if (child.attributes?.["macro"] !== undefined)

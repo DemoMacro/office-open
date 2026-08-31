@@ -758,7 +758,7 @@ function compileWorksheetPart(
         rId: embedRid ?? "",
         ...(linkRid ? { linkRId: linkRid } : {}),
         ...pickNonVisualDrawingProperties(img),
-        ...(img.spPr ? { spPr: img.spPr } : {}),
+        ...(img.properties ? { properties: img.properties } : {}),
         ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
         ...(img.sourceRectangle ? { sourceRectangle: img.sourceRectangle } : {}),
         ...(img.preferRelativeResize !== undefined

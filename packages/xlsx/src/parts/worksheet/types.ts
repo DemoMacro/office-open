@@ -339,7 +339,7 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
   type: "png" | "jpg" | "wmf" | "emf";
   /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
-  spPr?: ShapePropertiesOptions;
+  properties?: ShapePropertiesOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
   sourceRectangle?: SourceRectangleOptions;
   /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */

@@ -158,12 +158,14 @@ function spPrToPptxShape(spPr: ShapePropertiesOptions): PptxShapeOptions {
 
 /** xlsx group child shape → docx wps core (position lives on the wpg child wrapper). */
 function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): ShapeCoreOptions {
-  const preset = toPresetGeometry(s.spPr.geometry);
+  const preset = toPresetGeometry(s.properties.geometry);
   const cnvPr = pickNonVisualDrawingProperties(s);
   return {
     children: s.textBody ? textBodyToDocxChildren(s.textBody) : [],
-    ...pickContent(s.spPr),
-    ...(s.spPr.customGeometry !== undefined ? { customGeometry: s.spPr.customGeometry } : {}),
+    ...pickContent(s.properties),
+    ...(s.properties.customGeometry !== undefined
+      ? { customGeometry: s.properties.customGeometry }
+      : {}),
     ...(preset !== undefined ? { presetGeometry: preset } : {}),
     ...(hasCnvPr(cnvPr) ? docxNonVisualFromCnvPr(cnvPr, "Shape") : {}),
   };
@@ -188,14 +190,14 @@ function docxChildToSpPr(data: ShapeCoreOptions, box: AbsoluteBox): ShapePropert
 
 /** xlsx group connector child → pptx connector. */
 function xlsxConnectorChildToPptx(c: GroupConnectorChildOptions): PptxConnectorOptions {
-  const { x1, y1, x2, y2 } = boxToEndpoints(boxFromSpPr(c.spPr));
+  const { x1, y1, x2, y2 } = boxToEndpoints(boxFromSpPr(c.properties));
   return {
     x1,
     y1,
     x2,
     y2,
-    ...(c.spPr.outline !== undefined ? { outline: c.spPr.outline } : {}),
-    ...(c.spPr.fill !== undefined ? { fill: c.spPr.fill } : {}),
+    ...(c.properties.outline !== undefined ? { outline: c.properties.outline } : {}),
+    ...(c.properties.fill !== undefined ? { fill: c.properties.fill } : {}),
     ...(c.locking ? { locking: c.locking } : {}),
     ...(c.startConnection ? { startConnection: c.startConnection } : {}),
     ...(c.endConnection ? { endConnection: c.endConnection } : {}),
@@ -212,8 +214,8 @@ export function toDocxGroup(source: XlsxGroupOptions): DocxGroupOptions;
 export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGroupOptions {
   let box: AbsoluteBox;
   let children: GroupChildMediaData[];
-  if ("grpSpPr" in source) {
-    const g = source.grpSpPr;
+  if ("properties" in source) {
+    const g = source.properties;
     box = boxFromXlsxAnchor(
       source,
       g.width,
@@ -265,7 +267,7 @@ function xlsxGroupChildrenToDocx(
   for (const s of shapes ?? []) {
     out.push({
       type: "wps",
-      transformation: createTransformation(boxToDocx(boxFromSpPr(s.spPr))),
+      transformation: createTransformation(boxToDocx(boxFromSpPr(s.properties))),
       data: xlsxShapeChildToDocxData(s),
     });
   }
@@ -289,8 +291,8 @@ export function toPptxGroup(source: DocxGroupOptions | XlsxGroupOptions): PptxGr
     "transformation" in source
       ? pickNonVisualDrawingProperties(source.altText)
       : pickGroupBase(source);
-  if ("grpSpPr" in source) {
-    const g = source.grpSpPr;
+  if ("properties" in source) {
+    const g = source.properties;
     box = boxFromXlsxAnchor(
       source,
       g.width,
@@ -313,7 +315,7 @@ function xlsxGroupChildrenToPptx(
 ): SlideChild[] {
   const out: SlideChild[] = [];
   for (const s of shapes ?? []) {
-    const shape = spPrToPptxShape(s.spPr);
+    const shape = spPrToPptxShape(s.properties);
     if (s.textBody) shape.textBody = s.textBody;
     Object.assign(shape, pickNonVisualDrawingProperties(s));
     out.push({ shape });
@@ -386,7 +388,7 @@ export function toXlsxGroup(source: DocxGroupOptions | PptxGroupOptions): XlsxGr
   };
   return {
     ...pos.anchor,
-    grpSpPr,
+    properties: grpSpPr,
     ...(shapes.length ? { shapes } : {}),
     ...(connectors.length ? { connectors } : {}),
     ...cnvPr,
@@ -402,7 +404,7 @@ function pptxGroupChildrenToXlsx(children: SlideChild[] | undefined): {
   for (const child of children ?? []) {
     if ("shape" in child) {
       const s: GroupShapeChildOptions = {
-        spPr: pptxShapeToSpPr(child.shape),
+        properties: pptxShapeToSpPr(child.shape),
         ...(child.shape.textBody ? { textBody: child.shape.textBody } : {}),
         ...pickNonVisualDrawingProperties(child.shape),
       };
@@ -432,7 +434,7 @@ function pptxConnectorToXlsxChild(c: PptxConnectorOptions): GroupConnectorChildO
     ...(box.flipVertical ? { flipVertical: true } : {}),
   };
   return {
-    spPr,
+    properties: spPr,
     ...(c.locking ? { locking: c.locking } : {}),
     ...(c.startConnection ? { startConnection: c.startConnection } : {}),
     ...(c.endConnection ? { endConnection: c.endConnection } : {}),
@@ -452,7 +454,7 @@ function docxGroupChildrenToXlsx(children: GroupChildMediaData[] | undefined): {
       const spPr = docxChildToSpPr(child.data, box);
       const textBody = docxToTextBody(child.data.children, child.data.bodyProperties);
       shapes.push({
-        spPr,
+        properties: spPr,
         ...(textBody ? { textBody } : {}),
         ...pickNonVisualDrawingProperties(child.data.nonVisualProperties),
       });

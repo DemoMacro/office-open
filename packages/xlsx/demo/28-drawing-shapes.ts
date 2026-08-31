@@ -19,11 +19,11 @@ const buffer = await generateWorkbook({
           toCol: 5,
           toRow: 8,
           name: "Rectangle",
-          spPr: { geometry: "rect", fill: { type: "solid", color: "4472C4" } },
+          properties: { geometry: "rect", fill: { type: "solid", color: "4472C4" } },
           textBody: { paragraphs: [{ text: "Box" }] },
         },
       ],
-      connectors: [{ col: 6, row: 4, toCol: 10, toRow: 4, spPr: { geometry: "line" } }],
+      connectors: [{ col: 6, row: 4, toCol: 10, toRow: 4, properties: { geometry: "line" } }],
       groups: [
         {
           col: 2,
@@ -31,7 +31,7 @@ const buffer = await generateWorkbook({
           toCol: 7,
           toRow: 16,
           name: "Group",
-          grpSpPr: {
+          properties: {
             x: 0,
             y: 0,
             width: 3000000,
@@ -44,7 +44,7 @@ const buffer = await generateWorkbook({
           shapes: [
             {
               name: "Ellipse",
-              spPr: { geometry: "ellipse", fill: { type: "solid", color: "ED7D31" } },
+              properties: { geometry: "ellipse", fill: { type: "solid", color: "ED7D31" } },
             },
           ],
         },
