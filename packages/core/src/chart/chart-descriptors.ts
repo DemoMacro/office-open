@@ -58,7 +58,7 @@ import type {
   MarkerOptions,
   MarkerSymbol,
   DataPointOptions,
-  PictureOptionsOptions,
+  ChartPictureOptions,
   PictureFormat,
   BarShape,
   ChartSeriesCommon,
@@ -807,7 +807,7 @@ function stringifyMarker(opts: MarkerOptions, ctx: WriteContext): string {
   return `<c:marker>${parts.join("")}</c:marker>`;
 }
 
-function stringifyPictureOptions(opts: PictureOptionsOptions): string {
+function stringifyPictureOptions(opts: ChartPictureOptions): string {
   const parts: string[] = [];
   if (opts.applyToFront !== undefined) parts.push(`<c:applyToFront${boolVal(opts.applyToFront)}/>`);
   if (opts.applyToSides !== undefined) parts.push(`<c:applyToSides${boolVal(opts.applyToSides)}/>`);
@@ -1704,10 +1704,10 @@ function readMarker(parent: XmlElement, ctx: ReadContext): MarkerOptions | undef
   return Object.keys(opts).length ? opts : undefined;
 }
 
-function readPictureOptions(parent: XmlElement): PictureOptionsOptions | undefined {
+function readPictureOptions(parent: XmlElement): ChartPictureOptions | undefined {
   const el = findChild(parent, "c:pictureOptions");
   if (!el) return undefined;
-  const opts: PictureOptionsOptions = {};
+  const opts: ChartPictureOptions = {};
   const front = readBoolAttr(el, "c:applyToFront");
   if (front !== undefined) opts.applyToFront = front;
   const sides = readBoolAttr(el, "c:applyToSides");

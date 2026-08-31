@@ -39,11 +39,7 @@ import {
   textOf,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import type {
-  TableCellOptions,
-  VerticalAlignment,
-  TextVerticalType,
-} from "@shared/table/table-cell";
+import type { TableCellOptions, TextVerticalType, VerticalAnchor } from "@shared/table/table-cell";
 import type { CellBorderOptions } from "@shared/table/table-cell-properties";
 import type { TableOptions } from "@shared/table/table-frame";
 import type { TableRowOptions } from "@shared/table/table-row";
@@ -495,7 +491,7 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
   if (tcPr) {
     const keysBefore = Object.keys(result).length;
     const anchor = attr(tcPr, "anchor");
-    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAlignment;
+    if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAnchor;
     const vert = attr(tcPr, "vert");
     if (vert) result.vertical = xsdTextVerticalType.from(vert) as TextVerticalType;
 

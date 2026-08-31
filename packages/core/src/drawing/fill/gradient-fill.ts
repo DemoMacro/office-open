@@ -9,23 +9,19 @@
  */
 import { element } from "@office-open/xml";
 
+import { stripColorHashPrefix } from "../../util/values";
 import type { TileFlipMode } from "../blip/tile";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
+import type { GradientStopOptions } from "./fill-options";
 
 // Single home for the shared ST_TileFlipMode token set is blip/tile.ts;
 // re-exported here for gradient-fill consumers.
 export type { TileFlipMode } from "../blip/tile";
 
-/**
- * Gradient stop position as integer percent (0-100).
- */
-export interface GradientStop {
-  /** Position of the color stop as integer percent (0-100). */
-  position: number;
-  /** Color at this stop */
-  color: SolidFillOptions;
-}
+/** Narrow a stop color to SolidFillOptions for EG_ColorChoice emission. */
+export const toSolidColor = (color: GradientStopOptions["color"]): SolidFillOptions =>
+  typeof color === "string" ? ({ value: stripColorHashPrefix(color) } as SolidFillOptions) : color;
 
 /**
  * Path shade type for radial gradients.
@@ -102,8 +98,8 @@ export type GradientShadeOptions = LinearShadeOptions | PathShadeOptions;
  * ```
  */
 export interface GradientFillOptions {
-  /** Gradient color stops (minimum 2) */
-  stops: readonly GradientStop[];
+  /** Gradient color stops (minimum 2); color accepts a hex string or SolidFillOptions */
+  stops: readonly GradientStopOptions[];
   /** Shade type (linear or path) */
   shade?: GradientShadeOptions;
   /**
@@ -127,12 +123,14 @@ export interface GradientFillOptions {
  *
  * @example
  * ```typescript
- * createGradientStop({ position: 0, color: { value: "FF0000" } });
+ * createGradientStop({ position: 0, color: "FF0000" });
  * createGradientStop({ position: 100, color: { value: "0000FF" } });
  * ```
  */
-export const createGradientStop = (stop: GradientStop): string =>
-  element("a:gs", { pos: Math.round(stop.position * 1000) }, [createColorElement(stop.color)]);
+export const createGradientStop = (stop: GradientStopOptions): string =>
+  element("a:gs", { pos: Math.round(stop.position * 1000) }, [
+    createColorElement(toSolidColor(stop.color)),
+  ]);
 
 /**
  * Creates a relative rect element.

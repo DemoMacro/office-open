@@ -1,11 +1,16 @@
 import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
-import type { Cell3DOptions, ParagraphDescriptorOptions } from "@office-open/core/drawing";
+import type {
+  Cell3DOptions,
+  ParagraphDescriptorOptions,
+  VerticalAnchor,
+} from "@office-open/core/drawing";
 
 import type { FillOptions } from "../drawing/fill";
 import type { CellBorderOptions } from "./table-cell-properties";
 
-/** Vertical alignment of cell content (ST_TextAnchorType); "distribute" spreads lines evenly across the cell height. */
-export type VerticalAlignment = "top" | "center" | "bottom" | "justify" | "distribute";
+// Vertical anchor of cell content is the core DrawingML token set
+// (ST_TextAnchorType); re-exported under the table-cell domain.
+export type { VerticalAnchor } from "@office-open/core/drawing";
 
 /** Text direction within a cell (ST_TextVerticalType, a:tcPr `@vert`). */
 export type TextVerticalType =
@@ -19,7 +24,7 @@ export type TextVerticalType =
  *  widens to the DrawingML anchor set (justify/distribute) and fill/borders/
  *  margins/content are a:-domain types. */
 export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAlign"> {
-  verticalAlign?: VerticalAlignment;
+  verticalAlign?: VerticalAnchor;
   /** `@vert` — text direction (ST_TextVerticalType). */
   vertical?: TextVerticalType;
   text?: string;

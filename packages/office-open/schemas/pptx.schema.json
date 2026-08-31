@@ -2332,7 +2332,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {
@@ -3361,6 +3361,29 @@
       },
       "type": "object"
     },
+    "ChartPictureOptions": {
+      "additionalProperties": false,
+      "description": "Picture-fill options for bar/area series.",
+      "properties": {
+        "applyToEnd": {
+          "type": "boolean"
+        },
+        "applyToFront": {
+          "type": "boolean"
+        },
+        "applyToSides": {
+          "type": "boolean"
+        },
+        "pictureFormat": {
+          "$ref": "#/definitions/PictureFormat"
+        },
+        "pictureStackUnit": {
+          "description": "Stack unit (c:pictureStackUnit val).",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "ChartPivotFormatOptions": {
       "additionalProperties": false,
       "description": "Per-series pivot format override.",
@@ -3436,7 +3459,7 @@
           "type": "number"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {
@@ -3978,11 +4001,6 @@
     },
     "CompoundLine": {
       "description": "Compound line types for outlines.\n\nDefines the structure of compound lines (single, double, etc.).",
-      "enum": ["single", "double", "thickThin", "thinThick", "triple"],
-      "type": "string"
-    },
-    "CompoundLineType": {
-      "description": "Compound line type (,",
       "enum": ["single", "double", "thickThin", "thinThick", "triple"],
       "type": "string"
     },
@@ -4704,7 +4722,7 @@
           "$ref": "#/definitions/MarkerOptions"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions"
+          "$ref": "#/definitions/ChartPictureOptions"
         },
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -5845,9 +5863,9 @@
           "description": "Shade type (linear or path)"
         },
         "stops": {
-          "description": "Gradient color stops (minimum 2)",
+          "description": "Gradient color stops (minimum 2); color accepts a hex string or SolidFillOptions",
           "items": {
-            "$ref": "#/definitions/GradientStop"
+            "$ref": "#/definitions/GradientStopOptions"
           },
           "type": "array"
         },
@@ -5869,22 +5887,6 @@
         }
       ],
       "description": "Gradient shade options (linear or path)."
-    },
-    "GradientStop": {
-      "additionalProperties": false,
-      "description": "Gradient stop position as integer percent (0-100).",
-      "properties": {
-        "color": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Color at this stop"
-        },
-        "position": {
-          "description": "Position of the color stop as integer percent (0-100).",
-          "type": "number"
-        }
-      },
-      "required": ["position", "color"],
-      "type": "object"
     },
     "GradientStopOptions": {
       "additionalProperties": false,
@@ -8988,29 +8990,6 @@
       "required": ["type"],
       "type": "object"
     },
-    "PictureOptionsOptions": {
-      "additionalProperties": false,
-      "description": "Picture-fill options for bar/area series.",
-      "properties": {
-        "applyToEnd": {
-          "type": "boolean"
-        },
-        "applyToFront": {
-          "type": "boolean"
-        },
-        "applyToSides": {
-          "type": "boolean"
-        },
-        "pictureFormat": {
-          "$ref": "#/definitions/PictureFormat"
-        },
-        "pictureStackUnit": {
-          "description": "Stack unit (c:pictureStackUnit val).",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "PivotSourceOptions": {
       "additionalProperties": false,
       "description": "Pivot chart source.",
@@ -10335,7 +10314,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {
@@ -12234,7 +12213,7 @@
           "description": "`@vert` — text direction."
         },
         "verticalAlign": {
-          "$ref": "#/definitions/VerticalAlignment"
+          "$ref": "#/definitions/VerticalAnchor"
         },
         "verticalMerge": {
           "description": "Vertical merge: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
@@ -13406,7 +13385,7 @@
           "type": "string"
         },
         "compound": {
-          "$ref": "#/definitions/CompoundLineType",
+          "$ref": "#/definitions/CompoundLine",
           "description": "Compound line type (@cmpd)"
         },
         "lineReference": {
@@ -14099,11 +14078,6 @@
       },
       "required": ["dx", "dy", "dz"],
       "type": "object"
-    },
-    "VerticalAlignment": {
-      "description": "Vertical alignment of cell content; \"distribute\" spreads lines evenly across the cell height.",
-      "enum": ["top", "center", "bottom", "justify", "distribute"],
-      "type": "string"
     },
     "VerticalAnchor": {
       "description": "Text anchoring type.",

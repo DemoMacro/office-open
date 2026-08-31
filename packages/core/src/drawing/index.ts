@@ -32,7 +32,6 @@ export type {
   GradientShadeOptions,
   LinearShadeOptions,
   PathShadeOptions,
-  GradientStop,
   RelativeRect,
   PathShade,
   TileFlipMode,
@@ -145,7 +144,6 @@ export {
   type TableFontReferenceOptions,
   type TableStyleRegion,
   type OnOffStyleType,
-  type CompoundLineType,
 } from "./table-style";
 
 // Locking

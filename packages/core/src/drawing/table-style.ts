@@ -16,6 +16,7 @@ import { parse as parseDesc, stringify as stringifyDesc } from "../descriptor";
 import { xsdCompoundLine } from "../util/mappings";
 import { parseColorChoice, stringifyColorChoice } from "./color/color-descriptors";
 import type { SolidFillOptions } from "./color/solid-fill";
+import type { CompoundLine } from "./outline/outline";
 import type { StyleMatrixReferenceOptions } from "./style-reference";
 import { cell3DDesc } from "./three-d/three-d-descriptors";
 import type { Cell3DOptions } from "./three-d/three-d-descriptors";
@@ -47,9 +48,6 @@ export type TableStyleRegion =
 
 /** Style-part on/off state (ST_OnOffStyleType). */
 export type OnOffStyleType = "on" | "off" | "default";
-
-/** Compound line type (ST_CompoundLine, @cmpd on a:ln). */
-export type CompoundLineType = "single" | "double" | "thickThin" | "thinThick" | "triple";
 
 /**
  * Font reference — a:fontRef (CT_FontReference). Unlike lnRef/fillRef/effectRef
@@ -116,7 +114,7 @@ export interface ThemeableLineStyleOptions {
   /** Line width in EMUs */
   width?: number;
   /** Compound line type (@cmpd) */
-  compound?: CompoundLineType;
+  compound?: CompoundLine;
   /** Fill color component */
   color?: string;
   /** Line reference (a:lnRef) into the theme style matrix */
@@ -486,7 +484,7 @@ function parseThemeableLine(el: Element): ThemeableLineStyleOptions | undefined 
     const w = attrNum(el, "w");
     if (w !== undefined) opts.width = w;
     const cmpd = attr(el, "cmpd");
-    if (cmpd) opts.compound = xsdCompoundLine.from(cmpd) as CompoundLineType;
+    if (cmpd) opts.compound = xsdCompoundLine.from(cmpd) as CompoundLine;
   }
   for (const child of el.elements ?? []) {
     opts.color = serializeChild(child);

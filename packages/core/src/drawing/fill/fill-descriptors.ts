@@ -23,6 +23,7 @@ import { createTileInfo } from "../blip/tile";
 import { solidFillDesc, parseColorChoice, emitColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlipFillConfigOptions, FillOptions } from "./fill-options";
+import { toSolidColor } from "./gradient-fill";
 import type {
   GradientFillOptions,
   GradientShadeOptions,
@@ -190,15 +191,7 @@ export function emitFillXml(options: FillOptions, embedPlaceholder?: string): st
         return emitGradientFillXml(options.options);
       }
       // Simplified API variant
-      const gradOpts: GradientFillOptions = {
-        stops: options.stops.map((stop) => ({
-          position: stop.position,
-          color:
-            typeof stop.color === "string"
-              ? ({ value: stripColorHashPrefix(stop.color) } as SolidFillOptions)
-              : stop.color,
-        })),
-      };
+      const gradOpts: GradientFillOptions = { stops: options.stops };
       if (!options.path && options.angle !== undefined) {
         gradOpts.shade = { angle: options.angle, scaled: options.scaled ?? true };
       }
@@ -247,7 +240,7 @@ function emitGradientFillXml(opts: GradientFillOptions): string | undefined {
   // Gradient stop list — a:gs expects EG_ColorChoice (direct color), NOT solidFill
   const stopsXml = opts.stops
     .map((stop) => {
-      const colorXml = emitColorChoice(stop.color);
+      const colorXml = emitColorChoice(toSolidColor(stop.color));
       if (!colorXml) return `<a:gs pos="${emitPercent(stop.position)}"/>`;
       return `<a:gs pos="${emitPercent(stop.position)}">${colorXml}</a:gs>`;
     })

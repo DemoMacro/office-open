@@ -19,7 +19,6 @@ export {
   createGradientFill,
   createGradientStop,
   type GradientFillOptions as CoreGradientFillOptions,
-  type GradientStop,
   type PathShade,
   type TileFlipMode,
 } from "@office-open/core/drawing";
@@ -89,7 +88,7 @@ export type {
 // Table
 export type { TableOptions } from "./table/table-frame";
 export type { TableRowOptions } from "./table/table-row";
-export type { VerticalAlignment, TableCellOptions } from "./table/table-cell";
+export type { VerticalAnchor, TableCellOptions } from "./table/table-cell";
 export type { CellBorderOptions } from "./table/table-cell-properties";
 
 // Theme

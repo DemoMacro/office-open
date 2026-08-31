@@ -63,7 +63,7 @@ export const xsdTextAlign = bidi({
 
 // ---------------------------------------------------------------------------
 // DrawingML — Text anchoring (ST_TextAnchoringType)
-// Used by: VerticalAlignment (pptx)
+// Used by: VerticalAnchor (pptx table-cell re-export)
 // ---------------------------------------------------------------------------
 
 export const xsdTextAnchor = bidi({

@@ -1686,7 +1686,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {
@@ -2772,6 +2772,29 @@
       },
       "type": "object"
     },
+    "ChartPictureOptions": {
+      "additionalProperties": false,
+      "description": "Picture-fill options for bar/area series.",
+      "properties": {
+        "applyToEnd": {
+          "type": "boolean"
+        },
+        "applyToFront": {
+          "type": "boolean"
+        },
+        "applyToSides": {
+          "type": "boolean"
+        },
+        "pictureFormat": {
+          "$ref": "#/definitions/PictureFormat"
+        },
+        "pictureStackUnit": {
+          "description": "Stack unit (c:pictureStackUnit val).",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "ChartPivotFormatOptions": {
       "additionalProperties": false,
       "description": "Per-series pivot format override.",
@@ -2847,7 +2870,7 @@
           "type": "number"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {
@@ -5020,7 +5043,7 @@
           "$ref": "#/definitions/MarkerOptions"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions"
+          "$ref": "#/definitions/ChartPictureOptions"
         },
         "shapeProperties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
@@ -7466,9 +7489,9 @@
           "description": "Shade type (linear or path)"
         },
         "stops": {
-          "description": "Gradient color stops (minimum 2)",
+          "description": "Gradient color stops (minimum 2); color accepts a hex string or SolidFillOptions",
           "items": {
-            "$ref": "#/definitions/GradientStop"
+            "$ref": "#/definitions/GradientStopOptions"
           },
           "type": "array"
         },
@@ -7490,22 +7513,6 @@
         }
       ],
       "description": "Gradient shade options (linear or path)."
-    },
-    "GradientStop": {
-      "additionalProperties": false,
-      "description": "Gradient stop position as integer percent (0-100).",
-      "properties": {
-        "color": {
-          "$ref": "#/definitions/SolidFillOptions",
-          "description": "Color at this stop"
-        },
-        "position": {
-          "description": "Position of the color stop as integer percent (0-100).",
-          "type": "number"
-        }
-      },
-      "required": ["position", "color"],
-      "type": "object"
     },
     "GradientStopOptions": {
       "additionalProperties": false,
@@ -14558,29 +14565,6 @@
       ],
       "description": "Options for an inline/anchored picture (pic:pic)."
     },
-    "PictureOptionsOptions": {
-      "additionalProperties": false,
-      "description": "Picture-fill options for bar/area series.",
-      "properties": {
-        "applyToEnd": {
-          "type": "boolean"
-        },
-        "applyToFront": {
-          "type": "boolean"
-        },
-        "applyToSides": {
-          "type": "boolean"
-        },
-        "pictureFormat": {
-          "$ref": "#/definitions/PictureFormat"
-        },
-        "pictureStackUnit": {
-          "description": "Stack unit (c:pictureStackUnit val).",
-          "type": "number"
-        }
-      },
-      "type": "object"
-    },
     "PivotSourceOptions": {
       "additionalProperties": false,
       "description": "Pivot chart source.",
@@ -16290,7 +16274,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/order"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/PictureOptionsOptions",
+          "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
         },
         "shape": {

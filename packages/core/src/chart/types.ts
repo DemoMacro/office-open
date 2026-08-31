@@ -63,7 +63,7 @@ export interface ChartSeriesCommon {
   /** Pie slice explosion offset in percent (c:explosion). */
   explosion?: number;
   /** Picture-fill options (c:pictureOptions, bar/area). */
-  pictureOptions?: PictureOptionsOptions;
+  pictureOptions?: ChartPictureOptions;
   /** Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip. */
   shapeProperties?: ShapePropertiesOptions;
   /** 3D bar column shape (c:shape, bar3D). */
@@ -721,14 +721,14 @@ export interface DataPointOptions {
   explosion?: number;
   /** Per-point fill/outline (c:dPt > c:spPr) — round-trip. */
   shapeProperties?: ShapePropertiesOptions;
-  pictureOptions?: PictureOptionsOptions;
+  pictureOptions?: ChartPictureOptions;
 }
 
 /** Picture-fill mode (ST_PictureFormat): "stack" tile at natural size, "scale" stretch to fit, "stackScale" tile scaled by pictureStackUnit, "stretch". */
 export type PictureFormat = "stack" | "scale" | "stackScale" | "stretch";
 
 /** Picture-fill options for bar/area series (CT_PictureOptions). */
-export interface PictureOptionsOptions {
+export interface ChartPictureOptions {
   applyToFront?: boolean;
   applyToSides?: boolean;
   applyToEnd?: boolean;
