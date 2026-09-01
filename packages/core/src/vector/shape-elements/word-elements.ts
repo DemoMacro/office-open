@@ -112,7 +112,7 @@ const BORDER_ATTRS: readonly VmlAttrSpec[] = [
 ];
 
 /** The four w10: border element names. */
-export const VML_BORDER_TAGS = [
+const VML_BORDER_TAGS = [
   "w10:bordertop",
   "w10:borderleft",
   "w10:borderright",

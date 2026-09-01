@@ -119,7 +119,7 @@ export const BOOLEAN_TRANSFORMS: ReadonlySet<TransformKey> = new Set<TransformKe
 ]);
 
 /** Scale a transform value to its XSD unit; non-percent/angle keys pass through. */
-export function emitTransformValue(key: TransformKey, value: number): number {
+function emitTransformValue(key: TransformKey, value: number): number {
   if (PERCENT_TRANSFORMS.has(key)) return emitPercent(value);
   if (ANGLE_TRANSFORMS.has(key)) return emitAngle(value);
   return value;

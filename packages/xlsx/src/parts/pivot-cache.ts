@@ -52,7 +52,7 @@ export interface PivotCacheDefCacheField {
   sharedItems?: (string | number)[];
 }
 
-/** Structured output of {@link pivotCacheDefDesc}.parse — flat attributes + source + fields. */
+/** Structured pivotCacheDefinition.xml parse output — flat attributes + source + fields. */
 export interface PivotCacheDefParseResult {
   invalid?: boolean;
   saveData?: boolean;
@@ -74,7 +74,7 @@ export interface PivotCacheDefParseResult {
   cacheFields?: PivotCacheDefCacheField[];
 }
 
-/** Structured output of {@link pivotCacheRecordsDesc}.parse. */
+/** Structured pivotCacheRecords.xml parse output. */
 export interface PivotCacheRecordsParseResult {
   records: PivotCacheRecordEntry[][];
 }

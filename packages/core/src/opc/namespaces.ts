@@ -32,7 +32,7 @@ const SCHEMAS_MS = "http://schemas.microsoft.com";
  * Keep this aligned with Open XML SDK's OpenXmlNamespaceResolver
  * `_extendedNamespaces` table.
  */
-export const OOXML_OBSOLETE_NAMESPACE_ALIASES: Readonly<Record<string, string>> = {
+const OOXML_OBSOLETE_NAMESPACE_ALIASES: Readonly<Record<string, string>> = {
   [`${SCHEMAS_OPENXML}/wordprocessingml/2006/3/main`]: `${SCHEMAS_OPENXML}/wordprocessingml/2006/main`,
   [`${SCHEMAS_OPENXML}/wordprocessingml/2006/5/main`]: `${SCHEMAS_OPENXML}/wordprocessingml/2006/main`,
   [`${SCHEMAS_OPENXML}/wordprocessingml/2006/6/main`]: `${SCHEMAS_OPENXML}/wordprocessingml/2006/main`,

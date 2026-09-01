@@ -24,7 +24,7 @@ export interface CorePropertiesOptions {
    * default to now.
    */
   created?: string | null;
-  /** Last modified timestamp (W3CDTF); same null/undefined semantics as {@link created}. */
+  /** Last modified timestamp (W3CDTF); same null/undefined semantics as the created field. */
   modified?: string | null;
   /** Document category, round-tripped from cp:category. */
   category?: string;

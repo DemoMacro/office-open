@@ -27,7 +27,7 @@ export type LengthUnit = "auto" | number | Percentage | UniversalMeasure | Relat
  * Maps VmlShapeStyle property names to their corresponding CSS-style property names.
  * Used internally for converting TypeScript-friendly property names to VML style attributes.
  */
-export const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
+const styleToKeyMap: Record<keyof VmlShapeStyle, string> = {
   flip: "flip",
   height: "height",
   left: "left",

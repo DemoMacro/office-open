@@ -963,7 +963,7 @@
           "description": "Raw image data: Uint8Array, ArrayBuffer, or a base64 data URL."
         },
         "fileName": {
-          "description": "Placeholder key matching the `{fileName}` token in  {@link  rawXml  } .",
+          "description": "Placeholder key matching the `{fileName}` token inside the raw background XML.",
           "type": "string"
         },
         "type": {
@@ -5426,7 +5426,7 @@
           "type": "number"
         },
         "type": {
-          "description": "Grid behavior — see  {@link  DocumentGridType }  values.",
+          "description": "Grid behavior.",
           "enum": ["default", "lines", "linesAndChars", "snapToChars"],
           "type": "string"
         }
@@ -5606,7 +5606,7 @@
     },
     "DocumentBackgroundOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a document background.",
+      "description": "Options for creating a document background.\n\nSee the document-background descriptor for the XML this produces.",
       "properties": {
         "color": {
           "$ref": "#/definitions/HexColorOrAuto",
@@ -5980,7 +5980,7 @@
           "type": "string"
         },
         "modified": {
-          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as  {@link  created } .",
+          "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
           "type": ["string", "null"]
         },
         "numbering": {
@@ -7958,7 +7958,7 @@
     },
     "GroupShapePropertiesOptions": {
       "additionalProperties": false,
-      "description": "Group shape properties. Field order follows the XSD content model. The transform fields come from {@link GroupTransform2DOptions } (flat x/y/width/height/flip/rotation/childOffset/childExtent); the serializer emits them as a single a:xfrm group transform. The container-only `@bwMode` attribute and the wrapping tag are the caller's responsibility (mirrors shapePropertiesDesc).",
+      "description": "Group shape properties. Transform fields serialize as one a:xfrm group transform; container-only `@bwMode` and the wrapping tag are the caller's responsibility.",
       "properties": {
         "childExtentHeight": {
           "anyOf": [
@@ -13569,7 +13569,7 @@
               "$ref": "#/definitions/FootnoteEndnoteReferenceOptions"
             }
           ],
-          "description": "Endnote reference as a top-level field (see  {@link  footnoteReference } )."
+          "description": "Endnote reference as a top-level field (sibling of footnoteReference)."
         },
         "fitText": {
           "type": "number"
@@ -13698,7 +13698,7 @@
           "type": "number"
         },
         "sizeComplexScript": {
-          "description": "Complex-script font size in points (w:szCs). Independent from  {@link  size } .",
+          "description": "Complex-script font size in points (w:szCs). Independent from the size field.",
           "type": "number"
         },
         "smallCaps": {
@@ -15510,7 +15510,7 @@
     },
     "RunOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a Run element.\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.",
+      "description": "Options for creating a Run element.\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.\n\nSee the run descriptor for the XML this produces.",
       "properties": {
         "additionRsid": {
           "$ref": "#/definitions/LongHexNumber",

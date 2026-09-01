@@ -354,9 +354,9 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
   useLocalDpi?: boolean;
   /**
-   * Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi
-   * (a14 imgProps artistic effects, …). Round-trip only; subsumes
-   * {@link useLocalDpi} when the source list carries both.
+   * Verbatim a:blip `a:extLst` inner XML for extensions beyond the useLocalDpi
+   * hint (a14 imgProps artistic effects, …). Round-trip only; when the source
+   * list carries both, this element subsumes the hint.
    */
   blipExt?: string;
   /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
@@ -1447,7 +1447,7 @@ export interface WorksheetOptions {
   drawingRid?: string;
   /**
    * Legacy drawing reference r:id (CT_Worksheet `<legacyDrawing>`). Round-trip
-   * only, same passthrough semantics as {@link drawingRid}.
+   * only, same passthrough semantics as drawingRid.
    */
   legacyDrawingRid?: string;
   /** Selections in sheet view (CT_Selection — one per pane, max 4) */

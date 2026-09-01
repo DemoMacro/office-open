@@ -121,7 +121,7 @@ export interface RunStylePropertiesOptions {
   position?: number | UniversalMeasure;
   /** Font size in points. Internally stored as half-points in XML (×2). */
   size?: number;
-  /** Complex-script font size in points (w:szCs). Independent from {@link size}. */
+  /** Complex-script font size in points (w:szCs). Independent from the size field. */
   sizeComplexScript?: number;
   rightToLeft?: boolean;
   smallCaps?: boolean;

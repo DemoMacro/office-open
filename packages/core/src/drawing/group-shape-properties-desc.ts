@@ -37,12 +37,9 @@ import { groupTransform2DDesc } from "./transform-descriptors";
 // ── Types ──
 
 /**
- * Group shape properties (CT_GroupShapeProperties). Field order follows the XSD
- * content model. The transform fields come from {@link GroupTransform2DOptions}
- * (flat x/y/width/height/flip/rotation/childOffset/childExtent); the serializer
- * emits them as a single a:xfrm group transform. The container-only `@bwMode`
- * attribute and the wrapping tag are the caller's responsibility (mirrors
- * shapePropertiesDesc).
+ * Group shape properties (CT_GroupShapeProperties). Transform fields serialize
+ * as one a:xfrm group transform; container-only `@bwMode` and the wrapping tag
+ * are the caller's responsibility.
  */
 export interface GroupShapePropertiesOptions extends GroupTransform2DOptions {
   /** EG_FillProperties. */

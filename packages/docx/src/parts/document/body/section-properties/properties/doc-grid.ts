@@ -14,7 +14,7 @@ export const DocumentGridType = {
 } as const;
 
 export interface DocGridProperties {
-  /** Grid behavior — see {@link DocumentGridType} values. */
+  /** Grid behavior (ST_DocGridType token). */
   type?: (typeof DocumentGridType)[keyof typeof DocumentGridType];
   /** Line pitch in twentieths of a point (684 = 34.2 pt). Paragraphs opt out via snapToGrid or exact lineRule spacing. */
   linePitch: number;

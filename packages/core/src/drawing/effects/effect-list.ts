@@ -149,25 +149,6 @@ export interface EffectListOptions {
 }
 
 /**
- * Creates a blur effect element.
- *
- * ## XSD Schema
- * ```xml
- * <xsd:complexType name="CT_BlurEffect">
- *   <xsd:attribute name="rad" type="ST_PositiveCoordinate" default="0"/>
- *   <xsd:attribute name="grow" type="xsd:boolean" default="true"/>
- * </xsd:complexType>
- * ```
- */
-export const createBlurEffect = (options: BlurEffectOptions): string => {
-  const attrs: Record<string, number> = {};
-  if (options.radius !== undefined) attrs.rad = options.radius;
-  if (options.grow === false) attrs.grow = 0;
-
-  return Object.keys(attrs).length > 0 ? element("a:blur", attrs) : element("a:blur");
-};
-
-/**
  * Creates an effect list element (a:effectLst).
  *
  * This is the EG_EffectProperties choice for a flat list of effects.
@@ -189,6 +170,15 @@ export const createBlurEffect = (options: BlurEffectOptions): string => {
  * </xsd:complexType>
  * ```
  */
+/** Serialize a:blur (CT_BlurEffect). */
+const createBlurEffect = (options: BlurEffectOptions): string => {
+  const attrs: Record<string, number> = {};
+  if (options.radius !== undefined) attrs.rad = options.radius;
+  if (options.grow === false) attrs.grow = 0;
+
+  return Object.keys(attrs).length > 0 ? element("a:blur", attrs) : element("a:blur");
+};
+
 /**
  * Append the eight CT_EffectList effects (also valid in CT_EffectContainer),
  * in XSD sequence order. Shared by createEffectList and the DAG container.

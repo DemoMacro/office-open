@@ -75,13 +75,13 @@ function parseFontCollection(el: XmlElement | undefined): FontCollectionOptions 
 
 // ── Fresh defaults (Office theme major/minor fonts) ──
 
-export const DEFAULT_MAJOR_FONT: FontCollectionOptions = {
+const DEFAULT_MAJOR_FONT: FontCollectionOptions = {
   latin: { typeface: "Calibri Light", panose: "020F0302020204030204" },
   eastAsian: { typeface: "" },
   complexScript: { typeface: "" },
 };
 
-export const DEFAULT_MINOR_FONT: FontCollectionOptions = {
+const DEFAULT_MINOR_FONT: FontCollectionOptions = {
   latin: { typeface: "Calibri", panose: "020F0502020204030204" },
   eastAsian: { typeface: "" },
   complexScript: { typeface: "" },

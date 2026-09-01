@@ -104,7 +104,7 @@ interface RunOptionsBase {
    * with no children. w:footnoteReference is an EG_RunInnerContent member.
    */
   footnoteReference?: number | FootnoteEndnoteReferenceOptions;
-  /** Endnote reference as a top-level field (see {@link footnoteReference}). */
+  /** Endnote reference as a top-level field (sibling of footnoteReference). */
   endnoteReference?: number | FootnoteEndnoteReferenceOptions;
 }
 
@@ -114,7 +114,7 @@ interface RunOptionsBase {
  * The run element specifies a region of text with a common set of properties.
  * The children property can contain various inline content elements.
  *
- * @see {@link Run}
+ * See the run descriptor for the XML this produces.
  */
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {
