@@ -1,5 +1,6 @@
 import type { BaseMediaEntry, PictureLockingOptions } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core";
+import type { BlipCompression } from "@office-open/core/drawing";
 import type {
   BlackWhiteMode,
   EffectListOptions,
@@ -88,6 +89,8 @@ interface CoreMediaData extends BaseMediaEntry {
    * for round-trip fidelity. Omitted when absent (Word's default behavior).
    */
   useLocalDpi?: boolean;
+  /** Compression state (a:blip `@cstate`); absent = attribute omitted (schema default "none"). */
+  compression?: BlipCompression;
   /**
    * External image source URL (a:blip @r:link) — registered as an External
    * image relationship of the owning part when the picture is emitted.
@@ -130,6 +133,8 @@ export interface LinkedPictureMediaData {
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
   useLocalDpi?: boolean;
+  /** Compression state (a:blip `@cstate`); absent = attribute omitted. */
+  compression?: BlipCompression;
 }
 
 export interface ShapeMediaData {

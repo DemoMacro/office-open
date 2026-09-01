@@ -76,6 +76,12 @@ export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
   const modIdExt = opts.modId
     ? `<p:extLst><p:ext uri="${MODID_EXT_URI}"><p14:modId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="${opts.modId}"/></p:ext></p:extLst>`
     : "";
+  // isPhoto/userDrawn live on p:nvPr itself, orthogonal to the p:ph child
+  // (CT_ApplicationNonVisualDrawingProps) — a placeholder can carry both.
+  const nvPrAttrs: string[] = [];
+  if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
+  if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
+  const nvPrAttrsXml = nvPrAttrs.length ? ` ${nvPrAttrs.join(" ")}` : "";
   // p:ph @type is optional (XSD default "obj"), so a placeholder keyed only
   // by idx must still emit <p:ph/> without a type attribute.
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
@@ -86,17 +92,10 @@ export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    return `<p:nvPr><p:ph ${phAttrs.join(" ")}/>${modIdExt}</p:nvPr>`;
+    return `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/>${modIdExt}</p:nvPr>`;
   }
-  if (opts.isPhoto || opts.userDrawn) {
-    const nvPrAttrs: string[] = [];
-    if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
-    if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
-    return modIdExt
-      ? `<p:nvPr ${nvPrAttrs.join(" ")}>${modIdExt}</p:nvPr>`
-      : `<p:nvPr ${nvPrAttrs.join(" ")}/>`;
-  }
-  return modIdExt ? `<p:nvPr>${modIdExt}</p:nvPr>` : "<p:nvPr/>";
+  if (modIdExt) return `<p:nvPr${nvPrAttrsXml}>${modIdExt}</p:nvPr>`;
+  return nvPrAttrsXml ? `<p:nvPr${nvPrAttrsXml}/>` : "<p:nvPr/>";
 }
 
 /** Read the p:nvPr placeholder reference into a result object. */

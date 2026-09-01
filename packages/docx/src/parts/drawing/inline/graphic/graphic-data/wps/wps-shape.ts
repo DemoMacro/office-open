@@ -8,6 +8,7 @@ import type {
   ShapePropertiesExtensionOptions,
   Scene3DOptions,
   Shape3DOptions,
+  ShapeType,
   SolidFillOptions,
 } from "@office-open/core/drawing";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
@@ -68,8 +69,8 @@ export interface ShapeCoreOptions {
   outline?: OutlineOptions;
   fill?: FillOptions;
   customGeometry?: CustomGeometryOptions;
-  /** Preset geometry (a:prstGeom). */
-  geometry?: PresetGeometryOptions;
+  /** Preset geometry (a:prstGeom) — a bare string is shorthand for `{ preset: "<name>" }`. */
+  geometry?: ShapeType | PresetGeometryOptions;
   effectDag?: EffectDagOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;

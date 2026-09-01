@@ -191,13 +191,7 @@ export function boxToDocx(box: AbsoluteBox): MediaTransformation {
     width: box.width,
     height: box.height,
     ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
-    ...(box.flipHorizontal || box.flipVertical
-      ? {
-          flip: {
-            ...(box.flipHorizontal ? { horizontal: true } : {}),
-            ...(box.flipVertical ? { vertical: true } : {}),
-          },
-        }
-      : {}),
+    ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(box.flipVertical ? { flipVertical: true } : {}),
   };
 }

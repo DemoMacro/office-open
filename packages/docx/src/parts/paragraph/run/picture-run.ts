@@ -1,5 +1,6 @@
 import type { DataType } from "@office-open/core";
 import type {
+  BlipCompression,
   BlipEffectsOptions,
   EffectListOptions,
   FillOptions,
@@ -60,6 +61,8 @@ interface CorePictureOptions {
    * data it is the linked source of the local cache; alone it is linked-only.
    */
   sourceUrl?: string;
+  /** Compression state (a:blip `@cstate`); absent = attribute omitted (schema default "none"). */
+  compression?: BlipCompression;
 }
 
 interface RegularPictureOptions {

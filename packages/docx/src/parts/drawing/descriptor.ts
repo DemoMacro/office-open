@@ -279,6 +279,8 @@ function stringifyBlipFill(
   // A linked-only picture has no embedded copy: r:link alone.
   const blipAttrs: string[] = [];
   if (fileName !== undefined) blipAttrs.push(`r:embed="{${escapeXml(fileName)}}"`);
+  if (mediaData.compression !== undefined)
+    blipAttrs.push(`cstate="${escapeXml(mediaData.compression)}"`);
   // External linked source (r:link) — a direct External image relationship of
   // the owning part, the same channel docPr hyperlinks use.
   if (mediaData.sourceUrl !== undefined && ctx) {
@@ -541,8 +543,8 @@ function stringifyStyleRef(name: string, ref: ShapeStyleReferenceOptions | undef
 function stringifyFontRef(ref: ShapeStyleOptions["fontReference"] | undefined): string {
   if (!ref) return "";
   const colorXml = ref.color ? createColorElement(ref.color) : "";
-  if (colorXml) return `<a:fontRef idx="${ref.collection}">${colorXml}</a:fontRef>`;
-  return `<a:fontRef idx="${ref.collection}"/>`;
+  if (colorXml) return `<a:fontRef idx="${escapeXml(ref.collection)}">${colorXml}</a:fontRef>`;
+  return `<a:fontRef idx="${escapeXml(ref.collection)}"/>`;
 }
 
 /** Stringify a wps:style (CT_ShapeStyle): lnRef/fillRef/effectRef/fontRef. */

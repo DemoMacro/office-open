@@ -410,6 +410,10 @@ export function parsePictureRun(
   if (info.floating) imageOpts.floating = info.floating;
   if (info.graphicFrameLocks !== undefined) imageOpts.graphicFrameLocks = info.graphicFrameLocks;
 
+  // Blip compression state (a:blip @cstate)
+  const cstate = attr(blip, "cstate");
+  if (cstate !== undefined) imageOpts.compression = cstate;
+
   // Blip-fill crop (pic:blipFill/a:srcRect)
   const blipFill = findFirst(el, "pic:blipFill");
   if (blipFill) {
@@ -623,14 +627,13 @@ function parseStyleRef(el: Element, ctx: DocxReadContext): ShapeStyleReferenceOp
 
 /**
  * Parse a:fontRef — @idx is ST_FontCollectionIndex (major/minor/none), not a
- * number, so it reads as a collection slot instead of a matrix index.
+ * number, so it reads as a collection slot instead of a matrix index. Off-XSD
+ * tokens drop the reference (core parseFontReference precedent).
  */
 function parseFontRef(el: Element, ctx: DocxReadContext): ShapeStyleOptions["fontReference"] {
   const idx = attr(el, "idx");
-  if (idx === undefined) return undefined;
-  const result: NonNullable<ShapeStyleOptions["fontReference"]> = {
-    collection: idx as "major" | "minor" | "none",
-  };
+  if (idx !== "major" && idx !== "minor" && idx !== "none") return undefined;
+  const result: NonNullable<ShapeStyleOptions["fontReference"]> = { collection: idx };
   const color = parseColorChoice(el, ctx);
   if (color && Object.keys(color).length > 0) result.color = color;
   return result;

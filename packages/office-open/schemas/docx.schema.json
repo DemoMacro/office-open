@@ -7573,6 +7573,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+            },
             "data": {
               "$ref": "#/definitions/DataType"
             },
@@ -7617,6 +7621,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+            },
             "data": {
               "$ref": "#/definitions/DataType"
             },
@@ -7624,6 +7632,10 @@
               "additionalProperties": false,
               "description": "Fallback image for Word processors that do not support SVG. This ensures the document displays correctly in all viewers.",
               "properties": {
+                "compression": {
+                  "$ref": "#/definitions/BlipCompression",
+                  "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+                },
                 "data": {
                   "$ref": "#/definitions/DataType"
                 },
@@ -14367,6 +14379,10 @@
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions"
             },
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+            },
             "data": {
               "$ref": "#/definitions/DataType",
               "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
@@ -14451,6 +14467,10 @@
             },
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions"
+            },
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
             },
             "data": {
               "$ref": "#/definitions/DataType"
@@ -18724,8 +18744,7 @@
           "$ref": "#/definitions/FillOptions"
         },
         "geometry": {
-          "$ref": "#/definitions/PresetGeometryOptions",
-          "description": "Preset geometry (a:prstGeom)."
+          "$ref": "#/definitions/ShapeOptions/properties/geometry"
         },
         "linkedTextBox": {
           "$ref": "#/definitions/ShapeOptions/properties/linkedTextBox"
@@ -18862,8 +18881,15 @@
           "$ref": "#/definitions/Floating"
         },
         "geometry": {
-          "$ref": "#/definitions/PresetGeometryOptions",
-          "description": "Preset geometry (a:prstGeom)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ShapeType"
+            },
+            {
+              "$ref": "#/definitions/PresetGeometryOptions"
+            }
+          ],
+          "description": "Preset geometry (a:prstGeom) — a bare string is shorthand for `{ preset: \"<name>\" }`."
         },
         "graphicFrameLocks": {
           "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
