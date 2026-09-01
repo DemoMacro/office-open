@@ -9,7 +9,6 @@ import {
   extUriMatches,
   parseOnOff,
   stripColorHashPrefix,
-  xsdDashStyle,
   xsdTextAnchor,
   xsdTextVerticalType,
 } from "@office-open/core";
@@ -217,8 +216,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
           const prstDash = findChild(borderEl, "a:prstDash");
           if (prstDash) {
             const val = attr(prstDash, "val");
-            if (val)
-              borderOpts.dashStyle = xsdDashStyle.from(val) as CellBorderOptions["dashStyle"];
+            // Identity read — dashStyle shares PresetDash's token value set.
+            if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
           }
           borderOpts.outline = parse(outlineDesc, borderEl, ctx);
           borders[key] = borderOpts as CellBorderOptions;
@@ -397,7 +396,7 @@ function buildBorderLine(name: string, options: CellBorderOptions, ctx: PptxWrit
     if (fillXml) children.push(fillXml);
   }
   if (options.dashStyle) {
-    children.push(`<a:prstDash val="${xsdDashStyle.to(options.dashStyle)}"/>`);
+    children.push(`<a:prstDash val="${options.dashStyle}"/>`);
   }
 
   const attrStr = attrs.length > 0 ? ` ${attrs.join(" ")}` : "";
@@ -536,7 +535,8 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
         const prstDash = findChild(borderEl, "a:prstDash");
         if (prstDash) {
           const val = attr(prstDash, "val");
-          if (val) borderOpts.dashStyle = xsdDashStyle.from(val) as CellBorderOptions["dashStyle"];
+          // Identity read — dashStyle shares PresetDash's token value set.
+          if (val) borderOpts.dashStyle = val as CellBorderOptions["dashStyle"];
         }
         // Full line properties — keeps joins/line ends and bare <a:lnX><a:noFill/></a:lnX>.
         borderOpts.outline = parse(outlineDesc, borderEl, ctx);

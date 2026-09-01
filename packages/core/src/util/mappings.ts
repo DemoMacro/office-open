@@ -402,8 +402,6 @@ export const xsdDiagramDirection = bidi({ normal: "norm", reversed: "rev" } as c
 
 export const xsdResizeHandles = bidi({ exact: "exact", relative: "rel" } as const);
 
-export const xsdOnOffStyle = bidi({ default: "def" } as const);
-
 // ---------------------------------------------------------------------------
 // PPTX — animation classes, calc modes, slide layouts, text direction
 // ---------------------------------------------------------------------------
@@ -470,12 +468,6 @@ export const xsdTextVerticalType = bidi({
   eastAsianVertical: "eaVert",
   mongolianVertical: "mongolianVert",
   wordArtVerticalRightToLeft: "wordArtVertRtl",
-} as const);
-
-export const xsdDashStyle = bidi({
-  longDash: "lgDash",
-  systemDot: "sysDot",
-  systemDash: "sysDash",
 } as const);
 
 export const xsdOrient = bidi({ horizontal: "horz", vertical: "vert" } as const);

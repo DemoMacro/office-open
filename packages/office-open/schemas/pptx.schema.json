@@ -2704,9 +2704,8 @@
           "description": "Hex color string sugar, or a full fill (scheme colors, gradients)."
         },
         "dashStyle": {
-          "description": "Dash pattern: \"lgDash\" long dashes, \"sysDot\"/\"sysDash\" system-defined dot/dash.",
-          "enum": ["solid", "dash", "dashDot", "lgDash", "sysDot", "sysDash"],
-          "type": "string"
+          "$ref": "#/definitions/PresetDash",
+          "description": "Dash pattern sugar — same value set as `OutlineOptions.dash`; \"solid\" = a continuous line."
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions",
