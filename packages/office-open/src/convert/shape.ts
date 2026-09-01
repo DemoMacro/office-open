@@ -9,7 +9,7 @@
  *
  * docx shapes carry text as w:p paragraphs; pptx/xlsx carry it as a core
  * TextBody (a:p). bodyProperties (a:bodyPr) round-trips verbatim. Geometry
- * adapts to docx's stricter API (presetGeometry rejects the bare-string
+ * adapts to docx's stricter API (geometry rejects the bare-string
  * shorthand pptx/xlsx accept).
  *
  * @module
@@ -193,7 +193,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
         children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
         ...pickContent(spPr),
         ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
-        ...(preset !== undefined ? { presetGeometry: preset } : {}),
+        ...(preset !== undefined ? { geometry: preset } : {}),
         ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
       },
       transformation: boxToDocx(box),
@@ -215,7 +215,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
       children: source.textBody ? textBodyToDocxChildren(source.textBody) : [],
       ...pickContent(spPr),
       ...(spPr.customGeometry !== undefined ? { customGeometry: spPr.customGeometry } : {}),
-      ...(preset !== undefined ? { presetGeometry: preset } : {}),
+      ...(preset !== undefined ? { geometry: preset } : {}),
       ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
     },
     transformation: boxToDocx(box),
@@ -268,8 +268,8 @@ export function toPptxShape(source: DocxShapeOptions | XlsxShapeOptions): PptxSh
     ...boxToPptx(box),
     properties: {
       ...pickContent(source),
-      ...(source.presetGeometry !== undefined
-        ? { geometry: source.presetGeometry }
+      ...(source.geometry !== undefined
+        ? { geometry: source.geometry }
         : source.customGeometry !== undefined
           ? { customGeometry: source.customGeometry }
           : {}),
@@ -298,8 +298,8 @@ export function toXlsxShape(source: DocxShapeOptions | PptxShapeOptions): XlsxSh
       width: box.width,
       height: box.height,
       ...pickContent(source),
-      ...(source.presetGeometry !== undefined
-        ? { geometry: source.presetGeometry }
+      ...(source.geometry !== undefined
+        ? { geometry: source.geometry }
         : source.customGeometry !== undefined
           ? { customGeometry: source.customGeometry }
           : {}),

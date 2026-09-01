@@ -282,7 +282,7 @@ describe("drawingDesc round-trip", () => {
         transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
         data: {
           children: [],
-          presetGeometry: { preset: "roundRect" },
+          geometry: { preset: "roundRect" },
         },
       },
     });
@@ -557,7 +557,7 @@ describe("drawingDesc round-trip", () => {
         transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
         data: {
           children: [],
-          presetGeometry: { preset: "roundRect" },
+          geometry: { preset: "roundRect" },
         },
       },
     });
@@ -565,9 +565,9 @@ describe("drawingDesc round-trip", () => {
     const el = doc.elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as {
-      wpsShape?: { presetGeometry?: { preset?: string } };
+      wpsShape?: { geometry?: { preset?: string } };
     };
-    expect(result.wpsShape?.presetGeometry?.preset).toBe("roundRect");
+    expect(result.wpsShape?.geometry?.preset).toBe("roundRect");
   });
 
   it("round-trips wp14 percentage positioning", () => {

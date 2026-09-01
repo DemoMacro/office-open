@@ -443,18 +443,15 @@ export function parsePictureRun(
     if (xfrm) {
       const transform = imageOpts.transformation as {
         rotation?: number;
-        flip?: { horizontal?: boolean; vertical?: boolean };
+        flipHorizontal?: boolean;
+        flipVertical?: boolean;
       };
       const rot = attrNum(xfrm, "rot");
       if (rot !== undefined) transform.rotation = parseAngle(rot);
       const flipH = attrBool(xfrm, "flipH");
       const flipV = attrBool(xfrm, "flipV");
-      if (flipH !== undefined || flipV !== undefined) {
-        transform.flip = {
-          ...(flipH !== undefined ? { horizontal: flipH } : {}),
-          ...(flipV !== undefined ? { vertical: flipV } : {}),
-        };
-      }
+      if (flipH !== undefined) transform.flipHorizontal = flipH;
+      if (flipV !== undefined) transform.flipVertical = flipV;
     }
   }
 
@@ -616,17 +613,32 @@ function readShapeFill(parent: Element, ctx: DocxReadContext) {
  * the `idx` attribute plus an optional EG_ColorChoice color override.
  */
 function parseStyleRef(el: Element, ctx: DocxReadContext): ShapeStyleReferenceOptions | undefined {
-  const idx = attr(el, "idx");
+  const idx = attrNum(el, "idx");
   if (idx === undefined) return undefined;
-  const result: ShapeStyleReferenceOptions = { idx };
+  const result: ShapeStyleReferenceOptions = { index: idx };
   const color = parseColorChoice(el, ctx);
   if (color && Object.keys(color).length > 0) result.color = color;
   return result as ShapeStyleReferenceOptions;
 }
 
 /**
+ * Parse a:fontRef — @idx is ST_FontCollectionIndex (major/minor/none), not a
+ * number, so it reads as a collection slot instead of a matrix index.
+ */
+function parseFontRef(el: Element, ctx: DocxReadContext): ShapeStyleOptions["fontReference"] {
+  const idx = attr(el, "idx");
+  if (idx === undefined) return undefined;
+  const result: NonNullable<ShapeStyleOptions["fontReference"]> = {
+    collection: idx as "major" | "minor" | "none",
+  };
+  const color = parseColorChoice(el, ctx);
+  if (color && Object.keys(color).length > 0) result.color = color;
+  return result;
+}
+
+/**
  * Parse a wps:style (CT_ShapeStyle): line/fill/effect/font references into the
- * document theme. Delegates color to the shared core {@link parseColorChoice}.
+ * document theme. Delegates color to the shared core parseColorChoice.
  */
 function parseShapeStyle(styleEl: Element, ctx: DocxReadContext): ShapeStyleOptions {
   const result: ShapeStyleOptions = {};
@@ -637,7 +649,7 @@ function parseShapeStyle(styleEl: Element, ctx: DocxReadContext): ShapeStyleOpti
   const effectRef = findChild(styleEl, "a:effectRef");
   if (effectRef) result.effectReference = parseStyleRef(effectRef, ctx);
   const fontRef = findChild(styleEl, "a:fontRef");
-  if (fontRef) result.fontReference = parseStyleRef(fontRef, ctx);
+  if (fontRef) result.fontReference = parseFontRef(fontRef, ctx);
   return result as ShapeStyleOptions;
 }
 
@@ -737,7 +749,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
     const custGeom = findChild(spPr, "a:custGeom");
     if (custGeom) result.customGeometry = customGeometryDesc.parse(custGeom, ctx);
     const prstGeom = findChild(spPr, "a:prstGeom");
-    if (prstGeom) result.presetGeometry = presetGeometryDesc.parse(prstGeom, ctx);
+    if (prstGeom) result.geometry = presetGeometryDesc.parse(prstGeom, ctx);
     const scene3d = findChild(spPr, "a:scene3d");
     if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
     const sp3d = findChild(spPr, "a:sp3d");
@@ -792,12 +804,8 @@ function readChildTransformation(spPr: Element | undefined): MediaDataTransforma
 
   const flipH = attrBool(xfrm, "flipH");
   const flipV = attrBool(xfrm, "flipV");
-  if (flipH !== undefined || flipV !== undefined) {
-    const flip: { horizontal?: boolean; vertical?: boolean } = {};
-    if (flipH !== undefined) flip.horizontal = flipH;
-    if (flipV !== undefined) flip.vertical = flipV;
-    result.flip = flip;
-  }
+  if (flipH !== undefined) result.flipHorizontal = flipH;
+  if (flipV !== undefined) result.flipVertical = flipV;
   const rot = attrNum(xfrm, "rot");
   if (rot !== undefined) result.rotation = rot;
 

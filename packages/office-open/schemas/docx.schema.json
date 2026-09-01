@@ -10611,8 +10611,13 @@
           "required": ["x", "y"],
           "type": "object"
         },
-        "flip": {
-          "$ref": "#/definitions/MediaTransformation/properties/flip"
+        "flipHorizontal": {
+          "description": "Whether to flip the image horizontally (a:xfrm",
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Whether to flip the image vertically (a:xfrm",
+          "type": "boolean"
         },
         "offset": {
           "additionalProperties": false,
@@ -10684,20 +10689,13 @@
           "required": ["l", "t", "r", "b"],
           "type": "object"
         },
-        "flip": {
-          "additionalProperties": false,
-          "description": "Optional flip transformations",
-          "properties": {
-            "horizontal": {
-              "description": "Whether to flip the image horizontally",
-              "type": "boolean"
-            },
-            "vertical": {
-              "description": "Whether to flip the image vertically",
-              "type": "boolean"
-            }
-          },
-          "type": "object"
+        "flipHorizontal": {
+          "description": "Whether to flip the image horizontally (a:xfrm",
+          "type": "boolean"
+        },
+        "flipVertical": {
+          "description": "Whether to flip the image vertically (a:xfrm",
+          "type": "boolean"
         },
         "height": {
           "anyOf": [
@@ -18725,6 +18723,10 @@
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
+        "geometry": {
+          "$ref": "#/definitions/PresetGeometryOptions",
+          "description": "Preset geometry (a:prstGeom)."
+        },
         "linkedTextBox": {
           "$ref": "#/definitions/ShapeOptions/properties/linkedTextBox"
         },
@@ -18736,9 +18738,6 @@
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
-        },
-        "presetGeometry": {
-          "$ref": "#/definitions/PresetGeometryOptions"
         },
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions"
@@ -18862,6 +18861,10 @@
         "floating": {
           "$ref": "#/definitions/Floating"
         },
+        "geometry": {
+          "$ref": "#/definitions/PresetGeometryOptions",
+          "description": "Preset geometry (a:prstGeom)."
+        },
         "graphicFrameLocks": {
           "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
         },
@@ -18897,9 +18900,6 @@
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
-        },
-        "presetGeometry": {
-          "$ref": "#/definitions/PresetGeometryOptions"
         },
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
@@ -19071,7 +19071,19 @@
           "$ref": "#/definitions/ShapeStyleReferenceOptions"
         },
         "fontReference": {
-          "$ref": "#/definitions/ShapeStyleReferenceOptions"
+          "additionalProperties": false,
+          "description": "a:fontRef —",
+          "properties": {
+            "collection": {
+              "enum": ["major", "minor", "none"],
+              "type": "string"
+            },
+            "color": {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          },
+          "required": ["collection"],
+          "type": "object"
         },
         "lineReference": {
           "$ref": "#/definitions/ShapeStyleReferenceOptions"
@@ -19081,18 +19093,18 @@
     },
     "ShapeStyleReferenceOptions": {
       "additionalProperties": false,
-      "description": "A style-matrix reference: an `idx` into the theme style matrix plus an optional color override.",
+      "description": "A style-matrix reference: an index into the theme style matrix plus an optional color override.",
       "properties": {
         "color": {
           "$ref": "#/definitions/SolidFillOptions",
           "description": "Color (EG_ColorChoice) — schemeClr/srgbClr/hslClr/sysClr/prstClr/scRgbClr."
         },
-        "idx": {
-          "description": "Style index (\"0\",\"1\",\"2\",…; or \"minor\"/\"major\" for font references).",
-          "type": "string"
+        "index": {
+          "description": "Index into the theme style matrix list (idx attribute).",
+          "type": "number"
         }
       },
-      "required": ["idx"],
+      "required": ["index"],
       "type": "object"
     },
     "ShapeTextBoxChild": {

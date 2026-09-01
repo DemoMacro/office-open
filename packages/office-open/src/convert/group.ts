@@ -118,8 +118,8 @@ function docxChildMediaToBox(t: MediaDataTransformation): AbsoluteBox {
     width: t.emus.x,
     height: t.emus.y,
     ...(t.rotation !== undefined ? { rotation: parseAngle(t.rotation) } : {}),
-    ...(t.flip?.horizontal ? { flipHorizontal: true } : {}),
-    ...(t.flip?.vertical ? { flipVertical: true } : {}),
+    ...(t.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(t.flipVertical ? { flipVertical: true } : {}),
   };
 }
 
@@ -169,7 +169,7 @@ function xlsxShapeChildToDocxData(s: GroupShapeChildOptions): ShapeCoreOptions {
     ...(s.properties.customGeometry !== undefined
       ? { customGeometry: s.properties.customGeometry }
       : {}),
-    ...(preset !== undefined ? { presetGeometry: preset } : {}),
+    ...(preset !== undefined ? { geometry: preset } : {}),
     ...(hasCnvPr(cnvPr) ? docxNonVisualFromCnvPr(cnvPr, "Shape") : {}),
   };
 }
@@ -186,7 +186,7 @@ function docxChildToSpPr(data: ShapeCoreOptions, box: AbsoluteBox): ShapePropert
     ...(box.flipVertical ? { flipVertical: true } : {}),
     ...pickContent(data),
   };
-  if (data.presetGeometry !== undefined) out.geometry = data.presetGeometry;
+  if (data.geometry !== undefined) out.geometry = data.geometry;
   else if (data.customGeometry !== undefined) out.customGeometry = data.customGeometry;
   return out;
 }

@@ -67,9 +67,7 @@ const buffer = await generateDocument({
                     width: "6mm",
                   },
                   transformation: {
-                    flip: {
-                      vertical: true,
-                    },
+                    flipVertical: true,
                     height: "2.6cm",
                     width: "2.6cm",
                   },
@@ -86,9 +84,7 @@ const buffer = await generateDocument({
                 picture: {
                   data: readFileSync("./demo/images/parrots.bmp"),
                   transformation: {
-                    flip: {
-                      horizontal: true,
-                    },
+                    flipHorizontal: true,
                     height: "4cm",
                     rotation: 225,
                     width: "4cm",
@@ -106,10 +102,8 @@ const buffer = await generateDocument({
                 picture: {
                   data: readFileSync("./demo/images/pizza.gif"),
                   transformation: {
-                    flip: {
-                      horizontal: true,
-                      vertical: true,
-                    },
+                    flipHorizontal: true,
+                    flipVertical: true,
                     height: "5.3cm",
                     width: "5.3cm",
                   },

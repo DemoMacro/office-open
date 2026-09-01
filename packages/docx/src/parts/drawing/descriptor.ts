@@ -352,8 +352,8 @@ function stringifyShapeProps(
       y: transform.offset?.emus?.y ?? 0,
       width: transform.emus.x,
       height: transform.emus.y,
-      flipHorizontal: transform.flip?.horizontal,
-      flipVertical: transform.flip?.vertical,
+      flipHorizontal: transform.flipHorizontal,
+      flipVertical: transform.flipVertical,
       rotation: transform.rotation,
       // Pictures always use a rect preset geometry.
       geometry: "rect",
@@ -432,12 +432,12 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
         y: transform.offset?.emus?.y ?? 0,
         width: transform.emus.x,
         height: transform.emus.y,
-        flipHorizontal: transform.flip?.horizontal,
-        flipVertical: transform.flip?.vertical,
+        flipHorizontal: transform.flipHorizontal,
+        flipVertical: transform.flipVertical,
         rotation: transform.rotation,
         customGeometry: opts.customGeometry,
         // WPS shapes always carry geometry — default to rect when none specified.
-        geometry: opts.customGeometry ? undefined : (opts.presetGeometry ?? "rect"),
+        geometry: opts.customGeometry ? undefined : (opts.geometry ?? "rect"),
         fill: opts.fill,
         outline: opts.outline,
         effectDag: opts.effectDag,
@@ -532,10 +532,17 @@ function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions
 /** Stringify a single style-matrix reference (a:lnRef/a:fillRef/...). */
 function stringifyStyleRef(name: string, ref: ShapeStyleReferenceOptions | undefined): string {
   if (!ref) return "";
-  const idx = escapeXml(ref.idx);
   const colorXml = ref.color ? createColorElement(ref.color) : "";
-  if (colorXml) return `<${name} idx="${idx}">${colorXml}</${name}>`;
-  return `<${name} idx="${idx}"/>`;
+  if (colorXml) return `<${name} idx="${ref.index}">${colorXml}</${name}>`;
+  return `<${name} idx="${ref.index}"/>`;
+}
+
+/** Stringify a:fontRef — @idx is ST_FontCollectionIndex, not a number. */
+function stringifyFontRef(ref: ShapeStyleOptions["fontReference"] | undefined): string {
+  if (!ref) return "";
+  const colorXml = ref.color ? createColorElement(ref.color) : "";
+  if (colorXml) return `<a:fontRef idx="${ref.collection}">${colorXml}</a:fontRef>`;
+  return `<a:fontRef idx="${ref.collection}"/>`;
 }
 
 /** Stringify a wps:style (CT_ShapeStyle): lnRef/fillRef/effectRef/fontRef. */
@@ -544,7 +551,7 @@ function stringifyShapeStyle(opts: ShapeStyleOptions): string {
     stringifyStyleRef("a:lnRef", opts.lineReference) +
     stringifyStyleRef("a:fillRef", opts.fillReference) +
     stringifyStyleRef("a:effectRef", opts.effectReference) +
-    stringifyStyleRef("a:fontRef", opts.fontReference);
+    stringifyFontRef(opts.fontReference);
   return inner ? `<wps:style>${inner}</wps:style>` : "";
 }
 
@@ -579,8 +586,8 @@ function stringifyWpgGroup(
         y: transform.offset?.emus?.y ?? 0,
         width: transform.emus.x,
         height: transform.emus.y,
-        flipHorizontal: transform.flip?.horizontal,
-        flipVertical: transform.flip?.vertical,
+        flipHorizontal: transform.flipHorizontal,
+        flipVertical: transform.flipVertical,
         rotation: transform.rotation,
         childOffsetX: opts.childOffsetX,
         childOffsetY: opts.childOffsetY,
@@ -711,8 +718,7 @@ function stringifyCnvFrPr(locks?: GraphicFrameLocksOptions | null): string {
 function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaDataTransformation): string {
   const x = t.offset?.emus?.x ?? 0;
   const y = t.offset?.emus?.y ?? 0;
-  const flipAttrs =
-    (t.flip?.horizontal ? ' flipH="1"' : "") + (t.flip?.vertical ? ' flipV="1"' : "");
+  const flipAttrs = (t.flipHorizontal ? ' flipH="1"' : "") + (t.flipVertical ? ' flipV="1"' : "");
   const rotAttr = t.rotation !== undefined ? ` rot="${t.rotation}"` : "";
   return `<${prefix}:xfrm${flipAttrs}${rotAttr}><a:off x="${x}" y="${y}"/><a:ext cx="${t.emus.x}" cy="${t.emus.y}"/></${prefix}:xfrm>`;
 }
@@ -751,8 +757,8 @@ function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
         y: grp.transformation.offset?.emus?.y ?? 0,
         width: grp.transformation.emus.x,
         height: grp.transformation.emus.y,
-        flipHorizontal: grp.transformation.flip?.horizontal,
-        flipVertical: grp.transformation.flip?.vertical,
+        flipHorizontal: grp.transformation.flipHorizontal,
+        flipVertical: grp.transformation.flipVertical,
         rotation: grp.transformation.rotation,
         childOffsetX: grp.childOffsetX,
         childOffsetY: grp.childOffsetY,

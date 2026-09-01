@@ -36,13 +36,10 @@ export interface MediaDataTransformation {
     /** Height in EMUs (1 inch = 914400 EMUs) */
     y: number;
   };
-  /** Optional flip transformations */
-  flip?: {
-    /** Whether to flip the image vertically */
-    vertical?: boolean;
-    /** Whether to flip the image horizontally */
-    horizontal?: boolean;
-  };
+  /** Whether to flip the image horizontally (a:xfrm @flipH). */
+  flipHorizontal?: boolean;
+  /** Whether to flip the image vertically (a:xfrm @flipV). */
+  flipVertical?: boolean;
   /** Optional rotation angle in degrees */
   rotation?: number;
   /**

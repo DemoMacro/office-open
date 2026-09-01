@@ -87,7 +87,7 @@ describe("toDocxShape (pptx → docx)", () => {
     expect(d.children).toHaveLength(1);
     expect(d.children[0]).toBe("Hello");
     // docx geometry rejects the bare-string shorthand → preset object
-    expect(d.presetGeometry).toEqual({ preset: "rect" });
+    expect(d.geometry).toEqual({ preset: "rect" });
     expect(d.fill).toBe("4472C4");
   });
 });

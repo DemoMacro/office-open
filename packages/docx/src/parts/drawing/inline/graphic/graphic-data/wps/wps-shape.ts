@@ -24,12 +24,12 @@ import type { BodyPropertiesOptions } from "./body-properties";
 import type { NonVisualShapePropertiesOptions } from "./non-visual-shape-properties";
 
 /**
- * A style-matrix reference (CT_StyleMatrixReference): an `idx` into the theme
+ * A style-matrix reference (CT_StyleMatrixReference): an index into the theme
  * style matrix plus an optional color override.
  */
 export interface ShapeStyleReferenceOptions {
-  /** Style index ("0","1","2",…; or "minor"/"major" for font references). */
-  idx: string;
+  /** Index into the theme style matrix list (idx attribute). */
+  index: number;
   /** Color (EG_ColorChoice) — schemeClr/srgbClr/hslClr/sysClr/prstClr/scRgbClr. */
   color?: SolidFillOptions;
 }
@@ -42,7 +42,8 @@ export interface ShapeStyleOptions {
   lineReference?: ShapeStyleReferenceOptions;
   fillReference?: ShapeStyleReferenceOptions;
   effectReference?: ShapeStyleReferenceOptions;
-  fontReference?: ShapeStyleReferenceOptions;
+  /** a:fontRef — @idx is ST_FontCollectionIndex, not a number. */
+  fontReference?: { collection: "major" | "minor" | "none"; color?: SolidFillOptions };
 }
 
 export type ShapeTextBoxChild = ParagraphOptions | string | SectionChild;
@@ -67,7 +68,8 @@ export interface ShapeCoreOptions {
   outline?: OutlineOptions;
   fill?: FillOptions;
   customGeometry?: CustomGeometryOptions;
-  presetGeometry?: PresetGeometryOptions;
+  /** Preset geometry (a:prstGeom). */
+  geometry?: PresetGeometryOptions;
   effectDag?: EffectDagOptions;
   effects?: EffectListOptions;
   scene3d?: Scene3DOptions;

@@ -28,13 +28,10 @@ export interface MediaTransformation {
   width: number | UniversalMeasure;
   /** Display height in EMUs or universal measure */
   height: number | UniversalMeasure;
-  /** Optional flip transformations */
-  flip?: {
-    /** Whether to flip the image vertically */
-    vertical?: boolean;
-    /** Whether to flip the image horizontally */
-    horizontal?: boolean;
-  };
+  /** Whether to flip the image horizontally (a:xfrm @flipH). */
+  flipHorizontal?: boolean;
+  /** Whether to flip the image vertically (a:xfrm @flipV). */
+  flipVertical?: boolean;
   /** Optional rotation angle in degrees */
   rotation?: number;
   /** Effect extent (wp:effectExtent) in raw EMUs — passed through verbatim. */
@@ -55,7 +52,8 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
   const offsetTopEmu = convertToEmu(options.offset?.top ?? 0);
   return {
     emus: { x: widthEmu, y: heightEmu },
-    flip: options.flip,
+    flipHorizontal: options.flipHorizontal,
+    flipVertical: options.flipVertical,
     offset: {
       emus: { x: offsetLeftEmu, y: offsetTopEmu },
       pixels: {

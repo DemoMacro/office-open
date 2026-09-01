@@ -298,7 +298,7 @@ const doc: DocumentOptions = {
             children: [
               {
                 wpsShape: {
-                  presetGeometry: { preset: "roundRect" },
+                  geometry: { preset: "roundRect" },
                   fill: { type: "solid", color: "4472C4" },
                   transformation: { width: 200, height: 80 },
                   children: ["Shape text"],
@@ -318,7 +318,7 @@ const doc: DocumentOptions = {
                       type: "wps",
                       data: {
                         children: ["Grouped ellipse caption"],
-                        presetGeometry: { preset: "ellipse" },
+                        geometry: { preset: "ellipse" },
                         fill: { type: "solid", color: "ED7D31" },
                       },
                       transformation: {

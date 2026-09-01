@@ -122,8 +122,8 @@ export function boxFromDocx(transformation: MediaTransformation): AbsoluteBox {
     width: toEmu(transformation.width),
     height: toEmu(transformation.height),
     ...(transformation.rotation !== undefined ? { rotation: transformation.rotation } : {}),
-    ...(transformation.flip?.horizontal ? { flipHorizontal: true } : {}),
-    ...(transformation.flip?.vertical ? { flipVertical: true } : {}),
+    ...(transformation.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(transformation.flipVertical ? { flipVertical: true } : {}),
   };
 }
 

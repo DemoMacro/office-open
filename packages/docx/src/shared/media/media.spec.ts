@@ -12,7 +12,8 @@ describe("createTransformation", () => {
         x: 952500,
         y: 1905000,
       },
-      flip: undefined,
+      flipHorizontal: undefined,
+      flipVertical: undefined,
       offset: {
         emus: {
           x: 0,
@@ -61,13 +62,14 @@ describe("createTransformation", () => {
     expect(result.rotation).to.equal(90);
   });
 
-  it("should pass flip through unchanged", () => {
+  it("should pass flips through unchanged", () => {
     const result = createTransformation({
-      flip: { horizontal: true, vertical: false },
+      flipHorizontal: true,
       height: 100,
       width: 100,
     });
 
-    expect(result.flip).to.deep.equal({ horizontal: true, vertical: false });
+    expect(result.flipHorizontal).to.equal(true);
+    expect(result.flipVertical).to.equal(undefined);
   });
 });
