@@ -28,8 +28,19 @@ export type TextCapitalization = "none" | "all" | "small";
 
 // ── Paragraph alignment ──
 
-/** Paragraph alignment (ST_TextAlignType); "justify" stretches lines to full width. */
-export type TextAlignment = "left" | "center" | "right" | "justify";
+/**
+ * Paragraph alignment (ST_TextAlignType); "justify" stretches lines to full
+ * width, "distribute" justifies including the last line, "lowJustification"
+ * aligns to a low baseline, "thaiDistributed" is Thai-style distribution.
+ */
+export type TextAlignment =
+  | "left"
+  | "center"
+  | "right"
+  | "justify"
+  | "lowJustification"
+  | "distribute"
+  | "thaiDistributed";
 
 // ── Hyperlink (a:hlinkClick) ──
 

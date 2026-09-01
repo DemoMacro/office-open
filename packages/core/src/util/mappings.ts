@@ -59,6 +59,9 @@ export const xsdTextAlign = bidi({
   center: "ctr",
   right: "r",
   justify: "just",
+  lowJustification: "justLow",
+  distribute: "dist",
+  thaiDistributed: "thaiDist",
 } as const);
 
 // ---------------------------------------------------------------------------

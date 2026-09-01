@@ -14572,8 +14572,16 @@
       "type": "string"
     },
     "TextAlignment": {
-      "description": "Paragraph alignment; \"justify\" stretches lines to full width.",
-      "enum": ["left", "center", "right", "justify"],
+      "description": "Paragraph alignment; \"justify\" stretches lines to full width, \"distribute\" justifies including the last line, \"lowJustification\" aligns to a low baseline, \"thaiDistributed\" is Thai-style distribution.",
+      "enum": [
+        "left",
+        "center",
+        "right",
+        "justify",
+        "lowJustification",
+        "distribute",
+        "thaiDistributed"
+      ],
       "type": "string"
     },
     "TextBodyOptions": {

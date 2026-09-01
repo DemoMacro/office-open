@@ -19,6 +19,8 @@ import type { SectionChild } from "@shared/section";
 /** Gallery type for building blocks (ST_DocPartGallery) */
 export const DocPartGallery = {
   PLACEHOLDER: "placeholder",
+  /** Matches any gallery — used by docPartObj references without a specific gallery. */
+  ANY: "any",
   DEFAULT: "default",
   DOC_PARTS: "docParts",
   COVER_PAGE: "coverPg",

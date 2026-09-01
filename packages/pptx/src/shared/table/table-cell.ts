@@ -2,6 +2,7 @@ import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
 import type {
   Cell3DOptions,
   ParagraphDescriptorOptions,
+  TextVertical,
   VerticalAnchor,
 } from "@office-open/core/drawing";
 
@@ -12,13 +13,9 @@ import type { CellBorderOptions } from "./table-cell-properties";
 // (ST_TextAnchorType); re-exported under the table-cell domain.
 export type { VerticalAnchor } from "@office-open/core/drawing";
 
-/** Text direction within a cell (ST_TextVerticalType, a:tcPr `@vert`). */
-export type TextVerticalType =
-  | "horizontal"
-  | "vertical"
-  | "vertical270"
-  | "wordArtVertical"
-  | "wordArtVerticalRightToLeft";
+// Text direction within a cell (ST_TextVerticalType, a:tcPr `@vert`) shares
+// the core DrawingML token set; re-exported under the table-cell domain.
+export type { TextVertical as TextVerticalType } from "@office-open/core/drawing";
 
 /** pptx cell extends the base cell contract (span from base); verticalAlign
  *  widens to the DrawingML anchor set (justify/distribute) and fill/borders/
@@ -26,7 +23,7 @@ export type TextVerticalType =
 export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAlign"> {
   verticalAlign?: VerticalAnchor;
   /** `@vert` — text direction (ST_TextVerticalType). */
-  vertical?: TextVerticalType;
+  vertical?: TextVertical;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;
