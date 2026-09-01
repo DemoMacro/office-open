@@ -34,7 +34,7 @@ import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import type { ViewPropertiesOptions } from "@parts/view-properties";
 import type { AnimationEntry, AnimationsOptions } from "@shared/animation/timing";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
-import type { PlaceholderDefinition } from "@shared/placeholder";
+import type { PlaceholderMapOptions } from "@shared/placeholder";
 import type { ThemeOptions } from "@shared/theme";
 import type { TransitionOptions } from "@shared/transition";
 
@@ -49,23 +49,7 @@ export type SlideSize =
 /** Placeholder slot map — `false` hides the slot, a definition overrides its
  * position and facets, omitted shows the default. Same value shape as
  * `MasterPlaceholderOptions`. */
-export interface LayoutPlaceholderOptions {
-  title?: PlaceholderDefinition | false;
-  body?: PlaceholderDefinition | false;
-  subtitle?: PlaceholderDefinition | false;
-  date?: PlaceholderDefinition | false;
-  footer?: PlaceholderDefinition | false;
-  slideNumber?: PlaceholderDefinition | false;
-  header?: PlaceholderDefinition | false;
-  object?: PlaceholderDefinition | false;
-  chart?: PlaceholderDefinition | false;
-  table?: PlaceholderDefinition | false;
-  diagram?: PlaceholderDefinition | false;
-  media?: PlaceholderDefinition | false;
-  clipArt?: PlaceholderDefinition | false;
-  slideImage?: PlaceholderDefinition | false;
-  picture?: PlaceholderDefinition | false;
-}
+export type LayoutPlaceholderOptions = PlaceholderMapOptions;
 
 export interface LayoutDefinition {
   // Layout identity (p:sldLayout attributes)

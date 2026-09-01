@@ -109,12 +109,10 @@ interface RunOptionsBase {
 }
 
 /**
- * Options for creating a Run element.
+ * Options for creating a Run element (w:r).
  *
  * The run element specifies a region of text with a common set of properties.
  * The children property can contain various inline content elements.
- *
- * See the run descriptor for the XML this produces.
  */
 export type RunOptions = RunOptionsBase &
   RunPropertiesOptions & {

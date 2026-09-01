@@ -44,6 +44,14 @@ export type PlaceholderKey =
   | "picture";
 
 /**
+ * Placeholder slot map keyed by `p:ph/@type` (ST_PlaceholderType): `false`
+ * hides the slot, a definition overrides its position and facets, omitted
+ * shows the default. Layouts and masters share the same key set — both public
+ * maps are aliases of this type.
+ */
+export type PlaceholderMapOptions = { [K in PlaceholderKey]?: PlaceholderDefinition | false };
+
+/**
  * Maps a `p:ph/@type` token (ST_PlaceholderType, 16 tokens) to the matching
  * placeholder-map key. `ctrTitle` normalizes to `title`; every other token
  * keeps its full-word key.
@@ -71,7 +79,7 @@ export const PLACEHOLDER_TYPE_TO_KEY: Readonly<Record<string, PlaceholderKey>> =
  *  standard five with reference positions). Parse keeps every other
  *  placeholder type in the spTree children verbatim and records it on the map
  *  for inheritance only. */
-export const STANDARD_EMIT_KEYS: ReadonlySet<string> = new Set([
+export const STANDARD_EMIT_KEYS: ReadonlySet<PlaceholderKey> = new Set([
   "title",
   "body",
   "date",
@@ -225,8 +233,8 @@ export function resolvePlaceholder(
 export function extractPlaceholderDefinition(
   spEl: XmlElement,
   ctx: ReadContext,
-  phTypeToKey: Readonly<Record<string, string>>,
-): { key: string; def: PlaceholderDefinition | false } | undefined {
+  phTypeToKey: Readonly<Record<string, PlaceholderKey>>,
+): { key: PlaceholderKey; def: PlaceholderDefinition | false } | undefined {
   const nvSpPr = findChild(spEl, "p:nvSpPr");
   const nvPr = nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined;
   const ph = nvPr ? findChild(nvPr, "p:ph") : undefined;

@@ -5606,7 +5606,7 @@
     },
     "DocumentBackgroundOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a document background.\n\nSee the document-background descriptor for the XML this produces.",
+      "description": "Options for the document background (w:background).",
       "properties": {
         "color": {
           "$ref": "#/definitions/HexColorOrAuto",
@@ -15530,7 +15530,7 @@
     },
     "RunOptions": {
       "additionalProperties": false,
-      "description": "Options for creating a Run element.\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.\n\nSee the run descriptor for the XML this produces.",
+      "description": "Options for creating a Run element (w:r).\n\nThe run element specifies a region of text with a common set of properties. The children property can contain various inline content elements.",
       "properties": {
         "additionRsid": {
           "$ref": "#/definitions/LongHexNumber",

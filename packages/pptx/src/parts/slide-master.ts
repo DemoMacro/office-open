@@ -16,7 +16,7 @@ import type { TextStylesOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { AnimationsOptions } from "@shared/animation/timing";
-import type { PlaceholderDefinition } from "@shared/placeholder";
+import type { PlaceholderDefinition, PlaceholderMapOptions } from "@shared/placeholder";
 import type { TransitionOptions } from "@shared/transition";
 
 import type { PptxWriteContext } from "../context";
@@ -29,23 +29,7 @@ export interface MasterPlaceholderPosition {
   height: number | UniversalMeasure;
 }
 
-export interface MasterPlaceholderOptions {
-  title?: PlaceholderDefinition | false;
-  body?: PlaceholderDefinition | false;
-  subtitle?: PlaceholderDefinition | false;
-  date?: PlaceholderDefinition | false;
-  footer?: PlaceholderDefinition | false;
-  slideNumber?: PlaceholderDefinition | false;
-  header?: PlaceholderDefinition | false;
-  object?: PlaceholderDefinition | false;
-  chart?: PlaceholderDefinition | false;
-  table?: PlaceholderDefinition | false;
-  diagram?: PlaceholderDefinition | false;
-  media?: PlaceholderDefinition | false;
-  clipArt?: PlaceholderDefinition | false;
-  slideImage?: PlaceholderDefinition | false;
-  picture?: PlaceholderDefinition | false;
-}
+export type MasterPlaceholderOptions = PlaceholderMapOptions;
 
 export interface SlideMasterOptions {
   background?: BackgroundOptions;

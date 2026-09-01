@@ -6807,176 +6807,8 @@
       "type": "object"
     },
     "LayoutPlaceholderOptions": {
-      "additionalProperties": false,
-      "description": "Placeholder slot map — `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Same value shape as `MasterPlaceholderOptions`.",
-      "properties": {
-        "body": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "chart": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "clipArt": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "date": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "diagram": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "footer": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "header": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "media": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "object": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "picture": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "slideImage": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "slideNumber": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "subtitle": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "table": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "title": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        }
-      },
-      "type": "object"
+      "$ref": "#/definitions/PlaceholderMapOptions",
+      "description": "Placeholder slot map — `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Same value shape as `MasterPlaceholderOptions`."
     },
     "LayoutRuleOptions": {
       "additionalProperties": false,
@@ -7730,175 +7562,7 @@
       "type": "object"
     },
     "MasterPlaceholderOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "body": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "chart": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "clipArt": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "date": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "diagram": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "footer": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "header": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "media": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "object": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "picture": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "slideImage": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "slideNumber": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "subtitle": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "table": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        },
-        "title": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/PlaceholderDefinition"
-            },
-            {
-              "const": false,
-              "type": "boolean"
-            }
-          ]
-        }
-      },
-      "type": "object"
+      "$ref": "#/definitions/PlaceholderMapOptions"
     },
     "MediaAnimationType": {
       "description": "Media playback action: playAudio, playVideo, or \"play\" (media-type-agnostic).",
@@ -9323,6 +8987,178 @@
         }
       },
       "required": ["height", "width", "x", "y"],
+      "type": "object"
+    },
+    "PlaceholderMapOptions": {
+      "additionalProperties": false,
+      "description": "Placeholder slot map keyed by `p:ph/@type`: `false` hides the slot, a definition overrides its position and facets, omitted shows the default. Layouts and masters share the same key set — both public maps are aliases of this type.",
+      "properties": {
+        "body": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "chart": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "clipArt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "date": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "diagram": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "footer": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "header": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "media": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "object": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "slideImage": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "slideNumber": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "subtitle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "table": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "title": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        }
+      },
       "type": "object"
     },
     "PlaceholderOrientation": {

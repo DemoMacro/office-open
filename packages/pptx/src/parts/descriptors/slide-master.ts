@@ -178,7 +178,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
           if (child.name === "p:sp") {
             const ph = extractPlaceholderDefinition(child, ctx, PLACEHOLDER_TYPE_TO_KEY);
             if (ph) {
-              placeholders[ph.key as keyof MasterPlaceholderOptions] = ph.def;
+              placeholders[ph.key] = ph.def;
               // Standard five re-emit from the map (fresh reference
               // positions); any other placeholder type stays in the spTree
               // children verbatim — the emit helper has no branch for it.
@@ -195,8 +195,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
         // placeholder types are neither emitted fresh nor hidden by absence,
         // so they stay unset.
         for (const optKey of STANDARD_EMIT_KEYS) {
-          const k = optKey as keyof MasterPlaceholderOptions;
-          if (placeholders[k] === undefined) placeholders[k] = false;
+          if (placeholders[optKey] === undefined) placeholders[optKey] = false;
         }
         result.placeholders = placeholders;
       }

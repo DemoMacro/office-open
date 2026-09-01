@@ -169,7 +169,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
           if (parsed !== undefined) children.push(parsed);
           if (child.name === "p:sp") {
             const ph = extractPlaceholderDefinition(child, ctx, PLACEHOLDER_TYPE_TO_KEY);
-            if (ph) placeholders[ph.key as keyof LayoutPlaceholderOptions] = ph.def;
+            if (ph) placeholders[ph.key] = ph.def;
           }
         }
         if (children.length > 0) result.children = children;

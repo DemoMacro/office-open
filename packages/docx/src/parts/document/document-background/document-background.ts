@@ -24,11 +24,7 @@ export interface BackgroundImageOptions {
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
 }
 
-/**
- * Options for creating a document background.
- *
- * See the document-background descriptor for the XML this produces.
- */
+/** Options for the document background (w:background). */
 export interface DocumentBackgroundOptions {
   /** Background color, "auto" or hex format (e.g., "FF0000" for red) */
   color?: HexColorOrAuto;
