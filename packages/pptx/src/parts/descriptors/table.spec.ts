@@ -36,6 +36,37 @@ function roundTrip(opts: TableOptions) {
 }
 
 describe("tableDesc round-trip", () => {
+  it("round-trips a cell border dash token outside the legacy union", () => {
+    // lgDashDotDot is a ST_PresetLineDashVal token the old hand-written
+    // dashStyle union lacked — the identity read/write must keep it verbatim.
+    const opts: TableOptions = {
+      rows: [
+        {
+          cells: [
+            {
+              text: "Dashed",
+              borders: { left: { width: 12700, color: "FF0000", dashStyle: "lgDashDotDot" } },
+            },
+          ],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows?.[0]?.cells?.[0] as {
+      borders?: { left?: { dashStyle?: string } };
+    };
+    expect(cell.borders?.left?.dashStyle).toBe("lgDashDotDot");
+  });
+
+  it("round-trips the cell vertical text direction (a:tcPr @vert)", () => {
+    const opts: TableOptions = {
+      rows: [{ cells: [{ text: "Vert", vertical: "eastAsianVertical" }] }],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows?.[0]?.cells?.[0] as { vertical?: string };
+    expect(cell.vertical).toBe("eastAsianVertical");
+  });
+
   it("round-trips basic 2x2 table", () => {
     const opts: TableOptions = {
       rows: [

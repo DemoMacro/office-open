@@ -1039,7 +1039,7 @@ const slides: SlideOptions[] = [
           bandCol: true,
           borders: {
             top: { color: "333333", width: 12700 },
-            bottom: { color: "333333", width: 12700 },
+            bottom: { color: "333333", width: 12700, dashStyle: "lgDashDotDot" },
             left: { color: "333333", width: 12700 },
             right: { color: "333333", width: 12700 },
           },

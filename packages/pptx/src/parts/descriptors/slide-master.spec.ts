@@ -87,6 +87,62 @@ describe("slideMasterDesc round-trip", () => {
     expect(result.placeholders?.date).toBe(false);
   });
 
+  it("keeps non-standard placeholder shapes in children and records the map entry", () => {
+    // sldImg has no fresh-emit branch: the whole sp stays in children (re-emitted
+    // from there) and the definition lands on the map for inheritance only.
+    const spTreeOpen =
+      '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>' +
+      '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+    const sp =
+      '<p:sp><p:nvSpPr><p:cNvPr id="3" name="Image Placeholder"/><p:cNvSpPr/>' +
+      '<p:nvPr><p:ph type="sldImg"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="100000" y="200000"/><a:ext cx="300000" cy="400000"/></a:xfrm></p:spPr>' +
+      "<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>";
+    const xml =
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      spTreeOpen +
+      sp +
+      '</p:spTree></p:cSld><p:clrMap bg1="lt1"/></p:sldMaster>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = slideMasterDesc.parse(el, readCtx);
+
+    expect(result.children?.length).toBe(1);
+    const slideImage = result.placeholders?.slideImage;
+    expect(typeof slideImage).toBe("object");
+    expect((slideImage as { x: number }).x).toBe(100000);
+    // Non-standard keys do not participate in the standard-slot false fill.
+    expect(result.placeholders?.header).toBeUndefined();
+
+    const reEmitted = freshXml(result as SlideMasterDescriptorOptions);
+    expect(reEmitted).toContain('type="sldImg"');
+  });
+
+  it("maps the pic placeholder token to the picture key", () => {
+    const xml =
+      '<p:sldMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
+      '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>' +
+      '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/>' +
+      '<a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>' +
+      '<p:sp><p:nvSpPr><p:cNvPr id="4" name="Picture Placeholder"/><p:cNvSpPr/>' +
+      '<p:nvPr><p:ph type="pic"/></p:nvPr></p:nvSpPr>' +
+      '<p:spPr><a:xfrm><a:off x="100000" y="200000"/><a:ext cx="300000" cy="400000"/></a:xfrm></p:spPr>' +
+      "<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>" +
+      '</p:spTree></p:cSld><p:clrMap bg1="lt1"/></p:sldMaster>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = slideMasterDesc.parse(el, readCtx);
+    expect(typeof result.placeholders?.picture).toBe("object");
+    expect(result.children?.length).toBe(1);
+  });
+
   it("round-trips preserve attribute", () => {
     expect(roundTrip({ preserve: true }).preserve).toBe(true);
     expect(roundTrip({}).preserve).toBeUndefined();

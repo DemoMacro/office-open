@@ -294,6 +294,25 @@ describe("paragraphDesc round-trip", () => {
     expect(r.properties?.lineSpacingPercent).toBe(150);
   });
 
+  it("round-trips the extended alignment tokens", () => {
+    // ST_TextAlignType beyond left/center/right/justify: full-word API values
+    // map to the XSD tokens justLow/dist/thaiDist.
+    const TOKENS = [
+      ["lowJustification", "justLow"],
+      ["distribute", "dist"],
+      ["thaiDistributed", "thaiDist"],
+    ] as const;
+    for (const [value, token] of TOKENS) {
+      const xml = paragraphDesc.stringify(
+        { text: "x", properties: { alignment: value } },
+        writeCtx,
+      )!;
+      expect(xml).toContain(`algn="${token}"`);
+      const r = roundTrip({ text: "x", properties: { alignment: value } });
+      expect(r.properties?.alignment).toBe(value);
+    }
+  });
+
   it("round-trips bullet none/char/autoNum", () => {
     const none = roundTrip({ text: "a", properties: { bullet: { type: "none" } } });
     expect(none.properties?.bullet?.type).toBe("none");
@@ -429,6 +448,24 @@ describe("bodyPropertiesDesc round-trip", () => {
     expect(sp.spAutoFit).toBe(true);
     const none = roundTrip({ noAutoFit: true });
     expect(none.noAutoFit).toBe(true);
+  });
+
+  it("round-trips all seven vertical text directions", () => {
+    // bodyPr @vert — ST_TextVerticalType: full-word API values ↔ XSD tokens.
+    const TOKENS = [
+      ["horizontal", "horz"],
+      ["vertical", "vert"],
+      ["vertical270", "vert270"],
+      ["wordArtVertical", "wordArtVert"],
+      ["eastAsianVertical", "eaVert"],
+      ["mongolianVertical", "mongolianVert"],
+      ["wordArtVerticalRightToLeft", "wordArtVertRtl"],
+    ] as const;
+    for (const [value, token] of TOKENS) {
+      const xml = bodyPropertiesDesc.stringify({ vertical: value }, writeCtx)!;
+      expect(xml).toContain(`vert="${token}"`);
+      expect(roundTrip({ vertical: value }).vertical).toBe(value);
+    }
   });
 });
 

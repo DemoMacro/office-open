@@ -138,6 +138,38 @@ describe("tableDesc round-trip", () => {
     expect(result.borders!.top!.shadow).toBe(true);
   });
 
+  it("round-trips artistic ST_Border tokens verbatim", () => {
+    // Artistic borders (ST_Border's full 193-token set) survive parse and
+    // re-emit with the same @w:val — no whitelist in between.
+    const result = roundTrip({
+      borders: {
+        top: { style: "weavingBraid", color: "FF0000", size: 4 },
+        bottom: { style: "apples", color: "00FF00", size: 4 },
+      },
+      rows: [{ cells: [{ children: [] }] }],
+    });
+    expect(result.borders!.top!.style).toBe("weavingBraid");
+    expect(result.borders!.bottom!.style).toBe("apples");
+    const xml = tableDesc.stringify(
+      {
+        borders: { top: { style: "weavingBraid" } },
+        rows: [{ cells: [{ children: [] }] }],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain('w:val="weavingBraid"');
+  });
+
+  it("drops border sides without a w:val", () => {
+    const xml =
+      '<w:tbl><w:tblPr><w:tblBorders><w:top w:sz="4"/></w:tblBorders></w:tblPr>' +
+      "<w:tblGrid/><w:tr><w:tc><w:p/></w:tc></w:tr></w:tbl>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(el, readCtx);
+    expect(result.borders).toBeUndefined();
+  });
+
   it("round-trips table layout", () => {
     const result = roundTrip({
       layout: "fixed",

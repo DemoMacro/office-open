@@ -570,6 +570,60 @@ describe("drawingDesc round-trip", () => {
     expect(result.wpsShape?.geometry?.preset).toBe("roundRect");
   });
 
+  it("emits and re-reads flipH/flipV on pic:spPr/a:xfrm", () => {
+    const transformation = {
+      pixels: { x: 0, y: 0 },
+      emus: { x: 914400, y: 914400 },
+      flipHorizontal: true,
+      flipVertical: true,
+    };
+    const xml = stringify({ mediaData: { ...makeImageMediaData(), transformation } });
+    expect(xml).toContain('flipH="1"');
+    expect(xml).toContain('flipV="1"');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: { transformation?: { flipHorizontal?: boolean; flipVertical?: boolean } };
+    };
+    expect(result.picture?.transformation?.flipHorizontal).toBe(true);
+    expect(result.picture?.transformation?.flipVertical).toBe(true);
+  });
+
+  it("round-trips wps style fontReference collection and lineReference index", () => {
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: {
+          children: [],
+          style: {
+            lineReference: { index: 2 },
+            fontReference: { collection: "minor" },
+          },
+        },
+      },
+    });
+    expect(xml).toContain('<a:lnRef idx="2"/>');
+    expect(xml).toContain('<a:fontRef idx="minor"/>');
+
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: {
+        style?: {
+          lineReference?: { index?: number };
+          fontReference?: { collection?: string };
+        };
+      };
+    };
+    expect(result.wpsShape?.style?.lineReference?.index).toBe(2);
+    // fontReference @idx is ST_FontCollectionIndex, not a matrix index.
+    expect(result.wpsShape?.style?.fontReference?.collection).toBe("minor");
+  });
+
   it("round-trips wp14 percentage positioning", () => {
     const xml = stringify({
       mediaData: makeImageMediaData(),
