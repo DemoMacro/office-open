@@ -25,7 +25,7 @@ import {
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
 import type { LayoutDefinition, LayoutPlaceholderOptions } from "@shared/file";
-import { extractPlaceholderDefinition } from "@shared/placeholder";
+import { extractPlaceholderDefinition, PLACEHOLDER_TYPE_TO_KEY } from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
 import { timingDesc } from "./animation";
@@ -49,17 +49,6 @@ const NAME_TO_TYPE: Record<string, string> = {
   "Vertical Text": "verticalText",
   "Vertical Title and Text": "verticalTitleAndText",
   "Title and Text": "text",
-};
-
-/** Placeholder `@type` → LayoutPlaceholderOptions key. */
-const PH_TYPE_TO_KEY: Record<string, keyof LayoutPlaceholderOptions> = {
-  title: "title",
-  ctrTitle: "title",
-  body: "body",
-  sub: "subtitle",
-  dt: "date",
-  ftr: "footer",
-  sldNum: "slideNumber",
 };
 
 // ── Descriptor ──
@@ -179,7 +168,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
           const parsed = parseChild(child, ctx);
           if (parsed !== undefined) children.push(parsed);
           if (child.name === "p:sp") {
-            const ph = extractPlaceholderDefinition(child, ctx, PH_TYPE_TO_KEY);
+            const ph = extractPlaceholderDefinition(child, ctx, PLACEHOLDER_TYPE_TO_KEY);
             if (ph) placeholders[ph.key as keyof LayoutPlaceholderOptions] = ph.def;
           }
         }

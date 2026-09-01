@@ -379,9 +379,15 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 // ── Shape helper: p:nvSpPr ──
 
 function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: WriteContext): string {
-  // nvPr — p:ph @type is optional (XSD default "obj"), so a placeholder keyed
-  // only by idx must still emit <p:ph/> without a type attribute.
-  let nvPrContent = "<p:nvPr/>";
+  // nvPr — @isPhoto/@userDrawn are the element's own attributes, orthogonal
+  // to the p:ph child (CT_ApplicationNonVisualDrawingProps), so both emit
+  // together. p:ph @type is optional (XSD default "obj"), so a placeholder
+  // keyed only by idx must still emit <p:ph/> without a type attribute.
+  const nvPrAttrs: string[] = [];
+  if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
+  if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
+  const nvPrAttrsXml = nvPrAttrs.length > 0 ? ` ${nvPrAttrs.join(" ")}` : "";
+  let nvPrContent = nvPrAttrs.length > 0 ? `<p:nvPr${nvPrAttrsXml}/>` : "<p:nvPr/>";
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
     if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
@@ -390,12 +396,7 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    nvPrContent = `<p:nvPr><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
-  } else if (opts.isPhoto || opts.userDrawn) {
-    const nvPrAttrs: string[] = [];
-    if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
-    if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
-    nvPrContent = `<p:nvPr ${nvPrAttrs.join(" ")}/>`;
+    nvPrContent = `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
   }
 
   // cNvSpPr (with optional locking)

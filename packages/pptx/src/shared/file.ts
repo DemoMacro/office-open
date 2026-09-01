@@ -56,6 +56,15 @@ export interface LayoutPlaceholderOptions {
   date?: PlaceholderDefinition | false;
   footer?: PlaceholderDefinition | false;
   slideNumber?: PlaceholderDefinition | false;
+  header?: PlaceholderDefinition | false;
+  object?: PlaceholderDefinition | false;
+  chart?: PlaceholderDefinition | false;
+  table?: PlaceholderDefinition | false;
+  diagram?: PlaceholderDefinition | false;
+  media?: PlaceholderDefinition | false;
+  clipArt?: PlaceholderDefinition | false;
+  slideImage?: PlaceholderDefinition | false;
+  picture?: PlaceholderDefinition | false;
 }
 
 export interface LayoutDefinition {

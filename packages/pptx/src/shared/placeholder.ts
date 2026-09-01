@@ -24,20 +24,60 @@ import type { Element as XmlElement } from "@office-open/xml";
 import type { LayoutDefinition, MasterDefinition } from "./file";
 import { readShapeStyle, type ShapeStyleOptions } from "./shape/shape";
 
+/** Logical keys of the placeholder maps (LayoutPlaceholderOptions /
+ *  MasterPlaceholderOptions fields). */
+export type PlaceholderKey =
+  | "title"
+  | "body"
+  | "subtitle"
+  | "date"
+  | "footer"
+  | "slideNumber"
+  | "header"
+  | "object"
+  | "chart"
+  | "table"
+  | "diagram"
+  | "media"
+  | "clipArt"
+  | "slideImage"
+  | "picture";
+
 /**
- * Maps a `p:ph/@type` token to the matching key on
- * {@link LayoutDefinition.placeholders} / {@link MasterDefinition.placeholders}.
- * `ctrTitle` (centered title) is normalized to `title`.
+ * Maps a `p:ph/@type` token (ST_PlaceholderType, 16 tokens) to the matching
+ * placeholder-map key. `ctrTitle` normalizes to `title`; every other token
+ * keeps its full-word key.
  */
-export const PLACEHOLDER_TYPE_TO_KEY: Readonly<Record<string, string>> = {
+export const PLACEHOLDER_TYPE_TO_KEY: Readonly<Record<string, PlaceholderKey>> = {
   title: "title",
   ctrTitle: "title",
   body: "body",
-  sub: "subtitle",
+  subTitle: "subtitle",
   dt: "date",
-  ftr: "footer",
   sldNum: "slideNumber",
+  ftr: "footer",
+  hdr: "header",
+  obj: "object",
+  chart: "chart",
+  tbl: "table",
+  dgm: "diagram",
+  media: "media",
+  clipArt: "clipArt",
+  sldImg: "slideImage",
+  pic: "picture",
 };
+
+/** Placeholder slots the master fresh-emit re-generates from the map (the
+ *  standard five with reference positions). Parse keeps every other
+ *  placeholder type in the spTree children verbatim and records it on the map
+ *  for inheritance only. */
+export const STANDARD_EMIT_KEYS: ReadonlySet<string> = new Set([
+  "title",
+  "body",
+  "date",
+  "footer",
+  "slideNumber",
+]);
 
 /** Position rect (a:xfrm off/ext). `number` is EMU on round-trip. */
 export interface PlaceholderPosition {

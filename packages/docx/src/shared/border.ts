@@ -45,9 +45,11 @@ export interface BorderOptions {
   /**
    * Border pattern (ST_Border). Token jargon: "wave"/"doubleWave" wavy,
    * "inset"/"outset" pseudo-3D, "thickThin*"/"thinThickThin*" compound lines,
-   * "pctN" dotted density, "nil" none.
+   * "nil"/"none" no border. Accepts any ST_Border token — the BorderStyle
+   * const lists the common line styles; Word also defines ~165 artistic and
+   * pattern tokens (apples, weavingBraid, …) that round-trip as-is.
    */
-  style: (typeof BorderStyle)[keyof typeof BorderStyle];
+  style: (typeof BorderStyle)[keyof typeof BorderStyle] | string;
   /** Border color, "auto" or hex (eg 'FF00AA') */
   color?: HexColorOrAuto;
   /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
@@ -67,46 +69,9 @@ export interface BorderOptions {
 }
 
 /**
- * Table borders are defined with the <w:tblBorders> element. Child elements of this element specify the kinds of `border`:
- *
- * `bottom`, `end` (`right` in the previous version of the standard), `insideH`, `insideV`, `start` (`left` in the previous version of the standard), and `top`.
- *
- * Reference: http://officeopenxml.com/WPtableBorders.php
- *
- * ## XSD Schema
- * ```xml
- * <xsd:simpleType name="ST_Border">
- *     <xsd:restriction base="xsd:string">
- *          <xsd:enumeration value="single"/>
- *          <xsd:enumeration value="dashDotStroked"/>
- *          <xsd:enumeration value="dashed"/>
- *          <xsd:enumeration value="dashSmallGap"/>
- *          <xsd:enumeration value="dotDash"/>
- *          <xsd:enumeration value="dotDotDash"/>
- *          <xsd:enumeration value="dotted"/>
- *          <xsd:enumeration value="double"/>
- *          <xsd:enumeration value="doubleWave"/>
- *          <xsd:enumeration value="inset"/>
- *          <xsd:enumeration value="nil"/>
- *          <xsd:enumeration value="none"/>
- *          <xsd:enumeration value="outset"/>
- *          <xsd:enumeration value="thick"/>
- *          <xsd:enumeration value="thickThinLargeGap"/>
- *          <xsd:enumeration value="thickThinMediumGap"/>
- *          <xsd:enumeration value="thickThinSmallGap"/>
- *          <xsd:enumeration value="thinThickLargeGap"/>
- *          <xsd:enumeration value="thinThickMediumGap"/>
- *          <xsd:enumeration value="thinThickSmallGap"/>
- *          <xsd:enumeration value="thinThickThinLargeGap"/>
- *          <xsd:enumeration value="thinThickThinMediumGap"/>
- *          <xsd:enumeration value="thinThickThinSmallGap"/>
- *          <xsd:enumeration value="threeDEmboss"/>
- *          <xsd:enumeration value="threeDEngrave"/>
- *          <xsd:enumeration value="triple"/>
- *          <xsd:enumeration value="wave"/>
- *     </xsd:restriction>
- * </xsd:simpleType>
- * ```
+ * Border style tokens for the `style` field — the common line styles Word
+ * renders as line patterns. Child elements of w:tblBorders specify the sides:
+ * `top`, `bottom`, `start`/`left`, `end`/`right`, `insideH`, `insideV`.
  *
  * @publicApi
  */
@@ -169,16 +134,15 @@ export const BorderStyle = {
 
 // ── Parse helper ──
 
-/** Valid border `@w:val` values (ST_Border). */
-const BORDER_STYLES = Object.values(BorderStyle) as readonly string[];
-
 /**
  * Parse one CT_Border side element. Returns undefined when the element is
- * malformed (missing/unknown `@w:val`) so callers skip the side.
+ * malformed (missing `@w:val`) so callers skip the side. Any ST_Border token
+ * passes through — Word's artistic styles (apples, weavingBraid, …) keep the
+ * whole side instead of being dropped.
  */
 export function parseBorderSide(sideEl: Element): BorderOptions | undefined {
   const style = attr(sideEl, "w:val");
-  if (!style || !BORDER_STYLES.includes(style)) return undefined;
+  if (!style) return undefined;
   const sideOpts: BorderOptions = { style: style as BorderOptions["style"] };
   const color = attr(sideEl, "w:color");
   if (color) sideOpts.color = color;

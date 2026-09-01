@@ -305,7 +305,11 @@ function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?:
     ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
     : element(
         "a:blip",
-        { cstate: "none", "xmlns:r": R_NS, "r:embed": embedRef },
+        {
+          ...(options.compression !== undefined ? { cstate: options.compression } : {}),
+          "xmlns:r": R_NS,
+          "r:embed": embedRef,
+        },
         blipChildren.length > 0 ? blipChildren : undefined,
       );
 
@@ -382,6 +386,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
             fileName: mediaPath.split("/").pop(),
           };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
@@ -394,6 +399,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           // (attrs, srcRect, stretch) instead of degrading to noFill.
           const blip: BlipFillConfigOptions & { type: "blip" } = { type: "blip", noEmbed: true };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;

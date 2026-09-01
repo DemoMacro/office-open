@@ -30,7 +30,11 @@ import {
 } from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
 import { SP_TREE_HEADER } from "@shared/constants";
-import { extractPlaceholderDefinition } from "@shared/placeholder";
+import {
+  extractPlaceholderDefinition,
+  PLACEHOLDER_TYPE_TO_KEY,
+  STANDARD_EMIT_KEYS,
+} from "@shared/placeholder";
 
 import type { PptxWriteContext } from "../../context";
 import { buildHfAttrs, parseHeaderFooter } from "../handout-master";
@@ -65,16 +69,6 @@ const NS =
   'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
   'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
-
-/** Placeholder `@type` → MasterPlaceholderOptions key. */
-const PH_TYPE_TO_KEY: Record<string, keyof MasterPlaceholderOptions> = {
-  title: "title",
-  ctrTitle: "title",
-  body: "body",
-  dt: "date",
-  ftr: "footer",
-  sldNum: "slideNumber",
-};
 
 // ── Descriptor ──
 
@@ -182,21 +176,27 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
         for (const child of spTree.elements ?? []) {
           if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
           if (child.name === "p:sp") {
-            const ph = extractPlaceholderDefinition(child, ctx, PH_TYPE_TO_KEY);
+            const ph = extractPlaceholderDefinition(child, ctx, PLACEHOLDER_TYPE_TO_KEY);
             if (ph) {
               placeholders[ph.key as keyof MasterPlaceholderOptions] = ph.def;
-              continue;
+              // Standard five re-emit from the map (fresh reference
+              // positions); any other placeholder type stays in the spTree
+              // children verbatim — the emit helper has no branch for it.
+              if (STANDARD_EMIT_KEYS.has(ph.key)) continue;
             }
           }
           const parsed = parseChild(child, ctx);
           if (parsed !== undefined) children.push(parsed);
         }
         if (children.length > 0) result.children = children;
-        // Round-trip always declares the placeholder set explicitly — absent
-        // slots become false so a source master with no (or partial)
-        // placeholders does not fall back to the fresh-file defaults.
-        for (const optKey of new Set(Object.values(PH_TYPE_TO_KEY))) {
-          if (placeholders[optKey] === undefined) placeholders[optKey] = false;
+        // Round-trip always declares the standard slots explicitly — absent
+        // ones become false so a source master with no (or partial) standard
+        // placeholders does not fall back to the fresh-file defaults. Other
+        // placeholder types are neither emitted fresh nor hidden by absence,
+        // so they stay unset.
+        for (const optKey of STANDARD_EMIT_KEYS) {
+          const k = optKey as keyof MasterPlaceholderOptions;
+          if (placeholders[k] === undefined) placeholders[k] = false;
         }
         result.placeholders = placeholders;
       }

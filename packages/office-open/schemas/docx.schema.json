@@ -1156,6 +1156,11 @@
       },
       "type": "object"
     },
+    "BlipCompression": {
+      "description": "Blip compression states (, the a:blip",
+      "enum": ["email", "screen", "print", "hqprint", "none"],
+      "type": "string"
+    },
     "BlipEffectsOptions": {
       "additionalProperties": false,
       "description": "All blip image adjustment effects.",
@@ -1230,6 +1235,10 @@
         "blipEffects": {
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+        },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state, lifted from the a:blip child's"
         },
         "dpi": {
           "description": "DPI of the image",
@@ -1530,36 +1539,7 @@
           "type": "number"
         },
         "style": {
-          "description": "Border pattern. Token jargon: \"wave\"/\"doubleWave\" wavy, \"inset\"/\"outset\" pseudo-3D, \"thickThin*\"/\"thinThickThin*\" compound lines, \"pctN\" dotted density, \"nil\" none.",
-          "enum": [
-            "single",
-            "dashDotStroked",
-            "dashed",
-            "dashSmallGap",
-            "dotDash",
-            "dotDotDash",
-            "dotted",
-            "double",
-            "doubleWave",
-            "inset",
-            "nil",
-            "none",
-            "outset",
-            "thick",
-            "thickThinLargeGap",
-            "thickThinMediumGap",
-            "thickThinSmallGap",
-            "thinThickLargeGap",
-            "thinThickMediumGap",
-            "thinThickSmallGap",
-            "thinThickThinLargeGap",
-            "thinThickThinMediumGap",
-            "thinThickThinSmallGap",
-            "threeDEmboss",
-            "threeDEngrave",
-            "triple",
-            "wave"
-          ],
+          "description": "Border pattern. Token jargon: \"wave\"/\"doubleWave\" wavy, \"inset\"/\"outset\" pseudo-3D, \"thickThin*\"/\"thinThickThin*\" compound lines, \"nil\"/\"none\" no border. Accepts any token — the BorderStyle const lists the common line styles; Word also defines ~165 artistic and pattern tokens (apples, weavingBraid, …) that round-trip as-is.",
           "type": "string"
         },
         "themeColor": {
@@ -6796,6 +6776,10 @@
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions",
               "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+            },
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip"
             },
             "data": {
               "$ref": "#/definitions/DataType",

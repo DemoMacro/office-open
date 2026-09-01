@@ -2071,6 +2071,10 @@
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
         },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state, lifted from the a:blip child's"
+        },
         "dpi": {
           "description": "DPI of the image",
           "type": "number"
@@ -5558,6 +5562,10 @@
               "$ref": "#/definitions/BlipEffectsOptions",
               "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
             },
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip"
+            },
             "data": {
               "$ref": "#/definitions/DataType",
               "description": "Image data: raw bytes, ArrayBuffer, or a base64 data URL string."
@@ -6813,6 +6821,28 @@
             }
           ]
         },
+        "chart": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "clipArt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
         "date": {
           "anyOf": [
             {
@@ -6824,7 +6854,73 @@
             }
           ]
         },
+        "diagram": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
         "footer": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "header": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "media": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "object": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "slideImage": {
           "anyOf": [
             {
               "$ref": "#/definitions/PlaceholderDefinition"
@@ -6847,6 +6943,17 @@
           ]
         },
         "subtitle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "table": {
           "anyOf": [
             {
               "$ref": "#/definitions/PlaceholderDefinition"
@@ -7636,7 +7743,40 @@
             }
           ]
         },
+        "chart": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "clipArt": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
         "date": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "diagram": {
           "anyOf": [
             {
               "$ref": "#/definitions/PlaceholderDefinition"
@@ -7658,7 +7798,84 @@
             }
           ]
         },
+        "header": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "media": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "object": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "picture": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "slideImage": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
         "slideNumber": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "subtitle": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/PlaceholderDefinition"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ]
+        },
+        "table": {
           "anyOf": [
             {
               "$ref": "#/definitions/PlaceholderDefinition"

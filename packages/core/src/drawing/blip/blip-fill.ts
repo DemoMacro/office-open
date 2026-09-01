@@ -11,7 +11,7 @@
 import { element } from "@office-open/xml";
 
 import { createBlip } from "./blip";
-import type { BlipOptions } from "./blip";
+import type { BlipCompression, BlipOptions } from "./blip";
 import type { BlipEffectsOptions } from "./blip-effects";
 import { createSourceRectangle } from "./source-rectangle";
 import type { SourceRectangleOptions } from "./source-rectangle";
@@ -26,6 +26,8 @@ export interface BlipFillOptions {
   dpi?: number;
   /** Whether the fill rotates with the shape */
   rotWithShape?: boolean;
+  /** Compression state, lifted from the a:blip child's @cstate. */
+  compression?: BlipCompression;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */
   blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */

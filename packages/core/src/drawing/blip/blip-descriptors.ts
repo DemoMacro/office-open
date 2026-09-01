@@ -439,7 +439,11 @@ export const blipFillDesc: CustomDescriptor<
 
     // Blip child (uses referenceId from parent)
     if (opts.referenceId) {
-      const blipOpts = { referenceId: opts.referenceId, blipEffects: opts.blipEffects };
+      const blipOpts = {
+        referenceId: opts.referenceId,
+        compression: opts.compression,
+        blipEffects: opts.blipEffects,
+      };
       const blipXml = stringify(blipDesc, blipOpts, ctx);
       if (blipXml) parts.push(blipXml);
     }
@@ -478,6 +482,7 @@ export const blipFillDesc: CustomDescriptor<
     if (blip) {
       const blipResult = parse(blipDesc, blip, ctx);
       if (blipResult.referenceId) result.referenceId = blipResult.referenceId;
+      if (blipResult.compression !== undefined) result.compression = blipResult.compression;
       if (blipResult.blipEffects) result.blipEffects = blipResult.blipEffects;
     }
 

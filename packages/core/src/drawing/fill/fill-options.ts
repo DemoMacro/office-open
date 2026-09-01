@@ -2,6 +2,7 @@ import { toUint8Array } from "../../util/data-type";
 import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
 import type { HexColor } from "../../util/values";
+import type { BlipCompression } from "../blip/blip";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
 import type { SourceRectangleOptions } from "../blip/source-rectangle";
 import type { TileOptions } from "../blip/tile";
@@ -41,6 +42,8 @@ export interface BlipFillConfigOptions {
   fileName?: string;
   /** DPI of the image */
   dpi?: number;
+  /** Compression state (a:blip @cstate); absent = attribute omitted (schema default "none"). */
+  compression?: BlipCompression;
   /** Whether the fill rotates with the shape */
   rotWithShape?: boolean;
   /** Image adjustment effects (brightness, contrast, grayscale, etc.) */

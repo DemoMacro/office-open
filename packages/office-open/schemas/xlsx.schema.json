@@ -795,6 +795,11 @@
       },
       "type": "object"
     },
+    "BlipCompression": {
+      "description": "Blip compression states (, the a:blip",
+      "enum": ["email", "screen", "print", "hqprint", "none"],
+      "type": "string"
+    },
     "BlipEffectsOptions": {
       "additionalProperties": false,
       "description": "All blip image adjustment effects.",
@@ -869,6 +874,10 @@
         "blipEffects": {
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+        },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state, lifted from the a:blip child's"
         },
         "dpi": {
           "description": "DPI of the image",
@@ -5963,6 +5972,10 @@
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions",
               "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+            },
+            "compression": {
+              "$ref": "#/definitions/BlipCompression",
+              "description": "Compression state (a:blip"
             },
             "data": {
               "$ref": "#/definitions/DataType",

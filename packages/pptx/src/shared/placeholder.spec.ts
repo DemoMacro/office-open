@@ -8,10 +8,22 @@ describe("PLACEHOLDER_TYPE_TO_KEY", () => {
     expect(PLACEHOLDER_TYPE_TO_KEY.title).toBe("title");
     expect(PLACEHOLDER_TYPE_TO_KEY.ctrTitle).toBe("title");
     expect(PLACEHOLDER_TYPE_TO_KEY.body).toBe("body");
-    expect(PLACEHOLDER_TYPE_TO_KEY.sub).toBe("subtitle");
+    expect(PLACEHOLDER_TYPE_TO_KEY.subTitle).toBe("subtitle");
     expect(PLACEHOLDER_TYPE_TO_KEY.dt).toBe("date");
     expect(PLACEHOLDER_TYPE_TO_KEY.ftr).toBe("footer");
     expect(PLACEHOLDER_TYPE_TO_KEY.sldNum).toBe("slideNumber");
+  });
+
+  it("covers every remaining ST_PlaceholderType token", () => {
+    expect(PLACEHOLDER_TYPE_TO_KEY.hdr).toBe("header");
+    expect(PLACEHOLDER_TYPE_TO_KEY.obj).toBe("object");
+    expect(PLACEHOLDER_TYPE_TO_KEY.chart).toBe("chart");
+    expect(PLACEHOLDER_TYPE_TO_KEY.tbl).toBe("table");
+    expect(PLACEHOLDER_TYPE_TO_KEY.dgm).toBe("diagram");
+    expect(PLACEHOLDER_TYPE_TO_KEY.media).toBe("media");
+    expect(PLACEHOLDER_TYPE_TO_KEY.clipArt).toBe("clipArt");
+    expect(PLACEHOLDER_TYPE_TO_KEY.sldImg).toBe("slideImage");
+    expect(PLACEHOLDER_TYPE_TO_KEY.pic).toBe("picture");
   });
 });
 
