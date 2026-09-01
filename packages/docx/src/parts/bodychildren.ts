@@ -48,7 +48,7 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
         ? toUint8Array(wrapHtmlDocument(opts.data))
         : rawData;
 
-    ctx.fileData.document.relationships.addRelationship(relId, ALTCHUNK_REL_TYPE, partPath);
+    ctx.fileData.document.relationships.addRelationship(`rId${relId}`, ALTCHUNK_REL_TYPE, partPath);
     ctx.fileData.altChunks.addAltChunk(relId, {
       key: relId,
       data,
@@ -118,7 +118,7 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
     const partPath = `subdocs/subdoc${relId}.docx`;
     const data = toUint8Array(opts.data);
 
-    ctx.fileData.document.relationships.addRelationship(relId, SUBDOC_REL_TYPE, partPath);
+    ctx.fileData.document.relationships.addRelationship(`rId${relId}`, SUBDOC_REL_TYPE, partPath);
     ctx.fileData.subDocs.addSubDoc(relId, {
       data,
       path: partPath,

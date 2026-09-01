@@ -680,8 +680,8 @@ function compileWorksheetPart(
   const bgImg = wsOpts.backgroundImage;
 
   // Worksheet-level relationships
+  const wsPath = `xl/worksheets/sheet${i + 1}.xml`;
   let wsRels: Relationships | undefined;
-  let nextRid = 0;
 
   if (
     hasMedia ||
@@ -694,14 +694,17 @@ function compileWorksheetPart(
     bgImg
   ) {
     wsRels = new Relationships();
+    // Source ids first: every allocation below goes through add(), whose
+    // watermark the reserve lifts, so a rebuilt rels table can't hand a
+    // source id to a different part type — resolvePassthroughRid keeps its
+    // source ids, and the printed-page/pivotSelection references stay valid.
+    wsRels.reserveSourceRids(wsPath, passthroughRelationships ?? []);
   }
 
   if (hasExternalHyperlinks) {
     for (const hl of hlOpts) {
       if (hl.url === undefined) continue;
-      const rid = ++nextRid;
-      wsRels!.addRelationship(
-        rid,
+      wsRels!.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
         hl.url,
         "External",
@@ -895,18 +898,14 @@ function compileWorksheetPart(
     };
 
     // Insert drawing reference at its CT_Worksheet sequence position.
-    const drawingRid = ++nextRid;
+    const drawingRid = wsRels!.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
+      `../drawings/drawing${drawingIdx}.xml`,
+    );
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--DRAWING-->",
       `<drawing r:id="rId${drawingRid}"/>`,
-    );
-
-    // Add drawing relationship to worksheet rels
-    wsRels!.addRelationship(
-      drawingRid,
-      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing",
-      `../drawings/drawing${drawingIdx}.xml`,
     );
   }
 
@@ -929,16 +928,12 @@ function compileWorksheetPart(
     };
 
     // Worksheet rels: comments → comments XML, legacyDrawing → VML file
-    const commentsRid = ++nextRid;
-    wsRels!.addRelationship(
-      commentsRid,
+    wsRels!.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
       `../comments${commentsIdx}.xml`,
     );
 
-    const vmlRid = ++nextRid;
-    wsRels!.addRelationship(
-      vmlRid,
+    const vmlRid = wsRels!.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing",
       `../drawings/vmlDrawing${commentsIdx}.vml`,
     );
@@ -963,8 +958,7 @@ function compileWorksheetPart(
       height: 0,
     }));
     state.globalMediaIdx++;
-    const bgRid = ++nextRid;
-    wsRels!.addRelationship(bgRid, IMAGE_REL, `../media/${entry.fileName}`);
+    const bgRid = wsRels!.add(IMAGE_REL, `../media/${entry.fileName}`);
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--BACKGROUND_PICTURE-->",
@@ -979,7 +973,6 @@ function compileWorksheetPart(
   // same sheet carries comments/tables/…, re-register the passthrough
   // relationship — keeping the source id when it is free — so the reference
   // stays resolvable instead of dangling.
-  const wsPath = `xl/worksheets/sheet${i + 1}.xml`;
   const resolvePassthroughRid = (typeFragment: string, originalRid: string): string => {
     if (!wsRels) return originalRid;
     const rel = (passthroughRelationships ?? []).find(
@@ -990,8 +983,7 @@ function compileWorksheetPart(
     const existing = wsRels.idOf(rel.relationshipType, rel.target);
     if (existing) return existing;
     if (wsRels.hasId(originalRid)) {
-      const n = ++nextRid;
-      wsRels.addRelationship(n, rel.relationshipType as RelationshipType, rel.target);
+      const n = wsRels.add(rel.relationshipType as RelationshipType, rel.target);
       return `rId${n}`;
     }
     wsRels.addRelationship(originalRid, rel.relationshipType as RelationshipType, rel.target);
@@ -1107,9 +1099,7 @@ function compileWorksheetPart(
       };
 
       // Worksheet rels → pivotTable
-      const ptRid = ++nextRid;
-      wsRels!.addRelationship(
-        ptRid,
+      wsRels!.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/pivotTable",
         `../pivotTables/pivotTable${pivotIdx}.xml`,
       );
@@ -1135,9 +1125,7 @@ function compileWorksheetPart(
       };
 
       // Worksheet rels → table
-      const tblRid = ++nextRid;
-      wsRels!.addRelationship(
-        tblRid,
+      const tblRid = wsRels!.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
         `../tables/table${tableIdx}.xml`,
       );
@@ -1155,9 +1143,7 @@ function compileWorksheetPart(
         data: XML_DECL + queryTableDesc.stringify(qt, ctx),
         path: `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`,
       };
-      const qtRid = ++nextRid;
-      wsRels!.addRelationship(
-        qtRid,
+      wsRels!.add(
         "http://schemas.openxmlformats.org/officeDocument/2006/relationships/queryTable",
         `../queryTables/queryTable${state.globalQueryTableIdx}.xml`,
       );
@@ -1171,9 +1157,7 @@ function compileWorksheetPart(
       data: XML_DECL + singleXmlCellsDesc.stringify({ cells: singleXmlCellOpts }, ctx),
       path: `xl/tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
     };
-    const sxcRid = ++nextRid;
-    wsRels!.addRelationship(
-      sxcRid,
+    wsRels!.add(
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
       `../tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
     );
@@ -1246,11 +1230,12 @@ function compileWorksheetPart(
         );
       }
     }
+    // Model-unabsorbed worksheet rels — claim semantics keep the source id
+    // (reserved up front, so it is free unless the model genuinely took it)
+    // instead of renumbering onto an id the sheet XML still references.
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== wsPath) continue;
-      if (wsRels.hasRelationship(rel.relationshipType, rel.target)) continue;
-      const n = ++nextRid;
-      wsRels.addRelationship(n, rel.relationshipType as RelationshipType, rel.target);
+      wsRels.claimSourceRel(rel);
     }
   }
 

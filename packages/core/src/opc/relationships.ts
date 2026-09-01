@@ -119,7 +119,9 @@ export class Relationships {
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): void {
-    const rid = `rId${id}`;
+    // A string id is the full "rIdN" form (a passthrough source id) — prefix
+    // only numbers, so "rId2" can't become "rIdrId2".
+    const rid = typeof id === "number" ? `rId${id}` : id;
     this.trackId(rid);
     this.entries.push({ id: rid, type, target, targetMode });
   }
@@ -155,6 +157,33 @@ export class Relationships {
    * externally-determined ids (passthrough source ids) leave gaps below it. */
   public get nextRelationshipId(): number {
     return this.maxId + 1;
+  }
+
+  /** Pre-claim a source id without registering an entry. Reserving every
+   * passthrough source id up front keeps auto-allocated ids (add(), next)
+   * strictly above the source id space, so a part the source didn't carry
+   * (a fresh comment, say) can never take an id a later source re-use will
+   * need — re-emitting the source rel at a taken id corrupts the package.
+   * Accepts the passthrough `rId` form ("rId7") or a bare number. */
+  public reserveId(id: number | string): void {
+    const n = typeof id === "number" ? id : /^rId(\d+)$/.exec(id)?.[1];
+    if (n !== undefined) this.trackId(`rId${n}`);
+  }
+
+  /** Reserve every passthrough id held by one source part — the uniform entry
+   * point compilers call before filling a part's rels from the model. Without
+   * it the model's batch allocations (offset snapshots, add()) can land on a
+   * source id, forcing the later source re-emission to collide or renumber
+   * (renumbering dangles the verbatim references that motivated keeping the
+   * source id). Reserving is invisible to hasId/hasRelationship, so source
+   * re-emission and rename-to-source-id still work. */
+  public reserveSourceRids(
+    source: string,
+    passthrough: readonly { source: string; rId: string }[],
+  ): void {
+    for (const rel of passthrough) {
+      if (rel.source === source) this.reserveId(rel.rId);
+    }
   }
 
   /** Rename the first entry matching `type` to `newId` — used to promote a

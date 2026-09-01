@@ -386,31 +386,40 @@ function buildMasterMap(
       globalLayoutIndex++;
     }
 
-    const masterRelsEntries: RelEntry[] = [];
+    // The master's rels go through the Relationships class like every other
+    // part: model registrations and the passthrough claim below share one id
+    // space, so a hand-written max-id fallback can't collide with a batch
+    // offset. Source ids are reserved first — verbatim master islands
+    // (unmodeled pictures, OLE shapes) reference them, and a model batch
+    // landing on one would force the claim to renumber a dangle.
+    const masterRels = new Relationships();
+    masterRels.reserveSourceRids(
+      `ppt/slideMasters/slideMaster${mi + 1}.xml`,
+      passthroughRelationships ?? [],
+    );
     for (const [li, layout] of layouts.entries()) {
-      masterRelsEntries.push({
-        id: li + 1,
-        type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
-        target: `../slideLayouts/slideLayout${layout.index + 1}.xml`,
-      });
+      masterRels.addRelationship(
+        li + 1,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+        `../slideLayouts/slideLayout${layout.index + 1}.xml`,
+      );
     }
-    masterRelsEntries.push({
-      id: layouts.length + 1,
-      type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
-      target: `../theme/theme${themeIndex + 1}.xml`,
-    });
+    masterRels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
+      `../theme/theme${themeIndex + 1}.xml`,
+    );
     // Media referenced by master shapes gets the same image-relationship
     // wiring slides/layouts use (master pictures otherwise lose their rel).
     // Registered before the passthrough loop so its kind ownership test sees
     // the model registration and skips the source's stale image rels.
     const masterMediaData = getReferencedMedia(master, ctx.mediaCollection.array);
-    const masterImageOffset = masterRelsEntries.length + 1;
+    const masterImageOffset = masterRels.nextRelationshipId;
     for (const [idx, mediaItem] of masterMediaData.entries()) {
-      masterRelsEntries.push({
-        id: masterImageOffset + idx,
-        type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-        target: `../media/${mediaItem.fileName}`,
-      });
+      masterRels.addRelationship(
+        masterImageOffset + idx,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        `../media/${mediaItem.fileName}`,
+      );
     }
     let masterXml = replaceImagePlaceholders(master, masterMediaData, masterImageOffset);
     // Linked image sources on master shapes get the same External wiring.
@@ -418,49 +427,36 @@ function buildMasterMap(
     if (masterImgLinkKeys.length > 0) {
       const masterImgLinkSet = new Set(masterImgLinkKeys);
       const masterImgLinks = ctx.imageLinks.filter((l) => masterImgLinkSet.has(l.key));
-      const imgLinkOffset = masterRelsEntries.length + 1;
+      const imgLinkOffset = masterRels.nextRelationshipId;
       masterXml = replaceImageLinkPlaceholders(masterXml, masterImgLinks, imgLinkOffset);
       for (const [ili, imgLink] of masterImgLinks.entries()) {
-        masterRelsEntries.push({
-          id: imgLinkOffset + ili,
-          type: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
-          target: imgLink.url,
-          mode: "External",
-        });
+        masterRels.addRelationship(
+          imgLinkOffset + ili,
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+          imgLink.url,
+          "External",
+        );
       }
     }
     // Hyperlinks on master shapes/text — same placeholder wiring slides get.
     masterXml = wirePartHyperlinks(
       masterXml,
       ctx.hyperlinks,
-      masterRelsEntries.length + 1,
-      (id, type, target, mode) => masterRelsEntries.push({ id, type, target, mode }),
+      masterRels.nextRelationshipId,
+      (id, type, target, mode) => masterRels.addRelationship(id, type, target, mode),
       "../slides/",
     );
     // Master-level passthrough relationships (round-trip) — re-emitted as
-    // written unless the model already registered the same kind (ownership
-    // test: targets may be renamed and ISO-strict types differ in URI only).
-    // Source ids stay when free: verbatim master islands (unmodeled pictures,
-    // OLE shapes) reference the source rIds, and renumbering dangles them.
+    // written unless the model already registered the same kind+target
+    // (ownership test: targets may be renamed and ISO-strict types differ in
+    // URI only). Media-targeted rels whose kind the model already owns mean
+    // the source rel was absorbed under a renamed target — skip on kind alone
+    // or the stale target would re-emit dangling (same rule as slides).
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slideMasters/slideMaster${mi + 1}.xml`) continue;
-      const kind = rel.relationshipType.split("/").pop();
-      const kindOwned = masterRelsEntries.some((e) => e.type.split("/").pop() === kind);
-      const exists = masterRelsEntries.some(
-        (e) => e.type.split("/").pop() === kind && e.target === rel.target,
-      );
-      if (kindOwned || exists) continue;
-      const numeric = /^rId(\d+)$/.exec(rel.rId);
-      const sourceId = numeric ? Number(numeric[1]) : undefined;
-      const id =
-        sourceId !== undefined && !masterRelsEntries.some((e) => e.id === sourceId)
-          ? sourceId
-          : Math.max(0, ...masterRelsEntries.map((e) => Number(e.id))) + 1;
-      masterRelsEntries.push({
-        id,
-        type: rel.relationshipType as RelationshipType,
-        target: rel.target,
-      });
+      const kind = rel.relationshipType.split("/").pop()!;
+      if (MEDIA_REL_KINDS.has(kind) && masterRels.hasRelationshipKind(kind)) continue;
+      masterRels.claimSourceRel(rel);
     }
 
     masters.push({
@@ -470,7 +466,7 @@ function buildMasterMap(
       theme,
       themeIndex,
       layouts,
-      masterRels: buildRels(masterRelsEntries),
+      masterRels,
       layoutRels,
     });
   }
@@ -1296,6 +1292,14 @@ export function compilePresentation(
     const slideMediaData = getReferencedMedia(slideXml, media.array);
     const currentSlideRels = slideRels[i];
     if (!currentSlideRels) continue; // slideRels is built one-per-slide in lockstep with slides
+    // Reserve the slide's passthrough source ids first — the media/chart/…
+    // batches below snapshot nextRelationshipId, and a batch landing on a
+    // source id would force the claim loop at the end to renumber a verbatim
+    // reference into a dangle (or, for media kinds, silently rebind it).
+    currentSlideRels.reserveSourceRids(
+      `ppt/slides/slide${i + 1}.xml`,
+      options.passthroughRelationships ?? [],
+    );
     // Promote the slide layout rel to its source id up front — the model's
     // layout registration is rId1 by construction and the source id is free
     // below it, so the rename never collides.
@@ -1622,7 +1626,7 @@ export function compilePresentation(
   if (htmlPublishInfo) {
     const presPropsRels = new Relationships();
     presPropsRels.addRelationship(
-      htmlPublishInfo.rId.replace("rId", ""),
+      htmlPublishInfo.rId,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
       htmlPublishInfo.target ?? "presentation.htm",
       "External",

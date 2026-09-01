@@ -275,6 +275,13 @@ export class DocxWriteContext implements WriteContext {
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
     this.document = { relationships: new Relationships(), partName: "word/document.xml" };
+    // Reserve every passthrough source id so parts the source didn't carry
+    // (a fresh comment, header, …) allocate above the source id space instead
+    // of taking an id a later source re-use (fontTable, theme, …) needs.
+    this.document.relationships.reserveSourceRids(
+      "word/document.xml",
+      options.passthroughRelationships ?? [],
+    );
     // Settings.xml content has a single entry point: `settings`. The
     // background fallback turns the display flag on when a background image
     // needs showing; an explicit settings value wins via the spread.

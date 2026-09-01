@@ -18,7 +18,7 @@
  */
 
 import { TargetModeType } from "@office-open/core";
-import { convertToEmu, uniqueNumericIdCreator, uniqueId } from "@office-open/core";
+import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type {
   BlipEffectsOptions,
@@ -203,24 +203,10 @@ function registerHyperlinks(
   if (!hyperlink) return {};
   const result: HyperlinkIds = {};
   if (hyperlink.click) {
-    const linkId = uniqueId();
-    ctx.viewWrapper.relationships.addRelationship(
-      linkId,
-      HYPERLINK_REL,
-      hyperlink.click,
-      TargetModeType.EXTERNAL,
-    );
-    result.clickId = `rId${linkId}`;
+    result.clickId = `rId${ctx.viewWrapper.relationships.add(HYPERLINK_REL, hyperlink.click, TargetModeType.EXTERNAL)}`;
   }
   if (hyperlink.hover) {
-    const linkId = uniqueId();
-    ctx.viewWrapper.relationships.addRelationship(
-      linkId,
-      HYPERLINK_REL,
-      hyperlink.hover,
-      TargetModeType.EXTERNAL,
-    );
-    result.hoverId = `rId${linkId}`;
+    result.hoverId = `rId${ctx.viewWrapper.relationships.add(HYPERLINK_REL, hyperlink.hover, TargetModeType.EXTERNAL)}`;
   }
   return result;
 }
