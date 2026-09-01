@@ -372,6 +372,14 @@ function buildMasterMap(
         });
       }
       const layoutRel = buildRels(layoutRelEntries);
+      // Reserve the layout's passthrough source ids — the media/hyperlink
+      // batches below snapshot nextRelationshipId, and a batch landing on a
+      // source id would force the claim loop to renumber the source rel
+      // instead of keeping it.
+      layoutRel.reserveSourceRids(
+        `ppt/slideLayouts/slideLayout${globalLayoutIndex + 1}.xml`,
+        passthroughRelationships ?? [],
+      );
       // Layout-level passthrough relationships (round-trip) — re-emitted as
       // written unless the model already registered the same kind (ownership
       // test: targets may be renamed and ISO-strict types differ in URI only).
@@ -878,6 +886,12 @@ export function compilePresentation(
   // empty part (undefined = fresh document, omit the part).
   const hasCustomProperties = options.customProperties !== undefined;
   const presRels = initPresRels(masters, slides.length);
+  // Reserve the presentation's passthrough source ids — after the structured
+  // slide/master slots above (their r:ids are written verbatim into
+  // sldMasterIdLst/sldIdLst and take precedence), but before the claim loop,
+  // so anything allocated on the way there lands above the source id space
+  // instead of taking an id a claim wants to keep.
+  presRels.reserveSourceRids("ppt/presentation.xml", options.passthroughRelationships ?? []);
   // Group slides into p14:sections by name (first-occurrence order); slides
   // without a section name are left ungrouped (absent from p14:sectionLst).
   const sectionOrder: string[] = [];

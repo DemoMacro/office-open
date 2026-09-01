@@ -635,9 +635,6 @@ function compileWorksheetPart(
   const hlOpts = wsOpts.hyperlinks ?? [];
   const sheetName = wsOpts.name ?? `Sheet${i + 1}`;
 
-  // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
-  let sheetXml = buildWorksheetXml(wsOpts, wsContext);
-
   // Collect formula cells for calcChain. calcChain's i attribute is the
   // workbook sheetId (CT_Sheet @sheetId), not the sheet's position — the
   // fallback matches the all-generated case where both coincide.
@@ -700,6 +697,94 @@ function compileWorksheetPart(
     // source ids, and the printed-page/pivotSelection references stay valid.
     wsRels.reserveSourceRids(wsPath, passthroughRelationships ?? []);
   }
+
+  // Round-trip drawing/legacyDrawing references. The referenced part passes
+  // through verbatim when its anchors do not map onto options (e.g. OLE
+  // object shape representations). With untouched (passthrough) worksheet
+  // rels the original id stays valid; when the rels were rebuilt because the
+  // same sheet carries comments/tables/…, re-register the passthrough
+  // relationship — keeping the source id when it is free — so the reference
+  // stays resolvable instead of dangling.
+  const resolvePassthroughRid = (typeFragment: string, originalRid: string): string => {
+    if (!wsRels) return originalRid;
+    const rel = (passthroughRelationships ?? []).find(
+      (r) =>
+        r.source === wsPath && r.rId === originalRid && r.relationshipType.endsWith(typeFragment),
+    );
+    if (!rel) return originalRid;
+    const existing = wsRels.idOf(rel.relationshipType, rel.target);
+    if (existing) return existing;
+    if (wsRels.hasId(originalRid)) {
+      const n = wsRels.add(rel.relationshipType as RelationshipType, rel.target);
+      return `rId${n}`;
+    }
+    wsRels.addRelationship(originalRid, rel.relationshipType as RelationshipType, rel.target);
+    return originalRid;
+  };
+  // An OLE embedding's relationship is either the classic oleObject type or
+  // the native-package type; the r:id is the same either way.
+  const resolveEmbeddingRid = (originalRid: string): string => {
+    const rid = resolvePassthroughRid("/oleObject", originalRid);
+    return rid === originalRid ? resolvePassthroughRid("/package", originalRid) : rid;
+  };
+
+  // Every source r:id the sheet XML emits verbatim (OLE objects, controls,
+  // printer settings, header/footer VML, custom parts) resolves here — before
+  // stringify, so the emitted id is final and no post-stringify patching is
+  // needed. The shallow copies keep the caller's options tree untouched.
+  let xmlOpts = wsOpts;
+  if (wsRels && (passthroughRelationships?.length ?? 0) > 0) {
+    const oleObjects = wsOpts.oleObjects?.map((ole) => ({
+      ...ole,
+      rId: ole.rId ? resolveEmbeddingRid(ole.rId) : ole.rId,
+      properties:
+        ole.properties?.iconRid !== undefined
+          ? {
+              ...ole.properties,
+              iconRid: resolvePassthroughRid("/image", ole.properties.iconRid),
+            }
+          : ole.properties,
+    }));
+    const controls = wsOpts.controls?.map((c) => ({
+      ...c,
+      rId: resolvePassthroughRid("/controls", c.rId),
+      iconRid: c.iconRid !== undefined ? resolvePassthroughRid("/image", c.iconRid) : c.iconRid,
+    }));
+    const pageSetup = wsOpts.pageSetup?.printerSettingsRId
+      ? {
+          ...wsOpts.pageSetup,
+          printerSettingsRId: resolvePassthroughRid(
+            "/printerSettings",
+            wsOpts.pageSetup.printerSettingsRId,
+          ),
+        }
+      : wsOpts.pageSetup;
+    const pivotSelection = wsOpts.pivotSelection?.rId
+      ? {
+          ...wsOpts.pivotSelection,
+          rId: resolvePassthroughRid("/pivotTable", wsOpts.pivotSelection.rId),
+        }
+      : wsOpts.pivotSelection;
+    const legacyDrawingHF = wsOpts.legacyDrawingHF
+      ? resolvePassthroughRid("/vmlDrawing", wsOpts.legacyDrawingHF)
+      : wsOpts.legacyDrawingHF;
+    const customProperties = wsOpts.customProperties?.map((cp) => ({
+      ...cp,
+      rId: resolvePassthroughRid("/customXml", cp.rId),
+    }));
+    xmlOpts = {
+      ...wsOpts,
+      ...(oleObjects ? { oleObjects } : {}),
+      ...(controls ? { controls } : {}),
+      ...(pageSetup !== wsOpts.pageSetup ? { pageSetup } : {}),
+      ...(pivotSelection !== wsOpts.pivotSelection ? { pivotSelection } : {}),
+      ...(legacyDrawingHF !== wsOpts.legacyDrawingHF ? { legacyDrawingHF } : {}),
+      ...(customProperties ? { customProperties } : {}),
+    };
+  }
+
+  // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
+  let sheetXml = buildWorksheetXml(xmlOpts, wsContext);
 
   if (hasExternalHyperlinks) {
     for (const hl of hlOpts) {
@@ -966,29 +1051,6 @@ function compileWorksheetPart(
     );
   }
 
-  // Round-trip drawing/legacyDrawing references. The referenced part passes
-  // through verbatim when its anchors do not map onto options (e.g. OLE
-  // object shape representations). With untouched (passthrough) worksheet
-  // rels the original id stays valid; when the rels were rebuilt because the
-  // same sheet carries comments/tables/…, re-register the passthrough
-  // relationship — keeping the source id when it is free — so the reference
-  // stays resolvable instead of dangling.
-  const resolvePassthroughRid = (typeFragment: string, originalRid: string): string => {
-    if (!wsRels) return originalRid;
-    const rel = (passthroughRelationships ?? []).find(
-      (r) =>
-        r.source === wsPath && r.rId === originalRid && r.relationshipType.endsWith(typeFragment),
-    );
-    if (!rel) return originalRid;
-    const existing = wsRels.idOf(rel.relationshipType, rel.target);
-    if (existing) return existing;
-    if (wsRels.hasId(originalRid)) {
-      const n = wsRels.add(rel.relationshipType as RelationshipType, rel.target);
-      return `rId${n}`;
-    }
-    wsRels.addRelationship(originalRid, rel.relationshipType as RelationshipType, rel.target);
-    return originalRid;
-  };
   if (wsOpts.drawingRid) {
     const rid = escapeXml(resolvePassthroughRid("/drawing", wsOpts.drawingRid));
     sheetXml = editSheetTailMarker(sheetXml, "<!--DRAWING-->", `<drawing r:id="${rid}"/>`);
@@ -1202,34 +1264,6 @@ function compileWorksheetPart(
   // r:id. Targets are passthrough paths that never move, so kind+target
   // identifies an instance the model already registered (drawing above).
   if (wsRels) {
-    // pageSetup r:id → printerSettings: the rebuilt rels renumber every id,
-    // so remap the source id onto the re-emitted relationship (registered by
-    // resolvePassthroughRid; the kind+target loop below then skips it).
-    if (wsOpts.pageSetup?.printerSettingsRId) {
-      const src = wsOpts.pageSetup.printerSettingsRId;
-      const rid = resolvePassthroughRid("/printerSettings", src);
-      if (rid !== src) {
-        sheetXml = sheetXml.replace(
-          new RegExp(`(<pageSetup[^>]*r:id=")${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(")`),
-          `$1${rid}$2`,
-        );
-      }
-    }
-    // pivotSelection r:id → pivotTable: same renumbering concern — the
-    // selection references a pivotTable by the source id, which a rebuilt
-    // rels table may have handed to a different part type.
-    if (wsOpts.pivotSelection?.rId) {
-      const src = wsOpts.pivotSelection.rId;
-      const rid = resolvePassthroughRid("/pivotTable", src);
-      if (rid !== src) {
-        sheetXml = sheetXml.replace(
-          new RegExp(
-            `(<pivotSelection[^>]*r:id=")${src.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(")`,
-          ),
-          `$1${rid}$2`,
-        );
-      }
-    }
     // Model-unabsorbed worksheet rels — claim semantics keep the source id
     // (reserved up front, so it is free unless the model genuinely took it)
     // instead of renumbering onto an id the sheet XML still references.
