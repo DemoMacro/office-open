@@ -16,8 +16,22 @@
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
 - 🎨 **Rich Content** — Paragraphs, tables, images, charts, SmartArt, math equations, effects, animations, and more
 - 🔀 **Cross-Format Copy** — Convert pictures, shapes, tables, and text between formats; each format keeps its native types, conversions reuse shared `core` domains — no unified model layer
-- ⚡ **High Performance** — Pure string concatenation for XML generation, no intermediate AST, native zlib compression
+- ⚡ **High Performance** — Pure string concatenation for XML generation, no intermediate AST, native zlib compression — see the [benchmarks](#performance)
 - 🌐 **Cross-Platform** — Node.js, browsers, Deno, Bun. Export to Buffer, Blob, Base64, stream, or string
+
+## Performance
+
+Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11, Node 24 — the same scenarios run up to ~2× faster again on Bun 1.4). Compression matches MS Office defaults; full methodology, compression modes, and complete tables live in each package's README:
+
+| Package                                                  | Scenario                        | @office-open | Competitor             | Faster   |
+| -------------------------------------------------------- | ------------------------------- | ------------ | ---------------------- | -------- |
+| [@office-open/docx](./packages/docx/README.md#benchmark) | Full-featured document + 2 imgs | 763 ops/s    | docx 9.6 — 54.2 ops/s  | **14×**  |
+|                                                          | 2,000 paragraphs + 20 images    | 104 ops/s    | docx 9.6 — 2.85 ops/s  | **37×**  |
+| [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 fully-styled slides          | 73.8 ops/s   | PptxGenJS — 0.91 ops/s | **81×**  |
+| [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k rows × 20 cols (2M cells)  | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
+| [@office-open/xml](./packages/xml/README.md#benchmark)   | Parse complex OOXML             | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
+
+Plain-data workbooks also stream through a constant-memory path — at 1M rows × 3 columns, peak RSS is +177 MB streamed vs +810 MB buffered. @office-open/xml keeps pace with `txml` — the fastest mainstream XML parser — while round-tripping full OOXML (namespaces, entities, attribute order); older general-purpose parsers (`xml-js`) trail by 4.5× or more.
 
 ## Packages
 
@@ -167,6 +181,14 @@ Then follow the workflow: code to the project standards, run `pnpm build && pnpm
 - [Documentation](https://www.office-open.com) — guides, API reference, and AI integration docs
 - [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
+
+## Sponsors
+
+office-open is supported by [Wiseair-srl](https://github.com/Wiseair-srl) — their [json-to-office](https://json-to-office.com/) picks `@office-open/docx` as its quality-first DOCX renderer, with a live playground at [docx.json-to-office.com](https://docx.json-to-office.com/). Thank you! Want to support the project too? [GitHub Sponsors](https://github.com/sponsors/DemoMacro).
+
+## Acknowledgements
+
+This project's git history began as a fork of [dolanmiu/docx](https://github.com/dolanmiu/docx). The implementation has since been fully rewritten, but the API shape — sections, paragraphs, tables, runs — still follows the model that project established, and its design shaped our early direction. Thank you, [Dolan Miu](https://github.com/dolanmiu) and `docx` contributors, for the head start and the inspiration.
 
 ## License
 
