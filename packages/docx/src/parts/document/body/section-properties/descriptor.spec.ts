@@ -224,6 +224,14 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(grid.type).toBe("lines");
   });
 
+  it("omits w:charSpace when the grid carries none (Word's lines-only form)", () => {
+    const xml = sectionPropertiesDesc.stringify(
+      { grid: { linePitch: 312, type: "lines" } },
+      writeCtx,
+    )!;
+    expect(xml).not.toContain("w:charSpace");
+  });
+
   it("round-trips page numbers", () => {
     const result = roundTrip({
       pageNumberType: { start: 10, format: "decimal" },

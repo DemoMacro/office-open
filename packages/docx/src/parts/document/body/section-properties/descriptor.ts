@@ -263,7 +263,7 @@ function stringifySectionPropertiesInner(
 
   const {
     linePitch = 312,
-    charSpace = 0,
+    charSpace,
     type: gridType = "lines",
   } = typeof opts.grid === "object" ? opts.grid : {};
 
