@@ -3,8 +3,62 @@ import type { VNode } from "vue";
 </script>
 
 <script setup lang="ts">
-import { TabsRoot, TabsList, TabsIndicator, TabsTrigger, TabsContent } from "reka-ui";
+import { Tabs, Button } from "@bysages/vue";
 import { computed, ref, onBeforeUpdate } from "vue";
+
+// Code-block language → icon, consumed both here and by the client bundle
+// scanner (nuxt.config collectIconNames matches these literals in this file).
+const CODE_ICONS: Record<string, string> = {
+  docx: "i-vscode-icons-file-type-word",
+  pptx: "i-vscode-icons-file-type-powerpoint",
+  xlsx: "i-vscode-icons-file-type-excel",
+  json: "i-vscode-icons-file-type-json",
+  jsonc: "i-vscode-icons-file-type-json",
+  html: "i-vscode-icons-file-type-html",
+  htm: "i-vscode-icons-file-type-html",
+  xml: "i-vscode-icons-file-type-xml",
+  markdown: "i-vscode-icons-file-type-markdown",
+  md: "i-vscode-icons-file-type-markdown",
+  mdc: "i-vscode-icons-file-type-markdown",
+  css: "i-vscode-icons-file-type-css",
+  scss: "i-vscode-icons-file-type-css",
+  less: "i-vscode-icons-file-type-css",
+  yaml: "i-vscode-icons-file-type-yaml",
+  yml: "i-vscode-icons-file-type-yaml",
+  toml: "i-vscode-icons-file-type-toml",
+  js: "i-vscode-icons-file-type-js",
+  javascript: "i-vscode-icons-file-type-js",
+  mjs: "i-vscode-icons-file-type-js",
+  cjs: "i-vscode-icons-file-type-js",
+  jsx: "i-vscode-icons-file-type-js",
+  ts: "i-vscode-icons-file-type-typescript",
+  typescript: "i-vscode-icons-file-type-typescript",
+  tsx: "i-vscode-icons-file-type-typescript",
+  vue: "i-vscode-icons-file-type-vue",
+  bash: "i-vscode-icons-file-type-shell",
+  sh: "i-vscode-icons-file-type-shell",
+  shell: "i-vscode-icons-file-type-shell",
+  zsh: "i-vscode-icons-file-type-shell",
+  batch: "i-vscode-icons-file-type-shell",
+  python: "i-vscode-icons-file-type-python",
+  py: "i-vscode-icons-file-type-python",
+  go: "i-vscode-icons-file-type-go",
+  rust: "i-vscode-icons-file-type-rust",
+  rs: "i-vscode-icons-file-type-rust",
+  ruby: "i-vscode-icons-file-type-ruby",
+  rb: "i-vscode-icons-file-type-ruby",
+  java: "i-vscode-icons-file-type-java",
+  cs: "i-vscode-icons-file-type-csharp",
+  csharp: "i-vscode-icons-file-type-csharp",
+  kotlin: "i-vscode-icons-file-type-kotlin",
+  kt: "i-vscode-icons-file-type-kotlin",
+  php: "i-vscode-icons-file-type-php",
+  sql: "i-vscode-icons-file-type-sql",
+  docker: "i-vscode-icons-file-type-docker",
+  dockerfile: "i-vscode-icons-file-type-docker",
+  text: "i-vscode-icons-file-type-text",
+  plaintext: "i-vscode-icons-file-type-text",
+};
 
 const props = withDefaults(
   defineProps<{
@@ -28,9 +82,14 @@ function transformSlot(slot: any, index: number): any {
   if (typeof slot.type === "symbol") {
     return slot.children?.map(transformSlot);
   }
+  const label: string = slot.props?.filename || slot.props?.language || `${index}`;
+  const dot = label.lastIndexOf(".");
   return {
-    label: slot.props?.filename || slot.props?.label || `${index}`,
-    icon: slot.props?.icon,
+    label,
+    icon:
+      slot.props?.icon ??
+      CODE_ICONS[dot === -1 ? label : label.slice(dot + 1)] ??
+      CODE_ICONS[label],
     component: slot,
     code: slot.props?.code || "",
   };
@@ -100,45 +159,60 @@ async function handleExport() {
 </script>
 
 <template>
-  <TabsRoot
-    v-model="model"
-    :default-value="defaultValue"
-    :unmount-on-hide="false"
-    class="group relative my-5 *:not-first:static! *:not-first:my-0!"
-  >
-    <TabsList
-      class="border-muted bg-default relative flex items-center gap-1 overflow-x-auto rounded-t-md border border-b-0 p-2"
-    >
-      <TabsIndicator
-        class="bg-elevated absolute inset-y-2 left-0 w-(--reka-tabs-indicator-size) translate-x-(--reka-tabs-indicator-position) rounded-md shadow-xs transition-[translate,width] duration-200"
-      />
+  <Tabs.Root v-model="model" :default-value="defaultValue" class="bs-docs-code-group api-example">
+    <Tabs.List>
+      <Tabs.Trigger v-for="(item, index) of items" :key="index" :value="String(index)">
+        <Icon v-if="item.icon" :name="item.icon" class="api-example-icon" />
+        <span class="api-example-label">{{ item.label }}</span>
+      </Tabs.Trigger>
+    </Tabs.List>
 
-      <TabsTrigger
-        v-for="(item, index) of items"
-        :key="index"
-        :value="String(index)"
-        class="text-default data-[state=active]:text-highlighted hover:bg-elevated/50 focus-visible:ring-primary relative inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset disabled:cursor-not-allowed disabled:opacity-75"
-      >
-        <ProseCodeIcon :icon="item.icon" :filename="item.label" class="size-4 shrink-0" />
-        <span class="truncate">{{ item.label }}</span>
-      </TabsTrigger>
-    </TabsList>
+    <Tabs.Content v-for="(item, index) of items" :key="index" :value="String(index)">
+      <component :is="item.component" tabindex="-1" />
+    </Tabs.Content>
 
-    <TabsContent v-for="(item, index) of items" :key="index" :value="String(index)" as-child>
-      <component :is="item.component" hide-header tabindex="-1" />
-    </TabsContent>
-
-    <UButton
+    <Button
       v-if="showExport"
-      :disabled="exporting"
-      :loading="exporting"
-      icon="i-lucide-download"
+      class="api-example-export"
+      variant="ghost"
       size="sm"
-      color="neutral"
-      variant="outline"
-      style="position: absolute !important"
-      class="ring-accented hover:bg-elevated top-[11px] right-[44px] z-10 p-1.5 ring transition ring-inset lg:opacity-0 lg:group-hover:opacity-100"
+      :disabled="exporting"
+      aria-label="Download the generated document"
       @click="handleExport"
-    />
-  </TabsRoot>
+    >
+      <Icon name="i-lucide-download" />
+    </Button>
+  </Tabs.Root>
 </template>
+
+<style scoped>
+.api-example {
+  position: relative;
+}
+
+.api-example-icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+}
+
+.api-example-label {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.api-example-export {
+  position: absolute;
+  inset-block-start: var(--bs-space-1);
+  inset-inline-end: var(--bs-space-1);
+  z-index: 1;
+  opacity: 0;
+}
+
+.api-example:hover .api-example-export,
+.api-example-export:focus-visible {
+  opacity: 1;
+}
+</style>

@@ -10,11 +10,13 @@
   },
   "devDependencies": {
     "@ai-sdk/openai-compatible": "2.0.68",
+    "@bysages/docs-theme": "0.0.2",
+    "@bysages/tokens": "0.0.0",
+    "@bysages/vue": "0.0.0",
     "@iconify-json/lucide": "1.2.125",
     "@iconify-json/simple-icons": "1.2.93",
     "@iconify-json/vscode-icons": "1.2.74",
-    "agents": "0.21.0",
-    "docus": "5.12.3",
+    "minisearch": "7.2.0",
     "nuxt": "4.5.2",
     "office-open": "workspace:*"
   }

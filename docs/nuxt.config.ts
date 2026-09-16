@@ -1,11 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
-import { useNuxt } from "@nuxt/kit";
-
 // clientBundle.scan only sees icons referenced as literals inside vite modules;
-// icons from docus .navigation.yml and content frontmatter live in the content
-// dump instead, and with provider "server" those fall back to
+// icons from .navigation.yml and content frontmatter live in the content dump
+// instead, and with provider "server" those fall back to
 // /api/_nuxt_icon/* at runtime — which does not exist in a fully static deploy.
 // Collect every icon literal ourselves and hand the list to the client bundle.
 function collectIconNames(): string[] {
@@ -32,7 +30,7 @@ function collectIconNames(): string[] {
     }
   }
   // clientBundle.icons expects "collection:name"; component usage is "i-collection-name".
-  const collections = ["vscode-icons", "simple-icons", "lucide", "custom"];
+  const collections = ["vscode-icons", "simple-icons", "lucide"];
   return [...names]
     .map((icon) => {
       const body = icon.slice(2);
@@ -47,9 +45,20 @@ function collectIconNames(): string[] {
 }
 
 export default defineNuxtConfig({
-  extends: ["docus"],
+  extends: ["@bysages/docs-theme"],
   modules: ["@nuxtjs/i18n"],
-  css: ["~/assets/css/main.css"],
+
+  // The theme reads the locale off the first URL segment at query time, so
+  // every locale — the default included — must carry its prefix.
+  i18n: {
+    strategy: "prefix",
+    locales: [
+      { code: "en", name: "English", file: "en.json" },
+      { code: "zh", name: "中文", file: "zh.json" },
+    ],
+    defaultLocale: "en",
+    langDir: "locales",
+  },
 
   // Nitro's server-bundle esbuild plugin defaults to target "es2019"
   // (rollup/index.mjs), which rejects top-level await emitted by some
@@ -63,20 +72,9 @@ export default defineNuxtConfig({
     },
   },
 
-  // unifont initializes its google/googleicons providers on every build,
-  // fetching fonts.google.com metadata (with retry backoff) even though this
-  // site requests no Google web font or material-symbols icon. Disable both;
-  // icon rendering is fully covered by @nuxt/icon with local collections.
-  fonts: {
-    providers: {
-      google: false,
-      googleicons: false,
-    },
-  },
-
   // Resolve icons from locally installed @iconify-json/* collections instead
-  // of the iconify CDN (docus defaults provider to "iconify", which makes
-  // every visitor's browser call api.iconify.design at runtime).
+  // of the iconify CDN (every visitor's browser would otherwise call
+  // api.iconify.design at runtime).
   icon: {
     provider: "server",
     serverBundle: "local",
@@ -95,24 +93,16 @@ export default defineNuxtConfig({
         "@office-open/docx > @office-open/core",
         "@office-open/pptx > @office-open/core",
         "@office-open/xlsx > @office-open/core",
-        "@vue/devtools-core",
-        "@vue/devtools-kit",
-        "@vueuse/core",
         "ai",
         "fflate",
-        "remark-emoji",
         "remark-mdc",
       ],
     },
   },
 
-  i18n: {
-    locales: [
-      { code: "en", name: "English", file: "en.json" },
-      { code: "zh", name: "中文", file: "zh.json" },
-    ],
-    defaultLocale: "en",
-    langDir: "locales",
+  site: {
+    url: "https://www.office-open.com",
+    name: "Office Open",
   },
 
   llms: {
@@ -131,28 +121,17 @@ export default defineNuxtConfig({
     },
   },
 
-  docus: {
-    assistant: {
-      mcpServer: "/mcp",
-      apiPath: "/api/search",
-    },
+  agentDiscovery: {
     skills: {
       dir: "skills",
     },
-  },
-
-  hooks: {
-    // docus pulls in @nuxt/image but neither this site nor the docus theme
-    // renders a single NuxtImg/NuxtPicture; dropping the module keeps ipx and
-    // the sharp binary wiring out of the server bundle.
-    "modules:before"() {
-      const { modules } = useNuxt().options;
-      const image = modules.indexOf("@nuxt/image");
-      if (image !== -1) modules.splice(image, 1);
-    },
-
-    "nitro:config"(nitroConfig) {
-      nitroConfig.handlers = nitroConfig.handlers?.filter((h) => h?.route !== "/api/search");
+    discovery: {
+      mcpServerCard: {
+        endpoint: "/mcp",
+        name: "Office Open Docs",
+        description:
+          "Search and read the Office Open documentation: list-pages to explore, get-page for full markdown.",
+      },
     },
   },
 });
