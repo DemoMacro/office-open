@@ -5,14 +5,11 @@ seo:
     description: Generate, parse, and patch .docx, .pptx, and .xlsx files with JSON or TypeScript — AI-native, fully typed, 100% OOXML coverage. Runs in Node.js, browsers, Deno, and Bun.
 ---
 
-::u-page-hero
----
-orientation: horizontal
----
+::page-hero{orientation="horizontal"}
+#body
+  :::api-example{type="docx"}
 
-:::api-example{type="docx"}
-
-```json [JSON]
+  ```json [JSON]
 {
     "sections": [
         {
@@ -24,23 +21,23 @@ orientation: horizontal
 }
 ```
 
-```bash [pnpm]
+  ```bash [pnpm]
 pnpm add office-open
 ```
 
-```bash [npm]
+  ```bash [npm]
 npm install office-open
 ```
 
-```bash [yarn]
+  ```bash [yarn]
 yarn add office-open
 ```
 
-```bash [bun]
+  ```bash [bun]
 bun add office-open
 ```
 
-:::
+  :::
 
 #title
 Generate Office Open XML documents.
@@ -49,68 +46,89 @@ Generate Office Open XML documents.
 Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeScript — a natural fit for AI agents and hand-written code alike.
 
 #links
-:::u-button
----
-label: Get Started
-size: lg
-to: /en/getting-started/installation
-trailingIcon: i-lucide-arrow-right
----
-:::
+  :::button-link{to="/en/getting-started/installation" size="lg"}
+  Get Started <Icon name="i-lucide-arrow-right" />
+  :::
 
-:::u-button
----
-label: GitHub
-icon: i-simple-icons-github
-size: lg
-target: _blank
-to: https://github.com/DemoMacro/office-open
-variant: outline
----
-:::
+  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline" size="lg"}
+  GitHub <Icon name="i-simple-icons-github" />
+  :::
 ::
 
-::u-page-section
----
-features:
-  - icon: i-lucide-braces
-    title: JSON & TypeScript
-    description: Define documents as plain data — zero classes, zero boilerplate — with frozen JSON Schemas for tool-calling.
-  - icon: i-lucide-layers
-    title: Rich Content
-    description: Paragraphs, tables, charts, images, SmartArt, math equations, headers, footers, and more.
-  - icon: i-simple-icons-typescript
-    title: Type-safe
-    description: Comprehensive TypeScript definitions power autocomplete and catch errors as you type.
-  - icon: i-lucide-monitor
-    title: Cross-platform
-    description: Runs in Node.js, browsers, Deno, and Bun; export to Buffer, Blob, Base64, stream, or string.
-  - icon: i-lucide-shield-check
-    title: OOXML Complete
-    description: Every OOXML Transitional element and attribute, both generating and parsing — output opens in every major office suite.
-  - icon: i-lucide-package
-    title: Modular Packages
-    description: Install just the format you need, or the unified package with CLI and AI SDK tools on top.
----
+::page-section
+#cards
+  :::page-card
+  #icon
+  <Icon name="i-lucide-braces" />
+
+  #title
+  JSON & TypeScript
+
+  #description
+  Define documents as plain data — zero classes, zero boilerplate — with frozen JSON Schemas for tool-calling.
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-layers" />
+
+  #title
+  Rich Content
+
+  #description
+  Paragraphs, tables, charts, images, SmartArt, math equations, headers, footers, and more.
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-simple-icons-typescript" />
+
+  #title
+  Type-safe
+
+  #description
+  Comprehensive TypeScript definitions power autocomplete and catch errors as you type.
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-monitor" />
+
+  #title
+  Cross-platform
+
+  #description
+  Runs in Node.js, browsers, Deno, and Bun; export to Buffer, Blob, Base64, stream, or string.
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-shield-check" />
+
+  #title
+  OOXML Complete
+
+  #description
+  Every OOXML Transitional element and attribute, both generating and parsing — output opens in every major office suite.
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-package" />
+
+  #title
+  Modular Packages
+
+  #description
+  Install just the format you need, or the unified package with CLI and AI SDK tools on top.
+  :::
 ::
 
-::u-page-section
----
-orientation: horizontal
-features:
-  - icon: i-lucide-file-text
-    title: Create Word documents with paragraphs, tables, images, and charts
-  - icon: i-lucide-presentation
-    title: Create PowerPoint presentations with shapes, animations, and transitions
-  - icon: i-lucide-table-2
-    title: Create Excel spreadsheets with styles, charts, and data validation
-  - icon: i-lucide-zap
-    title: High Performance with native zlib compression and streaming output
----
+::page-section{orientation="horizontal"}
+#body
+  :::api-example
 
-:::api-example
-
-```json [DOCX]
+  ```json [DOCX]
 {
     "sections": [
         {
@@ -130,7 +148,7 @@ features:
 }
 ```
 
-```json [PPTX]
+  ```json [PPTX]
 {
     "slides": [
         {
@@ -147,7 +165,7 @@ features:
 }
 ```
 
-```json [XLSX]
+  ```json [XLSX]
 {
     "worksheets": [
         {
@@ -162,62 +180,66 @@ features:
 }
 ```
 
-:::
+  :::
 
 #title
-Build documents with [JSON]{.text-(--ui-primary)} or [TypeScript]{.text-(--ui-primary)}
+Build documents with JSON or TypeScript
 
 #description
 Define documents as plain JSON objects, or reach for the TypeScript API for a full IDE experience. Both produce the same valid OOXML markup.
 
 #links
-:::u-button
----
-color: neutral
-label: Explore Word docs
-to: /en/docx/quickstart
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
+  :::button-link{to="/en/docx/quickstart" variant="ghost"}
+  Explore Word docs <Icon name="i-lucide-arrow-right" />
+  :::
 
-:::u-button
----
-color: neutral
-label: Explore PowerPoint
-to: /en/pptx/quickstart
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
+  :::button-link{to="/en/pptx/quickstart" variant="ghost"}
+  Explore PowerPoint <Icon name="i-lucide-arrow-right" />
+  :::
 
-:::u-button
----
-color: neutral
-label: Explore Excel
-to: /en/xlsx/quickstart
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
+  :::button-link{to="/en/xlsx/quickstart" variant="ghost"}
+  Explore Excel <Icon name="i-lucide-arrow-right" />
+  :::
+
+#cards
+  :::page-card
+  #icon
+  <Icon name="i-lucide-file-text" />
+
+  #title
+  Create Word documents with paragraphs, tables, images, and charts
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-presentation" />
+
+  #title
+  Create PowerPoint presentations with shapes, animations, and transitions
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-table-2" />
+
+  #title
+  Create Excel spreadsheets with styles, charts, and data validation
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-zap" />
+
+  #title
+  High Performance with native zlib compression and streaming output
+  :::
 ::
 
-::u-page-section
----
-orientation: horizontal
-reverse: true
-features:
-  - icon: i-lucide-search
-    title: Read document structure, styles, and content
-  - icon: i-lucide-wrench
-    title: Patch template placeholders with new content
-  - icon: i-lucide-arrow-right-left
-    title: Parse, modify, and re-export in a pipeline
----
+::page-section{orientation="horizontal" reverse}
+#body
+  ::code-group
 
-:::code-group
-
-```ts [DOCX]
+  ```ts [DOCX]
 import { parseDocument, patchDocument } from "@office-open/docx";
 
 // Parse existing file
@@ -235,7 +257,7 @@ const result = await patchDocument({
 });
 ```
 
-```ts [PPTX]
+  ```ts [PPTX]
 import { parsePresentation, patchPresentation } from "@office-open/pptx";
 
 // Parse existing file
@@ -253,7 +275,7 @@ const result = await patchPresentation({
 });
 ```
 
-```ts [XLSX]
+  ```ts [XLSX]
 import { parseWorkbook, patchWorkbook } from "@office-open/xlsx";
 
 // Parse existing file
@@ -271,40 +293,55 @@ const result = await patchWorkbook({
 });
 ```
 
-:::
+  ::
 
 #title
-Read and [modify]{.text-(--ui-primary)} existing files
+Read and modify existing files
 
 #description
 Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch templates by replacing `{{placeholder}}` tokens with new content.
 
 #links
-:::u-button
----
-color: neutral
-label: Parse documents
-to: /en/docx/parsing
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
+  :::button-link{to="/en/docx/parsing" variant="ghost"}
+  Parse documents <Icon name="i-lucide-arrow-right" />
+  :::
 
-:::u-button
----
-color: neutral
-label: Patch templates
-to: /en/docx/patch
-trailingIcon: i-lucide-arrow-right
-variant: subtle
----
-:::
+  :::button-link{to="/en/docx/patch" variant="ghost"}
+  Patch templates <Icon name="i-lucide-arrow-right" />
+  :::
+
+#cards
+  :::page-card
+  #icon
+  <Icon name="i-lucide-search" />
+
+  #title
+  Read document structure, styles, and content
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-wrench" />
+
+  #title
+  Patch template placeholders with new content
+  :::
+
+  :::page-card
+  #icon
+  <Icon name="i-lucide-arrow-right-left" />
+
+  #title
+  Parse, modify, and re-export in a pipeline
+  :::
 ::
 
-::u-page-section
+::page-section
 #title
 Add document generation to your project.
 
 #links
-:u-button{label="Get Started" to="/en/getting-started/installation" trailing-icon="i-lucide-arrow-right"}
+  :::button-link{to="/en/getting-started/installation"}
+  Get Started <Icon name="i-lucide-arrow-right" />
+  :::
 ::
