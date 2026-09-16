@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Button } from "@bysages/vue";
+
 interface Props {
   filename: string;
   base64: string;
@@ -40,18 +42,57 @@ function download() {
 </script>
 
 <template>
-  <div class="flex items-center gap-3 p-2">
-    <div class="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-lg">
-      <UIcon :name="getIcon(mimeType)" class="text-primary size-5" />
+  <div class="document-card">
+    <div class="document-card-icon">
+      <Icon :name="getIcon(mimeType)" />
     </div>
-    <div class="min-w-0 flex-1">
-      <p class="text-highlighted truncate text-sm font-medium">
-        {{ filename }}
-      </p>
-      <p class="text-muted text-xs">
-        {{ formatSize(size) }}
-      </p>
+    <div class="document-card-meta">
+      <p class="document-card-name">{{ filename }}</p>
+      <p class="document-card-size">{{ formatSize(size) }}</p>
     </div>
-    <UButton icon="i-lucide-download" color="primary" variant="soft" size="xs" @click="download" />
+    <Button variant="ghost" size="sm" aria-label="Download" @click="download">
+      <Icon name="i-lucide-download" />
+    </Button>
   </div>
 </template>
+
+<style scoped>
+.document-card {
+  display: flex;
+  align-items: center;
+  gap: var(--bs-space-3);
+  padding: var(--bs-space-2);
+}
+
+.document-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--bs-space-10);
+  height: var(--bs-space-10);
+  border: 1px solid var(--bs-color-border);
+  border-radius: var(--bs-radius-sm);
+  background: var(--bs-color-surface-2);
+  font-size: var(--bs-font-size-lg);
+}
+
+.document-card-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.document-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--bs-font-size-sm);
+  font-weight: 500;
+  color: var(--bs-color-text-primary);
+}
+
+.document-card-size {
+  font-size: var(--bs-font-size-xs);
+  color: var(--bs-color-text-secondary);
+}
+</style>

@@ -165,23 +165,24 @@ async function handleExport() {
         <Icon v-if="item.icon" :name="item.icon" class="api-example-icon" />
         <span class="api-example-label">{{ item.label }}</span>
       </Tabs.Trigger>
+      <Tabs.Indicator />
     </Tabs.List>
 
     <Tabs.Content v-for="(item, index) of items" :key="index" :value="String(index)">
       <component :is="item.component" tabindex="-1" />
     </Tabs.Content>
 
-    <Button
-      v-if="showExport"
-      class="api-example-export"
-      variant="ghost"
-      size="sm"
-      :disabled="exporting"
-      aria-label="Download the generated document"
-      @click="handleExport"
-    >
-      <Icon name="i-lucide-download" />
-    </Button>
+    <span v-if="showExport" class="api-example-export">
+      <Button
+        variant="ghost"
+        size="sm"
+        :disabled="exporting"
+        aria-label="Download the generated document"
+        @click="handleExport"
+      >
+        <Icon name="i-lucide-download" />
+      </Button>
+    </span>
   </Tabs.Root>
 </template>
 
@@ -203,16 +204,23 @@ async function handleExport() {
   white-space: nowrap;
 }
 
+/* Paper chip pinned below the tab strip: the strip stays a pure tab row
+   (tabs scroll freely at any width), and the chip masks the code that
+   scrolls beneath it instead of covering tab triggers. */
 .api-example-export {
   position: absolute;
-  inset-block-start: var(--bs-space-1);
-  inset-inline-end: var(--bs-space-1);
+  inset-block-start: calc(var(--bs-control-height-sm) + var(--bs-space-2));
+  inset-inline-end: var(--bs-space-3);
   z-index: 1;
   opacity: 0;
+  background: var(--bs-color-surface-2);
+  border: 1px solid var(--bs-color-border);
+  border-radius: var(--bs-radius-sm);
+  overflow: hidden;
 }
 
 .api-example:hover .api-example-export,
-.api-example-export:focus-visible {
+.api-example-export:focus-within {
   opacity: 1;
 }
 </style>
