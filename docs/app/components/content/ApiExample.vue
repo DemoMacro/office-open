@@ -40,6 +40,10 @@ const CODE_ICONS: Record<string, string> = {
   shell: "i-vscode-icons-file-type-shell",
   zsh: "i-vscode-icons-file-type-shell",
   batch: "i-vscode-icons-file-type-shell",
+  pnpm: "i-simple-icons-pnpm",
+  npm: "i-simple-icons-npm",
+  yarn: "i-simple-icons-yarn",
+  bun: "i-simple-icons-bun",
   python: "i-vscode-icons-file-type-python",
   py: "i-vscode-icons-file-type-python",
   go: "i-vscode-icons-file-type-go",
@@ -84,12 +88,13 @@ function transformSlot(slot: any, index: number): any {
   }
   const label: string = slot.props?.filename || slot.props?.language || `${index}`;
   const dot = label.lastIndexOf(".");
+  // Labels come in any case ("JSON", "DOCX"); the table's keys are lower.
   return {
     label,
     icon:
       slot.props?.icon ??
-      CODE_ICONS[dot === -1 ? label : label.slice(dot + 1)] ??
-      CODE_ICONS[label],
+      CODE_ICONS[(dot === -1 ? label : label.slice(dot + 1)).toLowerCase()] ??
+      CODE_ICONS[label.toLowerCase()],
     component: slot,
     code: slot.props?.code || "",
   };
@@ -172,17 +177,20 @@ async function handleExport() {
       <component :is="item.component" tabindex="-1" />
     </Tabs.Content>
 
-    <span v-if="showExport" class="api-example-export">
+    <!-- Copy rides the pane's own pre bar (the site css re-shows it inside
+         code groups); download pins the tab strip's free end. -->
+    <div v-if="showExport" class="api-example-actions">
       <Button
         variant="ghost"
         size="sm"
+        square
         :disabled="exporting"
         aria-label="Download the generated document"
         @click="handleExport"
       >
         <Icon name="i-lucide-download" />
       </Button>
-    </span>
+    </div>
   </Tabs.Root>
 </template>
 
@@ -204,23 +212,15 @@ async function handleExport() {
   white-space: nowrap;
 }
 
-/* Paper chip pinned below the tab strip: the strip stays a pure tab row
-   (tabs scroll freely at any width), and the chip masks the code that
-   scrolls beneath it instead of covering tab triggers. */
-.api-example-export {
+/* Download rides the tab strip's free right end, always visible — the
+   strip is a pure tab row otherwise and the right end stays empty. */
+.api-example-actions {
   position: absolute;
-  inset-block-start: calc(var(--bs-control-height-sm) + var(--bs-space-2));
-  inset-inline-end: var(--bs-space-3);
+  inset-block-start: 0;
+  inset-inline-end: var(--bs-space-2);
   z-index: 1;
-  opacity: 0;
-  background: var(--bs-color-surface-2);
-  border: 1px solid var(--bs-color-border);
-  border-radius: var(--bs-radius-sm);
-  overflow: hidden;
-}
-
-.api-example:hover .api-example-export,
-.api-example-export:focus-within {
-  opacity: 1;
+  display: flex;
+  align-items: center;
+  height: var(--bs-control-height-sm);
 }
 </style>

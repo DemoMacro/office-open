@@ -72,11 +72,8 @@ importers:
         specifier: 4.0.99
         version: 4.0.99(vue@3.5.42(typescript@5.9.3))(zod@4.6.5)
       '@bysages/docs-theme':
-        specifier: 0.0.2
-        version: 0.0.2(a158b101e59a8a382488632a997e0889)
-      '@bysages/tokens':
-        specifier: 0.0.0
-        version: 0.0.0
+        specifier: 0.0.4
+        version: 0.0.4(a158b101e59a8a382488632a997e0889)
       '@bysages/vue':
         specifier: 0.0.0
         version: 0.0.0(vue@3.5.42(typescript@5.9.3))
@@ -92,9 +89,6 @@ importers:
       ai:
         specifier: 7.0.99
         version: 7.0.99(zod@4.6.5)
-      minisearch:
-        specifier: 7.2.0
-        version: 7.2.0
       nuxt:
         specifier: 4.5.2
         version: 4.5.2(f24de39c2fd0a86e503dd87880e16ad9)
@@ -495,24 +489,30 @@ packages:
       commander:
         optional: true
 
-  '@bysages/core@0.0.0':
-    resolution: {integrity: sha512-RTf1RZGEkOUl9X81so+jiNVZ24r54wGnYiLdSZsXYZ2YRiAH+34esR7SSbm6NzMRrYWhwcIiPrY510HGDcBwfQ==}
+  '@bysages/core@0.0.1':
+    resolution: {integrity: sha512-2Xovnj0u87uezofgJiFrXkMOtptoeM8EExoLTcJmeikLcu6Cnb/CkkYdCVzxRTxejlF+lP/Ql5fPtFgZQEPtNw==}
 
-  '@bysages/docs-theme@0.0.2':
-    resolution: {integrity: sha512-ZMDeoYvDk6PXGz8EPtmn+4XQ7LlczkvMx2ncb7I2b32P6f7OVp+JpTainuTZZgilw7Tq+JbecbVzvcYjzwAzyQ==}
+  '@bysages/docs-theme@0.0.4':
+    resolution: {integrity: sha512-FOcPB4R1WMhd6OedFRvHTJkRmIV8t3/pGzhf7U6QADWC7AUYCaYQMZcJDaZ6hJ42TW8nTLrIlx/xtBwIsJYg0g==}
     peerDependencies:
       nuxt: ^4.0.0
 
-  '@bysages/nuxt@0.0.1':
-    resolution: {integrity: sha512-q1a823xloKquIrlsq6UzNPlPT1hDMTQ8j0LlaG5WAMD6WILPWwRDh0gDVfr6DD9v6kTLg15c57aHUvvIWXzVoA==}
+  '@bysages/nuxt@0.0.3':
+    resolution: {integrity: sha512-XlHKJanvpQByuKwo/qIviLX1AvAYuTjAxmkeBYh9a2B5uoELk3qe5LC+DU9eefz8ld3T6opSW+oCrq9Uac4n4g==}
     peerDependencies:
       nuxt: ^4.0.0
+      vue: ^3.5
 
-  '@bysages/tokens@0.0.0':
-    resolution: {integrity: sha512-PSveqt78jmPSfjonaVH7zor/iLRAoY7AkEMkMyUnOaBM7nECDNeTILezIlC+INdVz7fGp7t5WVDg8uMm15BKyg==}
+  '@bysages/tokens@0.0.1':
+    resolution: {integrity: sha512-pDLnZeiR49Jyc2GdYnEm4uukecgnm44RmZibv4zUyDR/MCm68c5BhKDqLAhjiXtm2PfG5JTGJtSqEzBMq+Mekg==}
 
   '@bysages/vue@0.0.0':
     resolution: {integrity: sha512-xR5HWupPAMeO5hk9ILTnCxfsqiFiI17ea3TcEndRvoahMNmo+xs2N64FmRw3X4AAcjb2omjnr9XUDLj5EEv3xQ==}
+    peerDependencies:
+      vue: ^3.5
+
+  '@bysages/vue@0.0.1':
+    resolution: {integrity: sha512-OEGpCLN+EZU6FFBOift+q6Ds3FFv8lgq7Y9dP8e9DeMpF5WUeJ1chtWmLxZk9FypR6Q413Kl6mgCob3y0RD8RA==}
     peerDependencies:
       vue: ^3.5
 
@@ -8231,16 +8231,17 @@ snapshots:
       citty: 0.2.2
       commander: 14.0.3
 
-  '@bysages/core@0.0.0': {}
+  '@bysages/core@0.0.1':
+    dependencies:
+      '@bysages/tokens': 0.0.1
 
-  '@bysages/docs-theme@0.0.2(a158b101e59a8a382488632a997e0889)':
+  '@bysages/docs-theme@0.0.4(a158b101e59a8a382488632a997e0889)':
     dependencies:
       '@ai-sdk/mcp': 2.0.49(zod@4.6.5)
       '@ai-sdk/openai-compatible': 3.0.48(zod@4.6.5)
       '@ai-sdk/vue': 4.0.99(vue@3.5.42(typescript@5.9.3))(zod@4.6.5)
-      '@bysages/core': 0.0.0
-      '@bysages/nuxt': 0.0.1(magic-string@1.2.3)(magicast@0.5.4)(nuxt@4.5.2(f24de39c2fd0a86e503dd87880e16ad9))(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))(vue@3.5.42(typescript@5.9.3))
-      '@bysages/vue': 0.0.0(vue@3.5.42(typescript@5.9.3))
+      '@bysages/nuxt': 0.0.3(magic-string@1.2.3)(magicast@0.5.4)(nuxt@4.5.2(f24de39c2fd0a86e503dd87880e16ad9))(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))(vue@3.5.42(typescript@5.9.3))
+      '@bysages/vue': 0.0.1(vue@3.5.42(typescript@5.9.3))
       '@iconify-json/lucide': 1.2.132
       '@nuxt/content': 3.16.0(@oxc-project/types@0.147.0)(better-sqlite3@13.0.3)(esbuild@0.28.2)(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1))
       '@nuxt/icon': 2.5.1(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1))(vue@3.5.42(typescript@5.9.3))
@@ -8252,6 +8253,7 @@ snapshots:
       '@tanstack/highlight': 0.1.0
       ai: 7.0.99(zod@4.6.5)
       better-sqlite3: 13.0.3
+      minisearch: 7.2.0
       nuxt: 4.5.2(f24de39c2fd0a86e503dd87880e16ad9)
       nuxt-agent-discovery: 0.6.0(18b7b60430574557cec76c656adf684d)
       nuxt-llms: 0.2.0(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))
@@ -8333,12 +8335,13 @@ snapshots:
       - vue
       - webpack
 
-  '@bysages/nuxt@0.0.1(magic-string@1.2.3)(magicast@0.5.4)(nuxt@4.5.2(f24de39c2fd0a86e503dd87880e16ad9))(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))(vue@3.5.42(typescript@5.9.3))':
+  '@bysages/nuxt@0.0.3(magic-string@1.2.3)(magicast@0.5.4)(nuxt@4.5.2(f24de39c2fd0a86e503dd87880e16ad9))(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))(vue@3.5.42(typescript@5.9.3))':
     dependencies:
-      '@bysages/core': 0.0.0
-      '@bysages/vue': 0.0.0(vue@3.5.42(typescript@5.9.3))
+      '@bysages/core': 0.0.1
+      '@bysages/vue': 0.0.1(vue@3.5.42(typescript@5.9.3))
       '@nuxt/kit': 4.5.2(magic-string@1.2.3)(magicast@0.5.4)(oxc-parser@0.143.0)(rolldown@1.2.6)(unplugin@3.3.0(esbuild@0.28.2)(rolldown@1.2.6)(rollup@4.63.1)(vite@8.2.2(@types/node@26.2.0)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(tsx@4.23.12)(yaml@2.9.1)))
       nuxt: 4.5.2(f24de39c2fd0a86e503dd87880e16ad9)
+      vue: 3.5.42(typescript@5.9.3)
     transitivePeerDependencies:
       - magic-string
       - magicast
@@ -8347,13 +8350,24 @@ snapshots:
       - react
       - rolldown
       - unplugin
-      - vue
 
-  '@bysages/tokens@0.0.0': {}
+  '@bysages/tokens@0.0.1': {}
 
   '@bysages/vue@0.0.0(vue@3.5.42(typescript@5.9.3))':
     dependencies:
       '@ark-ui/vue': 5.39.1(vue@3.5.42(typescript@5.9.3))
+      '@tanstack/markdown': 0.0.15
+      '@tanstack/vue-table': 9.2.4(vue@3.5.42(typescript@5.9.3))
+      '@tanstack/vue-virtual': 3.13.38(vue@3.5.42(typescript@5.9.3))
+      vue: 3.5.42(typescript@5.9.3)
+    transitivePeerDependencies:
+      - octane
+      - react
+
+  '@bysages/vue@0.0.1(vue@3.5.42(typescript@5.9.3))':
+    dependencies:
+      '@ark-ui/vue': 5.39.1(vue@3.5.42(typescript@5.9.3))
+      '@bysages/core': 0.0.1
       '@tanstack/markdown': 0.0.15
       '@tanstack/vue-table': 9.2.4(vue@3.5.42(typescript@5.9.3))
       '@tanstack/vue-virtual': 3.13.38(vue@3.5.42(typescript@5.9.3))

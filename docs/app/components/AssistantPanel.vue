@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useChat } from "@ai-sdk/vue";
-import { Ai, Drawer } from "@bysages/vue";
+import { Ai, Button, Drawer } from "@bysages/vue";
 import { DefaultChatTransport, type ToolUIPart } from "ai";
 
 const {
@@ -19,7 +19,14 @@ const { Root, Backdrop, Positioner, Content, Title, CloseTrigger } = Drawer;
 
 const { isOpen, open, close, draft } = useAssistant();
 
-const { t } = useDocsI18n();
+const { t, tm, rt } = useDocsI18n();
+
+// The starter questions live in the locale files as an array — the site
+// overrides `docs.starters`, the theme's remain the fallback.
+const starters = computed(() => {
+  const messages = tm("docs.starters");
+  return Array.isArray(messages) ? messages.map((message) => rt(message)) : [];
+});
 
 const { messages, sendMessage, status, error, stop, setMessages } = useChat({
   transport: new DefaultChatTransport({ api: "/api/assistant" }),
@@ -35,6 +42,22 @@ watch(draft, (value) => {
 });
 
 const busy = computed(() => status.value !== "ready" && status.value !== "error");
+
+/* The reply streams with the prompt disabled, so the focus trap has
+   nothing to land on and settles on the panel container. When the reply
+   settles, hand the caret back — unless the reader already moved it. */
+watch(
+  busy,
+  (isBusy, wasBusy) => {
+    if (wasBusy && !isBusy && isOpen.value) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest(".bs-docs-assistant")) {
+        document.querySelector<HTMLElement>(".bs-docs-assistant textarea")?.focus();
+      }
+    }
+  },
+  { flush: "post" },
+);
 
 /** Zag-free mapping from a tool part's lifecycle to our status dot. */
 const TOOL_STATUS: Record<string, "running" | "completed" | "error"> = {
@@ -82,6 +105,10 @@ function documentData(part: { data?: unknown }): DocumentData {
   return part.data as DocumentData;
 }
 
+// A clear control beside the close one, present only while there is
+// something to clear.
+const canClear = computed(() => messages.value.length > 0);
+
 function clearMessages() {
   if (busy.value) stop();
   setMessages([]);
@@ -107,12 +134,24 @@ onBeforeUnmount(() => window.removeEventListener("keydown", toggleShortcut));
         <Content aria-label="AI assistant" class="bs-docs-assistant">
           <div class="bs-docs-assistant-head">
             <Title>{{ t("docs.assistantTitle") }}</Title>
-            <div class="bs-docs-assistant-actions">
-              <Action :label="t('docs.assistantClear')" @click="clearMessages">
-                <Icon name="i-lucide-eraser" />
-              </Action>
+            <!-- data-no-autofocus keeps the trap's first stop off the
+                 destructive tools and on the prompt; tabbing still
+                 reaches both. -->
+            <div class="bs-docs-assistant-tools">
+              <Button
+                v-if="canClear"
+                variant="ghost"
+                size="sm"
+                square
+                data-no-autofocus
+                :aria-label="t('docs.assistantClear')"
+                :title="t('docs.assistantClear')"
+                @click="clearMessages"
+              >
+                <Icon name="i-lucide-list-x" />
+              </Button>
               <CloseTrigger as-child>
-                <Action label="Close assistant">✕</Action>
+                <Action data-no-autofocus label="Close assistant">✕</Action>
               </CloseTrigger>
             </div>
           </div>
@@ -122,11 +161,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", toggleShortcut));
               <div class="bs-docs-assistant-empty">
                 <p class="bs-docs-assistant-greeting">{{ t("docs.assistantGreeting") }}</p>
                 <Suggestion
-                  v-for="starter in [
-                    t('docs.assistantStarter1'),
-                    t('docs.assistantStarter2'),
-                    t('docs.assistantStarter3'),
-                  ]"
+                  v-for="starter in starters"
                   :key="starter"
                   :prompt="starter"
                   @select="sendMessage({ text: $event })"
@@ -149,7 +184,11 @@ onBeforeUnmount(() => window.removeEventListener("keydown", toggleShortcut));
                       v-if="part.type === 'data-document' && part.data"
                       v-bind="documentData(part)"
                     />
-                    <Response v-else-if="part.type === 'text'" :content="part.text" />
+                    <Response
+                      v-else-if="part.type === 'text'"
+                      :content="part.text"
+                      :highlighter="highlightFence"
+                    />
                     <Reasoning
                       v-else-if="part.type === 'reasoning'"
                       :label="t('docs.assistantThinking')"

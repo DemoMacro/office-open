@@ -46,11 +46,11 @@ bun add office-open
 用纯 JSON 或全类型 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件——AI 代理与手写代码同样顺手。
 
 #links
-  :::button-link{to="/zh/getting-started/installation" size="lg"}
+  :::button-link{to="/zh/getting-started/installation"}
   快速开始 <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline" size="lg"}
+  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline"}
   GitHub <Icon name="i-simple-icons-github" />
   :::
 ::
@@ -189,20 +189,20 @@ bun add office-open
 把文档定义为纯 JSON 对象，或使用 TypeScript API 获得完整的 IDE 体验——两者生成同样有效的 OOXML 标记。
 
 #links
-  :::button-link{to="/zh/docx/quickstart" variant="ghost"}
+  :::button-link{to="/zh/docx/quickstart" variant="outline" size="sm"}
   了解 Word 文档 <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/zh/pptx/quickstart" variant="ghost"}
+  :::button-link{to="/zh/pptx/quickstart" variant="outline" size="sm"}
   了解 PowerPoint <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/zh/xlsx/quickstart" variant="ghost"}
+  :::button-link{to="/zh/xlsx/quickstart" variant="outline" size="sm"}
   了解 Excel <Icon name="i-lucide-arrow-right" />
   :::
 
-#cards
-  :::page-card
+#features
+  :::page-feature
   #icon
   <Icon name="i-lucide-file-text" />
 
@@ -210,7 +210,7 @@ bun add office-open
   创建 Word 文档，支持段落、表格、图片和图表
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-presentation" />
 
@@ -218,7 +218,7 @@ bun add office-open
   创建 PowerPoint 演示文稿，支持形状、动画和切换效果
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-table-2" />
 
@@ -226,7 +226,7 @@ bun add office-open
   创建 Excel 电子表格，支持样式、图表和数据验证
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-zap" />
 
@@ -302,16 +302,16 @@ const result = await patchWorkbook({
 将 `.docx`、`.pptx` 和 `.xlsx` 文件解析为结构化对象，或替换 `{{占位符}}` 标记修补模板。
 
 #links
-  :::button-link{to="/zh/docx/parsing" variant="ghost"}
+  :::button-link{to="/zh/docx/parsing" variant="outline" size="sm"}
   解析文档 <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/zh/docx/patch" variant="ghost"}
+  :::button-link{to="/zh/docx/patch" variant="outline" size="sm"}
   修补模板 <Icon name="i-lucide-arrow-right" />
   :::
 
-#cards
-  :::page-card
+#features
+  :::page-feature
   #icon
   <Icon name="i-lucide-search" />
 
@@ -319,7 +319,7 @@ const result = await patchWorkbook({
   读取文档结构、样式和内容
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-wrench" />
 
@@ -327,7 +327,7 @@ const result = await patchWorkbook({
   替换模板占位符为新内容
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-arrow-right-left" />
 

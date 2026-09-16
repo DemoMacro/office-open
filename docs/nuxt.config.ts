@@ -48,6 +48,8 @@ export default defineNuxtConfig({
   extends: ["@bysages/docs-theme"],
   modules: ["@nuxtjs/i18n"],
 
+  css: ["~/assets/css/main.css"],
+
   // The theme reads the locale off the first URL segment at query time, so
   // every locale — the default included — must carry its prefix.
   i18n: {

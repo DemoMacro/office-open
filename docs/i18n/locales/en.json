@@ -1,32 +1,12 @@
 {
-  "common": {
-    "error": {
-      "title": "This page is not on the shelf.",
-      "back": "Back to the index"
-    }
-  },
   "docs": {
-    "toc": "On this page",
-    "menu": "Menu",
-    "language": "Language",
-    "reference": "Reference",
-    "copy": {
-      "code": "Copy code",
-      "copied": "Copied"
-    },
-    "search": "Search the docs…",
-    "searchEmpty": "Nothing found.",
-    "assistant": "Ask about the docs…",
-    "assistantGreeting": "Ask the assistant — it reads these shelves.",
     "assistantTitle": "Documentation assistant",
     "assistantClear": "Clear conversation",
     "assistantError": "The assistant could not be reached. Please try again.",
-    "assistantThinking": "Thinking",
-    "assistantStarter1": "What does this site cover?",
-    "assistantStarter2": "How do I generate a Word document?",
-    "assistantStarter3": "Summarize this page.",
-    "prev": "Previous",
-    "next": "Next",
-    "edit": "Edit this page"
+    "starters": [
+      "What does this site cover?",
+      "How do I generate a Word document?",
+      "Summarize this page."
+    ]
   }
 }

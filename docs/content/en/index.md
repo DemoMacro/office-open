@@ -46,11 +46,11 @@ Generate Office Open XML documents.
 Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeScript — a natural fit for AI agents and hand-written code alike.
 
 #links
-  :::button-link{to="/en/getting-started/installation" size="lg"}
+  :::button-link{to="/en/getting-started/installation"}
   Get Started <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline" size="lg"}
+  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline"}
   GitHub <Icon name="i-simple-icons-github" />
   :::
 ::
@@ -189,20 +189,20 @@ Build documents with JSON or TypeScript
 Define documents as plain JSON objects, or reach for the TypeScript API for a full IDE experience. Both produce the same valid OOXML markup.
 
 #links
-  :::button-link{to="/en/docx/quickstart" variant="ghost"}
+  :::button-link{to="/en/docx/quickstart" variant="outline" size="sm"}
   Explore Word docs <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/en/pptx/quickstart" variant="ghost"}
+  :::button-link{to="/en/pptx/quickstart" variant="outline" size="sm"}
   Explore PowerPoint <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/en/xlsx/quickstart" variant="ghost"}
+  :::button-link{to="/en/xlsx/quickstart" variant="outline" size="sm"}
   Explore Excel <Icon name="i-lucide-arrow-right" />
   :::
 
-#cards
-  :::page-card
+#features
+  :::page-feature
   #icon
   <Icon name="i-lucide-file-text" />
 
@@ -210,7 +210,7 @@ Define documents as plain JSON objects, or reach for the TypeScript API for a fu
   Create Word documents with paragraphs, tables, images, and charts
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-presentation" />
 
@@ -218,7 +218,7 @@ Define documents as plain JSON objects, or reach for the TypeScript API for a fu
   Create PowerPoint presentations with shapes, animations, and transitions
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-table-2" />
 
@@ -226,7 +226,7 @@ Define documents as plain JSON objects, or reach for the TypeScript API for a fu
   Create Excel spreadsheets with styles, charts, and data validation
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-zap" />
 
@@ -302,16 +302,16 @@ Read and modify existing files
 Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch templates by replacing `{{placeholder}}` tokens with new content.
 
 #links
-  :::button-link{to="/en/docx/parsing" variant="ghost"}
+  :::button-link{to="/en/docx/parsing" variant="outline" size="sm"}
   Parse documents <Icon name="i-lucide-arrow-right" />
   :::
 
-  :::button-link{to="/en/docx/patch" variant="ghost"}
+  :::button-link{to="/en/docx/patch" variant="outline" size="sm"}
   Patch templates <Icon name="i-lucide-arrow-right" />
   :::
 
-#cards
-  :::page-card
+#features
+  :::page-feature
   #icon
   <Icon name="i-lucide-search" />
 
@@ -319,7 +319,7 @@ Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch temp
   Read document structure, styles, and content
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-wrench" />
 
@@ -327,7 +327,7 @@ Parse `.docx`, `.pptx`, and `.xlsx` files into structured objects, or patch temp
   Patch template placeholders with new content
   :::
 
-  :::page-card
+  :::page-feature
   #icon
   <Icon name="i-lucide-arrow-right-left" />
 

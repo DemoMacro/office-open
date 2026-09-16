@@ -1,32 +1,8 @@
 {
-  "common": {
-    "error": {
-      "title": "这一页不在书架上。",
-      "back": "回到目录"
-    }
-  },
   "docs": {
-    "toc": "本页目录",
-    "menu": "菜单",
-    "language": "语言",
-    "reference": "参考",
-    "copy": {
-      "code": "复制代码",
-      "copied": "已复制"
-    },
-    "search": "搜索文档…",
-    "searchEmpty": "没有找到。",
-    "assistant": "询问文档助手…",
-    "assistantGreeting": "问问文档助手——它读过这些书架。",
     "assistantTitle": "文档助手",
     "assistantClear": "清空对话",
     "assistantError": "连接不上文档助手，请重试。",
-    "assistantThinking": "思考中",
-    "assistantStarter1": "这个网站涵盖哪些内容？",
-    "assistantStarter2": "怎么生成 Word 文档？",
-    "assistantStarter3": "总结一下这一页。",
-    "prev": "上一篇",
-    "next": "下一篇",
-    "edit": "编辑此页"
+    "starters": ["这个网站涵盖哪些内容？", "怎么生成 Word 文档？", "总结一下这一页。"]
   }
 }

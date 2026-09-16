@@ -1,0 +1,8 @@
+/* Site CSS overrides. */
+
+/* The theme dissolves each pane's pre bar inside code groups — the tab
+   strip already names the language, but the bar also carries the Copy
+   button, and tabs switch panes while the bar is what copies. */
+.bs-docs-code-group .bs-docs-pre .bs-docs-pre-bar {
+  display: flex;
+}
