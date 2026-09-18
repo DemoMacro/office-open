@@ -53,21 +53,21 @@
   "devDependencies": {
     "@funish/basis": "0.3.0",
     "@rolldown/plugin-node-polyfills": "1.0.3",
-    "@types/node": "26.2.0",
-    "@vitest/coverage-v8": "4.1.10",
+    "@types/node": "26.6.1",
+    "@vitest/coverage-v8": "4.1.11",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "docx": "9.7.1",
     "execa": "10.0.1",
-    "happy-dom": "20.11.6",
+    "happy-dom": "20.14.5",
     "hucre": "1.1.0",
-    "inquirer": "14.1.0",
-    "libxml2-wasm": "0.7.1",
+    "inquirer": "14.2.2",
+    "libxml2-wasm": "0.7.2",
     "pptxgenjs": "4.0.1",
     "ts-json-schema-generator": "2.9.0",
     "ts-morph": "28.0.0",
-    "tsx": "4.23.12",
-    "vite-plus": "0.2.9"
+    "tsx": "4.23.13",
+    "vite-plus": "0.3.3"
   },
   "packageManager": "pnpm@10.33.0"
 }

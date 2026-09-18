@@ -1,6 +1,6 @@
 {
   "name": "@office-open/xml",
-  "version": "0.14.5",
+  "version": "0.14.6",
   "description": "Zero-dependency XML parsing and serialization for Office Open XML — drop-in replacement for xml and xml-js",
   "keywords": [
     "drop-in",
@@ -52,7 +52,7 @@
   },
   "devDependencies": {
     "@types/xml": "1.0.11",
-    "txml": "6.0.1",
+    "txml": "6.0.3",
     "xml": "1.0.1",
     "xml-js": "1.6.11"
   }

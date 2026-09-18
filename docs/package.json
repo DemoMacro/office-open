@@ -9,15 +9,15 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@ai-sdk/mcp": "2.0.49",
-    "@ai-sdk/openai-compatible": "3.0.48",
-    "@ai-sdk/vue": "4.0.99",
-    "@bysages/docs-theme": "0.0.4",
-    "@bysages/vue": "0.0.0",
-    "@iconify-json/lucide": "1.2.125",
-    "@iconify-json/simple-icons": "1.2.93",
-    "@iconify-json/vscode-icons": "1.2.74",
-    "ai": "7.0.99",
+    "@ai-sdk/mcp": "2.0.53",
+    "@ai-sdk/openai-compatible": "3.0.52",
+    "@ai-sdk/vue": "4.0.106",
+    "@bysages/docs-theme": "0.1.1",
+    "@bysages/vue": "0.1.1",
+    "@iconify-json/lucide": "1.2.134",
+    "@iconify-json/simple-icons": "1.2.96",
+    "@iconify-json/vscode-icons": "1.2.78",
+    "ai": "7.0.106",
     "nuxt": "4.5.2",
     "office-open": "workspace:*"
   }
