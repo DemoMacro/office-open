@@ -342,6 +342,29 @@ describe("dropDanglingPassthroughRels", () => {
     );
   });
 
+  it("keeps rels whose escaped target decodes to an existing part", () => {
+    const files = assembled();
+    files["word/fonts/My Font.odttf"] = new Uint8Array([9]);
+    files["word/_rels/document.xml.rels"] = encoder.encode(
+      `<Relationships>` +
+        `<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/font" Target="fonts/My%20Font.odttf"/>` +
+        `</Relationships>`,
+    );
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/font",
+        target: "fonts/My%20Font.odttf",
+        rId: "rId7",
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["word/_rels/document.xml.rels"])).toContain(
+      'Target="fonts/My%20Font.odttf"',
+    );
+  });
+
   it("preserves the [data, opts] entry form when rewriting", () => {
     const files = assembled();
     const opts = { level: 0 as const };

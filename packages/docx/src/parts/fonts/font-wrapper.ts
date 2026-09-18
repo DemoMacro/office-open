@@ -1,4 +1,10 @@
-import { RELATIONSHIP_TYPES, Relationships, toUint8Array, uniqueUuid } from "@office-open/core";
+import {
+  encodeUriPath,
+  RELATIONSHIP_TYPES,
+  Relationships,
+  toUint8Array,
+  uniqueUuid,
+} from "@office-open/core";
 import type { Guid } from "@office-open/core";
 
 /**
@@ -63,7 +69,9 @@ export class FontWrapper implements ViewWrapper {
           ? font.odttfPath.slice(5)
           : font.odttfPath
         : `fonts/${font.name}.odttf`;
-      this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, target);
+      // A Target is a URI: escape the font part name per segment (spaces,
+      // non-ASCII) so it matches the ZIP entry packed by compileDocument.
+      this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, encodeUriPath(target));
     }
   }
 }

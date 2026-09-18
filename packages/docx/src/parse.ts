@@ -2,6 +2,7 @@ import { parseArchive, ParsedArchive } from "@office-open/core";
 import type { DataType } from "@office-open/core";
 import {
   collectPassthroughParts,
+  decodeUriPath,
   isEncryptedContainer,
   resolveRelationshipTarget,
   toUint8Array,
@@ -175,11 +176,15 @@ function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: Parse
     if (!font.embedRid) continue;
     const odttfPath = ridToPath.get(font.embedRid);
     if (!odttfPath) continue;
-    const bytes = doc.getRaw(odttfPath);
+    // The Target is a URI (escaped); the ZIP entry may carry the raw name.
+    // Look up both forms and store the decoded path so compileDocument
+    // re-escapes it exactly once.
+    const decoded = decodeUriPath(odttfPath);
+    const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
     if (bytes) {
       font.data = Buffer.from(bytes);
       font.rawOdttf = true;
-      font.odttfPath = odttfPath;
+      font.odttfPath = decoded;
     }
   }
 }
