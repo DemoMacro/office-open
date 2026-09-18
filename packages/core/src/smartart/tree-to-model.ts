@@ -1,5 +1,6 @@
 import { escapeXml } from "@office-open/xml";
 
+import { activeReproducibleScope } from "../util/reproducible";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyConnection } from "./data-model/connection";
 import { stringifyDataModel } from "./data-model/data-model";
@@ -28,7 +29,8 @@ function stringifyDocPoint(layout: string, style: string, color: string): string
 }
 
 function uuid(): string {
-  return `{${crypto.randomUUID().toUpperCase()}}`;
+  const scope = activeReproducibleScope();
+  return scope ? `{${scope.nextUuid().toUpperCase()}}` : `{${crypto.randomUUID().toUpperCase()}}`;
 }
 
 /**

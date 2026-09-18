@@ -1,4 +1,4 @@
-import { Relationships } from "@office-open/core";
+import { Relationships, withReproducibleGeneration } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
@@ -113,6 +113,16 @@ describe("drawingDesc round-trip", () => {
     // 914400 EMU = 96 pixels
     expect(xml).toContain('cx="914400"');
     expect(xml).toContain('cy="914400"');
+  });
+
+  it("takes wp:docPr ids from a reproducible scope counter", () => {
+    const opts = { mediaData: makeImageMediaData() };
+    const ids = withReproducibleGeneration({}, () =>
+      [drawingDesc.stringify(opts, writeCtx), drawingDesc.stringify(opts, writeCtx)].map(
+        (xml) => /<wp:docPr id="(\d+)"/.exec(xml ?? "")?.[1],
+      ),
+    );
+    expect(ids).toEqual(["1", "2"]);
   });
 
   it("stringifies blip fill with correct embed reference", () => {

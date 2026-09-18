@@ -16,6 +16,7 @@ import {
   zipSync,
 } from "fflate";
 
+import { activeReproducibleScope } from "../util/reproducible";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
 import {
@@ -38,6 +39,19 @@ export interface XmlifyedFile {
 
 /** Default DEFLATE level for XML entries (SuperFast, matching MS Office). */
 export const ZIP_DEFLATE_LEVEL = 1;
+
+/**
+ * Timestamp stamped on every fflate-packed entry inside a reproducible scope:
+ * 1980-01-01, the earliest date a ZIP header can encode. The local-time
+ * constructor keeps the DOS fields zero in every timezone, matching the native
+ * writer (see writeZipBuffer). Native archives already carry this timestamp.
+ */
+const REPRODUCIBLE_ZIP_MTIME = new Date(1980, 0, 1);
+
+/** `mtime` option for fflate, undefined outside a reproducible scope (defaults
+ *  to the current time there). */
+const zipMtime = (): Date | undefined =>
+  activeReproducibleScope() ? REPRODUCIBLE_ZIP_MTIME : undefined;
 
 /** Default DEFLATE level for compressible media (EMF/WMF/BMP/TIFF/SVG). MS
  *  Office uses CompressionOption.Normal (~zlib 6); SuperFast (1) inflates EMF
@@ -127,7 +141,7 @@ export const zipAndConvert = async <T extends OutputType>(
     : await new Promise<Uint8Array>((resolve, reject) => {
         zip(
           files as AsyncZippable,
-          { level: level as ZipOptions["level"], consume: true },
+          { level: level as ZipOptions["level"], consume: true, mtime: zipMtime() },
           (err, data) => {
             if (err) reject(err);
             else resolve(data);
@@ -151,7 +165,7 @@ export const zipSyncAndConvert = <T extends OutputType>(
 ): OutputByType[T] => {
   const zipped = hasNativeDeflate()
     ? nativeZip(files, level)
-    : zipSync(files, { level: level as ZipOptions["level"] });
+    : zipSync(files, { level: level as ZipOptions["level"], mtime: zipMtime() });
   return convertOutput(zipped, type, mimeType);
 };
 
@@ -205,6 +219,7 @@ export const createZipStream = (
               : workerPath
                 ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
                 : new ZipDeflate(name, { level: level as ZipOptions["level"] });
+          if (activeReproducibleScope()) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
           zip.add(entry);
           // AsyncZipDeflate transfers each pushed buffer to its worker
           // (postMessage move semantics), detaching the caller's view —
@@ -276,6 +291,7 @@ export class ZipStreamWriter {
         : workerPath
           ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
           : new ZipDeflate(name, { level: level as ZipOptions["level"] });
+    if (activeReproducibleScope()) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
     // AsyncZipDeflate hands chunks to a worker; ondata delivery is asynchronous,
     // so ordering between parts is preserved by fflate's internal queue. The
     // worker transfer-detaches every chunk it is handed, so sinks receive

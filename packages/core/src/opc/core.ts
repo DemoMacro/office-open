@@ -1,6 +1,8 @@
 import { textOf, escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { activeReproducibleScope } from "../util/reproducible";
+
 /**
  * Core document properties (docProps/core.xml).
  *
@@ -144,7 +146,7 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
   if (opts.revision !== undefined)
     p.push(`<${cp("revision")}>${opts.revision}</${cp("revision")}>`);
 
-  const now = new Date().toISOString();
+  const now = activeReproducibleScope()?.date ?? new Date().toISOString();
   if (opts.created !== null)
     p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
   if (opts.modified !== null)

@@ -51,6 +51,7 @@ let _nativeDeflateAsync: AsyncDeflateFn | undefined;
 let _nativeInflate: InflateFn | undefined;
 let _nativeCrc32: Crc32Fn | undefined;
 let _zlibModule: typeof ZlibNode | undefined;
+let _forceJsDeflate = false;
 
 // Bun-specific fast path: Bun.deflateSync/Bun.inflateSync emit/accept RAW
 // deflate (bit-identical to deflateRawSync output) but skip the node:zlib
@@ -107,7 +108,17 @@ try {
   // Browser/Deno or Node-like runtime without usable zlib — fflate fallback
 }
 
-export const hasNativeDeflate = (): boolean => _nativeDeflate !== undefined;
+export const hasNativeDeflate = (): boolean => _nativeDeflate !== undefined && !_forceJsDeflate;
+
+/**
+ * Route DEFLATE through fflate even where native zlib resolved. Test seam for
+ * exercising the browser/Deno fallback paths on Node — not public API.
+ *
+ * @internal
+ */
+export function setForceJsDeflate(force: boolean): void {
+  _forceJsDeflate = force;
+}
 
 // fflate's async zip entries hand every chunk to a dedicated worker via
 // postMessage with a transfer list — one thread spawn per part (~5-10ms each
@@ -224,6 +235,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     wU16(buf, offset + 4, 20); // version needed
     wU16(buf, offset + 6, 0); // flags
     wU16(buf, offset + 8, e.method); // compression method
+    // DOS epoch (1980-01-01) — fixed so native archives are reproducible.
     wU16(buf, offset + 10, 0); // mod time
     wU16(buf, offset + 12, 0); // mod date
     wU32(buf, offset + 14, e.crc);
@@ -247,7 +259,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     wU16(buf, offset + 6, 20); // version needed
     wU16(buf, offset + 8, 0); // flags
     wU16(buf, offset + 10, e.method);
-    wU16(buf, offset + 12, 0); // mod time
+    wU16(buf, offset + 12, 0); // mod time (DOS epoch, see local header)
     wU16(buf, offset + 14, 0); // mod date
     wU32(buf, offset + 16, e.crc);
     wU32(buf, offset + 20, e.data.length);
