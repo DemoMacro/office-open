@@ -1,11 +1,9 @@
 /**
  * Shared skeleton for the footnotes/endnotes parts.
  *
- * Both parts serialize the same CT_FtnEdn structure — only the element names,
- * the reference-run flavor (footnoteRef/endnoteRef), and the reference-run
- * insertion point differ: a footnote reference goes after <w:pPr> when present
- * (CT_P ordering), an endnote reference goes right after the paragraph open
- * tag, preserving each format's historical output byte-for-byte.
+ * Both parts serialize the same CT_FtnEdn structure — only the element names
+ * and the reference-run flavor (footnoteRef/endnoteRef) differ; both insert
+ * the reference run after <w:pPr> when present, as CT_P ordering requires.
  *
  * @module
  */

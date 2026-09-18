@@ -64,6 +64,7 @@ export const endnotesDesc: CustomDescriptor<EndnotesData, BodyContext> = createN
   refRunXml: ENDNOTE_REF_RUN,
   separatorXml: SEPARATOR_ENDNOTE,
   continuationSeparatorXml: CONTINUATION_SEPARATOR_ENDNOTE,
-  // endnoteRef goes right after the paragraph open tag (historical output).
-  insertRefAfterParagraphProperties: false,
+  // Same insertion point as footnotes: CT_P ordering requires w:pPr first, so
+  // the reference run follows it instead of preceding it.
+  insertRefAfterParagraphProperties: true,
 });
