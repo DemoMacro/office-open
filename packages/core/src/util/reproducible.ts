@@ -36,7 +36,7 @@ export interface ReproducibleScope {
   nextUuid(): string;
   /** Next VML shape id (the numeric part of `_x0000_sN`). */
   nextVmlShapeId(): number;
-  /** Next wp:docPr id. */
+  /** Next integer id for drawing objects (wp:docPr) and revision markers. */
   nextDrawingId(): number;
 }
 

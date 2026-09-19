@@ -390,14 +390,14 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "insertion" in c) {
       const { id, author, date, children: nested } = c.insertion;
       parts.push(
-        `<w:ins w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+        `<w:ins w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
           stringifyTrackChangeChildren(nested, ctx, false) +
           "</w:ins>",
       );
     } else if (typeof c !== "string" && "deletion" in c) {
       const { id, author, date, children: nested } = c.deletion;
       parts.push(
-        `<w:del w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+        `<w:del w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
           stringifyTrackChangeChildren(nested, ctx, true) +
           "</w:del>",
       );
@@ -711,14 +711,14 @@ export function stringifyChildDispatch(
   if ("insertion" in child) {
     const { id, author, date, children } = child.insertion;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:ins w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
+    return `<w:ins w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
   }
 
   // Deleted text run(s) — w:del wraps one or more runs (delText content)
   if ("deletion" in child) {
     const { id, author, date, children } = child.deletion;
     const body = stringifyTrackChangeChildren(children, ctx, true);
-    return `<w:del w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:del>`;
+    return `<w:del w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:del>`;
   }
 
   // Hyperlink — side effect: relationship registration
@@ -796,7 +796,7 @@ export function stringifyChildDispatch(
   // ── Permission range markers ──
   if ("permStart" in child) {
     const ps = child.permStart;
-    const a: string[] = [`w:id="${ps.id ?? autoRevisionId()}"`];
+    const a: string[] = [`w:id="${ps.id ?? autoRevisionId(ctx.reproducible)}"`];
     if (ps.editor !== undefined) a.push(`w:ed="${escapeXml(String(ps.editor))}"`);
     if (ps.editGroup !== undefined) a.push(`w:edGrp="${ps.editGroup}"`);
     if (ps.colFirst !== undefined) a.push(`w:colFirst="${ps.colFirst}"`);
@@ -824,12 +824,12 @@ export function stringifyChildDispatch(
   if ("movedFrom" in child) {
     const { id, author, date, children } = child.movedFrom;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveFrom w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
+    return `<w:moveFrom w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
     const { id, author, date, children } = child.movedTo;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveTo w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
+    return `<w:moveTo w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
   }
 
   // ── Custom XML range markers (track changes) ──
@@ -969,7 +969,7 @@ export function stringifyChildDispatch(
       }
       contentXml = cparts.join("");
     }
-    return stringifySdtShell(s.properties, s.endProperties, contentXml);
+    return stringifySdtShell(s.properties, s.endProperties, contentXml, ctx.reproducible);
   }
 
   return undefined;
@@ -1012,7 +1012,7 @@ export function stringifyParagraphInline(
   const resolved: ParagraphOptions = typeof opts === "string" ? { text: opts } : opts;
   let body = "";
 
-  const props = stringifyParagraphProperties(resolved);
+  const props = stringifyParagraphProperties(resolved, ctx.reproducible);
   if (props.xml) body += props.xml;
 
   // Register numbering references from inline paragraphs (footnotes, endnotes, etc.)

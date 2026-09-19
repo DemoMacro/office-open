@@ -9,6 +9,7 @@
  * @module
  */
 
+import type { ReproducibleScope } from "@office-open/core";
 import { convertToTwip } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
@@ -219,15 +220,18 @@ function appendHeaderFooterRefs(
 
 // ── sectPrChange (recursive) ──
 
-function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions): string {
+function stringifySectionPropertiesChange(
+  opts: SectionPropertiesChangeOptions,
+  scope?: ReproducibleScope,
+): string {
   const { author, date, id, ...inner } = opts;
   // The inner w:sectPr is a snapshot of the PREVIOUS properties — emit only
   // what the source carried. Injecting the fresh-document defaults (pgSz,
   // pgMar, docGrid) would fabricate elements the revision never had.
-  const innerXml = stringifySectionPropertiesInner(inner, true);
+  const innerXml = stringifySectionPropertiesInner(inner, true, scope);
   // The snapshot's own rsid attributes round-trip too (CT_SectPrChange's
   // inner CT_SectPr carries them just like the top-level element).
-  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id ?? autoRevisionId()}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
+  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id ?? autoRevisionId(scope)}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──
@@ -235,6 +239,7 @@ function stringifySectionPropertiesChange(opts: SectionPropertiesChangeOptions):
 function stringifySectionPropertiesInner(
   opts: SectionPropertiesDescriptorOptions,
   omitDefaults = false,
+  scope?: ReproducibleScope,
 ): string {
   const parts: string[] = [];
 
@@ -358,7 +363,7 @@ function stringifySectionPropertiesInner(
 
   // Revision (sectPrChange)
   if (opts.revision) {
-    parts.push(stringifySectionPropertiesChange(opts.revision));
+    parts.push(stringifySectionPropertiesChange(opts.revision, scope));
   }
 
   return parts.join("");
@@ -385,8 +390,8 @@ export const sectionPropertiesDesc: CustomDescriptor<
 > = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    return stringifySectionProperties(opts);
+  stringify(opts, ctx) {
+    return stringifySectionProperties(opts, ctx.reproducible);
   },
 
   parse(el, _ctx) {
@@ -406,8 +411,11 @@ function sectPrRsidAttrs(opts: SectionPropertiesDescriptorOptions): string {
 }
 
 /** Standalone stringify — no context needed, pure options → XML. */
-export function stringifySectionProperties(opts: SectionPropertiesDescriptorOptions): string {
-  const inner = stringifySectionPropertiesInner(opts);
+export function stringifySectionProperties(
+  opts: SectionPropertiesDescriptorOptions,
+  scope?: ReproducibleScope,
+): string {
+  const inner = stringifySectionPropertiesInner(opts, false, scope);
   return `<w:sectPr${sectPrRsidAttrs(opts)}>${inner}</w:sectPr>`;
 }
 

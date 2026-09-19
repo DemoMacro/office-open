@@ -323,6 +323,20 @@ return `<p:spPr>${parts.join("")}</p:spPr>`;
 
 **Avoid `.forEach()`** — `for...of` is strictly superior.
 
+## Reproducible Generation
+
+`PackerOptions.reproducible` opts into byte-identical output: the packer creates a `ReproducibleScope` (a plain value object with per-scope counters, `createReproducibleScope`) and threads it through `CompileFn` and the ZIP step. Nothing global is installed — concurrent generations are isolated by construction.
+
+**Threading rules** — every nondeterministic read must resolve through the scope when one is active:
+
+- **Stringify side**: read `ctx.reproducible` (optional field on core `WriteContext`, set by each package's write context). Pattern: `opts.id ?? ctx.reproducible?.nextDrawingId() ?? moduleCounter++` — the scope never bypasses explicit ids, and the module counter stays the no-scope fallback.
+- **Stringify contexts are literals**: format-package body contexts (docx `mkCtx`) are object literals wrapping the write context, not the context itself. A new `WriteContext` field must be forwarded in the literal, or stringify reads `undefined`.
+- **Helpers without a context** (pure string builders) take an optional trailing `scope?: ReproducibleScope` parameter; callers with a context pass `ctx.reproducible`. `styles`/`numbering` definition stringifiers are static templates — threading there is not required.
+- **Counters**: `nextId` (alphanumeric), `nextUuid` (GUID-shaped), `nextVmlShapeId` (VML `_x0000_s`, starts at 1025), `nextDrawingId` (docPr ids, revision markers, and any other integer id space). Scope counters start where the module counters would, so ids do not drift by generation.
+- **Adding a new module-level counter or random id read**: grep for `Counter++`/`uniqueId()`/`randomUUID` and wire it through the scope in the same change — a missed read only shows up as a byte difference on the second generation in a process.
+
+Documented exception: password-derived protection hashes mint a fresh random salt per run; callers pass explicit `hashValue`/`saltValue` to pin them.
+
 ## XSD Value Mapping
 
 When XSD uses abbreviations, mapping is centralized in `packages/core/src/util/mappings.ts`. Each mapping is a `bidi()` helper exposing `.to()` (user value → XSD value) and `.from()` (XSD value → user value). The mapping is bidirectional:

@@ -7,7 +7,7 @@
  * @module
  */
 
-import { convertToTwip } from "@office-open/core";
+import { type ReproducibleScope, convertToTwip } from "@office-open/core";
 import { xsdJcAlignment } from "@office-open/core";
 import { xsdTableWidthType } from "@office-open/core";
 import { xsdVerticalMergeRev } from "@office-open/core";
@@ -102,6 +102,7 @@ function parseChangeAttrs(el: Element): Partial<ChangedProperties> {
 function buildTableGridXml(
   widths: Array<number | string>,
   revision?: TableGridChangeOptions,
+  scope?: ReproducibleScope,
 ): string {
   // w:gridCol @w is s:ST_TwipsMeasure — normalize UniversalMeasure to twip integers
   // so the emitted @w is always a bare integer (never "25mm").
@@ -111,7 +112,7 @@ function buildTableGridXml(
 
   if (revision) {
     const revCols = revision.columnWidths.map(gridCol).join("");
-    return `<w:tblGrid>${cols}<w:tblGridChange w:id="${revision.id ?? autoRevisionId()}"><w:tblGrid>${revCols}</w:tblGrid></w:tblGridChange></w:tblGrid>`;
+    return `<w:tblGrid>${cols}<w:tblGridChange w:id="${revision.id ?? autoRevisionId(scope)}"><w:tblGrid>${revCols}</w:tblGrid></w:tblGridChange></w:tblGrid>`;
   }
 
   return `<w:tblGrid>${cols}</w:tblGrid>`;
@@ -159,7 +160,7 @@ function stringifyCellChild(child: SectionChild, ctx: BodyContext): string {
 function stringifyTableCell(cell: TableCellOptions, ctx: BodyContext): string {
   let body = "";
 
-  const tcPr = stringifyTableCellProperties(cell);
+  const tcPr = stringifyTableCellProperties(cell, ctx.reproducible);
   if (tcPr) body += tcPr;
 
   const children = cell.children as SectionChild[] | undefined;
@@ -201,11 +202,11 @@ function stringifyTableRow(
 
   // Property exceptions (tblPrEx)
   if (row.propertyExceptions) {
-    parts.push(stringifyTablePropertyExceptions(row.propertyExceptions));
+    parts.push(stringifyTablePropertyExceptions(row.propertyExceptions, ctx.reproducible));
   }
 
   // Row properties
-  const trPr = stringifyTableRowProperties(row);
+  const trPr = stringifyTableRowProperties(row, ctx.reproducible);
   if (trPr) parts.push(trPr);
 
   const prefixCount = parts.length;
@@ -216,7 +217,7 @@ function stringifyTableRow(
     if ("sdt" in cell) {
       const s = cell.sdt;
       const contentXml = (s.cells ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
-      parts.push(stringifySdtShell(s.properties, s.endProperties, contentXml));
+      parts.push(stringifySdtShell(s.properties, s.endProperties, contentXml, ctx.reproducible));
     } else if ("customXml" in cell) {
       const cx = cell.customXml;
       const contentXml = (cx.children ?? []).map((c) => stringifyTableCell(c, ctx)).join("");
@@ -510,7 +511,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       width: opts.width,
       includeIfEmpty: true,
     };
-    parts.push(stringifyTableProperties(tblPrOpts)!);
+    parts.push(stringifyTableProperties(tblPrOpts, ctx.reproducible)!);
 
     // Table grid (fallback width count ignores markers between cells)
     const columnWidths =
@@ -523,7 +524,7 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
           ),
         ),
       ).fill(100);
-    parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision));
+    parts.push(buildTableGridXml(columnWidths, opts.columnWidthsRevision, ctx.reproducible));
 
     // Compute vertical merge CONTINUE cells
     const extraCells = computeVerticalMergeCells(opts.rows);
@@ -533,7 +534,9 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
       if ("sdt" in r) {
         const sdt = r.sdt;
         const contentXml = (sdt.rows ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");
-        parts.push(stringifySdtShell(sdt.properties, sdt.endProperties, contentXml));
+        parts.push(
+          stringifySdtShell(sdt.properties, sdt.endProperties, contentXml, ctx.reproducible),
+        );
       } else if ("customXml" in r) {
         const cx = r.customXml;
         const contentXml = (cx.children ?? []).map((rr) => stringifyTableRow(rr, ctx)).join("");

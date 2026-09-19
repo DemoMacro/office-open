@@ -17,6 +17,7 @@ import {
   hpsMeasureValue,
   mapOptional,
   pointMeasureValue,
+  type ReproducibleScope,
   uCharHexNumber,
   xsdJcAlignment,
   xsdShadingPattern,
@@ -353,6 +354,7 @@ export const EMPTY_PPR_RESULT: StringifyPPrResult = { xml: undefined, numberingR
 // nested revision wrappers), not document data — kept out of the public options.
 export function stringifyParagraphProperties(
   options?: ParagraphPropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): StringifyPPrResult {
   if (!options) return EMPTY_PPR_RESULT;
 
@@ -524,20 +526,20 @@ export function stringifyParagraphProperties(
   // holds only a paragraph-mark track-change marker (w:ins/w:del) or is a
   // parsed bare <w:rPr/> (emptyProperties).
   if (options.run) {
-    const inner = stringifyRunPropertiesInner(options.run);
+    const inner = stringifyRunPropertiesInner(options.run, scope);
     const runOpts = options.run as ParagraphRunPropertiesOptions;
     if (inner !== undefined || runOpts.insertion || runOpts.deletion || runOpts.emptyProperties) {
       const extra: string[] = [];
       if (runOpts.insertion) {
         const { id, author, date } = runOpts.insertion;
         extra.push(
-          `<w:ins w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
+          `<w:ins w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
         );
       }
       if (runOpts.deletion) {
         const { id, author, date } = runOpts.deletion;
         extra.push(
-          `<w:del w:id="${id ?? autoRevisionId()}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
+          `<w:del w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
         );
       }
       // CT_ParaRPr sequence: ins/del/moveFrom/moveTo lead, then EG_RPrBase.
@@ -552,8 +554,8 @@ export function stringifyParagraphProperties(
     // The embedded w:pPr is CT_PPrBase — no rPr (run), so drop it before
     // serializing the pre-change properties.
     const { author: _a, date: _d, id: _i, run: _r, ...originalProps } = rev;
-    const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true });
-    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId()}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
+    const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true }, scope);
+    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId(scope)}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }
 
   const body = s;
@@ -580,7 +582,10 @@ export function stringifyParagraphProperties(
  * Build the inner content of `<w:rPr>` as a string.
  * Returns undefined if no properties are set.
  */
-export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string | undefined {
+export function stringifyRunPropertiesInner(
+  opts?: RunPropertiesOptions,
+  scope?: ReproducibleScope,
+): string | undefined {
   if (!opts) return undefined;
 
   let s = "";
@@ -712,8 +717,8 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
   if (opts.revision) {
     const rev = opts.revision as RunPropertiesChangeOptions;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
-    const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions);
-    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId()}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
+    const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions, scope);
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — raw passthrough, emitted last (EG_RPrBase extension slot)
@@ -727,8 +732,11 @@ export function stringifyRunPropertiesInner(opts?: RunPropertiesOptions): string
  *
  * Replaces `buildRunProperties() + xml()` with a single-pass string builder.
  */
-export function stringifyRunProperties(opts?: RunPropertiesOptions): string | undefined {
-  const inner = stringifyRunPropertiesInner(opts);
+export function stringifyRunProperties(
+  opts?: RunPropertiesOptions,
+  scope?: ReproducibleScope,
+): string | undefined {
+  const inner = stringifyRunPropertiesInner(opts, scope);
   if (inner) return `<w:rPr>${inner}</w:rPr>`;
   // A parsed bare <w:rPr/> round-trips as the empty element.
   return opts?.emptyProperties ? "<w:rPr/>" : undefined;

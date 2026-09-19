@@ -119,7 +119,9 @@ export function stringifyParagraph(
 
   // Build paragraph properties — direct string output, no intermediate object tree.
   // A string paragraph is `{ text }` by construction: no pPr fields, no numbering.
-  const props = isPlainText ? EMPTY_PPR_RESULT : stringifyParagraphProperties(resolved);
+  const props = isPlainText
+    ? EMPTY_PPR_RESULT
+    : stringifyParagraphProperties(resolved, ctx.reproducible);
 
   // Register numbering references (length check skips the iterator allocation
   // on the common no-numbering path)
@@ -340,7 +342,7 @@ function stringifyTextbox(
 ): string {
   // Destructure to separate VML style/children from paragraph properties
   const { style, children, ...paraOpts } = opts;
-  const props = stringifyParagraphProperties(paraOpts);
+  const props = stringifyParagraphProperties(paraOpts, ctx.reproducible);
   const pPrXml = props.xml ?? "";
 
   // Textbox content — serialize children via stringifyBodyChild

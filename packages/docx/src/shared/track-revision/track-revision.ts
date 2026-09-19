@@ -1,4 +1,4 @@
-import type { DateTime } from "@office-open/core";
+import type { DateTime, ReproducibleScope } from "@office-open/core";
 /**
  * Track Revision module for WordprocessingML documents.
  *
@@ -40,7 +40,10 @@ export interface ChangedProperties {
 // dedupe pass in body.ts.
 let revisionIdCounter = 0;
 
-/** Allocate the next revision marker id for a fresh document. */
-export function autoRevisionId(): number {
-  return ++revisionIdCounter;
+/**
+ * Allocate the next revision marker id for a fresh document. Pass the
+ * reproducible scope to derive the id from the per-generation counter instead.
+ */
+export function autoRevisionId(scope?: ReproducibleScope): number {
+  return scope ? scope.nextDrawingId() : ++revisionIdCounter;
 }

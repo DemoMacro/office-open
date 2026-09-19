@@ -8,7 +8,12 @@
  * @module
  */
 
-import { convertToTwip, mapOptional, xsdVerticalMergeRev } from "@office-open/core";
+import {
+  type ReproducibleScope,
+  convertToTwip,
+  mapOptional,
+  xsdVerticalMergeRev,
+} from "@office-open/core";
 import { xsdJcAlignment } from "@office-open/core";
 import { xsdTableWidthType } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
@@ -195,22 +200,22 @@ function cnfStyleStr(opts: CnfStyleOptions): string {
 
 // ── Change/revision attribute string ──
 
-function changeAttrStr(tag: string, opts: ChangedProperties): string {
+function changeAttrStr(tag: string, opts: ChangedProperties, scope?: ReproducibleScope): string {
   const a = attrsRaw({
     "w:author": escapeXml(opts.author),
     "w:date": escapeXml(opts.date),
-    "w:id": opts.id ?? autoRevisionId(),
+    "w:id": opts.id ?? autoRevisionId(scope),
   });
   return `<${tag}${a}/>`;
 }
 
 // ── Cell merge revision string ──
 
-function cellMergeStr(opts: CellMergeAttributes): string {
+function cellMergeStr(opts: CellMergeAttributes, scope?: ReproducibleScope): string {
   const attrs: Record<string, string | number | boolean | undefined> = {
     "w:author": escapeXml(opts.author),
     "w:date": escapeXml(opts.date),
-    "w:id": opts.id ?? autoRevisionId(),
+    "w:id": opts.id ?? autoRevisionId(scope),
   };
   if (opts.verticalMerge !== undefined) {
     attrs["w:vMerge"] = xsdVerticalMergeRev.to(opts.verticalMerge);
@@ -234,14 +239,17 @@ function cellSpacingStr(opts: TableCellSpacingProperties): string {
 
 // ── Table properties change (w:tblPrChange) ──
 
-function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptions): string {
+function stringifyTablePropertiesChangeInner(
+  options: TablePropertiesChangeOptions,
+  scope?: ReproducibleScope,
+): string {
   // The embedded w:tblPr is CT_TblPrBase — no nested tblPrChange.
   const { revision: _rev, ...innerOptions } = options;
-  const inner = stringifyTablePropertiesInner({ ...innerOptions, includeIfEmpty: true });
+  const inner = stringifyTablePropertiesInner({ ...innerOptions, includeIfEmpty: true }, scope);
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id ?? autoRevisionId(),
+    "w:id": options.id ?? autoRevisionId(scope),
   });
   return `<w:tblPrChange ${a}><w:tblPr>${inner}</w:tblPr></w:tblPrChange>`;
 }
@@ -250,6 +258,7 @@ function stringifyTablePropertiesChangeInner(options: TablePropertiesChangeOptio
 
 function stringifyTablePropertiesInner(
   options: TablePropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): string {
   const parts: string[] = [];
 
@@ -323,7 +332,7 @@ function stringifyTablePropertiesInner(
   }
 
   if (options.revision) {
-    parts.push(stringifyTablePropertiesChangeInner(options.revision));
+    parts.push(stringifyTablePropertiesChangeInner(options.revision, scope));
   }
 
   return parts.join("");
@@ -331,8 +340,9 @@ function stringifyTablePropertiesInner(
 
 export function stringifyTableProperties(
   options: TablePropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): string | undefined {
-  const inner = stringifyTablePropertiesInner(options);
+  const inner = stringifyTablePropertiesInner(options, scope);
   if (options.includeIfEmpty || inner) {
     return `<w:tblPr>${inner}</w:tblPr>`;
   }
@@ -341,14 +351,17 @@ export function stringifyTableProperties(
 
 // ── Row properties change (w:trPrChange) ──
 
-function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChangeOptions): string {
+function stringifyTableRowPropertiesChangeInner(
+  options: TableRowPropertiesChangeOptions,
+  scope?: ReproducibleScope,
+): string {
   // TableRowPropertiesChangeOptions already narrows to CT_TrPrBase fields —
   // ins/del/trPrChange live only on the full TableRowPropertiesOptions.
-  const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true });
+  const inner = stringifyTableRowPropertiesInner({ ...options, includeIfEmpty: true }, scope);
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id ?? autoRevisionId(),
+    "w:id": options.id ?? autoRevisionId(scope),
   });
   return `<w:trPrChange ${a}><w:trPr>${inner}</w:trPr></w:trPrChange>`;
 }
@@ -357,6 +370,7 @@ function stringifyTableRowPropertiesChangeInner(options: TableRowPropertiesChang
 
 function stringifyTableRowPropertiesInner(
   options: TableRowPropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): string {
   const parts: string[] = [];
 
@@ -413,15 +427,15 @@ function stringifyTableRowPropertiesInner(
   }
 
   if (options.insertion) {
-    parts.push(changeAttrStr("w:ins", options.insertion));
+    parts.push(changeAttrStr("w:ins", options.insertion, scope));
   }
 
   if (options.deletion) {
-    parts.push(changeAttrStr("w:del", options.deletion));
+    parts.push(changeAttrStr("w:del", options.deletion, scope));
   }
 
   if (options.revision) {
-    parts.push(stringifyTableRowPropertiesChangeInner(options.revision));
+    parts.push(stringifyTableRowPropertiesChangeInner(options.revision, scope));
   }
 
   return parts.join("");
@@ -429,8 +443,9 @@ function stringifyTableRowPropertiesInner(
 
 export function stringifyTableRowProperties(
   options: TableRowPropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): string | undefined {
-  const inner = stringifyTableRowPropertiesInner(options);
+  const inner = stringifyTableRowPropertiesInner(options, scope);
   if (options.includeIfEmpty || inner) {
     return `<w:trPr>${inner}</w:trPr>`;
   }
@@ -441,15 +456,16 @@ export function stringifyTableRowProperties(
 
 function stringifyTableCellPropertiesChangeInner(
   options: TableCellPropertiesChangeOptions,
+  scope?: ReproducibleScope,
 ): string {
   // The embedded w:tcPr is CT_TcPrInner, which includes EG_CellMarkupElements
   // (cellIns/cellDel/cellMerge) — the snapshot's own revision markers
   // round-trip, same as every other property in the snapshot.
-  const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true });
+  const inner = stringifyTableCellPropertiesInner({ ...options, includeIfEmpty: true }, scope);
   const a = attrsRaw({
     "w:author": escapeXml(options.author),
     "w:date": escapeXml(options.date),
-    "w:id": options.id ?? autoRevisionId(),
+    "w:id": options.id ?? autoRevisionId(scope),
   });
   return `<w:tcPrChange ${a}><w:tcPr>${inner}</w:tcPr></w:tcPrChange>`;
 }
@@ -458,6 +474,7 @@ function stringifyTableCellPropertiesChangeInner(
 
 function stringifyTableCellPropertiesInner(
   options: TableCellPropertiesOptions & { includeIfEmpty?: boolean },
+  scope?: ReproducibleScope,
 ): string {
   // CT_TcPrBase sequence: cnfStyle, tcW, gridSpan, hMerge, vMerge, tcBorders, shd,
   // noWrap, tcMar, textDirection, tcFitText, vAlign, hideMark, headers;
@@ -530,19 +547,19 @@ function stringifyTableCellPropertiesInner(
   }
 
   if (options.insertion) {
-    parts.push(changeAttrStr("w:cellIns", options.insertion));
+    parts.push(changeAttrStr("w:cellIns", options.insertion, scope));
   }
 
   if (options.deletion) {
-    parts.push(changeAttrStr("w:cellDel", options.deletion));
+    parts.push(changeAttrStr("w:cellDel", options.deletion, scope));
   }
 
   if (options.cellMerge) {
-    parts.push(cellMergeStr(options.cellMerge));
+    parts.push(cellMergeStr(options.cellMerge, scope));
   }
 
   if (options.revision) {
-    parts.push(stringifyTableCellPropertiesChangeInner(options.revision));
+    parts.push(stringifyTableCellPropertiesChangeInner(options.revision, scope));
   }
 
   return parts.join("");
@@ -550,8 +567,9 @@ function stringifyTableCellPropertiesInner(
 
 export function stringifyTableCellProperties(
   options: TableCellPropertiesOptions & { includeIfEmpty?: boolean; cellProperties?: boolean },
+  scope?: ReproducibleScope,
 ): string | undefined {
-  const inner = stringifyTableCellPropertiesInner(options);
+  const inner = stringifyTableCellPropertiesInner(options, scope);
   // cellProperties marks a parsed bare <w:tcPr/> — round-trip as the empty element.
   if (options.includeIfEmpty || options.cellProperties === true || inner) {
     return `<w:tcPr>${inner}</w:tcPr>`;
@@ -561,7 +579,10 @@ export function stringifyTableCellProperties(
 
 // ── Table property exceptions (w:tblPrEx) ──
 
-function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions): string {
+function stringifyTablePropertyExceptionsInner(
+  options: TablePropertyExOptions,
+  scope?: ReproducibleScope,
+): string {
   const parts: string[] = [];
 
   if (options.width) {
@@ -607,16 +628,19 @@ function stringifyTablePropertyExceptionsInner(options: TablePropertyExOptions):
     const a = attrsRaw({
       "w:author": escapeXml(change.author),
       "w:date": escapeXml(change.date),
-      "w:id": change.id ?? autoRevisionId(),
+      "w:id": change.id ?? autoRevisionId(scope),
     });
     // CT_TblPrExChange requires a tblPrEx child holding the previous (pre-change) values.
-    const revInner = stringifyTablePropertyExceptionsInner(change);
+    const revInner = stringifyTablePropertyExceptionsInner(change, scope);
     parts.push(`<w:tblPrExChange ${a}><w:tblPrEx>${revInner}</w:tblPrEx></w:tblPrExChange>`);
   }
 
   return parts.join("");
 }
 
-export function stringifyTablePropertyExceptions(options: TablePropertyExOptions): string {
-  return `<w:tblPrEx>${stringifyTablePropertyExceptionsInner(options)}</w:tblPrEx>`;
+export function stringifyTablePropertyExceptions(
+  options: TablePropertyExOptions,
+  scope?: ReproducibleScope,
+): string {
+  return `<w:tblPrEx>${stringifyTablePropertyExceptionsInner(options, scope)}</w:tblPrEx>`;
 }

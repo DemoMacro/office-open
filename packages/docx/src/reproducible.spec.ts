@@ -40,7 +40,60 @@ const generate = {
   stream: (date: string) => collect(generateDocumentStream(options(), { reproducible: { date } })),
 };
 
+/** Revision markers of every fresh-constructible kind exercise the revision-id
+ *  threading (autoRevisionId) — a leaked module-counter fallback shows up as a
+ *  byte difference because the plain generation below advances the counters. */
+const revisionOptions = (): DocumentOptions => ({
+  sections: [
+    {
+      children: [
+        {
+          paragraph: {
+            children: [
+              { insertion: { author: "A", date: DATE, children: [{ text: "ins" }] } },
+              { deletion: { author: "A", date: DATE, children: [{ text: "del" }] } },
+              {
+                moveFrom: { name: "m1", author: "A", date: DATE, wrap: ["mv"] },
+              },
+              {
+                moveTo: { name: "m1", author: "A", date: DATE, wrap: ["mv"] },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: ["para"],
+            revision: { author: "A", date: DATE, alignment: "center" },
+          },
+        },
+        {
+          table: {
+            revision: { author: "A", date: DATE },
+            rows: [{ cells: [{ children: [{ paragraph: { children: ["cell"] } }] }] }],
+          },
+        },
+      ],
+    },
+  ],
+});
+
 describe("reproducible generation", () => {
+  it("derives revision marker ids from the reproducible option", () => {
+    // Advance the module-level fallback counters first — a leaked fallback
+    // read would then produce a byte difference between the two scoped runs.
+    generateDocumentSync(revisionOptions());
+    const first = generateDocumentSync(revisionOptions(), { reproducible: { date: DATE } });
+    const second = generateDocumentSync(revisionOptions(), { reproducible: { date: DATE } });
+    expect(Array.from(first)).toEqual(Array.from(second));
+    const doc = decode(first, "word/document.xml");
+    expect(doc).toContain("<w:ins ");
+    expect(doc).toContain("<w:del ");
+    expect(doc).toContain("<w:moveFrom ");
+    expect(doc).toContain("<w:pPrChange ");
+    expect(doc).toContain("<w:tblPrChange ");
+  });
+
   it("generates byte-identical documents on the async, sync and stream paths", async () => {
     const async_ = await generate.async(DATE);
     const sync = generate.sync(DATE);

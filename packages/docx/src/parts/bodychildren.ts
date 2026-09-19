@@ -7,7 +7,12 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, toUint8Array, uniqueId } from "@office-open/core";
+import {
+  type ReproducibleScope,
+  RELATIONSHIP_TYPES,
+  toUint8Array,
+  uniqueId,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -262,12 +267,12 @@ export function checkboxSymbolRunInner(cb: SdtCheckboxOptions): string {
   return `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r>`;
 }
 
-export function stringifySdtPr(opts: SdtPropertiesOptions): string {
+export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleScope): string {
   const parts: string[] = [];
 
   // rPr — the SDT start mark's run properties (CT_SdtPr's leading element)
   if (opts.runProperties) {
-    const rPrInner = stringifyRunPropertiesInner(opts.runProperties);
+    const rPrInner = stringifyRunPropertiesInner(opts.runProperties, scope);
     if (rPrInner) parts.push(`<w:rPr>${rPrInner}</w:rPr>`);
   }
 
@@ -339,10 +344,11 @@ export function stringifySdtShell(
   properties: SdtPropertiesOptions,
   endProperties: RunPropertiesOptions | undefined,
   contentXml: string,
+  scope?: ReproducibleScope,
 ): string {
   // sdtEndPr is optional (CT_Sdt's minOccurs=0) — omit when the source had
   // none; an empty object still emits the bare element the source carried.
-  const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties) : undefined;
+  const endPrInner = endProperties ? stringifyRunPropertiesInner(endProperties, scope) : undefined;
   const endPr =
     endProperties === undefined
       ? ""
@@ -350,7 +356,7 @@ export function stringifySdtShell(
         ? `<w:sdtEndPr><w:rPr>${endPrInner}</w:rPr></w:sdtEndPr>`
         : "<w:sdtEndPr/>";
   const content = contentXml ? `<w:sdtContent>${contentXml}</w:sdtContent>` : "<w:sdtContent/>";
-  return `<w:sdt>${stringifySdtPr(properties)}${endPr}${content}</w:sdt>`;
+  return `<w:sdt>${stringifySdtPr(properties, scope)}${endPr}${content}</w:sdt>`;
 }
 
 // ── SDT parse helpers ──
@@ -412,12 +418,12 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     const parts: string[] = ["<w:sdt>"];
 
     // sdtPr
-    parts.push(stringifySdtPr(opts.properties));
+    parts.push(stringifySdtPr(opts.properties, ctx.reproducible));
 
     // sdtEndPr — optional; CT_SdtEndPr wraps its run properties in w:rPr.
     // An empty object still emits the bare element the source carried.
     const endPrInner = opts.endProperties
-      ? stringifyRunPropertiesInner(opts.endProperties)
+      ? stringifyRunPropertiesInner(opts.endProperties, ctx.reproducible)
       : undefined;
     if (opts.endProperties !== undefined) {
       parts.push(
