@@ -31,6 +31,7 @@ import { readShapeStyle } from "@shared/shape/shape";
 import type { PptxWriteContext } from "../../context";
 import { readCnvPr } from "./shape";
 import { stringifyShapeStyle } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counters ──
 
@@ -110,7 +111,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextLineId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextLineId++;
     const name = opts.name ?? `Line ${id}`;
     (ctx as PptxWriteContext).registerShapeId(name, id);
 
@@ -202,7 +203,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextConnectorId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextConnectorId++;
     const name = opts.name ?? `Connector ${id}`;
     (ctx as PptxWriteContext).registerShapeId(name, id);
 

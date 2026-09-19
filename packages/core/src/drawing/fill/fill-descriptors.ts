@@ -292,10 +292,14 @@ function emitBlipFill(
   // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
   // replaces `{fileName}` with `rId{N}` and creates the relationship. When the
   // caller supplies embed (a media reference already registered with the write
-  // context, e.g. `{image1.png}`), use it verbatim so the emitted reference
-  // matches the registration.
-  const fileName = `${reproducible?.nextId() ?? uniqueId()}.${options.imageType ?? "png"}`;
-  const embedRef = embed ?? `{${fileName}}`;
+  // context, e.g. `{image1.png}`), use it verbatim, and noEmbed re-emits a
+  // bare a:blip with no r:embed — the placeholder id is minted only when it
+  // will actually be emitted, so scoped generation never burns a counter slot.
+  const embedRef =
+    embed ??
+    (options.noEmbed
+      ? ""
+      : `{${reproducible?.nextId() ?? uniqueId()}.${options.imageType ?? "png"}}`);
 
   const blipChildren: string[] = [];
   if (options.blipEffects) {

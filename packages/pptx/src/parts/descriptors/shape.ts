@@ -49,6 +49,7 @@ import {
 
 import type { PptxWriteContext, MediaEntry } from "../../context";
 import { readNvPrPlaceholder, stringifyNvPr } from "./graphic-frame";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── Auto-incrementing IDs ──
 
@@ -66,7 +67,7 @@ export const shapeDesc: CustomDescriptor<ShapeOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextShapeId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextShapeId++;
     const name = opts.name ?? `Shape ${id}`;
     (ctx as PptxWriteContext).registerShapeId(name, id);
     const parts: string[] = [];
@@ -146,7 +147,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 
   stringify(opts, ctx) {
     const pptx = ctx as PptxWriteContext;
-    const id = opts.id ?? _nextPictureId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextPictureId++;
     const name = opts.name ?? `Picture ${id}`;
     pptx.registerShapeId(name, id);
 

@@ -235,9 +235,11 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     wU16(buf, offset + 4, 20); // version needed
     wU16(buf, offset + 6, 0); // flags
     wU16(buf, offset + 8, e.method); // compression method
-    // DOS epoch (1980-01-01) — fixed so native archives are reproducible.
+    // DOS epoch (1980-01-01 00:00 → time 0x0000, date 0x0021) — fixed so native
+    // archives are reproducible and byte-match the fflate reproducible stamp
+    // (packer.ts REPRODUCIBLE_ZIP_MTIME).
     wU16(buf, offset + 10, 0); // mod time
-    wU16(buf, offset + 12, 0); // mod date
+    wU16(buf, offset + 12, 0x21); // mod date
     wU32(buf, offset + 14, e.crc);
     wU32(buf, offset + 18, e.data.length); // compressed size
     wU32(buf, offset + 22, e.uncompressedSize);
@@ -260,7 +262,7 @@ function writeZipBuffer(entries: Entry[]): Uint8Array {
     wU16(buf, offset + 8, 0); // flags
     wU16(buf, offset + 10, e.method);
     wU16(buf, offset + 12, 0); // mod time (DOS epoch, see local header)
-    wU16(buf, offset + 14, 0); // mod date
+    wU16(buf, offset + 14, 0x21); // mod date
     wU32(buf, offset + 16, e.crc);
     wU32(buf, offset + 20, e.data.length);
     wU32(buf, offset + 24, e.uncompressedSize);

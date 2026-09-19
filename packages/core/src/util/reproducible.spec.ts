@@ -66,7 +66,7 @@ describe("createReproducibleScope", () => {
     ]).toEqual(["_x0000_s1025", "_x0000_s1025"]);
   });
 
-  it("keeps drawing from the process-global VML counter when no scope is passed", () => {
+  it("keeps the VML shape id on the process-global counter when no scope is passed", () => {
     expect(nextVmlShapeId()).not.toBe(nextVmlShapeId());
   });
 

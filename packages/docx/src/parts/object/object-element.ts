@@ -128,7 +128,8 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const inner: string[] = [];
 
     // VML preview shape (v:shape + optional v:imagedata)
-    const shapeId = opts.shapeId ?? `_x0000_i${objectShapeCounter++}`;
+    const shapeId =
+      opts.shapeId ?? `_x0000_i${ctx.reproducible?.nextVmlShapeId() ?? objectShapeCounter++}`;
     const widthVal = opts.width ?? 100;
     const heightVal = opts.height ?? 100;
     const styleWidth =
@@ -183,7 +184,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (payload.drawAspect) {
         attrs.push(` DrawAspect="${payload.drawAspect === "icon" ? "Icon" : "Content"}"`);
       }
-      attrs.push(` ObjectID="${payload.objectId ?? `_${objectOleCounter++}`}"`);
+      attrs.push(
+        ` ObjectID="${payload.objectId ?? `_${ctx.reproducible?.nextDrawingId() ?? objectOleCounter++}`}"`,
+      );
       attrs.push(` r:id="{${fileName}}"`);
       let children = "";
       {

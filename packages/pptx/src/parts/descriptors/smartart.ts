@@ -34,6 +34,7 @@ import {
   stringifyNvPr,
 } from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── Types ──
 
@@ -48,7 +49,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
 
   stringify(opts, ctx) {
     const pptxCtx = ctx as PptxWriteContext;
-    const id = opts.id ?? _nextSmartArtId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextSmartArtId++;
     const name = opts.name ?? `Diagram ${id}`;
     pptxCtx.registerShapeId(name, id);
     const saKey = opts.smartArtKey ?? pptxCtx.nextSmartArtKey();

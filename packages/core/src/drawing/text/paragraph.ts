@@ -534,8 +534,11 @@ function fallbackFieldGuid(): string {
 
 function stringifyTextField(opts: TextFieldOptions, ctx: WriteContext): string {
   // id is a required GUID on CT_TextField; the fallback keeps user-authored
-  // fields PowerPoint-openable (see fallbackFieldGuid).
-  const id = opts.id ?? fallbackFieldGuid();
+  // fields PowerPoint-openable (see fallbackFieldGuid) and a reproducible
+  // scope derives it from the per-generation UUID counter instead.
+  const id =
+    opts.id ??
+    (ctx.reproducible ? `{${ctx.reproducible.nextUuid().toUpperCase()}}` : fallbackFieldGuid());
   const rPr = opts.properties ? (runPropertiesDesc.stringify(opts.properties, ctx) ?? "") : "";
   // CT_TextField sequence: rPr?, pPr?, t? — a bare <a:pPr/> placeholder (empty
   // options object) still round-trips, so fall back to the empty element.

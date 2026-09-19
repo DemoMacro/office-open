@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import type { OutputType, PackerOptions } from "@office-open/core";
+import type { OutputType, PackerOptions, ReproducibleGenerationOptions } from "@office-open/core";
 export { type OutputType } from "@office-open/core";
 
 import { generateDocument } from "@office-open/docx";
@@ -23,13 +23,18 @@ export interface GenerateOptions<T extends GenerateType = GenerateType> {
   type: T;
   options: GenerateOptionsMap[T];
   outputType?: OutputType;
+  /** Opt-in reproducible generation (see PackerOptions.reproducible). */
+  reproducible?: ReproducibleGenerationOptions;
 }
 
 export async function generate<T extends GenerateType>(
   options: GenerateOptions<T>,
 ): Promise<unknown> {
   const { type, options: docOptions, outputType = "nodebuffer" as OutputType } = options;
-  const packerOpts = { type: outputType } as PackerOptions<OutputType>;
+  const packerOpts = {
+    type: outputType,
+    reproducible: options.reproducible,
+  } as PackerOptions<OutputType>;
 
   switch (type) {
     case "docx":

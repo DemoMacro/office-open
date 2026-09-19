@@ -19,6 +19,7 @@ import type { GroupOptions } from "@shared/shape/group-shape";
 import type { PptxWriteContext } from "../../context";
 import { parseChild, stringifyChild } from "./bridge";
 import { readCnvPr } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counter ──
 
@@ -31,7 +32,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
 
   stringify(opts, ctx) {
     const descCtx = ctx as PptxWriteContext;
-    const id = opts.id ?? _nextGroupId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextGroupId++;
     const name = opts.name ?? "Group";
     descCtx.registerShapeId(name, id);
 

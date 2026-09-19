@@ -25,6 +25,25 @@ const Packer = createPacker<{ sections: readonly unknown[] }>({
 
 const mockFile = { sections: [] };
 
+/** Helper: collect all chunks from a ReadableStream<Uint8Array>. */
+const collectStream = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
+  const chunks: Uint8Array[] = [];
+  const reader = stream.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+  }
+  const total = chunks.reduce((s, c) => s + c.length, 0);
+  const combined = new Uint8Array(total);
+  let offset = 0;
+  for (const c of chunks) {
+    combined.set(c, offset);
+    offset += c.length;
+  }
+  return combined;
+};
+
 describe("createPacker", () => {
   beforeEach(() => {
     // Default: return minimal valid Zippable
@@ -246,25 +265,6 @@ describe("createPacker", () => {
 
   // ── Stream ──
 
-  /** Helper: collect all chunks from a ReadableStream<Uint8Array>. */
-  const collectStream = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
-    const chunks: Uint8Array[] = [];
-    const reader = stream.getReader();
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-    const total = chunks.reduce((s, c) => s + c.length, 0);
-    const combined = new Uint8Array(total);
-    let offset = 0;
-    for (const c of chunks) {
-      combined.set(c, offset);
-      offset += c.length;
-    }
-    return combined;
-  };
-
   describe("#toStream()", () => {
     it("should return a ReadableStream", () => {
       const stream = Packer.toStream(mockFile);
@@ -429,23 +429,6 @@ describe("reproducible generation", () => {
   /** Mod-date field of the first local file header; DOS 1980-01-01 = 0x21. */
   const dosDate = (zip: Uint8Array): number => zip[12]! | (zip[13]! << 8);
 
-  const collect = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      if (value) chunks.push(value);
-    }
-    const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
-    let offset = 0;
-    for (const c of chunks) {
-      out.set(c, offset);
-      offset += c.length;
-    }
-    return out;
-  };
-
   const runWriter = (
     parts: readonly Uint8Array[],
     reproducible?: ReturnType<typeof createReproducibleScope>,
@@ -522,8 +505,12 @@ describe("reproducible generation", () => {
 
   it("repeats byte-identically on the fflate stream path", async () => {
     setForceJsDeflate(true);
-    const first = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
-    const second = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
+    const first = await collectStream(
+      createZipStream(sample(), undefined, createReproducibleScope()),
+    );
+    const second = await collectStream(
+      createZipStream(sample(), undefined, createReproducibleScope()),
+    );
     expect(first).toEqual(second);
     expect(dosDate(first)).toBe(0x21);
   });
@@ -558,7 +545,9 @@ describe("reproducible generation", () => {
       undefined,
       createReproducibleScope(),
     );
-    const stream = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
+    const stream = await collectStream(
+      createZipStream(sample(), undefined, createReproducibleScope()),
+    );
     expect(async_).toEqual(sync);
     expect(stream).toEqual(sync);
   });

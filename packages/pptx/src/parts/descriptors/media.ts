@@ -26,6 +26,7 @@ import type { VideoFrameOptions, VideoType } from "@shared/media/video-frame";
 
 import type { MediaEntry, PptxWriteContext } from "../../context";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counters ──
 
@@ -101,7 +102,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextVideoId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextVideoId++;
     const name = opts.name ?? `Video ${id}`;
     const pptx = ctx as PptxWriteContext;
     pptx.registerShapeId(name, id);
@@ -216,7 +217,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextAudioId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextAudioId++;
     const name = opts.name ?? `Audio ${id}`;
     const pptx = ctx as PptxWriteContext;
     pptx.registerShapeId(name, id);

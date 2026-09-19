@@ -51,6 +51,7 @@ import {
   stringifyNvPr,
 } from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 import { paragraphDesc, type ParagraphDescriptorOptions } from "./text";
 
 // ── Internal aliases ──
@@ -96,7 +97,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
   stringify(opts, ctx) {
     const pptxCtx = ctx as PptxWriteContext;
-    const id = opts.id ?? _nextTableId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextTableId++;
     const name = opts.name ?? `Table ${id}`;
     pptxCtx.registerShapeId(name, id);
 

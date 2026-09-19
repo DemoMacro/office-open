@@ -26,6 +26,7 @@ import {
   stringifyNvPr,
 } from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counter ──
 
@@ -38,7 +39,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
 
   stringify(opts, ctx) {
     const pptxCtx = ctx as PptxWriteContext;
-    const id = opts.id ?? _nextChartId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextChartId++;
     const name = opts.name ?? `Chart ${id}`;
     pptxCtx.registerShapeId(name, id);
     const chartKey = opts.chartKey ?? pptxCtx.nextChartKey();

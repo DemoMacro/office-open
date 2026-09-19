@@ -24,6 +24,7 @@ import {
   stringifyNvPr,
 } from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counters ──
 
@@ -36,7 +37,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextLockedCanvasId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextLockedCanvasId++;
     const name = opts.name ?? `Locked Canvas ${id}`;
     (ctx as PptxWriteContext).registerShapeId(name, id);
 
@@ -131,7 +132,7 @@ function buildCanvasChildren(
 
   const parts: string[] = [];
   for (const { textBody, ...spPr } of children) {
-    const id = _nextCanvasShapeId++;
+    const id = nextSlideDrawingId(ctx) ?? _nextCanvasShapeId++;
     const spPrContent = shapePropertiesDesc.stringify(
       { ...spPr, geometry: spPr.geometry ?? "rect" },
       ctx,

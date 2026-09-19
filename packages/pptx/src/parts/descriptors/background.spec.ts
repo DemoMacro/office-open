@@ -1,6 +1,6 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 import type { BackgroundOptions } from "../background";
 import { backgroundDesc } from "./background";
@@ -74,6 +74,19 @@ describe("backgroundDesc round-trip", () => {
     );
     expect(xml).toContain('<p:bg bwMode="gray">');
     expect(xml).not.toContain("p:bwMode");
+  });
+
+  it("registers a blip fill with the media store and embeds its placeholder", () => {
+    // The descriptor path must register the image — an unregistered {fileName}
+    // placeholder would leak into r:embed with no relationship behind it.
+    const addMedia = vi.fn(() => "{image1.png}");
+    const ctx = { addMedia, addRelationship: () => "rId1" } as unknown as WriteContext;
+    const xml = backgroundDesc.stringify(
+      { fill: { type: "blip", data: "aGk=", imageType: "png" } },
+      ctx,
+    )!;
+    expect(addMedia).toHaveBeenCalledOnce();
+    expect(xml).toContain('r:embed="{image1.png}"');
   });
 
   it("round-trips a style matrix reference (p:bgRef)", () => {

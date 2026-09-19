@@ -22,10 +22,10 @@ export interface ReproducibleGenerationOptions {
 }
 
 /**
- * Per-generation deterministic state: a fixed wall-clock substitute plus
- * counter-backed replacements for the random id generators (uniqueId,
- * uniqueUuid, VML shape ids, wp:docPr ids). A scope is independent of every
- * other scope — counters start at the same values each time.
+ * Per-generation deterministic state: a fixed ISO-8601 date plus
+ * counter-backed replacements for the random id generators (alphanumeric ids,
+ * UUIDs, VML shape ids, drawing ids). Scopes are independent — counters start
+ * at the same values each time.
  */
 export interface ReproducibleScope {
   /** ISO-8601 timestamp used in place of the wall clock. */

@@ -11,7 +11,6 @@ import { createEffectList, effectListDesc, fillDesc } from "@office-open/core/dr
 import { stringifyColorChoice, parseColorChoiceElement } from "@office-open/core/drawing";
 import { attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
-import { buildFill } from "@shared/drawing/fill";
 
 import type { BackgroundOptions, StyleMatrixReferenceOptions } from "../background";
 
@@ -46,9 +45,13 @@ function stringifyBackgroundInner(opts: BackgroundOptions, ctx: WriteContext): s
   const bgPrAttrs: string[] = [];
   if (opts.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
 
-  // buildFill skips a one-stop gradient (illegal gsLst) — a skipped fill falls
-  // back to noFill so p:bgPr always carries exactly one fill element
-  const fillXml = buildFill(opts.fill ?? { type: "none" }) ?? "<a:noFill/>";
+  // The descriptor path (not the context-free buildFill) so a blip fill
+  // registers its media with the write context — an unregistered {fileName}
+  // placeholder would leak into r:embed with no relationship behind it — and
+  // so id/date reads honor a reproducible scope. A skipped fill (one-stop
+  // gradient, illegal gsLst) falls back to noFill so p:bgPr always carries
+  // exactly one fill element
+  const fillXml = fillDesc.stringify(opts.fill ?? { type: "none" }, ctx) ?? "<a:noFill/>";
 
   let effectsXml = "";
   if (opts.effects) {

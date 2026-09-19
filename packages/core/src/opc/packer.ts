@@ -47,9 +47,10 @@ export const ZIP_DEFLATE_LEVEL = 1;
 /**
  * Timestamp stamped on every fflate-packed entry during reproducible
  * generation: 1980-01-01, the earliest date a ZIP header can encode. The
- * local-time constructor keeps the DOS fields zero in every timezone, matching
- * the native writer (see writeZipBuffer). Native archives already carry this
- * timestamp.
+ * local-time constructor round-trips through fflate's local getters in every
+ * timezone, so the DOS fields always encode 1980-01-01 00:00 (date 0x21) —
+ * byte-identical to the native writer (see writeZipBuffer in zip-native.ts),
+ * which hard-writes the same fields.
  */
 const REPRODUCIBLE_ZIP_MTIME = new Date(1980, 0, 1);
 
@@ -120,8 +121,10 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
   compression?: CompressionOptions;
   /**
    * Opt-in reproducible generation: deterministic ZIP timestamps plus a
-   * deterministic id/date scope threaded into compile. With the same input,
-   * the same options yield byte-identical output.
+   * deterministic id/date scope threaded into compile — the same input and
+   * options yield byte-identical output. Exception: password-derived
+   * protection hashes mint a fresh random salt per run; pass explicit
+   * hashValue/saltValue options to pin them.
    */
   reproducible?: ReproducibleGenerationOptions;
 }
@@ -414,14 +417,17 @@ export const createPacker = <TFile>(options: {
 }): Packer<TFile> => {
   const { compile, mimeType } = options;
 
+  // One scope per output call, shared by compile (ids/dates) and the zip step
+  // (timestamps) — the two consumers must see the same instance.
+  const scopeOf = <T extends OutputType>(opts?: PackerOptions<T>): ReproducibleScope | undefined =>
+    opts?.reproducible ? createReproducibleScope(opts.reproducible) : undefined;
+
   const pack = async <T extends OutputType = "nodebuffer">(
     file: TFile,
     opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const reproducible = opts?.reproducible
-      ? createReproducibleScope(opts.reproducible)
-      : undefined;
+    const reproducible = scopeOf(opts);
     const files = compile(
       file,
       opts?.overrides ?? [],
@@ -454,9 +460,7 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): OutputByType[T] => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const reproducible = opts?.reproducible
-      ? createReproducibleScope(opts.reproducible)
-      : undefined;
+    const reproducible = scopeOf(opts);
     const files = compile(
       file,
       opts?.overrides ?? [],
@@ -489,9 +493,7 @@ export const createPacker = <TFile>(options: {
 
   const toStream = (file: TFile, opts?: PackerOptions) => {
     const mediaLevel = opts?.compression?.media ?? ZIP_MEDIA_LEVEL;
-    const reproducible = opts?.reproducible
-      ? createReproducibleScope(opts.reproducible)
-      : undefined;
+    const reproducible = scopeOf(opts);
     let files: Zippable;
     try {
       files = compile(file, opts?.overrides ?? [], mediaLevel, reproducible);

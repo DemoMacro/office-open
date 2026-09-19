@@ -20,6 +20,7 @@ import {
   stringifyNvPr,
 } from "./graphic-frame";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
+import { nextSlideDrawingId } from "./slide-drawing-ids";
 
 // ── ID counter ──
 
@@ -31,7 +32,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const id = opts.id ?? _nextOleId++;
+    const id = opts.id ?? nextSlideDrawingId(ctx) ?? _nextOleId++;
     const name = opts.name ?? `Object ${id}`;
     (ctx as PptxWriteContext).registerShapeId(name, id);
 
