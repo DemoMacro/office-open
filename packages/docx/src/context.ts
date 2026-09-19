@@ -16,6 +16,7 @@ import {
 import { ChartCollection } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { SmartArtCollection } from "@office-open/core/smartart";
+import type { ReproducibleScope } from "@office-open/core/util";
 import type { Element } from "@office-open/xml";
 import { AltChunkCollection } from "@parts/alt-chunk/alt-chunk-collection";
 import type { DocumentOptions } from "@parts/core-properties";
@@ -247,11 +248,15 @@ export class DocxWriteContext implements WriteContext {
   // --- Original input preserved for descriptor usage ---
   declare public _options: DocumentOptions;
 
+  /** Deterministic id/date scope when generating reproducibly (see PackerOptions). */
+  declare public readonly reproducible?: ReproducibleScope;
+
   /** Preflight result: does the body tree carry any `{ comment }` sugar? */
   declare private _hasCommentSugar: boolean;
 
-  constructor(options: DocumentOptions) {
+  constructor(options: DocumentOptions, reproducible?: ReproducibleScope) {
     this._options = options;
+    this.reproducible = reproducible;
 
     this.numbering = new Numbering(
       options.numbering ? options.numbering : { abstractNumberings: [] },
@@ -439,7 +444,7 @@ export class DocxWriteContext implements WriteContext {
       this.endnotes.continuationNotice = options.endnoteSeparators?.continuationNotice;
     }
 
-    this.fontTable = new FontWrapper(options.fonts ?? []);
+    this.fontTable = new FontWrapper(options.fonts ?? [], reproducible);
     this.glossaryOptions = options.glossary;
     this.webSettings = options.webSettings ?? undefined;
 

@@ -19,6 +19,7 @@ import {
   finalizeContentTypes,
   type PassthroughRelationship,
   type RelationshipType,
+  type ReproducibleScope,
   resolverFromRegistry,
   XLSX_PARTS,
   customPropertiesDesc,
@@ -94,8 +95,10 @@ export function compileWorkbook(
   options: WorkbookOptions,
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
+  reproducible?: ReproducibleScope,
 ): Zippable {
   const ctx = new XlsxWriteContext();
+  ctx.reproducible = reproducible;
   const mapping: Record<string, { data: string; path: string }> = {};
 
   // Seed the shared string table from parsed entries so round-tripped cells
@@ -110,7 +113,7 @@ export function compileWorkbook(
 
   // Core properties
   mapping["Properties"] = {
-    data: XML_DECL + buildCorePropertiesXmlString(options),
+    data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
     path: "docProps/core.xml",
   };
 

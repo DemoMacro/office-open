@@ -7,7 +7,6 @@
  * @module
  */
 
-import { activeReproducibleScope } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
 import type { BookmarkStartOptions, DisplacedByCustomXml } from "@parts/paragraph/links/bookmark";
@@ -67,11 +66,11 @@ function stringifyComment(opts: CommentOptions, ctx: BodyContext): string {
   const attrs: string[] = [`w:id="${opts.id}"`, `w:author="${escapeXml(opts.author ?? "")}"`];
   // date === null keeps the source's attribute-less form (source files exist
   // without w:date and Word accepts them); undefined = fresh, defaults to now
-  // (or the scope date inside withReproducibleGeneration).
+  // (or the reproducible scope's date when one is active).
   const dateStr =
     opts.date === null
       ? undefined
-      : (opts.date ?? activeReproducibleScope()?.date ?? new Date().toISOString());
+      : (opts.date ?? ctx.reproducible?.date ?? new Date().toISOString());
   if (dateStr !== undefined) attrs.push(`w:date="${escapeXml(dateStr)}"`);
   if (opts.initials !== undefined) attrs.push(`w:initials="${escapeXml(opts.initials)}"`);
 

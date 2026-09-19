@@ -315,7 +315,7 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
     const vmlBg = stringifyVmlBackground({
       // stringifyDocumentXml emits the background before body children, so the
       // allocator hands out 1025 here — matching Word's fixed v:background id.
-      id: nextVmlShapeId(),
+      id: nextVmlShapeId(ctx.reproducible),
       fill: {
         type: "frame",
         recolor: true,
@@ -353,7 +353,7 @@ function stringifyTextbox(
   const txbxContent = contentParts.join("");
 
   const vshape = stringifyVmlShape({
-    id: nextVmlShapeId(),
+    id: nextVmlShapeId(ctx.reproducible),
     type: "#_x0000_t202",
     style,
     textbox: {

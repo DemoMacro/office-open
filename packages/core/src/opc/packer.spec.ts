@@ -2,7 +2,7 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-pl
 
 import { decodeBase64, encodeBase64 } from "../util/base64";
 import { isBase64DataURL, toUint8Array } from "../util/data-type";
-import { withReproducibleGeneration } from "../util/reproducible";
+import { createReproducibleScope } from "../util/reproducible";
 import {
   createPacker,
   createZipStream,
@@ -38,40 +38,40 @@ describe("createPacker", () => {
   describe("compile passthrough", () => {
     it("should default overrides to empty array", async () => {
       await Packer.toString(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
     });
 
     it("should pass overrides through", async () => {
       const overrides: XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
       await Packer.toString(mockFile, { overrides });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 6);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 6, undefined);
     });
   });
 
   describe("compression options", () => {
     it("should default to mediaLevel 6 (Normal) when no options", async () => {
       await Packer.toBuffer(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
     });
 
     it("should pass mediaLevel 6 (default) when only xml option is set", async () => {
       await Packer.toBuffer(mockFile, { compression: { xml: 9 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
     });
 
     it("should pass custom mediaLevel", async () => {
       await Packer.toBuffer(mockFile, { compression: { media: 6 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
     });
 
     it("should pass both xml and media options", async () => {
       await Packer.toBuffer(mockFile, { compression: { xml: 9, media: 4 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 4);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 4, undefined);
     });
 
     it("should work with sync methods", () => {
       Packer.toBufferSync(mockFile, { compression: { xml: 6, media: 0 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0, undefined);
     });
 
     it("should produce valid output with custom compression", async () => {
@@ -446,22 +446,29 @@ describe("reproducible generation", () => {
     return out;
   };
 
-  const runWriter = (parts: readonly Uint8Array[]): Promise<Uint8Array> => {
+  const runWriter = (
+    parts: readonly Uint8Array[],
+    reproducible?: ReturnType<typeof createReproducibleScope>,
+  ): Promise<Uint8Array> => {
     const chunks: Uint8Array[] = [];
     let finish!: (out: Uint8Array) => void;
     const finished = new Promise<Uint8Array>((resolve) => (finish = resolve));
-    const writer = new ZipStreamWriter((err, chunk, final) => {
-      if (err) throw err;
-      chunks.push(chunk);
-      if (!final) return;
-      const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
-      let offset = 0;
-      for (const c of chunks) {
-        out.set(c, offset);
-        offset += c.length;
-      }
-      finish(out);
-    });
+    const writer = new ZipStreamWriter(
+      (err, chunk, final) => {
+        if (err) throw err;
+        chunks.push(chunk);
+        if (!final) return;
+        const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+        let offset = 0;
+        for (const c of chunks) {
+          out.set(c, offset);
+          offset += c.length;
+        }
+        finish(out);
+      },
+      undefined,
+      reproducible,
+    );
     const sink = writer.addPart("doc.xml");
     for (const part of parts.slice(0, -1)) sink.push(part);
     sink.end(parts[parts.length - 1]);
@@ -475,11 +482,19 @@ describe("reproducible generation", () => {
 
   it("stamps the DOS epoch and repeats byte-identically on the fflate sync path", () => {
     setForceJsDeflate(true);
-    const first = withReproducibleGeneration({}, () =>
-      zipSyncAndConvert(sample(), "uint8array", MIME),
+    const first = zipSyncAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
-    const second = withReproducibleGeneration({}, () =>
-      zipSyncAndConvert(sample(), "uint8array", MIME),
+    const second = zipSyncAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
     expect(first).toEqual(second);
     expect(dosDate(first)).toBe(0x21);
@@ -487,11 +502,19 @@ describe("reproducible generation", () => {
 
   it("repeats byte-identically on the fflate async path", async () => {
     setForceJsDeflate(true);
-    const first = await withReproducibleGeneration({}, () =>
-      zipAndConvert(sample(), "uint8array", MIME),
+    const first = await zipAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
-    const second = await withReproducibleGeneration({}, () =>
-      zipAndConvert(sample(), "uint8array", MIME),
+    const second = await zipAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
     expect(first).toEqual(second);
     expect(dosDate(first)).toBe(0x21);
@@ -499,8 +522,8 @@ describe("reproducible generation", () => {
 
   it("repeats byte-identically on the fflate stream path", async () => {
     setForceJsDeflate(true);
-    const first = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
-    const second = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
+    const first = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
+    const second = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
     expect(first).toEqual(second);
     expect(dosDate(first)).toBe(0x21);
   });
@@ -508,26 +531,34 @@ describe("reproducible generation", () => {
   it("repeats byte-identically on the ZipStreamWriter path", async () => {
     setForceJsDeflate(true);
     const parts = [encode("<root>"), encode("streamed"), encode("</root>")];
-    const first = await withReproducibleGeneration({}, () => runWriter(parts));
-    const second = await withReproducibleGeneration({}, () => runWriter(parts));
+    const first = await runWriter(parts, createReproducibleScope());
+    const second = await runWriter(parts, createReproducibleScope());
     expect(first).toEqual(second);
     expect(dosDate(first)).toBe(0x21);
   });
 
-  it("keeps the current timestamp outside a scope", () => {
+  it("keeps the current timestamp outside a reproducible generation", () => {
     setForceJsDeflate(true);
     const zip = zipSyncAndConvert(sample(), "uint8array", MIME);
     expect(dosDate(zip)).not.toBe(0x21);
   });
 
   it("repeats byte-identically on the native path across output methods", async () => {
-    const sync = withReproducibleGeneration({}, () =>
-      zipSyncAndConvert(sample(), "uint8array", MIME),
+    const sync = zipSyncAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
-    const async_ = await withReproducibleGeneration({}, () =>
-      zipAndConvert(sample(), "uint8array", MIME),
+    const async_ = await zipAndConvert(
+      sample(),
+      "uint8array",
+      MIME,
+      undefined,
+      createReproducibleScope(),
     );
-    const stream = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
+    const stream = await collect(createZipStream(sample(), undefined, createReproducibleScope()));
     expect(async_).toEqual(sync);
     expect(stream).toEqual(sync);
   });

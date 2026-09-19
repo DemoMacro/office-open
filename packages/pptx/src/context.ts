@@ -12,6 +12,7 @@ import type {
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
 } from "@office-open/core/smartart";
+import type { ReproducibleScope } from "@office-open/core/util";
 
 import type { PptxDocument } from "./parse";
 
@@ -84,6 +85,9 @@ export interface OleLinkEntry {
  * generic `WriteContext` to this type to access PPTX-specific features.
  */
 export class PptxWriteContext implements WriteContext {
+  /** Deterministic id/date scope when generating reproducibly (see PackerOptions). */
+  public reproducible?: ReproducibleScope;
+
   private _media = new Media<MediaEntry>();
   private _embeddings = new EmbeddingCollection();
   private _charts = new Map<string, ChartEntry>();

@@ -65,7 +65,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     // still round-trips (the data part keeps its bare doc point); only an
     // absent tree skips registration.
     if (opts.nodes !== undefined) {
-      const body = createDataModel(opts.nodes, layoutId, styleId, colorId);
+      const body = createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
       const dataModelXml = body
         ? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + body
         : "";

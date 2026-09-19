@@ -17,7 +17,8 @@ import { compilePresentation } from "./compiler";
 
 /** `@internal` Packer instance for PPTX generation. */
 const Packer = createPacker<PresentationOptions>({
-  compile: (options, overrides, mediaLevel) => compilePresentation(options, overrides, mediaLevel),
+  compile: (options, overrides, mediaLevel, reproducible) =>
+    compilePresentation(options, overrides, mediaLevel, reproducible),
   mimeType: OoxmlMimeType.PPTX,
 });
 

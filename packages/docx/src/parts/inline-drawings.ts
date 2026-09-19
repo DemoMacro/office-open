@@ -381,7 +381,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       typeof opts.style === "object" ? definitionId(opts.style) : (opts.style ?? "simple1");
     const colorId =
       typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
-    const dataModelXml = createDataModel(opts.nodes, layoutId, styleId, colorId);
+    const dataModelXml = createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
 
     // Data-part companion images (dgm:pt blipFill art): register through the
     // media collection so name pinning and dedup match the picture path. A

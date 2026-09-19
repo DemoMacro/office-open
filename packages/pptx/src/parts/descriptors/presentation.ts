@@ -10,6 +10,7 @@ import {
   extUriMatches,
   parseOnOff,
   parsePercentAttr,
+  type ReproducibleScope,
   uniqueUuid,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
@@ -71,7 +72,10 @@ const DEFAULT_TEXT_STYLE_XML = `<p:defaultTextStyle xmlns:a="http://schemas.open
 
 // ── Stringify (internal) ──
 
-function stringifyPresentation(opts: PresentationPartOptions): string {
+function stringifyPresentation(
+  opts: PresentationPartOptions,
+  reproducible?: ReproducibleScope,
+): string {
   const cx = opts.slideWidth ?? 12192000;
   const cy = opts.slideHeight ?? 6858000;
 
@@ -277,7 +281,7 @@ function stringifyPresentation(opts: PresentationPartOptions): string {
       if (ids.length === 0) continue;
       const sldIds = ids.map((id) => `<p14:sldId id="${id}"/>`).join("");
       sectionXml.push(
-        `<p14:section name="${escapeXml(sec.name)}" id="{${uniqueUuid().toUpperCase()}}"><p14:sldIdLst>${sldIds}</p14:sldIdLst></p14:section>`,
+        `<p14:section name="${escapeXml(sec.name)}" id="{${(reproducible?.nextUuid() ?? uniqueUuid()).toUpperCase()}}"><p14:sldIdLst>${sldIds}</p14:sldIdLst></p14:section>`,
       );
     }
     if (sectionXml.length > 0) {
@@ -538,8 +542,8 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
 export const presentationDesc: CustomDescriptor<PresentationPartOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    return stringifyPresentation(opts);
+  stringify(opts, ctx) {
+    return stringifyPresentation(opts, ctx.reproducible);
   },
 
   parse(el, _ctx) {

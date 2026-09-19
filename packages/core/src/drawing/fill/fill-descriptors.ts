@@ -15,6 +15,7 @@ import { toUint8Array } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
 import { imageTypeFromPath } from "../../util/image-type";
 import { xsdPattern } from "../../util/mappings";
+import type { ReproducibleScope } from "../../util/reproducible";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc } from "../blip/blip-descriptors";
 import { createBlipEffects } from "../blip/blip-effects";
@@ -283,13 +284,17 @@ function emitPatternFillXml(opts: PatternFillOptions): string {
 }
 
 /** Serialize a:blipFill with the given embed reference (descriptor emission). */
-function emitBlipFill(options: BlipFillConfigOptions & { type: "blip" }, embed?: string): string {
+function emitBlipFill(
+  options: BlipFillConfigOptions & { type: "blip" },
+  embed?: string,
+  reproducible?: ReproducibleScope,
+): string {
   // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
   // replaces `{fileName}` with `rId{N}` and creates the relationship. When the
   // caller supplies embed (a media reference already registered with the write
   // context, e.g. `{image1.png}`), use it verbatim so the emitted reference
   // matches the registration.
-  const fileName = `${uniqueId()}.${options.imageType ?? "png"}`;
+  const fileName = `${reproducible?.nextId() ?? uniqueId()}.${options.imageType ?? "png"}`;
   const embedRef = embed ?? `{${fileName}}`;
 
   const blipChildren: string[] = [];
@@ -335,7 +340,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
     if (typeof opts !== "string" && opts.type === "blip") {
       // noEmbed: an empty-marker blip — nothing to register with the media
       // store; emit the bare a:blipFill shape (attrs, srcRect, stretch).
-      if (opts.noEmbed) return emitBlipFill(opts);
+      if (opts.noEmbed) return emitBlipFill(opts, undefined, ctx.reproducible);
       // Register the image media via the write context, then emit a:blipFill
       // with the returned {fileName} placeholder. The format-package compiler
       // replaces the placeholder with a relationship rId at pack time.
@@ -343,7 +348,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
         toUint8Array(opts.data!, { encoding: "base64" }),
         opts.imageType!,
       );
-      return emitBlipFill(opts, placeholder);
+      return emitBlipFill(opts, placeholder, ctx.reproducible);
     }
     return emitFillXml(opts);
   },

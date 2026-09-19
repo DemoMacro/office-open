@@ -16,7 +16,7 @@
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml, stringifyElement } from "@office-open/xml";
 
-import { activeReproducibleScope } from "../util/reproducible";
+import type { ReproducibleScope } from "../util/reproducible";
 import {
   stringifyVmlAttributes,
   parseVmlAttributes,
@@ -129,12 +129,11 @@ let nextSpid = 1024;
 /**
  * Allocate the next VML shape id (`_x0000_s1025`, `_x0000_s1026`, …).
  * Ids only need to be unique within a document; the counter is process-global
- * so concurrent generations never collide. Inside a reproducible scope the id
- * comes from the per-generation counter instead.
+ * so concurrent generations never collide. Pass a reproducible scope to derive
+ * the id from the per-generation counter instead.
  */
-export function nextVmlShapeId(): string {
-  const scope = activeReproducibleScope();
-  return `_x0000_s${scope ? scope.nextVmlShapeId() : ++nextSpid}`;
+export function nextVmlShapeId(reproducible?: ReproducibleScope): string {
+  return `_x0000_s${reproducible ? reproducible.nextVmlShapeId() : ++nextSpid}`;
 }
 
 // ── Shared shape options base ──

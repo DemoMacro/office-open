@@ -7,8 +7,6 @@
 import { sha1 } from "@noble/hashes/legacy.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
 
-import { activeReproducibleScope } from "./reproducible";
-
 /**
  * A function that generates unique sequential numeric IDs.
  */
@@ -25,12 +23,9 @@ export const uniqueNumericIdCreator = (initial = 0): UniqueNumericIdCreator => {
 const URL_ALPHABET = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";
 
 /**
- * Generates a unique lowercase alphanumeric ID using crypto.getRandomValues,
- * or the scope counter inside withReproducibleGeneration.
+ * Generates a unique lowercase alphanumeric ID using crypto.getRandomValues.
  */
 export const uniqueId = (): string => {
-  const scope = activeReproducibleScope();
-  if (scope) return scope.nextId();
   const bytes = new Uint8Array(21);
   crypto.getRandomValues(bytes);
   let id = "";
@@ -53,8 +48,6 @@ export const hashedId = (data: Uint8Array | ArrayBuffer | string): string => {
 };
 
 /**
- * Generates a UUID v4-style unique identifier using crypto.randomUUID, or the
- * scope's deterministic UUID inside withReproducibleGeneration.
+ * Generates a UUID v4-style unique identifier using crypto.randomUUID.
  */
-export const uniqueUuid = (): string =>
-  activeReproducibleScope()?.nextUuid() ?? crypto.randomUUID();
+export const uniqueUuid = (): string => crypto.randomUUID();

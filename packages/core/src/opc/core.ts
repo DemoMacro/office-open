@@ -1,7 +1,7 @@
 import { textOf, escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import { activeReproducibleScope } from "../util/reproducible";
+import type { ReproducibleScope } from "../util/reproducible";
 
 /**
  * Core document properties (docProps/core.xml).
@@ -116,10 +116,13 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
  * Build a cp:coreProperties XML string directly (fast path).
  *
  * Shared by pptx and xlsx to bypass the toXml() → xml() pipeline.
- * created/modified default to now when not supplied; all other fields emit
- * only when present.
+ * created/modified default to now when not supplied (the reproducible scope's
+ * date when one is passed); all other fields emit only when present.
  */
-export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): string {
+export function buildCorePropertiesXmlString(
+  opts: CorePropertiesOptions,
+  reproducible?: ReproducibleScope,
+): string {
   // ISO/strict round-trip: the core-properties namespace is the default, so
   // its children carry no prefix (dc:/dcterms: keep theirs).
   const cp = (name: string): string => (opts.defaultNamespace ? name : `cp:${name}`);
@@ -146,7 +149,7 @@ export function buildCorePropertiesXmlString(opts: CorePropertiesOptions): strin
   if (opts.revision !== undefined)
     p.push(`<${cp("revision")}>${opts.revision}</${cp("revision")}>`);
 
-  const now = activeReproducibleScope()?.date ?? new Date().toISOString();
+  const now = reproducible?.date ?? new Date().toISOString();
   if (opts.created !== null)
     p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
   if (opts.modified !== null)

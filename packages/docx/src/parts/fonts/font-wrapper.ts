@@ -1,6 +1,7 @@
 import {
   encodeUriPath,
   RELATIONSHIP_TYPES,
+  type ReproducibleScope,
   Relationships,
   toUint8Array,
   uniqueUuid,
@@ -48,14 +49,20 @@ export class FontWrapper implements ViewWrapper {
   public relationships: Relationships;
   public fontOptionsWithKey: EmbeddedFontOptionsWithKey[] = [];
 
-  public constructor(public options: EmbeddedFontOptions[]) {
+  public constructor(
+    public options: EmbeddedFontOptions[],
+    reproducible?: ReproducibleScope,
+  ) {
     // Keep every font declaration — metadata-only fonts (no `data`) carry no
     // bytes to embed but must still round-trip into fontTable.xml. Only fonts
     // with binary data receive a fontKey + relationship for the .odttf part.
     this.fontOptionsWithKey = options.map((o): EmbeddedFontOptionsWithKey => ({
       ...o,
       data: o.data !== undefined ? toUint8Array(o.data) : undefined,
-      fontKey: o.data !== undefined ? (o.fontKey ?? uniqueUuid()) : (o.fontKey ?? ""),
+      fontKey:
+        o.data !== undefined
+          ? (o.fontKey ?? reproducible?.nextUuid() ?? uniqueUuid())
+          : (o.fontKey ?? ""),
     }));
     this.relationships = new Relationships();
 

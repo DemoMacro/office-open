@@ -146,8 +146,8 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 export const corePropertiesDesc: CustomDescriptor<CorePropertiesOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    return buildCorePropertiesXmlString(opts);
+  stringify(opts, ctx) {
+    return buildCorePropertiesXmlString(opts, ctx.reproducible);
   },
 
   parse(el, _ctx) {

@@ -1,4 +1,4 @@
-import { Relationships, withReproducibleGeneration } from "@office-open/core";
+import { Relationships, createReproducibleScope } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
@@ -117,11 +117,11 @@ describe("drawingDesc round-trip", () => {
 
   it("takes wp:docPr ids from a reproducible scope counter", () => {
     const opts = { mediaData: makeImageMediaData() };
-    const ids = withReproducibleGeneration({}, () =>
-      [drawingDesc.stringify(opts, writeCtx), drawingDesc.stringify(opts, writeCtx)].map(
-        (xml) => /<wp:docPr id="(\d+)"/.exec(xml ?? "")?.[1],
-      ),
-    );
+    const scopedCtx = { ...writeCtx, reproducible: createReproducibleScope() } as typeof writeCtx;
+    const ids = [
+      drawingDesc.stringify(opts, scopedCtx),
+      drawingDesc.stringify(opts, scopedCtx),
+    ].map((xml) => /<wp:docPr id="(\d+)"/.exec(xml ?? "")?.[1]);
     expect(ids).toEqual(["1", "2"]);
   });
 

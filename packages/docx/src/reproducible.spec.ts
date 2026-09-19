@@ -1,4 +1,4 @@
-import { unzipSync, withReproducibleGeneration } from "@office-open/core";
+import { unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateDocument, generateDocumentStream, generateDocumentSync } from "./generate";
@@ -34,20 +34,24 @@ const collect = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> 
   return out;
 };
 
-const scoped = <T>(date: string, fn: () => T): T => withReproducibleGeneration({ date }, fn);
+const generate = {
+  async: (date: string) => generateDocument(options(), { reproducible: { date } }),
+  sync: (date: string) => generateDocumentSync(options(), { reproducible: { date } }),
+  stream: (date: string) => collect(generateDocumentStream(options(), { reproducible: { date } })),
+};
 
 describe("reproducible generation", () => {
   it("generates byte-identical documents on the async, sync and stream paths", async () => {
-    const async_ = await scoped(DATE, () => generateDocument(options()));
-    const sync = scoped(DATE, () => generateDocumentSync(options()));
-    const stream = await scoped(DATE, () => collect(generateDocumentStream(options())));
+    const async_ = await generate.async(DATE);
+    const sync = generate.sync(DATE);
+    const stream = await generate.stream(DATE);
     // Byte equality across the Buffer (async/sync) and Uint8Array (stream) types.
     expect(Array.from(async_)).toEqual(Array.from(sync));
     expect(Array.from(stream)).toEqual(Array.from(sync));
   });
 
-  it("drives the date defaults from the scope", () => {
-    const buffer = scoped(DATE, () => generateDocumentSync(options()));
+  it("drives the date defaults from the reproducible option", () => {
+    const buffer = generate.sync(DATE);
     expect(decode(buffer, "word/comments.xml")).toContain(`w:date="${DATE}"`);
     expect(decode(buffer, "docProps/core.xml")).toContain(
       `<dcterms:created xsi:type="dcterms:W3CDTF">${DATE}`,
@@ -58,19 +62,17 @@ describe("reproducible generation", () => {
   });
 
   it("isolates concurrent generations from each other", async () => {
-    const soloFirst = await scoped(DATE, () => generateDocument(options()));
-    const soloSecond = await scoped(OTHER_DATE, () => generateDocument(options()));
+    const soloFirst = await generate.async(DATE);
+    const soloSecond = await generate.async(OTHER_DATE);
 
-    const [first, second] = await Promise.all([
-      scoped(DATE, () => generateDocument(options())),
-      scoped(OTHER_DATE, () => generateDocument(options())),
-    ]);
+    // Each call creates its own scope inside the packer — no shared state.
+    const [first, second] = await Promise.all([generate.async(DATE), generate.async(OTHER_DATE)]);
     expect(first).toEqual(soloFirst);
     expect(second).toEqual(soloSecond);
     expect(first).not.toEqual(second);
   });
 
-  it("keeps cryptographic ids and real dates outside a scope", () => {
+  it("keeps cryptographic ids and real dates without the reproducible option", () => {
     const first = generateDocumentSync(options());
     const second = generateDocumentSync(options());
     expect(first).not.toEqual(second);

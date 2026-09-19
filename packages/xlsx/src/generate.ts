@@ -4,7 +4,7 @@
  * @module
  */
 
-import { createPacker, OoxmlMimeType } from "@office-open/core";
+import { createReproducibleScope, createPacker, OoxmlMimeType } from "@office-open/core";
 import {
   assertEncryptedExclusive,
   encryptedContainerOutput,
@@ -18,7 +18,8 @@ import { canStreamWorkbook, streamWorkbook } from "./stream";
 
 /** `@internal` Packer instance for XLSX generation. */
 const Packer = createPacker<WorkbookOptions>({
-  compile: (options, overrides, mediaLevel) => compileWorkbook(options, overrides, mediaLevel),
+  compile: (options, overrides, mediaLevel, reproducible) =>
+    compileWorkbook(options, overrides, mediaLevel, reproducible),
   mimeType: OoxmlMimeType.XLSX,
 });
 
@@ -104,6 +105,9 @@ export function generateWorkbookStream(
   return new ReadableStream<Uint8Array>({
     start(controller) {
       try {
+        const reproducible = packerOptions?.reproducible
+          ? createReproducibleScope(packerOptions.reproducible)
+          : undefined;
         streamWorkbook(
           options,
           (err, chunk, final) => {
@@ -115,6 +119,7 @@ export function generateWorkbookStream(
             if (final) controller.close();
           },
           packerOptions?.compression,
+          reproducible,
         );
       } catch (err) {
         controller.error(err instanceof Error ? err : new Error(String(err)));

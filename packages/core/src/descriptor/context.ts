@@ -6,6 +6,8 @@
 
 import type { Element as XmlElement } from "@office-open/xml";
 
+import type { ReproducibleScope } from "../util/reproducible";
+
 /** Target for a DrawingML text hyperlink (external URL or internal slide jump). */
 export interface HyperlinkTarget {
   /** External URL (mutually exclusive with slide). */
@@ -31,6 +33,12 @@ export interface WriteContext {
    * this as a no-op.
    */
   addHyperlink(key: string, target: HyperlinkTarget): void;
+  /**
+   * Deterministic id/date scope for reproducible generation, threaded from the
+   * packer's `reproducible` option. Absent in a normal generation — id and
+   * date reads fall back to their random/wall-clock defaults.
+   */
+  readonly reproducible?: ReproducibleScope;
 }
 
 /** Context passed during parse (parse path). */

@@ -1,11 +1,16 @@
 /**
  * Opt-in reproducible generation: the same input produces the same bytes.
  *
+ * The scope is a plain value object — create it once per generation and thread
+ * it explicitly through the packer options ({@link
+ * PackerOptions.reproducible}); it never installs global state, so concurrent
+ * generations are isolated by construction.
+ *
  * @module
  */
 
 /**
- * Options for {@link withReproducibleGeneration}.
+ * Options for creating a reproducible scope ({@link createReproducibleScope}).
  */
 export interface ReproducibleGenerationOptions {
   /**
@@ -17,9 +22,10 @@ export interface ReproducibleGenerationOptions {
 }
 
 /**
- * Per-generation deterministic state. Read it through
- * {@link activeReproducibleScope}: the scope exists only between
- * {@link withReproducibleGeneration} and its return.
+ * Per-generation deterministic state: a fixed wall-clock substitute plus
+ * counter-backed replacements for the random id generators (uniqueId,
+ * uniqueUuid, VML shape ids, wp:docPr ids). A scope is independent of every
+ * other scope — counters start at the same values each time.
  */
 export interface ReproducibleScope {
   /** ISO-8601 timestamp used in place of the wall clock. */
@@ -38,74 +44,22 @@ export interface ReproducibleScope {
 const EPOCH = "1970-01-01T00:00:00.000Z";
 
 /**
- * `globalThis` slot holding the scope stack. `Symbol.for` (not a module-level
- * binding) so every copy of core in one process shares the same scopes.
+ * Create a fresh deterministic scope. Counters start where the un-scoped
+ * readers would: VML ids at 1024 (first id 1025), the rest at 0.
  */
-const REPRODUCIBLE_SCOPE = Symbol.for("office-open.reproducible");
-
-/** The process-wide scope stack, created on first use. */
-function scopeStack(): ReproducibleScope[] {
-  const globals = globalThis as Record<symbol, unknown>;
-  const existing = globals[REPRODUCIBLE_SCOPE];
-  if (Array.isArray(existing)) return existing as ReproducibleScope[];
-  const stack: ReproducibleScope[] = [];
-  globals[REPRODUCIBLE_SCOPE] = stack;
-  return stack;
-}
-
-/** Counters start where the un-scoped readers would: VML ids at 1024 (first
- *  id 1025), the rest at 0. */
-function createScope(date: string): ReproducibleScope {
+export function createReproducibleScope(
+  options?: ReproducibleGenerationOptions,
+): ReproducibleScope {
   let ids = 0;
   let uuids = 0;
   let vmlShapeIds = 1024;
   let drawingIds = 0;
   return {
-    date,
+    date: options?.date ?? EPOCH,
     nextId: () => (++ids).toString(36).padStart(21, "0"),
     nextUuid: () =>
       `00000000-0000-4000-8000-${(++uuids).toString(16).padStart(12, "0").slice(-12)}`,
     nextVmlShapeId: () => ++vmlShapeIds,
     nextDrawingId: () => ++drawingIds,
   };
-}
-
-/**
- * The scope that id and date reads resolve against, or undefined outside
- * {@link withReproducibleGeneration}. With nested scopes the innermost wins.
- */
-export function activeReproducibleScope(): ReproducibleScope | undefined {
-  const stack = scopeStack();
-  return stack[stack.length - 1];
-}
-
-/**
- * Runs `fn` with deterministic auto-ids, date defaults and ZIP timestamps, so
- * the same input yields byte-identical output. Scopes nest (innermost wins).
- * An async `fn` keeps its scope installed until the returned promise settles;
- * concurrent generations each get their own scope because id reads happen
- * synchronously during compile, before any packer await.
- */
-export function withReproducibleGeneration<T>(
-  options: ReproducibleGenerationOptions,
-  fn: () => T,
-): T {
-  const stack = scopeStack();
-  const scope = createScope(options.date ?? EPOCH);
-  stack.push(scope);
-  const restore = (): void => {
-    const index = stack.lastIndexOf(scope);
-    if (index >= 0) stack.splice(index, 1);
-  };
-  try {
-    const result = fn();
-    if (result != null && typeof (result as { then?: unknown }).then === "function") {
-      return Promise.resolve(result).finally(restore) as T;
-    }
-    restore();
-    return result;
-  } catch (error) {
-    restore();
-    throw error;
-  }
 }

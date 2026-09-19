@@ -1,6 +1,6 @@
 import { escapeXml } from "@office-open/xml";
 
-import { activeReproducibleScope } from "../util/reproducible";
+import type { ReproducibleScope } from "../util/reproducible";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyConnection } from "./data-model/connection";
 import { stringifyDataModel } from "./data-model/data-model";
@@ -28,9 +28,10 @@ function stringifyDocPoint(layout: string, style: string, color: string): string
   ].join("");
 }
 
-function uuid(): string {
-  const scope = activeReproducibleScope();
-  return scope ? `{${scope.nextUuid().toUpperCase()}}` : `{${crypto.randomUUID().toUpperCase()}}`;
+function uuid(reproducible?: ReproducibleScope): string {
+  return reproducible
+    ? `{${reproducible.nextUuid().toUpperCase()}}`
+    : `{${crypto.randomUUID().toUpperCase()}}`;
 }
 
 /**
@@ -42,6 +43,7 @@ export const createDataModel = (
   layout: string = "default",
   style: string = "simple1",
   color: string = "accent1_2",
+  reproducible?: ReproducibleScope,
 ): string => {
   const pointStrs: string[] = [];
   const connectionStrs: string[] = [];
@@ -50,10 +52,10 @@ export const createDataModel = (
 
   for (const [i, node] of nodes.entries()) {
     const walk = (node: TreeNode, parentUuid: string, srcOrd: number): void => {
-      const nodeUuid = uuid();
-      const parTransUuid = uuid();
-      const sibTransUuid = uuid();
-      const cxnUuid = uuid();
+      const nodeUuid = uuid(reproducible);
+      const parTransUuid = uuid(reproducible);
+      const sibTransUuid = uuid(reproducible);
+      const cxnUuid = uuid(reproducible);
 
       pointStrs.push(stringifyTransPoint(parTransUuid, "parTrans", cxnUuid));
       pointStrs.push(stringifyTransPoint(sibTransUuid, "sibTrans", cxnUuid));

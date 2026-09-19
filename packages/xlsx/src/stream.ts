@@ -33,6 +33,7 @@ import {
   XLSX_PARTS,
   ZIP_DEFLATE_LEVEL,
   type CompressionOptions,
+  type ReproducibleScope,
 } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
@@ -108,11 +109,13 @@ export function streamWorkbook(
   options: WorkbookOptions,
   ondata: (err: Error | null, chunk: Uint8Array, final: boolean) => void,
   compression: CompressionOptions = {},
+  reproducible?: ReproducibleScope,
 ): void {
   const xmlLevel = compression.xml ?? ZIP_DEFLATE_LEVEL;
   const ctx = new XlsxWriteContext();
+  ctx.reproducible = reproducible;
   const encoder = new TextEncoder();
-  const writer = new ZipStreamWriter(ondata, xmlLevel);
+  const writer = new ZipStreamWriter(ondata, xmlLevel, reproducible);
 
   const worksheets = options.worksheets ?? [];
   const sheetPaths = worksheets.map((_, i) => `xl/worksheets/sheet${i + 1}.xml`);
@@ -162,7 +165,10 @@ export function streamWorkbook(
         options.passthroughRelationships,
       ).serialize(),
   );
-  writeString("docProps/core.xml", OOXML_XML_DECLARATION + buildCorePropertiesXmlString(options));
+  writeString(
+    "docProps/core.xml",
+    OOXML_XML_DECLARATION + buildCorePropertiesXmlString(options, reproducible),
+  );
   writeString(
     "docProps/app.xml",
     OOXML_XML_DECLARATION + (appPropertiesDesc.stringify(options.appProperties ?? {}, ctx) ?? ""),

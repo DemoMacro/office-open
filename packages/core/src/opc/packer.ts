@@ -16,7 +16,11 @@ import {
   zipSync,
 } from "fflate";
 
-import { activeReproducibleScope } from "../util/reproducible";
+import {
+  type ReproducibleGenerationOptions,
+  createReproducibleScope,
+  type ReproducibleScope,
+} from "../util/reproducible";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
 import {
@@ -41,17 +45,13 @@ export interface XmlifyedFile {
 export const ZIP_DEFLATE_LEVEL = 1;
 
 /**
- * Timestamp stamped on every fflate-packed entry inside a reproducible scope:
- * 1980-01-01, the earliest date a ZIP header can encode. The local-time
- * constructor keeps the DOS fields zero in every timezone, matching the native
- * writer (see writeZipBuffer). Native archives already carry this timestamp.
+ * Timestamp stamped on every fflate-packed entry during reproducible
+ * generation: 1980-01-01, the earliest date a ZIP header can encode. The
+ * local-time constructor keeps the DOS fields zero in every timezone, matching
+ * the native writer (see writeZipBuffer). Native archives already carry this
+ * timestamp.
  */
 const REPRODUCIBLE_ZIP_MTIME = new Date(1980, 0, 1);
-
-/** `mtime` option for fflate, undefined outside a reproducible scope (defaults
- *  to the current time there). */
-const zipMtime = (): Date | undefined =>
-  activeReproducibleScope() ? REPRODUCIBLE_ZIP_MTIME : undefined;
 
 /** Default DEFLATE level for compressible media (EMF/WMF/BMP/TIFF/SVG). MS
  *  Office uses CompressionOption.Normal (~zlib 6); SuperFast (1) inflates EMF
@@ -118,6 +118,12 @@ export interface PackerOptions<T extends OutputType = "nodebuffer"> {
   overrides?: XmlifyedFile[];
   /** Compression levels for ZIP entries. */
   compression?: CompressionOptions;
+  /**
+   * Opt-in reproducible generation: deterministic ZIP timestamps plus a
+   * deterministic id/date scope threaded into compile. With the same input,
+   * the same options yield byte-identical output.
+   */
+  reproducible?: ReproducibleGenerationOptions;
 }
 
 /**
@@ -135,13 +141,18 @@ export const zipAndConvert = async <T extends OutputType>(
   type: T,
   mimeType: string,
   level: number = ZIP_DEFLATE_LEVEL,
+  reproducible?: ReproducibleScope,
 ): Promise<OutputByType[T]> => {
   const zipped = hasNativeDeflate()
     ? await nativeZipAsync(files, level)
     : await new Promise<Uint8Array>((resolve, reject) => {
         zip(
           files as AsyncZippable,
-          { level: level as ZipOptions["level"], consume: true, mtime: zipMtime() },
+          {
+            level: level as ZipOptions["level"],
+            consume: true,
+            mtime: reproducible ? REPRODUCIBLE_ZIP_MTIME : undefined,
+          },
           (err, data) => {
             if (err) reject(err);
             else resolve(data);
@@ -162,10 +173,14 @@ export const zipSyncAndConvert = <T extends OutputType>(
   type: T,
   mimeType: string,
   level: number = ZIP_DEFLATE_LEVEL,
+  reproducible?: ReproducibleScope,
 ): OutputByType[T] => {
   const zipped = hasNativeDeflate()
     ? nativeZip(files, level)
-    : zipSync(files, { level: level as ZipOptions["level"], mtime: zipMtime() });
+    : zipSync(files, {
+        level: level as ZipOptions["level"],
+        mtime: reproducible ? REPRODUCIBLE_ZIP_MTIME : undefined,
+      });
   return convertOutput(zipped, type, mimeType);
 };
 
@@ -179,6 +194,7 @@ export const zipSyncAndConvert = <T extends OutputType>(
 export const createZipStream = (
   files: Zippable,
   defaultLevel: number = ZIP_DEFLATE_LEVEL,
+  reproducible?: ReproducibleScope,
 ): ReadableStream<Uint8Array> => {
   // Node's native zlib compresses the entries in parallel on the libuv pool —
   // vastly faster than fflate's per-entry workers, whose spawn cost dominates
@@ -219,7 +235,7 @@ export const createZipStream = (
               : workerPath
                 ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
                 : new ZipDeflate(name, { level: level as ZipOptions["level"] });
-          if (activeReproducibleScope()) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
+          if (reproducible) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
           zip.add(entry);
           // AsyncZipDeflate transfers each pushed buffer to its worker
           // (postMessage move semantics), detaching the caller's view —
@@ -275,6 +291,7 @@ export class ZipStreamWriter {
   constructor(
     ondata: (err: Error | null, chunk: Uint8Array, final: boolean) => void,
     private readonly defaultLevel: number = ZIP_DEFLATE_LEVEL,
+    private readonly reproducible?: ReproducibleScope,
   ) {
     this.zip = new Zip(ondata);
   }
@@ -291,7 +308,7 @@ export class ZipStreamWriter {
         : workerPath
           ? new AsyncZipDeflate(name, { level: level as ZipOptions["level"] })
           : new ZipDeflate(name, { level: level as ZipOptions["level"] });
-    if (activeReproducibleScope()) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
+    if (this.reproducible) entry.mtime = REPRODUCIBLE_ZIP_MTIME;
     // AsyncZipDeflate hands chunks to a worker; ondata delivery is asynchronous,
     // so ordering between parts is preserved by fflate's internal queue. The
     // worker transfer-detaches every chunk it is handed, so sinks receive
@@ -318,11 +335,14 @@ export class ZipStreamWriter {
 
 /**
  * Compile function provided by each package to convert a file object into a Zippable map.
+ * The reproducible scope (when set) must be threaded into the write context so
+ * stringified ids and dates derive from it.
  */
 export type CompileFn<TFile> = (
   file: TFile,
   overrides?: XmlifyedFile[],
   mediaLevel?: number,
+  reproducible?: ReproducibleScope,
 ) => Zippable;
 
 /**
@@ -399,8 +419,22 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const files = compile(file, opts?.overrides ?? [], opts?.compression?.media ?? ZIP_MEDIA_LEVEL);
-    return zipAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
+    const reproducible = opts?.reproducible
+      ? createReproducibleScope(opts.reproducible)
+      : undefined;
+    const files = compile(
+      file,
+      opts?.overrides ?? [],
+      opts?.compression?.media ?? ZIP_MEDIA_LEVEL,
+      reproducible,
+    );
+    return zipAndConvert(
+      files,
+      type,
+      mimeType,
+      opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL,
+      reproducible,
+    );
   };
 
   const toBytes = (file: TFile, opts?: PackerOptions) =>
@@ -420,8 +454,22 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): OutputByType[T] => {
     const type = opts?.type ?? ("nodebuffer" as T);
-    const files = compile(file, opts?.overrides ?? [], opts?.compression?.media ?? ZIP_MEDIA_LEVEL);
-    return zipSyncAndConvert(files, type, mimeType, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
+    const reproducible = opts?.reproducible
+      ? createReproducibleScope(opts.reproducible)
+      : undefined;
+    const files = compile(
+      file,
+      opts?.overrides ?? [],
+      opts?.compression?.media ?? ZIP_MEDIA_LEVEL,
+      reproducible,
+    );
+    return zipSyncAndConvert(
+      files,
+      type,
+      mimeType,
+      opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL,
+      reproducible,
+    );
   };
 
   const toBytesSync = (file: TFile, opts?: PackerOptions) =>
@@ -441,9 +489,12 @@ export const createPacker = <TFile>(options: {
 
   const toStream = (file: TFile, opts?: PackerOptions) => {
     const mediaLevel = opts?.compression?.media ?? ZIP_MEDIA_LEVEL;
+    const reproducible = opts?.reproducible
+      ? createReproducibleScope(opts.reproducible)
+      : undefined;
     let files: Zippable;
     try {
-      files = compile(file, opts?.overrides ?? [], mediaLevel);
+      files = compile(file, opts?.overrides ?? [], mediaLevel, reproducible);
     } catch (err) {
       return new ReadableStream<Uint8Array>({
         start(controller) {
@@ -451,7 +502,7 @@ export const createPacker = <TFile>(options: {
         },
       });
     }
-    return createZipStream(files, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL);
+    return createZipStream(files, opts?.compression?.xml ?? ZIP_DEFLATE_LEVEL, reproducible);
   };
 
   return {

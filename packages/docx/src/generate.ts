@@ -17,7 +17,8 @@ import { compileDocument } from "./compiler";
 
 /** `@internal` Packer instance for DOCX generation. */
 const Packer = createPacker<DocumentOptions>({
-  compile: (options, overrides, mediaLevel) => compileDocument(options, overrides, mediaLevel),
+  compile: (options, overrides, mediaLevel, reproducible) =>
+    compileDocument(options, overrides, mediaLevel, reproducible),
   mimeType: OoxmlMimeType.DOCX,
 });
 

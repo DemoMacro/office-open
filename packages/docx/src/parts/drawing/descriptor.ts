@@ -17,8 +17,8 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, TargetModeType } from "@office-open/core";
-import { activeReproducibleScope, convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
+import { RELATIONSHIP_TYPES, type ReproducibleScope, TargetModeType } from "@office-open/core";
+import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type {
   BlipEffectsOptions,
@@ -220,8 +220,12 @@ function buildHyperlinkChildren(ids: HyperlinkIds): string {
 
 // ── DocPr ──
 
-function stringifyDocPr(opts: DocPropertiesOptions | undefined, hlIds: HyperlinkIds): string {
-  const id = opts?.id ?? activeReproducibleScope()?.nextDrawingId() ?? _docPropsIdGen();
+function stringifyDocPr(
+  opts: DocPropertiesOptions | undefined,
+  hlIds: HyperlinkIds,
+  reproducible?: ReproducibleScope,
+): string {
+  const id = opts?.id ?? reproducible?.nextDrawingId() ?? _docPropsIdGen();
   return stringifyNonVisualDrawingProperties(
     "wp:docPr",
     id,
@@ -1034,7 +1038,7 @@ function stringifyInline(
     `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
-    stringifyDocPr(docProperties, hlIds) +
+    stringifyDocPr(docProperties, hlIds, ctx.reproducible) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
     choiceXml +
     `</wp:inline></w:drawing>`
@@ -1125,7 +1129,7 @@ function stringifyAnchor(
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     effectExtentXml +
     wrapXml +
-    stringifyDocPr(docProperties, hlIds) +
+    stringifyDocPr(docProperties, hlIds, ctx.reproducible) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
     choiceXml +
     sizeRelXml +

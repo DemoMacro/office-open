@@ -38,7 +38,7 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const relId = uniqueId();
+    const relId = ctx.reproducible?.nextId() ?? uniqueId();
     const extension = opts.extension;
     const partPath = `afchunks/afchunk${relId}.${extension}`;
     const rawData = typeof opts.data === "string" ? toUint8Array(opts.data) : opts.data;
@@ -112,7 +112,7 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const relId = uniqueId();
+    const relId = ctx.reproducible?.nextId() ?? uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
     const data = toUint8Array(opts.data);
 

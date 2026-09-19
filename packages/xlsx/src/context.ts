@@ -12,6 +12,7 @@ import {
   type RelationshipType,
 } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReproducibleScope } from "@office-open/core/util";
 import type { Element } from "@office-open/xml";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
@@ -37,6 +38,9 @@ export interface HyperlinkEntry {
 }
 
 export class XlsxWriteContext implements WriteContext {
+  /** Deterministic id/date scope when generating reproducibly (see PackerOptions). */
+  reproducible?: ReproducibleScope;
+
   sharedStrings = new SharedStrings();
   styles = new Styles();
   media = new Media<MediaData>();

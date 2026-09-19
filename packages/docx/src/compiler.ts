@@ -33,7 +33,7 @@ import {
   IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
 } from "@office-open/core";
-import type { XmlifyedFile, Zippable } from "@office-open/core";
+import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 
@@ -92,8 +92,9 @@ export function compileDocument(
   options: DocumentOptions,
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
+  reproducible?: ReproducibleScope,
 ): Zippable {
-  const ctx = new DocxWriteContext(options);
+  const ctx = new DocxWriteContext(options, reproducible);
   const xmlifiedFileMapping = xmlifyContext(ctx);
   const files = compileMapping(xmlifiedFileMapping, overrides);
 
@@ -197,6 +198,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       fileData: ctx,
       file: ctx,
       viewWrapper,
+      reproducible: ctx.reproducible,
       addRelationship: (type: string, target: string, mode?: string) =>
         ctx.addRelationship(type, target, mode),
       addMedia: (data: Uint8Array, type: string) => ctx.addMedia(data, type),

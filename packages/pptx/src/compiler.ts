@@ -22,7 +22,7 @@ import {
   getReferencedMedia,
   replaceImagePlaceholders,
 } from "@office-open/core";
-import type { XmlifyedFile, Zippable } from "@office-open/core";
+import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
 import {
   appPropertiesDesc,
   buildCorePropertiesXmlString,
@@ -140,8 +140,10 @@ export function compilePresentation(
   options: PresentationOptions,
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
+  reproducible?: ReproducibleScope,
 ): Zippable {
   const descCtx = new PptxWriteContext();
+  descCtx.reproducible = reproducible;
   const slides = options.slides ?? [];
   const masterDefs = options.masters ?? [];
   const sz = resolveSlideSize(options.size);
@@ -252,7 +254,7 @@ export function compilePresentation(
       path: "docProps/app.xml",
     },
     Properties: {
-      data: XML_DECL + buildCorePropertiesXmlString(options),
+      data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
       path: "docProps/core.xml",
     },
     ...(hasCustomProperties
