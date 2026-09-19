@@ -123,13 +123,35 @@ function parseHeaderFooterRef(
 // ── Section child dispatch ───────────────────────────────────────────────────
 
 /**
+ * The w:pict of a paragraph whose only run wraps a VML textbox — the shape
+ * office-open's own textbox stringifier emits (w:p > w:r > w:pict, per
+ * EG_RunInnerContent). Returns undefined when the paragraph carries any other
+ * content, so a real run mixing text with a pict is never promoted (the
+ * surrounding content would be lost).
+ */
+function findRunTextboxPict(el: Element): Element | undefined {
+  let pict: Element | undefined;
+  for (const child of el.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "w:pPr") continue;
+    if (child.name !== "w:r" || pict !== undefined) return undefined;
+    const runContent = (child.elements ?? []).filter(
+      (c) => c.type === "element" && c.name !== "w:rPr" && c.name !== "w:pict",
+    );
+    if (runContent.length > 0) return undefined;
+    pict = findChild(child, "w:pict");
+  }
+  return pict;
+}
+
+/**
  * Parse a single body child element into a SectionChild.
  */
 export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChild {
   switch (el.name) {
     case "w:p": {
-      // Check for textbox (w:pict containing v:textbox)
-      const pict = findChild(el, "w:pict");
+      // Check for textbox (w:pict containing v:textbox) — bare or run-wrapped
+      const pict = findChild(el, "w:pict") ?? findRunTextboxPict(el);
       if (pict) {
         const textbox = findFirst(pict, "v:textbox");
         if (textbox) {
@@ -493,14 +515,21 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   // The aggregated field span carries no w:sdt wrapper — keep it bare so the
   // re-emitted TOC does not grow a content control the source never had.
   tocOpts.bare = true;
-  // The field end drifted into a following body paragraph (carrying text) —
-  // that paragraph round-trips through the returnsToBody path, so the emit
-  // path must not inject a second end run into the last entry.
+  const entryEls = selectTocEntryElements(els);
   const lastEl = els[els.length - 1]!;
-  if (lastEl && countFieldDelta(lastEl) < 0 && findFirst(lastEl, "w:t") !== undefined) {
+  // endInBody means "the field end lives in a body paragraph after the
+  // entries" — only when the closing paragraph did NOT join the entries.
+  // selectTocEntryElements keeps a text-bearing closing paragraph that is the
+  // last rendered entry, and that paragraph's consumed end must be re-injected
+  // (injectFieldEnd) instead of leaving a second end run in the body.
+  if (
+    lastEl &&
+    countFieldDelta(lastEl) < 0 &&
+    findFirst(lastEl, "w:t") !== undefined &&
+    entryEls[entryEls.length - 1] !== lastEl
+  ) {
     tocOpts.endInBody = true;
   }
-  const entryEls = selectTocEntryElements(els);
   if (entryEls.length > 0) {
     // Entry paragraphs live INSIDE the field: the per-paragraph accumulator
     // consumes their fldChar control runs and keeps the rest. They must not go

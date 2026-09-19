@@ -337,6 +337,103 @@ describe("parseBody TOC entry preservation", () => {
   });
 });
 
+describe("TOC field boundary round-trip", () => {
+  it("captures a single-paragraph field's entry and slices around it", () => {
+    // A one-entry TOC renders the entire field — begin, separate, entry text,
+    // nested PAGEREF, end — inside one w:p. The splitter must still start the
+    // field slice there (depth opens AND closes in the same element) and keep
+    // the paragraph as the rendered entry.
+    const xml = `<w:sdt>
+      <w:sdtPr><w:docPartObj><w:docPartGallery w:val="Table of Contents"/></w:docPartObj></w:sdtPr>
+      <w:sdtContent>
+        <w:p><w:r><w:t>Contents</w:t></w:r></w:p>
+        <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr>
+          <w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h \\z </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:t>Heading One</w:t></w:r>
+          <w:r><w:tab/></w:r>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1 \\h </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:t>1</w:t></w:r>
+          <w:r><w:fldChar w:fldCharType="end"/></w:r>
+          <w:r><w:fldChar w:fldCharType="end"/></w:r>
+        </w:p>
+        <w:p><w:r><w:t>After</w:t></w:r></w:p>
+      </w:sdtContent>
+    </w:sdt>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parseToc(el, readCtx, (els, ctx) => els.map((e) => parseSectionChild(e, ctx)));
+    expect(result?.entries).toHaveLength(1);
+    expect(JSON.stringify(result?.entries?.[0])).toContain("Heading One");
+    // The heading paragraph and the paragraph after the field stay outside it.
+    expect(result?.leading).toHaveLength(1);
+    expect(JSON.stringify(result?.leading?.[0])).toContain("Contents");
+    expect(result?.trailing).toHaveLength(1);
+    expect(JSON.stringify(result?.trailing?.[0])).toContain("After");
+  });
+
+  it("keeps the last entry when the field end is parked in its paragraph", () => {
+    // Word parks the outer field end in the last rendered entry's paragraph
+    // (after the nested PAGEREF end). That paragraph carries an entry's markup
+    // and must stay in the TOC; its consumed end is re-injected on emit, so the
+    // body must not receive a field-less copy and endInBody must stay off.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC2"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> PAGEREF _Toc2 \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+        <w:r><w:t>Heading Two</w:t></w:r>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const children = sections[0]?.children ?? [];
+    const tocChild = children.find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[]; endInBody?: boolean } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+    expect(tocChild?.toc.endInBody).not.toBe(true);
+    const closing = JSON.stringify(tocChild?.toc.entries?.[1]);
+    expect(closing).toContain("Heading Two");
+    expect(closing).toContain("TOC2");
+    // The closing paragraph lives inside the TOC — it is not duplicated into
+    // the body as a standalone paragraph.
+    expect(children).toHaveLength(1);
+  });
+
+  it("keeps a hyperlink-wrapped closing paragraph as the last entry", () => {
+    // The closing paragraph may carry a custom entry style instead of TOCn;
+    // the hyperlink wrapping the entry text is what identifies it as an entry.
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="Contents2"/></w:pPr>
+        <w:hyperlink w:anchor="_Toc2"><w:r><w:t>Heading Two</w:t></w:r></w:hyperlink>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const children = sections[0]?.children ?? [];
+    const tocChild = children.find((c) => "toc" in c) as
+      | { toc: { entries?: unknown[] } }
+      | undefined;
+    expect(tocChild?.toc.entries).toHaveLength(2);
+    expect(children).toHaveLength(1);
+  });
+});
+
 describe("stringifyTableOfContents dirty strategy", () => {
   it("marks a fresh TOC dirty so the app regenerates entries", () => {
     const xml = stringifyTableOfContents("Table of Contents", {

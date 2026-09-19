@@ -86,4 +86,22 @@ describe("endnotesDesc round-trip", () => {
     expect(xml).toContain('<w:t xml:space="preserve">cell</w:t>');
     expect(xml).not.toContain("<w:endnoteRef/>");
   });
+
+  it("injects the reference run after the paragraph properties", () => {
+    // CT_P orders w:pPr before every run: an endnoteRef injected right after
+    // the paragraph open tag makes the part schema-invalid.
+    const source =
+      '<w:endnotes xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:endnote w:id="1"><w:p><w:pPr><w:pStyle w:val="FootnoteText"/></w:pPr>' +
+      "<w:r><w:t>note text</w:t></w:r></w:p></w:endnote></w:endnotes>";
+    const root = parseXml(source).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = endnotesDesc.parse(root, readCtx);
+
+    const xml = endnotesDesc.stringify(parsed, writeCtx as any)!;
+    expect(xml).toContain(
+      '</w:pPr><w:r><w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr><w:endnoteRef/></w:r>',
+    );
+    expect(xml.indexOf("<w:endnoteRef/>")).toBeGreaterThan(xml.indexOf("</w:pPr>"));
+  });
 });

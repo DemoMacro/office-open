@@ -134,19 +134,29 @@ function splitAroundOuterField(els: Element[]): {
   let endIdx = -1;
   for (let i = 0; i < els.length; i++) {
     const depthBefore = depth;
+    let opened = false;
     const walk = (node: Element): void => {
       if (node.name === "w:fldChar") {
         const type = attr(node, "w:fldCharType");
-        if (type === "begin") depth++;
-        else if (type === "end") depth--;
+        if (type === "begin") {
+          depth++;
+          opened = true;
+        } else if (type === "end") depth--;
       }
       for (const c of node.elements ?? []) {
         if (c.type === "element") walk(c);
       }
     };
     walk(els[i]!);
-    if (startIdx < 0 && depth > depthBefore) startIdx = i;
-    if (startIdx >= 0 && endIdx < 0 && depthBefore > 0 && depth === 0) {
+    // `opened` (not depth > depthBefore): an element may open AND close the
+    // field itself — a single-entry TOC renders the whole field in one
+    // paragraph — in which case depth returns to depthBefore and the element
+    // must still start the field slice.
+    if (startIdx < 0 && opened) startIdx = i;
+    // The field span closes when depth returns to 0 from an open field, or in
+    // the element that opened it (the single-paragraph case), so content after
+    // the field stays in the trailing slice instead of being swallowed.
+    if (startIdx >= 0 && endIdx < 0 && depth === 0 && (depthBefore > 0 || opened)) {
       endIdx = i;
       break;
     }
@@ -232,18 +242,16 @@ export function parseTocFieldFromElements(els: Element[]): TableOfContentsOption
  * boundary detection.
  *
  * A paragraph is an entry when, after walking it, the field is past `separate`
- * and not past `end` (depth ≥ 1) and the paragraph carries rendered text (`w:t`).
- * This captures an entry whose paragraph also opens the field (`begin`) or holds
- * the `separate` marker — common when Word emits begin + separate + first entry
- * in one paragraph — while the `w:t` requirement excludes a pure control
+ * and the paragraph carries rendered text (`w:t`). This captures an entry whose
+ * paragraph also opens the field (`begin`) or holds the `separate` marker or
+ * closes the field in the same paragraph — Word may render the whole field in
+ * one paragraph — while the `w:t` requirement excludes a pure control
  * paragraph (field head / separate-only / end).
  *
- * The paragraph that closes the field (depth drops to 0) is kept as a pure
- * control paragraph when it carries a pPr or follows rendered entries — the
- * source markup carried that paragraph, and the stringify path injects the
- * field-end run back into it, keeping the paragraph count identical. One
- * carrying text is body content (see keepTocClosingParagraph) and is returned
- * to the body by the TOC aggregator.
+ * A paragraph that closes an already-open field (depth drops to 0) joins the
+ * entries when it is a pure control paragraph the source markup carried or
+ * when it is itself the last rendered entry (see keepTocClosingParagraph);
+ * a text-bearing paragraph the end merely drifted into stays body content.
  */
 export function selectTocEntryElements(els: Element[]): Element[] {
   const entries: Element[] = [];
@@ -263,8 +271,15 @@ export function selectTocEntryElements(els: Element[]): Element[] {
       }
     };
     walk(el);
-    if (afterSeparate && depth === 0 && depthBefore > 0) {
-      if (keepTocClosingParagraph(el, entries.length > 0)) entries.push(el);
+    if (afterSeparate && depth === 0) {
+      // depthBefore === 0 marks a paragraph that opens AND closes the field in
+      // itself (single-paragraph TOC): it carries the entry text, not a
+      // trailing control paragraph, so plain text membership decides.
+      const closing = depthBefore > 0;
+      const keep = closing
+        ? keepTocClosingParagraph(el, entries.length > 0)
+        : findFirst(el, "w:t") !== undefined;
+      if (keep) entries.push(el);
       afterSeparate = false;
     } else if (afterSeparate && depth >= 1 && findFirst(el, "w:t") !== undefined) {
       entries.push(el);
@@ -280,13 +295,41 @@ export function selectTocEntryElements(els: Element[]): Element[] {
  * — a paragraph the source markup carried, so the stringify path injects the
  * field-end run back into it, keeping the paragraph count identical. A bare
  * closing paragraph with no entries before it belongs to a never-rendered
- * field (fresh dirty TOC) and is dropped. A closing paragraph WITH text is
- * body content the field end drifted into (Word drops the end marker into a
- * following heading when it updates the field) — it must stay in the body,
- * not the TOC.
+ * field (fresh dirty TOC) and is dropped. A text-bearing closing paragraph
+ * joins the entries only when it is itself the last rendered entry (see
+ * isTocEntryClosingParagraph); a paragraph the end merely drifted into is
+ * body content and must stay in the body, not the TOC.
  */
 export function keepTocClosingParagraph(el: Element, hasEntries: boolean): boolean {
-  return findFirst(el, "w:t") === undefined && (hasEntries || findFirst(el, "w:pPr") !== undefined);
+  if (findFirst(el, "w:t") === undefined) {
+    return hasEntries || findFirst(el, "w:pPr") !== undefined;
+  }
+  return isTocEntryClosingParagraph(el);
+}
+
+/**
+ * True when a text-bearing paragraph that closes the TOC field is itself the
+ * last rendered entry. The writer parks the field end in the last entry's
+ * paragraph, so such a paragraph keeps an entry's markup — a TOC style, a
+ * hyperlink, or a nested page-number field — and must stay in the entries
+ * rather than being dropped/moved to the body. A paragraph the end merely
+ * drifted into (a following heading) carries none of those.
+ */
+function isTocEntryClosingParagraph(el: Element): boolean {
+  const pPr = findChild(el, "w:pPr");
+  const styleEl = pPr ? findChild(pPr, "w:pStyle") : undefined;
+  const style = styleEl ? attr(styleEl, "w:val") : undefined;
+  if (typeof style === "string" && style.toUpperCase().startsWith("TOC")) return true;
+  if (findFirst(el, "w:hyperlink") !== undefined) return true;
+  let fields = 0;
+  const walk = (node: Element): void => {
+    if (node.name === "w:fldChar") fields++;
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return fields > 1;
 }
 
 /**

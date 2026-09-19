@@ -1365,6 +1365,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   if (info?.graphicFrameLocks !== undefined) {
     opts.graphicFrameLocks = info.graphicFrameLocks;
   }
+  if (info?.altText) opts.altText = info.altText;
   if (info?.floating) opts.floating = info.floating;
 
   return { chart: opts };
