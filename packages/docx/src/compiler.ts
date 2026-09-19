@@ -23,6 +23,7 @@ import {
   createThemeXml,
   dropDanglingPassthroughRels,
   DOCX_PARTS,
+  encodeUriPath,
   finalizeContentTypes,
   findAndReplaceImagePlaceholders,
   optionalRelsPart,
@@ -104,7 +105,10 @@ export function compileDocument(
   for (const font of ctx.fontTable.fontOptionsWithKey) {
     if (font.data === undefined) continue;
     const [nameWithoutExtension] = font.name.split(".");
-    const filePath = font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`;
+    // Pack the font part under the URI-escaped path so the ZIP item name
+    // equals the escaped rel Target byte-for-byte (readers resolve the
+    // Target as a URI; an unescaped part name with spaces never matches).
+    const filePath = encodeUriPath(font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`);
     files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
   }
 

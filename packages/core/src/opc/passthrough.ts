@@ -16,6 +16,7 @@
 
 import { attr, escapeXml, type Element } from "@office-open/xml";
 
+import { decodeUriPath } from "../util/uri-path";
 import {
   contentTypesDesc,
   type ContentTypeDefault,
@@ -230,6 +231,11 @@ export function dropDanglingPassthroughRels(
     if (!match) continue;
     const resolved = resolveRelationshipTarget(rel.source, rel.target);
     if (paths.has(resolved.toLowerCase())) continue;
+    // A Target is a URI: a part whose name carries spaces/non-ASCII is
+    // referenced percent-encoded, so compare the decoded form too before
+    // treating the relationship as dangling.
+    const decoded = decodeUriPath(resolved);
+    if (decoded !== resolved && paths.has(decoded.toLowerCase())) continue;
     const stripped = xml.slice(0, match.index) + xml.slice(match.index + match[1]!.length);
     const rewritten = encoder.encode(stripped);
     files[relsPath] = Array.isArray(entry) ? [rewritten, entry[1]] : rewritten;
