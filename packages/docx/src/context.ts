@@ -502,7 +502,7 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private createHeader(header: SectionChild[], partName?: string): HeaderFooterEntry {
-    const referenceId = this.document.relationships.nextRelationshipId;
+    const referenceId = this.headerFooterReferenceId(partName, RELATIONSHIP_TYPES.header);
     const entry: HeaderFooterEntry = {
       children: header,
       relationships: new Relationships(),
@@ -513,7 +513,7 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private createFooter(footer: SectionChild[], partName?: string): HeaderFooterEntry {
-    const referenceId = this.document.relationships.nextRelationshipId;
+    const referenceId = this.headerFooterReferenceId(partName, RELATIONSHIP_TYPES.footer);
     const entry: HeaderFooterEntry = {
       children: footer,
       relationships: new Relationships(),
@@ -523,24 +523,58 @@ export class DocxWriteContext implements WriteContext {
     return entry;
   }
 
+  /**
+   * Reference id for a header/footer part. When a round-tripped part keeps its
+   * source file name, reuse the related source relationship's rId (kind+target
+   * match) so saving an opened document does not monotonically grow the id
+   * counter and shift every header/footer reference each cycle. A part already
+   * wired in this generation (two slots sharing one part) reuses its registered
+   * id; a fresh compile allocates the next one.
+   */
+  private headerFooterReferenceId(partName: string | undefined, type: RelationshipType): number {
+    if (!partName) return this.document.relationships.nextRelationshipId;
+    const existing = this.document.relationships.idOf(type, partName);
+    if (existing) {
+      const m = /^rId(\d+)$/.exec(existing);
+      if (m) return Number(m[1]);
+    }
+    const source = (this._options.passthroughRelationships ?? []).find(
+      (r) =>
+        r.source === "word/document.xml" &&
+        r.relationshipType === type &&
+        (r.target === partName || r.target.endsWith(`/${partName}`)),
+    );
+    const m = source ? /^rId(\d+)$/.exec(source.rId) : undefined;
+    if (m && !this.document.relationships.hasId(m[0])) return Number(m[1]);
+    return this.document.relationships.nextRelationshipId;
+  }
+
   private addHeaderToDocument(header: HeaderFooterEntry, partName?: string): void {
     this._headers.push(header);
     header.partName = this.nextPartName(this._headers, partName, "header");
-    this.document.relationships.addRelationship(
-      header.referenceId,
-      RELATIONSHIP_TYPES.header,
-      header.partName,
-    );
+    // Two slots may share one part (a source referencing the same header from
+    // several sections) — its relationship is already registered, and a
+    // duplicate relationship id would corrupt the document rels.
+    if (!this.document.relationships.hasRelationship(RELATIONSHIP_TYPES.header, header.partName)) {
+      this.document.relationships.addRelationship(
+        header.referenceId,
+        RELATIONSHIP_TYPES.header,
+        header.partName,
+      );
+    }
   }
 
   private addFooterToDocument(footer: HeaderFooterEntry, partName?: string): void {
     this._footers.push(footer);
     footer.partName = this.nextPartName(this._footers, partName, "footer");
-    this.document.relationships.addRelationship(
-      footer.referenceId,
-      RELATIONSHIP_TYPES.footer,
-      footer.partName,
-    );
+    // Same shared-part guard as addHeaderToDocument.
+    if (!this.document.relationships.hasRelationship(RELATIONSHIP_TYPES.footer, footer.partName)) {
+      this.document.relationships.addRelationship(
+        footer.referenceId,
+        RELATIONSHIP_TYPES.footer,
+        footer.partName,
+      );
+    }
   }
 
   /** Resolve the part file name: the round-tripped source name when given,
