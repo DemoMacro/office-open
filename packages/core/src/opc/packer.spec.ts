@@ -2,7 +2,17 @@ import { afterEach, assert, beforeEach, describe, expect, it, vi } from "vite-pl
 
 import { decodeBase64, encodeBase64 } from "../util/base64";
 import { isBase64DataURL, toUint8Array } from "../util/data-type";
-import { createPacker, unzipSync, ZipStreamWriter, type XmlifyedFile } from "./packer";
+import { withReproducibleGeneration } from "../util/reproducible";
+import {
+  createPacker,
+  createZipStream,
+  unzipSync,
+  ZipStreamWriter,
+  zipAndConvert,
+  zipSyncAndConvert,
+  type XmlifyedFile,
+} from "./packer";
+import { setForceJsDeflate } from "./zip-native";
 
 // Simple mock compile function for testing createPacker
 const compileMock = vi.fn();
@@ -406,6 +416,120 @@ describe("createPacker", () => {
       expect(first.length).toBe(6);
       expect(middle.length).toBe(8);
     });
+  });
+});
+
+describe("reproducible generation", () => {
+  const MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  const encode = (s: string): Uint8Array => new TextEncoder().encode(s);
+  const sample = () => ({
+    "[Content_Types].xml": encode("<Types/>"),
+    "word/document.xml": encode("<w:document>hello</w:document>"),
+  });
+  /** Mod-date field of the first local file header; DOS 1980-01-01 = 0x21. */
+  const dosDate = (zip: Uint8Array): number => zip[12]! | (zip[13]! << 8);
+
+  const collect = async (stream: ReadableStream<Uint8Array>): Promise<Uint8Array> => {
+    const reader = stream.getReader();
+    const chunks: Uint8Array[] = [];
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (value) chunks.push(value);
+    }
+    const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+    let offset = 0;
+    for (const c of chunks) {
+      out.set(c, offset);
+      offset += c.length;
+    }
+    return out;
+  };
+
+  const runWriter = (parts: readonly Uint8Array[]): Promise<Uint8Array> => {
+    const chunks: Uint8Array[] = [];
+    let finish!: (out: Uint8Array) => void;
+    const finished = new Promise<Uint8Array>((resolve) => (finish = resolve));
+    const writer = new ZipStreamWriter((err, chunk, final) => {
+      if (err) throw err;
+      chunks.push(chunk);
+      if (!final) return;
+      const out = new Uint8Array(chunks.reduce((n, c) => n + c.length, 0));
+      let offset = 0;
+      for (const c of chunks) {
+        out.set(c, offset);
+        offset += c.length;
+      }
+      finish(out);
+    });
+    const sink = writer.addPart("doc.xml");
+    for (const part of parts.slice(0, -1)) sink.push(part);
+    sink.end(parts[parts.length - 1]);
+    writer.end();
+    return finished;
+  };
+
+  afterEach(() => {
+    setForceJsDeflate(false);
+  });
+
+  it("stamps the DOS epoch and repeats byte-identically on the fflate sync path", () => {
+    setForceJsDeflate(true);
+    const first = withReproducibleGeneration({}, () =>
+      zipSyncAndConvert(sample(), "uint8array", MIME),
+    );
+    const second = withReproducibleGeneration({}, () =>
+      zipSyncAndConvert(sample(), "uint8array", MIME),
+    );
+    expect(first).toEqual(second);
+    expect(dosDate(first)).toBe(0x21);
+  });
+
+  it("repeats byte-identically on the fflate async path", async () => {
+    setForceJsDeflate(true);
+    const first = await withReproducibleGeneration({}, () =>
+      zipAndConvert(sample(), "uint8array", MIME),
+    );
+    const second = await withReproducibleGeneration({}, () =>
+      zipAndConvert(sample(), "uint8array", MIME),
+    );
+    expect(first).toEqual(second);
+    expect(dosDate(first)).toBe(0x21);
+  });
+
+  it("repeats byte-identically on the fflate stream path", async () => {
+    setForceJsDeflate(true);
+    const first = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
+    const second = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
+    expect(first).toEqual(second);
+    expect(dosDate(first)).toBe(0x21);
+  });
+
+  it("repeats byte-identically on the ZipStreamWriter path", async () => {
+    setForceJsDeflate(true);
+    const parts = [encode("<root>"), encode("streamed"), encode("</root>")];
+    const first = await withReproducibleGeneration({}, () => runWriter(parts));
+    const second = await withReproducibleGeneration({}, () => runWriter(parts));
+    expect(first).toEqual(second);
+    expect(dosDate(first)).toBe(0x21);
+  });
+
+  it("keeps the current timestamp outside a scope", () => {
+    setForceJsDeflate(true);
+    const zip = zipSyncAndConvert(sample(), "uint8array", MIME);
+    expect(dosDate(zip)).not.toBe(0x21);
+  });
+
+  it("repeats byte-identically on the native path across output methods", async () => {
+    const sync = withReproducibleGeneration({}, () =>
+      zipSyncAndConvert(sample(), "uint8array", MIME),
+    );
+    const async_ = await withReproducibleGeneration({}, () =>
+      zipAndConvert(sample(), "uint8array", MIME),
+    );
+    const stream = await withReproducibleGeneration({}, () => collect(createZipStream(sample())));
+    expect(async_).toEqual(sync);
+    expect(stream).toEqual(sync);
   });
 });
 

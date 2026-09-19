@@ -18,7 +18,7 @@
  */
 
 import { RELATIONSHIP_TYPES, TargetModeType } from "@office-open/core";
-import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
+import { activeReproducibleScope, convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type {
   BlipEffectsOptions,
@@ -221,7 +221,7 @@ function buildHyperlinkChildren(ids: HyperlinkIds): string {
 // ── DocPr ──
 
 function stringifyDocPr(opts: DocPropertiesOptions | undefined, hlIds: HyperlinkIds): string {
-  const id = opts?.id ?? _docPropsIdGen();
+  const id = opts?.id ?? activeReproducibleScope()?.nextDrawingId() ?? _docPropsIdGen();
   return stringifyNonVisualDrawingProperties(
     "wp:docPr",
     id,
