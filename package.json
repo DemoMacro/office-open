@@ -54,7 +54,7 @@
     "@funish/basis": "0.3.0",
     "@rolldown/plugin-node-polyfills": "1.0.3",
     "@types/node": "26.6.1",
-    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/coverage-v8": "4.1.10",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
     "docx": "9.7.1",
@@ -67,7 +67,7 @@
     "ts-json-schema-generator": "2.9.0",
     "ts-morph": "28.0.0",
     "tsx": "4.23.13",
-    "vite-plus": "0.3.3"
+    "vite-plus": "0.2.9"
   },
   "packageManager": "pnpm@10.33.0"
 }
