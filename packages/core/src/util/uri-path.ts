@@ -7,7 +7,9 @@
 /**
  * Percent-encode each path segment of a URI reference, keeping the `/`
  * separators: a Target is a URI, so spaces, `#`, `?` and non-ASCII in a part
- * name must be escaped. Encoding an already-encoded path is idempotent.
+ * name must be escaped. Not idempotent — an already-encoded segment gets its
+ * `%` re-escaped — so callers pass the raw path exactly once (parse stores the
+ * decoded form precisely so re-compilation escapes once).
  */
 export function encodeUriPath(path: string): string {
   return path.split("/").map(encodeURIComponent).join("/");

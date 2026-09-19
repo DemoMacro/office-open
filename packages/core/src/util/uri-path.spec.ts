@@ -8,7 +8,7 @@ describe("encodeUriPath", () => {
     expect(encodeUriPath("word/fonts/Café Font.odttf")).toBe("word/fonts/Caf%C3%A9%20Font.odttf");
   });
 
-  it("is idempotent on an already-escaped path", () => {
+  it("round-trips an already-escaped path through decode", () => {
     const escaped = "word/fonts/My%20Font.odttf";
     expect(encodeUriPath(decodeUriPath(escaped))).toBe(escaped);
   });
