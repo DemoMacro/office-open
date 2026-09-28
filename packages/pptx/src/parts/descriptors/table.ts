@@ -180,12 +180,18 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // a:tblPr
     const tblPr = findChild(tbl, "a:tblPr");
     if (tblPr) {
-      if (attrBool(tblPr, "firstRow")) result.firstRow = true;
-      if (attrBool(tblPr, "lastRow")) result.lastRow = true;
-      if (attrBool(tblPr, "bandRow")) result.bandRow = true;
-      if (attrBool(tblPr, "firstCol")) result.firstCol = true;
-      if (attrBool(tblPr, "lastCol")) result.lastCol = true;
-      if (attrBool(tblPr, "bandCol")) result.bandCol = true;
+      const firstRow = attrBool(tblPr, "firstRow");
+      const lastRow = attrBool(tblPr, "lastRow");
+      const bandRow = attrBool(tblPr, "bandRow");
+      const firstCol = attrBool(tblPr, "firstCol");
+      const lastCol = attrBool(tblPr, "lastCol");
+      const bandCol = attrBool(tblPr, "bandCol");
+      if (firstRow !== undefined) result.firstRow = firstRow;
+      if (lastRow !== undefined) result.lastRow = lastRow;
+      if (bandRow !== undefined) result.bandRow = bandRow;
+      if (firstCol !== undefined) result.firstCol = firstCol;
+      if (lastCol !== undefined) result.lastCol = lastCol;
+      if (bandCol !== undefined) result.bandCol = bandCol;
 
       const tableStyleIdEl = findChild(tblPr, "a:tableStyleId");
       if (tableStyleIdEl) {
