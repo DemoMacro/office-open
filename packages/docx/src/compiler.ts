@@ -201,7 +201,8 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       reproducible: ctx.reproducible,
       addRelationship: (type: string, target: string, mode?: string) =>
         ctx.addRelationship(type, target, mode),
-      addMedia: (data: Uint8Array, type: string) => ctx.addMedia(data, type),
+      addMedia: (data: Uint8Array, type: string, fileName?: string) =>
+        ctx.addMedia(data, type, fileName),
       addHyperlink: (key, target) => ctx.addHyperlink(key, target),
       // Assigned after the literal: stringifyBodyChild needs this context, which
       // is only bound once the literal finishes initializing.

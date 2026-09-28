@@ -275,11 +275,9 @@ export function buildPlaceholderShapes(
 // ── Background ──
 
 /** Emit p:bg. Undefined background emits the MS Office default bgRef idx="1001". */
-export function buildBackgroundXml(bg?: BackgroundOptions): string {
-  return (
-    backgroundDesc.stringify(
-      bg ?? { reference: DEFAULT_BACKGROUND_REFERENCE },
-      undefined as never,
-    ) ?? ""
-  );
+export function buildBackgroundXml(
+  bg: BackgroundOptions | undefined,
+  ctx: PptxWriteContext,
+): string {
+  return backgroundDesc.stringify(bg ?? { reference: DEFAULT_BACKGROUND_REFERENCE }, ctx) ?? "";
 }

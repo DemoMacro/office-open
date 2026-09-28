@@ -55,17 +55,22 @@ export class XlsxWriteContext implements WriteContext {
     return `rId${this.workbookRels.add(type, target)}`;
   }
 
-  public addMedia(data: Uint8Array, type: string): string {
+  public addMedia(data: Uint8Array, type: string, fileName?: string): string {
     // Reached by DrawingML blip fills (drawing shape picture fill) via fillDesc.
     // Image anchors still register through ctx.media directly in the compiler
     // because they carry pixel dimensions; both land in the same collection.
-    const entry = this.media.addMedia(data, type, (fileName) => ({
-      fileName,
-      type,
+    const entry = this.media.addMedia(
       data,
-      width: 0,
-      height: 0,
-    }));
+      type,
+      (fileName) => ({
+        fileName,
+        type,
+        data,
+        width: 0,
+        height: 0,
+      }),
+      fileName,
+    );
     return `{${entry.fileName}}`;
   }
 

@@ -222,7 +222,7 @@ export class DocxWriteContext implements WriteContext {
     return `rId${this.document.relationships.add(type as RelationshipType, target, mode as "External" | undefined)}`;
   }
 
-  public addMedia(data: Uint8Array, type: string): string {
+  public addMedia(data: Uint8Array, type: string, fileName?: string): string {
     const entry = this.media.addMedia(
       data,
       type,
@@ -233,6 +233,7 @@ export class DocxWriteContext implements WriteContext {
           type,
           transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
         }) as MediaData,
+      fileName,
     );
     return `{${entry.fileName}}`;
   }

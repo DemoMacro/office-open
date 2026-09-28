@@ -123,13 +123,18 @@ export class PptxWriteContext implements WriteContext {
     return `rId${id}`;
   }
 
-  public addMedia(data: Uint8Array, type: string): string {
-    const entry = this._media.addMedia(data, type, (fileName) => ({
-      key: fileName,
-      fileName,
+  public addMedia(data: Uint8Array, type: string, fileName?: string): string {
+    const entry = this._media.addMedia(
       data,
       type,
-    }));
+      (fileName) => ({
+        key: fileName,
+        fileName,
+        data,
+        type,
+      }),
+      fileName,
+    );
     return `{${entry.fileName}}`;
   }
 

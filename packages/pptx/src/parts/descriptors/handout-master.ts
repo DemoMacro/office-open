@@ -38,7 +38,7 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions,
         const parts: string[] = [];
         parts.push(`<p:handoutMaster ${NS}>`);
         parts.push("<p:cSld>");
-        parts.push(buildBackgroundXml(opts.options.background));
+        parts.push(buildBackgroundXml(opts.options.background, ctx));
         parts.push("<p:spTree>");
         parts.push(SP_TREE_HEADER);
         let childId = 100;
