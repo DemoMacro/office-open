@@ -285,6 +285,23 @@ describe("tableDesc round-trip", () => {
     expect(result.lastCol).toBe(true);
   });
 
+  it("round-trips explicitly disabled table properties", () => {
+    const result = roundTrip({
+      bandRow: true,
+      firstRow: false,
+      lastRow: false,
+      firstCol: false,
+      lastCol: true,
+      bandCol: false,
+      rows: [{ cells: [{ text: "X" }] }],
+    });
+
+    expect(result.firstRow).toBe(false);
+    expect(result.lastRow).toBe(false);
+    expect(result.firstCol).toBe(false);
+    expect(result.bandCol).toBe(false);
+  });
+
   it("round-trips table with tableStyleId", () => {
     const opts: TableOptions = {
       tableStyleId: "{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}",

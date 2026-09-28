@@ -87,7 +87,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     parts.push(`<p:cSld${opts.name !== undefined ? ` name="${opts.name}"` : ""}>`);
 
     // p:bg — undefined background emits the MS Office default bgRef idx="1001".
-    parts.push(buildBackgroundXml(opts.background));
+    parts.push(buildBackgroundXml(opts.background, ctx));
 
     // p:spTree — standard placeholders (scaled to slide width) + custom children.
     parts.push("<p:spTree>");

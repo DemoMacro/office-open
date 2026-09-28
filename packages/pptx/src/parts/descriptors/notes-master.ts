@@ -34,7 +34,7 @@ export const notesMasterDesc: CustomDescriptor<NotesMasterOptions, PptxWriteCont
 
     // p:cSld — bg + spTree.
     parts.push("<p:cSld>");
-    parts.push(buildBackgroundXml(opts.background));
+    parts.push(buildBackgroundXml(opts.background, ctx));
     parts.push("<p:spTree>");
     parts.push(SP_TREE_HEADER);
     // Children carry explicit cNvPr ids so they never collide with the group

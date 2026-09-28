@@ -351,6 +351,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
       const placeholder = ctx.addMedia(
         toUint8Array(opts.data!, { encoding: "base64" }),
         opts.imageType!,
+        opts.fileName,
       );
       return emitBlipFill(opts, placeholder, ctx.reproducible);
     }

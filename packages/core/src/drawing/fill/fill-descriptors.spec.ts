@@ -245,18 +245,36 @@ describe("fillDesc blip fill (stringify)", () => {
   // Blip stringify registers image media via ctx.addMedia and emits a:blipFill
   // with the returned {fileName} placeholder; the format-package compiler
   // replaces the placeholder with a relationship rId at pack time.
-  const mockWriteCtx = (placeholder = "{image1.png}"): WriteContext =>
+  const mockWriteCtx = (placeholder = "{image1.png}", media: string[] = []): WriteContext =>
     ({
       addRelationship: () => "rId1",
-      addMedia: (_data: Uint8Array, _type: string) => placeholder,
+      addMedia: (_data: Uint8Array, _type: string, fileName?: string) => {
+        media.push(fileName ?? "unpinned");
+        return placeholder;
+      },
     }) as unknown as WriteContext;
 
   it("registers media and emits a:blipFill with the embed placeholder", () => {
+    const media: string[] = [];
     const opts: FillOptions = { type: "blip", data: new Uint8Array([1, 2, 3]), imageType: "png" };
-    const xml = stringify(fillDesc, opts, mockWriteCtx());
+    const xml = stringify(fillDesc, opts, mockWriteCtx("{image1.png}", media));
     expect(xml).toContain("<a:blipFill");
     expect(xml).toContain('r:embed="{image1.png}"');
     expect(xml).toContain("<a:stretch><a:fillRect/></a:stretch>");
+    expect(media).toEqual(["unpinned"]);
+  });
+
+  it("pins round-trip media to its source file name", () => {
+    const media: string[] = [];
+    const opts: FillOptions = {
+      type: "blip",
+      data: new Uint8Array([1, 2, 3]),
+      imageType: "png",
+      fileName: "image1.png",
+    };
+    const xml = stringify(fillDesc, opts, mockWriteCtx("{image1.png}", media));
+    expect(xml).toContain('r:embed="{image1.png}"');
+    expect(media).toEqual(["image1.png"]);
   });
 
   it("emits source rectangle and blip effects when provided", () => {

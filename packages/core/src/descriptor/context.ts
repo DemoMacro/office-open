@@ -25,8 +25,8 @@ export interface HyperlinkTarget {
 export interface WriteContext {
   /** Register a relationship and return its rId. */
   addRelationship(type: string, target: string, mode?: string): string;
-  /** Add a media file and return its reference. */
-  addMedia(data: Uint8Array, type: string): string;
+  /** Add a media file and return its reference; `fileName` pins a source name. */
+  addMedia(data: Uint8Array, type: string, fileName?: string): string;
   /**
    * Register a DrawingML text hyperlink (a:hlinkClick on runs). Formats that
    * don't emit DrawingML text hyperlinks (DOCX uses w:hyperlink) implement
