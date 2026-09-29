@@ -1,6 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import type { NitroOptions } from "nitropack";
+import type { NuxtConfig } from "nuxt/config";
+
 // clientBundle.scan only sees icons referenced as literals inside vite modules;
 // icons from .navigation.yml and content frontmatter live in the content dump
 // instead, and with provider "server" those fall back to
@@ -66,13 +69,24 @@ export default defineNuxtConfig({
   // (rollup/index.mjs), which rejects top-level await emitted by some
   // dependencies bundled under serverless presets. Raise it to "es2022"
   // (TLA is part of ES2022) so the prerenderer stops failing.
-  nitro: {
-    esbuild: {
-      options: {
-        target: "es2022",
-      },
+  // The theme ships raw TypeScript server modules, so allow its package
+  // through the plugin's node_modules exclusion.
+  hooks: {
+    "nitro:config"(nitroConfig: NitroOptions) {
+      nitroConfig.esbuild = {
+        ...nitroConfig.esbuild,
+        options: {
+          ...nitroConfig.esbuild?.options,
+          target: "es2022",
+          include: [
+            /^(?!.*node_modules).*\.(?:[cm]?[jt]sx?)$/,
+            /node_modules\/@bysages\/docs-theme\/.*\.ts$/,
+          ],
+          exclude: [],
+        },
+      };
     },
-  },
+  } as NuxtConfig["hooks"],
 
   // Resolve icons from locally installed @iconify-json/* collections instead
   // of the iconify CDN (every visitor's browser would otherwise call

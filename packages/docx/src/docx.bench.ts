@@ -15,7 +15,7 @@ import {
   TextRun as TextRunOrig,
   UnderlineType as UnderlineTypeOrig,
 } from "docx";
-import { bench, describe } from "vite-plus/test";
+import { describe, test } from "vite-plus/test";
 
 import {
   AlignmentType,
@@ -28,6 +28,12 @@ import {
   WidthType,
 } from "./index";
 import type { DocumentOptions, SectionChild } from "./index";
+
+const bench = (name: string, fn: () => unknown, options?: { iterations?: number }): void => {
+  test(name, async ({ bench: benchmark }) => {
+    await benchmark(name, fn).run(options);
+  });
+};
 
 // Bench modes:
 //   "ours default"  = XML DEFLATE level 1 (SuperFast); media split by type

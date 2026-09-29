@@ -112,7 +112,7 @@
     "citty": "0.2.2"
   },
   "peerDependencies": {
-    "ai": "^6.0.0"
+    "ai": "^6.0.0 || ^7.0.0"
   },
   "peerDependenciesMeta": {
     "ai": {
