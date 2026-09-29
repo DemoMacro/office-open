@@ -11,6 +11,7 @@ import {
   RELATIONSHIP_TYPES,
   Relationships,
   PPTX_PARTS,
+  toUint8Array,
   getReferencedMedia,
   replaceImagePlaceholders,
   resolverFromRegistry,
@@ -107,6 +108,7 @@ export function compileTailParts(
       layout: s.layout,
       style: s.style,
       color: s.color,
+      raw: s.raw,
     })),
     ...descCtx.smartArts.map((s) => ({
       key: s.key,
@@ -114,22 +116,43 @@ export function compileTailParts(
       layout: s.layout,
       style: s.style,
       color: s.color,
+      raw: s.raw,
     })),
   ];
   for (const [i, sa] of allSmartArts.entries()) {
-    files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(sa.dataModelXml);
-    files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(
-      typeof sa.layout === "string"
-        ? getLayoutXml(sa.layout)
-        : stringifyLayoutDefinitionPart(sa.layout),
-    );
-    files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
-      typeof sa.style === "string" ? getStyleXml(sa.style) : stringifyStyleDefinitionPart(sa.style),
-    );
-    files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(
-      typeof sa.color === "string" ? getColorXml(sa.color) : stringifyColorDefinitionPart(sa.color),
-    );
-    files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
+    files[`ppt/diagrams/data${i + 1}.xml`] =
+      sa.raw?.data !== undefined ? toUint8Array(sa.raw.data) : encoder.encode(sa.dataModelXml);
+    files[`ppt/diagrams/layout${i + 1}.xml`] =
+      sa.raw?.layout !== undefined
+        ? toUint8Array(sa.raw.layout)
+        : encoder.encode(
+            typeof sa.layout === "string"
+              ? getLayoutXml(sa.layout)
+              : stringifyLayoutDefinitionPart(sa.layout),
+          );
+    files[`ppt/diagrams/quickStyle${i + 1}.xml`] =
+      sa.raw?.style !== undefined
+        ? toUint8Array(sa.raw.style)
+        : encoder.encode(
+            typeof sa.style === "string"
+              ? getStyleXml(sa.style)
+              : stringifyStyleDefinitionPart(sa.style),
+          );
+    files[`ppt/diagrams/colors${i + 1}.xml`] =
+      sa.raw?.color !== undefined
+        ? toUint8Array(sa.raw.color)
+        : encoder.encode(
+            typeof sa.color === "string"
+              ? getColorXml(sa.color)
+              : stringifyColorDefinitionPart(sa.color),
+          );
+    files[`ppt/diagrams/drawing${i + 1}.xml`] =
+      sa.raw?.drawing !== undefined
+        ? toUint8Array(sa.raw.drawing)
+        : encoder.encode(DEFAULT_DRAWING_XML);
+    if (sa.raw?.dataRels !== undefined) {
+      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(sa.raw.dataRels);
+    }
   }
 
   // ViewProps relationships

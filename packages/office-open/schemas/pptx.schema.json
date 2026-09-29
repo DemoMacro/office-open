@@ -11793,6 +11793,10 @@
           "$ref": "#/definitions/PlaceholderSize",
           "description": "`@sz` — sizing hint (default \"full\")."
         },
+        "raw": {
+          "$ref": "#/definitions/SmartArtRawParts",
+          "description": "Verbatim source diagram parts. Round-trip only — do not hand-author."
+        },
         "smartArtKey": {
           "description": "Pre-generated SmartArt key (e.g. \"smartart_1024\"). Auto-generated if omitted.",
           "type": "string"
@@ -11848,6 +11852,54 @@
         }
       },
       "required": ["nodes"],
+      "type": "object"
+    },
+    "SmartArtRawParts": {
+      "additionalProperties": false,
+      "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a `SmartArtData` entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/colorsN.xml source bytes."
+        },
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/dataN.xml source bytes."
+        },
+        "dataRels": {
+          "$ref": "#/definitions/DataType",
+          "description": "Verbatim rels XML of the data part (its rIds resolve against media)."
+        },
+        "drawing": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) Word caches beside the data model. Falls back to an empty spTree shell when absent."
+        },
+        "layout": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/layoutN.xml source bytes."
+        },
+        "media": {
+          "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "data": {
+                "$ref": "#/definitions/DataType"
+              },
+              "fileName": {
+                "type": "string"
+              }
+            },
+            "required": ["fileName", "data"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "style": {
+          "$ref": "#/definitions/DataType",
+          "description": "word/diagrams/quickStyleN.xml source bytes."
+        }
+      },
       "type": "object"
     },
     "SolidFillOptions": {
