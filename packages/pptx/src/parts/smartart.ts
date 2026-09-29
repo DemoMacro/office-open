@@ -5,6 +5,7 @@ import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
+  SmartArtRawParts,
   TreeNode,
 } from "@office-open/core/smartart";
 import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
@@ -48,4 +49,6 @@ export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions, NvPr
   style?: string | StyleDefinitionOptions;
   /** Built-in color transform ID ("accent1_2") or a custom color definition. */
   color?: string | ColorDefinitionOptions;
+  /** Verbatim source diagram parts. Round-trip only — do not hand-author. */
+  raw?: SmartArtRawParts;
 }

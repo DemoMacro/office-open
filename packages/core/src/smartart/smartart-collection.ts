@@ -15,23 +15,23 @@ import type { StyleDefinitionOptions } from "./style-definition";
  * diagram part names instead of rebuilding from the modeled XML.
  */
 export interface SmartArtRawParts {
-  /** word/diagrams/dataN.xml source bytes. */
+  /** diagrams/dataN.xml source bytes. */
   data?: DataType;
-  /** word/diagrams/layoutN.xml source bytes. */
+  /** diagrams/layoutN.xml source bytes. */
   layout?: DataType;
-  /** word/diagrams/quickStyleN.xml source bytes. */
+  /** diagrams/quickStyleN.xml source bytes. */
   style?: DataType;
-  /** word/diagrams/colorsN.xml source bytes. */
+  /** diagrams/colorsN.xml source bytes. */
   color?: DataType;
   /**
-   * word/diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing
-   * snapshot (MS-ODRAWXML 2008 extension) Word caches beside the data model.
+   * diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing
+   * snapshot (MS-ODRAWXML 2008 extension) cached beside the data model.
    * Falls back to an empty spTree shell when absent.
    */
   drawing?: DataType;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
   media?: { fileName: string; data: DataType }[];
-  /** Verbatim rels XML of the data part (its rIds resolve against media). */
+  /** Verbatim rels XML of the data part (its targets resolve beside the data part). */
   dataRels?: DataType;
 }
 

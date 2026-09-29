@@ -19489,23 +19489,23 @@
       "properties": {
         "color": {
           "$ref": "#/definitions/DataType",
-          "description": "word/diagrams/colorsN.xml source bytes."
+          "description": "diagrams/colorsN.xml source bytes."
         },
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "word/diagrams/dataN.xml source bytes."
+          "description": "diagrams/dataN.xml source bytes."
         },
         "dataRels": {
           "$ref": "#/definitions/DataType",
-          "description": "Verbatim rels XML of the data part (its rIds resolve against media)."
+          "description": "Verbatim rels XML of the data part (its targets resolve beside the data part)."
         },
         "drawing": {
           "$ref": "#/definitions/DataType",
-          "description": "word/diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) Word caches beside the data model. Falls back to an empty spTree shell when absent."
+          "description": "diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) cached beside the data model. Falls back to an empty spTree shell when absent."
         },
         "layout": {
           "$ref": "#/definitions/DataType",
-          "description": "word/diagrams/layoutN.xml source bytes."
+          "description": "diagrams/layoutN.xml source bytes."
         },
         "media": {
           "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
@@ -19526,7 +19526,7 @@
         },
         "style": {
           "$ref": "#/definitions/DataType",
-          "description": "word/diagrams/quickStyleN.xml source bytes."
+          "description": "diagrams/quickStyleN.xml source bytes."
         }
       },
       "type": "object"

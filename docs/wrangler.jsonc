@@ -1,0 +1,18 @@
+{
+  // Cloudflare Pages serves prerendered pages from the asset store; the
+  // Worker only handles /api, /mcp, generated sitemaps and other runtime
+  // routes configured by @bysages/docs-theme.
+  "name": "office-open-docs",
+  "compatibility_date": "2026-09-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "./.output/public",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "office-open-docs",
+      // Replace before production deploy: `wrangler d1 create office-open-docs`.
+      // Local Pages preview provisions a temporary database for this binding.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+    },
+  ],
+}

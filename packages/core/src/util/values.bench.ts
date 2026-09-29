@@ -1,5 +1,11 @@
 import { element } from "@office-open/xml";
-import { describe, bench } from "vite-plus/test";
+import { describe, test } from "vite-plus/test";
+
+const bench = (name: string, fn: () => unknown, options?: { iterations?: number }): void => {
+  test(name, async ({ bench: benchmark }) => {
+    await benchmark(name, fn).run(options);
+  });
+};
 
 import { uniqueId, uniqueUuid, hashedId, uniqueNumericIdCreator } from "./generators";
 import { decimalNumber, hexColorValue, hpsMeasureValue, universalMeasureValue } from "./values";

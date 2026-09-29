@@ -11,6 +11,7 @@ import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
+  SmartArtRawParts,
 } from "@office-open/core/smartart";
 import type { ReproducibleScope } from "@office-open/core/util";
 
@@ -54,6 +55,8 @@ export interface SmartArtEntry {
   style: string | StyleDefinitionOptions;
   /** Built-in color-transform id or a full custom color definition. */
   color: string | ColorDefinitionOptions;
+  /** Verbatim source parts retained by round-trip parsing. */
+  raw?: SmartArtRawParts;
 }
 
 export interface HyperlinkEntry {

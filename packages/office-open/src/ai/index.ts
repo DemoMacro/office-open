@@ -13,6 +13,7 @@
 import type { DocumentOptions } from "@office-open/docx";
 import type { PresentationOptions } from "@office-open/pptx";
 import type { WorkbookOptions } from "@office-open/xlsx";
+import type { Tool, ToolSet } from "ai";
 import { jsonSchema, tool } from "ai";
 
 export { formatToolError } from "./error";
@@ -52,7 +53,28 @@ function documentGeneratedSummary(output: { base64: string; mimeType: string }):
   return `Document generated and all validations passed (${output.mimeType}, ${kb} KB).`;
 }
 
-export const docxTool = tool({
+interface GeneratedDocumentOutput {
+  base64: string;
+  mimeType: string;
+}
+
+interface SchemaLookupSuccess {
+  type: DocumentType;
+  requested: string[];
+  typeText: string;
+  error?: undefined;
+  suggestions?: undefined;
+}
+
+interface SchemaLookupFailure {
+  type: DocumentType;
+  requested: string[];
+  error: string;
+  suggestions: readonly string[];
+  typeText?: undefined;
+}
+
+export const docxTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
   description:
     "Generate a .docx Word document. " +
     "The input is the document options directly — must include a 'sections' array. " +
@@ -81,7 +103,7 @@ export const docxTool = tool({
   toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
-export const pptxTool = tool({
+export const pptxTool: Tool<PresentationOptions, GeneratedDocumentOutput> = tool({
   description:
     "Generate a .pptx PowerPoint presentation. " +
     "The input is the presentation options directly — must include a 'slides' array. " +
@@ -110,7 +132,7 @@ export const pptxTool = tool({
   toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
-export const xlsxTool = tool({
+export const xlsxTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   description:
     "Generate a .xlsx Excel spreadsheet. " +
     "The input is the workbook options directly — must include a 'worksheets' array. " +
@@ -147,64 +169,65 @@ export const xlsxTool = tool({
   toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
-export const schemaLookupTool = tool({
-  description:
-    "Fetch the precise type definitions for office-open option fields on demand. " +
-    "Use it before filling complex objects into the generate tools: the generate input schemas are " +
-    "skeletons whose stubs name the definition to look up here. " +
-    "Valid names come from the skeleton stubs, or list indexed entries with " +
-    "`npx office-open schema index <type>` (all names with --all). " +
-    "Returns the requested definitions plus their dependency closure as type-definition text " +
-    '(field types, "a" | "b" value enums, optional markers, one-line comments); cataloged ' +
-    "domains not requested stay as stubs, so request each domain root you need (e.g. " +
-    "['ParagraphOptions', 'RunOptions', 'TableOptions']).",
-  inputSchema: jsonSchema<SchemaLookupInput>({
-    type: "object",
-    additionalProperties: false,
-    required: ["type", "definitions"],
-    properties: {
-      type: {
-        type: "string",
-        enum: ["docx", "pptx", "xlsx"],
-        description: "Document format whose schema to slice",
+export const schemaLookupTool: Tool<SchemaLookupInput, SchemaLookupSuccess | SchemaLookupFailure> =
+  tool({
+    description:
+      "Fetch the precise type definitions for office-open option fields on demand. " +
+      "Use it before filling complex objects into the generate tools: the generate input schemas are " +
+      "skeletons whose stubs name the definition to look up here. " +
+      "Valid names come from the skeleton stubs, or list indexed entries with " +
+      "`npx office-open schema index <type>` (all names with --all). " +
+      "Returns the requested definitions plus their dependency closure as type-definition text " +
+      '(field types, "a" | "b" value enums, optional markers, one-line comments); cataloged ' +
+      "domains not requested stay as stubs, so request each domain root you need (e.g. " +
+      "['ParagraphOptions', 'RunOptions', 'TableOptions']).",
+    inputSchema: jsonSchema<SchemaLookupInput>({
+      type: "object",
+      additionalProperties: false,
+      required: ["type", "definitions"],
+      properties: {
+        type: {
+          type: "string",
+          enum: ["docx", "pptx", "xlsx"],
+          description: "Document format whose schema to slice",
+        },
+        definitions: {
+          type: "array",
+          items: { type: "string" },
+          minItems: 1,
+          maxItems: 8,
+          description:
+            "Definition names (TS type names, e.g. ParagraphOptions, SlideOptions, StyleOptions). " +
+            "At most 8 per call.",
+        },
       },
-      definitions: {
-        type: "array",
-        items: { type: "string" },
-        minItems: 1,
-        maxItems: 8,
-        description:
-          "Definition names (TS type names, e.g. ParagraphOptions, SlideOptions, StyleOptions). " +
-          "At most 8 per call.",
-      },
-    },
-  }),
-  execute: async ({ type, definitions }) => {
-    try {
-      const slice = sliceDocumentSchema(type, definitions);
-      return {
-        type,
-        requested: definitions,
-        typeText: renderSliceTypeText(type, definitions, slice),
-      };
-    } catch (error) {
-      if (error instanceof UnknownDefinitionError) {
-        // Data, not a throw: lets the model self-correct from the suggestions.
+    }),
+    execute: async ({ type, definitions }) => {
+      try {
+        const slice = sliceDocumentSchema(type, definitions);
         return {
           type,
           requested: definitions,
-          error:
-            `${error.message}. Closest: ${error.suggestions.join(", ") || "none"}. ` +
-            `List indexed entries with: npx office-open schema index ${type}`,
-          suggestions: error.suggestions,
+          typeText: renderSliceTypeText(type, definitions, slice),
         };
+      } catch (error) {
+        if (error instanceof UnknownDefinitionError) {
+          // Data, not a throw: lets the model self-correct from the suggestions.
+          return {
+            type,
+            requested: definitions,
+            error:
+              `${error.message}. Closest: ${error.suggestions.join(", ") || "none"}. ` +
+              `List indexed entries with: npx office-open schema index ${type}`,
+            suggestions: error.suggestions,
+          };
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-});
+    },
+  });
 
-export const officeOpenTools = {
+export const officeOpenTools: ToolSet = {
   "generate-docx": docxTool,
   "generate-pptx": pptxTool,
   "generate-xlsx": xlsxTool,

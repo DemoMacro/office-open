@@ -9,15 +9,17 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@ai-sdk/mcp": "2.0.53",
-    "@ai-sdk/openai-compatible": "3.0.52",
-    "@ai-sdk/vue": "4.0.106",
-    "@bysages/docs-theme": "0.1.1",
-    "@bysages/vue": "0.1.1",
-    "@iconify-json/lucide": "1.2.134",
-    "@iconify-json/simple-icons": "1.2.96",
-    "@iconify-json/vscode-icons": "1.2.78",
-    "ai": "7.0.106",
+    "@ai-sdk/mcp": "2.0.62",
+    "@ai-sdk/openai-compatible": "3.0.59",
+    "@ai-sdk/vue": "4.0.122",
+    "@bysages/docs-theme": "0.2.3",
+    "@bysages/vue": "0.2.3",
+    "@iconify-json/lucide": "1.2.137",
+    "@iconify-json/simple-icons": "1.2.98",
+    "@iconify-json/vscode-icons": "1.2.83",
+    "@takumi-rs/core": "2.14.0",
+    "@takumi-rs/wasm": "2.14.0",
+    "ai": "7.0.122",
     "nuxt": "4.5.2",
     "office-open": "workspace:*"
   }

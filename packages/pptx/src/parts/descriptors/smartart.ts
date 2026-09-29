@@ -8,13 +8,21 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
+import {
+  convertToEmu,
+  imageTypeFromPath,
+  partPathToRelsPath,
+  remapSmartArtMediaTargets,
+  resolveRelationshipTarget,
+  toUint8Array,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
   COLOR_CATEGORIES,
   LAYOUT_CATEGORIES,
   STYLE_CATEGORIES,
+  type SmartArtRawParts,
   createDataModel,
   definitionId,
   parseColorDefinition,
@@ -41,6 +49,28 @@ import { nextSlideDrawingId } from "./slide-drawing-ids";
 // ── ID counter ──
 
 let _nextSmartArtId = 1024;
+
+/** Register companion images without mutating the caller's SmartArt options. */
+function withRegisteredRawMedia(
+  pptxCtx: PptxWriteContext,
+  raw: SmartArtRawParts,
+): SmartArtRawParts {
+  if (!raw.media) return raw;
+  const renames = new Map<string, string>();
+  for (const media of raw.media) {
+    const data = toUint8Array(media.data);
+    const placeholder = pptxCtx.addMedia(data, imageTypeFromPath(media.fileName), media.fileName);
+    const outputName = placeholder.slice(1, -1);
+    if (outputName !== media.fileName) renames.set(media.fileName, outputName);
+  }
+  if (renames.size === 0) return raw;
+  return {
+    ...raw,
+    ...(raw.dataRels !== undefined
+      ? { dataRels: remapSmartArtMediaTargets(raw.dataRels, renames) }
+      : {}),
+  };
+}
 
 // ── SmartArt descriptor ──
 
@@ -76,6 +106,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
         layout: opts.layout ?? "default",
         style: opts.style ?? "simple1",
         color: opts.color ?? "accent1_2",
+        ...(opts.raw ? { raw: withRegisteredRawMedia(pptxCtx, opts.raw) } : {}),
       });
     }
 
@@ -131,28 +162,45 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           if (dataEl) {
             parseSmartArtDataXml(dataEl, result);
           }
+          const raw = readRawParts(dataPath, _ctx);
+          if (raw) result.raw = raw;
         }
       }
 
       // Custom definitions come back structured; built-in stubs fold to their
       // id string so round-tripping a built-in diagram keeps the compact form.
-      const layoutEl = readRelatedPart(_ctx, relIds, "r:lo");
+      const layoutPath = readRelatedPartPath(_ctx, relIds, "r:lo");
+      const layoutEl = layoutPath ? _ctx.getPart(layoutPath) : undefined;
       if (layoutEl) {
         const layout = parseLayoutDefinition(layoutEl);
         const id = layout.uniqueId?.split("/").pop();
         result.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
       }
-      const styleEl = readRelatedPart(_ctx, relIds, "r:qs");
+      if (result.raw && layoutPath) {
+        const bytes = _ctx.getRaw(layoutPath);
+        if (bytes) result.raw.layout = bytes;
+      }
+      const stylePath = readRelatedPartPath(_ctx, relIds, "r:qs");
+      const styleEl = stylePath ? _ctx.getPart(stylePath) : undefined;
       if (styleEl) {
         const style = parseStyleDefinition(styleEl);
         const id = style.uniqueId?.split("/").pop();
         result.style = id && id in STYLE_CATEGORIES ? id : style;
       }
-      const colorEl = readRelatedPart(_ctx, relIds, "r:cs");
+      if (result.raw && stylePath) {
+        const bytes = _ctx.getRaw(stylePath);
+        if (bytes) result.raw.style = bytes;
+      }
+      const colorPath = readRelatedPartPath(_ctx, relIds, "r:cs");
+      const colorEl = colorPath ? _ctx.getPart(colorPath) : undefined;
       if (colorEl) {
         const color = parseColorDefinition(colorEl);
         const id = color.uniqueId?.split("/").pop();
         result.color = id && id in COLOR_CATEGORIES ? id : color;
+      }
+      if (result.raw && colorPath) {
+        const bytes = _ctx.getRaw(colorPath);
+        if (bytes) result.raw.color = bytes;
       }
     }
 
@@ -160,19 +208,54 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
   },
 };
 
-/** Resolve a dgm:relIds relationship attribute to its parsed part element. */
-function readRelatedPart(
+/** Resolve a dgm:relIds relationship attribute to its part path. */
+function readRelatedPartPath(
   ctx: {
     resolveRelationship(rId: string): string | undefined;
-    getPart(path: string): Element | undefined;
   },
   relIds: Element,
   attrName: "r:lo" | "r:qs" | "r:cs",
-): Element | undefined {
+) {
   const rId = attr(relIds, attrName);
   if (!rId) return undefined;
-  const path = ctx.resolveRelationship(rId);
-  return path ? ctx.getPart(path) : undefined;
+  return ctx.resolveRelationship(rId);
+}
+
+/** Collect verbatim diagram parts behind one graphicFrame. */
+function readRawParts(
+  dataPath: string,
+  ctx: {
+    getPart(path: string): Element | undefined;
+    getRaw(path: string): Uint8Array | undefined;
+  },
+): SmartArtRawParts | undefined {
+  const data = ctx.getRaw(dataPath);
+  if (!data) return undefined;
+  const raw: SmartArtRawParts = { data };
+  const relsPath = partPathToRelsPath(dataPath);
+  const relsEl = ctx.getPart(relsPath);
+  if (relsEl) {
+    raw.dataRels = ctx.getRaw(relsPath);
+    const media = new Map<string, { fileName: string; data: Uint8Array }>();
+    for (const rel of relsEl.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      const type = attr(rel, "Type") ?? "";
+      const target = attr(rel, "Target");
+      if (!target || attr(rel, "TargetMode") === "External") continue;
+      const path = resolveRelationshipTarget(dataPath, target);
+      if (type.endsWith("/diagramDrawing")) raw.drawing = ctx.getRaw(path);
+      if (!type.endsWith("/image")) continue;
+      const bytes = ctx.getRaw(path);
+      const fileName = path.split("/").pop() ?? path;
+      if (bytes && !media.has(fileName)) media.set(fileName, { fileName, data: bytes });
+    }
+    if (media.size > 0) raw.media = [...media.values()];
+  }
+  const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
+  if (raw.drawing === undefined && index !== undefined) {
+    raw.drawing = ctx.getRaw(`ppt/diagrams/drawing${index}.xml`);
+  }
+  return raw;
 }
 
 /** Parse SmartArt data XML into options. */
