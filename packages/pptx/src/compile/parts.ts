@@ -11,6 +11,7 @@ import {
   RELATIONSHIP_TYPES,
   Relationships,
   PPTX_PARTS,
+  remapSmartArtDrawingTarget,
   toUint8Array,
   getReferencedMedia,
   replaceImagePlaceholders,
@@ -151,7 +152,9 @@ export function compileTailParts(
         ? toUint8Array(sa.raw.drawing)
         : encoder.encode(DEFAULT_DRAWING_XML);
     if (sa.raw?.dataRels !== undefined) {
-      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(sa.raw.dataRels);
+      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(
+        remapSmartArtDrawingTarget(sa.raw.dataRels, `drawing${i + 1}.xml`),
+      );
     }
   }
 

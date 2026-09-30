@@ -8,7 +8,14 @@
  * @module
  */
 
-import { convertToEmu, partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
+import {
+  convertToEmu,
+  imageTypeFromPath,
+  partPathToRelsPath,
+  remapSmartArtMediaTargets,
+  resolveRelationshipTarget,
+  toUint8Array,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
@@ -42,6 +49,28 @@ import { nextSlideDrawingId } from "./slide-drawing-ids";
 // ── ID counter ──
 
 let _nextSmartArtId = 1024;
+
+/** Register companion images without mutating the caller's SmartArt options. */
+function withRegisteredRawMedia(
+  pptxCtx: PptxWriteContext,
+  raw: SmartArtRawParts,
+): SmartArtRawParts {
+  if (!raw.media) return raw;
+  const renames = new Map<string, string>();
+  for (const media of raw.media) {
+    const data = toUint8Array(media.data);
+    const placeholder = pptxCtx.addMedia(data, imageTypeFromPath(media.fileName), media.fileName);
+    const outputName = placeholder.slice(1, -1);
+    if (outputName !== media.fileName) renames.set(media.fileName, outputName);
+  }
+  if (renames.size === 0) return raw;
+  return {
+    ...raw,
+    ...(raw.dataRels !== undefined
+      ? { dataRels: remapSmartArtMediaTargets(raw.dataRels, renames) }
+      : {}),
+  };
+}
 
 // ── SmartArt descriptor ──
 
@@ -77,7 +106,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
         layout: opts.layout ?? "default",
         style: opts.style ?? "simple1",
         color: opts.color ?? "accent1_2",
-        ...(opts.raw ? { raw: opts.raw } : {}),
+        ...(opts.raw ? { raw: withRegisteredRawMedia(pptxCtx, opts.raw) } : {}),
       });
     }
 
@@ -207,6 +236,7 @@ function readRawParts(
   const relsEl = ctx.getPart(relsPath);
   if (relsEl) {
     raw.dataRels = ctx.getRaw(relsPath);
+    const media = new Map<string, { fileName: string; data: Uint8Array }>();
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
@@ -214,7 +244,12 @@ function readRawParts(
       if (!target || attr(rel, "TargetMode") === "External") continue;
       const path = resolveRelationshipTarget(dataPath, target);
       if (type.endsWith("/diagramDrawing")) raw.drawing = ctx.getRaw(path);
+      if (!type.endsWith("/image")) continue;
+      const bytes = ctx.getRaw(path);
+      const fileName = path.split("/").pop() ?? path;
+      if (bytes && !media.has(fileName)) media.set(fileName, { fileName, data: bytes });
     }
+    if (media.size > 0) raw.media = [...media.values()];
   }
   const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
   if (raw.drawing === undefined && index !== undefined) {
