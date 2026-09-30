@@ -1,11 +1,5 @@
 import PptxGenJS from "pptxgenjs";
-import { describe, test } from "vite-plus/test";
-
-const bench = (name: string, fn: () => unknown, options?: { iterations?: number }): void => {
-  test(name, async ({ bench: benchmark }) => {
-    await benchmark(name, fn).run(options);
-  });
-};
+import { bench, describe } from "vite-plus/test";
 
 import {
   generatePresentation,
