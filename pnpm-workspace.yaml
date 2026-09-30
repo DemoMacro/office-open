@@ -3,6 +3,9 @@ packages:
   - docs/**
   - playground/**
   - "!**/test/**"
+overrides:
+  vite-plus: 0.1.24
+  oxfmt: 0.70.0
 allowBuilds:
   better-sqlite3: true
   sharp: true
