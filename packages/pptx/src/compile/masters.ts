@@ -137,9 +137,7 @@ export function buildMasterMap(
     const layoutDefs = def.layouts;
     let layoutKeys: string[];
     if (layoutDefs && layoutDefs.length > 0) {
-      layoutKeys = layoutDefs.map(
-        (ld) => ld.type ?? ld.name ?? `layout${mi}_${layoutDefs.indexOf(ld)}`,
-      );
+      layoutKeys = layoutDefs.map((ld) => layoutLookupKey(ld, mi, layoutDefs.indexOf(ld)));
     } else {
       const seen = new Set<string>();
       const keys: string[] = [];
@@ -321,9 +319,22 @@ function findLayoutForSlide(
         )
       : 0;
   const master = masters[mi]!;
+  if (opts.layoutKey !== undefined) {
+    const keyed = master.layouts.find((l) => l.key === opts.layoutKey);
+    if (keyed) return keyed;
+  }
   const layoutKey = opts.layout ?? "blank";
   const li = master.layouts.find((l) => l.key === layoutKey);
   return li ?? master.layouts[0]!;
+}
+
+function layoutLookupKey(
+  layout: LayoutDefinition,
+  masterIndex: number,
+  layoutIndex: number,
+): string {
+  if (layout.layoutId !== undefined) return `layout:${layout.layoutId}`;
+  return layout.type ?? layout.name ?? `layout${masterIndex}_${layoutIndex}`;
 }
 
 export function buildSlideRels(masters: MasterInfo[], slides: SlideOptions[]): Relationships[] {

@@ -9,7 +9,15 @@
 import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
-import { attr, attrBool, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrNum,
+  escapeXml,
+  findChild,
+  findDeep,
+  findFirst,
+} from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
@@ -131,17 +139,16 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     // Navigate to a:graphic/a:graphicData/p:oleObj
     const graphic = findChild(el, "a:graphic");
     const graphicData = graphic ? findChild(graphic, "a:graphicData") : undefined;
-    const oleObj = graphicData ? findChild(graphicData, "p:oleObj") : undefined;
-    if (oleObj) {
+    for (const oleObj of graphicData ? findDeep(graphicData, "p:oleObj") : []) {
       const progId = attr(oleObj, "progId");
-      if (progId !== undefined) result.progId = progId;
+      if (progId !== undefined && result.progId === undefined) result.progId = progId;
       const shapeId = attr(oleObj, "spid");
-      if (shapeId !== undefined) result.shapeId = shapeId;
+      if (shapeId !== undefined && result.shapeId === undefined) result.shapeId = shapeId;
       if (attrBool(oleObj, "showAsIcon")) result.showAsIcon = true;
       const imgW = attrNum(oleObj, "imgW");
-      if (imgW !== undefined) result.imageWidth = imgW;
+      if (imgW !== undefined && result.imageWidth === undefined) result.imageWidth = imgW;
       const imgH = attrNum(oleObj, "imgH");
-      if (imgH !== undefined) result.imageHeight = imgH;
+      if (imgH !== undefined && result.imageHeight === undefined) result.imageHeight = imgH;
 
       // embed/link — embedded OLE reads the binary back through the
       // relationship so generate re-registers it in a fresh package.
@@ -170,7 +177,8 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
           // does not survive renumbering.
           const url = rId ? ctx.resolveRelationship(rId) : undefined;
           const autoUpdate = attrBool(linkEl, "updateAutomatic") === true;
-          if (url) result.link = { url, ...(autoUpdate ? { autoUpdate: true } : {}) };
+          if (url && result.link === undefined)
+            result.link = { url, ...(autoUpdate ? { autoUpdate: true } : {}) };
         }
       }
 
@@ -182,7 +190,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         const imagePath = blipRId ? ctx.resolveRelationship(blipRId) : undefined;
         const raw = imagePath ? ctx.getRaw(imagePath) : undefined;
         const type = imagePath?.split(".").pop();
-        if (raw && type) result.iconImage = { data: raw, type };
+        if (raw && type && result.iconImage === undefined) result.iconImage = { data: raw, type };
       }
     }
 

@@ -465,6 +465,24 @@ describe("pictureDesc round-trip", () => {
     expect(result.rotation).toBe(90);
   });
 
+  it("round-trips picture fill rotation and black-white mode", () => {
+    const result = roundTripPicture({
+      id: 8,
+      name: "Rotated Fill",
+      data: "dummy",
+      type: "png",
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 50,
+      rotWithShape: true,
+      blackWhiteMode: "gray",
+    });
+
+    expect(result.rotWithShape).toBe(true);
+    expect(result.blackWhiteMode).toBe("gray");
+  });
+
   it("emits a linked-only blip (r:link, no media registration)", () => {
     const imageLinks: string[] = [];
     const ctx = {

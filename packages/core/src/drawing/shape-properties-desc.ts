@@ -142,7 +142,11 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
 
     // EG_EffectProperties: effectDag | effectLst (mutually exclusive).
     if (opts.effectDag) {
-      parts.push(createEffectDag(opts.effectDag));
+      if (opts.effectDag.raw !== undefined) {
+        parts.push(opts.effectDag.raw);
+      } else {
+        parts.push(createEffectDag(opts.effectDag));
+      }
     } else if (opts.effects) {
       const e = effectListDesc.stringify(opts.effects, ctx);
       if (e) parts.push(e);
@@ -220,6 +224,9 @@ export const shapePropertiesDesc: CustomDescriptor<ShapePropertiesOptions> = {
     // stringify when the caller supplies it.)
     const effectLst = findChild(el, "a:effectLst");
     if (effectLst) result.effects = effectListDesc.parse(effectLst, ctx);
+
+    const effectDag = findChild(el, "a:effectDag");
+    if (effectDag) result.effectDag = { raw: stringifyElement(effectDag) };
 
     // a:scene3d
     const scene3d = findChild(el, "a:scene3d");

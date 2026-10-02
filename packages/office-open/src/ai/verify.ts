@@ -12,6 +12,7 @@
  */
 import {
   encodeBase64,
+  OOXML_PACKAGE_FORMATS,
   PART_REGISTRIES,
   unzipSync,
   validateOpcConsistency,
@@ -25,12 +26,18 @@ const decoder = new TextDecoder("utf-8", { fatal: false });
 
 /** OPC-check a fresh package and return it as base64 for the tool result. */
 export function generateVerifiedBase64(type: GenerateType, bytes: Uint8Array): string {
+  const schemaTypes = {
+    wordprocessing: "docx",
+    spreadsheet: "xlsx",
+    presentation: "pptx",
+  } as const;
+  const schemaType = schemaTypes[OOXML_PACKAGE_FORMATS[type].family];
   const files = unzipSync(bytes);
   const entries = new Map<string, string>();
   for (const name of Object.keys(files)) {
     entries.set(name, decoder.decode(files[name]));
   }
-  const issues = validateOpcConsistency(entries, PART_REGISTRIES[type]!);
+  const issues = validateOpcConsistency(entries, PART_REGISTRIES[schemaType]!);
   if (issues.length > 0) {
     const lines = issues.map((i) => `  ${i.code} [${i.severity}] ${i.part}: ${i.message}`);
     throw new Error(

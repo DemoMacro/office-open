@@ -8,7 +8,7 @@
  * @module
  */
 
-import { escapeXml, findChild } from "@office-open/xml";
+import { escapeXml, findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
@@ -216,6 +216,8 @@ export function stringifyRunProperties(
     if (effectXml) parts.push(effectXml);
   }
 
+  if (opts.effectDag !== undefined) parts.push(opts.effectDag);
+
   // XSD order: highlight (CT_Color) comes after effects, before fonts.
   if (opts.highlight !== undefined) {
     const hlXml = stringifyColorChoice(opts.highlight, ctx);
@@ -336,6 +338,9 @@ export const runPropertiesDesc: CustomDescriptor<TextCharacterPropertiesOptions>
     // Shadow — full EG_EffectProperties round-trip
     const effectLst = findChild(el, "a:effectLst");
     if (effectLst) result.shadow = parse(effectListDesc, effectLst, _ctx) as EffectListOptions;
+
+    const effectDag = findChild(el, "a:effectDag");
+    if (effectDag) result.effectDag = stringifyElement(effectDag);
 
     // Highlight (CT_Color)
     const highlight = findChild(el, "a:highlight");

@@ -23,6 +23,8 @@ import {
 } from "../util/reproducible";
 import { convertOutput } from "./output";
 import type { OutputByType, OutputType } from "./output";
+import { ooxmlMimeType } from "./output";
+import type { OoxmlPackageFamily, OoxmlPackageVariant } from "./package-format";
 import {
   hasNativeDeflate,
   isBunRuntime,
@@ -115,6 +117,8 @@ export interface CompressionOptions {
 export interface PackerOptions<T extends OutputType = "nodebuffer"> {
   /** Output format. Defaults to `"nodebuffer"` (Node.js Buffer). */
   type?: T;
+  /** OOXML package dialect. Defaults to the family's standard format. */
+  packageVariant?: OoxmlPackageVariant;
   /** Custom XML/ZIP file overrides. */
   overrides?: XmlifyedFile[];
   /** Compression levels for ZIP entries. */
@@ -346,6 +350,7 @@ export type CompileFn<TFile> = (
   overrides?: XmlifyedFile[],
   mediaLevel?: number,
   reproducible?: ReproducibleScope,
+  packageVariant?: OoxmlPackageVariant,
 ) => Zippable;
 
 /**
@@ -413,9 +418,9 @@ export interface Packer<TFile> {
  */
 export const createPacker = <TFile>(options: {
   compile: CompileFn<TFile>;
-  mimeType: string;
+  family: OoxmlPackageFamily;
 }): Packer<TFile> => {
-  const { compile, mimeType } = options;
+  const { compile, family } = options;
 
   // One scope per output call, shared by compile (ids/dates) and the zip step
   // (timestamps) — the two consumers must see the same instance.
@@ -427,12 +432,15 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
     const type = opts?.type ?? ("nodebuffer" as T);
+    const packageVariant = opts?.packageVariant ?? "standard";
+    const mimeType = ooxmlMimeType(family, packageVariant);
     const reproducible = scopeOf(opts);
     const files = compile(
       file,
       opts?.overrides ?? [],
       opts?.compression?.media ?? ZIP_MEDIA_LEVEL,
       reproducible,
+      packageVariant,
     );
     return zipAndConvert(
       files,
@@ -460,12 +468,15 @@ export const createPacker = <TFile>(options: {
     opts?: PackerOptions<T>,
   ): OutputByType[T] => {
     const type = opts?.type ?? ("nodebuffer" as T);
+    const packageVariant = opts?.packageVariant ?? "standard";
+    const mimeType = ooxmlMimeType(family, packageVariant);
     const reproducible = scopeOf(opts);
     const files = compile(
       file,
       opts?.overrides ?? [],
       opts?.compression?.media ?? ZIP_MEDIA_LEVEL,
       reproducible,
+      packageVariant,
     );
     return zipSyncAndConvert(
       files,
@@ -494,9 +505,10 @@ export const createPacker = <TFile>(options: {
   const toStream = (file: TFile, opts?: PackerOptions) => {
     const mediaLevel = opts?.compression?.media ?? ZIP_MEDIA_LEVEL;
     const reproducible = scopeOf(opts);
+    const packageVariant = opts?.packageVariant ?? "standard";
     let files: Zippable;
     try {
-      files = compile(file, opts?.overrides ?? [], mediaLevel, reproducible);
+      files = compile(file, opts?.overrides ?? [], mediaLevel, reproducible, packageVariant);
     } catch (err) {
       return new ReadableStream<Uint8Array>({
         start(controller) {

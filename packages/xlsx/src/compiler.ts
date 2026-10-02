@@ -17,9 +17,11 @@ import {
   compileMapping,
   dropDanglingPassthroughRels,
   finalizeContentTypes,
+  type OoxmlPackageVariant,
   type PassthroughRelationship,
   type RelationshipType,
   type ReproducibleScope,
+  ooxmlPackageFormatInfo,
   resolverFromRegistry,
   XLSX_PARTS,
   customPropertiesDesc,
@@ -96,6 +98,7 @@ export function compileWorkbook(
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
   reproducible?: ReproducibleScope,
+  packageVariant: OoxmlPackageVariant = "standard",
 ): Zippable {
   const ctx = new XlsxWriteContext();
   ctx.reproducible = reproducible;
@@ -504,6 +507,12 @@ export function compileWorkbook(
         // only fill what surviving source entries leave uncovered or mistyped.
         source: options.contentTypes,
         rawParts: options.rawParts,
+        forcedOverrides: [
+          {
+            path: "xl/workbook.xml",
+            contentType: ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType,
+          },
+        ],
       },
       ctx,
     ),

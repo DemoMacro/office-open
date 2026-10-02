@@ -6,6 +6,7 @@
 
 import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { SolidFillOptions } from "@office-open/core/drawing";
 import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import {
@@ -75,8 +76,14 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
     const penClr = findChild(showPr, "p:penClr");
     if (penClr) {
       const srgb = findChild(penClr, "a:srgbClr");
-      const val = srgb ? attr(srgb, "val") : undefined;
-      if (val) showOpts.penColor = val;
+      if (srgb) {
+        const val = attr(srgb, "val");
+        if (val) showOpts.penColor = val;
+      } else {
+        const schemeClr = findChild(penClr, "a:schemeClr");
+        const val = schemeClr ? attr(schemeClr, "val") : undefined;
+        if (val) showOpts.penColor = { value: val } as SolidFillOptions;
+      }
     }
     const showPrExt = findChild(showPr, "p:extLst");
     if (showPrExt) showOpts.ext = stringifyXml(showPrExt);

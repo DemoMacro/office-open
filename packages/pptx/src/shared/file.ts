@@ -8,6 +8,7 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type { DateTime } from "@office-open/core";
+import type { SolidFillOptions } from "@office-open/core/drawing";
 import type { BackgroundOptions } from "@parts/background";
 import type { ColorMappingOverrideOptions } from "@parts/descriptors/color-map-override";
 import type { NotesSlideOptions } from "@parts/descriptors/notes-slide";
@@ -131,6 +132,8 @@ export interface SlideOptions {
   colorMappingOverride?: ColorMappingOverrideOptions;
   comments?: SlideCommentOptions[];
   layout?: SlideLayoutType | string;
+  /** Stable layout lookup key — round-trip uses the source p:sldLayoutId @id when present. */
+  layoutKey?: string;
   master?: string;
   showMasterShapes?: boolean;
   showMasterPlaceholderAnimations?: boolean;
@@ -163,7 +166,8 @@ export interface ShowOptions {
   showAnimation?: boolean;
   useTimings?: boolean;
   slideRange?: { start: number; end: number };
-  penColor?: string;
+  /** Laser-pointer color: RGB shorthand (`"FF0000"`) or a DrawingML color choice. */
+  penColor?: string | SolidFillOptions;
   /** Verbatim children of the showPr p:extLst (p14 laser pointer extensions) — round-trip channel: captured from a parsed source; do not hand-author. */
   ext?: string;
 }

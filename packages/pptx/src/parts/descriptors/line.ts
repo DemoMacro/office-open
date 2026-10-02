@@ -47,8 +47,13 @@ function stringifyLineXfrmGeometry(
   x2: number,
   y2: number,
   geomXml = '<a:prstGeom prst="line"><a:avLst/></a:prstGeom>',
+  rotation?: number,
 ): string {
-  const attrs = [x1 > x2 ? ' flipH="1"' : "", y1 > y2 ? ' flipV="1"' : ""].join("");
+  const attrs = [
+    rotation !== undefined ? ` rot="${Math.round(rotation * 60000)}"` : "",
+    x1 > x2 ? ' flipH="1"' : "",
+    y1 > y2 ? ' flipV="1"' : "",
+  ].join("");
   const offX = Math.min(x1, x2);
   const offY = Math.min(y1, y2);
   return (
@@ -64,6 +69,7 @@ function parseLineSpPr(
   ctx: ReadContext,
 ): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2"> & {
   properties: NonNullable<LineShapeOptions["properties"]>;
+  rotation?: number;
 } {
   const result: ReturnType<typeof parseLineSpPr> = { properties: {} };
 
@@ -73,6 +79,8 @@ function parseLineSpPr(
     const ext = findChild(xfrm, "a:ext");
     const flipH = attrBool(xfrm, "flipH");
     const flipV = attrBool(xfrm, "flipV");
+    const rotation = attrNum(xfrm, "rot");
+    if (rotation !== undefined) result.rotation = rotation / 60000;
 
     if (off && ext) {
       const offX = attrNum(off, "x") ?? 0;
@@ -124,7 +132,10 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
 
     // p:nvSpPr
     const spLocks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
-    const cNvSpPr = spLocks ? `<p:cNvSpPr>${spLocks}</p:cNvSpPr>` : "<p:cNvSpPr/>";
+    const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
+    const cNvSpPr = spLocks
+      ? `<p:cNvSpPr${txBoxAttr}>${spLocks}</p:cNvSpPr>`
+      : `<p:cNvSpPr${txBoxAttr}/>`;
     parts.push(
       `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvSpPr}<p:nvPr/></p:nvSpPr>`,
     );
@@ -132,7 +143,8 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     // p:spPr
     const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
-    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2));
+    const spPrAttrs = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
+    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, undefined, opts.rotation));
 
     // Fill
     if (sp.fill !== undefined) {
@@ -151,7 +163,7 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
     if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
 
-    parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
+    parts.push(`<p:spPr${spPrAttrs}>${spPrParts.join("")}</p:spPr>`);
 
     // p:style
     if (opts.style) {
@@ -180,10 +192,16 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       const locks = shapeLockingDesc.parse(spLocks, _ctx);
       if (locks && Object.keys(locks).length > 0) result.locking = locks;
     }
+    if (attrBool(cNvSpPr, "txBox")) result.textBox = true;
 
     // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
-    if (spPr) Object.assign(result, parseLineSpPr(spPr, _ctx));
+    if (spPr) {
+      Object.assign(result, parseLineSpPr(spPr, _ctx));
+      const bwMode = spPr.attributes?.["bwMode"];
+      if (bwMode !== undefined)
+        result.blackWhiteMode = bwMode as LineShapeOptions["blackWhiteMode"];
+    }
 
     // p:style
     const lineStyle = findChild(el, "p:style");
@@ -247,7 +265,8 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     // p:spPr
     const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
-    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml));
+    const spPrAttrs = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
+    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml, opts.rotation));
 
     // Fill
     if (sp.fill !== undefined) {
@@ -266,7 +285,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     if (sp.scene3d) spPrParts.push(scene3DDesc.stringify(sp.scene3d, ctx) ?? "");
     if (sp.shape3d) spPrParts.push(shape3DDesc.stringify(sp.shape3d, ctx) ?? "");
 
-    parts.push(`<p:spPr>${spPrParts.join("")}</p:spPr>`);
+    parts.push(`<p:spPr${spPrAttrs}>${spPrParts.join("")}</p:spPr>`);
 
     // p:style
     if (opts.style) {
@@ -310,6 +329,9 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       const { properties, ...endpoints } = parseLineSpPr(spPr, _ctx);
       Object.assign(result, endpoints);
       result.properties = properties;
+      const bwMode = spPr.attributes?.["bwMode"];
+      if (bwMode !== undefined)
+        result.blackWhiteMode = bwMode as ConnectorOptions["blackWhiteMode"];
       // Non-line presets or adjusted guides must survive the round-trip.
       const prstGeom = findChild(spPr, "a:prstGeom");
       if (prstGeom) {

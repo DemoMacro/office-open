@@ -41,7 +41,21 @@ export {
 } from "./variant-types";
 
 // Output types
-export { convertOutput, OoxmlMimeType, type OutputByType, type OutputType } from "./output";
+export {
+  convertOutput,
+  OoxmlMimeType,
+  ooxmlMimeType,
+  type OutputByType,
+  type OutputType,
+} from "./output";
+export {
+  OOXML_PACKAGE_FORMATS,
+  ooxmlPackageFormatInfo,
+  type OoxmlPackageFamily,
+  type OoxmlPackageFormat,
+  type OoxmlPackageFormatInfo,
+  type OoxmlPackageVariant,
+} from "./package-format";
 
 // Encrypted OOXML container passthrough
 export {

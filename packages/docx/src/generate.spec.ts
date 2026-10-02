@@ -2,11 +2,73 @@ import type { GroupChildMediaData } from "@shared/media";
 import { describe, expect, it } from "vite-plus/test";
 
 import { compileDocument } from "./compiler";
-import { generateDocument } from "./generate";
+import { generateDocument, generateDocumentSync } from "./generate";
 
 describe("generateDocument entry guards", () => {
   it("names the missing sections array instead of dying in the compiler", () => {
     expect(() => generateDocument({} as never)).toThrow(/sections is required/);
+  });
+});
+
+describe("package variants", () => {
+  const variants = [
+    {
+      variant: "standard",
+      mainContentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    },
+    {
+      variant: "macro",
+      mainContentType: "application/vnd.ms-word.document.macroEnabled.main+xml",
+      mimeType: "application/vnd.ms-word.document.macroEnabled.12",
+    },
+    {
+      variant: "template",
+      mainContentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml",
+      mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+    },
+    {
+      variant: "macroTemplate",
+      mainContentType: "application/vnd.ms-word.template.macroEnabled.main+xml",
+      mimeType: "application/vnd.ms-word.template.macroEnabled.12",
+    },
+  ] as const;
+  const encrypted = {
+    sections: [],
+    encrypted: { data: new Uint8Array([0xd0, 0xcf, 0x11, 0xe0]) },
+  };
+
+  it("forces the main document content type for each output variant", () => {
+    for (const { variant, mainContentType } of variants) {
+      const files = compileDocument(
+        {
+          sections: [{ children: [{ paragraph: { children: ["Variant"] } }] }],
+        },
+        [],
+        0,
+        undefined,
+        variant,
+      );
+      const xml = new TextDecoder().decode(files["[Content_Types].xml"] as Uint8Array);
+      expect(xml).toContain(`PartName="/word/document.xml" ContentType="${mainContentType}"`);
+    }
+  });
+
+  it("uses the variant MIME for generated and encrypted passthrough blobs", async () => {
+    for (const { variant, mimeType } of variants) {
+      const generated = await generateDocument(
+        { sections: [{ children: [{ paragraph: { children: ["Variant"] } }] }] },
+        { type: "blob", packageVariant: variant },
+      );
+      const passthrough = generateDocumentSync(encrypted, {
+        type: "blob",
+        packageVariant: variant,
+      });
+      expect(generated.type).toBe(mimeType.toLowerCase());
+      expect(passthrough.type).toBe(mimeType.toLowerCase());
+    }
   });
 });
 

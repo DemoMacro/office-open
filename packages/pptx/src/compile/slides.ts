@@ -377,7 +377,12 @@ export function compileSlideParts(
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
       const kind = rel.relationshipType.split("/").pop()!;
-      if (MEDIA_REL_KINDS.has(kind) && currentSlideRels.hasRelationshipKind(kind)) continue;
+      if (
+        (MEDIA_REL_KINDS.has(kind) || kind === "slideLayout") &&
+        currentSlideRels.hasRelationshipKind(kind)
+      ) {
+        continue;
+      }
       currentSlideRels.claimSourceRel(rel);
     }
 
@@ -436,6 +441,7 @@ function wireSlidePlaceholderBatches(
     const xmlCompSmartArts = smartArts.array.filter((s) => slideSmartArtKeySet.has(s.key));
     const descSmartArts = descCtx.smartArts.filter((s) => slideSmartArtKeySet.has(s.key));
     const allSaKeys = [...xmlCompSmartArts.map((s) => s.key), ...descSmartArts.map((s) => s.key)];
+    const smartArtsByKey = new Map([...xmlCompSmartArts, ...descSmartArts].map((s) => [s.key, s]));
     const saOffset = rels.nextRelationshipId;
     replacedSlideXml = replaceSmartArtPlaceholders(replacedSlideXml, allSaKeys, saOffset);
     const firstSaKey = allSaKeys[0];
@@ -455,6 +461,10 @@ function wireSlidePlaceholderBatches(
         {
           pathPrefix: "../",
           styleRelType: RELATIONSHIP_TYPES.diagramQuickStyle,
+          hasDrawing: (key) => {
+            const smartArt = smartArtsByKey.get(key);
+            return smartArt?.raw?.drawing !== undefined || smartArt?.raw === undefined;
+          },
         },
       );
     }

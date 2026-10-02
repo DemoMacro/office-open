@@ -4,22 +4,23 @@
  * @module
  */
 
-import { createPacker, OoxmlMimeType } from "@office-open/core";
+import { createPacker, ooxmlMimeType } from "@office-open/core";
 import {
   assertEncryptedExclusive,
   encryptedContainerOutput,
   encryptedContainerStream,
 } from "@office-open/core";
 import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
+import type { OoxmlPackageVariant } from "@office-open/core";
 import type { DocumentOptions } from "@parts/core-properties";
 
 import { compileDocument } from "./compiler";
 
 /** `@internal` Packer instance for DOCX generation. */
 const Packer = createPacker<DocumentOptions>({
-  compile: (options, overrides, mediaLevel, reproducible) =>
-    compileDocument(options, overrides, mediaLevel, reproducible),
-  mimeType: OoxmlMimeType.DOCX,
+  compile: (options, overrides, mediaLevel, reproducible, packageVariant) =>
+    compileDocument(options, overrides, mediaLevel, reproducible, packageVariant),
+  family: "wordprocessing",
 });
 
 /**
@@ -29,9 +30,10 @@ const Packer = createPacker<DocumentOptions>({
 function encryptedPassthrough<T extends OutputType>(
   options: DocumentOptions,
   type: T,
+  packageVariant: OoxmlPackageVariant = "standard",
 ): OutputByType[T] | undefined {
   assertEncryptedExclusive(options, sectionsOf(options).length > 0);
-  return encryptedContainerOutput(options, type, OoxmlMimeType.DOCX);
+  return encryptedContainerOutput(options, type, ooxmlMimeType("wordprocessing", packageVariant));
 }
 
 /**
@@ -69,7 +71,11 @@ export function generateDocument<T extends OutputType = "nodebuffer">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
+  const encrypted = encryptedPassthrough(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.packageVariant,
+  );
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
@@ -81,7 +87,11 @@ export function generateDocumentSync<T extends OutputType = "nodebuffer">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
+  const encrypted = encryptedPassthrough(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.packageVariant,
+  );
   if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }

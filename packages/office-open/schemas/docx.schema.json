@@ -4761,6 +4761,10 @@
           "description": "Drop the label for this point (c:delete).",
           "type": "boolean"
         },
+        "ext": {
+          "description": "Raw inner XML of the label's trailing c:extLst — Office extension round-trip.",
+          "type": "string"
+        },
         "index": {
           "description": "Series point index this label applies to (c:idx, required).",
           "type": "number"
@@ -4899,6 +4903,10 @@
         "delete": {
           "description": "Drop every label for this series (c:delete). Choice vs the shared settings below: `true` ignores them all; `false` keeps labels on and emits its element only when no setting is set (round-trip).",
           "type": "boolean"
+        },
+        "ext": {
+          "description": "Raw inner XML of the group's trailing c:extLst — c15 label extensions.",
+          "type": "string"
         },
         "labels": {
           "description": "Per-point label overrides (c:dLbl, emitted before the shared settings).",
@@ -6362,6 +6370,10 @@
         },
         "presetShadow": {
           "$ref": "#/definitions/PresetShadowEffectOptions"
+        },
+        "raw": {
+          "description": "Verbatim a:effectDag element for unmodeled effect payloads. Round-trip channel: captured from a parsed source; do not hand-author.",
+          "type": "string"
         },
         "reflection": {
           "anyOf": [
@@ -21985,6 +21997,10 @@
         "dirty": {
           "type": "boolean"
         },
+        "effectDag": {
+          "description": "Verbatim a:effectDag element for effect containers. Round-trip channel: captured from a parsed source; do not hand-author.",
+          "type": "string"
+        },
         "err": {
           "description": "`@err` — spelling error flag.",
           "type": "boolean"
@@ -22375,6 +22391,9 @@
         },
         "dirty": {
           "type": "boolean"
+        },
+        "effectDag": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/effectDag"
         },
         "emptyProperties": {
           "description": "The source carried a bare `<a:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",

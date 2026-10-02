@@ -29,11 +29,13 @@ import {
   contentTypesDesc,
   customPropertiesDesc,
   deriveContentTypes,
+  ooxmlPackageFormatInfo,
   resolverFromRegistry,
   XLSX_PARTS,
   ZIP_DEFLATE_LEVEL,
   type CompressionOptions,
   type ReproducibleScope,
+  type OoxmlPackageVariant,
 } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
@@ -110,6 +112,7 @@ export function streamWorkbook(
   ondata: (err: Error | null, chunk: Uint8Array, final: boolean) => void,
   compression: CompressionOptions = {},
   reproducible?: ReproducibleScope,
+  packageVariant: OoxmlPackageVariant = "standard",
 ): void {
   const xmlLevel = compression.xml ?? ZIP_DEFLATE_LEVEL;
   const ctx = new XlsxWriteContext();
@@ -144,17 +147,21 @@ export function streamWorkbook(
     sink.end();
   };
 
+  const contentTypes = deriveContentTypes(partPaths, {
+    resolve: XLSX_CONTENT_TYPE_RESOLVER,
+    // This path emits no media parts, so there is nothing to resolve.
+    mediaContentTypes: {},
+  });
+  const mainContentType = ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType;
+  const workbookOverride = contentTypes.overrides.find(
+    (entry) => entry.partName.toLowerCase() === "/xl/workbook.xml",
+  );
+  if (workbookOverride) workbookOverride.contentType = mainContentType;
+  else contentTypes.overrides.push({ partName: "/xl/workbook.xml", contentType: mainContentType });
+
   writeString(
     "[Content_Types].xml",
-    OOXML_XML_DECLARATION +
-      (contentTypesDesc.stringify(
-        deriveContentTypes(partPaths, {
-          resolve: XLSX_CONTENT_TYPE_RESOLVER,
-          // This path emits no media parts, so there is nothing to resolve.
-          mediaContentTypes: {},
-        }),
-        ctx,
-      ) ?? ""),
+    OOXML_XML_DECLARATION + (contentTypesDesc.stringify(contentTypes, ctx) ?? ""),
   );
   writeString(
     "_rels/.rels",

@@ -198,6 +198,8 @@ export interface DataLabelOptions {
   showPercent?: boolean;
   showBubbleSize?: boolean;
   separator?: string;
+  /** Raw inner XML of the label's trailing c:extLst — Office extension round-trip. */
+  ext?: string;
 }
 
 export interface DataLabelsOptions {
@@ -226,6 +228,8 @@ export interface DataLabelsOptions {
   labels?: readonly DataLabelOptions[];
   /** Emit a c:leaderLines element for default-styled leader lines. */
   leaderLines?: boolean;
+  /** Raw inner XML of the group's trailing c:extLst — c15 label extensions. */
+  ext?: string;
 }
 
 // ── Chart series ──
