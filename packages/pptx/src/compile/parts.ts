@@ -147,10 +147,11 @@ export function compileTailParts(
               ? getColorXml(sa.color)
               : stringifyColorDefinitionPart(sa.color),
           );
-    files[`ppt/diagrams/drawing${i + 1}.xml`] =
-      sa.raw?.drawing !== undefined
-        ? toUint8Array(sa.raw.drawing)
-        : encoder.encode(DEFAULT_DRAWING_XML);
+    if (sa.raw?.drawing !== undefined) {
+      files[`ppt/diagrams/drawing${i + 1}.xml`] = toUint8Array(sa.raw.drawing);
+    } else if (sa.raw === undefined) {
+      files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
+    }
     if (sa.raw?.dataRels !== undefined) {
       files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(
         remapSmartArtDrawingTarget(sa.raw.dataRels, `drawing${i + 1}.xml`),

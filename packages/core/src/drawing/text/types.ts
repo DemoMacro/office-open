@@ -123,6 +123,11 @@ export interface TextCharacterPropertiesOptions {
   outline?: true | OutlineOptions;
   /** a:effectLst (EG_EffectProperties). `true` emits a default outer shadow; a full EffectListOptions round-trips. */
   shadow?: true | EffectListOptions;
+  /**
+   * Verbatim a:effectDag element for effect containers. Round-trip channel:
+   * captured from a parsed source; do not hand-author.
+   */
+  effectDag?: string;
   rightToLeft?: boolean;
   noProof?: boolean;
   dirty?: boolean;

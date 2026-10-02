@@ -614,6 +614,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   // 5. Parse masters
 
   const masterDefs: MasterDefinition[] = [];
+  const layoutIdsByPath = new Map<string, number>();
+  const layoutKeysByPath = new Map<string, string>();
 
   for (const [mi, masterPath] of pptx.slideMasters.entries()) {
     const masterEl = pptx.doc.get(masterPath);
@@ -637,7 +639,6 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // A layout with no .rels (sources ship such packages) still belongs when
     // the master's sldLayoutIdLst names it — fall back to that membership.
     const masterListedLayouts = new Set<string>();
-    const layoutIdsByPath = new Map<string, number>();
     const sldLayoutIdLst = findChild(masterEl, "p:sldLayoutIdLst");
     if (sldLayoutIdLst) {
       const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
@@ -670,6 +671,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         const sourceLayoutId = layoutIdsByPath.get(layoutPath);
         if (sourceLayoutId !== undefined) layoutDef.layoutId = sourceLayoutId;
+        if (sourceLayoutId !== undefined)
+          layoutKeysByPath.set(layoutPath, `layout:${sourceLayoutId}`);
         const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
         const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
         if (themeOverrideEl) {
@@ -781,7 +784,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
           new ParseContext(pptx, parseSlideRelMap(pptx.doc, layoutPath)),
         );
         const layoutOpts = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
-        slideOpts.layout = (layoutOpts.type ?? "blank") as SlideLayoutType;
+        const layoutKey = layoutKeysByPath.get(layoutPath);
+        if (layoutKey !== undefined) slideOpts.layoutKey = layoutKey;
+        slideOpts.layout = (layoutOpts.type ?? layoutOpts.name ?? "blank") as SlideLayoutType;
       }
 
       const resolvedMasterPath = layoutMasterPaths.get(layoutPath);

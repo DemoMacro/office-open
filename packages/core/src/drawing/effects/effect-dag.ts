@@ -157,6 +157,11 @@ export interface EffectReferenceOptions {
  * ```
  */
 export interface EffectDagOptions {
+  /**
+   * Verbatim a:effectDag element for unmodeled effect payloads. Round-trip
+   * channel: captured from a parsed source; do not hand-author.
+   */
+  raw?: string;
   /** Container type: "sib" (parallel) or "tree" (sequential) */
   type?: EffectContainer;
   /** Container name */

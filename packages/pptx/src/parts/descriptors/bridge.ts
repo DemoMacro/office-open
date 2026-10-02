@@ -173,6 +173,9 @@ function parseGraphicFrameChild(el: XmlElement, ctx: ReadContext): LegacySlideCh
   if (uri.includes("/diagram")) {
     return { smartart: smartArtDesc.parse(el, ctx) } as LegacySlideChild;
   }
+  if (uri.includes("/ole")) {
+    return { ole: oleDesc.parse(el, ctx) } as LegacySlideChild;
+  }
 
   const tbl = findChild(graphicData, "a:tbl");
   if (tbl) {

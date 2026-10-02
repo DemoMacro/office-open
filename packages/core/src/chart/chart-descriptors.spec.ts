@@ -424,6 +424,37 @@ describe("chartSpaceDesc", () => {
     expect((result.series[0] as ChartSeriesData).dataLabels?.leaderLines).toBe(true);
   });
 
+  it("round-trips data-label extension lists", () => {
+    const labelExt =
+      '<c16:uniqueId xmlns:c16="http://schemas.microsoft.com/office/drawing/2014/chart" val="{A}"/>';
+    const groupExt =
+      '<c15:showLeaderLines xmlns:c15="http://schemas.microsoft.com/office/drawing/2012/chart" val="1"/>';
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      categories: ["A", "B"],
+      series: [
+        {
+          name: "S",
+          values: [1, 2],
+          dataLabels: {
+            showVal: true,
+            labels: [{ index: 0, ext: labelExt }],
+            ext: groupExt,
+          },
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain("<c:extLst>");
+    expect(xml).toContain("c16:uniqueId");
+    expect(xml).toContain("c15:showLeaderLines");
+
+    const result = roundTrip(opts);
+    const dataLabels = (result.series[0] as ChartSeriesData).dataLabels;
+    expect(dataLabels?.labels?.[0]?.ext).toBe(labelExt);
+    expect(dataLabels?.ext).toBe(groupExt);
+  });
+
   it("resolves the dLbls choice arm: a true delete drops every shared setting", () => {
     const opts: ChartSpaceOptions = {
       type: "pie",

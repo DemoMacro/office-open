@@ -340,7 +340,7 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
     }
 
     // a:gdLst
-    if (opts.guides && opts.guides.length > 0) {
+    if (opts.guides) {
       parts.push(stringifyGuideList("a:gdLst", opts.guides));
     }
 
@@ -381,10 +381,7 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
 
     // a:gdLst
     const gdLst = findChild(el, "a:gdLst");
-    if (gdLst) {
-      const guides = readGuideList(gdLst);
-      if (guides.length > 0) result.guides = guides;
-    }
+    if (gdLst) result.guides = readGuideList(gdLst);
 
     // a:ahLst — keep a bare element too (sources often carry <a:ahLst/>).
     const ahLst = findChild(el, "a:ahLst");

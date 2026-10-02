@@ -32,6 +32,12 @@ export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | 
   audioCd?: AudioCdOptions;
   /** MIME content type of the linked audio (CT_AudioFile `@contentType`) */
   contentType?: string;
+  /**
+   * Modern embedded-audio form: a:audioFile link plus the p14:media embed.
+   * Required to distinguish a modern embedded WAV from the legacy
+   * a:wavAudioFile element.
+   */
+  embeddedMedia?: boolean;
   /** Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only) */
   audioFileName?: string;
   /** Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art. */

@@ -88,6 +88,23 @@ describe("lineShapeDesc round-trip", () => {
     const outline = result.properties!.outline as Record<string, unknown>;
     expect(outline.width).toBe(2);
   });
+
+  it("round-trips rotated black-and-white text boxes", () => {
+    const result = roundTripLine({
+      id: 7,
+      x1: 10,
+      y1: 20,
+      x2: 110,
+      y2: 120,
+      rotation: 90,
+      blackWhiteMode: "auto",
+      textBox: true,
+    });
+
+    expect(result.rotation).toBe(90);
+    expect(result.blackWhiteMode).toBe("auto");
+    expect(result.textBox).toBe(true);
+  });
 });
 
 describe("connectorShapeDesc round-trip", () => {
@@ -140,5 +157,20 @@ describe("connectorShapeDesc round-trip", () => {
     expect(result.properties?.outline).toBeDefined();
     const outline = result.properties!.outline as Record<string, unknown>;
     expect(outline.width).toBe(3);
+  });
+
+  it("round-trips connector rotation and black-and-white mode", () => {
+    const result = roundTripConnector({
+      id: 23,
+      x1: 10,
+      y1: 20,
+      x2: 110,
+      y2: 120,
+      rotation: 270,
+      blackWhiteMode: "gray",
+    });
+
+    expect(result.rotation).toBe(270);
+    expect(result.blackWhiteMode).toBe("gray");
   });
 });

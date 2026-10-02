@@ -4,6 +4,7 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type {
+  BlackWhiteMode,
   PresetGeometryOptions,
   ShapeLockingOptions,
   ShapePropertiesOptions,
@@ -31,10 +32,16 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   locking?: ShapeLockingOptions;
   /** Text body — source lines carry wrap/anchor hints and an empty paragraph. */
   textBody?: TextBodyOptions;
+  /** Text-box marker (p:cNvSpPr @txBox). */
+  textBox?: boolean;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
   y2?: number | UniversalMeasure;
+  /** Rotation angle in degrees (a:xfrm @rot; 90 = 90°). */
+  rotation?: number;
+  /** @bwMode on p:spPr — black-and-white render mode. */
+  blackWhiteMode?: BlackWhiteMode;
   /**
    * Line paint (a:spPr children): fill/outline/effects/3D. Endpoints stay
    * top-level — direction is encoded as xfrm flip, not an owner transform.
@@ -62,6 +69,10 @@ export interface ConnectorOptions extends BaseConnectorOptions {
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
   y2?: number | UniversalMeasure;
+  /** Rotation angle in degrees (a:xfrm @rot; 90 = 90°). */
+  rotation?: number;
+  /** @bwMode on p:spPr — black-and-white render mode. */
+  blackWhiteMode?: BlackWhiteMode;
   /** Shape style matrix reference (p:style). */
   style?: ShapeStyleOptions;
 }

@@ -1,3 +1,5 @@
+import { createColorElement } from "@office-open/core/drawing";
+import type { SolidFillOptions } from "@office-open/core/drawing";
 import type { ShowOptions } from "@shared/file";
 
 /** Web output options (p:webPr — HTML export behavior). */
@@ -138,7 +140,11 @@ function buildShowPrXml(showOptions: ShowOptions): string {
 
   let penClrXml = "";
   if (showOptions.penColor) {
-    penClrXml = `<p:penClr><a:srgbClr val="${showOptions.penColor}"/></p:penClr>`;
+    const color =
+      typeof showOptions.penColor === "string"
+        ? ({ value: showOptions.penColor } as SolidFillOptions)
+        : showOptions.penColor;
+    penClrXml = `<p:penClr>${createColorElement(color)}</p:penClr>`;
   }
 
   const extXml = showOptions.ext !== undefined ? `<p:extLst>${showOptions.ext}</p:extLst>` : "";

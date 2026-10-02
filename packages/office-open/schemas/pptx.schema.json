@@ -1435,6 +1435,10 @@
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
+        "embeddedMedia": {
+          "description": "Modern embedded-audio form: a:audioFile link plus the p14:media embed. Required to distinguish a modern embedded WAV from the legacy a:wavAudioFile element.",
+          "type": "boolean"
+        },
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
@@ -4039,6 +4043,9 @@
       "additionalProperties": false,
       "description": "Connector options for pptx slides (p:cxnSp). The cNvPr + locking + endpoint connection fields come from `BaseConnectorOptions`; the rest is the pptx two-endpoint positioning model plus the connector paint.",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -4070,6 +4077,10 @@
         "properties": {
           "$ref": "#/definitions/ConnectorShapeProperties",
           "description": "Connector paint (a:spPr children): geometry/fill/outline/effects/3D. The endpoint model defaults to \"line\"; source connectors often use bentConnector/elbowConnector forms with adjusted values. Endpoints stay top-level."
+        },
+        "rotation": {
+          "description": "Rotation angle in degrees (a:xfrm",
+          "type": "number"
         },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
@@ -4506,6 +4517,10 @@
           "description": "Drop the label for this point (c:delete).",
           "type": "boolean"
         },
+        "ext": {
+          "description": "Raw inner XML of the label's trailing c:extLst — Office extension round-trip.",
+          "type": "string"
+        },
         "index": {
           "description": "Series point index this label applies to (c:idx, required).",
           "type": "number"
@@ -4644,6 +4659,10 @@
         "delete": {
           "description": "Drop every label for this series (c:delete). Choice vs the shared settings below: `true` ignores them all; `false` keeps labels on and emits its element only when no setting is set (round-trip).",
           "type": "boolean"
+        },
+        "ext": {
+          "description": "Raw inner XML of the group's trailing c:extLst — c15 label extensions.",
+          "type": "string"
         },
         "labels": {
           "description": "Per-point label overrides (c:dLbl, emitted before the shared settings).",
@@ -5074,6 +5093,10 @@
         },
         "presetShadow": {
           "$ref": "#/definitions/PresetShadowEffectOptions"
+        },
+        "raw": {
+          "description": "Verbatim a:effectDag element for unmodeled effect payloads. Round-trip channel: captured from a parsed source; do not hand-author.",
+          "type": "string"
         },
         "reflection": {
           "anyOf": [
@@ -6101,6 +6124,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn` — preserve presentation-authored group marking.",
+          "type": "boolean"
+        },
         "width": {
           "anyOf": [
             {
@@ -7040,6 +7067,9 @@
     "LineShapeOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -7068,6 +7098,10 @@
           "$ref": "#/definitions/EndpointShapeProperties",
           "description": "Line paint (a:spPr children): fill/outline/effects/3D. Endpoints stay top-level — direction is encoded as xfrm flip, not an owner transform."
         },
+        "rotation": {
+          "description": "Rotation angle in degrees (a:xfrm",
+          "type": "number"
+        },
         "style": {
           "$ref": "#/definitions/ShapeStyleOptions",
           "description": "Shape style matrix reference (p:style)."
@@ -7075,6 +7109,10 @@
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions",
           "description": "Text body — source lines carry wrap/anchor hints and an empty paragraph."
+        },
+        "textBox": {
+          "description": "Text-box marker (p:cNvSpPr",
+          "type": "boolean"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -8671,6 +8709,9 @@
       "additionalProperties": false,
       "description": "Picture (p:pic) for pptx slides. Extends cross-format BasePictureOptions (binary data + cNvPr name/description/title/hidden → p:cNvPr) with absolute EMU positioning and optional shape-level effects.",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
         "blipEffects": {
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Blip color effects (a:lum, a:duotone, … children of a:blip)."
@@ -8789,6 +8830,10 @@
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
           "description": "`@sz` — sizing hint (default \"full\")."
+        },
+        "rotWithShape": {
+          "description": "Rotate image fill with the shape frame (p:blipFill",
+          "type": "boolean"
         },
         "rotation": {
           "description": "Rotation angle in degrees (e.g., 45 = 45°).",
@@ -10807,6 +10852,10 @@
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions"
         },
+        "textBox": {
+          "description": "Text-box marker (p:cNvSpPr",
+          "type": "boolean"
+        },
         "title": {
           "description": "XSD `@title`.",
           "type": "string"
@@ -11218,7 +11267,15 @@
           "type": "boolean"
         },
         "penColor": {
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/SolidFillOptions"
+            }
+          ],
+          "description": "Laser-pointer color: RGB shorthand (`\"FF0000\"`) or a DrawingML color choice."
         },
         "restart": {
           "type": "number"
@@ -11582,6 +11639,10 @@
               "type": "string"
             }
           ]
+        },
+        "layoutKey": {
+          "description": "Stable layout lookup key — round-trip uses the source p:sldLayoutId",
+          "type": "string"
         },
         "master": {
           "type": "string"
@@ -12888,6 +12949,10 @@
         "dirty": {
           "type": "boolean"
         },
+        "effectDag": {
+          "description": "Verbatim a:effectDag element for effect containers. Round-trip channel: captured from a parsed source; do not hand-author.",
+          "type": "string"
+        },
         "err": {
           "description": "`@err` — spelling error flag.",
           "type": "boolean"
@@ -13270,6 +13335,9 @@
         },
         "dirty": {
           "type": "boolean"
+        },
+        "effectDag": {
+          "$ref": "#/definitions/TextCharacterPropertiesOptions/properties/effectDag"
         },
         "emptyProperties": {
           "description": "The source carried a bare `<a:rPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",

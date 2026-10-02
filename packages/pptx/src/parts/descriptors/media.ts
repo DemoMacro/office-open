@@ -239,11 +239,13 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     if (opts.audioCd) {
       mediaEl = stringifyAudioCd(opts.audioCd);
     } else if (mediaFileName) {
-      mediaEl = stringifyAudioFile(mediaFileName, opts.type ?? "mp3", opts);
+      const audioType = opts.embeddedMedia && opts.type === "wav" ? "mp3" : (opts.type ?? "mp3");
+      mediaEl = stringifyAudioFile(mediaFileName, audioType, opts);
     } else {
       mediaEl = "";
     }
-    const emitExt = mediaFileName !== undefined && (opts.type ?? "mp3") !== "wav";
+    const emitExt =
+      mediaFileName !== undefined && (opts.embeddedMedia || (opts.type ?? "mp3") !== "wav");
     const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
@@ -317,6 +319,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     if (p14media) {
       const trim = readMediaTrim(p14media);
       if (trim) result.trim = trim;
+      result.embeddedMedia = true;
     }
     const mediaRef = rLink ?? rEmbedAttr ?? rEmbedExt;
     if (mediaRef) {

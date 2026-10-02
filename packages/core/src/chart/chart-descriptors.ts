@@ -255,6 +255,7 @@ function stringifyDataLabel(opts: DataLabelOptions, ctx: WriteContext): string {
   if (opts.text)
     inner.push(`<c:tx><c:rich>${textBodyDesc.stringify(opts.text, ctx) ?? ""}</c:rich></c:tx>`);
   inner.push(...dataLabelSharedParts(opts, ctx));
+  if (opts.ext) inner.push(`<c:extLst>${opts.ext}</c:extLst>`);
   return `<c:dLbl><c:idx val="${opts.index}"/>${inner.join("")}</c:dLbl>`;
 }
 
@@ -292,6 +293,7 @@ function stringifyDataLabels(opts: DataLabelsOptions, ctx: WriteContext): string
   if (opts.showLeaderLines !== undefined)
     parts.push(`<c:showLeaderLines${boolVal(opts.showLeaderLines)}/>`);
   if (opts.leaderLines) parts.push(emptyEl("c:leaderLines"));
+  if (opts.ext) parts.push(`<c:extLst>${opts.ext}</c:extLst>`);
   return `<c:dLbls>${head}${parts.join("")}</c:dLbls>`;
 }
 
@@ -1681,10 +1683,18 @@ function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions 
       }
       const sep = textOf(findChild(el, "c:separator"));
       if (sep) result.separator = sep;
+      const labelExtLst = findChild(el, "c:extLst");
+      if (labelExtLst) {
+        result.ext = (labelExtLst.elements ?? []).map((child) => stringifyElement(child)).join("");
+      }
       return result;
     });
   }
   if (findChild(dlEl, "c:leaderLines")) opts.leaderLines = true;
+  const groupExtLst = findChild(dlEl, "c:extLst");
+  if (groupExtLst) {
+    opts.ext = (groupExtLst.elements ?? []).map((child) => stringifyElement(child)).join("");
+  }
   return opts;
 }
 

@@ -184,6 +184,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         ctx,
         opts.useLocalDpi,
         opts.fillRectangle,
+        opts.rotWithShape,
       ),
     );
 
@@ -272,6 +273,8 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       if (scene3d) result.scene3d = scene3DDesc.parse(scene3d, ctx);
       const sp3d = findChild(spPr, "a:sp3d");
       if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
+      const bwMode = spPr.attributes?.["bwMode"];
+      if (bwMode !== undefined) result.blackWhiteMode = bwMode as PictureOptions["blackWhiteMode"];
     }
 
     // p:style
@@ -280,6 +283,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
 
     // Crop rectangle from p:blipFill → a:srcRect (‰ → percent)
     const blipFill = findChild(el, "p:blipFill");
+    if (parseOnOff(blipFill?.attributes?.["rotWithShape"])) result.rotWithShape = true;
     const srcRectEl = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
     if (srcRectEl) {
       const rect: SourceRectangleOptions = {};
@@ -381,11 +385,14 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
   }
 
   // cNvSpPr (with optional locking)
-  let cNvSpPrContent = "<p:cNvSpPr/>";
+  const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
+  let cNvSpPrContent = `<p:cNvSpPr${txBoxAttr}/>`;
   if (opts.locking) {
     const lockAttrs = buildLockAttrs(opts.locking);
     if (lockAttrs.length > 0) {
-      cNvSpPrContent = `<p:cNvSpPr><a:spLocks ${lockAttrs.join(" ")}/></p:cNvSpPr>`;
+      cNvSpPrContent = `<p:cNvSpPr${txBoxAttr}><a:spLocks ${lockAttrs.join(" ")}/></p:cNvSpPr>`;
+    } else {
+      cNvSpPrContent = `<p:cNvSpPr${txBoxAttr}><a:spLocks/></p:cNvSpPr>`;
     }
   }
 
@@ -557,6 +564,7 @@ function stringifyPptxBlipFill(
   ctx?: WriteContext,
   useLocalDpi?: boolean,
   fillRectangle?: SourceRectangleOptions | false,
+  rotWithShape?: boolean,
 ): string {
   // The linked source registers an {img-link:key} placeholder the compiler
   // rewrites per slide/layout while adding the External image relationship.
@@ -581,7 +589,8 @@ function stringifyPptxBlipFill(
     fillRectangle === false
       ? "<a:stretch/>"
       : `<a:stretch>${createSourceRectangle(fillRectangle ?? {}, "a:fillRect")}</a:stretch>`;
-  return `<p:blipFill>${blipXml}${srcRect}${fillRect}</p:blipFill>`;
+  const rootAttrs = rotWithShape ? ' rotWithShape="1"' : "";
+  return `<p:blipFill${rootAttrs}>${blipXml}${srcRect}${fillRect}</p:blipFill>`;
 }
 
 function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
@@ -604,8 +613,9 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
     },
     ctx,
   );
-  if (!spPrContent) return "<p:spPr/>";
-  return `<p:spPr>${spPrContent}</p:spPr>`;
+  const bwAttr = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
+  if (!spPrContent) return `<p:spPr${bwAttr}/>`;
+  return `<p:spPr${bwAttr}>${spPrContent}</p:spPr>`;
 }
 
 // ── Read helpers ──
@@ -680,6 +690,7 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
     if (spLocks) {
       result.locking = shapeLockingDesc.parse(spLocks, {} as ReadContext) as ShapeLockingOptions;
     }
+    if (parseOnOff(cNvSpPr.attributes?.["txBox"])) result.textBox = true;
   }
 
   return result;

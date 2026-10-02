@@ -1,6 +1,7 @@
 import type {
   BasePictureOptions,
   BlipCompression,
+  BlackWhiteMode,
   EffectListOptions,
   PictureLockingOptions,
   UniversalMeasure,
@@ -35,6 +36,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   flipVertical?: boolean;
   /** Rotation angle in degrees (e.g., 45 = 45°). */
   rotation?: number;
+  /** Rotate image fill with the shape frame (p:blipFill @rotWithShape). */
+  rotWithShape?: boolean;
   type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
   /**
    * Media file name inside the package (ppt/media/<fileName>). Round-trip
@@ -79,4 +82,6 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   shape3d?: Shape3DOptions;
   /** Shape style matrix reference (p:style). */
   style?: ShapeStyleOptions;
+  /** @bwMode on p:spPr — black-and-white render mode. */
+  blackWhiteMode?: BlackWhiteMode;
 }

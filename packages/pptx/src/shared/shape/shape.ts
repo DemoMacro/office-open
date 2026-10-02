@@ -95,6 +95,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
   isPhoto?: boolean;
   userDrawn?: boolean;
   hasCustomPrompt?: boolean;
+  /** Text-box marker (p:cNvSpPr @txBox). */
+  textBox?: boolean;
   style?: ShapeStyleOptions;
   /**
    * `@bwMode` (ST_BlackWhiteMode) on `p:spPr` — how the shape renders in

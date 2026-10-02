@@ -5,6 +5,7 @@
  */
 
 import { convertToEmu } from "@office-open/core";
+import { parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import {
   groupLockingDesc,
@@ -77,8 +78,9 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
           ? (groupLockingDesc.stringify(opts.locking, descCtx) ?? "")
           : "";
     const cNvGrpSpPr = grpLocks ? `<p:cNvGrpSpPr>${grpLocks}</p:cNvGrpSpPr>` : "<p:cNvGrpSpPr/>";
+    const nvPr = opts.userDrawn ? '<p:nvPr userDrawn="1"/>' : "<p:nvPr/>";
     parts.push(
-      `<p:nvGrpSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvGrpSpPr}<p:nvPr/></p:nvGrpSpPr>`,
+      `<p:nvGrpSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvGrpSpPr}${nvPr}</p:nvGrpSpPr>`,
     );
 
     // p:grpSpPr
@@ -101,6 +103,10 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     // id + name from p:nvGrpSpPr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGrpSpPr"));
     const nvGrpSpPr = findChild(el, "p:nvGrpSpPr");
+    const groupNvPr = findChild(nvGrpSpPr, "p:nvPr");
+    if (parseOnOff(groupNvPr?.attributes?.["userDrawn"])) {
+      result.userDrawn = true;
+    }
     const grpLocks = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvGrpSpPr") : undefined;
     const lockEl = grpLocks ? findChild(grpLocks, "a:grpSpLocks") : undefined;
     if (lockEl) {
