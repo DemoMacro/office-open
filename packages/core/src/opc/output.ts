@@ -7,6 +7,8 @@
 import { strFromU8 } from "fflate";
 
 import { encodeBase64 } from "../util/base64";
+import type { OoxmlPackageFamily, OoxmlPackageVariant } from "./package-format";
+import { ooxmlPackageFormatInfo } from "./package-format";
 
 export interface OutputByType {
   base64: string;
@@ -25,9 +27,25 @@ export type OutputType = keyof OutputByType;
 /* V8 ignore start */
 export const OoxmlMimeType = {
   DOCX: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  DOCM: "application/vnd.ms-word.document.macroEnabled.12",
+  DOTX: "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+  DOTM: "application/vnd.ms-word.template.macroEnabled.12",
   PPTX: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  PPTM: "application/vnd.ms-powerpoint.presentation.macroEnabled.12",
+  POTX: "application/vnd.openxmlformats-officedocument.presentationml.template",
+  POTM: "application/vnd.ms-powerpoint.template.macroEnabled.12",
   XLSX: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  XLSM: "application/vnd.ms-excel.sheet.macroEnabled.12",
+  XLTX: "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+  XLTM: "application/vnd.ms-excel.template.macroEnabled.12",
 } as const;
+
+export function ooxmlMimeType(
+  family: OoxmlPackageFamily,
+  variant: OoxmlPackageVariant = "standard",
+): string {
+  return ooxmlPackageFormatInfo(family, variant).mimeType;
+}
 
 export const convertOutput = <T extends OutputType>(
   data: Uint8Array,

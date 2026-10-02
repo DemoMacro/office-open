@@ -1,6 +1,12 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import type { OutputType, PackerOptions, ReproducibleGenerationOptions } from "@office-open/core";
+import type {
+  OoxmlPackageFormat,
+  OutputType,
+  PackerOptions,
+  ReproducibleGenerationOptions,
+} from "@office-open/core";
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
 export { type OutputType } from "@office-open/core";
 
 import { generateDocument } from "@office-open/docx";
@@ -10,13 +16,22 @@ import type { PresentationOptions } from "@office-open/pptx";
 import { generateWorkbook } from "@office-open/xlsx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
-export type GenerateType = "docx" | "pptx" | "xlsx";
+export type GenerateType = OoxmlPackageFormat;
 
 /** Map from type string to the corresponding options type. */
 export interface GenerateOptionsMap {
   docx: DocumentOptions;
+  docm: DocumentOptions;
+  dotx: DocumentOptions;
+  dotm: DocumentOptions;
   pptx: PresentationOptions;
+  pptm: PresentationOptions;
+  potx: PresentationOptions;
+  potm: PresentationOptions;
   xlsx: WorkbookOptions;
+  xlsm: WorkbookOptions;
+  xltx: WorkbookOptions;
+  xltm: WorkbookOptions;
 }
 
 export interface GenerateOptions<T extends GenerateType = GenerateType> {
@@ -31,23 +46,25 @@ export async function generate<T extends GenerateType>(
   options: GenerateOptions<T>,
 ): Promise<unknown> {
   const { type, options: docOptions, outputType = "nodebuffer" as OutputType } = options;
+  const packageFormat = OOXML_PACKAGE_FORMATS[type];
   const packerOpts = {
     type: outputType,
+    packageVariant: packageFormat.variant,
     reproducible: options.reproducible,
   } as PackerOptions<OutputType>;
 
-  switch (type) {
-    case "docx":
+  switch (packageFormat.family) {
+    case "wordprocessing":
       return generateDocument(
         docOptions as DocumentOptions,
         packerOpts as PackerOptions<"nodebuffer">,
       );
-    case "pptx":
+    case "presentation":
       return generatePresentation(
         docOptions as PresentationOptions,
         packerOpts as PackerOptions<"nodebuffer">,
       );
-    case "xlsx":
+    case "spreadsheet":
       return generateWorkbook(
         docOptions as WorkbookOptions,
         packerOpts as PackerOptions<"nodebuffer">,

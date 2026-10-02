@@ -37,6 +37,7 @@ import { unzipSync } from "fflate";
 // fix that, at the cost of three workers; importing the dist bundles instead
 // also means the gate tests the exact artifacts consumers receive.
 // Requires a prior `pnpm build`.
+import { OOXML_PACKAGE_FORMATS } from "../packages/core/dist/index.mjs";
 import { parseDocument, generateDocument } from "../packages/docx/dist/index.mjs";
 import { parsePresentation, generatePresentation } from "../packages/pptx/dist/index.mjs";
 import { parseWorkbook, generateWorkbook } from "../packages/xlsx/dist/index.mjs";
@@ -78,15 +79,24 @@ const LIBRARIES: Library[] = [
 ];
 
 type Format = "docx" | "xlsx" | "pptx";
+type PackageFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
-const BY_EXT: Record<string, { format: Format; parse: (b: Uint8Array) => Promise<unknown> }> = {
-  docx: { format: "docx", parse: parseDocument },
-  dotx: { format: "docx", parse: parseDocument },
-  docm: { format: "docx", parse: parseDocument },
-  xlsx: { format: "xlsx", parse: parseWorkbook },
-  xlsm: { format: "xlsx", parse: parseWorkbook },
-  pptx: { format: "pptx", parse: parsePresentation },
-  pptm: { format: "pptx", parse: parsePresentation },
+const BY_EXT: Record<
+  string,
+  { format: Format; type: PackageFormat; parse: (b: Uint8Array) => Promise<unknown> }
+> = {
+  docx: { format: "docx", type: "docx", parse: parseDocument },
+  docm: { format: "docx", type: "docm", parse: parseDocument },
+  dotx: { format: "docx", type: "dotx", parse: parseDocument },
+  dotm: { format: "docx", type: "dotm", parse: parseDocument },
+  xlsx: { format: "xlsx", type: "xlsx", parse: parseWorkbook },
+  xlsm: { format: "xlsx", type: "xlsm", parse: parseWorkbook },
+  xltx: { format: "xlsx", type: "xltx", parse: parseWorkbook },
+  xltm: { format: "xlsx", type: "xltm", parse: parseWorkbook },
+  pptx: { format: "pptx", type: "pptx", parse: parsePresentation },
+  pptm: { format: "pptx", type: "pptm", parse: parsePresentation },
+  potx: { format: "pptx", type: "potx", parse: parsePresentation },
+  potm: { format: "pptx", type: "potm", parse: parsePresentation },
 };
 
 interface FormatCounts {
@@ -101,7 +111,10 @@ type Baseline = Record<string, Partial<Record<Format, FormatCounts>>>;
 
 // ── corpus discovery ──
 
-function walk(dir: string, out: { path: string; format: Format }[] = []): typeof out {
+function walk(
+  dir: string,
+  out: { path: string; format: Format; type: PackageFormat }[] = [],
+): typeof out {
   let entries: fs.Dirent[];
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -113,7 +126,7 @@ function walk(dir: string, out: { path: string; format: Format }[] = []): typeof
     if (e.isDirectory()) walk(p, out);
     else {
       const cfg = BY_EXT[e.name.split(".").pop()!.toLowerCase()];
-      if (cfg) out.push({ path: p, format: cfg.format });
+      if (cfg) out.push({ path: p, format: cfg.format, type: cfg.type });
     }
   }
   return out;
@@ -171,7 +184,7 @@ async function runLibrary(
     pptx: new Map(),
   };
 
-  for (const { path: f, format } of walk(path.resolve(ROOT_DIR, lib.dest))) {
+  for (const { path: f, format, type } of walk(path.resolve(ROOT_DIR, lib.dest))) {
     const a = counts[format];
     a.total++;
     let opts: unknown;
@@ -186,12 +199,16 @@ async function runLibrary(
       continue;
     }
     try {
+      const packerOptions = { packageVariant: OOXML_PACKAGE_FORMATS[type].variant };
       out =
         format === "docx"
-          ? await generateDocument(opts as Parameters<typeof generateDocument>[0])
+          ? await generateDocument(opts as Parameters<typeof generateDocument>[0], packerOptions)
           : format === "xlsx"
-            ? await generateWorkbook(opts as Parameters<typeof generateWorkbook>[0])
-            : await generatePresentation(opts as Parameters<typeof generatePresentation>[0]);
+            ? await generateWorkbook(opts as Parameters<typeof generateWorkbook>[0], packerOptions)
+            : await generatePresentation(
+                opts as Parameters<typeof generatePresentation>[0],
+                packerOptions,
+              );
     } catch (e) {
       a.genFail++;
       console.error(`  genFail ${path.relative(ROOT_DIR, f)}: ${String(e).slice(0, 120)}`);

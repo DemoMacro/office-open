@@ -371,6 +371,8 @@ export interface FinalizeContentTypesOptions {
    * docx altChunks carry a caller-supplied MIME, sub-documents are always
    * main-document parts. */
   overrides?: ReadonlyArray<{ path: string; contentType: string }>;
+  /** Output-dialect declarations that win over source and derived entries. */
+  forcedOverrides?: ReadonlyArray<{ path: string; contentType: string }>;
 }
 
 /**
@@ -413,6 +415,14 @@ export function finalizeContentTypes(
     const ext = dot > slash ? part.path.slice(dot + 1).toLowerCase() : undefined;
     if (ext && coveredExt.has(ext)) continue;
     input.overrides.push({ partName: `/${part.path}`, contentType: part.contentType });
+  }
+  for (const override of options.forcedOverrides ?? []) {
+    const partName = `/${override.path.replace(/^\//, "")}`;
+    const existing = input.overrides.find(
+      (entry) => entry.partName.toLowerCase() === partName.toLowerCase(),
+    );
+    if (existing) existing.contentType = override.contentType;
+    else input.overrides.push({ partName, contentType: override.contentType });
   }
   return OOXML_XML_DECLARATION + (contentTypesDesc.stringify(input, ctx) ?? "");
 }

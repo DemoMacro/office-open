@@ -20,9 +20,15 @@ import {
   dropDanglingPassthroughRels,
   finalizeContentTypes,
   getReferencedMedia,
+  ooxmlPackageFormatInfo,
   replaceImagePlaceholders,
 } from "@office-open/core";
-import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
+import type {
+  OoxmlPackageVariant,
+  ReproducibleScope,
+  XmlifyedFile,
+  Zippable,
+} from "@office-open/core";
 import {
   appPropertiesDesc,
   buildCorePropertiesXmlString,
@@ -141,7 +147,9 @@ export function compilePresentation(
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
   reproducible?: ReproducibleScope,
+  packageVariant: OoxmlPackageVariant = "standard",
 ): Zippable {
+  const packageFormat = ooxmlPackageFormatInfo("presentation", packageVariant);
   const descCtx = new PptxWriteContext();
   descCtx.reproducible = reproducible;
   const slides = options.slides ?? [];
@@ -399,6 +407,12 @@ export function compilePresentation(
         // only fill what surviving source entries leave uncovered or mistyped.
         source: options.contentTypes,
         rawParts: options.rawParts,
+        forcedOverrides: [
+          {
+            path: packageFormat.mainPartPath,
+            contentType: packageFormat.mainContentType,
+          },
+        ],
       },
       descCtx,
     ),

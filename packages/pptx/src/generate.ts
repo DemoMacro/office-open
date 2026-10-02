@@ -4,22 +4,27 @@
  * @module
  */
 
-import { createPacker, OoxmlMimeType } from "@office-open/core";
+import { createPacker, ooxmlMimeType } from "@office-open/core";
 import {
   assertEncryptedExclusive,
   encryptedContainerOutput,
   encryptedContainerStream,
 } from "@office-open/core";
-import type { OutputByType, OutputType, PackerOptions } from "@office-open/core";
+import type {
+  OoxmlPackageVariant,
+  OutputByType,
+  OutputType,
+  PackerOptions,
+} from "@office-open/core";
 import type { PresentationOptions } from "@shared/file";
 
 import { compilePresentation } from "./compiler";
 
 /** `@internal` Packer instance for PPTX generation. */
 const Packer = createPacker<PresentationOptions>({
-  compile: (options, overrides, mediaLevel, reproducible) =>
-    compilePresentation(options, overrides, mediaLevel, reproducible),
-  mimeType: OoxmlMimeType.PPTX,
+  compile: (options, overrides, mediaLevel, reproducible, packageVariant) =>
+    compilePresentation(options, overrides, mediaLevel, reproducible, packageVariant),
+  family: "presentation",
 });
 
 /**
@@ -29,9 +34,10 @@ const Packer = createPacker<PresentationOptions>({
 function encryptedPassthrough<T extends OutputType>(
   options: PresentationOptions,
   type: T,
+  packageVariant: OoxmlPackageVariant,
 ): OutputByType[T] | undefined {
   assertEncryptedExclusive(options, (options.slides?.length ?? 0) > 0);
-  return encryptedContainerOutput(options, type, OoxmlMimeType.PPTX);
+  return encryptedContainerOutput(options, type, ooxmlMimeType("presentation", packageVariant));
 }
 
 /**
@@ -56,7 +62,11 @@ export function generatePresentation<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
-  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
+  const encrypted = encryptedPassthrough(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.packageVariant ?? "standard",
+  );
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
   return Packer.pack(options, packerOptions) as Promise<OutputByType[T]>;
 }
@@ -68,7 +78,11 @@ export function generatePresentationSync<T extends OutputType = "nodebuffer">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
-  const encrypted = encryptedPassthrough(options, packerOptions?.type ?? "nodebuffer");
+  const encrypted = encryptedPassthrough(
+    options,
+    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.packageVariant ?? "standard",
+  );
   if (encrypted) return encrypted as OutputByType[T];
   return Packer.packSync(options, packerOptions) as OutputByType[T];
 }

@@ -20,7 +20,7 @@ const compileMock = vi.fn();
 const mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const Packer = createPacker<{ sections: readonly unknown[] }>({
   compile: compileMock,
-  mimeType,
+  family: "wordprocessing",
 });
 
 const mockFile = { sections: [] };
@@ -57,40 +57,57 @@ describe("createPacker", () => {
   describe("compile passthrough", () => {
     it("should default overrides to empty array", async () => {
       await Packer.toString(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined, "standard");
     });
 
     it("should pass overrides through", async () => {
       const overrides: XmlifyedFile[] = [{ data: "test", path: "test.xml" }];
       await Packer.toString(mockFile, { overrides });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), overrides, 6, undefined);
+      expect(compileMock).toHaveBeenCalledWith(
+        expect.anything(),
+        overrides,
+        6,
+        undefined,
+        "standard",
+      );
     });
   });
 
   describe("compression options", () => {
     it("should default to mediaLevel 6 (Normal) when no options", async () => {
       await Packer.toBuffer(mockFile);
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined, "standard");
     });
 
     it("should pass mediaLevel 6 (default) when only xml option is set", async () => {
       await Packer.toBuffer(mockFile, { compression: { xml: 9 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined, "standard");
     });
 
     it("should pass custom mediaLevel", async () => {
       await Packer.toBuffer(mockFile, { compression: { media: 6 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 6, undefined, "standard");
     });
 
     it("should pass both xml and media options", async () => {
       await Packer.toBuffer(mockFile, { compression: { xml: 9, media: 4 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 4, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 4, undefined, "standard");
     });
 
     it("should work with sync methods", () => {
       Packer.toBufferSync(mockFile, { compression: { xml: 6, media: 0 } });
-      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0, undefined);
+      expect(compileMock).toHaveBeenCalledWith(expect.anything(), [], 0, undefined, "standard");
+    });
+
+    it("should pass the selected package variant", async () => {
+      await Packer.toBuffer(mockFile, { packageVariant: "macroTemplate" });
+      expect(compileMock).toHaveBeenCalledWith(
+        expect.anything(),
+        [],
+        6,
+        undefined,
+        "macroTemplate",
+      );
     });
 
     it("should produce valid output with custom compression", async () => {

@@ -32,8 +32,10 @@ import {
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
+  ooxmlPackageFormatInfo,
 } from "@office-open/core";
 import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
+import type { OoxmlPackageVariant } from "@office-open/core";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 
@@ -93,7 +95,9 @@ export function compileDocument(
   overrides: XmlifyedFile[] = [],
   mediaLevel: number = 0,
   reproducible?: ReproducibleScope,
+  packageVariant: OoxmlPackageVariant = "standard",
 ): Zippable {
+  const packageFormat = ooxmlPackageFormatInfo("wordprocessing", packageVariant);
   const ctx = new DocxWriteContext(options, reproducible);
   const xmlifiedFileMapping = xmlifyContext(ctx);
   const files = compileMapping(xmlifiedFileMapping, overrides);
@@ -136,6 +140,12 @@ export function compileDocument(
             contentType:
               "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
           })),
+        ],
+        forcedOverrides: [
+          {
+            path: packageFormat.mainPartPath,
+            contentType: packageFormat.mainContentType,
+          },
         ],
       },
       ctx,

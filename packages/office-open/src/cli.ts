@@ -1,3 +1,4 @@
+import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
 import { defineCommand, runMain } from "citty";
 
 import { generateToFile, parseInput } from "./generate";
@@ -10,14 +11,32 @@ import {
 } from "./schemas";
 import { SCHEMAS, type DocumentType } from "./schemas/schemas";
 
-const FORMATS: readonly DocumentType[] = ["docx", "pptx", "xlsx"];
+type GenerateFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
-/** Parse and validate the format positional (citty positionals cannot be enums). */
-function parseFormat(raw: string | undefined): DocumentType {
-  if (raw && (FORMATS as readonly string[]).includes(raw)) return raw as DocumentType;
+const FORMATS = Object.keys(OOXML_PACKAGE_FORMATS) as GenerateFormat[];
+
+const SCHEMA_TYPES = {
+  wordprocessing: "docx",
+  spreadsheet: "xlsx",
+  presentation: "pptx",
+} as const;
+
+function schemaTypeOf(format: GenerateFormat): DocumentType {
+  return SCHEMA_TYPES[OOXML_PACKAGE_FORMATS[format].family];
+}
+
+/** Parse and validate a generate-format positional (citty positionals cannot be enums). */
+function parseGenerateFormat(raw: string | undefined): GenerateFormat {
+  if (raw && (FORMATS as readonly string[]).includes(raw)) return raw as GenerateFormat;
   console.error(`Unknown format "${raw ?? ""}" — expected one of: ${FORMATS.join(", ")}`);
   globalThis.process.exitCode = 1;
   throw new Error("invalid format");
+}
+
+/** Parse and validate a schema-family positional. */
+function parseSchemaFormat(raw: string | undefined): DocumentType {
+  const format = parseGenerateFormat(raw);
+  return schemaTypeOf(format);
 }
 
 function createConvertCommand(type: string, defaultExt: string) {
@@ -51,13 +70,14 @@ function createConvertCommand(type: string, defaultExt: string) {
     async run({ args }) {
       const jsonInput = (args.input ?? args["input-file"]) as string;
       const outputPath = (args.output ?? args["output-file"] ?? `output.${defaultExt}`) as string;
-      const docType = type as "docx" | "pptx" | "xlsx";
+      const generateType = type as GenerateFormat;
+      const docType = schemaTypeOf(generateType);
 
       try {
         const docOptions = await parseInput(jsonInput);
         const validated = validateDocumentInput(docType, docOptions);
         await generateToFile(outputPath, {
-          type: docType,
+          type: generateType,
           options: validated,
         });
         console.log(`Generated: ${outputPath}`);
@@ -82,7 +102,7 @@ const schemaIndexCommand = defineCommand({
     json: { type: "boolean", description: "Machine-readable output" },
   },
   run({ args }) {
-    const format = parseFormat(args.format as string | undefined);
+    const format = parseSchemaFormat(args.format as string | undefined);
     const definitionCount = Object.keys(
       (SCHEMAS[format].definitions as Record<string, unknown>) ?? {},
     ).length;
@@ -148,7 +168,7 @@ const schemaSliceCommand = defineCommand({
     // citty does not type variadic positionals; args._ keeps every raw positional
     // (format first), so slice the tail off it instead of the typed args.
     const positional = args._ as string[];
-    const format = parseFormat(positional[0]);
+    const format = parseSchemaFormat(positional[0]);
     const definitions = positional.slice(1);
     if (definitions.length === 0) {
       console.error("Provide at least one definition name (see `office-open schema index`).");
@@ -188,7 +208,7 @@ const schemaCommand = defineCommand({
 const mainCommand = defineCommand({
   meta: {
     name: "office-open",
-    version: "0.10.15",
+    version: "0.14.6",
     description: "Generate Office files (.docx, .pptx, .xlsx) from JSON",
   },
   subCommands: {
@@ -201,7 +221,7 @@ const mainCommand = defineCommand({
     type: {
       type: "enum",
       description: "File type to generate",
-      options: ["docx", "pptx", "xlsx"],
+      options: [...FORMATS],
     },
   },
   async run() {

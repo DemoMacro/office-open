@@ -49,6 +49,32 @@ function roundTrip(opts: OleOptions, ctx: ReadContext = readCtx) {
 }
 
 describe("oleDesc round-trip", () => {
+  it("reads linked OLE from markup-compatibility alternate content", () => {
+    const xml =
+      `<p:graphicFrame xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"` +
+      ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"` +
+      ` xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">` +
+      `<a:graphic><a:graphicData>` +
+      `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+      `<mc:Choice Requires="v"><p:oleObj name="Document" r:id="rId1" progId="Word.Document.8">` +
+      `<p:link updateAutomatic="1"/></p:oleObj></mc:Choice>` +
+      `<mc:Fallback><p:oleObj name="Document" r:id="rId1" progId="Word.Document.8">` +
+      `<p:link updateAutomatic="1"/></p:oleObj></mc:Fallback>` +
+      `</mc:AlternateContent></a:graphicData></a:graphic></p:graphicFrame>`;
+    const ctx = {
+      resolveRelationship: () => "https://example.com/document.doc",
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const parsed = oleDesc.parse(root, ctx);
+
+    expect(parsed.progId).toBe("Word.Document.8");
+    expect(parsed.link).toEqual({ url: "https://example.com/document.doc", autoUpdate: true });
+  });
+
   it("registers embedded OLE binary and reads it back on parse", () => {
     const opts: OleOptions = {
       id: 100,

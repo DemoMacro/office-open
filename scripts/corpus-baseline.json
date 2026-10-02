@@ -1,23 +1,23 @@
 {
   "sdk": {
     "docx": {
-      "total": 502,
-      "clean": 492,
-      "diff": 8,
+      "total": 505,
+      "clean": 480,
+      "diff": 23,
       "parseFail": 2,
       "genFail": 0
     },
     "xlsx": {
-      "total": 109,
-      "clean": 77,
-      "diff": 32,
+      "total": 155,
+      "clean": 21,
+      "diff": 134,
       "parseFail": 0,
       "genFail": 0
     },
     "pptx": {
-      "total": 183,
-      "clean": 169,
-      "diff": 13,
+      "total": 226,
+      "clean": 217,
+      "diff": 8,
       "parseFail": 1,
       "genFail": 0
     }
@@ -32,8 +32,8 @@
     },
     "xlsx": {
       "total": 69,
-      "clean": 35,
-      "diff": 33,
+      "clean": 26,
+      "diff": 42,
       "parseFail": 1,
       "genFail": 0
     },
@@ -55,8 +55,8 @@
     },
     "xlsx": {
       "total": 384,
-      "clean": 120,
-      "diff": 262,
+      "clean": 66,
+      "diff": 316,
       "parseFail": 2,
       "genFail": 0
     },
@@ -70,23 +70,23 @@
   },
   "oletools": {
     "docx": {
-      "total": 16,
-      "clean": 8,
-      "diff": 3,
+      "total": 18,
+      "clean": 9,
+      "diff": 4,
       "parseFail": 5,
       "genFail": 0
     },
     "xlsx": {
-      "total": 12,
-      "clean": 6,
-      "diff": 1,
+      "total": 15,
+      "clean": 2,
+      "diff": 8,
       "parseFail": 5,
       "genFail": 0
     },
     "pptx": {
-      "total": 6,
+      "total": 10,
       "clean": 4,
-      "diff": 0,
+      "diff": 4,
       "parseFail": 2,
       "genFail": 0
     }
@@ -94,22 +94,22 @@
   "pandoc": {
     "docx": {
       "total": 131,
-      "clean": 117,
-      "diff": 13,
+      "clean": 115,
+      "diff": 15,
       "parseFail": 1,
       "genFail": 0
     },
     "xlsx": {
       "total": 1,
-      "clean": 1,
-      "diff": 0,
+      "clean": 0,
+      "diff": 1,
       "parseFail": 0,
       "genFail": 0
     },
     "pptx": {
       "total": 109,
-      "clean": 103,
-      "diff": 6,
+      "clean": 104,
+      "diff": 5,
       "parseFail": 0,
       "genFail": 0
     }
@@ -131,30 +131,30 @@
     },
     "pptx": {
       "total": 68,
-      "clean": 62,
-      "diff": 6,
+      "clean": 64,
+      "diff": 4,
       "parseFail": 0,
       "genFail": 0
     }
   },
   "tika": {
     "docx": {
-      "total": 76,
-      "clean": 44,
+      "total": 77,
+      "clean": 45,
       "diff": 28,
       "parseFail": 4,
       "genFail": 0
     },
     "xlsx": {
-      "total": 36,
-      "clean": 21,
-      "diff": 11,
+      "total": 38,
+      "clean": 14,
+      "diff": 20,
       "parseFail": 4,
       "genFail": 0
     },
     "pptx": {
-      "total": 32,
-      "clean": 16,
+      "total": 33,
+      "clean": 17,
       "diff": 15,
       "parseFail": 1,
       "genFail": 0
