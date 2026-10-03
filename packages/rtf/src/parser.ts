@@ -133,7 +133,8 @@ export function parseRtf(source: string): DocumentOptions {
   const tables: TableDraft[] = [];
   const groupFrames: GroupFrame[] = [];
   const sections: SectionOptions[] = [{ children: [] }];
-  let blocks: SectionChild[] = sections[0]!.children;
+  let activeSection = sections[0]!;
+  let blocks: SectionChild[] = activeSection.children;
   const footnotes: FootnoteOptions[] = [];
   const numberingReferences = new Set<string>();
   const listFormats = new Map<string, "bullet" | "decimal">();
@@ -511,24 +512,26 @@ export function parseRtf(source: string): DocumentOptions {
       case "sectd":
         if (activeTable()) return;
         flushParagraph();
-        blocks = [];
+        activeSection.properties = undefined;
+        blocks = activeSection.children;
         return;
       case "sect": {
         if (activeTable()) return;
         flushParagraph(true);
         const next: SectionOptions = { children: [] };
         sections.push(next);
+        activeSection = next;
         blocks = next.children;
         return;
       }
       case "pgwsxn":
       case "pghsxn":
         if (activeTable()) return;
-        sections[0]!.properties ??= {};
-        sections[0]!.properties.pageSize ??= {};
-        if (sections[0]!.properties.pageSize !== false && token.param !== undefined) {
-          if (word === "pgwsxn") sections[0]!.properties.pageSize.width = token.param;
-          else sections[0]!.properties.pageSize.height = token.param;
+        activeSection.properties ??= {};
+        activeSection.properties.pageSize ??= {};
+        if (activeSection.properties.pageSize !== false && token.param !== undefined) {
+          if (word === "pgwsxn") activeSection.properties.pageSize.width = token.param;
+          else activeSection.properties.pageSize.height = token.param;
         }
         return;
       case "marglsxn":
@@ -536,10 +539,10 @@ export function parseRtf(source: string): DocumentOptions {
       case "margtsxn":
       case "margbsxn":
         if (activeTable()) return;
-        sections[0]!.properties ??= {};
-        sections[0]!.properties.pageMargin ??= {};
-        if (sections[0]!.properties.pageMargin !== false && token.param !== undefined) {
-          const margin = sections[0]!.properties.pageMargin;
+        activeSection.properties ??= {};
+        activeSection.properties.pageMargin ??= {};
+        if (activeSection.properties.pageMargin !== false && token.param !== undefined) {
+          const margin = activeSection.properties.pageMargin;
           if (word === "marglsxn") margin.left = token.param;
           else if (word === "margsxn") margin.right = token.param;
           else if (word === "margtsxn") margin.top = token.param;

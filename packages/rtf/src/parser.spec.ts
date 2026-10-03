@@ -249,6 +249,21 @@ describe("parseRtf rich destinations", () => {
     });
   });
 
+  it("binds section properties to the section after its break", () => {
+    const document = parseRtf(
+      String.raw`{\rtf1\par First\sect\sectd\pgwsxn10000\pghsxn12000\par Second}`,
+    );
+    expect(document.sections[0]?.properties).toBeUndefined();
+    expect(document.sections[1]?.properties).toEqual({
+      pageSize: { width: 10000, height: 12000 },
+    });
+  });
+
+  it("resets inherited section properties on sectd", () => {
+    const document = parseRtf(String.raw`{\rtf1\pghsxn12000\sectd\par Page}`);
+    expect(document.sections[0]?.properties).toBeUndefined();
+  });
+
   it("projects paragraph shading and borders", () => {
     const paragraph = firstParagraph(String.raw`{\rtf1\shading1000\brdrb\brdrs80\par Box}`);
     expect(paragraph.shading).toEqual({ type: "clear", fill: "auto" });
