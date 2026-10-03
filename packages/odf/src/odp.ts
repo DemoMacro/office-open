@@ -7,6 +7,7 @@ import type { PresentationOptions, ShapeOptions, SlideOptions } from "@office-op
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
+import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml } from "./package";
 import {
   attributeString,
@@ -35,7 +36,9 @@ interface TextProperties {
   size?: number;
 }
 
-export function generateOdp(options: PresentationOptions): Uint8Array {
+export type OdpOptions = PresentationOptions & { odfExtensions?: OdfXmlNode[] };
+
+export function generateOdp(options: OdpOptions): Uint8Array {
   const styles: string[] = [];
   const size = normalizeSize(options.size);
   const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
@@ -46,14 +49,17 @@ export function generateOdp(options: PresentationOptions): Uint8Array {
   ]);
   const pages = (options.slides ?? []).map((slide, index) => slideXml(slide, index + 1, styles));
   const files = {
-    "content.xml": contentXml(pages.join(""), styles),
+    "content.xml": contentXml(
+      [...pages, ...serializeOdfNodes(options.odfExtensions)].join(""),
+      styles,
+    ),
     "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
   return generateOcf(MIME, files);
 }
 
-export function parseOdp(data: Uint8Array): PresentationOptions {
+export function parseOdp(data: Uint8Array): OdpOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
@@ -64,12 +70,14 @@ export function parseOdp(data: Uint8Array): PresentationOptions {
   );
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
+  const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
       parseSlide(page, parseTextStyles(childNamed(content, "office:automatic-styles"))),
     ),
+    odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
   };
 }
 

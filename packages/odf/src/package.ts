@@ -4,12 +4,18 @@ import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
+export type OdfFileContent = string | Uint8Array;
+
 export interface OdfFiles {
   [path: string]: string;
 }
 
-export function manifestXml(mimeType: string, files: OdfFiles): string {
-  const paths = ["mimetype", ...Object.keys(files)];
+export interface OdfPackageFiles {
+  [path: string]: OdfFileContent;
+}
+
+export function manifestXml(mimeType: string, files: OdfPackageFiles): string {
+  const paths = ["mimetype", ...directoryPaths(Object.keys(files)), ...Object.keys(files)];
   const entries = ["/", ...paths]
     .map(
       (path) =>
@@ -25,11 +31,29 @@ function mediaType(path: string): string {
   return path.endsWith(".xml") ? "text/xml" : "application/binary";
 }
 
-export function generateOcf(mimeType: string, files: OdfFiles): Uint8Array {
+function directoryPaths(paths: string[]): string[] {
+  return [
+    ...new Set(
+      paths.flatMap((path) =>
+        path
+          .split("/")
+          .slice(0, -1)
+          .map((_, index, parts) => parts.slice(0, index + 1).join("/") + "/"),
+      ),
+    ),
+  ];
+}
+
+export function generateOcf(mimeType: string, files: OdfPackageFiles): Uint8Array {
   return zipSync(
     {
       mimetype: [strToU8(mimeType), { level: 0 }],
-      ...Object.fromEntries(Object.entries(files).map(([path, xml]) => [path, strToU8(xml)])),
+      ...Object.fromEntries(
+        Object.entries(files).map(([path, content]) => [
+          path,
+          typeof content === "string" ? strToU8(content) : [content, { level: 6 }],
+        ]),
+      ),
       "META-INF/manifest.xml": strToU8(manifestXml(mimeType, files)),
     },
     { level: 6 },

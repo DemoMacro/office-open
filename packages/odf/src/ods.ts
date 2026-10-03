@@ -8,6 +8,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
+import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
 import {
   attributeNumber,
@@ -33,29 +34,36 @@ interface DimensionStyle {
   hidden?: boolean;
 }
 
-export function generateOds(options: WorkbookOptions): Uint8Array {
+export type OdsOptions = WorkbookOptions & { odfExtensions?: OdfXmlNode[] };
+
+export function generateOds(options: OdsOptions): Uint8Array {
   const styles: string[] = [];
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>
     worksheetXml(worksheet, index + 1, styles),
   );
   const files: OdfFiles = {
-    "content.xml": contentXml(sheets.join(""), styles),
+    "content.xml": contentXml(
+      [...sheets, ...serializeOdfNodes(options.odfExtensions)].join(""),
+      styles,
+    ),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
   return generateOcf(MIME, files);
 }
 
-export function parseOds(data: Uint8Array): WorkbookOptions {
+export function parseOds(data: Uint8Array): OdsOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
   const dimensions = parseDimensionStyles(childNamed(content, "office:automatic-styles"));
+  const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
     worksheets: childrenNamed(body, "table:table").map((table, index) =>
       worksheet(table, index + 1, dimensions),
     ),
+    odfExtensions: rawNodes.filter((node) => node.name !== "table:table"),
   };
 }
 
