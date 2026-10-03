@@ -90,6 +90,10 @@
       "types": "./dist/formats.d.mts",
       "import": "./dist/formats.mjs"
     },
+    "./detect": {
+      "types": "./dist/detect.d.mts",
+      "import": "./dist/detect.mjs"
+    },
     "./parse": {
       "types": "./dist/parse.d.mts",
       "import": "./dist/parse.mjs"

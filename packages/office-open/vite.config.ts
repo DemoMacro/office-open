@@ -14,6 +14,7 @@ export default defineConfig({
       "src/rtf.ts",
       "src/odf.ts",
       "src/formats.ts",
+      "src/detect.ts",
       "src/parse.ts",
       "src/core.ts",
       "src/xml.ts",
