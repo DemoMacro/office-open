@@ -69,6 +69,9 @@ export const DOCX_PARTS = {
     "word/fonts/",
     "word/embeddings/",
     "word/afchunks/",
+    "word/printerSettings/",
+    "word/activeX/",
+    "word/controls/",
     "customXml/",
     "_rels/",
     "word/_rels/",
@@ -254,6 +257,16 @@ export const DOCX_PARTS = {
       contentType: "application/vnd.openxmlformats-officedocument.theme+xml",
       presence: { kind: "conditional", flag: "freshCompile" },
     },
+    {
+      path: "word/vbaProject.bin",
+      contentType: "application/vnd.ms-office.vbaProject",
+      presence: { kind: "conditional", flag: "macro-enabled package" },
+    },
+    {
+      path: "word/vbaData.xml",
+      contentType: "application/vnd.ms-word.vbaData+xml",
+      presence: { kind: "conditional", flag: "macro-enabled package" },
+    },
   ],
 } as const satisfies PackagePartRegistry;
 
@@ -264,6 +277,8 @@ export const PPTX_PARTS = {
   orphanWhitelist: [
     "ppt/media/",
     "ppt/embeddings/",
+    "ppt/drawings/",
+    "ppt/printerSettings/",
     "_rels/",
     "ppt/_rels/",
     "ppt/slideMasters/_rels/",
@@ -416,6 +431,11 @@ export const PPTX_PARTS = {
         "application/vnd.openxmlformats-officedocument.presentationml.slideUpdateInfo+xml",
       presence: { kind: "repeated", countFrom: "slides with slideSync" },
     },
+    {
+      path: "ppt/vbaProject.bin",
+      contentType: "application/vnd.ms-office.vbaProject",
+      presence: { kind: "conditional", flag: "macro-enabled package" },
+    },
   ],
 } as const satisfies PackagePartRegistry;
 
@@ -426,6 +446,9 @@ export const XLSX_PARTS = {
   orphanWhitelist: [
     "xl/media/",
     "xl/embeddings/",
+    "xl/printerSettings/",
+    "xl/activeX/",
+    "xl/ctrlProps/",
     "_rels/",
     "xl/_rels/",
     "xl/worksheets/_rels/",
@@ -570,6 +593,16 @@ export const XLSX_PARTS = {
       path: "xl/volTypes.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.volTypes+xml",
       presence: { kind: "conditional", flag: "volTypes" },
+    },
+    {
+      path: "xl/vbaProject.bin",
+      contentType: "application/vnd.ms-office.vbaProject",
+      presence: { kind: "conditional", flag: "macro-enabled package" },
+    },
+    {
+      path: "xl/macrosheets/sheet${i}.xml",
+      contentType: "application/vnd.ms-excel.macrosheet+xml",
+      presence: { kind: "repeated", countFrom: "macro sheets" },
     },
     {
       path: "xl/tables/tableSingleCells${i}.xml",

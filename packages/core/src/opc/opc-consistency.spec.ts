@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vite-plus/test";
 
 import { validateOpcConsistency, type OpcIssue } from "./opc-consistency";
-import { DOCX_PARTS, PPTX_PARTS } from "./part-registry";
+import { DOCX_PARTS, PPTX_PARTS, XLSX_PARTS } from "./part-registry";
 
 const NS_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types";
 const NS_RELS = "http://schemas.openxmlformats.org/package/2006/relationships";
@@ -108,6 +108,57 @@ const codes = (issues: readonly OpcIssue[]): string[] => issues.map((i) => i.cod
 describe("validateOpcConsistency", () => {
   it("returns no issues for a consistent package", () => {
     expect(validateOpcConsistency(baseDocxEntries(), DOCX_PARTS)).toEqual([]);
+  });
+
+  it("accepts the companion parts carried by macro-enabled packages", () => {
+    const minimalPackage = (mainPart: string, mainContentType: string, macroParts: string[]) =>
+      new Map<string, string>([
+        [
+          "[Content_Types].xml",
+          `<Types xmlns="${NS_TYPES}">` +
+            def("rels", CT.rels) +
+            def("xml", CT.xml) +
+            def("bin", "application/vnd.ms-office.vbaProject") +
+            ov(`/${mainPart}`, mainContentType) +
+            macroParts
+              .filter((part) => part.endsWith(".xml"))
+              .map((part) =>
+                ov(
+                  `/${part}`,
+                  part === "word/vbaData.xml"
+                    ? "application/vnd.ms-word.vbaData+xml"
+                    : "application/vnd.ms-excel.macrosheet+xml",
+                ),
+              )
+              .join("") +
+            "</Types>",
+        ],
+        ["_rels/.rels", `<Relationships xmlns="${NS_RELS}"/>`],
+        [mainPart, "<root/>"],
+        ...macroParts.map((part) => [part, "binary"] as const),
+      ]);
+
+    expect(
+      validateOpcConsistency(
+        minimalPackage("word/document.xml", CT.doc, ["word/vbaProject.bin", "word/vbaData.xml"]),
+        DOCX_PARTS,
+      ),
+    ).toEqual([]);
+    expect(
+      validateOpcConsistency(
+        minimalPackage("xl/workbook.xml", CT.doc, [
+          "xl/vbaProject.bin",
+          "xl/macrosheets/sheet1.xml",
+        ]),
+        XLSX_PARTS,
+      ),
+    ).toEqual([]);
+    expect(
+      validateOpcConsistency(
+        minimalPackage("ppt/presentation.xml", CT.doc, ["ppt/vbaProject.bin"]),
+        PPTX_PARTS,
+      ),
+    ).toEqual([]);
   });
 
   it("O2 — flags a missing always part", () => {
