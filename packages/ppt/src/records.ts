@@ -11,6 +11,8 @@ export const RecordType = {
   textHeader: 3999,
   textChars: 4000,
   textBytes: 4008,
+  dateTimeAtom: 4006,
+  slideNumberAtom: 4056,
   slideListWithText: 4080,
   userEditAtom: 4085,
   currentUserAtom: 4086,

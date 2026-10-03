@@ -42,6 +42,15 @@ function int16(value: number): number[] {
   return [value & 0xff, (value >>> 8) & 0xff];
 }
 
+function utf16(value: string): number[] {
+  const bytes: number[] = [];
+  for (let index = 0; index < value.length; index += 1) {
+    const code = value.charCodeAt(index);
+    bytes.push(code & 0xff, (code >>> 8) & 0xff);
+  }
+  return bytes;
+}
+
 function packedPersist(firstId: number, count: number): number[] {
   return int32(((count & 0xfff) << 20) | (firstId & 0xfffff));
 }
@@ -95,18 +104,22 @@ function childTextShape(
   ]);
 }
 
-function groupShape(children: readonly number[][], compactBounds = false): number[][] {
+function groupShape(
+  children: readonly number[][],
+  compactBounds = false,
+  height = 150,
+): number[][] {
   const bounds = compactBounds
     ? [...int32(0), ...int32(0), ...int32(300), ...int32(150)]
     : [
         ...int32(0),
         ...int32(0),
         ...int32(300),
-        ...int32(150),
+        ...int32(height),
         ...int32(0),
         ...int32(0),
         ...int32(300),
-        ...int32(150),
+        ...int32(height),
       ];
   return [
     container(0xf004, [
@@ -117,8 +130,8 @@ function groupShape(children: readonly number[][], compactBounds = false): numbe
   ];
 }
 
-function nestedGroupDrawing(children: readonly number[][]): number[][] {
-  return [container(0xf003, groupShape(children))];
+function nestedGroupDrawing(children: readonly number[][], height = 150): number[][] {
+  return [container(0xf003, groupShape(children, false, height))];
 }
 
 function compactGroupDrawing(children: readonly number[][]): number[][] {
@@ -182,6 +195,48 @@ function pictureShape(id: number): number[] {
     record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
     record(0xf00b, [0x04, 0xc1, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
   ]);
+}
+
+function pictureTextShape(id: number): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
+    record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
+    record(0xf00b, [0x04, 0xc1, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
+    container(0xf00d, [record(3998, int32(0))]),
+  ]);
+}
+
+function fieldShape(id: number, atomType: number): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(544)]),
+    record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(100)]),
+    container(0xf00d, [
+      record(3999, int32(4)),
+      record(4000, utf16("*")),
+      record(atomType, int32(0)),
+    ]),
+  ]);
+}
+
+function mergedTableDrawing(): number[][] {
+  const cells: readonly (readonly [number, number, number, number])[] = [
+    [0, 0, 200, 50],
+    [200, 0, 300, 50],
+    [0, 50, 100, 100],
+    [100, 50, 200, 100],
+    [200, 50, 300, 100],
+    [0, 100, 100, 150],
+    [100, 100, 200, 200],
+    [200, 100, 300, 150],
+    [0, 150, 100, 200],
+    [200, 150, 300, 200],
+  ];
+  return nestedGroupDrawing(
+    cells.map((bounds, index) =>
+      childTextShape(4400 + index, index, bounds[0]!, bounds[1]!, bounds[2]!, bounds[3]!),
+    ),
+    200,
+  );
 }
 
 function buildDocument(
@@ -332,7 +387,7 @@ describe("parsePresentation", () => {
     ]);
   });
 
-  it("splits vertical-tab paragraph separators", () => {
+  it("preserves vertical-tab line separators in one paragraph", () => {
     const { document, currentUser } = buildDocument([anchoredTextShape()], ["First\vSecond"]);
     const fixture = buildCfb([
       { name: "PowerPoint Document", data: document },
@@ -340,10 +395,7 @@ describe("parsePresentation", () => {
     ]);
     const child = parsePresentation(fixture).slides![0]!.children![0]!;
     if (!("shape" in child)) throw new TypeError("Expected a shape child");
-    expect(child.shape?.textBody?.paragraphs).toEqual([
-      { children: [{ text: "First" }] },
-      { children: [{ text: "Second" }] },
-    ]);
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "First\nSecond" }] }]);
   });
 
   it("projects direct OfficeArt picture records and blip references", () => {
@@ -421,6 +473,33 @@ describe("parsePresentation", () => {
     expect(child.picture?.data).toEqual(new Uint8Array(png));
   });
 
+  it("keeps text on a shape with an embedded picture fill", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const blip = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const bseBody = Array.from<number>({ length: 36 }).fill(0);
+    bseBody[33] = 2;
+    const bse = record(0xf007, [...bseBody, 0, 0, ...blip], { version: 2, instance: 0x6e0 });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(container(0xf001, [bse]), 0);
+    const { document, currentUser } = buildDocument([pictureTextShape(2051)], ["Filled"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.properties?.fill).toEqual({
+      type: "blip",
+      data: new Uint8Array(png),
+      imageType: "png",
+    });
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "Filled" }] }]);
+  });
+
   it("projects a complete grouped-text grid as a table", () => {
     const { document, currentUser } = buildDocument(
       groupedTableDrawing(),
@@ -442,6 +521,27 @@ describe("parsePresentation", () => {
       ["Cell 0", "Cell 1", "Cell 2"],
       ["Cell 3", "Cell 4", "Cell 5"],
     ]);
+  });
+
+  it("preserves multiple paragraphs in grouped table cells", () => {
+    const { document, currentUser } = buildDocument(groupedTableDrawing(), [
+      "First\rSecond",
+      "Cell 1",
+      "Cell 2",
+      "Cell 3",
+      "Cell 4",
+      "Cell 5",
+    ]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("table" in child)) throw new TypeError("Expected a table child");
+    expect(child.table?.rows[0]?.cells[0]).toEqual({
+      children: [{ children: [{ text: "First" }] }, { children: [{ text: "Second" }] }],
+    });
+    expect(child.table?.rows[0]?.cells[1]?.text).toBe("Cell 1");
   });
 
   it("projects a compact top-level text grid as a table", () => {
@@ -470,6 +570,111 @@ describe("parsePresentation", () => {
     ]);
     const child = parsePresentation(fixture).slides![0]!.children![0]!;
     expect(Object.keys(child)).toEqual(["table"]);
+  });
+
+  it("projects merged grouped text rectangles as table spans", () => {
+    const { document, currentUser } = buildDocument(mergedTableDrawing(), [
+      "Wide",
+      "Right",
+      "A",
+      "B",
+      "C",
+      "D",
+      "Tall",
+      "F",
+      "G",
+      "H",
+    ]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("table" in child)) throw new TypeError("Expected a table child");
+    expect(child.table?.columnWidths).toEqual([158_750, 158_750, 158_750]);
+    expect(
+      child.table?.rows.map((row) =>
+        row.cells.map((cell) => ({
+          text: cell.text,
+          columnSpan: cell.columnSpan,
+          rowSpan: cell.rowSpan,
+        })),
+      ),
+    ).toEqual([
+      [
+        { text: "Wide", columnSpan: 2, rowSpan: undefined },
+        { text: "Right", columnSpan: undefined, rowSpan: undefined },
+      ],
+      [
+        { text: "A", columnSpan: undefined, rowSpan: undefined },
+        { text: "B", columnSpan: undefined, rowSpan: undefined },
+        { text: "C", columnSpan: undefined, rowSpan: undefined },
+      ],
+      [
+        { text: "D", columnSpan: undefined, rowSpan: undefined },
+        { text: "Tall", columnSpan: undefined, rowSpan: 2 },
+        { text: "F", columnSpan: undefined, rowSpan: undefined },
+      ],
+      [
+        { text: "G", columnSpan: undefined, rowSpan: undefined },
+        { text: "H", columnSpan: undefined, rowSpan: undefined },
+      ],
+    ]);
+  });
+
+  it("maps vertical tabs to line breaks without splitting paragraphs", () => {
+    const { document, currentUser } = buildDocument(undefined, ["First\vSecond"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "First\nSecond" }] }]);
+  });
+
+  it("maps line feeds to line breaks without splitting paragraphs", () => {
+    const { document, currentUser } = buildDocument(undefined, ["First\nSecond"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "First\nSecond" }] }]);
+  });
+
+  it("projects unreferenced slide-list text", () => {
+    const { document, currentUser } = buildDocument([], ["Orphan"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "Orphan" }] }]);
+  });
+
+  it("resolves date and slide-number field placeholders", () => {
+    const { document, currentUser } = buildDocument(
+      [fieldShape(2051, 4006), fieldShape(2052, 4056)],
+      [],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const children = parsePresentation(fixture).slides![0]!.children!;
+    expect(
+      children.map((child) => {
+        if (!("shape" in child)) throw new TypeError("Expected shape children");
+        const paragraph = child.shape?.textBody?.paragraphs?.[0];
+        if (typeof paragraph !== "object") throw new TypeError("Expected a paragraph object");
+        const run = paragraph.children?.[0];
+        if (typeof run !== "object" || !("text" in run)) throw new TypeError("Expected a text run");
+        return run.text;
+      }),
+    ).toEqual(["1/1/1", "1"]);
   });
 
   it("rejects input that is not CFB", () => {

@@ -47,6 +47,8 @@ interface TextEntry {
   readonly text: string;
 }
 
+type TableCell = NonNullable<TableOptions["rows"]>[number]["cells"][number];
+
 interface SlideTextGroup {
   readonly persistReference: number;
   readonly slideIdentifier: number | undefined;
@@ -61,6 +63,7 @@ interface LegacyPicture {
 interface DrawingContext {
   readonly entries: TextEntry[];
   readonly pictures: readonly (LegacyPicture | undefined)[];
+  readonly usedEntryIndexes: Set<number>;
 }
 
 /**
@@ -139,12 +142,27 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
     if (group.slideIdentifier !== undefined && !masterNames.has(group.slideIdentifier)) {
       masterNames.set(group.slideIdentifier, name);
     }
-    return readMaster(documentView, persistReferences, group, pictures, name);
+    return readMaster(
+      documentView,
+      persistReferences,
+      group,
+      {
+        entries: group.entries,
+        pictures,
+        usedEntryIndexes: new Set(),
+      },
+      name,
+    );
   });
   const defaultMaster = masters[0]?.name;
-  const slides = slideGroups.map((group) =>
-    readSlide(documentView, persistReferences, group, pictures, defaultMaster, masterNames),
-  );
+  const slides = slideGroups.map((group) => {
+    const context: DrawingContext = {
+      entries: group.entries,
+      pictures,
+      usedEntryIndexes: new Set(),
+    };
+    return readSlide(documentView, persistReferences, group, context, defaultMaster, masterNames);
+  });
   const result: PresentationOptions = {};
   if (size) result.size = size;
   if (masters.length > 0) result.masters = masters;
@@ -335,7 +353,7 @@ function readSlide(
   view: DataView,
   references: Map<number, number>,
   group: SlideTextGroup,
-  pictures: readonly (LegacyPicture | undefined)[],
+  context: DrawingContext,
   defaultMaster: string | undefined,
   masterNames: ReadonlyMap<number, string>,
 ): SlideOptions {
@@ -350,9 +368,8 @@ function readSlide(
     );
   }
   const drawing = findDirect(slide, RecordType.ppDrawing);
-  const children = drawing
-    ? readDrawingChildren(view, drawing, { entries: group.entries, pictures })
-    : [];
+  const drawingChildren = drawing ? readDrawingChildren(view, drawing, context) : [];
+  const children = appendUnreferencedText(drawingChildren, context);
   const slideAtom = findDirect(slide, RecordType.slideAtom);
   const masterId =
     slideAtom && slideAtom.length >= 16 ? readUint32(view, slideAtom, 12) : undefined;
@@ -368,7 +385,7 @@ function readMaster(
   view: DataView,
   references: Map<number, number>,
   group: SlideTextGroup,
-  pictures: readonly (LegacyPicture | undefined)[],
+  context: DrawingContext,
   name: string,
 ): MasterDefinition {
   const offset = references.get(group.persistReference);
@@ -384,10 +401,40 @@ function readMaster(
     );
   }
   const drawing = findDirect(master, RecordType.ppDrawing);
-  const children = drawing
-    ? readDrawingChildren(view, drawing, { entries: group.entries, pictures })
-    : [];
+  const drawingChildren = drawing ? readDrawingChildren(view, drawing, context) : [];
+  const children = appendUnreferencedText(drawingChildren, context);
   return children.length > 0 ? { name, children } : { name };
+}
+
+function appendUnreferencedText(children: SlideChild[], context: DrawingContext): SlideChild[] {
+  const result = [...children];
+  const projectedText = children.flatMap(slideChildText).map(compactText);
+  for (const [index, entry] of context.entries.entries()) {
+    if (context.usedEntryIndexes.has(index)) continue;
+    if (projectedText.includes(compactText(entry.text))) continue;
+    result.push({
+      shape: {
+        textBox: true,
+        textBody: createTextBody([entry.text]),
+      },
+    });
+  }
+  return result;
+}
+
+function slideChildText(child: SlideChild): string[] {
+  if ("shape" in child) return [textBodyToText(child.shape.textBody)];
+  if ("group" in child) return child.group.children.flatMap(slideChildText);
+  if ("table" in child) {
+    return child.table.rows.flatMap((row) =>
+      row.cells.map((cell) => (typeof cell.text === "string" ? cell.text : textBodyToText(cell))),
+    );
+  }
+  return [];
+}
+
+function compactText(value: string): string {
+  return value.replace(/\s+/g, "");
 }
 
 function readPictureStore(data: Uint8Array): readonly (LegacyPicture | undefined)[] {
@@ -628,38 +675,78 @@ function detectGroupedTable(
 
   const lefts = uniqueSorted(bounds.map((item) => item.left));
   const tops = uniqueSorted(bounds.map((item) => item.top));
-  if (lefts.length < 3 || tops.length < 2 || lefts.length * tops.length !== bounds.length) {
+  const rightEdges = uniqueSorted(bounds.map((item) => item.right));
+  const bottomEdges = uniqueSorted(bounds.map((item) => item.bottom));
+  const columnEdges = uniqueSorted([...lefts, ...rightEdges]);
+  const rowEdges = uniqueSorted([...tops, ...bottomEdges]);
+  if (
+    columnEdges.length < 3 ||
+    tops.length < 2 ||
+    columnEdges.length !== lefts.length + 1 ||
+    rowEdges.length !== tops.length + 1 ||
+    lefts.some((left, index) => !near(left, columnEdges[index]!)) ||
+    rightEdges.some((right, index) => !near(right, columnEdges[index + 1]!)) ||
+    tops.some((top, index) => !near(top, rowEdges[index]!)) ||
+    bottomEdges.some((bottom, index) => !near(bottom, rowEdges[index + 1]!))
+  ) {
     return undefined;
   }
 
-  const columnWidths: number[] = [];
-  for (const [index, left] of lefts.entries()) {
-    const cells = bounds.filter((item) => near(item.left, left));
-    const right = cells[0]?.right;
-    if (right === undefined || cells.some((item) => !near(item.right, right))) return undefined;
-    const nextLeft = lefts[index + 1];
-    if (nextLeft !== undefined && !near(right, nextLeft)) return undefined;
-    const width = masterUnitsToEmu(right - left);
-    if (width <= 0) return undefined;
-    columnWidths.push(width);
+  const columnCount = columnEdges.length - 1;
+  const rowCount = rowEdges.length - 1;
+  const occupied = Array.from({ length: rowCount }, () => Array<boolean>(columnCount).fill(false));
+  const cells: (TableCell | undefined)[][] = Array.from({ length: rowCount }, () =>
+    Array.from({ length: columnCount }, () => undefined),
+  );
+
+  for (const item of bounds.sort(
+    (first, second) => first.top - second.top || first.left - second.left,
+  )) {
+    const columnStart = columnEdges.findIndex((edge) => near(edge, item.left));
+    const columnEnd = columnEdges.findIndex((edge) => near(edge, item.right));
+    const rowStart = rowEdges.findIndex((edge) => near(edge, item.top));
+    const rowEnd = rowEdges.findIndex((edge) => near(edge, item.bottom));
+    const columnSpan = columnEnd - columnStart;
+    const rowSpan = rowEnd - rowStart;
+    if (columnStart < 0 || rowStart < 0 || columnSpan <= 0 || rowSpan <= 0) return undefined;
+
+    let firstColumn = -1;
+    let firstRow = -1;
+    outer: for (let row = rowStart; row < rowEnd; row += 1) {
+      for (let column = columnStart; column < columnEnd; column += 1) {
+        if (!occupied[row]![column]) {
+          firstRow = row;
+          firstColumn = column;
+          break outer;
+        }
+      }
+    }
+    if (firstRow < 0 || firstColumn < 0) return undefined;
+    for (let row = firstRow; row < firstRow + rowSpan; row += 1) {
+      for (let column = firstColumn; column < firstColumn + columnSpan; column += 1) {
+        if (occupied[row]![column]) return undefined;
+        occupied[row]![column] = true;
+      }
+    }
+    cells[firstRow]![firstColumn] = {
+      ...tableCell(item.shape),
+      ...(columnSpan > 1 ? { columnSpan } : {}),
+      ...(rowSpan > 1 ? { rowSpan } : {}),
+    };
   }
+  if (occupied.some((row) => row.some((cell) => !cell))) return undefined;
+
+  const columnWidths = columnEdges
+    .slice(0, -1)
+    .map((edge, index) => masterUnitsToEmu(columnEdges[index + 1]! - edge));
+  const rowHeights = rowEdges
+    .slice(0, -1)
+    .map((edge, index) => masterUnitsToEmu(rowEdges[index + 1]! - edge));
 
   const rows: NonNullable<TableOptions["rows"]> = [];
-  for (const [index, top] of tops.entries()) {
-    const cells = bounds
-      .filter((item) => near(item.top, top))
-      .sort((first, second) => first.left - second.left);
-    if (cells.length !== lefts.length) return undefined;
-    const bottom = cells[0]!.bottom;
-    if (cells.some((item) => !near(item.bottom, bottom))) return undefined;
-    const nextTop = tops[index + 1];
-    if (nextTop !== undefined && !near(bottom, nextTop)) return undefined;
-    const height = masterUnitsToEmu(bottom - top);
+  for (const [index, height] of rowHeights.entries()) {
     if (height <= 0) return undefined;
-    rows.push({
-      height,
-      cells: cells.map((cell) => ({ text: textBodyToText(cell.shape.textBody) })),
-    });
+    rows.push({ height, cells: cells[index]!.filter((cell) => cell !== undefined) });
   }
 
   return { ...frame, rows, columnWidths };
@@ -818,6 +905,12 @@ function readTableFrame(view: DataView, metadata: RecordNode | undefined): Table
   };
 }
 
+function tableCell(shape: ShapeOptions): TableCell {
+  const paragraphs = shape.textBody?.paragraphs;
+  if (paragraphs !== undefined && paragraphs.length > 1) return { children: paragraphs };
+  return { text: textBodyToText(shape.textBody) };
+}
+
 function parseShape(
   view: DataView,
   container: RecordNode,
@@ -827,9 +920,9 @@ function parseShape(
   if (!shapeRecord) return undefined;
   const bounds = readAnchorBounds(view, container);
   if (!bounds) return undefined;
-  const text = readContainerText(view, container, context.entries);
   const picture =
     shapeRecord.instance === 75 ? readShapePicture(view, container, context.pictures) : undefined;
+  const text = readContainerText(view, container, context);
   if (!text && !picture) return undefined;
 
   const position = {
@@ -839,7 +932,17 @@ function parseShape(
     width: masterUnitsToEmu(Math.abs(bounds.right - bounds.left)),
     height: masterUnitsToEmu(Math.abs(bounds.bottom - bounds.top)),
   };
-  if (picture) return { ...position, type: picture.type, data: picture.data };
+  if (picture && !text) return { ...position, type: picture.type, data: picture.data };
+  if (picture) {
+    return {
+      ...position,
+      textBox: true,
+      properties: {
+        fill: { type: "blip", data: picture.data, imageType: picture.type },
+      },
+      textBody: text,
+    };
+  }
   return {
     ...position,
     textBox: true,
@@ -880,7 +983,7 @@ function findShapePictureReference(view: DataView, options: RecordNode): number 
 function readContainerText(
   view: DataView,
   container: RecordNode,
-  slideEntries: TextEntry[],
+  context: DrawingContext,
 ): TextBodyOptions | undefined {
   const clientTextbox = findDirect(container, RecordType.escherClientTextbox);
   if (!clientTextbox) return undefined;
@@ -891,8 +994,11 @@ function readContainerText(
   const reference = findDescendant(clientTextbox, RecordType.outlineTextReference);
   if (reference && reference.length >= 4) {
     const index = readInt32(view, reference, 0);
-    const entry = slideEntries[index];
-    if (entry) return createTextBody([entry.text]);
+    const entry = context.entries[index];
+    if (entry) {
+      context.usedEntryIndexes.add(index);
+      return createTextBody([entry.text]);
+    }
   }
   return undefined;
 }
@@ -900,17 +1006,35 @@ function readContainerText(
 function collectEmbeddedText(view: DataView, parent: RecordNode): string[] {
   const text: string[] = [];
   let placeholderType: number | undefined;
+  let value: string | undefined;
+  let hasDateTime = false;
+  let hasSlideNumber = false;
+
+  const flush = (): void => {
+    if (value === undefined) return;
+    if (value === "*" && hasSlideNumber) text.push("1");
+    else if (value === "*" && hasDateTime) text.push("1/1/1");
+    else text.push(value);
+    value = undefined;
+  };
+
   for (const child of flatten(parent)) {
     if (child.type === RecordType.textHeader) {
+      flush();
+      hasDateTime = false;
+      hasSlideNumber = false;
       placeholderType = readInt32(view, child, 0);
     } else if (placeholderType !== undefined && child.type === RecordType.textChars) {
-      text.push(decodeUtf16(recordBody(view, child)));
-      placeholderType = undefined;
+      value = decodeUtf16(recordBody(view, child));
     } else if (placeholderType !== undefined && child.type === RecordType.textBytes) {
-      text.push(decodeAnsi(recordBody(view, child)));
-      placeholderType = undefined;
+      value = decodeAnsi(recordBody(view, child));
+    } else if (child.type === RecordType.dateTimeAtom) {
+      hasDateTime = true;
+    } else if (child.type === RecordType.slideNumberAtom) {
+      hasSlideNumber = true;
     }
   }
+  flush();
   return text;
 }
 
@@ -934,7 +1058,7 @@ function createTextBody(text: readonly string[]): TextBodyOptions {
 }
 
 function splitParagraphs(value: string): string[] {
-  return value.split(/\r\n|\r|\n|\v/);
+  return value.split(/\r\n|\r/).map((paragraph) => paragraph.replace(/[\n\v]/g, "\n"));
 }
 
 function masterUnitsToEmu(value: number): number {
