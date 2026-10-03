@@ -9,6 +9,7 @@
 ## Features
 
 - **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`; no Microsoft Office required
+- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate ODF documents; convert CSV/TSV
 - **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, with schema-validated retries
 - **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
@@ -57,6 +58,10 @@ const buffer = await generate({
 npx office-open docx document.json "output.docx"
 npx office-open pptx slides.json "output.pptx"
 npx office-open xlsx spreadsheet.json "output.xlsx"
+
+# Detect or parse supported input formats
+npx office-open detect input.doc
+npx office-open parse input.rtf --output model.json
 
 # Inspect the option schemas on demand
 npx office-open schema index docx                        # indexed lookup entries by domain
@@ -122,11 +127,29 @@ import { parse, stringify } from "office-open/xml";
 | `office-open/docx`     | @office-open/docx                        |
 | `office-open/pptx`     | @office-open/pptx                        |
 | `office-open/xlsx`     | @office-open/xlsx                        |
+| `office-open/doc`      | @office-open/doc                         |
+| `office-open/xls`      | @office-open/xls                         |
+| `office-open/ppt`      | @office-open/ppt                         |
+| `office-open/rtf`      | @office-open/rtf                         |
+| `office-open/odf`      | @office-open/odf                         |
+| `office-open/convert`  | Cross-format, CSV, and TSV conversion    |
 | `office-open/core`     | @office-open/core                        |
 | `office-open/xml`      | @office-open/xml                         |
 | `office-open/generate` | `generate()` function                    |
 | `office-open/ai`       | Vercel AI SDK tools                      |
 | `office-open/schemas`  | JSON schemas, validation, and slicing    |
+
+## Format Support
+
+| Input family         | Parse | Generate | Notes                                             |
+| -------------------- | ----- | -------- | ------------------------------------------------- |
+| DOCX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
+| XLSX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
+| PPTX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
+| DOC, XLS, PPT        | ✅    | ❌       | Parse-only projection to existing option families |
+| RTF                  | ✅    | ❌       | Parse-only projection to `DocumentOptions`        |
+| ODT, ODS, ODP        | ✅    | ✅       | ODF generation and parsing                        |
+| CSV, TSV             | ✅    | ✅       | Conversion to and from `WorkbookOptions`          |
 
 ## JSON Document Structures
 
