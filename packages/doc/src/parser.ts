@@ -509,12 +509,27 @@ function normalizeCharacter(value: string): string | undefined {
 
 function projectText(pieces: Piece[], word: Uint8Array, ccpText: number): TextCharacter[] {
   const characters: TextCharacter[] = [];
+  const fieldResults: boolean[] = [];
   for (const piece of pieces) {
     if (piece.cpStart >= ccpText) break;
     const cpEnd = Math.min(piece.cpEnd, ccpText);
     const decoded = decodePiece(word, { ...piece, cpEnd });
     for (let index = 0; index < decoded.length; index++) {
-      const value = normalizeCharacter(decoded[index]!);
+      const source = decoded[index]!;
+      if (source === "\x13") {
+        fieldResults.push(false);
+        continue;
+      }
+      if (source === "\x14") {
+        if (fieldResults.length > 0) fieldResults[fieldResults.length - 1] = true;
+        continue;
+      }
+      if (source === "\x15") {
+        fieldResults.pop();
+        continue;
+      }
+      if (fieldResults.at(-1) === false) continue;
+      const value = normalizeCharacter(source);
       const isParagraphEnd = value === "\r" || value === "\x07" || value === "\x0c";
       if (isParagraphEnd) {
         characters.push({ value: "", cp: piece.cpStart + index, paragraphEnd: true });

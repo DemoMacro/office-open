@@ -105,7 +105,9 @@ function buildContainer(streams: readonly { path: string; data: Uint8Array }[]):
   return bytes;
 }
 
-function buildDocument(options: { characterBinTableLength?: number; secondCp?: number } = {}): {
+function buildDocument(
+  options: { characterBinTableLength?: number; secondCp?: number; fields?: boolean } = {},
+): {
   data: Uint8Array;
   word: Uint8Array;
   table: Uint8Array;
@@ -132,20 +134,27 @@ function buildDocument(options: { characterBinTableLength?: number; secondCp?: n
   setFibPair(33, 512, 33);
 
   word.set(new TextEncoder().encode("Hi\r"), 512);
+  if (options.fields) {
+    word.set(
+      Uint8Array.from([0x41, 0x13, 0x49, 0x4e, 0x53, 0x54, 0x14, 0x52, 0x45, 0x53, 0x15, 0x0d]),
+      512,
+    );
+    wordView.setUint32(76, 15, true);
+  }
   const unicode = new Uint8Array(6);
   const unicodeView = new DataView(unicode.buffer);
   unicodeView.setUint16(0, 0x4e16, true);
   unicodeView.setUint16(2, 0x754c, true);
   unicodeView.setUint16(4, 0x000d, true);
-  word.set(unicode, 516);
+  word.set(unicode, options.fields ? 528 : 516);
 
   tableView.setUint8(512, 2);
   tableView.setUint32(513, 28, true);
   tableView.setUint32(517, 0, true);
-  tableView.setUint32(521, options.secondCp ?? 4, true);
-  tableView.setUint32(525, 7, true);
+  tableView.setUint32(521, options.secondCp ?? (options.fields ? 12 : 4), true);
+  tableView.setUint32(525, options.fields ? 15 : 7, true);
   tableView.setUint32(531, 0x40000400, true);
-  tableView.setUint32(539, 516, true);
+  tableView.setUint32(539, options.fields ? 528 : 516, true);
 
   tableView.setUint32(0, 512, true);
   tableView.setUint32(4, 528, true);
@@ -206,6 +215,25 @@ describe("legacy DOC parser", () => {
     expect(children[1]).toEqual({
       paragraph: { children: [{ text: "世界", bold: true, size: 12 }] },
     });
+  });
+
+  it("keeps field results without field instructions", () => {
+    const { data } = buildDocument({ fields: true });
+    const children = parseDocument(data).sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new TypeError("Expected a paragraph child");
+    const paragraph = first.paragraph;
+    const text =
+      typeof paragraph === "string"
+        ? paragraph
+        : (paragraph?.children ?? [])
+            .map((child) => {
+              if (typeof child === "string") return child;
+              return "text" in child && typeof child.text === "string" ? child.text : "";
+            })
+            .join("");
+    expect(text).toBe("ARES");
+    expect(JSON.stringify(children)).not.toContain("INST");
   });
 
   it("validates PlcfBteChpx FC and page array boundaries", () => {

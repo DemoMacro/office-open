@@ -95,20 +95,23 @@ function childTextShape(
   ]);
 }
 
-function groupShape(children: readonly number[][]): number[][] {
+function groupShape(children: readonly number[][], compactBounds = false): number[][] {
+  const bounds = compactBounds
+    ? [...int32(0), ...int32(0), ...int32(300), ...int32(150)]
+    : [
+        ...int32(0),
+        ...int32(0),
+        ...int32(300),
+        ...int32(150),
+        ...int32(0),
+        ...int32(0),
+        ...int32(300),
+        ...int32(150),
+      ];
   return [
     container(0xf004, [
       record(0xf00a, [...int32(4000), ...int32(1)], { instance: 202 }),
-      record(0xf009, [
-        ...int32(0),
-        ...int32(0),
-        ...int32(300),
-        ...int32(150),
-        ...int32(0),
-        ...int32(0),
-        ...int32(300),
-        ...int32(150),
-      ]),
+      record(0xf009, bounds),
     ]),
     ...children,
   ];
@@ -116,6 +119,14 @@ function groupShape(children: readonly number[][]): number[][] {
 
 function nestedGroupDrawing(children: readonly number[][]): number[][] {
   return [container(0xf003, groupShape(children))];
+}
+
+function compactGroupDrawing(children: readonly number[][]): number[][] {
+  return [container(0xf003, groupShape(children, true))];
+}
+
+function wrappedCompactGroupDrawing(children: readonly number[][]): number[][] {
+  return [container(0xf003, [...groupShape([], true), ...compactGroupDrawing(children)])];
 }
 
 function groupedTableDrawing(): number[][] {
@@ -132,6 +143,37 @@ function groupedTableDrawing(): number[][] {
       childTextShape(4100 + index, index, bounds[0]!, bounds[1]!, bounds[2]!, bounds[3]!),
     ),
   );
+}
+
+function compactGroupedTableDrawing(): number[][] {
+  const cells = [
+    [0, 0, 100, 50],
+    [100, 0, 200, 50],
+    [200, 0, 300, 50],
+    [0, 50, 100, 100],
+    [100, 50, 200, 100],
+    [200, 50, 300, 100],
+  ];
+  return compactGroupDrawing(
+    cells.map((bounds, index) =>
+      childTextShape(4200 + index, index, bounds[0]!, bounds[1]!, bounds[2]!, bounds[3]!),
+    ),
+  );
+}
+
+function wrappedCompactGroupedTableDrawing(): number[][] {
+  const cells = [
+    [0, 0, 100, 50],
+    [100, 0, 200, 50],
+    [200, 0, 300, 50],
+    [0, 50, 100, 100],
+    [100, 50, 200, 100],
+    [200, 50, 300, 100],
+  ];
+  const shapes = cells.map((bounds, index) =>
+    childTextShape(4300 + index, index, bounds[0]!, bounds[1]!, bounds[2]!, bounds[3]!),
+  );
+  return wrappedCompactGroupDrawing(shapes);
 }
 
 function pictureShape(id: number): number[] {
@@ -290,6 +332,20 @@ describe("parsePresentation", () => {
     ]);
   });
 
+  it("splits vertical-tab paragraph separators", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["First\vSecond"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([
+      { children: [{ text: "First" }] },
+      { children: [{ text: "Second" }] },
+    ]);
+  });
+
   it("projects direct OfficeArt picture records and blip references", () => {
     const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     const pictures = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
@@ -386,6 +442,34 @@ describe("parsePresentation", () => {
       ["Cell 0", "Cell 1", "Cell 2"],
       ["Cell 3", "Cell 4", "Cell 5"],
     ]);
+  });
+
+  it("projects a compact top-level text grid as a table", () => {
+    const { document, currentUser } = buildDocument(
+      compactGroupedTableDrawing(),
+      Array.from({ length: 6 }, (_, index) => `Cell ${index}`),
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("table" in child)) throw new TypeError("Expected a table child");
+    expect(child.table?.width).toBe(476_250);
+    expect(child.table?.rows).toHaveLength(2);
+  });
+
+  it("unwraps a top-level table group wrapper", () => {
+    const { document, currentUser } = buildDocument(
+      wrappedCompactGroupedTableDrawing(),
+      Array.from({ length: 6 }, (_, index) => `Cell ${index}`),
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    expect(Object.keys(child)).toEqual(["table"]);
   });
 
   it("rejects input that is not CFB", () => {

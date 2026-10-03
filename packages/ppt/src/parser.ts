@@ -555,7 +555,14 @@ function parseShapeGroup(
   }
 
   if (children.length === 0) return [];
-  if (depth === 0) return children;
+  if (depth === 0 && children.length === 1) {
+    const only = children[0]!;
+    if ("table" in only) return children;
+    if ("group" in only) {
+      const nested = only.group.children;
+      if (nested.length === 1 && "table" in nested[0]!) return nested;
+    }
+  }
 
   const table = detectGroupedTable(view, childRecords, context);
   if (table) return [{ table }];
@@ -773,12 +780,24 @@ function readGroupBounds(
   metadata: RecordNode | undefined,
 ): GroupBounds | undefined {
   const groupAtom = metadata && findDirect(metadata, RecordType.escherShapeGroup);
-  if (!groupAtom || groupAtom.length < 32) return undefined;
-  return {
+  if (!groupAtom || groupAtom.length < 16) return undefined;
+  const bounds = {
     left: readInt32(view, groupAtom, 0),
     top: readInt32(view, groupAtom, 4),
     right: readInt32(view, groupAtom, 8),
     bottom: readInt32(view, groupAtom, 12),
+  };
+  if (groupAtom.length < 32) {
+    return {
+      ...bounds,
+      childLeft: bounds.left,
+      childTop: bounds.top,
+      childRight: bounds.right,
+      childBottom: bounds.bottom,
+    };
+  }
+  return {
+    ...bounds,
     childLeft: readInt32(view, groupAtom, 16),
     childTop: readInt32(view, groupAtom, 20),
     childRight: readInt32(view, groupAtom, 24),
@@ -915,7 +934,7 @@ function createTextBody(text: readonly string[]): TextBodyOptions {
 }
 
 function splitParagraphs(value: string): string[] {
-  return value.split(/\r\n|\r|\n/);
+  return value.split(/\r\n|\r|\n|\v/);
 }
 
 function masterUnitsToEmu(value: number): number {

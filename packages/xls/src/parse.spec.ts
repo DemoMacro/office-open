@@ -146,6 +146,10 @@ function blankCell(row: number, column: number, style = 4): Uint8Array {
   return record(0x0201, uint16Body([row, column, style]));
 }
 
+function boolErrCell(row: number, column: number, value: number, isError: number): Uint8Array {
+  return record(0x0205, new Uint8Array([row, 0, column, 0, 5, 0, value, isError]));
+}
+
 function mulBlankCell(row: number, firstColumn: number, styles: readonly number[]): Uint8Array {
   const body = new Uint8Array(6 + styles.length * 2);
   const view = new DataView(body.buffer);
@@ -326,6 +330,19 @@ describe("parseWorkbook", () => {
     expect(cell(worksheet, "A1").value).toBe(1.5);
     expect(cell(worksheet, "A2").value).toBe("old");
     expect(cell(worksheet, "C3").value).toBe(42);
+  });
+
+  it("parses boolean and error cells", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [boolErrCell(0, 0, 1, 0), boolErrCell(0, 1, 0x0f, 1)],
+      },
+    ]);
+    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    if (!worksheet) throw new TypeError("Expected a worksheet");
+    expect(cell(worksheet, "A1").value).toBe(true);
+    expect(cell(worksheet, "B1").value).toBe("#VALUE!");
   });
 
   it("reads BIFF8 shared strings across continuation records", () => {

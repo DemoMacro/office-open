@@ -9,6 +9,7 @@ const enum RecordCode {
   Continue = 0x003c,
   EndOfFile = 0x000a,
   Blank = 0x0201,
+  BoolErr = 0x0205,
   Dimensions = 0x0200,
   Number = 0x0203,
   Label = 0x0204,
@@ -457,6 +458,24 @@ function parseWorksheetStream(
           value: null,
           style: view.getUint16(4, true),
         });
+        break;
+      }
+      case RecordCode.BoolErr: {
+        if (record.body.byteLength < 8)
+          throw new Error("Invalid legacy XLS file: truncated boolean/error cell");
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const row = view.getUint16(0, true);
+        const column = view.getUint16(2, true);
+        const style = view.getUint16(4, true);
+        const value = record.body[6]!;
+        const isError = record.body[7]! !== 0;
+        ensureRow(sheet, row).cells!.push(
+          makeCell(row, column, style, isError ? errorLiteral(value) : value !== 0),
+        );
         break;
       }
       case RecordCode.MulBlank: {
