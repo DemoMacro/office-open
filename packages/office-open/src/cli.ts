@@ -205,16 +205,18 @@ const schemaCommand = defineCommand({
   subCommands: { index: schemaIndexCommand, slice: schemaSliceCommand },
 });
 
+const convertCommands = Object.fromEntries(
+  FORMATS.map((format) => [format, createConvertCommand(format, format)]),
+) as Record<GenerateFormat, ReturnType<typeof createConvertCommand>>;
+
 const mainCommand = defineCommand({
   meta: {
     name: "office-open",
     version: "0.14.6",
-    description: "Generate Office files (.docx, .pptx, .xlsx) from JSON",
+    description: "Generate Office Open XML files from JSON",
   },
   subCommands: {
-    docx: createConvertCommand("docx", "docx"),
-    pptx: createConvertCommand("pptx", "pptx"),
-    xlsx: createConvertCommand("xlsx", "xlsx"),
+    ...convertCommands,
     schema: schemaCommand,
   },
   args: {
