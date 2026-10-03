@@ -1,6 +1,7 @@
 import { CompoundFileReader } from "@office-open/core";
 import type { TextBodyOptions, TextRunOptions } from "@office-open/core";
 import type {
+  AnimationEntry,
   GroupOptions,
   MasterDefinition,
   PresentationOptions,
@@ -38,6 +39,7 @@ const MASTER_UNITS_PER_INCH = 576;
 const MAX_USER_EDITS = 256;
 const MAX_PERSIST_REFERENCES = 1_000_000;
 const TABLE_BOUND_TOLERANCE = 2;
+const RECORD_BODY_OFFSET = 8;
 const PICTURE_RECORD_TYPES = new Set([
   0xf01a, 0xf01b, 0xf01c, 0xf01d, 0xf01e, 0xf01f, 0xf029, 0xf02a,
 ]);
@@ -64,6 +66,11 @@ interface DrawingContext {
   readonly entries: TextEntry[];
   readonly pictures: readonly (LegacyPicture | undefined)[];
   readonly usedEntryIndexes: Set<number>;
+}
+
+interface LegacyAnimation {
+  readonly shapeId: number | undefined;
+  readonly atom: RecordNode;
 }
 
 /**
@@ -135,6 +142,7 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
     : undefined;
 
   const slideGroups = readSlideTextGroups(documentView, documentRecord, "slide");
+  const notesGroups = readSlideTextGroups(documentView, documentRecord, "notes");
   const masterGroups = readSlideTextGroups(documentView, documentRecord, "master");
   const masterNames = new Map<number, string>();
   const masters = masterGroups.map((group, index) => {
@@ -161,7 +169,15 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
       pictures,
       usedEntryIndexes: new Set(),
     };
-    return readSlide(documentView, persistReferences, group, context, defaultMaster, masterNames);
+    return readSlide(
+      documentView,
+      persistReferences,
+      group,
+      context,
+      defaultMaster,
+      masterNames,
+      notesGroups,
+    );
   });
   const result: PresentationOptions = {};
   if (size) result.size = size;
@@ -299,13 +315,13 @@ function assertNotEncrypted(document: RecordNode): void {
 function readSlideTextGroups(
   view: DataView,
   document: RecordNode,
-  kind: "slide" | "master",
+  kind: "slide" | "master" | "notes",
 ): SlideTextGroup[] {
   const lists = document.children
     .filter(
       (child) =>
         child.type === RecordType.slideListWithText &&
-        child.instance === (kind === "slide" ? 0 : 1),
+        child.instance === (kind === "slide" ? 0 : kind === "master" ? 1 : 2),
     )
     .flatMap((list) => groupSlideText(view, list));
   return lists;
@@ -356,6 +372,7 @@ function readSlide(
   context: DrawingContext,
   defaultMaster: string | undefined,
   masterNames: ReadonlyMap<number, string>,
+  notesGroups: readonly SlideTextGroup[],
 ): SlideOptions {
   const offset = references.get(group.persistReference);
   if (offset === undefined) {
@@ -371,14 +388,113 @@ function readSlide(
   const drawingChildren = drawing ? readDrawingChildren(view, drawing, context) : [];
   const children = appendUnreferencedText(drawingChildren, context);
   const slideAtom = findDirect(slide, RecordType.slideAtom);
-  const masterId =
-    slideAtom && slideAtom.length >= 16 ? readUint32(view, slideAtom, 12) : undefined;
+  const hasSlideAtom = slideAtom !== undefined && slideAtom.length >= 24;
+  const masterId = hasSlideAtom ? readUint32(view, slideAtom!, 16) : undefined;
+  const notesId = hasSlideAtom ? readUint32(view, slideAtom!, 20) : undefined;
   const master = masterId !== undefined && masterId > 0 ? masterNames.get(masterId) : undefined;
   const result: SlideOptions = {};
   if (children.length > 0) result.children = children;
   const slideMaster = master ?? defaultMaster;
   if (slideMaster) result.master = slideMaster;
+  const notes = readNotes(view, references, notesGroups, notesId);
+  if (notes) result.notes = notes;
+  const animations = drawing
+    ? readSlideAnimations(view, drawing).map((animation) => projectAnimation(view, animation))
+    : [];
+  if (animations.length > 0) result.animations = animations;
   return result;
+}
+
+function readNotes(
+  view: DataView,
+  references: Map<number, number>,
+  notesGroups: readonly SlideTextGroup[],
+  notesId: number | undefined,
+): string | undefined {
+  if (!notesId) return undefined;
+  const group = notesGroups.find((entry) => entry.slideIdentifier === notesId);
+  const offset = group && references.get(group.persistReference);
+  if (offset === undefined) return undefined;
+  try {
+    const notes = readPersistedRecord(view, offset, [RecordType.notes]);
+    const drawing = findDirect(notes, RecordType.ppDrawing);
+    if (!drawing) return undefined;
+    const paragraphs = collectEmbeddedText(view, drawing)
+      .flatMap((value) => splitParagraphs(value))
+      .filter((value) => value.length > 0);
+    return paragraphs.length > 0 ? paragraphs.join("\n") : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readSlideAnimations(view: DataView, drawing: RecordNode): LegacyAnimation[] {
+  const shapes = collectDescendants(drawing, RecordType.escherShapeContainer);
+  const animations: LegacyAnimation[] = [];
+  for (const shape of shapes) {
+    try {
+      const shapeRecord = findDirect(shape, RecordType.escherShape);
+      const container = findDirect(shape, RecordType.animationInfo);
+      const atom = container && findDirect(container, RecordType.animationInfoAtom);
+      if (atom && atom.length >= 28) {
+        animations.push({
+          shapeId:
+            shapeRecord && shapeRecord.length >= 4 ? readInt32(view, shapeRecord, 0) : undefined,
+          atom,
+        });
+      }
+    } catch {
+      continue;
+    }
+  }
+  return animations.sort(
+    (first, second) => animationOrder(view, first) - animationOrder(view, second),
+  );
+}
+
+function animationOrder(view: DataView, animation: LegacyAnimation): number {
+  try {
+    return readInt16(view, animation.atom, 16);
+  } catch {
+    return 0;
+  }
+}
+
+function projectAnimation(view: DataView, animation: LegacyAnimation): AnimationEntry {
+  const atom = animation.atom;
+  const effect = view.getUint8(atom.offset + RECORD_BODY_OFFSET + 21);
+  const mask = view.getUint16(atom.offset + RECORD_BODY_OFFSET + 4, true);
+  const automatic = ((mask >>> 2) & 1) === 1;
+  let delay = 0;
+  try {
+    delay = Math.max(0, readInt32(view, atom, 12));
+  } catch {
+    delay = 0;
+  }
+  return {
+    type: animationType(effect),
+    class: "entrance",
+    trigger: automatic ? "afterPrevious" : "onClick",
+    ...(delay > 0 ? { delay } : {}),
+    ...(animation.shapeId !== undefined && animation.shapeId > 0
+      ? { shapeId: animation.shapeId }
+      : {}),
+  };
+}
+
+function animationType(effect: number): AnimationEntry["type"] {
+  if (effect === 0x02) return "blinds";
+  if (effect === 0x03) return "checker";
+  if (effect === 0x04) return "cover";
+  if (effect === 0x05) return "dissolve";
+  if (effect === 0x06) return "fade";
+  if (effect === 0x08) return "randomBars";
+  if (effect === 0x09) return "strips";
+  if (effect === 0x0a) return "wipe";
+  if (effect === 0x0b) return "fly";
+  if (effect === 0x0d) return "split";
+  if (effect === 0x1a) return "wheel";
+  return "appear";
 }
 
 function readMaster(

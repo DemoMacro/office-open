@@ -29,6 +29,12 @@ function runs(paragraph: ParagraphOptions): RunOptions[] {
   return paragraph.children as RunOptions[];
 }
 
+function firstInlineChild(paragraph: ParagraphOptions): unknown {
+  const [run] = runs(paragraph);
+  const children = run?.children;
+  return children ? children[0] : undefined;
+}
+
 describe("parseRtf text and formatting", () => {
   it("parses standard text into a document paragraph", () => {
     expect(parseRtf("{\\rtf1 Hello, RTF!}")).toEqual({
@@ -153,5 +159,105 @@ describe("parseRtf recovery", () => {
       { paragraph: { children: [{ text: "First" }] } },
       { paragraph: { children: [{ text: "Second" }] } },
     ]);
+  });
+});
+
+describe("parseRtf rich destinations", () => {
+  it("projects headers, footers, and footnotes", () => {
+    const document = parseRtf(
+      String.raw`{\rtf1{\header Header}{\footer Footer}{\footnote Note}Body}`,
+    );
+    expect(document.sections[0]?.headers?.default?.[0]).toEqual({
+      paragraph: { children: [{ text: "Header" }] },
+    });
+    expect(document.sections[0]?.footers?.default?.[0]).toEqual({
+      paragraph: { children: [{ text: "Footer" }] },
+    });
+    expect(document.footnotes?.[0]?.children[0]).toEqual({
+      paragraph: { children: [{ text: "Note" }] },
+    });
+  });
+
+  it("projects HYPERLINK, PAGE, and DATE fields", () => {
+    const paragraph = firstParagraph(
+      String.raw`{\rtf1{\field{\*\fldinst HYPERLINK "https://example.com"}{\fldrslt Link}}\par{\field{\*\fldinst PAGE}{\fldrslt 1}}\par{\field{\*\fldinst DATE}{\fldrslt Today}}}`,
+    );
+    expect(firstInlineChild(paragraph)).toEqual({
+      hyperlink: { url: "https://example.com", children: ["Link"] },
+    });
+    const page = firstParagraph(String.raw`{\rtf1{\field{\*\fldinst PAGE}{\fldrslt 1}}}`);
+    expect(firstInlineChild(page)).toEqual({
+      complexField: { instruction: "PAGE", result: "1" },
+    });
+    const date = firstParagraph(String.raw`{\rtf1{\field{\*\fldinst DATE}{\fldrslt Today}}}`);
+    expect(firstInlineChild(date)).toEqual({
+      complexField: { instruction: "DATE", result: "Today" },
+    });
+  });
+
+  it("extracts PNG picture bytes and twip dimensions", () => {
+    const png = "89504e470d0a1a0a";
+    const paragraph = firstParagraph(String.raw`{\rtf1{\pict\pngblip\picw100\pich50 ${png}}}`);
+    expect(firstInlineChild(paragraph)).toEqual({
+      picture: {
+        type: "png",
+        data: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+        transformation: { width: 63500, height: 31750 },
+      },
+    });
+  });
+
+  it("skips a malformed picture without failing the document", () => {
+    expect(parseRtf(String.raw`{\rtf1{\pict\pngblip\picw0\pich0 zz}Text}`)).toEqual({
+      sections: [{ children: [{ paragraph: { children: [{ text: "Text" }] } }] }],
+    });
+  });
+
+  it("pairs bookmark starts and ends", () => {
+    const children =
+      parseRtf(String.raw`{\rtf1{\bkmkstart Mark}A{\bkmkend Mark}}`).sections[0]?.children ?? [];
+    expect(children).toHaveLength(1);
+    const first = children[0];
+    const inline =
+      first && "paragraph" in first && typeof first.paragraph !== "string"
+        ? firstInlineChild(first.paragraph)
+        : undefined;
+    expect(inline).toEqual({
+      bookmarkStart: { id: 1, name: "Mark" },
+    });
+    const endParagraph = firstParagraph(String.raw`{\rtf1{\bkmkend Mark}}`);
+    expect(firstInlineChild(endParagraph)).toEqual({
+      bookmarkEnd: { id: 1 },
+    });
+  });
+
+  it("projects list references and levels", () => {
+    const document = parseRtf(String.raw`{\rtf1\ls3\ilvl1\par Item}`);
+    expect(firstParagraph(String.raw`{\rtf1\ls3\ilvl1\par Item}`)).toMatchObject({
+      numbering: { reference: "rtf-list-3", level: 1 },
+    });
+    expect(document.numbering?.abstractNumberings[0]).toMatchObject({
+      reference: "rtf-list-3",
+      levels: [{ level: 0, format: "decimal" }],
+    });
+  });
+
+  it("projects section page size", () => {
+    const document = parseRtf(String.raw`{\rtf1\sectd\pgwsxn10000\pghsxn12000\par Page}`);
+    expect(document.sections[0]?.properties).toEqual({
+      pageSize: { width: 10000, height: 12000 },
+    });
+  });
+
+  it("projects paragraph shading and borders", () => {
+    const paragraph = firstParagraph(String.raw`{\rtf1\shading1000\brdrb\brdrs80\par Box}`);
+    expect(paragraph.shading).toEqual({ type: "clear", fill: "auto" });
+    expect(paragraph.border?.bottom).toEqual({ style: "single" });
+  });
+
+  it("recognizes an embedded object class", () => {
+    expect(
+      firstParagraph(String.raw`{\rtf1{\object{\objclass Excel.Sheet.8}{\objdata 0000}}}`),
+    ).toEqual({ children: [{ text: "[Embedded object: Excel.Sheet.8]" }] });
   });
 });

@@ -81,12 +81,16 @@ function userEditAtom(pointerOffset: number): number[] {
   ]);
 }
 
-function anchoredTextShape(): number[] {
-  return container(0xf004, [
+function anchoredTextShapeBody(): number[][] {
+  return [
     record(0xf00a, [...int32(2050), ...int32(544)]),
     record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
     container(0xf00d, [record(3998, int32(0))]),
-  ]);
+  ];
+}
+
+function anchoredTextShape(): number[] {
+  return container(0xf004, anchoredTextShapeBody());
 }
 
 function childTextShape(
@@ -218,6 +222,39 @@ function fieldShape(id: number, atomType: number): number[] {
   ]);
 }
 
+function embeddedTextShape(id: number, text: string): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(544)]),
+    record(0xf010, [...int16(0), ...int16(0), ...int16(1728), ...int16(576)]),
+    container(0xf00d, [record(3999, int32(0)), record(4000, utf16(text))]),
+  ]);
+}
+
+function animationAtom(effect: number, automatic = false): number[] {
+  return record(4081, [
+    ...int32(0),
+    ...int16(automatic ? 0x0002 : 0x0000),
+    ...int16(0),
+    ...int32(0),
+    ...int32(120),
+    ...int16(1),
+    ...int16(0),
+    0,
+    effect,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  ]);
+}
+
+function animatedTextShape(): number[] {
+  return container(0xf004, [...anchoredTextShapeBody(), container(4116, [animationAtom(0x06)])]);
+}
+
 function mergedTableDrawing(): number[][] {
   const cells: readonly (readonly [number, number, number, number])[] = [
     [0, 0, 200, 50],
@@ -242,6 +279,7 @@ function mergedTableDrawing(): number[][] {
 function buildDocument(
   shapeContainers: readonly number[][] = [anchoredTextShape()],
   textValues: readonly string[] = ["First\rSecond"],
+  extras: { notes?: boolean; animation?: boolean } = {},
 ): { document: Uint8Array; currentUser: Uint8Array } {
   const slideList = container(4080, [
     record(1011, [...int32(2), ...int32(4), ...int32(1), ...int32(257), ...int32(0), ...int32(0)]),
@@ -250,25 +288,54 @@ function buildDocument(
       record(4008, [...new TextEncoder().encode(value)]),
     ]),
   ]);
-  const document = container(1000, [
+  const documentChildren = [
     record(1001, [...int32(5760), ...int32(4320), ...Array.from<number>({ length: 40 }).fill(0)]),
     slideList,
+  ];
+  const notesList = container(
+    4080,
+    [record(1011, [...int32(3), ...int32(0), ...int32(0), ...int32(123), ...int32(0)])],
+    2,
+  );
+  if (extras.notes) documentChildren.push(notesList);
+  const document = container(1000, documentChildren);
+
+  const slideAtom = record(1007, [
+    ...int32(5760),
+    ...int32(4320),
+    ...int32(0),
+    ...int32(0),
+    ...int32(0),
+    ...int32(extras.notes ? 123 : 0),
+    ...int16(0),
+    ...int16(0),
+  ]);
+  const drawing = container(1036, [container(0xf002, [container(0xf003, shapeContainers)])]);
+  const slide = container(1006, [slideAtom, drawing]);
+
+  const notes = container(1008, [
+    record(1009, [...int32(123), ...int16(0), ...int16(0)]),
+    container(1036, [
+      container(0xf002, [container(0xf003, [embeddedTextShape(5000, "Speaker note")])]),
+    ]),
   ]);
 
-  const slide = container(1006, [
-    container(1036, [container(0xf002, [container(0xf003, shapeContainers)])]),
-  ]);
-
-  const pointers = record(6002, [
+  const pointerBody = [
     ...packedPersist(1, 1),
     ...int32(0),
     ...packedPersist(2, 1),
     ...int32(document.length),
-  ]);
-  const pointerOffset = document.length + slide.length;
+  ];
+  if (extras.notes) {
+    pointerBody.push(...packedPersist(3, 1), ...int32(document.length + slide.length));
+  }
+  const pointers = record(6002, pointerBody);
+  const pointerOffset = document.length + slide.length + (extras.notes ? notes.length : 0);
   const editOffset = pointerOffset + pointers.length;
   const userEdit = userEditAtom(pointerOffset);
-  const paddedDocument = [...document, ...slide, ...pointers, ...userEdit];
+  const paddedDocument = extras.notes
+    ? [...document, ...slide, ...notes, ...pointers, ...userEdit]
+    : [...document, ...slide, ...pointers, ...userEdit];
   paddedDocument.push(
     ...Array.from<number>({ length: Math.max(0, 4096 - paddedDocument.length) }).fill(0),
   );
@@ -396,6 +463,31 @@ describe("parsePresentation", () => {
     const child = parsePresentation(fixture).slides![0]!.children![0]!;
     if (!("shape" in child)) throw new TypeError("Expected a shape child");
     expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "First\nSecond" }] }]);
+  });
+
+  it("projects notes associated by SlideAtom.notesIdRef", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
+      notes: true,
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    expect(parsePresentation(fixture).slides![0]!.notes).toBe("Speaker note");
+  });
+
+  it("projects legacy shape animation effect, target, trigger, and delay", () => {
+    const { document, currentUser } = buildDocument([animatedTextShape()], ["Slide text"], {
+      animation: true,
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const slide = parsePresentation(fixture).slides![0]!;
+    expect(slide.animations).toEqual([
+      { type: "fade", class: "entrance", trigger: "onClick", delay: 120, shapeId: 2050 },
+    ]);
   });
 
   it("projects direct OfficeArt picture records and blip references", () => {
