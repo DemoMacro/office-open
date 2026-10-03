@@ -159,7 +159,7 @@ function parseFib(word: Uint8Array): Fib {
     ccpText: readUint32(word, characterLengthsOffset + 12, streamMessage),
     characterBinTable: readPair(12, "fcPlcfbteChpx"),
     paragraphBinTable: readPair(13, "fcPlcfbtePapx"),
-    clx: readPair(34, "fcClx"),
+    clx: readPair(33, "fcClx"),
   };
 }
 
@@ -257,7 +257,7 @@ function parseBinTable(
   for (let index = 0; index < count; index++) {
     const fcStart = readUint32(table, range.offset + index * 4, message);
     const fcEnd = readUint32(table, range.offset + (index + 1) * 4, message);
-    const page = readUint32(table, range.offset + (count + 1) * 4 + index * 4, message);
+    const page = readUint32(table, range.offset + (count + 1) * 4 + index * 4, message) & 0x3fffff;
     if (index > 0 && fcStart < entries[index - 1]!.fcEnd) {
       throw new DocParseError(`Invalid DOC ${kind} bin table: FC boundaries overlap`);
     }
@@ -299,47 +299,47 @@ function overlappingPieces(
 }
 
 function parseCharacterFkp(
-  table: Uint8Array,
+  word: Uint8Array,
   page: number,
   pieces: Piece[],
   cpEndLimit: number,
 ): CharacterRange[] {
   requireRange(
-    table,
+    word,
     page,
     FKP_LENGTH,
-    "Invalid DOC character FKP: page is outside the table stream",
+    "Invalid DOC character FKP: page is outside the WordDocument stream",
   );
-  const count = table[page + FKP_LENGTH - 1]!;
+  const count = word[page + FKP_LENGTH - 1]!;
   if (count === 0 || count > (FKP_LENGTH - 5) / 5) {
     throw new DocParseError("Invalid DOC character FKP: invalid entry count");
   }
   const ranges: CharacterRange[] = [];
   for (let index = 0; index < count; index++) {
     const fcStart = readUint32(
-      table,
+      word,
       page + index * 4,
       "Invalid DOC character FKP: FC array is truncated",
     );
     const fcEnd = readUint32(
-      table,
+      word,
       page + (index + 1) * 4,
       "Invalid DOC character FKP: FC array is truncated",
     );
-    const propertyOffset = table[page + (count + 1) * 4 + index]!;
+    const propertyOffset = word[page + (count + 1) * 4 + index]!;
     if (fcEnd <= fcStart) throw new DocParseError("Invalid DOC character FKP: invalid FC range");
     if (propertyOffset === 0) continue;
     const propertiesStart = page + propertyOffset * 2;
-    const propertiesLength = table[propertiesStart]!;
+    const propertiesLength = word[propertiesStart]!;
     const grpprlStart = propertiesStart + 1;
     requireRange(
-      table,
+      word,
       grpprlStart,
       propertiesLength,
       "Invalid DOC character FKP: property data is outside the page",
     );
     const properties = parseCharacterProperties(
-      table.subarray(grpprlStart, grpprlStart + propertiesLength),
+      word.subarray(grpprlStart, grpprlStart + propertiesLength),
     );
     for (const overlap of overlappingPieces(pieces, cpEndLimit, fcStart, fcEnd)) {
       ranges.push({ ...overlap, properties });
@@ -348,47 +348,48 @@ function parseCharacterFkp(
   return ranges.sort((left, right) => left.cpStart - right.cpStart || left.cpEnd - right.cpEnd);
 }
 
-function parseParagraphFkp(table: Uint8Array, page: number): ParagraphRange[] {
+function parseParagraphFkp(word: Uint8Array, page: number): ParagraphRange[] {
   requireRange(
-    table,
+    word,
     page,
     FKP_LENGTH,
-    "Invalid DOC paragraph FKP: page is outside the table stream",
+    "Invalid DOC paragraph FKP: page is outside the WordDocument stream",
   );
-  const count = table[page + FKP_LENGTH - 1]!;
+  const count = word[page + FKP_LENGTH - 1]!;
   if (count === 0 || count > (FKP_LENGTH - 5) / 14) {
     throw new DocParseError("Invalid DOC paragraph FKP: invalid entry count");
   }
   const ranges: ParagraphRange[] = [];
   for (let index = 0; index < count; index++) {
     const fcStart = readUint32(
-      table,
+      word,
       page + index * 4,
       "Invalid DOC paragraph FKP: FC array is truncated",
     );
     const fcEnd = readUint32(
-      table,
+      word,
       page + (index + 1) * 4,
       "Invalid DOC paragraph FKP: FC array is truncated",
     );
     const entryOffset = page + (count + 1) * 4 + index * 13;
-    const propertyOffset = table[entryOffset]!;
+    const propertyOffset = word[entryOffset]!;
     if (fcEnd <= fcStart) throw new DocParseError("Invalid DOC paragraph FKP: invalid FC range");
     if (propertyOffset === 0) {
       ranges.push({ cpStart: fcStart, cpEnd: fcEnd });
       continue;
     }
     const propertiesStart = page + propertyOffset * 2;
-    const wordCount = table[propertiesStart]!;
-    const grpprlStart = propertiesStart + (wordCount === 0 ? 2 : 1);
-    const propertiesLength = wordCount === 0 ? table[propertiesStart + 1]! : wordCount * 2 - 1;
+    const wordCount = word[propertiesStart]!;
+    const grpprlStart = propertiesStart + (wordCount === 0 ? 4 : 3);
+    const propertiesLength =
+      wordCount === 0 ? word[propertiesStart + 1]! * 2 - 2 : wordCount * 2 - 3;
     requireRange(
-      table,
+      word,
       grpprlStart,
       propertiesLength,
       "Invalid DOC paragraph FKP: property data is outside the page",
     );
-    skipProperties(table.subarray(grpprlStart, grpprlStart + propertiesLength));
+    skipProperties(word.subarray(grpprlStart, grpprlStart + propertiesLength));
     ranges.push({ cpStart: fcStart, cpEnd: fcEnd });
   }
   return ranges;
@@ -606,10 +607,10 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
   const characters = projectText(pieces, word, fib.ccpText);
   const characterEntries = parseBinTable(table, fib.characterBinTable, "character");
   const characterRanges = characterEntries.flatMap((entry) =>
-    parseCharacterFkp(table, entry.page, pieces, fib.ccpText),
+    parseCharacterFkp(word, entry.page, pieces, fib.ccpText),
   );
   for (const entry of parseBinTable(table, fib.paragraphBinTable, "paragraph")) {
-    parseParagraphFkp(table, entry.page);
+    parseParagraphFkp(word, entry.page);
   }
   return { sections: [{ children: projectChildren(characters, characterRanges) }] };
 }

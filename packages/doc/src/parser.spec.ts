@@ -129,7 +129,7 @@ function buildDocument(options: { characterBinTableLength?: number; secondCp?: n
   };
   setFibPair(12, 0, options.characterBinTableLength ?? 12);
   setFibPair(13, 12, 12);
-  setFibPair(34, 512, 33);
+  setFibPair(33, 512, 33);
 
   word.set(new TextEncoder().encode("Hi\r"), 512);
   const unicode = new Uint8Array(6);
@@ -155,21 +155,36 @@ function buildDocument(options: { characterBinTableLength?: number; secondCp?: n
   tableView.setUint32(20, 3, true);
 
   const characterPage = 1024;
-  tableView.setUint32(characterPage, 512, true);
-  tableView.setUint32(characterPage + 4, 528, true);
-  tableView.setUint8(characterPage + 8, 20);
-  tableView.setUint8(characterPage + 511, 1);
+  wordView.setUint32(characterPage, 512, true);
+  wordView.setUint32(characterPage + 4, 528, true);
+  wordView.setUint8(characterPage + 8, 20);
+  wordView.setUint8(characterPage + 511, 1);
   const grpprl = [
     0x35, 0x08, 0x01, 0x00, 0xc0, 0x02, 0xaa, 0xbb, 0x43, 0x4a, 0x18, 0x00, 0x00, 0x00, 0x00,
   ];
-  table.set(Uint8Array.from(grpprl), characterPage + 41);
-  tableView.setUint8(characterPage + 40, grpprl.length);
+  word.set(Uint8Array.from(grpprl), characterPage + 41);
+  wordView.setUint8(characterPage + 40, grpprl.length);
 
   const paragraphPage = 1536;
-  tableView.setUint32(paragraphPage, 512, true);
-  tableView.setUint32(paragraphPage + 4, 528, true);
-  tableView.setUint8(paragraphPage + 8, 0);
-  tableView.setUint8(paragraphPage + 511, 1);
+  wordView.setUint32(paragraphPage, 512, true);
+  wordView.setUint32(paragraphPage + 4, 528, true);
+  wordView.setUint8(paragraphPage + 8, 20);
+  wordView.setUint8(paragraphPage + 511, 1);
+  word.set(
+    Uint8Array.from([
+      0,
+      4, // cb = 0, cb' = 4 (8-byte GrpPrlAndIstd)
+      0,
+      0, // istd
+      0x00,
+      0x24,
+      0x01, // GrpPrl
+      0x00,
+      0x24,
+      0x01, // GrpPrl
+    ]),
+    paragraphPage + 40,
+  );
 
   const data = buildContainer([
     { path: "WordDocument", data: word },
