@@ -376,6 +376,17 @@ describe("parseWorkbook", () => {
     expect(worksheets[0]!.rows?.map((row) => row.rowNumber)).toEqual([1, 2]);
   });
 
+  it("stops a stale shared-string count at the physical table end", () => {
+    const header = new Uint8Array(8);
+    const headerView = new DataView(header.buffer);
+    headerView.setUint32(0, 2, true);
+    headerView.setUint32(4, 2, true);
+    const staleSst = record(0x00fc, concat([header, biff8String("only")]));
+    const data = workbook(8, [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }], [], [staleSst]);
+    const worksheets = parseWorkbook(xls(data)).worksheets ?? [];
+    expect(cell(worksheets[0]!, "A1").value).toBe("only");
+  });
+
   it("ignores nested substreams before the worksheet EOF", () => {
     const data = workbook(8, [
       { name: "Nested", nestedSubstream: true, cells: [numberCell(0, 0, 7)] },

@@ -272,6 +272,10 @@ function parseSharedStrings(parts: readonly Uint8Array[], isBiff8: boolean): str
   };
 
   for (let index = 0; index < stringCount; index++) {
+    const currentPart = parts[partIndex];
+    if (!currentPart || (offset >= currentPart.byteLength && partIndex + 1 >= parts.length)) {
+      break;
+    }
     const characterCount = takeUint16();
     const flags = takeByte();
     highByte = isBiff8 && (flags & 0x01) !== 0;
