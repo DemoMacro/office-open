@@ -92,6 +92,26 @@ function dimensions(version: 5 | 8, lastRow: number, lastColumn: number): Uint8A
   return record(0x0200, bytes);
 }
 
+function rowRecord(
+  row: number,
+  firstColumn: number,
+  lastColumn: number,
+  height: number,
+  flags: number,
+  style = 0,
+): Uint8Array {
+  const bytes = new Uint8Array(16);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, row, true);
+  view.setUint16(2, firstColumn, true);
+  view.setUint16(4, lastColumn, true);
+  view.setUint16(6, height, true);
+  bytes[13] = 1;
+  view.setUint16(12, flags, true);
+  view.setUint16(14, style, true);
+  return record(0x0208, bytes);
+}
+
 function numberCell(row: number, column: number, value: number, style = 0): Uint8Array {
   const body = new Uint8Array(14);
   const view = new DataView(body.buffer);
@@ -117,6 +137,10 @@ function labelSstCell(row: number, column: number, index: number): Uint8Array {
   view.setUint16(4, 1, true);
   view.setUint32(6, index, true);
   return record(0x00fd, body);
+}
+
+function richLabelCell(row: number, column: number, value: string): Uint8Array {
+  return record(0x00d6, concat([uint16Body([row, column, 3]), biff8String(value)]));
 }
 
 function rkCell(row: number, column: number, value: number, style = 2): Uint8Array {
@@ -336,13 +360,46 @@ describe("parseWorkbook", () => {
     const data = workbook(8, [
       {
         name: "Sheet",
-        cells: [boolErrCell(0, 0, 1, 0), boolErrCell(0, 1, 0x0f, 1)],
+        cells: [boolErrCell(0, 0, 1, 0), boolErrCell(0, 1, 0x0f, 1), boolErrCell(0, 2, 0x2b, 1)],
       },
     ]);
     const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
     if (!worksheet) throw new TypeError("Expected a worksheet");
     expect(cell(worksheet, "A1").value).toBe(true);
     expect(cell(worksheet, "B1").value).toBe("#VALUE!");
+    expect(cell(worksheet, "C1").value).toBe("#GETTING_DATA");
+  });
+
+  it("reads BIFF8 rich label cells", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [richLabelCell(0, 0, "rich")] }]);
+    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    if (!worksheet) throw new TypeError("Expected a worksheet");
+    const richCell = cell(worksheet, "A1");
+    expect(richCell.value).toBe("rich");
+    expect(richCell.style).toBe(3);
+  });
+
+  it("reads row layout semantics", () => {
+    const flags = 0x0003 | 0x0010 | 0x0020 | 0x0080 | 0x0100 | 0x0200 | 0x0400;
+    const row = rowRecord(4, 2, 5, 450, flags, 123);
+    const data = workbook(8, [{ name: "Sheet", cells: [row, numberCell(4, 2, 7)] }]);
+    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    if (!worksheet) throw new TypeError("Expected a worksheet");
+    const parsedRow = worksheet.rows?.[0];
+    expect(parsedRow).toMatchObject({
+      rowNumber: 5,
+      spans: "3:5",
+      height: 22.5,
+      outlineLevel: 3,
+      collapsed: true,
+      hidden: true,
+      customFormat: true,
+      thickTop: true,
+      thickBot: true,
+      phonetic: true,
+      style: 123,
+    });
+    expect(cell(worksheet, "C5").value).toBe(7);
   });
 
   it("reads BIFF8 shared strings across continuation records", () => {
