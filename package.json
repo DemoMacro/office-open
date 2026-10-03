@@ -42,6 +42,7 @@
     "containers:check": "tsx scripts/check-containers.ts",
     "corpus:check": "tsx scripts/corpus-check.ts",
     "legacy:corpus": "tsx scripts/legacy-corpus-check.ts",
+    "cross-format:check": "tsx scripts/cross-format-check.ts",
     "version": "pnpm --filter \"./packages/**\" -r exec basis version",
     "publish": "pnpm --filter \"./packages/**\" -r exec basis publish",
     "postinstall": "pnpm build && vp config && basis git setup",

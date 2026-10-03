@@ -9,7 +9,9 @@ const enum RecordCode {
   Continue = 0x003c,
   EndOfFile = 0x000a,
   Blank = 0x0201,
+  BoolErr = 0x0205,
   Dimensions = 0x0200,
+  Row = 0x0208,
   Number = 0x0203,
   Label = 0x0204,
   BoundSheet = 0x0085,
@@ -19,6 +21,7 @@ const enum RecordCode {
   LabelSst = 0x00fd,
   SharedStringTable = 0x00fc,
   Xf = 0x00e0,
+  RichLabel = 0x00d6,
 }
 
 interface BiffRecord {
@@ -272,6 +275,10 @@ function parseSharedStrings(parts: readonly Uint8Array[], isBiff8: boolean): str
   };
 
   for (let index = 0; index < stringCount; index++) {
+    const currentPart = parts[partIndex];
+    if (!currentPart || (offset >= currentPart.byteLength && partIndex + 1 >= parts.length)) {
+      break;
+    }
     const characterCount = takeUint16();
     const flags = takeByte();
     highByte = isBiff8 && (flags & 0x01) !== 0;
@@ -344,6 +351,7 @@ function errorLiteral(code: number): string {
     0x1d: "#NAME?",
     0x24: "#NUM!",
     0x2a: "#N/A",
+    0x2b: "#GETTING_DATA",
   };
   const literal = literals[code];
   if (!literal)
@@ -438,6 +446,27 @@ function parseWorksheetStream(
         sheet.dimension = `${reference(firstRow, firstColumn)}:${reference(lastRow, lastColumn)}`;
         break;
       }
+      case RecordCode.Row: {
+        if (record.body.byteLength < 16) throw new Error("Invalid legacy XLS file: truncated row");
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const row = ensureRow(sheet, view.getUint16(0, true));
+        row.spans = `${view.getUint16(2, true) + 1}:${view.getUint16(4, true)}`;
+        row.height = view.getUint16(6, true) / 20;
+        const flags = view.getUint16(12, true);
+        row.outlineLevel = flags & 0x0007;
+        row.collapsed = (flags & 0x0010) !== 0;
+        row.hidden = (flags & 0x0020) !== 0;
+        row.customFormat = (flags & 0x0080) !== 0;
+        row.thickTop = (flags & 0x0100) !== 0;
+        row.thickBot = (flags & 0x0200) !== 0;
+        row.phonetic = (flags & 0x0400) !== 0;
+        if (row.customFormat) row.style = view.getUint16(14, true) & 0x0fff;
+        break;
+      }
       case RecordCode.Blank: {
         if (record.body.byteLength < 6)
           throw new Error("Invalid legacy XLS file: truncated blank cell");
@@ -453,6 +482,24 @@ function parseWorksheetStream(
           value: null,
           style: view.getUint16(4, true),
         });
+        break;
+      }
+      case RecordCode.BoolErr: {
+        if (record.body.byteLength < 8)
+          throw new Error("Invalid legacy XLS file: truncated boolean/error cell");
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const row = view.getUint16(0, true);
+        const column = view.getUint16(2, true);
+        const style = view.getUint16(4, true);
+        const value = record.body[6]!;
+        const isError = record.body[7]! !== 0;
+        ensureRow(sheet, row).cells!.push(
+          makeCell(row, column, style, isError ? errorLiteral(value) : value !== 0),
+        );
         break;
       }
       case RecordCode.MulBlank: {
@@ -510,6 +557,26 @@ function parseWorksheetStream(
             state.version === 8 ? readBiff8String(record.body, 6) : readBiff5String(record.body, 6);
         } catch {
           throw new Error("Invalid legacy XLS file: truncated label cell");
+        }
+        ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value));
+        break;
+      }
+      case RecordCode.RichLabel: {
+        if (record.body.byteLength < 7)
+          throw new Error("Invalid legacy XLS file: truncated rich label cell");
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const row = view.getUint16(0, true);
+        const column = view.getUint16(2, true);
+        const style = view.getUint16(4, true);
+        let text: { value: string; offset: number };
+        try {
+          text = readBiff8String(record.body, 6);
+        } catch {
+          throw new Error("Invalid legacy XLS file: truncated rich label cell");
         }
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value));
         break;
