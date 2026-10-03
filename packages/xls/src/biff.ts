@@ -16,7 +16,7 @@ import type {
 import { escherImages, escherPictures } from "./escher";
 import { decodeFormula } from "./formula";
 
-const BIFF2_RECORD_HEADER_SIZE = 3;
+const BIFF2_RECORD_HEADER_SIZE = 4;
 const RECORD_LENGTH_SIZE = 4;
 const enum RecordCode {
   Biff2Blank = 0x0001,
@@ -119,21 +119,17 @@ interface FormulaLocation {
   expression?: string;
 }
 
-interface PendingNote {
-  row: number;
-  column: number;
-  visible: boolean;
-  author: string;
-  objectId: number;
-  text?: string;
-}
-
 interface TxoState {
   objectId: number;
   characterCount: number;
   runByteCount: number;
-  textParts: Uint8Array[];
+  textParts: TxoTextPart[];
   phase: "text" | "runs";
+}
+
+interface TxoTextPart {
+  readonly encoding: "utf-16le" | "windows-1252";
+  readonly data: Uint8Array;
 }
 
 interface TxoText {
@@ -162,8 +158,8 @@ function readRecord(stream: Uint8Array, position: number, version: BiffVersion):
   if (position < 0 || position + headerSize > stream.byteLength) {
     throw new Error("Invalid legacy XLS file: truncated BIFF record header");
   }
-  const code = version === 2 ? stream[position]! : view.getUint16(position, true);
-  const length = view.getUint16(position + (version === 2 ? 1 : 2), true);
+  const code = view.getUint16(position, true);
+  const length = view.getUint16(position + 2, true);
   const bodyStart = position + headerSize;
   if (bodyStart + length > stream.byteLength) {
     throw new Error(
@@ -456,7 +452,8 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         break;
       }
       case RecordCode.Font: {
-        fonts.push(parseFont(record.body, workbookVersion === 8, encodingForCodepage(codepage)));
+        const font = parseFont(record.body, workbookVersion === 8, encodingForCodepage(codepage));
+        if (font) fonts.push(font);
         break;
       }
       case RecordCode.Format: {
@@ -465,7 +462,7 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
           workbookVersion === 8,
           encodingForCodepage(codepage),
         );
-        numberFormats.set(format.id, format.code);
+        if (format) numberFormats.set(format.id, format.code);
         break;
       }
       case RecordCode.Palette: {
@@ -473,8 +470,12 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         break;
       }
       case RecordCode.Supbook: {
-        const supbook = parseSupbook(record.body, encodingForCodepage(codepage));
-        if (supbook) pendingSupbooks.push(supbook);
+        try {
+          const supbook = parseSupbook(record.body, encodingForCodepage(codepage));
+          if (supbook) pendingSupbooks.push(supbook);
+        } catch {
+          // Malformed external-workbook metadata is auxiliary and can be omitted.
+        }
         break;
       }
       case RecordCode.ExternSheet: {
@@ -644,8 +645,8 @@ function readLegacyWorkbookGlobals(
   };
 }
 
-function parseFont(body: Uint8Array, isBiff8: boolean, encoding: string): FontOptions {
-  if (body.byteLength < 15) throw new Error("Invalid legacy XLS file: truncated FONT");
+function parseFont(body: Uint8Array, isBiff8: boolean, encoding: string): FontOptions | undefined {
+  if (body.byteLength < 15) return undefined;
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   // MS-XLS 2.5.146: Font.name is a shortXLUnicodeString — a 1-byte cch (not
   // the 2-byte XLUnicodeString count), preceded by 14 fixed bytes.
@@ -673,21 +674,27 @@ function parseFormat(
   body: Uint8Array,
   isBiff8: boolean,
   encoding: string,
-): { id: number; code: string } {
-  if (body.byteLength < 4) throw new Error("Invalid legacy XLS file: truncated FORMAT");
+): { id: number; code: string } | undefined {
+  if (body.byteLength < 4) return undefined;
   const id = new DataView(body.buffer, body.byteOffset, body.byteLength).getUint16(0, true);
+  let code: string;
+  try {
+    code = (isBiff8 ? readBiff8String(body, 2, encoding) : readBiff5String(body, 2, encoding))
+      .value;
+  } catch {
+    return undefined;
+  }
   return {
     id,
-    code: (isBiff8 ? readBiff8String(body, 2, encoding) : readBiff5String(body, 2, encoding)).value,
+    code,
   };
 }
 
 function parsePalette(body: Uint8Array): string[] {
-  if (body.byteLength < 2) throw new Error("Invalid legacy XLS file: truncated PALETTE");
+  if (body.byteLength < 2) return [];
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const count = view.getUint16(0, true);
-  if (body.byteLength < 2 + count * 4)
-    throw new Error("Invalid legacy XLS file: truncated PALETTE colors");
+  if (body.byteLength < 2 + count * 4) return [];
   return Array.from({ length: count }, (_, index) => {
     const value = view.getUint32(2 + index * 4, true);
     const blue = (value & 0xff).toString(16).padStart(2, "0");
@@ -701,7 +708,7 @@ function parseSupbook(
   body: Uint8Array,
   encoding: string,
 ): { target: string; sheetNames: string[] } | undefined {
-  if (body.byteLength < 2) throw new Error("Invalid legacy XLS file: truncated SUPBOOK");
+  if (body.byteLength < 2) return undefined;
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const sheetCount = view.getUint16(0, true);
   if (body.byteLength >= 4 && view.getUint16(2, true) === 0x0401) return undefined;
@@ -928,8 +935,8 @@ function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
   return bytes;
 }
 
-function decodeParts(parts: readonly Uint8Array[]): string {
-  return new TextDecoder("windows-1252").decode(concatBytes(parts));
+function decodeParts(parts: readonly TxoTextPart[]): string {
+  return parts.map(({ encoding, data }) => new TextDecoder(encoding).decode(data)).join("");
 }
 
 function reference(row: number, column: number): string {
@@ -1024,8 +1031,8 @@ function parseWorksheetStream(
   let currentDrawing: Uint8Array[] | undefined;
   let txo: TxoState | undefined;
   let conditional: PendingConditional | undefined;
-  const notesByObjectId = new Map<number, PendingNote>();
   const txoTextByObjectId = new Map<number, TxoText>();
+  let noteObjectId: number | undefined;
   let sharedFormulaIndex = 0;
   const worksheetExtras: Partial<WorksheetOptions> = {};
 
@@ -1059,11 +1066,11 @@ function parseWorksheetStream(
     if (txo && record.code === RecordCode.Continue) {
       if (txo.phase === "text") {
         const highByte = record.body[0] === 1;
-        txo.textParts.push(record.body.subarray(1));
-        txo.characterCount -= highByte
-          ? Math.floor(record.body.byteLength / 2)
-          : record.body.byteLength;
-        txo.phase = "runs";
+        const data = record.body.subarray(1, 1 + txo.characterCount * (highByte ? 2 : 1));
+        const characterCount = highByte ? Math.floor(data.byteLength / 2) : data.byteLength;
+        txo.textParts.push({ encoding: highByte ? "utf-16le" : "windows-1252", data });
+        txo.characterCount -= characterCount;
+        if (txo.characterCount <= 0) txo.phase = "runs";
       } else {
         txo.runByteCount -= record.body.byteLength;
       }
@@ -1517,14 +1524,16 @@ function parseWorksheetStream(
         break;
       }
       case RecordCode.MergedCells: {
-        const count = Math.floor(record.body.byteLength / 8);
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const available =
+          record.body.byteLength < 2 ? 0 : Math.floor((record.body.byteLength - 2) / 8);
+        const count = record.body.byteLength < 2 ? 0 : Math.min(view.getUint16(0, true), available);
         worksheetExtras.mergeCells = Array.from({ length: count }, (_, index) => {
-          const view = new DataView(
-            record.body.buffer,
-            record.body.byteOffset,
-            record.body.byteLength,
-          );
-          const offset = index * 8;
+          const offset = 2 + index * 8;
           const firstRow = view.getUint16(offset, true);
           const lastRow = view.getUint16(offset + 2, true);
           const firstColumn = view.getUint16(offset + 4, true);
@@ -1534,10 +1543,14 @@ function parseWorksheetStream(
         break;
       }
       case RecordCode.Hyperlink: {
-        worksheetExtras.hyperlinks = [
-          ...(worksheetExtras.hyperlinks ?? []),
-          parseHyperlink(record.body),
-        ];
+        try {
+          worksheetExtras.hyperlinks = [
+            ...(worksheetExtras.hyperlinks ?? []),
+            parseHyperlink(record.body),
+          ];
+        } catch {
+          // Malformed hyperlink metadata is auxiliary and can be omitted.
+        }
         break;
       }
       case RecordCode.Obj: {
@@ -1548,30 +1561,29 @@ function parseWorksheetStream(
             record.body.byteLength,
           );
           const objectId = view.getUint16(6, true);
-          notesByObjectId.set(objectId, {
-            row: 0,
-            column: 0,
-            visible: false,
-            author: "",
-            objectId,
-          });
+          if (view.getUint16(4, true) === 0x0019) {
+            noteObjectId = objectId;
+          }
         }
         break;
       }
       case RecordCode.Txo: {
-        if (record.body.byteLength < 18) throw new Error("Invalid legacy XLS file: truncated TXO");
+        if (record.body.byteLength < 18) {
+          txo = undefined;
+          break;
+        }
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
           record.body.byteLength,
         );
-        const objectId = notesByObjectId.keys().next().value ?? 0;
+        const objectId = noteObjectId ?? 0;
         txo = {
           objectId,
           characterCount: view.getUint16(10, true),
           runByteCount: view.getUint16(12, true),
           textParts: [],
-          phase: "text",
+          phase: view.getUint16(10, true) === 0 ? "runs" : "text",
         };
         break;
       }

@@ -102,9 +102,14 @@ function absoluteCell(row: number, column: number, flags: number): string {
 }
 
 function relativeCell(row: number, column: number, flags: number, context: FormulaContext): string {
-  const rowDelta = (flags & 0x8000) !== 0 ? viewSigned(row) : row;
-  const columnDelta = (flags & 0x4000) !== 0 ? column & 0x3fff : column;
-  return absoluteCell(Math.max(0, context.baseRow + rowDelta), columnDelta, flags);
+  const rowDelta = viewSigned(row);
+  const columnField = column & 0x3fff;
+  const columnDelta = columnField >= 0x2000 ? columnField - 0x4000 : columnField;
+  return absoluteCell(
+    Math.max(0, context.baseRow + rowDelta),
+    Math.max(0, context.baseColumn + columnDelta),
+    flags,
+  );
 }
 
 function viewSigned(value: number): number {

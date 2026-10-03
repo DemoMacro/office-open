@@ -189,11 +189,11 @@ function boolErrCell(row: number, column: number, value: number, isError: number
 }
 
 function biff2Record(code: number, body: Uint8Array): Uint8Array {
-  const bytes = new Uint8Array(3 + body.byteLength);
+  const bytes = new Uint8Array(4 + body.byteLength);
   const view = new DataView(bytes.buffer);
-  bytes[0] = code;
-  view.setUint16(1, body.byteLength, true);
-  bytes.set(body, 3);
+  view.setUint16(0, code, true);
+  view.setUint16(2, body.byteLength, true);
+  bytes.set(body, 4);
   return bytes;
 }
 
@@ -298,6 +298,15 @@ function referenceToken(row: number, column: number): Uint8Array {
   const view = new DataView(bytes.buffer);
   view.setUint16(1, row, true);
   view.setUint16(3, column | 0x4000, true);
+  return bytes;
+}
+
+function relativeReferenceToken(rowDelta: number, columnDelta: number): Uint8Array {
+  const bytes = new Uint8Array(5);
+  bytes[0] = 0x4c;
+  const view = new DataView(bytes.buffer);
+  view.setUint16(1, rowDelta & 0xffff, true);
+  view.setUint16(3, (columnDelta & 0x3fff) | 0xc000, true);
   return bytes;
 }
 
@@ -417,7 +426,7 @@ function externSheetRecord(): Uint8Array {
 }
 
 function mergedCellsRecord(): Uint8Array {
-  return record(0x00e5, uint16Body([0, 0, 0, 1, 0, 2]));
+  return record(0x00e5, uint16Body([1, 0, 0, 0, 1, 0]));
 }
 
 function colInfoRecord(): Uint8Array {
@@ -455,7 +464,7 @@ function noteRecord(row: number, column: number, objectId: number, author: strin
 }
 
 function objRecord(objectId: number): Uint8Array {
-  return record(0x005d, uint16Body([0x0015, 18, 8, objectId, 0]));
+  return record(0x005d, uint16Body([0x0015, 18, 0x0019, objectId, 0]));
 }
 
 function sharedFormulaRecord(tokens: Uint8Array): Uint8Array {
@@ -916,6 +925,25 @@ describe("parseWorkbook", () => {
     expect(parseWorkbook(xls(data)).colors?.indexedColors?.[0]?.rgb).toBe("FF0000ff");
   });
 
+  it("skips malformed auxiliary formatting records", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1)] }],
+      [],
+      [],
+      [
+        record(0x0031, new Uint8Array(3)),
+        record(0x041e, new Uint8Array(1)),
+        record(0x0092, new Uint8Array(1)),
+      ],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.fonts).toBeUndefined();
+    expect(parsed.numFmts).toBeUndefined();
+    expect(parsed.colors).toBeUndefined();
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").value).toBe(1);
+  });
+
   it("parses MERGEDCELLS and COLINFO", () => {
     const data = workbook(
       8,
@@ -1007,6 +1035,34 @@ describe("parseWorkbook", () => {
     ]);
   });
 
+  it("associates multiple TXO notes and decodes UTF-16 continuations", () => {
+    const latinText = new Uint8Array([0, ...new TextEncoder().encode("old")]);
+    const unicodeText = new Uint8Array([1, 0xe9, 0]);
+    const runs = new Uint8Array(8);
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          objRecord(8),
+          txoRecord(1, 8),
+          record(0x003c, unicodeText),
+          record(0x003c, runs),
+          objRecord(7),
+          txoRecord(3, 8),
+          record(0x003c, latinText),
+          record(0x003c, runs),
+          noteRecord(0, 0, 7, "Ada"),
+          noteRecord(1, 1, 8, "Grace"),
+        ],
+      },
+    ]);
+    const comments = (parseWorkbook(xls(data)).worksheets ?? [])[0]!.comments ?? [];
+    expect(comments.map((comment) => [comment.text, comment.cell])).toEqual([
+      ["old", "A1"],
+      ["é", "B2"],
+    ]);
+  });
+
   it("recursively parses MSODRAWING Escher anchors", () => {
     const data = workbook(
       8,
@@ -1024,7 +1080,8 @@ describe("parseWorkbook", () => {
       anchorType: "twoCell",
       shapeId: 1025,
     });
-    expect((image?.data as Uint8Array)[0]).toBe(0x89);
+    const imageData = image?.data;
+    expect(imageData instanceof Uint8Array ? imageData[0] : undefined).toBe(0x89);
   });
 
   it("parses CONDFMT and CF rules", () => {
@@ -1075,6 +1132,21 @@ describe("parseWorkbook", () => {
       formula: "7",
       type: "array",
       reference: "A3:A4",
+    });
+  });
+
+  it("applies base column deltas to relative formula references", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(0, 1, typedResult(1, 1), relativeReferenceToken(-1, -1)),
+          record(0x0007, biff8String("cached")),
+        ],
+      },
+    ]);
+    expect(cell((parseWorkbook(xls(data)).worksheets ?? [])[0]!, "B1").formula).toEqual({
+      formula: "$A$1",
     });
   });
 
