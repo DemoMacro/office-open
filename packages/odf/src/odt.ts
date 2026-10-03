@@ -8,6 +8,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
+import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
 import {
   attributeNumber,
@@ -21,6 +22,8 @@ import {
 
 const MIME = "application/vnd.oasis.opendocument.text";
 const NAMESPACES = ODF_NAMESPACES;
+
+export type OdtOptions = DocumentOptions & { odfExtensions?: OdfXmlNode[] };
 
 interface CharacterProperties {
   bold?: boolean;
@@ -37,12 +40,13 @@ type StyleMap = Map<
   { alignment?: string; columnWidth?: number; character: CharacterProperties }
 >;
 
-export function generateOdt(options: DocumentOptions): Uint8Array {
+export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
-  const body = options.sections
+  const mapped = options.sections
     .flatMap((section) => section.children)
     .map((child) => blockXml(child, styles))
     .join("");
+  const body = [mapped, ...serializeOdfNodes(options.odfExtensions)].join("");
   const files: OdfFiles = {
     "content.xml": contentXml(body, styles),
     "styles.xml": documentStylesXml(),
@@ -51,18 +55,25 @@ export function generateOdt(options: DocumentOptions): Uint8Array {
   return generateOcf(MIME, files);
 }
 
-export function parseOdt(data: Uint8Array): DocumentOptions {
+export function parseOdt(data: Uint8Array): OdtOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleMap = parseStyles(childNamed(content, "office:automatic-styles"));
+  const rawNodes = parseOdfNodes(body);
   const children = (body?.elements ?? [])
     .filter(
       (element) =>
         element.name === "text:p" || element.name === "text:h" || element.name === "table:table",
     )
     .map((element) => parseBlock(element, styleMap));
-  return { ...parseMeta(files), sections: [{ children }] };
+  return {
+    ...parseMeta(files),
+    sections: [{ children }],
+    odfExtensions: rawNodes.filter(
+      (node) => !["text:p", "text:h", "table:table"].includes(node.name),
+    ),
+  };
 }
 
 function contentXml(body: string, styles: string[]): string {
@@ -160,7 +171,7 @@ function addCharacterStyle(properties: CharacterProperties, styles: string[]): s
 }
 
 function tableXml(table: TableOptions, styles: string[]): string {
-  const columns = (table.columnWidths ?? []).map((width) => {
+  const explicitColumns = (table.columnWidths ?? []).map((width) => {
     const twips = typeof width === "number" ? width : Math.round(lengthToEmu(width)! / 635);
     const name = `T${styles.length + 1}`;
     styles.push(
@@ -192,9 +203,23 @@ function tableXml(table: TableOptions, styles: string[]): string {
     });
     return xmlElement("table:table-row", undefined, cells);
   });
+  const rowSpans = table.rows.map((row) =>
+    ("cells" in row ? row.cells : []).reduce(
+      (total, cell) => total + ("columnSpan" in cell ? (cell.columnSpan ?? 1) : 1),
+      0,
+    ),
+  );
+  const columnCount = Math.max(explicitColumns.length, ...rowSpans, 1);
+  const columns = Array.from(
+    { length: columnCount },
+    (_, column) => explicitColumns[column] ?? xmlElement("table:table-column"),
+  );
+  const bodyRows = rows.length
+    ? rows
+    : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   return xmlElement("table:table", { "table:name": `Table${styles.length + 1}` }, [
     columns.join(""),
-    rows.join(""),
+    bodyRows.join(""),
   ]);
 }
 

@@ -7,6 +7,7 @@ import type { PresentationOptions, ShapeOptions, SlideOptions } from "@office-op
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
+import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml } from "./package";
 import {
   attributeString,
@@ -35,43 +36,48 @@ interface TextProperties {
   size?: number;
 }
 
-export function generateOdp(options: PresentationOptions): Uint8Array {
+export type OdpOptions = PresentationOptions & { odfExtensions?: OdfXmlNode[] };
+
+export function generateOdp(options: OdpOptions): Uint8Array {
   const styles: string[] = [];
   const size = normalizeSize(options.size);
-  styles.push(
-    xmlElement("style:page-layout", { "style:name": "PM1" }, [
-      xmlElement("style:page-layout-properties", {
-        "fo:page-width": emuToLength(size.width),
-        "fo:page-height": emuToLength(size.height),
-      }),
-    ]),
-  );
+  const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
+    xmlElement("style:page-layout-properties", {
+      "fo:page-width": emuToLength(size.width),
+      "fo:page-height": emuToLength(size.height),
+    }),
+  ]);
   const pages = (options.slides ?? []).map((slide, index) => slideXml(slide, index + 1, styles));
   const files = {
-    "content.xml": contentXml(pages.join(""), styles),
-    "styles.xml": stylesXml(),
+    "content.xml": contentXml(
+      [...pages, ...serializeOdfNodes(options.odfExtensions)].join(""),
+      styles,
+    ),
+    "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
   return generateOcf(MIME, files);
 }
 
-export function parseOdp(data: Uint8Array): PresentationOptions {
+export function parseOdp(data: Uint8Array): OdpOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
-  const automatic = childNamed(content, "office:automatic-styles");
+  const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
   const pageLayout = childNamed(
-    childNamed(automatic, "style:page-layout"),
+    childNamed(childNamed(stylesDocument, "office:automatic-styles"), "style:page-layout"),
     "style:page-layout-properties",
   );
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
+  const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
       parseSlide(page, parseTextStyles(childNamed(content, "office:automatic-styles"))),
     ),
+    odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
   };
 }
 
@@ -81,8 +87,8 @@ function contentXml(pages: string, styles: string[]): string {
   )}</office:automatic-styles><office:body><office:presentation>${pages}</office:presentation></office:body></office:document-content>`;
 }
 
-function stylesXml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
+function stylesXml(pageLayout: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles><office:master-styles><style:master-page style:name="Default" style:page-layout-name="PM1"/></office:master-styles></office:document-styles>`;
 }
 
 function normalizeSize(size: PresentationOptions["size"]): { width: number; height: number } {
@@ -100,7 +106,11 @@ function slideXml(slide: SlideOptions, index: number, styles: string[]): string 
   const frames = (slide.children ?? []).map((child) =>
     "shape" in child ? shapeXml(child.shape, styles) : "",
   );
-  return xmlElement("draw:page", { "draw:name": `Slide${index}` }, frames);
+  return xmlElement(
+    "draw:page",
+    { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
+    frames,
+  );
 }
 
 function shapeXml(shape: ShapeOptions, styles: string[]): string {

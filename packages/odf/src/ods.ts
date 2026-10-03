@@ -8,6 +8,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
+import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
 import {
   attributeNumber,
@@ -33,29 +34,36 @@ interface DimensionStyle {
   hidden?: boolean;
 }
 
-export function generateOds(options: WorkbookOptions): Uint8Array {
+export type OdsOptions = WorkbookOptions & { odfExtensions?: OdfXmlNode[] };
+
+export function generateOds(options: OdsOptions): Uint8Array {
   const styles: string[] = [];
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>
     worksheetXml(worksheet, index + 1, styles),
   );
   const files: OdfFiles = {
-    "content.xml": contentXml(sheets.join(""), styles),
+    "content.xml": contentXml(
+      [...sheets, ...serializeOdfNodes(options.odfExtensions)].join(""),
+      styles,
+    ),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
   return generateOcf(MIME, files);
 }
 
-export function parseOds(data: Uint8Array): WorkbookOptions {
+export function parseOds(data: Uint8Array): OdsOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
   const dimensions = parseDimensionStyles(childNamed(content, "office:automatic-styles"));
+  const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
     worksheets: childrenNamed(body, "table:table").map((table, index) =>
       worksheet(table, index + 1, dimensions),
     ),
+    odfExtensions: rawNodes.filter((node) => node.name !== "table:table"),
   };
 }
 
@@ -70,7 +78,7 @@ function stylesXml(): string {
 }
 
 function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string[]): string {
-  const columns = (worksheet.columns ?? []).flatMap((column) => {
+  const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
       column.width === undefined && !column.hidden
@@ -80,7 +88,13 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
       xmlElement("table:table-column", { "table:style-name": styleName }),
     );
   });
-  const rows = (worksheet.rows ?? []).map((row) => {
+  const maxRowCells = Math.max(0, ...(worksheet.rows ?? []).map((row) => row.cells?.length ?? 0));
+  const columnCount = Math.max(explicitColumns.length, maxRowCells, 1);
+  const columns = Array.from(
+    { length: columnCount },
+    (_, column) => explicitColumns[column] ?? xmlElement("table:table-column"),
+  );
+  const bodyRows = (worksheet.rows ?? []).map((row) => {
     const styleName =
       row.height === undefined && !row.hidden
         ? undefined
@@ -95,6 +109,9 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
       (row.cells ?? []).map((cell) => cellXml(cell)),
     );
   });
+  const rows = bodyRows.length
+    ? bodyRows
+    : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   return xmlElement("table:table", { "table:name": worksheet.name ?? `Sheet${index}` }, [
     columns.join(""),
     rows.join(""),

@@ -55,6 +55,17 @@ function biff5String(value: string): Uint8Array {
   return bytes;
 }
 
+function biff5LabelString(value: string): Uint8Array {
+  const characters = Array.from(value);
+  const bytes = new Uint8Array(2 + characters.length);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, characters.length, true);
+  characters.forEach((character, index) => {
+    bytes[index + 2] = character.charCodeAt(0);
+  });
+  return bytes;
+}
+
 function beginOfFile(versionToken: number, type = 0x0010): Uint8Array {
   return record(
     0x0809,
@@ -125,7 +136,10 @@ function numberCell(row: number, column: number, value: number, style = 0): Uint
 function labelCell(version: 5 | 8, row: number, column: number, value: string): Uint8Array {
   return record(
     0x0204,
-    concat([uint16Body([row, column, 1]), version === 8 ? biff8String(value) : biff5String(value)]),
+    concat([
+      uint16Body([row, column, 1]),
+      version === 8 ? biff8String(value) : biff5LabelString(value),
+    ]),
   );
 }
 
@@ -174,6 +188,72 @@ function boolErrCell(row: number, column: number, value: number, isError: number
   return record(0x0205, new Uint8Array([row, 0, column, 0, 5, 0, value, isError]));
 }
 
+function biff2Record(code: number, body: Uint8Array): Uint8Array {
+  const bytes = new Uint8Array(4 + body.byteLength);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, code, true);
+  view.setUint16(2, body.byteLength, true);
+  bytes.set(body, 4);
+  return bytes;
+}
+
+function biff2BeginOfFile(): Uint8Array {
+  return biff2Record(0x09, uint16Body([0x0200, 0x0010]));
+}
+
+function biff2NumberCell(row: number, column: number, value: number): Uint8Array {
+  const body = new Uint8Array(15);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, row, true);
+  view.setUint16(2, column, true);
+  view.setFloat64(7, value, true);
+  return biff2Record(0x03, body);
+}
+
+function biff2IntegerCell(row: number, column: number, value: number): Uint8Array {
+  const body = new Uint8Array(9);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, row, true);
+  view.setUint16(2, column, true);
+  view.setUint16(7, value, true);
+  return biff2Record(0x02, body);
+}
+
+function biff2LabelCell(row: number, column: number, value: string): Uint8Array {
+  return biff2Record(
+    0x04,
+    concat([uint16Body([row, column]), new Uint8Array(3), biff5LegacyString(value)]),
+  );
+}
+
+function biff5LegacyString(value: string): Uint8Array {
+  const bytes = new Uint8Array(1 + value.length);
+  bytes[0] = value.length;
+  for (let index = 0; index < value.length; index++) bytes[index + 1] = value.charCodeAt(index);
+  return bytes;
+}
+
+function biff4BeginOfFile(streamType = 0x0010): Uint8Array {
+  const body = new Uint8Array(6);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, 0x0400, true);
+  view.setUint16(2, streamType, true);
+  return record(0x0409, body);
+}
+
+function biff4NumberCell(row: number, column: number, value: number): Uint8Array {
+  return record(0x0203, concat([uint16Body([row, column, 0]), numericResult(value)]));
+}
+
+function biff4LabelCell(row: number, column: number, value: string): Uint8Array {
+  const length = new Uint8Array(2);
+  new DataView(length.buffer).setUint16(0, value.length, true);
+  return record(
+    0x0204,
+    concat([uint16Body([row, column, 0]), length, new TextEncoder().encode(value)]),
+  );
+}
+
 function mulBlankCell(row: number, firstColumn: number, styles: readonly number[]): Uint8Array {
   const body = new Uint8Array(6 + styles.length * 2);
   const view = new DataView(body.buffer);
@@ -185,13 +265,261 @@ function mulBlankCell(row: number, firstColumn: number, styles: readonly number[
 }
 
 function formulaCell(row: number, column: number, cached: Uint8Array): Uint8Array {
-  const body = new Uint8Array(22);
+  return formulaCellTokens(row, column, cached);
+}
+
+function formulaCellTokens(
+  row: number,
+  column: number,
+  cached: Uint8Array,
+  tokens: Uint8Array = new Uint8Array(),
+): Uint8Array {
+  const body = new Uint8Array(22 + tokens.byteLength);
   const view = new DataView(body.buffer);
   view.setUint16(0, row, true);
   view.setUint16(2, column, true);
   view.setUint16(4, 5, true);
   body.set(cached, 6);
+  view.setUint16(20, tokens.byteLength, true);
+  body.set(tokens, 22);
   return record(0x0006, body);
+}
+
+function integerToken(value: number): Uint8Array {
+  const bytes = new Uint8Array(3);
+  bytes[0] = 0x1e;
+  new DataView(bytes.buffer).setUint16(1, value, true);
+  return bytes;
+}
+
+function referenceToken(row: number, column: number): Uint8Array {
+  const bytes = new Uint8Array(5);
+  bytes[0] = 0x24;
+  const view = new DataView(bytes.buffer);
+  view.setUint16(1, row, true);
+  view.setUint16(3, column | 0x4000, true);
+  return bytes;
+}
+
+function relativeReferenceToken(rowDelta: number, columnDelta: number): Uint8Array {
+  const bytes = new Uint8Array(5);
+  bytes[0] = 0x4c;
+  const view = new DataView(bytes.buffer);
+  view.setUint16(1, rowDelta & 0xffff, true);
+  view.setUint16(3, (columnDelta & 0x3fff) | 0xc000, true);
+  return bytes;
+}
+
+function biff3LabelCell(row: number, column: number, value: string): Uint8Array {
+  const text = new TextEncoder().encode(value);
+  const length = new Uint8Array(2);
+  new DataView(length.buffer).setUint16(0, text.byteLength, true);
+  return record(0x0204, concat([uint16Body([row, column, 0]), length, text]));
+}
+
+function biff3NumberCell(row: number, column: number, value: number): Uint8Array {
+  const body = new Uint8Array(14);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, row, true);
+  view.setUint16(2, column, true);
+  view.setUint16(4, 0, true);
+  view.setFloat64(6, value, true);
+  return record(0x0203, body);
+}
+
+function escherHeader(type: number, instance: number, length: number): Uint8Array {
+  const bytes = new Uint8Array(8);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, (instance << 4) | 0x000f, true);
+  view.setUint16(2, type, true);
+  view.setUint32(4, length, true);
+  return bytes;
+}
+
+function clientAnchor(): Uint8Array {
+  const bytes = new Uint8Array(18);
+  const view = new DataView(bytes.buffer);
+  view.setUint16(0, 0, true);
+  view.setInt16(2, 1, true);
+  view.setInt16(4, 2, true);
+  view.setInt32(6, 0, true);
+  view.setInt32(10, 0, true);
+  view.setInt16(14, 3, true);
+  view.setInt16(16, 4, true);
+  return bytes;
+}
+
+function msodrawingAnchor(): Uint8Array {
+  const anchor = clientAnchor();
+  const sp = new Uint8Array(8);
+  new DataView(sp.buffer).setInt32(4, 1025, true);
+  const opt = uint16Body([0x0104, 0, 0]);
+  const spContainerBody = concat([
+    escherHeader(0xf00a, 2, sp.byteLength),
+    sp,
+    escherHeader(0xf00b, 3, opt.byteLength),
+    opt,
+    escherHeader(0xf010, 1, anchor.byteLength),
+    anchor,
+  ]);
+  const spgrBody = concat([
+    escherHeader(0xf004, 0x000f, spContainerBody.byteLength),
+    spContainerBody,
+  ]);
+  const dgBody = concat([escherHeader(0xf003, 0x000f, spgrBody.byteLength), spgrBody]);
+  const dggBody = concat([escherHeader(0xf002, 0x000f, dgBody.byteLength), dgBody]);
+  return record(0x00ec, concat([escherHeader(0xf000, 0x000f, dggBody.byteLength), dggBody]));
+}
+
+function msodrawingGroup(): Uint8Array {
+  const bseMetadata = new Uint8Array(36);
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const bseBody = concat([bseMetadata, escherHeader(0xf01e, 0x046a, png.byteLength), png]);
+  const bstoreBody = concat([escherHeader(0xf007, 0x0001, bseBody.byteLength), bseBody]);
+  const dggBody = concat([escherHeader(0xf001, 0x000f, bstoreBody.byteLength), bstoreBody]);
+  return record(0x00eb, concat([escherHeader(0xf000, 0x000f, dggBody.byteLength), dggBody]));
+}
+
+function workbookGlobals(version: 5 | 8, records: readonly Uint8Array[]): readonly Uint8Array[] {
+  return version === 8 ? records : [];
+}
+
+function formatRecord(id: number, code: string): Uint8Array {
+  const prefix = uint16Body([id]);
+  return record(0x041e, concat([prefix, biff8String(code)]));
+}
+
+function fontRecord(name: string): Uint8Array {
+  const body = new Uint8Array(14);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, 240, true);
+  view.setUint16(2, 0x0002, true);
+  view.setUint16(4, 10, true);
+  view.setUint16(6, 700, true);
+  return record(0x0031, concat([body, shortBiff8String(name)]));
+}
+
+function xfRecord(fontIndex: number, numberFormatId: number): Uint8Array {
+  return record(0x00e0, uint16Body([fontIndex, numberFormatId, 0, 0, 0, 0]));
+}
+
+function nameRecord(name: string, tokens: Uint8Array): Uint8Array {
+  const encodedName = shortBiff8String(name);
+  const body = new Uint8Array(14);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, 0, true);
+  body[2] = name.length;
+  view.setUint16(4, tokens.byteLength, true);
+  view.setUint16(8, 0, true);
+  return record(0x0018, concat([body, encodedName, tokens]));
+}
+
+function supbookRecord(target: string, sheets: readonly string[]): Uint8Array {
+  return record(
+    0x01ae,
+    concat([uint16Body([sheets.length]), biff8String(target), ...sheets.map(shortBiff8String)]),
+  );
+}
+
+function externSheetRecord(): Uint8Array {
+  return record(0x0017, uint16Body([1, 0, 0, 0]));
+}
+
+function mergedCellsRecord(): Uint8Array {
+  return record(0x00e5, uint16Body([1, 0, 0, 0, 1, 0]));
+}
+
+function colInfoRecord(): Uint8Array {
+  return record(0x007d, uint16Body([0, 0, 512, 0, 0x0001, 0]));
+}
+
+function hyperlinkRecord(): Uint8Array {
+  const body = new Uint8Array(32);
+  const view = new DataView(body.buffer);
+  view.setInt32(28, 0x00000001, true);
+  const urlText = "https://example.com/";
+  const urlBytes = new Uint8Array((urlText.length + 1) * 2);
+  const urlView = new DataView(urlBytes.buffer);
+  Array.from(urlText).forEach((character, index) =>
+    urlView.setUint16(index * 2, character.charCodeAt(0), true),
+  );
+  const urlLength = new Uint8Array(4);
+  new DataView(urlLength.buffer).setUint32(0, urlBytes.byteLength, true);
+  const moniker = new Uint8Array([
+    0xe0, 0xc9, 0xea, 0x79, 0xf9, 0xba, 0xce, 0x11, 0x8c, 0x82, 0, 0xaa, 0, 0x4b, 0xa9, 0x0b,
+  ]);
+  return record(0x01b8, concat([body, moniker, urlLength, urlBytes]));
+}
+
+function txoRecord(characterCount: number, runByteCount: number): Uint8Array {
+  const body = new Uint8Array(18);
+  const view = new DataView(body.buffer);
+  view.setUint16(10, characterCount, true);
+  view.setUint16(12, runByteCount, true);
+  return record(0x01b6, body);
+}
+
+function noteRecord(row: number, column: number, objectId: number, author: string): Uint8Array {
+  return record(0x001c, concat([uint16Body([row, column, 0, objectId]), shortBiff8String(author)]));
+}
+
+function objRecord(objectId: number): Uint8Array {
+  return record(0x005d, uint16Body([0x0015, 18, 0x0019, objectId, 0]));
+}
+
+function sharedFormulaRecord(tokens: Uint8Array): Uint8Array {
+  const header = new Uint8Array(10);
+  const view = new DataView(header.buffer);
+  view.setUint16(0, 0, true);
+  view.setUint16(2, 0, true);
+  view.setUint16(8, 1, true);
+  return record(0x04bc, concat([header, tokens]));
+}
+
+function arrayFormulaRecord(tokens: Uint8Array): Uint8Array {
+  return record(0x0221, concat([uint16Body([2, 3, 0, 0]), new Uint8Array(6), tokens]));
+}
+
+function condfmtRecord(): Uint8Array {
+  return record(0x01b0, uint16Body([1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0]));
+}
+
+function conditionalFormatRecord(): Uint8Array {
+  const body = new Uint8Array(12 + integerToken(10).byteLength);
+  const view = new DataView(body.buffer);
+  body[0] = 2;
+  body[1] = 6;
+  view.setUint16(2, 3, true);
+  view.setUint32(6, 0, true);
+  body.set(integerToken(10), 12);
+  return record(0x01b1, body);
+}
+
+function pageSetupRecords(): readonly Uint8Array[] {
+  const setup = new Uint8Array(32);
+  const view = new DataView(setup.buffer);
+  view.setUint16(0, 9, true);
+  view.setUint16(2, 80, true);
+  view.setUint16(6, 1, true);
+  view.setUint16(8, 1, true);
+  view.setUint16(10, 0x0002, true);
+  view.setFloat64(16, 0.5, true);
+  view.setFloat64(24, 0.5, true);
+  return [
+    record(0x0014, new TextEncoder().encode("H\0")),
+    record(0x0015, new TextEncoder().encode("F\0")),
+    record(0x0026, float64Bytes(0.75)),
+    record(0x0027, float64Bytes(0.75)),
+    record(0x0028, float64Bytes(0.75)),
+    record(0x0029, float64Bytes(0.75)),
+    record(0x00a1, setup),
+  ];
+}
+
+function float64Bytes(value: number): Uint8Array {
+  const bytes = new Uint8Array(8);
+  new DataView(bytes.buffer).setFloat64(0, value, true);
+  return bytes;
 }
 
 function numericResult(value: number): Uint8Array {
@@ -244,14 +572,20 @@ function workbook(
   sheets: readonly SyntheticSheet[],
   sharedStrings: readonly string[] = [],
   sharedStringParts: readonly Uint8Array[] = [],
+  globals: readonly Uint8Array[] = [],
 ): Uint8Array {
   const versionToken = version === 8 ? BIFF8_TOKEN : BIFF5_TOKEN;
   const globalBegin = beginOfFile(versionToken, 0x0005);
   const sstRecords = [sharedStringTable(sharedStrings), ...sharedStringParts];
   const positions: number[] = [];
   const sheetRecords = sheets.map((item) => boundSheet(version, 0, item.name, item.state));
+  const globalsLength = workbookGlobals(version, globals).reduce(
+    (total, recordBytes) => total + recordBytes.byteLength,
+    0,
+  );
   let position =
     globalBegin.byteLength +
+    globalsLength +
     sstRecords.reduce((total, recordBytes) => total + recordBytes.byteLength, 0) +
     endOfFile().byteLength +
     sheetRecords.reduce((total, recordBytes) => total + recordBytes.byteLength, 0);
@@ -264,6 +598,7 @@ function workbook(
   );
   return concat([
     globalBegin,
+    ...workbookGlobals(version, globals),
     ...sstRecords,
     ...positionedSheetRecords,
     endOfFile(),
@@ -284,6 +619,78 @@ function cell(worksheet: WorksheetOptions, reference: string): CellOptions {
 }
 
 describe("parseWorkbook", () => {
+  it("parses a raw BIFF2 worksheet stream", () => {
+    const data = concat([
+      biff2BeginOfFile(),
+      biff2NumberCell(0, 0, 1.5),
+      biff2IntegerCell(0, 1, 7),
+      biff2LabelCell(1, 0, "BIFF2"),
+      biff2Record(0x0a, new Uint8Array()),
+    ]);
+    const worksheets = parseWorkbook(data).worksheets ?? [];
+    expect(worksheets).toHaveLength(1);
+    expect(cell(worksheets[0]!, "A1").value).toBe(1.5);
+    expect(cell(worksheets[0]!, "B1").value).toBe(7);
+    expect(cell(worksheets[0]!, "A2").value).toBe("BIFF2");
+  });
+
+  it("parses a raw BIFF4 worksheet stream", () => {
+    const data = concat([
+      biff4BeginOfFile(),
+      biff4NumberCell(0, 0, 2.25),
+      biff4LabelCell(0, 1, "BIFF4"),
+      endOfFile(),
+    ]);
+    const worksheets = parseWorkbook(data).worksheets ?? [];
+    expect(worksheets).toHaveLength(1);
+    expect(cell(worksheets[0]!, "A1").value).toBe(2.25);
+    expect(cell(worksheets[0]!, "B1").value).toBe("BIFF4");
+  });
+
+  it("parses a raw BIFF3 worksheet stream", () => {
+    const data = concat([
+      record(0x0209, uint16Body([0x0200, 0x0010])),
+      biff3LabelCell(0, 0, "BIFF3"),
+      biff3NumberCell(0, 1, 2.5),
+      endOfFile(),
+    ]);
+    const worksheets = parseWorkbook(data).worksheets ?? [];
+    expect(worksheets).toHaveLength(1);
+    expect(cell(worksheets[0]!, "A1").value).toBe("BIFF3");
+    expect(cell(worksheets[0]!, "B1").value).toBe(2.5);
+  });
+
+  it("reads BIFF4W workbook streams through SHEETHDR substreams", () => {
+    const sheetStream = (value: string) =>
+      concat([biff4BeginOfFile(), biff4LabelCell(0, 0, value), endOfFile()]);
+    const first = sheetStream("First");
+    const second = sheetStream("Second");
+    const sheetHeader = (name: string, stream: Uint8Array) =>
+      record(
+        0x008f,
+        concat([
+          (() => {
+            const bytes = new Uint8Array(4);
+            new DataView(bytes.buffer).setInt32(0, stream.byteLength, true);
+            return bytes;
+          })(),
+          biff5LegacyString(name),
+        ]),
+      );
+    const data = concat([
+      biff4BeginOfFile(0x0100),
+      sheetHeader("One", first),
+      first,
+      sheetHeader("Two", second),
+      second,
+      endOfFile(),
+    ]);
+    const worksheets = parseWorkbook(data).worksheets ?? [];
+    expect(worksheets.map((worksheet) => worksheet.name)).toEqual(["One", "Two"]);
+    expect(cell(worksheets[0]!, "A1").value).toBe("First");
+    expect(cell(worksheets[1]!, "A1").value).toBe("Second");
+  });
+
   it("parses BIFF8 cells, dimensions, and cached formula results", () => {
     const data = workbook(
       8,
@@ -476,6 +883,273 @@ describe("parseWorkbook", () => {
     expect(worksheets[0]!.name).toBe("Sheet");
   });
 
+  it("decodes CODEPAGE strings and DATEMODE", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [labelSstCell(0, 0, 0)] }],
+      ["café"],
+      [],
+      [record(0x0042, uint16Body([65001])), record(0x0022, uint16Body([1]))],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").value).toBe("café");
+    expect(parsed.properties?.date1904).toBe(true);
+  });
+
+  it("maps FONT, FORMAT and XF to cell formatting", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1, 0)] }],
+      [],
+      [],
+      [fontRecord("Arial"), formatRecord(164, "0.0%"), xfRecord(0, 164)],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.fonts?.[0]).toMatchObject({ font: "Arial", size: 12, bold: true, italic: true });
+    expect(parsed.numFmts).toEqual([{ numFmtId: 164, formatCode: "0.0%" }]);
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").style).toEqual({
+      font: parsed.fonts?.[0],
+      numFmt: "0.0%",
+    });
+  });
+
+  it("parses PALETTE colors", () => {
+    const colors = new Uint8Array([255, 0, 0, 255]);
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x0092, concat([uint16Body([1]), colors]))],
+    );
+    expect(parseWorkbook(xls(data)).colors?.indexedColors?.[0]?.rgb).toBe("FF0000ff");
+  });
+
+  it("skips malformed auxiliary formatting records", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1)] }],
+      [],
+      [],
+      [
+        record(0x0031, new Uint8Array(3)),
+        record(0x041e, new Uint8Array(1)),
+        record(0x0092, new Uint8Array(1)),
+      ],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(parsed.fonts).toBeUndefined();
+    expect(parsed.numFmts).toBeUndefined();
+    expect(parsed.colors).toBeUndefined();
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").value).toBe(1);
+  });
+
+  it("parses MERGEDCELLS and COLINFO", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [mergedCellsRecord(), colInfoRecord()] }],
+      [],
+      [],
+      [],
+    );
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.mergeCells).toEqual([{ ref: "A1:B1" }]);
+    expect(worksheet.columns).toEqual([
+      {
+        min: 1,
+        max: 1,
+        width: 2,
+        customWidth: true,
+        hidden: true,
+        outlineLevel: 0,
+        collapsed: false,
+      },
+    ]);
+  });
+
+  it("parses NAME defined names", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [nameRecord("Total", referenceToken(0, 0))],
+    );
+    expect(parseWorkbook(xls(data)).definedNames).toEqual([
+      {
+        name: "Total",
+        value: "$A$1",
+        localSheetId: undefined,
+        hidden: false,
+        function: false,
+        vbProcedure: false,
+      },
+    ]);
+  });
+
+  it("parses SUPBOOK and EXTERNSHEET", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [supbookRecord("external.xlsx", ["Data"]), externSheetRecord()],
+    );
+    expect(parseWorkbook(xls(data)).externalLinks?.[0]?.externalBook).toEqual({
+      target: "external.xlsx",
+      sheetNames: ["Data"],
+    });
+  });
+
+  it("parses HLINK hyperlinks", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [hyperlinkRecord()] }]);
+    expect((parseWorkbook(xls(data)).worksheets ?? [])[0]!.hyperlinks?.[0]?.url).toBe(
+      "https://example.com/",
+    );
+  });
+
+  it("parses OBJ/TXO/NOTE comments", () => {
+    const text = new TextEncoder().encode("note");
+    const runs = new Uint8Array(8);
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          objRecord(7),
+          txoRecord(4, 8),
+          record(0x003c, concat([new Uint8Array([0]), text])),
+          record(0x003c, runs),
+          noteRecord(2, 3, 7, "Ada"),
+        ],
+      },
+    ]);
+    expect((parseWorkbook(xls(data)).worksheets ?? [])[0]!.comments).toEqual([
+      {
+        cell: "D3",
+        author: "Ada",
+        text: "note",
+        visible: false,
+        size: { width: 108, height: 59.25 },
+        anchor: { from: { col: 3, row: 2 }, to: { col: 4, row: 3 } },
+      },
+    ]);
+  });
+
+  it("associates multiple TXO notes and decodes UTF-16 continuations", () => {
+    const latinText = new Uint8Array([0, ...new TextEncoder().encode("old")]);
+    const unicodeText = new Uint8Array([1, 0xe9, 0]);
+    const runs = new Uint8Array(8);
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          objRecord(8),
+          txoRecord(1, 8),
+          record(0x003c, unicodeText),
+          record(0x003c, runs),
+          objRecord(7),
+          txoRecord(3, 8),
+          record(0x003c, latinText),
+          record(0x003c, runs),
+          noteRecord(0, 0, 7, "Ada"),
+          noteRecord(1, 1, 8, "Grace"),
+        ],
+      },
+    ]);
+    const comments = (parseWorkbook(xls(data)).worksheets ?? [])[0]!.comments ?? [];
+    expect(comments.map((comment) => [comment.text, comment.cell])).toEqual([
+      ["old", "A1"],
+      ["é", "B2"],
+    ]);
+  });
+
+  it("recursively parses MSODRAWING Escher anchors", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [msodrawingAnchor(), numberCell(0, 0, 1)] }],
+      [],
+      [],
+      [msodrawingGroup()],
+    );
+    const image = (parseWorkbook(xls(data)).worksheets ?? [])[0]!.images?.[0];
+    expect(image).toMatchObject({
+      col: 3,
+      row: 2,
+      toCol: 5,
+      toRow: 4,
+      anchorType: "twoCell",
+      shapeId: 1025,
+    });
+    const imageData = image?.data;
+    expect(imageData instanceof Uint8Array ? imageData[0] : undefined).toBe(0x89);
+  });
+
+  it("parses CONDFMT and CF rules", () => {
+    const data = workbook(8, [
+      { name: "Sheet", cells: [condfmtRecord(), conditionalFormatRecord()] },
+    ]);
+    expect((parseWorkbook(xls(data)).worksheets ?? [])[0]!.conditionalFormats).toEqual([
+      {
+        sqref: "A1:B1",
+        rules: [{ type: "cellIs", operator: "lessThan", formulas: ["10"], priority: 1 }],
+      },
+    ]);
+  });
+
+  it("parses HEADER, FOOTER, margins and PAGESETUP", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [...pageSetupRecords()] }]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.headerFooter).toEqual({ oddHeader: "H", oddFooter: "F" });
+    expect(worksheet.pageMargins).toEqual({
+      left: 0.75,
+      right: 0.75,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.5,
+      footer: 0.5,
+    });
+    expect(worksheet.pageSetup).toMatchObject({ paperSize: 9, scale: 80, orientation: "portrait" });
+  });
+
+  it("parses normal, shared and array formula tokens", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(0, 0, numericResult(42), integerToken(42)),
+          formulaCellTokens(1, 0, typedResult(0xff)),
+          sharedFormulaRecord(integerToken(21)),
+          formulaCellTokens(2, 0, typedResult(0xff)),
+          arrayFormulaRecord(integerToken(7)),
+        ],
+      },
+    ]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(cell(worksheet, "A1").formula).toEqual({ formula: "42" });
+    expect(cell(worksheet, "A2").formula).toMatchObject({ type: "shared", sharedIndex: 0 });
+    expect(cell(worksheet, "A2").formula).toMatchObject({ formula: "21" });
+    expect(cell(worksheet, "A3").formula).toEqual({
+      formula: "7",
+      type: "array",
+      reference: "A3:A4",
+    });
+  });
+
+  it("applies base column deltas to relative formula references", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(0, 1, typedResult(1, 1), relativeReferenceToken(-1, -1)),
+          record(0x0007, biff8String("cached")),
+        ],
+      },
+    ]);
+    expect(cell((parseWorkbook(xls(data)).worksheets ?? [])[0]!, "B1").formula).toEqual({
+      formula: "$A$1",
+    });
+  });
+
   it("throws clear errors for invalid inputs", () => {
     expect(() => parseWorkbook(new Uint8Array([1, 2, 3]))).toThrow(/Invalid CFB file/);
     expect(() => parseWorkbook(xls(new Uint8Array([1, 2, 3]), "Other"))).toThrow(
@@ -483,7 +1157,7 @@ describe("parseWorkbook", () => {
     );
     expect(() => parseWorkbook(xls(new Uint8Array(10)))).toThrow(/truncated/);
     expect(() => parseWorkbook(xls(concat([endOfFile(), endOfFile()])))).toThrow(
-      /missing Begin Of File/,
+      /no sheet definitions/,
     );
     expect(() => parseWorkbook(xls(beginOfFile(0x0300)))).toThrow(
       /Unsupported legacy XLS BIFF version/,

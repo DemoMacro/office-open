@@ -157,6 +157,48 @@ describe("revisionLogDesc round-trip", () => {
     expect(d.newCellXml).toContain("<t>foo</t>");
   });
 
+  it("round-trips complete cell change payloads in XSD order", () => {
+    const oldCellXml = `<oc r="A1" t="inlineStr"><is><t>old</t></is></oc>`;
+    const newCellXml = `<nc r="A1" t="inlineStr"><is><t>new</t></is></nc>`;
+    const oldDxfXml = `<odxf><font><b/></font></odxf>`;
+    const newDxfXml = `<ndxf><font><i/></font></ndxf>`;
+    const opts: RevisionLogOptions = {
+      revisions: [
+        {
+          type: "cellChange",
+          data: {
+            rId: 1,
+            sheetId: 1,
+            oldCellXml,
+            newCellXml,
+            oldDxfXml,
+            newDxfXml,
+            hasOldDxf: true,
+            xfDxf: true,
+          },
+        },
+      ],
+    };
+    const result = revisionLogDesc.parse(
+      parseRoot(revisionLogDesc.stringify(opts, writeCtx)!),
+      readCtx,
+    );
+    const xml = revisionLogDesc.stringify(opts, writeCtx)!;
+    expect(xml.indexOf("<oc")).toBeLessThan(xml.indexOf("<nc"));
+    expect(xml.indexOf("<nc")).toBeLessThan(xml.indexOf("<odxf"));
+    expect(xml.indexOf("<odxf")).toBeLessThan(xml.indexOf("<ndxf"));
+    const data = result.revisions[0]?.data as {
+      oldCellXml?: string;
+      newCellXml?: string;
+      oldDxfXml?: string;
+      newDxfXml?: string;
+    };
+    expect(data.oldCellXml).toBe(oldCellXml);
+    expect(data.newCellXml).toBe(newCellXml);
+    expect(data.oldDxfXml).toBe(oldDxfXml);
+    expect(data.newDxfXml).toBe(newDxfXml);
+  });
+
   it("round-trips rowColumn with structured undo/rcc/rfmt children", () => {
     const opts: RevisionLogOptions = {
       revisions: [

@@ -1,3 +1,4 @@
+import type { ParagraphOptions, SectionChild } from "@office-open/docx";
 import { describe, expect, it } from "vitest";
 
 import { parseDocument } from "./index";
@@ -110,6 +111,14 @@ function buildDocument(
     characterBinTableLength?: number;
     secondCp?: number;
     fields?: boolean;
+    annotations?: boolean;
+    bookmarks?: boolean;
+    drawing?: boolean | "embedded";
+    fieldTable?: boolean;
+    lists?: boolean;
+    paragraphGrpprl?: readonly number[];
+    sectionProperties?: boolean;
+    stylesheet?: boolean;
     textboxes?: { malformed?: boolean; reusableFirst?: boolean };
     notes?: boolean;
     headers?: boolean;
@@ -134,7 +143,7 @@ function buildDocument(
   wordView.setUint32(80, options.notes ? 4 : 0, true);
   wordView.setUint32(84, options.headers ? 4 : 0, true);
   wordView.setUint32(100, options.textboxes ? 4 : 0, true);
-  wordView.setUint16(152, 59, true);
+  wordView.setUint16(152, 75, true);
 
   const setFibPair = (index: number, offset: number, length: number): void => {
     wordView.setUint32(154 + index * 8, offset, true);
@@ -146,6 +155,20 @@ function buildDocument(
   setFibPair(56, 640, options.textboxes?.malformed ? 57 : 56);
   setFibPair(3, 720, options.notes ? 16 : 0);
   setFibPair(11, 720, options.headers ? 56 : 0);
+  setFibPair(1, options.stylesheet ? 768 : 0, options.stylesheet ? 28 : 0);
+  setFibPair(4, options.annotations ? 944 : 0, options.annotations ? 8 : 0);
+  setFibPair(6, options.sectionProperties ? 800 : 0, options.sectionProperties ? 20 : 0);
+  setFibPair(16, options.fieldTable ? 912 : 0, options.fieldTable ? 16 : 0);
+  setFibPair(21, options.bookmarks ? 832 : 0, options.bookmarks ? 8 : 0);
+  setFibPair(22, options.bookmarks ? 880 : 0, options.bookmarks ? 12 : 0);
+  setFibPair(23, options.bookmarks ? 896 : 0, options.bookmarks ? 8 : 0);
+  setFibPair(
+    50,
+    options.drawing ? 1024 : 0,
+    options.drawing ? (options.drawing === "embedded" ? 114 : 60) : 0,
+  );
+  setFibPair(73, options.lists ? 1216 : 0, options.lists ? 30 : 0);
+  setFibPair(74, options.lists ? 1280 : 0, options.lists ? 10 : 0);
 
   word.set(new TextEncoder().encode("Hi\r"), 512);
   if (options.fields) {
@@ -203,6 +226,7 @@ function buildDocument(
   }
 
   const characterPage = 1024;
+  const paragraphPage = 1536;
   wordView.setUint32(characterPage, 512, true);
   wordView.setUint32(characterPage + 4, 528, true);
   wordView.setUint8(characterPage + 8, 20);
@@ -213,32 +237,175 @@ function buildDocument(
   word.set(Uint8Array.from(grpprl), characterPage + 41);
   wordView.setUint8(characterPage + 40, grpprl.length);
 
-  const paragraphPage = 1536;
+  if (options.paragraphGrpprl) {
+    const papxGrpprl = Uint8Array.from(options.paragraphGrpprl);
+    const papxCb = Math.ceil(papxGrpprl.byteLength / 2) + 1;
+    const paddedGrpprl =
+      papxGrpprl.byteLength % 2 === 0 ? papxGrpprl : Uint8Array.from([...papxGrpprl, 0]);
+    word.set(Uint8Array.from([0, papxCb, 0, 0, ...paddedGrpprl, 0, 0]), paragraphPage + 40);
+  }
+
+  if (options.sectionProperties) {
+    tableView.setUint32(800, 0, true);
+    tableView.setUint32(804, 1, true);
+    tableView.setUint32(808, 0, true);
+    tableView.setUint32(810, 2048, true);
+    tableView.setUint32(816, 0, true);
+    word.set(
+      Uint8Array.from([
+        24, 0, 0x1f, 0xf6, 0xa0, 0x0f, 0x20, 0xf6, 0xd0, 0x07, 0x21, 0xf6, 0x40, 0x00, 0x22, 0xf6,
+        0x80, 0x00, 0x23, 0xf6, 0x60, 0x00,
+      ]),
+      2048,
+    );
+  }
+
+  if (options.stylesheet) {
+    tableView.setUint16(768, 1, true);
+    tableView.setUint8(772, 0);
+    tableView.setUint8(773, 0);
+    tableView.setUint16(774, 0, true);
+    tableView.setUint16(776, 4095, true);
+    tableView.setUint16(778, 10, true);
+    tableView.setUint16(780, 0, true);
+    tableView.setUint16(782, 6, true);
+    "Normal"
+      .split("")
+      .forEach((character, index) =>
+        tableView.setUint16(784 + index * 2, character.charCodeAt(0), true),
+      );
+  }
+
+  if (options.bookmarks) {
+    tableView.setUint32(832, 1, true);
+    tableView.setUint16(836, 4, true);
+    "Mark".split("").forEach((character, index) => {
+      tableView.setUint8(838 + index, character.charCodeAt(0));
+    });
+    tableView.setUint32(880, 0, true);
+    tableView.setUint32(884, 3, true);
+    tableView.setUint32(888, 0, true);
+    tableView.setUint32(896, 0, true);
+    tableView.setUint32(900, 3, true);
+  }
+
+  if (options.fieldTable) {
+    [1, 2, 3, 4].forEach((value, index) => tableView.setUint32(912 + index * 4, value, true));
+    tableView.setUint8(924, 0x13);
+    tableView.setUint8(925, 0x21);
+    tableView.setUint8(926, 0x14);
+    tableView.setUint8(927, 0xff);
+    tableView.setUint8(928, 0x15);
+    tableView.setUint8(929, 0xff);
+  }
+
+  if (options.annotations) {
+    [0, 3].forEach((value, index) => tableView.setUint32(944 + index * 4, value, true));
+    tableView.setUint8(952, 0);
+    tableView.setUint8(953, 0);
+  }
+
+  if (options.drawing) {
+    const drawingView = new DataView(table.buffer);
+    const embedded = options.drawing === "embedded";
+    drawingView.setUint16(1024, 0x000f, true);
+    drawingView.setUint16(1026, 0xf000, true);
+    drawingView.setUint32(1028, embedded ? 106 : 52, true);
+    drawingView.setUint16(1032, 0x000f, true);
+    drawingView.setUint16(1034, 0xf001, true);
+    drawingView.setUint32(1036, embedded ? 98 : 44, true);
+    drawingView.setUint16(1040, embedded ? 0x06e0 : 0x0000, true);
+    drawingView.setUint16(1042, 0xf007, true);
+    drawingView.setUint32(1044, embedded ? 90 : 36, true);
+    tableView.setUint8(1058, 1);
+    drawingView.setUint32(1076, embedded ? 0xffffffff : 0, true);
+    if (embedded) {
+      drawingView.setUint16(1084, 0x06e0, true);
+      drawingView.setUint16(1086, 0xf01e, true);
+      drawingView.setUint32(1088, 46, true);
+      drawingView.setUint8(1108, 0xff);
+      [
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0,
+        0, 4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
+      ].forEach((byte, index) => {
+        drawingView.setUint8(1109 + index, byte);
+      });
+    }
+  }
+
+  if (options.lists) {
+    tableView.setUint16(1216, 1, true);
+    tableView.setUint32(1218, 100, true);
+    tableView.setUint8(1244, 1);
+    tableView.setUint32(1280, 1, true);
+    tableView.setUint32(1284, 100, true);
+    tableView.setUint8(1288, 0);
+  }
+
   wordView.setUint32(paragraphPage, 512, true);
   wordView.setUint32(paragraphPage + 4, 528, true);
   wordView.setUint8(paragraphPage + 8, 20);
   wordView.setUint8(paragraphPage + 511, 1);
-  word.set(
-    Uint8Array.from([
-      0,
-      4, // cb = 0, cb' = 4 (8-byte GrpPrlAndIstd)
-      0,
-      0, // istd
-      0x00,
-      0x24,
-      0x01, // GrpPrl
-      0x00,
-      0x24,
-      0x01, // GrpPrl
-    ]),
-    paragraphPage + 40,
-  );
+  if (!options.paragraphGrpprl) {
+    word.set(
+      Uint8Array.from([
+        0,
+        4, // cb = 0, cb' = 4 (8-byte GrpPrlAndIstd)
+        0,
+        0, // istd
+        0x00,
+        0x24,
+        0x01, // GrpPrl
+        0x00,
+        0x24,
+        0x01, // GrpPrl
+      ]),
+      paragraphPage + 40,
+    );
+  }
 
   const data = buildContainer([
     { path: "WordDocument", data: word },
     { path: "1Table", data: table },
+    ...(options.drawing
+      ? [
+          {
+            path: "Data",
+            data: options.drawing === "embedded" ? new Uint8Array() : drawingStream(),
+          },
+        ]
+      : []),
   ]);
   return { data, word, table };
+}
+
+function drawingStream(): Uint8Array {
+  const data = new Uint8Array(STREAM_SIZE);
+  const view = new DataView(data.buffer);
+  view.setUint16(0, 0x06e0, true);
+  view.setUint16(2, 0xf01e, true);
+  view.setUint32(4, 46, true);
+  view.setUint8(24, 0xff);
+  data.set(
+    Uint8Array.from([
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0,
+      4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
+    ]),
+    25,
+  );
+  return data;
+}
+
+function buildLegacyDocument(): Uint8Array {
+  const word = new Uint8Array(STREAM_SIZE);
+  const view = new DataView(word.buffer);
+  view.setUint16(0, 0xa5dc, true);
+  view.setUint16(2, 101, true);
+  view.setUint32(24, 768, true);
+  view.setUint32(28, 812, true);
+  view.setUint32(52, 44, true);
+  word.set(new TextEncoder().encode("The quick brown fox jumps over the lazy dog\r"), 768);
+  return buildContainer([{ path: "WordDocument", data: word }]);
 }
 
 describe("legacy DOC parser", () => {
@@ -266,18 +433,24 @@ describe("legacy DOC parser", () => {
       typeof paragraph === "string"
         ? paragraph
         : (paragraph?.children ?? [])
-            .map((child) => {
+            .map((child: unknown) => {
               if (typeof child === "string") return child;
-              return "text" in child && typeof child.text === "string" ? child.text : "";
+              return typeof child === "object" &&
+                child !== null &&
+                "text" in child &&
+                typeof child.text === "string"
+                ? child.text
+                : "";
             })
             .join("");
     expect(text).toBe("ARES");
     expect(JSON.stringify(children)).not.toContain("INST");
   });
 
-  it("validates PlcfBteChpx FC and page array boundaries", () => {
+  it("degrades malformed character bin tables without losing text", () => {
     const { data } = buildDocument({ characterBinTableLength: 13 });
-    expect(() => parseDocument(data)).toThrow("character bin table");
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children).toHaveLength(2);
   });
 
   it("projects actual textbox boundaries and skips reusable FTXBXS records", () => {
@@ -300,9 +473,11 @@ describe("legacy DOC parser", () => {
     expect("textbox" in children[0]!).toBe(false);
   });
 
-  it("validates the textbox boundary table instead of treating a story as one box", () => {
+  it("degrades malformed textbox boundary tables without losing text", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
-    expect(() => parseDocument(data)).toThrow("malformed CP and textbox counts");
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children).toHaveLength(1);
+    expect("textbox" in children[0]!).toBe(false);
   });
 
   it("projects individual footnote boundaries", () => {
@@ -325,4 +500,129 @@ describe("legacy DOC parser", () => {
     ]);
     expect(section.footers).toBeUndefined();
   });
+
+  it("decodes full CHPX run formatting", () => {
+    const { data } = buildDocument({
+      characterBinTableLength: 12,
+      paragraphGrpprl: [0x03, 0x24, 0x01],
+    });
+    const paragraph = parseDocument(data).sections[0]!.children[0]!;
+    const run = extractParagraph(paragraph).children?.[0]!;
+    expect(run).toMatchObject({ text: "Hi", bold: true, size: 12 });
+  });
+
+  it("decodes PAPX alignment, indentation, spacing and outline level", () => {
+    const { data } = buildDocument({
+      paragraphGrpprl: [
+        0x03, 0x24, 0x01, 0x5e, 0x84, 0xd0, 0x02, 0x5d, 0x84, 0x40, 0x00, 0x11, 0x84, 0x00, 0x00,
+        0x13, 0xa4, 0x20, 0x00, 0x40, 0x24, 0x01,
+      ],
+    });
+    const paragraph = extractParagraph(parseDocument(data).sections[0]!.children[0]!);
+    expect(paragraph.alignment).toBe("center");
+    expect(paragraph.indent).toEqual({ left: 720, right: 64, firstLine: 0 });
+    expect(paragraph.spacing).toEqual({ before: 32 });
+    expect(paragraph.outlineLevel).toBe(1);
+  });
+
+  it("maps SEPX geometry to DocumentOptions.sections", () => {
+    const { data } = buildDocument({ sectionProperties: true });
+    const section = parseDocument(data).sections[0]!;
+    expect(section.properties?.pageSize).toMatchObject({ width: 4000, height: 2000 });
+    expect(section.properties?.pageMargin).toMatchObject({ left: 64, right: 128, top: 96 });
+  });
+
+  it("builds a table row from in-table PAPX and TAP", () => {
+    const { data } = buildDocument({
+      paragraphGrpprl: [
+        0x16, 0x24, 0x01, 0x17, 0x24, 0x01, 0x08, 0xd6, 0x0d, 0x02, 0x00, 0x00, 0x00, 0x40, 0x00,
+        0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      ],
+    });
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children[0]).toEqual({
+      table: {
+        columnWidths: [64, 64],
+        rows: [
+          {
+            cells: [
+              {
+                children: [
+                  expect.objectContaining({
+                    paragraph: { children: [{ text: "Hi", bold: true, size: 12 }] },
+                  }),
+                ],
+              },
+              {
+                children: [
+                  expect.objectContaining({
+                    paragraph: { children: [{ text: "世界", bold: true, size: 12 }] },
+                  }),
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+  });
+
+  it("projects bookmark names and ranges", () => {
+    const { data } = buildDocument({ bookmarks: true });
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children[0]).toEqual({ bookmarkStart: { id: 1, name: "Mark" } });
+    expect(children.at(-1)).toEqual({ bookmarkEnd: { id: 1 } });
+  });
+
+  it("decodes annotation references as revision ranges", () => {
+    const { data } = buildDocument({ annotations: true });
+    expect(parseDocument(data).revisions).toEqual([{ start: 0, end: 3, inserted: true }]);
+  });
+
+  it("decodes main-document field instructions from PlcffldMom", () => {
+    const { data } = buildDocument({ fieldTable: true });
+    expect(parseDocument(data).fields).toHaveLength(1);
+  });
+
+  it("parses Escher BStore and Data-stream BLIP picture data", () => {
+    const { data } = buildDocument({ drawing: true });
+    expect(parseDocument(data).pictures).toEqual([
+      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
+    ]);
+  });
+
+  it("parses an embedded BLIP without consulting the Data stream", () => {
+    const { data } = buildDocument({ drawing: "embedded" });
+    expect(parseDocument(data).pictures).toEqual([
+      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
+    ]);
+  });
+
+  it("converts PlfLst and PlfLfo to numbering definitions", () => {
+    const { data } = buildDocument({ lists: true });
+    expect(parseDocument(data).numbering?.abstractNumberings).toHaveLength(1);
+    expect(parseDocument(data).numbering?.abstractNumberings[0]!.levels).toHaveLength(1);
+  });
+
+  it("converts STSH style names and based-on relationships", () => {
+    const { data } = buildDocument({ stylesheet: true });
+    expect(parseDocument(data).styles?.paragraphStyles).toEqual([
+      { id: "style-0", name: "Normal", basedOn: undefined },
+    ]);
+  });
+
+  it("extracts Word 6.0/95 text without modern FIB extensions", () => {
+    const document = parseDocument(buildLegacyDocument());
+    expect(document.sections[0]!.children).toEqual([
+      { paragraph: "The quick brown fox jumps over the lazy dog" },
+      { paragraph: "" },
+    ]);
+  });
 });
+
+function extractParagraph(child: SectionChild): ParagraphOptions {
+  if (!("paragraph" in child) || typeof child.paragraph === "string") {
+    throw new TypeError("Expected a paragraph object");
+  }
+  return child.paragraph;
+}

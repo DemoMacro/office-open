@@ -5,6 +5,8 @@ export const RecordType = {
   documentAtom: 1001,
   slide: 1006,
   slideAtom: 1007,
+  notes: 1008,
+  notesAtom: 1009,
   mainMaster: 1016,
   slidePersistAtom: 1011,
   ppDrawing: 1036,
@@ -12,10 +14,12 @@ export const RecordType = {
   textChars: 4000,
   textBytes: 4008,
   dateTimeAtom: 4006,
+  animationInfoAtom: 4081,
   slideNumberAtom: 4056,
   slideListWithText: 4080,
   userEditAtom: 4085,
   currentUserAtom: 4086,
+  animationInfo: 4116,
   persistPointerFullBlock: 6001,
   persistPointerIncrementalBlock: 6002,
   documentEncryptionAtom: 12052,
@@ -117,7 +121,7 @@ export function readRecordTree(
   return nodes;
 }
 
-function isZeroPadding(view: DataView, start: number, end: number): boolean {
+export function isZeroPadding(view: DataView, start: number, end: number): boolean {
   for (let offset = start; offset < end; offset += 1) {
     if (view.getUint8(offset) !== 0) return false;
   }
