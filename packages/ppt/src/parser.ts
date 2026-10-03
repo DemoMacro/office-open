@@ -20,6 +20,7 @@ import {
   decodeUtf16,
   findDescendant,
   findDirect,
+  isZeroPadding,
   readInt16,
   readInt32,
   readUint32,
@@ -555,22 +556,46 @@ function compactText(value: string): string {
 
 function readPictureStore(data: Uint8Array): readonly (LegacyPicture | undefined)[] {
   const view = createView(data);
-  const records = readRecordTree(view, 0, data.byteLength);
-  const pictureRecords =
-    records.length === 1 && records[0]!.type === RecordType.escherBStoreContainer
-      ? records[0]!.children
-      : records;
-  if (pictureRecords.some((record) => !isPictureRecord(record))) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed Pictures stream");
+  const pictureRecords = readPictureRecords(view);
+  return [undefined, ...pictureRecords.map((record) => readIsolatedPicture(view, record))];
+}
+
+function readPictureRecords(view: DataView): readonly RecordNode[] {
+  const records = readPictureRecordRange(view, 0, view.byteLength);
+  return records.length === 1 && records[0]!.type === RecordType.escherBStoreContainer
+    ? readPictureRecordRange(view, records[0]!.offset + RECORD_BODY_OFFSET, records[0]!.end)
+    : records;
+}
+
+function readPictureRecordRange(view: DataView, offset: number, end: number): RecordNode[] {
+  const records: RecordNode[] = [];
+  let cursor = offset;
+  while (cursor + RECORD_BODY_OFFSET <= end) {
+    if (isZeroPadding(view, cursor, end)) break;
+    let header: RecordHeader;
+    try {
+      header = readRecordHeader(view, cursor, end);
+    } catch (error) {
+      if (!(error instanceof LegacyPowerPointError)) throw error;
+      break;
+    }
+    records.push({ ...header, children: [] });
+    if (header.end <= cursor) break;
+    cursor = header.end;
   }
-  return [
-    undefined,
-    ...pictureRecords.map((record) =>
-      record.type === RecordType.escherBse
-        ? readPictureRecord(view, record)
-        : readEmbeddedPicture(record, recordBody(view, record)),
-    ),
-  ];
+  return records;
+}
+
+function readIsolatedPicture(view: DataView, record: RecordNode): LegacyPicture | undefined {
+  if (!isPictureRecord(record)) return undefined;
+  try {
+    return record.type === RecordType.escherBse
+      ? readPictureRecord(view, record)
+      : readEmbeddedPicture(record, recordBody(view, record));
+  } catch (error) {
+    if (!(error instanceof LegacyPowerPointError)) throw error;
+    return undefined;
+  }
 }
 
 function isPictureRecord(record: RecordNode): boolean {

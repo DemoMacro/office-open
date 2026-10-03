@@ -201,6 +201,14 @@ function pictureShape(id: number): number[] {
   ]);
 }
 
+function pictureShapeWithReference(id: number, reference: number): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
+    record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
+    record(0xf00b, [...int16(0xc104), ...int32(reference)], { version: 3, instance: 1 }),
+  ]);
+}
+
 function pictureTextShape(id: number): number[] {
   return container(0xf004, [
     record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
@@ -590,6 +598,45 @@ describe("parsePresentation", () => {
       imageType: "png",
     });
     expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "Filled" }] }]);
+  });
+
+  it("isolates a corrupt picture beside a valid embedded picture", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const bseBody = Array.from<number>({ length: 36 }).fill(0);
+    bseBody[33] = 0;
+    const corruptBlip = record(0xf01f, Array.from<number>({ length: 10 }).fill(0), {
+      version: 2,
+      instance: 0x7a8,
+    });
+    const corruptBse = record(0xf007, [...bseBody, ...corruptBlip], { version: 2 });
+    const validBlip = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    bseBody[33] = 2;
+    const validBse = record(0xf007, [...bseBody, 0, 0, ...validBlip], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(container(0xf001, [corruptBse, validBse]), 0);
+    const { document, currentUser } = buildDocument(
+      [pictureShapeWithReference(2051, 2)],
+      ["Picture"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+
+    const presentation = parsePresentation(fixture);
+    expect(presentation.slides).toHaveLength(1);
+    const child = presentation.slides![0]!.children![0]!;
+    if (!("picture" in child)) throw new TypeError("Expected a picture child");
+    expect(child.picture?.id).toBe(2051);
+    expect(child.picture?.type).toBe("png");
+    expect(child.picture?.data).toEqual(new Uint8Array(png));
   });
 
   it("projects a complete grouped-text grid as a table", () => {

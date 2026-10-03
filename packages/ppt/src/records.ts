@@ -121,7 +121,7 @@ export function readRecordTree(
   return nodes;
 }
 
-function isZeroPadding(view: DataView, start: number, end: number): boolean {
+export function isZeroPadding(view: DataView, start: number, end: number): boolean {
   for (let offset = start; offset < end; offset += 1) {
     if (view.getUint8(offset) !== 0) return false;
   }
