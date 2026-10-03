@@ -106,7 +106,14 @@ function buildContainer(streams: readonly { path: string; data: Uint8Array }[]):
 }
 
 function buildDocument(
-  options: { characterBinTableLength?: number; secondCp?: number; fields?: boolean } = {},
+  options: {
+    characterBinTableLength?: number;
+    secondCp?: number;
+    fields?: boolean;
+    textboxes?: { malformed?: boolean; reusableFirst?: boolean };
+    notes?: boolean;
+    headers?: boolean;
+  } = {},
 ): {
   data: Uint8Array;
   word: Uint8Array;
@@ -122,8 +129,12 @@ function buildDocument(
   wordView.setUint16(10, 0x0200, true);
   wordView.setUint16(32, 14, true);
   wordView.setUint16(62, 22, true);
-  wordView.setUint32(76, 7, true);
-  wordView.setUint16(152, 35, true);
+  const storyFixture = options.textboxes ?? options.notes ?? options.headers;
+  wordView.setUint32(76, storyFixture ? 4 : 7, true);
+  wordView.setUint32(80, options.notes ? 4 : 0, true);
+  wordView.setUint32(84, options.headers ? 4 : 0, true);
+  wordView.setUint32(100, options.textboxes ? 4 : 0, true);
+  wordView.setUint16(152, 59, true);
 
   const setFibPair = (index: number, offset: number, length: number): void => {
     wordView.setUint32(154 + index * 8, offset, true);
@@ -132,6 +143,9 @@ function buildDocument(
   setFibPair(12, 0, options.characterBinTableLength ?? 12);
   setFibPair(13, 12, 12);
   setFibPair(33, 512, 33);
+  setFibPair(56, 640, options.textboxes?.malformed ? 57 : 56);
+  setFibPair(3, 720, options.notes ? 16 : 0);
+  setFibPair(11, 720, options.headers ? 56 : 0);
 
   word.set(new TextEncoder().encode("Hi\r"), 512);
   if (options.fields) {
@@ -141,18 +155,25 @@ function buildDocument(
     );
     wordView.setUint32(76, 15, true);
   }
-  const unicode = new Uint8Array(6);
+  const unicode = new Uint8Array(storyFixture ? 8 : 6);
   const unicodeView = new DataView(unicode.buffer);
-  unicodeView.setUint16(0, 0x4e16, true);
-  unicodeView.setUint16(2, 0x754c, true);
-  unicodeView.setUint16(4, 0x000d, true);
+  if (storyFixture) {
+    unicodeView.setUint16(0, 0x0041, true);
+    unicodeView.setUint16(2, 0x000d, true);
+    unicodeView.setUint16(4, 0x0042, true);
+    unicodeView.setUint16(6, 0x000d, true);
+  } else {
+    unicodeView.setUint16(0, 0x4e16, true);
+    unicodeView.setUint16(2, 0x754c, true);
+    unicodeView.setUint16(4, 0x000d, true);
+  }
   word.set(unicode, options.fields ? 528 : 516);
 
   tableView.setUint8(512, 2);
   tableView.setUint32(513, 28, true);
   tableView.setUint32(517, 0, true);
   tableView.setUint32(521, options.secondCp ?? (options.fields ? 12 : 4), true);
-  tableView.setUint32(525, options.fields ? 15 : 7, true);
+  tableView.setUint32(525, options.fields ? 15 : storyFixture ? 8 : 7, true);
   tableView.setUint32(531, 0x40000400, true);
   tableView.setUint32(539, options.fields ? 528 : 516, true);
 
@@ -162,6 +183,24 @@ function buildDocument(
   tableView.setUint32(12, 512, true);
   tableView.setUint32(16, 528, true);
   tableView.setUint32(20, 3, true);
+
+  if (options.textboxes) {
+    tableView.setUint32(640, 0, true);
+    tableView.setUint32(644, 2, true);
+    tableView.setUint32(648, 4, true);
+    tableView.setUint16(660, options.textboxes.reusableFirst ? 1 : 0);
+    tableView.setUint16(682, 1);
+  }
+
+  if (options.notes) {
+    [0, 2, 3, 0].forEach((value, index) => tableView.setUint32(720 + index * 4, value, true));
+  }
+
+  if (options.headers) {
+    [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 0].forEach((value, index) =>
+      tableView.setUint32(720 + index * 4, value, true),
+    );
+  }
 
   const characterPage = 1024;
   wordView.setUint32(characterPage, 512, true);
@@ -239,5 +278,51 @@ describe("legacy DOC parser", () => {
   it("validates PlcfBteChpx FC and page array boundaries", () => {
     const { data } = buildDocument({ characterBinTableLength: 13 });
     expect(() => parseDocument(data)).toThrow("character bin table");
+  });
+
+  it("projects actual textbox boundaries and skips reusable FTXBXS records", () => {
+    const { data } = buildDocument({ textboxes: {} });
+    const children = parseDocument(data).sections[0]!.children;
+    const textbox = children.at(-1);
+    if (!textbox || !("textbox" in textbox)) throw new TypeError("Expected a textbox child");
+
+    expect(children).toHaveLength(2);
+    expect(textbox.textbox.children).toEqual([
+      { paragraph: { children: [{ text: "A", bold: true, size: 12 }] } },
+    ]);
+  });
+
+  it("ignores an FTXBXS record marked reusable before the final spare", () => {
+    const { data } = buildDocument({ textboxes: { reusableFirst: true } });
+    const children = parseDocument(data).sections[0]!.children;
+
+    expect(children).toHaveLength(1);
+    expect("textbox" in children[0]!).toBe(false);
+  });
+
+  it("validates the textbox boundary table instead of treating a story as one box", () => {
+    const { data } = buildDocument({ textboxes: { malformed: true } });
+    expect(() => parseDocument(data)).toThrow("malformed CP and textbox counts");
+  });
+
+  it("projects individual footnote boundaries", () => {
+    const { data } = buildDocument({ notes: true });
+    const document = parseDocument(data);
+
+    expect(document.footnotes).toEqual([
+      { id: 1, children: [{ paragraph: { children: [{ text: "A", bold: true, size: 12 }] } }] },
+      { id: 2, children: [{ paragraph: { children: [{ text: "B", bold: true, size: 12 }] } }] },
+    ]);
+  });
+
+  it("projects the default header story slot", () => {
+    const { data } = buildDocument({ headers: true });
+    const section = parseDocument(data).sections[0]!;
+
+    expect(section.headers?.default).toEqual([
+      { paragraph: { children: [{ text: "A", bold: true, size: 12 }] } },
+      { paragraph: { children: [{ text: "B", bold: true, size: 12 }] } },
+    ]);
+    expect(section.footers).toBeUndefined();
   });
 });

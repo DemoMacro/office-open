@@ -1,13 +1,30 @@
 import { CompoundFileReader } from "@office-open/core";
-import type { DocumentOptions, RunOptions, SectionChild } from "@office-open/docx";
+import type {
+  DocumentOptions,
+  ParagraphOptions,
+  RunOptions,
+  SectionChild,
+} from "@office-open/docx";
 
 import { DocParseError } from "./errors";
 
 interface Fib {
   ccpText: number;
+  ccpFootnotes: number;
+  ccpHeaders: number;
+  ccpComments: number;
+  ccpEndnotes: number;
+  ccpTextboxes: number;
+  ccpHeaderTextboxes: number;
+  totalCharacters: number;
   clx: NumberPair;
   characterBinTable: NumberPair;
   paragraphBinTable: NumberPair;
+  footnoteTable: NumberPair;
+  headerTable: NumberPair;
+  endnoteTable: NumberPair;
+  textboxTable: NumberPair;
+  headerTextboxTable: NumberPair;
 }
 
 interface NumberPair {
@@ -32,6 +49,11 @@ interface CharacterRange {
   cpStart: number;
   cpEnd: number;
   properties: RunOptions;
+}
+
+interface TextboxBoundary {
+  start: number;
+  end: number;
 }
 
 interface ParagraphRange {
@@ -154,12 +176,42 @@ function parseFib(word: Uint8Array): Fib {
     };
   };
 
-  if (cslw < 4) throw new DocParseError("Invalid Word document: FIB text lengths are truncated");
+  if (cslw < 11) {
+    throw new DocParseError("Invalid Word document: FIB text lengths are truncated");
+  }
+  const readLength = (index: number): number =>
+    readUint32(word, characterLengthsOffset + index * 4, streamMessage);
+  const ccpText = readLength(3);
+  const ccpFootnotes = readLength(4);
+  const ccpHeaders = readLength(5);
+  const ccpComments = readLength(7);
+  const ccpEndnotes = readLength(8);
+  const ccpTextboxes = readLength(9);
+  const ccpHeaderTextboxes = readLength(10);
   return {
-    ccpText: readUint32(word, characterLengthsOffset + 12, streamMessage),
+    ccpText,
+    ccpFootnotes,
+    ccpHeaders,
+    ccpComments,
+    ccpEndnotes,
+    ccpTextboxes,
+    ccpHeaderTextboxes,
+    totalCharacters:
+      ccpText +
+      ccpFootnotes +
+      ccpHeaders +
+      ccpComments +
+      ccpEndnotes +
+      ccpTextboxes +
+      ccpHeaderTextboxes,
     characterBinTable: readPair(12, "fcPlcfbteChpx"),
     paragraphBinTable: readPair(13, "fcPlcfbtePapx"),
+    footnoteTable: readPair(3, "fcPlcffndTxt"),
+    headerTable: readPair(11, "fcPlcfHdd"),
+    endnoteTable: readPair(47, "fcPlcfendTxt"),
     clx: readPair(33, "fcClx"),
+    textboxTable: readPair(56, "fcPlcftxbxTxt"),
+    headerTextboxTable: readPair(58, "fcPlcfHdrTxbxTxt"),
   };
 }
 
@@ -267,6 +319,100 @@ function parseBinTable(
     entries.push({ fcStart, fcEnd, page: page * FKP_LENGTH });
   }
   return entries;
+}
+
+function parseNoteBoundaries(
+  table: Uint8Array,
+  range: NumberPair,
+  storyLength: number,
+): TextboxBoundary[] {
+  if (storyLength === 0) return [];
+  if (range.length === 0) {
+    throw new DocParseError("Invalid Word document: note boundary table is missing");
+  }
+  const message = "Invalid DOC note table: it is outside the table stream";
+  requireRange(table, range.offset, range.length, message);
+  if (range.length < 12 || range.length % 4 !== 0) {
+    throw new DocParseError("Invalid DOC note table: malformed CP count");
+  }
+  const cps = Array.from({ length: range.length / 4 }, (_, index) =>
+    readUint32(table, range.offset + index * 4, message),
+  );
+  if (cps.slice(0, -2).some((cp) => cp >= storyLength)) {
+    throw new DocParseError("Invalid DOC note table: CP boundary is outside the story");
+  }
+  if (cps[cps.length - 2] !== storyLength - 1) {
+    throw new DocParseError("Invalid DOC note table: final boundary is invalid");
+  }
+  return cps.slice(0, -2).map((start, index) => ({
+    start,
+    end: cps[index + 1]!,
+  }));
+}
+
+function parseHeaderStories(
+  table: Uint8Array,
+  range: NumberPair,
+  storyLength: number,
+): TextboxBoundary[] {
+  if (storyLength === 0) return [];
+  if (range.length === 0) {
+    throw new DocParseError("Invalid Word document: header boundary table is missing");
+  }
+  const message = "Invalid DOC header table: it is outside the table stream";
+  requireRange(table, range.offset, range.length, message);
+  if (range.length < 12 || range.length % 4 !== 0) {
+    throw new DocParseError("Invalid DOC header table: malformed CP count");
+  }
+  const cps = Array.from({ length: range.length / 4 }, (_, index) =>
+    readUint32(table, range.offset + index * 4, message),
+  );
+  if (cps.slice(0, -2).some((cp) => cp >= storyLength)) {
+    throw new DocParseError("Invalid DOC header table: CP boundary is outside the story");
+  }
+  if (cps[cps.length - 2] !== storyLength - 1) {
+    throw new DocParseError("Invalid DOC header table: final boundary is invalid");
+  }
+  return cps.slice(0, -2).map((start, index) => ({
+    start,
+    end: cps[index + 1]!,
+  }));
+}
+
+function parseTextboxBoundaries(
+  table: Uint8Array,
+  range: NumberPair,
+  storyLength: number,
+): TextboxBoundary[] {
+  if (range.length === 0) {
+    throw new DocParseError("Invalid Word document: textbox boundary table is missing");
+  }
+  const message = "Invalid DOC textbox table: it is outside the table stream";
+  requireRange(table, range.offset, range.length, message);
+  if (range.length < 4 || (range.length - 4) % 26 !== 0) {
+    throw new DocParseError("Invalid DOC textbox table: malformed CP and textbox counts");
+  }
+  const count = (range.length - 4) / 26;
+  const boundaries: TextboxBoundary[] = [];
+  const cps: number[] = [];
+  for (let index = 0; index <= count; index++) {
+    const cp = readUint32(table, range.offset + index * 4, message);
+    if (index > 0 && cp <= cps[index - 1]!) {
+      throw new DocParseError("Invalid DOC textbox table: CP boundaries are not increasing");
+    }
+    cps.push(cp);
+  }
+  if (count === 0) return [];
+  if (cps[0] !== 0 || cps[count - 1]! > storyLength) {
+    throw new DocParseError("Invalid DOC textbox table: boundaries do not fit the story");
+  }
+  const recordsOffset = range.offset + (count + 1) * 4;
+  for (let index = 0; index < count - 1; index++) {
+    const reusable =
+      index === count - 1 || readUint16(table, recordsOffset + index * 22 + 8, message) !== 0;
+    if (!reusable) boundaries.push({ start: cps[index]!, end: cps[index + 1]! });
+  }
+  return boundaries.filter((item) => item.end > item.start);
 }
 
 function fcToCp(fc: number, piece: Piece): number {
@@ -541,7 +687,10 @@ function projectText(pieces: Piece[], word: Uint8Array, ccpText: number): TextCh
   return characters;
 }
 
-function projectChildren(characters: TextCharacter[], ranges: CharacterRange[]): SectionChild[] {
+function projectChildren(
+  characters: TextCharacter[],
+  ranges: readonly CharacterRange[],
+): SectionChild[] {
   const children: SectionChild[] = [];
   let paragraph: TextCharacter[] = [];
 
@@ -591,6 +740,29 @@ function projectChildren(characters: TextCharacter[], ranges: CharacterRange[]):
   return children;
 }
 
+function projectStory(
+  characters: readonly TextCharacter[],
+  ranges: readonly CharacterRange[],
+  start: number,
+  end: number,
+): SectionChild[] {
+  return projectChildren(
+    characters.filter((character) => character.cp >= start && character.cp < end),
+    ranges,
+  );
+}
+
+function projectCommentStory(
+  characters: readonly TextCharacter[],
+  ranges: readonly CharacterRange[],
+  start: number,
+  end: number,
+): Array<string | ParagraphOptions> {
+  return projectStory(characters, ranges, start, end).flatMap((child) =>
+    "paragraph" in child ? [child.paragraph] : [],
+  );
+}
+
 export function parseInternal(data: Uint8Array): DocumentOptions {
   let reader: CompoundFileReader;
   try {
@@ -613,21 +785,157 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
     throw new DocParseError(`Invalid Word document: ${tablePath} stream is missing`);
   }
   const table = reader.read(tablePath);
-  if (fib.ccpText === 0) return { sections: [{ children: [{ paragraph: "" }] }] };
+  if (fib.totalCharacters === 0) return { sections: [{ children: [{ paragraph: "" }] }] };
 
   const pieces = parsePieceTable(table, fib.clx);
-  if (fib.ccpText > pieces[pieces.length - 1]!.cpEnd) {
+  if (fib.totalCharacters > pieces[pieces.length - 1]!.cpEnd) {
     throw new DocParseError("Invalid Word document: main text extends beyond the piece table");
   }
-  const characters = projectText(pieces, word, fib.ccpText);
+  const characters = projectText(pieces, word, fib.totalCharacters);
   const characterEntries = parseBinTable(table, fib.characterBinTable, "character");
   const characterRanges = characterEntries.flatMap((entry) =>
-    parseCharacterFkp(word, entry.page, pieces, fib.ccpText),
+    parseCharacterFkp(word, entry.page, pieces, fib.totalCharacters),
   );
   for (const entry of parseBinTable(table, fib.paragraphBinTable, "paragraph")) {
     parseParagraphFkp(word, entry.page);
   }
-  return { sections: [{ children: projectChildren(characters, characterRanges) }] };
+
+  const ranges = [
+    { start: 0, end: fib.ccpText },
+    { start: fib.ccpText, end: fib.ccpText + fib.ccpFootnotes },
+    {
+      start: fib.ccpText + fib.ccpFootnotes,
+      end: fib.ccpText + fib.ccpFootnotes + fib.ccpHeaders,
+    },
+  ];
+  const footnoteStart = ranges[1]!.start;
+  const headerStart = ranges[2]!.start;
+  const commentStart = headerStart + fib.ccpHeaders;
+  const endnoteStart = commentStart + fib.ccpComments;
+  const textboxStart = endnoteStart + fib.ccpEndnotes;
+  const headerTextboxStart = textboxStart + fib.ccpTextboxes;
+
+  const sectionChildren = projectStory(characters, characterRanges, 0, fib.ccpText);
+  const headerStories = parseHeaderStories(table, fib.headerTable, fib.ccpHeaders);
+  const headerStoryChildren = (index: number): SectionChild[] => {
+    const story = headerStories[index];
+    if (!story) return [];
+    return projectStory(
+      characters,
+      characterRanges,
+      headerStart + story.start,
+      headerStart + story.end,
+    ).filter((child) => !("paragraph" in child && child.paragraph === ""));
+  };
+  const defaultHeaderChildren = headerStoryChildren(7);
+  const evenHeaderChildren = headerStoryChildren(6);
+  const firstHeaderChildren = headerStoryChildren(10);
+  const defaultFooterChildren = headerStoryChildren(9);
+  const evenFooterChildren = headerStoryChildren(8);
+  const firstFooterChildren = headerStoryChildren(11);
+  for (const boundary of fib.ccpTextboxes > 0
+    ? parseTextboxBoundaries(table, fib.textboxTable, fib.ccpTextboxes)
+    : []) {
+    sectionChildren.push({
+      textbox: {
+        children: projectStory(
+          characters,
+          characterRanges,
+          textboxStart + boundary.start,
+          textboxStart + boundary.end,
+        ),
+      },
+    });
+  }
+  for (const boundary of fib.ccpHeaderTextboxes > 0
+    ? parseTextboxBoundaries(table, fib.headerTextboxTable, fib.ccpHeaderTextboxes)
+    : []) {
+    defaultHeaderChildren.push({
+      textbox: {
+        children: projectStory(
+          characters,
+          characterRanges,
+          headerTextboxStart + boundary.start,
+          headerTextboxStart + boundary.end,
+        ),
+      },
+    });
+  }
+
+  return {
+    sections: [
+      {
+        children: sectionChildren,
+        ...(defaultHeaderChildren.length > 0 ||
+        evenHeaderChildren.length > 0 ||
+        firstHeaderChildren.length > 0
+          ? {
+              headers: {
+                ...(defaultHeaderChildren.length > 0 ? { default: defaultHeaderChildren } : {}),
+                ...(evenHeaderChildren.length > 0 ? { even: evenHeaderChildren } : {}),
+                ...(firstHeaderChildren.length > 0 ? { first: firstHeaderChildren } : {}),
+              },
+            }
+          : {}),
+        ...(defaultFooterChildren.length > 0 ||
+        evenFooterChildren.length > 0 ||
+        firstFooterChildren.length > 0
+          ? {
+              footers: {
+                ...(defaultFooterChildren.length > 0 ? { default: defaultFooterChildren } : {}),
+                ...(evenFooterChildren.length > 0 ? { even: evenFooterChildren } : {}),
+                ...(firstFooterChildren.length > 0 ? { first: firstFooterChildren } : {}),
+              },
+            }
+          : {}),
+      },
+    ],
+    ...(fib.ccpFootnotes > 0
+      ? {
+          footnotes: parseNoteBoundaries(table, fib.footnoteTable, fib.ccpFootnotes).map(
+            (boundary, index) => ({
+              id: index + 1,
+              children: projectStory(
+                characters,
+                characterRanges,
+                footnoteStart + boundary.start,
+                footnoteStart + boundary.end,
+              ),
+            }),
+          ),
+        }
+      : {}),
+    ...(fib.ccpComments > 0
+      ? {
+          comments: [
+            {
+              id: 1,
+              children: projectCommentStory(
+                characters,
+                characterRanges,
+                commentStart,
+                endnoteStart,
+              ),
+            },
+          ],
+        }
+      : {}),
+    ...(fib.ccpEndnotes > 0
+      ? {
+          endnotes: parseNoteBoundaries(table, fib.endnoteTable, fib.ccpEndnotes).map(
+            (boundary, index) => ({
+              id: index + 1,
+              children: projectStory(
+                characters,
+                characterRanges,
+                endnoteStart + boundary.start,
+                endnoteStart + boundary.end,
+              ),
+            }),
+          ),
+        }
+      : {}),
+  };
 }
 
 export { transformPieceFc };
