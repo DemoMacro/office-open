@@ -22,6 +22,7 @@ packages/
   pptx/   — @office-open/pptx (PPTX)
   xlsx/   — @office-open/xlsx (XLSX)
 ooxml-schemas/  — OOXML XSD schemas (golden source of truth)
+odf-schemas/    — Official ODF 1.3 Relax NG schemas (golden source of truth)
 ```
 
 Every format package (docx, pptx, xlsx) follows the same layout:
@@ -52,6 +53,20 @@ src/
 - `microsoft/` — Microsoft extensions
 
 Key files: `wml.xsd` (DOCX), `pml.xsd` (PPTX), `sml.xsd` (XLSX), `dml-main.xsd` (DrawingML).
+
+## ODF Schemas
+
+`odf-schemas/` contains the official ODF 1.3 Relax NG schemas — the golden source of truth for the ODF package. ODF uses Relax NG, not XSD:
+
+- `OpenDocument-v1.3-schema.rng` — content.xml, styles.xml, meta.xml, settings.xml
+- `OpenDocument-v1.3-manifest-schema.rng` — META-INF/manifest.xml (manifest namespace stays `…manifest:1.0` even in ODF 1.3)
+- `OpenDocument-v1.3-dsig-schema.rng` — digital signatures
+
+Validate generated ODF output (including parse → generate round trips) against them:
+
+```bash
+pnpm tsx scripts/validate-odf.ts
+```
 
 ## Naming Conventions
 
@@ -383,6 +398,7 @@ cd packages/xlsx && pnpm tsx demo/<demo-file>.ts
 pnpm tsx scripts/validate.ts                # All demos
 pnpm tsx scripts/validate.ts pptx           # One package
 pnpm tsx scripts/validate.ts docx "path.docx"  # Specific file
+pnpm tsx scripts/validate-odf.ts            # ODF samples against Relax NG
 ```
 
 ## Pull Request Process

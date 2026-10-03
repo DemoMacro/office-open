@@ -2,7 +2,7 @@ import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
-const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3";
+const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 
 export interface OdfFiles {
   [path: string]: string;

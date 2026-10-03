@@ -70,7 +70,7 @@ function stylesXml(): string {
 }
 
 function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string[]): string {
-  const columns = (worksheet.columns ?? []).flatMap((column) => {
+  const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
       column.width === undefined && !column.hidden
@@ -80,7 +80,13 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
       xmlElement("table:table-column", { "table:style-name": styleName }),
     );
   });
-  const rows = (worksheet.rows ?? []).map((row) => {
+  const maxRowCells = Math.max(0, ...(worksheet.rows ?? []).map((row) => row.cells?.length ?? 0));
+  const columnCount = Math.max(explicitColumns.length, maxRowCells, 1);
+  const columns = Array.from(
+    { length: columnCount },
+    (_, column) => explicitColumns[column] ?? xmlElement("table:table-column"),
+  );
+  const bodyRows = (worksheet.rows ?? []).map((row) => {
     const styleName =
       row.height === undefined && !row.hidden
         ? undefined
@@ -95,6 +101,9 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
       (row.cells ?? []).map((cell) => cellXml(cell)),
     );
   });
+  const rows = bodyRows.length
+    ? bodyRows
+    : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   return xmlElement("table:table", { "table:name": worksheet.name ?? `Sheet${index}` }, [
     columns.join(""),
     rows.join(""),

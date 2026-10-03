@@ -21,7 +21,7 @@ describe("ODF package contract", () => {
     const data = generateOdt({ sections: [] });
     const entries = unzipSync(data);
     entries["META-INF/manifest.xml"] = new TextEncoder().encode(
-      '<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.3" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="mimetype" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/></manifest:manifest>',
+      '<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:version="1.3" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="mimetype" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="styles.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="meta.xml" manifest:media-type="text/xml"/></manifest:manifest>',
     );
     const tampered = zipSync(entries);
     expect(() => parseOdt(tampered)).toThrow(/Manifest does not declare content\.xml/);

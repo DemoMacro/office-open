@@ -160,7 +160,7 @@ function addCharacterStyle(properties: CharacterProperties, styles: string[]): s
 }
 
 function tableXml(table: TableOptions, styles: string[]): string {
-  const columns = (table.columnWidths ?? []).map((width) => {
+  const explicitColumns = (table.columnWidths ?? []).map((width) => {
     const twips = typeof width === "number" ? width : Math.round(lengthToEmu(width)! / 635);
     const name = `T${styles.length + 1}`;
     styles.push(
@@ -192,9 +192,23 @@ function tableXml(table: TableOptions, styles: string[]): string {
     });
     return xmlElement("table:table-row", undefined, cells);
   });
+  const rowSpans = table.rows.map((row) =>
+    ("cells" in row ? row.cells : []).reduce(
+      (total, cell) => total + ("columnSpan" in cell ? (cell.columnSpan ?? 1) : 1),
+      0,
+    ),
+  );
+  const columnCount = Math.max(explicitColumns.length, ...rowSpans, 1);
+  const columns = Array.from(
+    { length: columnCount },
+    (_, column) => explicitColumns[column] ?? xmlElement("table:table-column"),
+  );
+  const bodyRows = rows.length
+    ? rows
+    : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   return xmlElement("table:table", { "table:name": `Table${styles.length + 1}` }, [
     columns.join(""),
-    rows.join(""),
+    bodyRows.join(""),
   ]);
 }
 
