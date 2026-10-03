@@ -154,9 +154,9 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   const sharedStrings = doc.get("xl/sharedStrings.xml");
 
   // Resolve worksheet paths from workbook rels
-  const worksheets: string[] = [];
-  const charts: string[] = [];
-  const drawings: string[] = [];
+  let worksheets: string[] = [];
+  let charts: string[] = [];
+  let drawings: string[] = [];
   const media: string[] = [];
   let theme: string | undefined;
 
@@ -175,7 +175,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       }
     }
   }
-  sortByNumber(worksheets);
+  worksheets = sortByNumber(worksheets);
 
   // Scan for drawings, charts, media
   drawings.push(...doc.keys("xl/drawings/").filter((k) => k.endsWith(".xml")));
@@ -184,8 +184,8 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
     ...doc.keys("xl/charts/").filter((k) => k.endsWith(".xml") && !/userShapes\d+\.xml$/.test(k)),
   );
   media.push(...doc.keys("xl/media/"));
-  sortByNumber(drawings);
-  sortByNumber(charts);
+  drawings = sortByNumber(drawings);
+  charts = sortByNumber(charts);
 
   // Root rels → core/app props
   let coreProps: string | undefined;

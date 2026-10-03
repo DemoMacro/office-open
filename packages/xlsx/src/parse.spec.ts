@@ -14,6 +14,46 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("keeps worksheet contents aligned when workbook relationships are out of order", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          { name: "Alpha", rows: [{ cells: [{ value: "alpha" }] }] },
+          { name: "Beta", rows: [{ cells: [{ value: "beta" }] }] },
+          { name: "Gamma", rows: [{ cells: [{ value: "gamma" }] }] },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(buffer);
+    const relsPath = "xl/_rels/workbook.xml.rels";
+    const relsXml = new TextDecoder().decode(archive[relsPath]!);
+    const relationships = [...relsXml.matchAll(/<Relationship\b[^>]+\/>/g)].map(
+      (match) => match[0],
+    );
+    const worksheetRels = relationships.filter((relationship) =>
+      relationship.includes('Target="worksheets/'),
+    );
+    const otherRels = relationships.filter(
+      (relationship) => !relationship.includes('Target="worksheets/'),
+    );
+    const firstRelationship = relsXml.search(/<Relationship\b[^>]+\/>/);
+    const opening = relsXml.slice(0, firstRelationship);
+    archive[relsPath] = new TextEncoder().encode(
+      opening + [...worksheetRels].reverse().concat(otherRels).join("") + "</Relationships>",
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+
+    expect(parsed.worksheets?.map((worksheet) => worksheet.name)).toEqual([
+      "Alpha",
+      "Beta",
+      "Gamma",
+    ]);
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("alpha");
+    expect(parsed.worksheets?.[2]?.rows?.[0]?.cells?.[0]?.value).toBe("gamma");
+  });
+
   it("emits the shared strings relationship only when the part exists", async () => {
     const withoutStrings = (await generateWorkbook(
       { worksheets: [{ rows: [{ cells: [{ value: 1 }] }] }] },
