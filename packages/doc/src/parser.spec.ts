@@ -113,7 +113,7 @@ function buildDocument(
     fields?: boolean;
     annotations?: boolean;
     bookmarks?: boolean;
-    drawing?: boolean;
+    drawing?: boolean | "embedded";
     fieldTable?: boolean;
     lists?: boolean;
     paragraphGrpprl?: readonly number[];
@@ -162,7 +162,11 @@ function buildDocument(
   setFibPair(21, options.bookmarks ? 832 : 0, options.bookmarks ? 8 : 0);
   setFibPair(22, options.bookmarks ? 880 : 0, options.bookmarks ? 12 : 0);
   setFibPair(23, options.bookmarks ? 896 : 0, options.bookmarks ? 8 : 0);
-  setFibPair(50, options.drawing ? 1024 : 0, options.drawing ? 77 : 0);
+  setFibPair(
+    50,
+    options.drawing ? 1024 : 0,
+    options.drawing ? (options.drawing === "embedded" ? 114 : 60) : 0,
+  );
   setFibPair(73, options.lists ? 1216 : 0, options.lists ? 30 : 0);
   setFibPair(74, options.lists ? 1280 : 0, options.lists ? 10 : 0);
 
@@ -245,7 +249,7 @@ function buildDocument(
     tableView.setUint32(800, 0, true);
     tableView.setUint32(804, 1, true);
     tableView.setUint32(808, 0, true);
-    tableView.setUint32(812, 2048, true);
+    tableView.setUint32(810, 2048, true);
     tableView.setUint32(816, 0, true);
     word.set(
       Uint8Array.from([
@@ -303,17 +307,30 @@ function buildDocument(
 
   if (options.drawing) {
     const drawingView = new DataView(table.buffer);
+    const embedded = options.drawing === "embedded";
     drawingView.setUint16(1024, 0x000f, true);
     drawingView.setUint16(1026, 0xf000, true);
-    drawingView.setUint32(1028, 69, true);
+    drawingView.setUint32(1028, embedded ? 106 : 52, true);
     drawingView.setUint16(1032, 0x000f, true);
     drawingView.setUint16(1034, 0xf001, true);
-    drawingView.setUint32(1036, 61, true);
-    drawingView.setUint16(1040, 0x0000, true);
+    drawingView.setUint32(1036, embedded ? 98 : 44, true);
+    drawingView.setUint16(1040, embedded ? 0x06e0 : 0x0000, true);
     drawingView.setUint16(1042, 0xf007, true);
-    drawingView.setUint32(1044, 53, true);
+    drawingView.setUint32(1044, embedded ? 90 : 36, true);
     tableView.setUint8(1058, 1);
-    drawingView.setUint32(1068, 1, true);
+    drawingView.setUint32(1076, embedded ? 0xffffffff : 0, true);
+    if (embedded) {
+      drawingView.setUint16(1084, 0x06e0, true);
+      drawingView.setUint16(1086, 0xf01e, true);
+      drawingView.setUint32(1088, 46, true);
+      drawingView.setUint8(1108, 0xff);
+      [
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0,
+        0, 4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
+      ].forEach((byte, index) => {
+        drawingView.setUint8(1109 + index, byte);
+      });
+    }
   }
 
   if (options.lists) {
@@ -350,7 +367,14 @@ function buildDocument(
   const data = buildContainer([
     { path: "WordDocument", data: word },
     { path: "1Table", data: table },
-    ...(options.drawing ? [{ path: "Data", data: drawingStream() }] : []),
+    ...(options.drawing
+      ? [
+          {
+            path: "Data",
+            data: options.drawing === "embedded" ? new Uint8Array() : drawingStream(),
+          },
+        ]
+      : []),
   ]);
   return { data, word, table };
 }
@@ -358,14 +382,16 @@ function buildDocument(
 function drawingStream(): Uint8Array {
   const data = new Uint8Array(STREAM_SIZE);
   const view = new DataView(data.buffer);
-  view.setUint16(2, 1, true);
-  view.setUint32(24, 1, true);
+  view.setUint16(0, 0x06e0, true);
+  view.setUint16(2, 0xf01e, true);
+  view.setUint32(4, 46, true);
+  view.setUint8(24, 0xff);
   data.set(
     Uint8Array.from([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0,
       4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
     ]),
-    36,
+    25,
   );
   return data;
 }
@@ -421,9 +447,10 @@ describe("legacy DOC parser", () => {
     expect(JSON.stringify(children)).not.toContain("INST");
   });
 
-  it("validates PlcfBteChpx FC and page array boundaries", () => {
+  it("degrades malformed character bin tables without losing text", () => {
     const { data } = buildDocument({ characterBinTableLength: 13 });
-    expect(() => parseDocument(data)).toThrow("character bin table");
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children).toHaveLength(2);
   });
 
   it("projects actual textbox boundaries and skips reusable FTXBXS records", () => {
@@ -446,9 +473,11 @@ describe("legacy DOC parser", () => {
     expect("textbox" in children[0]!).toBe(false);
   });
 
-  it("validates the textbox boundary table instead of treating a story as one box", () => {
+  it("degrades malformed textbox boundary tables without losing text", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
-    expect(() => parseDocument(data)).toThrow("malformed CP and textbox counts");
+    const children = parseDocument(data).sections[0]!.children;
+    expect(children).toHaveLength(1);
+    expect("textbox" in children[0]!).toBe(false);
   });
 
   it("projects individual footnote boundaries", () => {
@@ -557,6 +586,13 @@ describe("legacy DOC parser", () => {
 
   it("parses Escher BStore and Data-stream BLIP picture data", () => {
     const { data } = buildDocument({ drawing: true });
+    expect(parseDocument(data).pictures).toEqual([
+      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
+    ]);
+  });
+
+  it("parses an embedded BLIP without consulting the Data stream", () => {
+    const { data } = buildDocument({ drawing: "embedded" });
     expect(parseDocument(data).pictures).toEqual([
       { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
     ]);

@@ -514,7 +514,7 @@ function parseTextboxBoundaries(
     cps.push(cp);
   }
   if (count === 0) return [];
-  if (cps[0] !== 0 || cps[count - 1]! > storyLength) {
+  if (cps[0] !== 0 || cps[count]! > storyLength) {
     throw new DocParseError("Invalid DOC textbox table: boundaries do not fit the story");
   }
   const recordsOffset = range.offset + (count + 1) * 4;
@@ -613,7 +613,7 @@ function parseParagraphFkp(word: Uint8Array, page: number): ParagraphRange[] {
     "Invalid DOC paragraph FKP: page is outside the WordDocument stream",
   );
   const count = word[page + FKP_LENGTH - 1]!;
-  if (count === 0 || count > (FKP_LENGTH - 5) / 14) {
+  if (count === 0 || count > Math.floor((FKP_LENGTH - 5) / 17)) {
     throw new DocParseError("Invalid DOC paragraph FKP: invalid entry count");
   }
   const ranges: ParagraphRange[] = [];
@@ -955,6 +955,15 @@ function projectStory(
   );
 }
 
+function parseOptional<T>(parse: () => T, fallback: T): T {
+  try {
+    return parse();
+  } catch (error) {
+    if (!(error instanceof DocParseError)) throw error;
+    return fallback;
+  }
+}
+
 function paragraphPropertiesFor(
   ranges: readonly ParagraphRange[],
   cp: number | undefined,
@@ -1101,20 +1110,28 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
     throw new DocParseError("Invalid Word document: main text extends beyond the piece table");
   }
   const characters = projectText(pieces, word, fib.totalCharacters);
-  const characterEntries = parseBinTable(table, fib.characterBinTable, "character");
-  const characterRanges = characterEntries.flatMap((entry) =>
-    parseCharacterFkp(word, entry.page, pieces, fib.totalCharacters),
+  const characterEntries = parseOptional(
+    () => parseBinTable(table, fib.characterBinTable, "character"),
+    [],
   );
-  const paragraphRanges = parseBinTable(table, fib.paragraphBinTable, "paragraph")
-    .flatMap((entry) => parseParagraphFkp(word, entry.page))
+  const characterRanges = characterEntries.flatMap((entry) =>
+    parseOptional(() => parseCharacterFkp(word, entry.page, pieces, fib.totalCharacters), []),
+  );
+  const paragraphRanges = parseOptional(
+    () => parseBinTable(table, fib.paragraphBinTable, "paragraph"),
+    [],
+  )
+    .flatMap((entry) => parseOptional(() => parseParagraphFkp(word, entry.page), []))
     .map((range) => {
       const overlaps = overlappingPieces(pieces, fib.totalCharacters, range.cpStart, range.cpEnd);
+      if (overlaps.length === 0) return undefined;
       return {
         cpStart: Math.min(...overlaps.map((overlap) => overlap.cpStart)),
         cpEnd: Math.max(...overlaps.map((overlap) => overlap.cpEnd)),
         properties: range.properties,
       };
-    });
+    })
+    .filter((range) => range !== undefined);
 
   const ranges = [
     { start: 0, end: fib.ccpText },
@@ -1206,7 +1223,10 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
   );
   const sectionChildren = applyTables(projectedChildren, paragraphRanges, characters);
   const sectionChildrenWithBookmarks = applyBookmarks(sectionChildren, bookmarks, characters);
-  const headerStories = parseHeaderStreams(table, fib.headerTable, fib.ccpHeaders);
+  const headerStories = parseOptional(
+    () => parseHeaderStreams(table, fib.headerTable, fib.ccpHeaders),
+    [],
+  );
   const headerStoryChildren = (index: number): SectionChild[] => {
     const story = headerStories[index];
     if (!story) return [];
@@ -1223,9 +1243,11 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
   const defaultFooterChildren = headerStoryChildren(9);
   const evenFooterChildren = headerStoryChildren(8);
   const firstFooterChildren = headerStoryChildren(11);
-  for (const boundary of fib.ccpTextboxes > 0
-    ? parseTextboxBoundaries(table, fib.textboxTable, fib.ccpTextboxes)
-    : []) {
+  const textboxBoundaries =
+    fib.ccpTextboxes > 0
+      ? parseOptional(() => parseTextboxBoundaries(table, fib.textboxTable, fib.ccpTextboxes), [])
+      : [];
+  for (const boundary of textboxBoundaries) {
     sectionChildren.push({
       textbox: {
         children: projectStory(
@@ -1237,9 +1259,14 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
       },
     });
   }
-  for (const boundary of fib.ccpHeaderTextboxes > 0
-    ? parseTextboxBoundaries(table, fib.headerTextboxTable, fib.ccpHeaderTextboxes)
-    : []) {
+  const headerTextboxBoundaries =
+    fib.ccpHeaderTextboxes > 0
+      ? parseOptional(
+          () => parseTextboxBoundaries(table, fib.headerTextboxTable, fib.ccpHeaderTextboxes),
+          [],
+        )
+      : [];
+  for (const boundary of headerTextboxBoundaries) {
     defaultHeaderChildren.push({
       textbox: {
         children: projectStory(
@@ -1339,17 +1366,18 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
       : {}),
     ...(fib.ccpFootnotes > 0
       ? {
-          footnotes: parseNoteBoundaries(table, fib.footnoteTable, fib.ccpFootnotes).map(
-            (boundary, index) => ({
-              id: index + 1,
-              children: projectStory(
-                characters,
-                characterRanges,
-                footnoteStart + boundary.start,
-                footnoteStart + boundary.end,
-              ),
-            }),
-          ),
+          footnotes: parseOptional(
+            () => parseNoteBoundaries(table, fib.footnoteTable, fib.ccpFootnotes),
+            [],
+          ).map((boundary, index) => ({
+            id: index + 1,
+            children: projectStory(
+              characters,
+              characterRanges,
+              footnoteStart + boundary.start,
+              footnoteStart + boundary.end,
+            ),
+          })),
         }
       : {}),
     ...(fib.ccpComments > 0
@@ -1369,17 +1397,18 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
       : {}),
     ...(fib.ccpEndnotes > 0
       ? {
-          endnotes: parseNoteBoundaries(table, fib.endnoteTable, fib.ccpEndnotes).map(
-            (boundary, index) => ({
-              id: index + 1,
-              children: projectStory(
-                characters,
-                characterRanges,
-                endnoteStart + boundary.start,
-                endnoteStart + boundary.end,
-              ),
-            }),
-          ),
+          endnotes: parseOptional(
+            () => parseNoteBoundaries(table, fib.endnoteTable, fib.ccpEndnotes),
+            [],
+          ).map((boundary, index) => ({
+            id: index + 1,
+            children: projectStory(
+              characters,
+              characterRanges,
+              endnoteStart + boundary.start,
+              endnoteStart + boundary.end,
+            ),
+          })),
         }
       : {}),
   };

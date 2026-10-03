@@ -160,6 +160,7 @@ export function parseSectionProperties(
     try {
       parseOneSection(record, word, properties);
     } catch {
+      properties.push({});
       // Tolerate individual corrupt SEPX records — sections are auxiliary
       // geometry and the remaining sections should still be read.
     }
@@ -172,7 +173,7 @@ function parseOneSection(
   word: Uint8Array,
   properties: SectionModel[],
 ): void {
-  const sepx = readUint32(record.data, 4, "Invalid DOC section properties: invalid SEPX pointer");
+  const sepx = readUint32(record.data, 2, "Invalid DOC section properties: invalid SEPX pointer");
   const cb = readUint16(word, sepx, "Invalid DOC section properties: truncated SEPX");
   const grpprlStart = sepx + 2;
   requireRange(word, grpprlStart, cb, "Invalid DOC section properties: truncated SEPX");
@@ -367,6 +368,9 @@ export function parseFields(
 /** Parse Escher OfficeArtContent, including BStore containers and BLIP records. */
 export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): LegacyPictureData[] {
   const pictures: LegacyPictureData[] = [];
+  const addPicture = (picture: LegacyPictureData): void => {
+    if (picture.data.byteLength > 0) pictures.push(picture);
+  };
   const walk = (offset: number, end: number): void => {
     while (offset + 8 <= end) {
       const version = readUint16(drawing, offset, "Invalid DOC Escher drawing") & 0x000f;
@@ -377,13 +381,24 @@ export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): Lega
       if (version === 0x0f) {
         walk(body, body + length);
       } else if (type === 0xf007) {
-        const blipReference = readUint32(drawing, body + 20, "Invalid DOC Escher picture");
-        const blipType = drawing[body + 10];
-        if (blipReference !== 0xffffffff && blipType !== undefined) {
-          pictures.push(parseBlip(dataStream, blipReference));
+        try {
+          const delayOffset = readUint32(drawing, body + 28, "Invalid DOC Escher picture");
+          const nameLength = drawing[body + 33] ?? 0;
+          const embedded = body + 36 + nameLength;
+          if (delayOffset === 0xffffffff && embedded + 8 <= body + length) {
+            addPicture(parseEmbeddedBlip(drawing.subarray(embedded, body + length)));
+          } else if (delayOffset !== 0xffffffff) {
+            addPicture(parseBlip(dataStream, delayOffset));
+          }
+        } catch (error) {
+          if (!(error instanceof DocParseError)) throw error;
         }
-      } else if (type === 0xf01a || type === 0xf01b || type === 0xf01c || type === 0xf00a) {
-        pictures.push(parseEmbeddedBlip(drawing.subarray(body, body + length)));
+      } else if (type >= 0xf01a && type <= 0xf01f) {
+        try {
+          addPicture(parseEmbeddedBlip(drawing.subarray(body, body + length)));
+        } catch (error) {
+          if (!(error instanceof DocParseError)) throw error;
+        }
       }
       offset = body + length;
     }
@@ -391,14 +406,6 @@ export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): Lega
   walk(0, drawing.byteLength);
   return pictures.filter((picture) => picture.data.byteLength > 0);
 }
-
-const BLIP_TYPES = new Map<number, LegacyPictureData["type"]>([
-  [0x2160, "bmp"],
-  [0x6c00, "jpeg"],
-  [0x6c01, "png"],
-  [0x7c80, "gif"],
-  [0x6c02, "tiff"],
-]);
 
 function imageTypeFromBytes(data: Uint8Array): LegacyPictureData["type"] | undefined {
   if (data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47) return "png";
@@ -411,25 +418,26 @@ function imageTypeFromBytes(data: Uint8Array): LegacyPictureData["type"] | undef
 }
 
 function parseEmbeddedBlip(bytes: Uint8Array): LegacyPictureData {
-  const record = readUint16(bytes, 2, "Invalid DOC Escher BLIP");
-  let start = 36;
-  if (bytes[0] === 0x89 && bytes[1] === 0x50) start = 0;
-  else if (bytes[0] === 0xff && bytes[1] === 0xd8) start = 0;
-  const type = imageTypeFromBytes(bytes.subarray(start)) ?? BLIP_TYPES.get(record) ?? "unknown";
+  const header = readUint16(bytes, 0, "Invalid DOC Escher BLIP");
+  const recordType = readUint16(bytes, 2, "Invalid DOC Escher BLIP");
+  if (recordType < 0xf01a || recordType > 0xf01f) {
+    throw new DocParseError("Invalid DOC Escher BLIP: unsupported record type");
+  }
+  const instance = header >> 4;
+  const uidCount = instance % 2 === 0 ? 1 : 2;
+  const metafileHeaderLength = recordType <= 0xf01c ? 34 : 1;
+  const start = 8 + uidCount * 16 + metafileHeaderLength;
+  const type = imageTypeFromBytes(bytes.subarray(start)) ?? "unknown";
   const data = bytes.subarray(start);
   const dimensions = readImageDimensions(data, type);
   return { type, data, ...dimensions };
 }
 
 function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData {
-  let offset = 0;
-  while (offset + 61 <= dataStream.byteLength) {
-    if (readUint32(dataStream, offset + 24, "Invalid DOC Data stream") === reference) {
-      return parseEmbeddedBlip(dataStream.subarray(offset + 36));
-    }
-    offset += 61;
+  if (reference >= dataStream.byteLength) {
+    return { type: "unknown", data: new Uint8Array(), width: 0, height: 0 };
   }
-  return { type: "unknown", data: new Uint8Array(), width: 0, height: 0 };
+  return parseEmbeddedBlip(dataStream.subarray(reference));
 }
 
 function readImageDimensions(
