@@ -7,6 +7,7 @@
 export * from "./picture";
 export * from "./shape";
 export * from "./connector";
+export * from "./csv";
 export * from "./group";
 export * from "./table";
 export * from "./smartart";

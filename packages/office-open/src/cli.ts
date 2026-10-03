@@ -1,7 +1,11 @@
+import { readFile, writeFile } from "node:fs/promises";
+
 import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
 import { defineCommand, runMain } from "citty";
 
+import { detectOfficeFile } from "./detect";
 import { generateToFile, parseInput } from "./generate";
+import { parseOfficeDocument } from "./parse";
 import {
   SCHEMA_ENTRIES,
   UnknownDefinitionError,
@@ -205,6 +209,64 @@ const schemaCommand = defineCommand({
   subCommands: { index: schemaIndexCommand, slice: schemaSliceCommand },
 });
 
+const detectCommand = defineCommand({
+  meta: {
+    name: "detect",
+    description: "Detect the office format of a binary or text file",
+  },
+  args: {
+    input: { type: "positional", description: "File path", required: true },
+    json: { type: "boolean", description: "Machine-readable output" },
+  },
+  async run({ args }) {
+    try {
+      const info = await detectOfficeFile(args.input as string);
+      if (args.json) {
+        console.log(JSON.stringify(info));
+        return;
+      }
+      console.log(`Format: ${info.format}`);
+      console.log(`Family: ${info.family}`);
+      console.log(`Container: ${info.container}`);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      globalThis.process.exitCode = 1;
+    }
+  },
+});
+
+const parseCommand = defineCommand({
+  meta: {
+    name: "parse",
+    description: "Parse a supported office file into its Options JSON model",
+  },
+  args: {
+    input: { type: "positional", description: "File path", required: true },
+    output: {
+      type: "string",
+      description: "Write JSON to a file instead of stdout",
+      alias: ["o"],
+    },
+  },
+  async run({ args }) {
+    try {
+      const parsed = await parseOfficeDocument(
+        new Uint8Array(await readFile(args.input as string)),
+      );
+      const json = JSON.stringify(parsed, null, 2);
+      if (args.output) {
+        await writeFile(args.output as string, json);
+        console.log(`Parsed: ${args.output}`);
+        return;
+      }
+      console.log(json);
+    } catch (error) {
+      console.error(`Error: ${(error as Error).message}`);
+      globalThis.process.exitCode = 1;
+    }
+  },
+});
+
 const convertCommands = Object.fromEntries(
   FORMATS.map((format) => [format, createConvertCommand(format, format)]),
 ) as Record<GenerateFormat, ReturnType<typeof createConvertCommand>>;
@@ -217,6 +279,8 @@ const mainCommand = defineCommand({
   },
   subCommands: {
     ...convertCommands,
+    detect: detectCommand,
+    parse: parseCommand,
     schema: schemaCommand,
   },
   args: {

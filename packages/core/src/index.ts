@@ -4,6 +4,7 @@
  * @module
  */
 export * from "./opc";
+export * from "./cfb";
 export * from "./smartart";
 export * from "./chart";
 export * from "./table";
