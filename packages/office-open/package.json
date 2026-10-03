@@ -66,6 +66,34 @@
       "types": "./dist/xlsx.d.mts",
       "import": "./dist/xlsx.mjs"
     },
+    "./doc": {
+      "types": "./dist/doc.d.mts",
+      "import": "./dist/doc.mjs"
+    },
+    "./xls": {
+      "types": "./dist/xls.d.mts",
+      "import": "./dist/xls.mjs"
+    },
+    "./ppt": {
+      "types": "./dist/ppt.d.mts",
+      "import": "./dist/ppt.mjs"
+    },
+    "./rtf": {
+      "types": "./dist/rtf.d.mts",
+      "import": "./dist/rtf.mjs"
+    },
+    "./odf": {
+      "types": "./dist/odf.d.mts",
+      "import": "./dist/odf.mjs"
+    },
+    "./formats": {
+      "types": "./dist/formats.d.mts",
+      "import": "./dist/formats.mjs"
+    },
+    "./parse": {
+      "types": "./dist/parse.d.mts",
+      "import": "./dist/parse.mjs"
+    },
     "./core": {
       "types": "./dist/core.d.mts",
       "import": "./dist/core.mjs"
@@ -103,13 +131,19 @@
   },
   "dependencies": {
     "@office-open/core": "workspace:*",
+    "@office-open/doc": "workspace:*",
     "@office-open/docx": "workspace:*",
+    "@office-open/odf": "workspace:*",
+    "@office-open/ppt": "workspace:*",
     "@office-open/pptx": "workspace:*",
+    "@office-open/rtf": "workspace:*",
+    "@office-open/xls": "workspace:*",
     "@office-open/xlsx": "workspace:*",
     "@office-open/xml": "workspace:*",
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "citty": "0.2.2"
+    "citty": "0.2.2",
+    "fflate": "0.8.3"
   },
   "peerDependencies": {
     "ai": "^6.0.0 || ^7.0.0"

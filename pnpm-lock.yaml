@@ -159,12 +159,27 @@ importers:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+      '@office-open/doc':
+        specifier: workspace:*
+        version: link:../doc
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
+      '@office-open/odf':
+        specifier: workspace:*
+        version: link:../odf
+      '@office-open/ppt':
+        specifier: workspace:*
+        version: link:../ppt
       '@office-open/pptx':
         specifier: workspace:*
         version: link:../pptx
+      '@office-open/rtf':
+        specifier: workspace:*
+        version: link:../rtf
+      '@office-open/xls':
+        specifier: workspace:*
+        version: link:../xls
       '@office-open/xlsx':
         specifier: workspace:*
         version: link:../xlsx
@@ -183,6 +198,9 @@ importers:
       citty:
         specifier: 0.2.2
         version: 0.2.2
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
 
   packages/ppt:
     dependencies:
