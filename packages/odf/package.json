@@ -1,0 +1,33 @@
+{
+  "name": "@office-open/odf",
+  "version": "0.14.6",
+  "description": "Generate and parse OpenDocument text, spreadsheet, and presentation documents",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "dev": "basis build --stub",
+    "build": "vp pack",
+    "prepack": "pnpm build",
+    "test": "vp test run",
+    "check": "vp check --fix"
+  },
+  "dependencies": {
+    "@office-open/docx": "workspace:*",
+    "@office-open/pptx": "workspace:*",
+    "@office-open/xlsx": "workspace:*",
+    "@office-open/xml": "workspace:*",
+    "fflate": "0.8.3"
+  }
+}

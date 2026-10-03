@@ -1,0 +1,30 @@
+{
+  "name": "@office-open/ppt",
+  "version": "0.14.6",
+  "description": "Parse legacy Microsoft PowerPoint .ppt presentations into office-open PresentationOptions",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "dev": "basis build --stub",
+    "build": "vp pack",
+    "prepack": "pnpm build",
+    "test": "vp test run",
+    "check": "vp check --fix"
+  },
+  "dependencies": {
+    "@office-open/core": "workspace:*",
+    "@office-open/pptx": "workspace:*"
+  }
+}

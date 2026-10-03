@@ -118,6 +118,15 @@ importers:
         specifier: 0.8.3
         version: 0.8.3
 
+  packages/doc:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/docx':
+        specifier: workspace:*
+        version: link:../docx
+
   packages/docx:
     dependencies:
       '@office-open/core':
@@ -126,6 +135,24 @@ importers:
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
+
+  packages/odf:
+    dependencies:
+      '@office-open/docx':
+        specifier: workspace:*
+        version: link:../docx
+      '@office-open/pptx':
+        specifier: workspace:*
+        version: link:../pptx
+      '@office-open/xlsx':
+        specifier: workspace:*
+        version: link:../xlsx
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
 
   packages/office-open:
     dependencies:
@@ -157,6 +184,15 @@ importers:
         specifier: 0.2.2
         version: 0.2.2
 
+  packages/ppt:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/pptx':
+        specifier: workspace:*
+        version: link:../pptx
+
   packages/pptx:
     dependencies:
       '@office-open/core':
@@ -165,6 +201,21 @@ importers:
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
+
+  packages/rtf:
+    dependencies:
+      '@office-open/docx':
+        specifier: workspace:*
+        version: link:../docx
+
+  packages/xls:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/xlsx':
+        specifier: workspace:*
+        version: link:../xlsx
 
   packages/xlsx:
     dependencies:
