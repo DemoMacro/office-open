@@ -4,6 +4,7 @@ export const RecordType = {
   document: 1000,
   documentAtom: 1001,
   slide: 1006,
+  slideAtom: 1007,
   mainMaster: 1016,
   slidePersistAtom: 1011,
   ppDrawing: 1036,
@@ -18,11 +19,16 @@ export const RecordType = {
   documentEncryptionAtom: 12052,
   outlineTextReference: 3998,
   escherContainer: 0xf000,
+  escherBStoreContainer: 0xf001,
   escherDrawingContainer: 0xf002,
   escherShapeGroupContainer: 0xf003,
   escherShapeContainer: 0xf004,
+  escherBse: 0xf007,
+  escherShapeGroup: 0xf009,
   escherShape: 0xf00a,
+  escherShapeProperties: 0xf00b,
   escherClientTextbox: 0xf00d,
+  escherChildAnchor: 0xf00f,
   escherClientAnchor: 0xf010,
 } as const;
 
@@ -86,6 +92,7 @@ export function readRecordTree(
   let cursor = offset;
 
   while (cursor + RECORD_HEADER_SIZE <= end) {
+    if (isZeroPadding(view, cursor, end)) break;
     if (nodes.length >= maxRecords) {
       throw new LegacyPowerPointError("Corrupt legacy PowerPoint record: too many sibling records");
     }
@@ -100,12 +107,19 @@ export function readRecordTree(
     cursor = header.end;
   }
 
-  if (cursor !== end) {
+  if (cursor !== end && !isZeroPadding(view, cursor, end)) {
     throw new LegacyPowerPointError(
       "Corrupt legacy PowerPoint record: trailing bytes in container",
     );
   }
   return nodes;
+}
+
+function isZeroPadding(view: DataView, start: number, end: number): boolean {
+  for (let offset = start; offset < end; offset += 1) {
+    if (view.getUint8(offset) !== 0) return false;
+  }
+  return true;
 }
 
 function readAtomChildren(view: DataView, parent: RecordHeader): RecordNode[] {
@@ -153,6 +167,13 @@ export function readInt32(view: DataView, record: RecordHeader, offset: number):
     throw new LegacyPowerPointError("Corrupt legacy PowerPoint atom: missing 32-bit field");
   }
   return view.getInt32(record.offset + RECORD_HEADER_SIZE + offset, true);
+}
+
+export function readUint32(view: DataView, record: RecordHeader, offset: number): number {
+  if (offset < 0 || offset + 4 > record.length) {
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint atom: missing 32-bit field");
+  }
+  return view.getUint32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readInt16(view: DataView, record: RecordHeader, offset: number): number {

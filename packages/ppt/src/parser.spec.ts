@@ -72,11 +72,86 @@ function userEditAtom(pointerOffset: number): number[] {
   ]);
 }
 
-function buildDocument(): { document: Uint8Array; currentUser: Uint8Array } {
+function anchoredTextShape(): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(2050), ...int32(544)]),
+    record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
+    container(0xf00d, [record(3998, int32(0))]),
+  ]);
+}
+
+function childTextShape(
+  id: number,
+  textIndex: number,
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(0)]),
+    record(0xf00f, [...int32(left), ...int32(top), ...int32(right), ...int32(bottom)]),
+    container(0xf00d, [record(3998, int32(textIndex))]),
+  ]);
+}
+
+function groupShape(children: readonly number[][]): number[][] {
+  return [
+    container(0xf004, [
+      record(0xf00a, [...int32(4000), ...int32(1)], { instance: 202 }),
+      record(0xf009, [
+        ...int32(0),
+        ...int32(0),
+        ...int32(300),
+        ...int32(150),
+        ...int32(0),
+        ...int32(0),
+        ...int32(300),
+        ...int32(150),
+      ]),
+    ]),
+    ...children,
+  ];
+}
+
+function nestedGroupDrawing(children: readonly number[][]): number[][] {
+  return [container(0xf003, groupShape(children))];
+}
+
+function groupedTableDrawing(): number[][] {
+  const cells = [
+    [0, 0, 100, 50],
+    [100, 0, 200, 50],
+    [200, 0, 300, 50],
+    [0, 50, 100, 100],
+    [100, 50, 200, 100],
+    [200, 50, 300, 100],
+  ];
+  return nestedGroupDrawing(
+    cells.map((bounds, index) =>
+      childTextShape(4100 + index, index, bounds[0]!, bounds[1]!, bounds[2]!, bounds[3]!),
+    ),
+  );
+}
+
+function pictureShape(id: number): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
+    record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
+    record(0xf00b, [0x04, 0xc1, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
+  ]);
+}
+
+function buildDocument(
+  shapeContainers: readonly number[][] = [anchoredTextShape()],
+  textValues: readonly string[] = ["First\rSecond"],
+): { document: Uint8Array; currentUser: Uint8Array } {
   const slideList = container(4080, [
     record(1011, [...int32(2), ...int32(4), ...int32(1), ...int32(257), ...int32(0), ...int32(0)]),
-    record(3999, int32(0)),
-    record(4008, [...new TextEncoder().encode("First\rSecond")]),
+    ...textValues.flatMap((value) => [
+      record(3999, int32(0)),
+      record(4008, [...new TextEncoder().encode(value)]),
+    ]),
   ]);
   const document = container(1000, [
     record(1001, [...int32(5760), ...int32(4320), ...Array.from<number>({ length: 40 }).fill(0)]),
@@ -84,17 +159,7 @@ function buildDocument(): { document: Uint8Array; currentUser: Uint8Array } {
   ]);
 
   const slide = container(1006, [
-    container(1036, [
-      container(0xf002, [
-        container(0xf003, [
-          container(0xf004, [
-            record(0xf00a, [...int32(2050), ...int32(544)]),
-            record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
-            container(0xf00d, [record(3998, int32(0))]),
-          ]),
-        ]),
-      ]),
-    ]),
+    container(1036, [container(0xf002, [container(0xf003, shapeContainers)])]),
   ]);
 
   const pointers = record(6002, [
@@ -222,6 +287,104 @@ describe("parsePresentation", () => {
     expect(child.shape?.textBody?.paragraphs).toEqual([
       { children: [{ text: "First" }] },
       { children: [{ text: "Second" }] },
+    ]);
+  });
+
+  it("projects direct OfficeArt picture records and blip references", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const pictures = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(pictures, 0);
+    const { document, currentUser } = buildDocument([pictureShape(2051)], ["Picture"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("picture" in child)) throw new TypeError("Expected a picture child");
+    expect(child.picture?.id).toBe(2051);
+    expect(child.picture?.x).toBe(317_500);
+    expect(child.picture?.y).toBe(158_750);
+    expect(child.picture?.width).toBe(476_250);
+    expect(child.picture?.height).toBe(476_250);
+    expect(child.picture?.type).toBe("png");
+    expect(child.picture?.data).toEqual(new Uint8Array(png));
+  });
+
+  it("reads 32-bit child anchors in nested groups", () => {
+    const { document, currentUser } = buildDocument(
+      nestedGroupDrawing([
+        childTextShape(4100, 0, 10, 20, 110, 170),
+        childTextShape(4101, 1, 20, 40, 120, 190),
+      ]),
+      ["Alpha", "Beta"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("group" in child)) throw new TypeError("Expected a group child");
+    expect(child.group?.x).toBe(0);
+    expect(child.group?.y).toBe(0);
+    expect(child.group?.width).toBe(476_250);
+    expect(child.group?.height).toBe(238_125);
+    expect(child.group?.children).toHaveLength(2);
+    const shape = child.group?.children[0];
+    if (!shape || !("shape" in shape)) throw new TypeError("Expected a nested shape");
+    expect(shape.shape?.x).toBe(15_875);
+    expect(shape.shape?.y).toBe(31_750);
+    expect(shape.shape?.width).toBe(158_750);
+    expect(shape.shape?.height).toBe(238_125);
+  });
+
+  it("projects an embedded BSE picture and trims its name", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const blip = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const bseBody = Array.from<number>({ length: 36 }).fill(0);
+    bseBody[33] = 2;
+    const bse = record(0xf007, [...bseBody, 0, 0, ...blip], { version: 2, instance: 0x6e0 });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(container(0xf001, [bse]), 0);
+    const { document, currentUser } = buildDocument([pictureShape(2051)], ["Picture"]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("picture" in child)) throw new TypeError("Expected a picture child");
+    expect(child.picture?.type).toBe("png");
+    expect(child.picture?.data).toEqual(new Uint8Array(png));
+  });
+
+  it("projects a complete grouped-text grid as a table", () => {
+    const { document, currentUser } = buildDocument(
+      groupedTableDrawing(),
+      Array.from({ length: 6 }, (_, index) => `Cell ${index}`),
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("table" in child)) throw new TypeError("Expected a table child");
+    expect(child.table?.x).toBe(0);
+    expect(child.table?.y).toBe(0);
+    expect(child.table?.width).toBe(476_250);
+    expect(child.table?.height).toBe(238_125);
+    expect(child.table?.columnWidths).toEqual([158_750, 158_750, 158_750]);
+    expect(child.table?.rows.map((row) => row.height)).toEqual([79_375, 79_375]);
+    expect(child.table?.rows.map((row) => row.cells.map((cell) => cell.text))).toEqual([
+      ["Cell 0", "Cell 1", "Cell 2"],
+      ["Cell 3", "Cell 4", "Cell 5"],
     ]);
   });
 
