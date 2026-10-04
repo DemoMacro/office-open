@@ -341,6 +341,31 @@ describe("ODS mapping", () => {
       fill: { type: "solid", color: "C6EFCE" },
     });
   });
+
+  it("round-trips cell alignment through style properties", () => {
+    const source: OdsOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  value: "Centered",
+                  style: {
+                    alignment: { horizontal: "center", vertical: "center", wrapText: true },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.style).toEqual({
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    });
+  });
 });
 
 describe("ODP mapping", () => {

@@ -1,4 +1,5 @@
 import type {
+  AlignmentOptions,
   CellFillOptions,
   CellOptions,
   ColumnOptions,
@@ -179,6 +180,7 @@ function addCellStyle(style: StyleOptions, styles: string[]): string {
 function cellStyleChildren(style: StyleOptions): string[] {
   const font = style.font;
   const fill = style.fill;
+  const alignment = style.alignment;
   const textAttributes = {
     "fo:color": odfHex(font?.color),
     "fo:font-size": font?.size !== undefined ? `${font.size}pt` : undefined,
@@ -189,13 +191,33 @@ function cellStyleChildren(style: StyleOptions): string[] {
   };
   const cellAttributes = {
     "fo:background-color": odfHex(solidFillColor(fill)),
+    "style:vertical-align": odfVertical(alignment?.vertical),
+    "fo:wrap-option": alignment?.wrapText ? "wrap" : undefined,
   };
+  const paragraphAttributes = { "fo:text-align": odfHorizontal(alignment?.horizontal) };
   const children: string[] = [];
   if (Object.values(cellAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:table-cell-properties", cellAttributes));
+  if (Object.values(paragraphAttributes).some((value) => value !== undefined))
+    children.push(xmlElement("style:paragraph-properties", paragraphAttributes));
   if (Object.values(textAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:text-properties", textAttributes));
   return children;
+}
+
+/** xlsx horizontal → ODF fo:text-align. */
+function odfHorizontal(value: AlignmentOptions["horizontal"]): string | undefined {
+  if (value === "left") return "start";
+  if (value === "right") return "end";
+  if (value === "center" || value === "justify") return value;
+  return undefined;
+}
+
+/** xlsx vertical → ODF style:vertical-align. */
+function odfVertical(value: AlignmentOptions["vertical"]): string | undefined {
+  if (value === "center") return "middle";
+  if (value === "top" || value === "bottom") return value;
+  return undefined;
 }
 
 /** Solid-fill foreground color; pattern/gradient fills keep their typed shape. */
@@ -350,6 +372,25 @@ function parseNumberStyles(container: Element | undefined): Map<string, StyleOpt
       attributeString(childNamed(style, "style:table-cell-properties"), "fo:background-color"),
     );
     if (background) options.fill = { type: "solid", color: background };
+    const cellProps = childNamed(style, "style:table-cell-properties");
+    const vertical = attributeString(cellProps, "style:vertical-align");
+    const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";
+    const horizontal = attributeString(
+      childNamed(style, "style:paragraph-properties"),
+      "fo:text-align",
+    );
+    const alignment: AlignmentOptions = {
+      horizontal:
+        horizontal === "start"
+          ? "left"
+          : horizontal === "end"
+            ? "right"
+            : (horizontal as AlignmentOptions["horizontal"]),
+      vertical: (vertical === "middle" ? "center" : vertical) as AlignmentOptions["vertical"],
+      wrapText: wrapText || undefined,
+    };
+    if (Object.values(alignment).some((value) => value !== undefined))
+      options.alignment = alignment;
     if (Object.keys(options).length > 0) {
       cellStyles.set(attributeString(style, "style:name") ?? "", options);
     }
