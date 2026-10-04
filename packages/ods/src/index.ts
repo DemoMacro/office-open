@@ -5,6 +5,7 @@ export type {
   OdsCalculationSettings,
   OdsCellGraphic,
   OdsCellOptions,
+  OdsObjectGraphic,
   OdsSemanticsOptions,
   OdsWorkbookOptions,
   OdsWorksheetOptions,

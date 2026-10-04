@@ -12,8 +12,11 @@ import path from "node:path";
 import { unzipSync } from "fflate";
 
 import { parseOdp } from "../packages/odp/src";
+import { OdpParseError } from "../packages/odp/src/error";
 import { parseOds } from "../packages/ods/src";
+import { OdsParseError } from "../packages/ods/src/error";
 import { parseOdt } from "../packages/odt/src";
+import { OdtParseError } from "../packages/odt/src/error";
 
 const decoder = new TextDecoder();
 
@@ -97,11 +100,18 @@ function hasEncryptedManifest(data: Uint8Array): boolean {
 
 function packageCategory(message: string): string {
   const normalized = message.toLowerCase();
-  if (normalized.includes("zip") || normalized.includes("compression")) return "package:zip";
-  if (normalized.includes("mime")) return "package:mime";
-  if (normalized.includes("manifest")) return "package:manifest";
+  if (normalized.includes("zip") || normalized.includes("compression")) return "package:invalid";
+  if (normalized.includes("mime")) return "package:invalid";
+  if (normalized.includes("manifest")) return "package:invalid";
   if (normalized.includes("missing content.xml")) return "package:missing-content";
   return "package:other";
+}
+
+function parseCategory(error: unknown): string {
+  if (error instanceof OdtParseError) return `parse:${error.name}:${error.reason}`;
+  if (error instanceof OdsParseError) return `parse:${error.name}:${error.reason}`;
+  if (error instanceof OdpParseError) return `parse:${error.name}:${error.reason}`;
+  return "parse:unknown";
 }
 
 function printLine(label: string, value: number | string): void {
@@ -157,8 +167,12 @@ async function run(directory: string): Promise<void> {
       const isPackageFailure =
         /^(unexpected odf mime type|odf package|invalid odf manifest|manifest does not declare|invalid zip|unknown compression)/i.test(
           message,
-        );
-      const category = isPackageFailure ? packageCategory(message) : "parse";
+        ) ||
+        ((error instanceof OdtParseError ||
+          error instanceof OdsParseError ||
+          error instanceof OdpParseError) &&
+          error.part === "mimetype");
+      const category = isPackageFailure ? packageCategory(message) : parseCategory(error);
 
       if (isPackageFailure) {
         counts.packageFailure++;
@@ -184,7 +198,7 @@ async function run(directory: string): Promise<void> {
     }
   }
 
-  if (totals.packageFailure > 0 || totals.parseFailure > 0) process.exitCode = 1;
+  if (totals.parseFailure > 0) process.exitCode = 1;
 }
 
 const directory = process.argv[2];

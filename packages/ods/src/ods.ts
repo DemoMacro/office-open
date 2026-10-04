@@ -36,7 +36,6 @@ import type {
   RowOptions,
   StyleOptions,
   WorkbookOptions,
-  WorksheetOptions,
   WorksheetChartOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
@@ -46,6 +45,7 @@ import type {
   OdsAnnotation,
   OdsCellGraphic,
   OdsCellOptions,
+  OdsObjectGraphic,
   OdsSemanticsOptions,
   OdsWorkbookOptions,
   OdsWorksheetOptions,
@@ -60,6 +60,7 @@ const NAMESPACES = [
   'xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
   'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
+  'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
   'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"',
   'xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0"',
   'xmlns:xforms="http://www.w3.org/2002/xforms"',
@@ -151,7 +152,30 @@ function parseOdsWorkbook(data: Uint8Array): OdsWorkbookOptions {
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
   const definedNames = parseDefinedNames(body) ?? [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
-    const parsed = worksheet(table, index + 1, dimensions, cellStyles);
+    const parsed = worksheet(table, index + 1, dimensions, cellStyles) as OdsWorksheetOptions;
+    const formsElement = childNamed(table, "office:forms");
+    if (formsElement) {
+      parsed.forms = parseOfficeForms(
+        formsElement,
+        "content.xml",
+        `/office:document-content/office:body/office:spreadsheet/table:table/office:forms`,
+      );
+    }
+    const objectGraphics = childrenNamed(childNamed(table, "table:shapes"), "draw:frame")
+      .filter((frame) => {
+        const object = childNamed(frame, "draw:object") ?? childNamed(frame, "draw:object-ole");
+        return object !== undefined && !attributeString(object, "xlink:href");
+      })
+      .map((frame) => ({
+        reference: "",
+        href: attributeString(childNamed(frame, "draw:object"), "xlink:href"),
+        name: attributeString(frame, "draw:name"),
+        x: lengthToEmu(attributeString(frame, "svg:x")),
+        y: lengthToEmu(attributeString(frame, "svg:y")),
+        width: lengthToEmu(attributeString(frame, "svg:width")),
+        height: lengthToEmu(attributeString(frame, "svg:height")),
+      }));
+    if (objectGraphics.length) parsed.objectGraphics = objectGraphics;
     const name = attributeString(table, "table:name");
     const charts = embeddedCharts
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))
@@ -314,6 +338,28 @@ function worksheetXml(
     ? bodyRows
     : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   const sheetName = worksheet.name ?? `Sheet${index}`;
+  const objectFrames = (worksheet.objectGraphics ?? []).map((object) =>
+    xmlElement(
+      "draw:frame",
+      {
+        "draw:name": object.name,
+        "svg:x": emuToLength(object.x ?? 0),
+        "svg:y": emuToLength(object.y ?? 0),
+        "svg:width": emuToLength(object.width ?? 0),
+        "svg:height": emuToLength(object.height ?? 0),
+      },
+      [
+        object.href
+          ? xmlElement("draw:object", {
+              "xlink:href": object.href,
+              "xlink:type": "simple",
+              "xlink:show": "embed",
+              "xlink:actuate": "onLoad",
+            })
+          : xmlElement("draw:object-ole", undefined, [xmlElement("office:binary-data")]),
+      ],
+    ),
+  );
   const frames = embeddedCharts
     .filter((entry) => entry.worksheet === sheetName)
     .map((entry) =>
@@ -348,9 +394,12 @@ function worksheetXml(
       ),
     );
   return xmlElement("table:table", { "table:name": sheetName }, [
+    officeFormsXml(worksheet.forms),
+    ...(objectFrames.length || frames.length
+      ? [xmlElement("table:shapes", undefined, [...objectFrames, ...frames])]
+      : []),
     columns.join(""),
     rows.join(""),
-    ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
   ]);
 }
 
@@ -375,14 +424,7 @@ function parseWorksheetCharts(
         ?.replace(/^\.\//, "")
         .replace(/\/$/, "");
       const chart = href ? pool.get(href) : undefined;
-      if (!href) {
-        throw unknownOdsElement(
-          frame,
-          `/office:spreadsheet/table:table[@table:name="${worksheet ?? ""}"]`,
-          "draw:object",
-          "chart frame has no object reference",
-        );
-      }
+      if (!href) continue;
       if (!chart) {
         throw unknownOdsElement(
           frame,
@@ -445,6 +487,7 @@ function rejectUnknownSpreadsheetChildren(body: Element | undefined): void {
     "table:calculation-settings",
     "office:forms",
     "table:named-expressions",
+    "draw:frame",
   ]);
   for (const child of body?.elements ?? []) {
     if (child.name && !allowed.has(child.name)) {
@@ -943,9 +986,10 @@ function worksheet(
   index: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
-): WorksheetOptions {
+): OdsWorksheetOptions {
   const annotations: OdsAnnotation[] = [];
   const cellGraphics: OdsCellGraphic[] = [];
+  const objectGraphics: OdsObjectGraphic[] = [];
   validateTableChildren(table);
   const worksheetOptions = {
     name: attributeString(table, "table:name") ?? `Sheet${index}`,
@@ -953,14 +997,23 @@ function worksheet(
       parseColumn(column, columnIndex + 1, dimensions),
     ),
     rows: tableRows(table).map((row, rowIndex) =>
-      parseRow(row, rowIndex + 1, dimensions, cellStyles, annotations, cellGraphics),
+      parseRow(
+        row,
+        rowIndex + 1,
+        dimensions,
+        cellStyles,
+        annotations,
+        cellGraphics,
+        objectGraphics,
+      ),
     ),
   };
   return {
     ...worksheetOptions,
     ...(annotations.length ? { annotations } : {}),
     ...(cellGraphics.length ? { cellGraphics } : {}),
-  } as OdsWorksheetOptions;
+    ...(objectGraphics.length ? { objectGraphics } : {}),
+  };
 }
 
 function validateTableChildren(table: Element): void {
@@ -970,6 +1023,8 @@ function validateTableChildren(table: Element): void {
       child.name === "table:table-column" ||
       child.name === "table:table-row" ||
       child.name === "table:shapes" ||
+      child.name === "office:forms" ||
+      child.name === "draw:frame" ||
       COLUMN_CONTAINERS.has(child.name) ||
       ROW_CONTAINERS.has(child.name)
     ) {
@@ -1016,6 +1071,7 @@ function parseRow(
   cellStyles: Map<string, StyleOptions>,
   annotations: OdsAnnotation[],
   cellGraphics: OdsCellGraphic[],
+  objectGraphics: OdsObjectGraphic[],
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   return {
@@ -1054,13 +1110,17 @@ function parseRow(
             const object = childNamed(child, "draw:object");
             const image = childNamed(child, "draw:image");
             const href = attributeString(object ?? image, "xlink:href");
-            if (!href)
-              throw unknownOdsElement(
-                child,
-                `/table:table/table:table-row[${rowNumber}]`,
-                "draw:frame",
-                "cell graphic has no object or image reference",
-              );
+            if (!href) {
+              objectGraphics.push({
+                reference: parsed.reference ?? "",
+                name: attributeString(child, "draw:name"),
+                x: lengthToEmu(attributeString(child, "svg:x")),
+                y: lengthToEmu(attributeString(child, "svg:y")),
+                width: lengthToEmu(attributeString(child, "svg:width")),
+                height: lengthToEmu(attributeString(child, "svg:height")),
+              });
+              continue;
+            }
             cellGraphics.push({
               reference: parsed.reference ?? "",
               href,

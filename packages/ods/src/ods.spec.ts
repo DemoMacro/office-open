@@ -131,6 +131,27 @@ describe("ODS codec", () => {
     expect(charts[0]).not.toHaveProperty("row");
   });
 
+  it("round-trips worksheet forms and unreferenced object frames", () => {
+    const options: OdsWorkbookOptions = {
+      worksheets: [
+        {
+          forms: {
+            forms: [{ name: "Controls", controls: [{ kind: "form:checkbox", id: "active" }] }],
+          },
+          objectGraphics: [{ reference: "", name: "Embedded", width: 720000, height: 720000 }],
+          rows: [{ cells: [{ reference: "A1", value: "ODS" }] }],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(options));
+    expect(parsed.worksheets?.[0]?.forms).toMatchObject(options.worksheets?.[0]?.forms ?? {});
+    expect(parsed.worksheets?.[0]?.objectGraphics?.[0]).toMatchObject({
+      name: "Embedded",
+      width: 720000,
+      height: 720000,
+    });
+  });
+
   it("round-trips defined names and rejects unknown worksheet children", () => {
     const parsed = parseOds(
       generateOds({
