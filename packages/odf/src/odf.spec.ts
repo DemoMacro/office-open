@@ -1042,6 +1042,42 @@ describe("ODP mapping", () => {
     expect(child.connector.endConnection).toEqual({ id: 5, index: 1 });
   });
 
+  it("round-trips slide custom shapes through draw:custom-shape", () => {
+    const source: OdpOptions = {
+      slides: [
+        {
+          children: [
+            {
+              shape: {
+                name: "Banner",
+                x: 914400,
+                y: 914400,
+                width: 3657600,
+                height: 1828800,
+                textBody: { text: "Shape text" },
+                properties: {
+                  geometry: "rect",
+                  fill: { type: "solid", color: "FF0000" },
+                  outline: { width: 12700, color: "000000" },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new Error("Expected an ODP shape");
+    expect(child.shape.x).toBe(914400);
+    expect(child.shape.width).toBe(3657600);
+    expect(child.shape.name).toBe("Banner");
+    expect(child.shape.textBody).toMatchObject({ paragraphs: [{ text: "Shape text" }] });
+    expect(child.shape.properties?.geometry).toBe("rect");
+    expect(child.shape.properties?.fill).toMatchObject({ type: "solid", color: "FF0000" });
+    expect(child.shape.properties?.outline).toMatchObject({ width: 12700, color: "000000" });
+  });
+
   it("round-trips slide pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: OdpOptions = {
