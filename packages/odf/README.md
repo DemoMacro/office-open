@@ -13,10 +13,8 @@
 - 📽️ **Presentations** — Generate and parse `.odp` slides, shapes, rich text, page geometry, and embedded charts
 - 🎨 **Basic Styles** — Preserve common text, paragraph, dimension, and visibility styles
 - 📝 **Metadata** — Round-trip titles, subjects, creators, keywords, dates, categories, and revisions
-- 🧩 **Generic ODF Nodes** — Address ODF elements outside the specialized typed surface as extension nodes
-- 📦 **Low-Level Package APIs** — Read OCF manifests, package files, XML nodes, charts, and database documents
 
-The specialized ODF surface is intentionally compact today. Generic node support keeps all ODF Relax NG elements addressable for parsing and serialization; specialized typed coverage continues to expand separately.
+The specialized ODF surface is intentionally compact today; low-level OCF nodes and shared ODF schema codecs live in their dedicated packages.
 
 ### Target Architecture
 
@@ -69,10 +67,6 @@ const parsedPresentation = parseOdp(presentation);
 - `generateOdt(options)` / `parseOdt(data)` — ODF Text (`DocumentOptions`)
 - `generateOds(options)` / `parseOds(data)` — ODF Spreadsheet (`WorkbookOptions`)
 - `generateOdp(options)` / `parseOdp(data)` — ODF Presentation (`PresentationOptions`)
-- `generateChartDocument(options)` / `parseChartDocument(data)` — ODF Chart (`ChartDocumentOptions`)
-- `generateDatabaseDocument(options)` / `parseDatabaseDocument(data)` — ODF Database (`DatabaseDocumentOptions`)
-- `parseOdfNode`, `parseOdfNodes`, `serializeOdfNodes`, `ODF_ELEMENT_NAMES` — generic ODF node extensions
-- `generateOcf`, `manifestXml`, `readOcf`, `readXml` — ODF container and manifest helpers
 
 The high-level models are the corresponding office-open `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions` shapes. ODF packages use an uncompressed leading `mimetype` and an ODF 1.3 manifest.
 
