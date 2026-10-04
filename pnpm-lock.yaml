@@ -150,12 +150,6 @@ importers:
 
   packages/odf:
     dependencies:
-      '@office-open/ocf':
-        specifier: workspace:*
-        version: link:../ocf
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
       '@office-open/odp':
         specifier: workspace:*
         version: link:../odp
@@ -165,6 +159,10 @@ importers:
       '@office-open/odt':
         specifier: workspace:*
         version: link:../odt
+    devDependencies:
+      '@office-open/odf-schema':
+        specifier: workspace:*
+        version: link:../odf-schema
 
   packages/odf-schema:
     dependencies:
