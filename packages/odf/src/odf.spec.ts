@@ -47,6 +47,36 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
+  it("round-trips inline pictures through draw:image", () => {
+    const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "png",
+                      data,
+                      transformation: { width: 9525, height: 9525 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const paragraph = parsed.sections[0]?.children[0] as {
+      paragraph: { children?: Array<{ picture?: { type: string } }> };
+    };
+    expect(paragraph.paragraph.children?.[0]?.picture?.type).toBe("png");
+  });
+
   it("round-trips page size and margins through page-layout", () => {
     const source: DocumentOptions = {
       sections: [

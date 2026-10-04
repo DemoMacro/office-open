@@ -28,7 +28,17 @@ export function manifestXml(mimeType: string, files: OdfPackageFiles): string {
 }
 
 function mediaType(path: string): string {
-  return path.endsWith(".xml") ? "text/xml" : "application/binary";
+  const imageTypes: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    bmp: "image/bmp",
+    tif: "image/tiff",
+    svg: "image/svg+xml",
+  };
+  if (path.endsWith(".xml")) return "text/xml";
+  return imageTypes[path.split(".").pop() ?? ""] ?? "application/binary";
 }
 
 function directoryPaths(paths: string[]): string[] {
@@ -63,11 +73,17 @@ export function generateOcf(mimeType: string, files: OdfPackageFiles): Uint8Arra
 export function readOcf(
   data: Uint8Array,
   expectedMimeType: string,
-): { files: OdfFiles; manifest: Element } {
+): { files: OdfFiles; binaries: Record<string, Uint8Array>; manifest: Element } {
   const entries = unzipSync(data);
   const files: OdfFiles = {};
+  const binaries: Record<string, Uint8Array> = {};
   for (const [path, bytes] of Object.entries(entries)) {
-    if (path !== "mimetype") files[path] = strFromU8(bytes);
+    if (path === "mimetype") continue;
+    if (path.endsWith(".xml")) {
+      files[path] = strFromU8(bytes);
+    } else {
+      binaries[path] = bytes;
+    }
   }
   const mimeType = strFromU8(entries.mimetype ?? new Uint8Array());
   if (mimeType !== expectedMimeType) {
@@ -79,7 +95,7 @@ export function readOcf(
   const manifest = manifestDocument.elements?.[0] ?? manifestDocument;
   if (manifest.name !== "manifest:manifest") throw new Error("Invalid ODF manifest");
   validateManifestPaths(manifest, ["content.xml"]);
-  return { files, manifest };
+  return { files, binaries, manifest };
 }
 
 function validateManifestPaths(manifest: Element, actualPaths: string[]): void {

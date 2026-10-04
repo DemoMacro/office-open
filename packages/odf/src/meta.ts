@@ -12,6 +12,7 @@ export const ODF_NAMESPACES = [
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
   'xmlns:dc="http://purl.org/dc/elements/1.1/"',
+  'xmlns:xlink="http://www.w3.org/1999/xlink"',
   'xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"',
 ].join(" ");
 
