@@ -253,6 +253,99 @@ describe("ODT mapping", () => {
     expect(secondParagraph.bullet).toEqual({ level: 1 });
   });
 
+  it("round-trips numbered lists through a number list style", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { paragraph: { text: "First", numbering: { reference: "num", level: 0 } } },
+            { paragraph: { text: "Second", numbering: { reference: "num", level: 0 } } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a list paragraph");
+    const firstParagraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    expect(firstParagraph.numbering).toMatchObject({ level: 0 });
+    const second = children[1]!;
+    if (!("paragraph" in second)) throw new Error("Expected a list paragraph");
+    const secondParagraph =
+      typeof second.paragraph === "string" ? { text: second.paragraph } : second.paragraph;
+    expect(secondParagraph.numbering).toMatchObject({ level: 0 });
+  });
+
+  it("round-trips hyperlinks as text:a elements", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    hyperlink: {
+                      url: "https://example.com",
+                      tooltip: "Example",
+                      children: ["Site"],
+                    },
+                  },
+                  { hyperlink: { anchor: "top", children: ["Jump"] } },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{
+      hyperlink?: { url?: string; anchor?: string; tooltip?: string; children?: string[] };
+    }>;
+    expect(runs[0]?.hyperlink).toMatchObject({
+      url: "https://example.com",
+      tooltip: "Example",
+    });
+    expect(runs[0]?.hyperlink?.children?.join("")).toBe("Site");
+    expect(runs[1]?.hyperlink).toMatchObject({ anchor: "top" });
+    expect(runs[1]?.hyperlink?.children?.join("")).toBe("Jump");
+  });
+
+  it("round-trips bookmarks as text:bookmark elements", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { paragraph: { children: [{ bookmark: { name: "intro" } }, { text: "Body" }] } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ bookmark?: { name: string } }>;
+    expect(runs[0]?.bookmark).toEqual({ name: "intro" });
+  });
+
+  it("preserves runs of multiple spaces through text:s", () => {
+    const source: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { text: "a  b   c" } }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { text: "" } : child.paragraph;
+    expect(paragraph.text).toBe("a  b   c");
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [

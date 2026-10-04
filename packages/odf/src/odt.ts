@@ -41,6 +41,20 @@ export interface OdtTextSectionOptions {
   children?: SectionChild[];
 }
 
+/** Runs of two or more spaces emit text:s so XML whitespace folding keeps them. */
+function spacesXml(text: string): string {
+  const parts: string[] = [];
+  let index = 0;
+  for (const match of text.matchAll(/ {2,}/g)) {
+    const start = match.index ?? 0;
+    parts.push(escapeText(text.slice(index, start)));
+    parts.push(xmlElement("text:s", { "text:c": match[0].length }));
+    index = start + match[0].length;
+  }
+  parts.push(escapeText(text.slice(index)));
+  return parts.join("");
+}
+
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 interface OdtImage {
   path: string;
@@ -70,6 +84,7 @@ type StyleMap = Map<
 /** Shared lookup state threaded through the ODT parse pipeline. */
 interface ParseContext {
   styles: StyleMap;
+  listStyles: Map<string, boolean>;
   binaries: Record<string, Uint8Array>;
   textSections: OdtTextSectionOptions[];
 }
@@ -107,21 +122,23 @@ export function generateOdt(options: OdtOptions): Uint8Array {
 function blocksXml(blocks: SectionChild[], styles: string[], images: OdtImage[]): string {
   const parts: string[] = [];
   let index = 0;
-  // Consecutive bullet paragraphs of the same level group into one text:list —
-  // the ODF shape for Word's bullet-list runs.
+  // Consecutive list paragraphs of the same level and kind group into one
+  // text:list — the ODF shape for Word's bullet/numbering runs.
   while (index < blocks.length) {
-    const bulletLevel = bulletParagraphLevel(blocks[index]!);
-    if (bulletLevel === undefined) {
+    const listInfo = listParagraphLevel(blocks[index]!);
+    if (listInfo === undefined) {
       parts.push(blockXml(blocks[index]!, styles, images));
       index += 1;
       continue;
     }
     const group: SectionChild[] = [];
-    while (index < blocks.length && bulletParagraphLevel(blocks[index]!) === bulletLevel) {
+    while (index < blocks.length) {
+      const info = listParagraphLevel(blocks[index]!);
+      if (info?.level !== listInfo.level || info?.ordered !== listInfo.ordered) break;
       group.push(blocks[index]!);
       index += 1;
     }
-    parts.push(listXml(group, bulletLevel, styles, images));
+    parts.push(listXml(group, listInfo.level, listInfo.ordered, styles, images));
   }
   return parts.join("");
 }
@@ -130,9 +147,15 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const { files, binaries } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
-  const styleMap = parseStyles(childNamed(content, "office:automatic-styles"));
+  const styleContainer = childNamed(content, "office:automatic-styles");
+  const styleMap = parseStyles(styleContainer);
   const rawNodes = parseOdfNodes(body);
-  const context: ParseContext = { styles: styleMap, binaries, textSections: [] };
+  const context: ParseContext = {
+    styles: styleMap,
+    listStyles: parseListStyles(styleContainer),
+    binaries,
+    textSections: [],
+  };
   const children = parseBlocks(body?.elements ?? [], context);
   const result: OdtOptions = {
     ...parseMeta(files),
@@ -222,20 +245,25 @@ function normalizeParagraph(input: string | ParagraphOptions): ParagraphOptions 
   return typeof input === "string" ? { text: input } : input;
 }
 
-function bulletParagraphLevel(child: SectionChild): number | undefined {
+function listParagraphLevel(child: SectionChild): { level: number; ordered: boolean } | undefined {
   if (!("paragraph" in child)) return undefined;
   const options = normalizeParagraph(child.paragraph);
-  return options.bullet?.level;
+  if (options.bullet?.level !== undefined) return { level: options.bullet.level, ordered: false };
+  const numbering = options.numbering;
+  if (typeof numbering === "object" && "reference" in numbering)
+    return { level: numbering.level ?? 0, ordered: true };
+  return undefined;
 }
 
 function listXml(
   group: SectionChild[],
   level: number,
+  ordered: boolean,
   styles: string[],
   images: OdtImage[],
 ): string {
-  const styleName = addListStyle(styles);
-  // ODF nesting is 1-based: bullet level 0 renders as a single text:list,
+  const styleName = addListStyle(styles, ordered);
+  // ODF nesting is 1-based: list level 0 renders as a single text:list,
   // level 1 nests one text:list inside the first list-item, and so on.
   const items = group
     .map((child) => xmlElement("text:list-item", undefined, [blockXml(child, styles, images)]))
@@ -249,19 +277,35 @@ function listXml(
   return xmlElement("text:list", { "text:style-name": styleName }, [xml]);
 }
 
-function addListStyle(styles: string[]): string {
+function addListStyle(styles: string[], ordered: boolean): string {
   const name = `L${styles.length + 1}`;
   styles.push(
     xmlElement("text:list-style", { "style:name": name }, [
-      xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
-        xmlElement("style:list-level-properties", {
-          "style:list-level-position-and-space-mode": "label-alignment",
-        }),
-        xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
-      ]),
+      ordered
+        ? xmlElement("text:list-level-style-number", { "text:level": 1, "style:num-format": "1" }, [
+            xmlElement("style:list-level-properties", {
+              "style:list-level-position-and-space-mode": "label-alignment",
+            }),
+          ])
+        : xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
+            xmlElement("style:list-level-properties", {
+              "style:list-level-position-and-space-mode": "label-alignment",
+            }),
+            xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
+          ]),
     ]),
   );
   return name;
+}
+
+/** List styles record whether each name resolves to a numbering run. */
+function parseListStyles(container: Element | undefined): Map<string, boolean> {
+  const result = new Map<string, boolean>();
+  for (const style of childrenNamed(container, "text:list-style")) {
+    const name = attributeString(style, "style:name") ?? "";
+    result.set(name, childrenNamed(style, "text:list-level-style-number").length > 0);
+  }
+  return result;
 }
 
 function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string {
@@ -281,19 +325,55 @@ function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtIm
 
 function runXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string[] {
   if (options.text !== undefined && options.children === undefined) {
-    return [escapeText(options.text)];
+    return [spacesXml(options.text)];
   }
   return (options.children ?? []).map((child) => {
-    if (typeof child === "string") return `<text:span>${escapeText(child)}</text:span>`;
+    if (typeof child === "string") return `<text:span>${spacesXml(child)}</text:span>`;
     if ("pageBreak" in child) return "<text:soft-page-break/>";
     if ("columnBreak" in child) return "<text:line-break/>";
     if ("break" in child) return lineBreakXml(child as RunOptions);
+    if ("bookmark" in child) {
+      return xmlElement("text:bookmark", {
+        "text:name": (child as { bookmark: { name: string } }).bookmark.name,
+      });
+    }
+    if ("hyperlink" in child) {
+      const link = (
+        child as {
+          hyperlink: {
+            url?: string;
+            anchor?: string;
+            tooltip?: string;
+            targetFrame?: string;
+            children?: Array<string | { text?: string }>;
+          };
+          text?: string;
+        }
+      ).hyperlink;
+      const href = link.url ?? (link.anchor !== undefined ? `#${link.anchor}` : undefined);
+      if (href === undefined) return "";
+      const inner = link.children
+        ? link.children
+            .map((c) => (typeof c === "string" ? spacesXml(c) : spacesXml(c.text ?? "")))
+            .join("")
+        : spacesXml((child as { text?: string }).text ?? "");
+      return xmlElement(
+        "text:a",
+        {
+          "xlink:type": "simple",
+          "xlink:href": href,
+          "office:title": link.tooltip,
+          "office:target-frame-name": link.targetFrame,
+        },
+        [inner],
+      );
+    }
     if ("text" in child) {
       const run = child as RunOptions;
       const styleName = addCharacterStyle(characterProperties(run), styles);
       return (
         lineBreakXml(run) +
-        xmlElement("text:span", { "text:style-name": styleName }, [escapeText(run.text ?? "")])
+        xmlElement("text:span", { "text:style-name": styleName }, [spacesXml(run.text ?? "")])
       );
     }
     if ("tab" in child) return "<text:tab/>";
@@ -424,7 +504,12 @@ function parseBlock(element: Element, context: ParseContext): SectionChild {
   return { paragraph };
 }
 
-function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0): SectionChild[] {
+function parseBlocks(
+  elements: Element[],
+  context: ParseContext,
+  listDepth = 0,
+  listState?: { name: string; ordered: boolean },
+): SectionChild[] {
   const result: SectionChild[] = [];
   for (const element of elements) {
     if (element.name === "text:section") {
@@ -438,17 +523,20 @@ function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0):
         children: [],
       };
       context.textSections.push(textSection);
-      textSection.children = parseBlocks(element.elements ?? [], context, listDepth);
+      textSection.children = parseBlocks(element.elements ?? [], context, listDepth, listState);
       // Typed sections flatten into document children; the wrapper is retained
       // separately so name/style/protection metadata round-trip.
       result.push(...textSection.children);
       continue;
     }
     if (element.name === "text:list") {
-      // A typed text:list unwraps to bullet paragraphs at the nesting depth;
-      // list-header content (rare) keeps the generic fall-through below.
+      // A typed text:list unwraps to bullet or numbered paragraphs at the
+      // nesting depth, judged by its referenced list style; list-header
+      // content (rare) keeps the generic fall-through below.
+      const name = attributeString(element, "text:style-name") ?? "";
+      const state = { name, ordered: context.listStyles.get(name) ?? false };
       for (const item of childrenNamed(element, "text:list-item")) {
-        result.push(...parseBlocks(item.elements ?? [], context, listDepth + 1));
+        result.push(...parseBlocks(item.elements ?? [], context, listDepth + 1, state));
       }
       continue;
     }
@@ -461,7 +549,9 @@ function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0):
       if (listDepth > 0 && "paragraph" in child) {
         const paragraph = normalizeParagraph(child.paragraph);
         result.push({
-          paragraph: { ...paragraph, bullet: { level: listDepth - 1 } },
+          paragraph: listState?.ordered
+            ? { ...paragraph, numbering: { reference: listState.name, level: listDepth - 1 } }
+            : { ...paragraph, bullet: { level: listDepth - 1 } },
         } as SectionChild);
       } else {
         result.push(child);
@@ -490,30 +580,56 @@ function parseRuns(
   element: Element,
   context: ParseContext,
 ): (string | RunOptions | { tab: true })[] {
-  return (element.elements ?? []).flatMap((child): (string | RunOptions | { tab: true })[] => {
-    if (child.type === "text") return [String(child.text ?? "")];
-    if (child.name === "text:line-break") return [{ break: 1 } as unknown as RunOptions];
-    if (child.name === "text:soft-page-break")
-      return [{ pageBreak: true } as unknown as RunOptions];
-    if (child.name === "text:s") {
-      const count = attributeNumber(child, "text:c") ?? 1;
-      return [" ".repeat(count)];
-    }
-    if (child.name === "text:span") {
-      const properties = context.styles.get(
-        attributeString(child, "text:style-name") ?? "",
-      )?.character;
-      const run: RunOptions = {
-        text: textOf(child),
-        ...properties,
-        underline: properties?.underline ? { type: "single" } : undefined,
-      };
-      return [run];
-    }
-    if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
-    if (child.name === "draw:frame") return parsePictureFrame(child, context);
-    return [];
-  });
+  const runs = (element.elements ?? []).flatMap(
+    (child): (string | RunOptions | { tab: true })[] => {
+      if (child.type === "text") return [String(child.text ?? "")];
+      if (child.name === "text:line-break") return [{ break: 1 } as unknown as RunOptions];
+      if (child.name === "text:soft-page-break")
+        return [{ pageBreak: true } as unknown as RunOptions];
+      if (child.name === "text:s") {
+        const count = attributeNumber(child, "text:c") ?? 1;
+        return [" ".repeat(count)];
+      }
+      if (child.name === "text:a") {
+        const href = attributeString(child, "xlink:href") ?? "";
+        const link = {
+          hyperlink: {
+            ...(href.startsWith("#") ? { anchor: href.slice(1) } : { url: href }),
+            tooltip: attributeString(child, "office:title"),
+            targetFrame: attributeString(child, "office:target-frame-name"),
+            children: parseRuns(child, context),
+          },
+        };
+        return [link as unknown as RunOptions];
+      }
+      if (child.name === "text:bookmark") {
+        const bookmark = { bookmark: { name: attributeString(child, "text:name") ?? "" } };
+        return [bookmark as unknown as RunOptions];
+      }
+      if (child.name === "text:span") {
+        const properties = context.styles.get(
+          attributeString(child, "text:style-name") ?? "",
+        )?.character;
+        const run: RunOptions = {
+          text: textOf(child),
+          ...properties,
+          underline: properties?.underline ? { type: "single" } : undefined,
+        };
+        return [run];
+      }
+      if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
+      if (child.name === "draw:frame") return parsePictureFrame(child, context);
+      return [];
+    },
+  );
+  // Adjacent plain runs (for example text:s splits) merge back into one string
+  // so text shorthand survives the round trip.
+  return runs.reduce<(string | RunOptions | { tab: true })[]>((merged, run) => {
+    const last = merged.at(-1);
+    if (typeof last === "string" && typeof run === "string") merged[merged.length - 1] = last + run;
+    else merged.push(run);
+    return merged;
+  }, []);
 }
 
 /** draw:frame + draw:image maps back to an inline picture run. */
