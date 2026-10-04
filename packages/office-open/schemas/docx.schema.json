@@ -3258,6 +3258,46 @@
       "required": ["anchors"],
       "type": "object"
     },
+    "CheckBoxControlOptions": {
+      "additionalProperties": false,
+      "description": "Checkbox form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "checked": {
+          "description": "Current checked state.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "checkBox",
+          "description": "Checkbox control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control"],
+      "type": "object"
+    },
     "CheckBoxOptions": {
       "additionalProperties": false,
       "description": "Options for a checkbox form field.",
@@ -6024,6 +6064,13 @@
           },
           "type": "array"
         },
+        "forms": {
+          "description": "Document-level form containers independent of inline form fields.",
+          "items": {
+            "$ref": "#/definitions/FormContainerOptions"
+          },
+          "type": "array"
+        },
         "glossary": {
           "$ref": "#/definitions/GlossaryDocumentOptions",
           "description": "Glossary document — building blocks (Quick Parts)"
@@ -6122,6 +6169,13 @@
           },
           "type": "array"
         },
+        "sequenceDeclarations": {
+          "description": "Declared sequence names and numbering semantics used by sequence fields.",
+          "items": {
+            "$ref": "#/definitions/SequenceDeclarationOptions"
+          },
+          "type": "array"
+        },
         "settings": {
           "$ref": "#/definitions/SettingsOptions",
           "description": "Document settings (word/settings.xml)."
@@ -6134,6 +6188,13 @@
         },
         "title": {
           "type": "string"
+        },
+        "variableDeclarations": {
+          "description": "Declared variable names and value types used by variable fields.",
+          "items": {
+            "$ref": "#/definitions/VariableDeclarationOptions"
+          },
+          "type": "array"
         },
         "version": {
           "description": "Document version number, round-tripped from cp:version.",
@@ -6230,6 +6291,53 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "DropDownListControlOptions": {
+      "additionalProperties": false,
+      "description": "Dropdown form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "dropDownList",
+          "description": "Dropdown control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "entries": {
+          "description": "Selectable labels in display order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "selectedIndex": {
+          "description": "Zero-based selected entry index.",
+          "type": "number"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control", "entries"],
       "type": "object"
     },
     "DropDownListOptions": {
@@ -7291,6 +7399,46 @@
         }
       },
       "type": "object"
+    },
+    "FormContainerOptions": {
+      "additionalProperties": false,
+      "description": "A named container holding one or more form controls.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "controls": {
+          "description": "Controls contained by this form.",
+          "items": {
+            "$ref": "#/definitions/FormControlOptions"
+          },
+          "type": "array"
+        },
+        "designMode": {
+          "description": "Whether controls are shown in design mode rather than active mode.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Container name shown to form consumers.",
+          "type": "string"
+        }
+      },
+      "required": ["controls"],
+      "type": "object"
+    },
+    "FormControlOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TextControlOptions"
+        },
+        {
+          "$ref": "#/definitions/CheckBoxControlOptions"
+        },
+        {
+          "$ref": "#/definitions/DropDownListControlOptions"
+        }
+      ]
     },
     "FormFieldOptions": {
       "additionalProperties": false,
@@ -18373,6 +18521,26 @@
       "enum": ["both", "bottom", "center", "top"],
       "type": "string"
     },
+    "SequenceDeclarationOptions": {
+      "additionalProperties": false,
+      "description": "A named sequence-field declaration.",
+      "properties": {
+        "displayOutlineLevel": {
+          "description": "Outline level shown in the sequence number; omit for a flat number.",
+          "type": "number"
+        },
+        "name": {
+          "description": "Unique sequence name used by sequence fields.",
+          "type": "string"
+        },
+        "outlineSeparator": {
+          "description": "Text between the outline level and sequence number.",
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
     "SettingsOptions": {
       "additionalProperties": false,
       "description": "Options for configuring document settings.",
@@ -22563,6 +22731,55 @@
       },
       "type": "object"
     },
+    "TextControlOptions": {
+      "additionalProperties": false,
+      "description": "Text-entry form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "text",
+          "description": "Text-entry control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "maxLength": {
+          "description": "Maximum accepted character count.",
+          "type": "number"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        },
+        "value": {
+          "description": "Current text value.",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "Declared stored value type for the text control.",
+          "enum": ["float", "string", "date", "time"],
+          "type": "string"
+        }
+      },
+      "required": ["control"],
+      "type": "object"
+    },
     "TextFieldOptions": {
       "additionalProperties": false,
       "properties": {
@@ -23702,6 +23919,23 @@
         }
       },
       "required": ["id", "shapeProperties", "type"],
+      "type": "object"
+    },
+    "VariableDeclarationOptions": {
+      "additionalProperties": false,
+      "description": "A named variable-field declaration.",
+      "properties": {
+        "name": {
+          "description": "Unique variable name used by variable fields.",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "Stored value type; display text is owned by the field result.",
+          "enum": ["float", "string"],
+          "type": "string"
+        }
+      },
+      "required": ["name", "valueType"],
       "type": "object"
     },
     "VariableListOptions": {
