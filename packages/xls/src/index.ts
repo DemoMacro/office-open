@@ -1,1 +1,1 @@
-export { parseWorkbook } from "./biff";
+export { parseWorkbook, type LegacyParseOptions } from "./biff";

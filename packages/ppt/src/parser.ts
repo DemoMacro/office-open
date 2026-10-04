@@ -1,4 +1,10 @@
-import { CompoundFileReader } from "@office-open/core";
+import {
+  CompoundFileReader,
+  decryptRc4CryptoApi,
+  parseRc4CryptoApiHeader,
+  parseSummaryInformation,
+  verifyRc4CryptoApiPassword,
+} from "@office-open/core";
 import type { TextBodyOptions, TextRunOptions } from "@office-open/core";
 import type {
   AnimationEntry,
@@ -78,7 +84,15 @@ interface LegacyAnimation {
  * Parse a legacy Microsoft PowerPoint .ppt CFB container into PPTX options.
  * @throws {LegacyPowerPointError} For non-CFB, corrupt, or encrypted input.
  */
-export function parsePresentation(data: Uint8Array): PresentationOptions {
+export interface LegacyParseOptions {
+  /** Password used to verify and decrypt legacy Office RC4 containers. */
+  password?: string;
+}
+
+export function parsePresentation(
+  data: Uint8Array,
+  options?: LegacyParseOptions,
+): PresentationOptions {
   if (!(data instanceof Uint8Array)) throw new TypeError("parsePresentation expects a Uint8Array");
   assertCfbSignature(data);
 
@@ -91,8 +105,8 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
     );
   }
 
-  const document = readStream(reader, POWERPOINT_DOCUMENT_STREAM);
-  const currentUser = readStream(reader, CURRENT_USER_STREAM);
+  let document = readStream(reader, POWERPOINT_DOCUMENT_STREAM);
+  let currentUser = readStream(reader, CURRENT_USER_STREAM);
   const pictures = reader.entry("Pictures") ? readPictureStore(reader.read("Pictures")) : [];
   const documentView = createView(document);
   const currentUserView = createView(currentUser);
@@ -107,7 +121,19 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
   }
 
   const encryptionToken = currentUserView.getUint32(12, true);
-  if (encryptionToken === ENCRYPTED_TOKEN || encryptionToken !== NON_ENCRYPTED_TOKEN) {
+  const encrypted = encryptionToken === ENCRYPTED_TOKEN || encryptionToken !== NON_ENCRYPTED_TOKEN;
+  if (encrypted) {
+    const encryptedEditOffset = readStreamOffset(
+      currentUserView,
+      16,
+      "Current User edit offset",
+      documentView.byteLength,
+    );
+    const encryptedEdit = readRecordHeader(documentView, encryptedEditOffset);
+    document = decryptPowerPointDocument(documentView, encryptedEdit, options?.password);
+    currentUser = new Uint8Array(currentUser);
+    createView(currentUser).setUint32(12, NON_ENCRYPTED_TOKEN, true);
+  } else if (encryptionToken !== NON_ENCRYPTED_TOKEN) {
     throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported");
   }
 
@@ -181,10 +207,112 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
     );
   });
   const result: PresentationOptions = {};
+  Object.assign(result, readSummaryInformation(reader));
   if (size) result.size = size;
   if (masters.length > 0) result.masters = masters;
   if (slides.length > 0) result.slides = slides;
   return result;
+}
+
+function decryptPowerPointDocument(
+  encryptedView: DataView,
+  userEdit: RecordHeader,
+  password?: string,
+): Uint8Array {
+  if (password === undefined) {
+    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported");
+  }
+  if (userEdit.length < 32) {
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption reference");
+  }
+  const references = readPersistReferences(encryptedView, userEdit.offset);
+  const encryptionReference = readUint32(encryptedView, userEdit, 28);
+  const encryptionOffset = references.get(encryptionReference);
+  if (encryptionOffset === undefined) {
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing encryption record");
+  }
+  const encryptionRecord = readRecordHeader(encryptedView, encryptionOffset);
+  if (encryptionRecord.type !== RecordType.documentEncryptionAtom) {
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption record");
+  }
+  const encryptionData = new Uint8Array(
+    encryptedView.buffer,
+    encryptedView.byteOffset + encryptionRecord.offset + 8,
+    encryptionRecord.length,
+  );
+  const { keySizeBits, verifier } = parseRc4CryptoApiHeader(encryptionData, 4);
+  if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
+    throw new LegacyPowerPointError("Invalid legacy PowerPoint password");
+  }
+
+  const result = new Uint8Array(
+    encryptedView.buffer,
+    encryptedView.byteOffset,
+    encryptedView.byteLength,
+  );
+  const resultView = new DataView(result.buffer, result.byteOffset, result.byteLength);
+  const protectedOffsets = new Set<number>([userEdit.offset]);
+  let editOffset: number | undefined = userEdit.offset;
+  while (editOffset !== undefined && editOffset !== 0) {
+    const edit = readRecordHeader(encryptedView, editOffset);
+    protectedOffsets.add(
+      readStreamOffset(encryptedView, edit.offset + 20, "persist pointer offset"),
+    );
+    editOffset = readStreamOffset(encryptedView, edit.offset + 16, "previous UserEditAtom offset");
+  }
+  const offsets = [...new Set(references.values())].sort((left, right) => left - right);
+  const referenceByOffset = new Map(
+    [...references].map(([reference, offset]) => [offset, reference]),
+  );
+  for (const [index, offset] of offsets.entries()) {
+    if (protectedOffsets.has(offset)) continue;
+    if (offset === encryptionOffset) {
+      result.fill(0, offset + 8, offset + 8 + encryptionRecord.length);
+      continue;
+    }
+    const end = index + 1 < offsets.length ? offsets[index + 1]! : encryptedView.byteLength;
+    const length = end - offset;
+    const recordBlockSize = Math.ceil(length / keySizeBits) * keySizeBits;
+    const decrypted = decryptRc4CryptoApi(
+      result.subarray(offset, end),
+      password,
+      verifier.salt,
+      keySizeBits,
+      recordBlockSize,
+      referenceByOffset.get(offset) ?? 0,
+    );
+    result.set(decrypted, offset);
+  }
+  const pointerOffset = readStreamOffset(
+    encryptedView,
+    userEdit.offset + 20,
+    "persist pointer offset",
+  );
+  const pointerBlock = readRecordHeader(encryptedView, pointerOffset);
+  const documentReferences = [...references]
+    .filter(([reference]) => reference !== encryptionReference)
+    .sort(([left], [right]) => left - right);
+  const firstReference = documentReferences[0]?.[0] ?? 0;
+  const firstOffset = documentReferences[0]?.[1] ?? 0;
+  const referenceCount = documentReferences.length;
+  const pointerBodyLength = 4 + referenceCount * 4;
+  resultView.setUint32(pointerBlock.offset + 4, pointerBodyLength, true);
+  resultView.setUint32(pointerBlock.offset + 8, firstReference | (1 << 20), true);
+  resultView.setUint32(pointerBlock.offset + 8, firstReference | (referenceCount << 20), true);
+  resultView.setUint32(pointerBlock.offset + 12, firstOffset, true);
+  for (const [index, [, offset]] of documentReferences.entries()) {
+    resultView.setUint32(pointerBlock.offset + 12 + index * 4, offset, true);
+  }
+  result.fill(0, pointerBlock.offset + 8 + pointerBodyLength, userEdit.offset);
+  resultView.setUint32(userEdit.offset + 4, userEdit.length - 4, true);
+  resultView.setUint32(userEdit.offset + 8 + 28, 0, true);
+  result.fill(0, userEdit.offset + 8 + userEdit.length - 4, userEdit.offset + 8 + userEdit.length);
+  return result;
+}
+
+function readSummaryInformation(reader: CompoundFileReader): PresentationOptions {
+  const path = `${String.fromCharCode(5)}SummaryInformation`;
+  return reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
 }
 
 function assertCfbSignature(data: Uint8Array): void {
@@ -283,8 +411,7 @@ function readPersistPointerBlock(
     }
     for (let index = 0; index < count; index += 1) {
       const recordOffset = view.getUint32(cursor + index * 4, true);
-      const record = readRecordHeader(view, recordOffset);
-      references.set(firstId + index, record.offset);
+      references.set(firstId + index, recordOffset);
     }
     cursor += count * 4;
   }
@@ -300,7 +427,8 @@ function readPersistedRecord(
   offset: number,
   expectedTypes: readonly number[],
 ): RecordNode {
-  const record = readRecordTree(view, offset, view.byteLength)[0];
+  const header = readRecordHeader(view, offset);
+  const record = readRecordTree(view, offset, header.end)[0];
   if (!record || !expectedTypes.includes(record.type)) {
     throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: unexpected persist object");
   }
@@ -379,7 +507,8 @@ function readSlide(
   if (offset === undefined) {
     throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing slide persist object");
   }
-  const slide = readRecordTree(view, offset, view.byteLength)[0];
+  const slideHeader = readRecordHeader(view, offset);
+  const slide = readRecordTree(view, offset, slideHeader.end)[0];
   if (!slide || slide.type !== RecordType.slide) {
     throw new LegacyPowerPointError(
       "Corrupt legacy PowerPoint file: unexpected slide persist object",
@@ -511,7 +640,8 @@ function readMaster(
       "Corrupt legacy PowerPoint file: missing master persist object",
     );
   }
-  const master = readRecordTree(view, offset, view.byteLength)[0];
+  const masterHeader = readRecordHeader(view, offset);
+  const master = readRecordTree(view, offset, masterHeader.end)[0];
   if (!master || (master.type !== RecordType.slide && master.type !== RecordType.mainMaster)) {
     throw new LegacyPowerPointError(
       "Corrupt legacy PowerPoint file: unexpected master persist object",

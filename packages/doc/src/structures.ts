@@ -358,7 +358,9 @@ export function parseFields(
       const instruction = characters
         .slice(cp + 1, end)
         .join("")
-        .replace(/[\x13\x14\x15]/g, "");
+        .replaceAll("\x13", "")
+        .replaceAll("\x14", "")
+        .replaceAll("\x15", "");
       fields.push({ start: cp, end, instruction });
     }
   }

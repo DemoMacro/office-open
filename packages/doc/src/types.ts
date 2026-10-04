@@ -40,3 +40,9 @@ export interface LegacyDocumentOptions extends DocumentOptions {
   fields?: LegacyField[];
   pictures?: LegacyPictureData[];
 }
+
+/** Password for password-protected legacy DOC containers. */
+export interface LegacyParseOptions {
+  /** Password used to verify and decrypt legacy Office RC4 containers. */
+  password?: string;
+}

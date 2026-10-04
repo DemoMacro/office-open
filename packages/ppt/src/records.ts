@@ -74,7 +74,9 @@ export function readRecordHeader(
   const length = view.getUint32(offset + 4, true);
   const end = offset + RECORD_HEADER_SIZE + length;
   if (end > streamEnd) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint record: record exceeds its parent");
+    throw new LegacyPowerPointError(
+      `Corrupt legacy PowerPoint record at offset ${offset}: record exceeds its parent`,
+    );
   }
   return {
     offset,
