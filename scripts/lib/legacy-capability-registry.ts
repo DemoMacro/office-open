@@ -140,23 +140,23 @@ export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
         {
           name: "Annotations and revision ranges",
           assertion: "annotation references become revision ranges",
-          testId: "decodes annotation references as revision ranges",
+          testId: "projects annotation references as canonical revision ranges",
         },
         {
           name: "Main document fields",
           assertion: "PlcffldMom field instructions are preserved",
-          testId: "decodes main-document field instructions from PlcffldMom",
+          testId: "projects main-document field instructions into canonical field runs",
         },
         {
           name: "Pictures (BStore and Data)",
           assertion: "BStore and Data-stream BLIP data project",
-          testId: "parses Escher BStore and Data-stream BLIP picture data",
+          testId: "projects Escher BStore pictures into canonical inline pictures",
           fixtureKey: "synthetic-doc-escher-pictures",
         },
         {
           name: "Embedded pictures",
           assertion: "embedded BLIP data projects without consulting Data",
-          testId: "parses an embedded BLIP without consulting the Data stream",
+          testId: "projects embedded BLIP pictures without consulting the Data stream",
           fixtureKey: "synthetic-doc-embedded-picture",
         },
         {
