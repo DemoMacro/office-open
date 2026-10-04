@@ -1,7 +1,7 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdt, OdtParseError, parseOdt } from "./index";
+import { generateOdt, OdtParseError, parseOdt, type OdtDocumentOptions } from "./index";
 
 describe("ODT codec", () => {
   it("round-trips a document through canonical DocumentOptions", () => {
@@ -11,6 +11,28 @@ describe("ODT codec", () => {
 
   it("wraps invalid packages in OdtParseError", () => {
     expect(() => parseOdt(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
+  });
+
+  it("round-trips declarations, tracked changes, forms, and bookmarks", () => {
+    const options: OdtDocumentOptions = {
+      sections: [
+        { children: [{ bookmarkStart: { id: 7, name: "target" } }, { paragraph: "ODT" }] },
+      ],
+      odfSemantics: {
+        sequenceDeclarations: [{ name: "Figure", displayOutlineLevel: 1 }],
+        variableDeclarations: [{ name: "Total", valueType: "float" }],
+        trackedChanges: {
+          trackChanges: true,
+          changes: [
+            { id: "ct1", kind: "insertion", author: "Author", date: "2026-01-01T00:00:00" },
+          ],
+        },
+        forms: { forms: [{ name: "Editor", controls: [{ kind: "form:text", id: "name" }] }] },
+      },
+    };
+    const parsed = parseOdt(generateOdt(options));
+    expect(parsed.odfSemantics).toMatchObject(options.odfSemantics ?? {});
+    expect(parsed.sections[0]?.children?.[0]).toEqual({ bookmarkStart: { id: 7, name: "target" } });
   });
 
   it("round-trips text section identity, style, protection, and order", () => {
