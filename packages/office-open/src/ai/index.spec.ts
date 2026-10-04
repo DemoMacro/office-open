@@ -1,12 +1,47 @@
+import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
+import { detectOfficeFormat } from "../formats";
 import { formatToolError } from "./error";
-import { docxTool, officeOpenTools, schemaLookupTool, xlsxTool } from "./index";
+import {
+  docxTool,
+  odpTool,
+  odsTool,
+  officeOpenTools,
+  odtTool,
+  pptxTool,
+  schemaLookupTool,
+  xlsxTool,
+} from "./index";
 
 /** Tool-definition budget: the full docx schema is ~675 KB — the whole point
  *  of skeletons. Ratchet against silent growth; see skeleton.spec.ts for the
  *  industry yardstick (healthy single-tool schema ≈ 200-600 tokens). */
 const MAX_INPUT_SCHEMA_BYTES = 28 * 1024;
+
+const VALID_INPUTS = {
+  docx: { sections: [{ children: [{ paragraph: { children: ["AI DOCX"] } }] }] },
+  pptx: {
+    slides: [
+      {
+        children: [{ shape: { x: 0, y: 0, width: 10, height: 4, textBody: { text: "AI PPTX" } } }],
+      },
+    ],
+  },
+  xlsx: { worksheets: [{ rows: [{ cells: [{ value: "AI XLSX" }] }] }] },
+} as const;
+
+async function executeTool(
+  tool: unknown,
+  input: unknown,
+): Promise<{ base64: string; mimeType: string }> {
+  const execute = (
+    tool as {
+      execute: (value: unknown) => Promise<{ base64: string; mimeType: string }>;
+    }
+  ).execute;
+  return execute(input);
+}
 
 describe("officeOpenTools", () => {
   it("should export seven tools with correct keys", () => {
@@ -103,6 +138,64 @@ describe("generate tool validation gate", () => {
         worksheets: [{ rows: [{ cells: [{ reference: "B1", formula: "Nope!A1" }] }] }],
       }),
     ).rejects.toThrow("Invalid xlsx formulas");
+  });
+});
+
+describe("generate tool dispatch", () => {
+  it.each([
+    ["docxTool", docxTool, VALID_INPUTS.docx, "wordprocessingml.document"],
+    ["pptxTool", pptxTool, VALID_INPUTS.pptx, "presentationml.presentation"],
+    ["xlsxTool", xlsxTool, VALID_INPUTS.xlsx, "spreadsheetml.sheet"],
+  ])("generates %s", async (_name, tool, input, mimeType) => {
+    const result = await executeTool(tool, input);
+    expect(result.base64).toBeTruthy();
+    expect(result.mimeType).toBe(`application/vnd.openxmlformats-officedocument.${mimeType}`);
+  });
+
+  it("generates ODF through canonical schemas and verifies package structure", async () => {
+    const expected = {
+      odt: {
+        tool: odtTool,
+        input: VALID_INPUTS.docx,
+        mimeType: "application/vnd.oasis.opendocument.text",
+        files: ["content.xml", "styles.xml", "meta.xml"],
+      },
+      ods: {
+        tool: odsTool,
+        input: VALID_INPUTS.xlsx,
+        mimeType: "application/vnd.oasis.opendocument.spreadsheet",
+        files: ["content.xml", "styles.xml", "meta.xml"],
+      },
+      odp: {
+        tool: odpTool,
+        input: VALID_INPUTS.pptx,
+        mimeType: "application/vnd.oasis.opendocument.presentation",
+        files: ["content.xml", "styles.xml", "meta.xml"],
+      },
+    } as const;
+
+    for (const [format, fixture] of Object.entries(expected)) {
+      const result = await executeTool(fixture.tool, fixture.input);
+      const bytes = new Uint8Array(Buffer.from(result.base64, "base64"));
+      expect(result.mimeType).toBe(fixture.mimeType);
+      expect(detectOfficeFormat(bytes).format).toBe(format);
+      const files = unzipSync(bytes);
+      expect(new TextDecoder().decode(files.mimetype).trim()).toBe(fixture.mimeType);
+      const manifest = new TextDecoder().decode(files["META-INF/manifest.xml"]);
+      expect(manifest).toContain(`manifest:full-path="/"`);
+      expect(manifest).toContain(`manifest:media-type="${fixture.mimeType}"`);
+      for (const file of fixture.files) expect(files[file]).toBeInstanceOf(Uint8Array);
+    }
+  });
+
+  it.each([
+    ["odtTool", odtTool, "docx"],
+    ["odsTool", odsTool, "xlsx"],
+    ["odpTool", odpTool, "pptx"],
+  ])("rejects invalid %s tool input", async (_name, tool, format) => {
+    await expect(executeTool(tool, { invalidRoot: true })).rejects.toThrow(
+      `Invalid ${format} options`,
+    );
   });
 });
 
