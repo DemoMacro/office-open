@@ -494,4 +494,29 @@ describe("ODP mapping", () => {
     if (!("rawXml" in child)) throw new Error("Expected rawXml preservation");
     expect(child.rawXml).toContain("draw:object");
   });
+
+  it("flattens text sections in document order", () => {
+    const data = generateOdt({
+      sections: [{ children: [{ paragraph: "Before" }, { paragraph: "After" }] }],
+    });
+    const entries = unzipSync(data);
+    entries["content.xml"] = new TextEncoder().encode(
+      strFromU8(entries["content.xml"]!).replace(
+        /<text:p>After<\/text:p>/u,
+        '<text:section text:name="S1"><text:p>Inside</text:p></text:section><text:p>After</text:p>',
+      ),
+    );
+    const parsed = parseOdt(zipSync(entries));
+    expect(parsed.odfExtensions).toHaveLength(0);
+    const texts = parsed.sections[0]!.children.map((child) =>
+      "paragraph" in child && typeof child.paragraph === "object"
+        ? child.paragraph.text
+        : "paragraph" in child
+          ? typeof child.paragraph === "string"
+            ? child.paragraph
+            : undefined
+          : undefined,
+    );
+    expect(texts).toEqual(["Before", "Inside", "After"]);
+  });
 });

@@ -106,7 +106,8 @@ export function parseOdt(data: Uint8Array): OdtOptions {
     ...parseMeta(files),
     sections: [{ properties: parsePageLayout(files), children }],
     odfExtensions: rawNodes.filter(
-      (node) => !["text:p", "text:h", "table:table", "text:list"].includes(node.name),
+      (node) =>
+        !["text:p", "text:h", "table:table", "text:list", "text:section"].includes(node.name),
     ),
   };
 }
@@ -392,6 +393,12 @@ function parseBlock(element: Element, context: ParseContext): SectionChild {
 function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0): SectionChild[] {
   const result: SectionChild[] = [];
   for (const element of elements) {
+    if (element.name === "text:section") {
+      // Typed sections flatten: their typed children merge in document order
+      // (the wrapper's name/protected attributes stay an authoring concern).
+      result.push(...parseBlocks(element.elements ?? [], context, listDepth));
+      continue;
+    }
     if (element.name === "text:list") {
       // A typed text:list unwraps to bullet paragraphs at the nesting depth;
       // list-header content (rare) keeps the generic fall-through below.
