@@ -36,8 +36,10 @@ import {
   chartBodyXml,
   graphicFill,
   graphicOutline,
+  officeFormsXml,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  parseOfficeForms,
   OdfSchemaError,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
@@ -47,13 +49,32 @@ import type { GraphicStyle } from "@office-open/odf-schema";
 import type { Element } from "@office-open/xml";
 
 import { OdtParseError } from "./error";
+import type {
+  OdtAnnotation,
+  OdtBookmarkReference,
+  OdtBibliography,
+  OdtBibliographyMark,
+  OdtChapter,
+  OdtExpression,
+  OdtHiddenText,
+  OdtIndex,
+  OdtSequence,
+  OdtShape,
+  OdtShapeHyperlink,
+  OdtReferenceMarkEnd,
+  OdtReferenceReference,
+  OdtVariableSet,
+} from "./semantics";
+import type { OdtDocumentOptions, OdtSemanticsOptions } from "./semantics";
 import { parseTable, tableXml } from "./table";
 
 const MIME = "application/vnd.oasis.opendocument.text";
-const NAMESPACES = ODF_NAMESPACES;
+const NAMESPACES = `${ODF_NAMESPACES} xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:xforms="http://www.w3.org/2002/xforms"`;
 
 /** Section headers/footers render as master-page style:header/style:footer. */
-function masterHeaderFooter(section: SectionOptions | undefined): string {
+function masterHeaderFooter(
+  section: Pick<SectionOptions, "headers" | "footers"> | undefined,
+): string {
   return (
     headerFooterXml(section?.headers?.default, "style:header") +
     headerFooterXml(section?.footers?.default, "style:footer")
@@ -261,13 +282,16 @@ interface OdtChart {
   chart: ChartSpaceOptions;
 }
 
-export function generateOdt(options: DocumentOptions): Uint8Array {
+export function generateOdt(options: OdtDocumentOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
   const notes = notesContext(options);
-  const body = [blocksXml(blocks, styles, images, notes, options.numbering, charts)].join("");
+  const body = [
+    semanticsXml(options.odfSemantics),
+    blocksXml(blocks, styles, images, notes, options.numbering, charts),
+  ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -342,7 +366,7 @@ function blocksXml(
   return parts.join("");
 }
 
-export function parseOdt(data: Uint8Array): DocumentOptions {
+export function parseOdt(data: Uint8Array): OdtDocumentOptions {
   try {
     return parseOdtDocument(data);
   } catch (cause) {
@@ -363,7 +387,7 @@ export function parseOdt(data: Uint8Array): DocumentOptions {
   }
 }
 
-function parseOdtDocument(data: Uint8Array): DocumentOptions {
+function parseOdtDocument(data: Uint8Array): OdtDocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
@@ -381,11 +405,13 @@ function parseOdtDocument(data: Uint8Array): DocumentOptions {
     binaries,
     notes: { footnotes: [], endnotes: [] },
   };
+  const semantics = parseSemantics(body);
   const children = parseBlocks(body?.elements ?? [], context);
-  const result: DocumentOptions = {
+  const result: OdtDocumentOptions = {
     ...parseMeta(files),
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  if (semantics) result.odfSemantics = semantics;
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
   if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
   const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
@@ -412,6 +438,109 @@ function parseOdtDocument(data: Uint8Array): DocumentOptions {
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
   }
   return result;
+}
+
+function parseSemantics(body: Element | undefined): OdtSemanticsOptions | undefined {
+  const result: OdtSemanticsOptions = {};
+  const forms = childNamed(body, "office:forms");
+  if (forms)
+    result.forms = parseOfficeForms(
+      forms,
+      "content.xml",
+      "/office:document-content/office:body/office:text/office:forms",
+    );
+  const sequences = childNamed(body, "text:sequence-decls");
+  const sequenceDeclarations = childrenNamed(sequences, "text:sequence-decl").map((element) => ({
+    name: attributeString(element, "text:name") ?? "",
+    displayOutlineLevel: attributeNumber(element, "text:display-outline-level") ?? 0,
+    separationCharacter: attributeString(element, "text:separation-character"),
+  }));
+  if (sequenceDeclarations.length) result.sequenceDeclarations = sequenceDeclarations;
+  const variables = childNamed(body, "text:variable-decls");
+  const variableDeclarations = childrenNamed(variables, "text:variable-decl").map((element) => ({
+    name: attributeString(element, "text:name") ?? "",
+    valueType: (attributeString(element, "office:value-type") ?? "string") as NonNullable<
+      OdtSemanticsOptions["variableDeclarations"]
+    >[number]["valueType"],
+  }));
+  if (variableDeclarations.length) result.variableDeclarations = variableDeclarations;
+  const tracked = childNamed(body, "text:tracked-changes");
+  const changes = childrenNamed(tracked, "text:changed-region").flatMap((region) => {
+    const child = region.elements?.find((element) =>
+      ["text:insertion", "text:deletion", "text:format-change"].includes(element.name ?? ""),
+    );
+    if (!child?.name) return [];
+    return [
+      {
+        id: attributeString(region, "text:id") ?? attributeString(region, "xml:id") ?? "",
+        kind: child.name.replace("text:", "") as "insertion" | "deletion" | "format-change",
+        author: attributeString(child, "office:changer") ?? undefined,
+        date: attributeString(child, "dc:date") ?? undefined,
+      },
+    ];
+  });
+  if (tracked || changes.length)
+    result.trackedChanges = {
+      trackChanges: attributeString(tracked, "text:track-changes") !== "false",
+      changes,
+    };
+  return Object.keys(result).length ? result : undefined;
+}
+
+function semanticsXml(semantics: OdtSemanticsOptions | undefined): string {
+  if (!semantics) return "";
+  const parts = [
+    officeFormsXml(semantics.forms),
+    semantics.sequenceDeclarations?.length
+      ? xmlElement(
+          "text:sequence-decls",
+          undefined,
+          semantics.sequenceDeclarations.map((declaration) =>
+            xmlElement("text:sequence-decl", {
+              "text:name": declaration.name,
+              "text:display-outline-level": declaration.displayOutlineLevel,
+              "text:separation-character": declaration.separationCharacter,
+            }),
+          ),
+        )
+      : "",
+    semantics.variableDeclarations?.length
+      ? xmlElement(
+          "text:variable-decls",
+          undefined,
+          semantics.variableDeclarations.map((declaration) =>
+            xmlElement("text:variable-decl", {
+              "text:name": declaration.name,
+              "office:value-type": declaration.valueType,
+            }),
+          ),
+        )
+      : "",
+  ];
+  const tracked = semantics.trackedChanges;
+  if (tracked)
+    parts.push(
+      xmlElement(
+        "text:tracked-changes",
+        { "text:track-changes": tracked.trackChanges === false ? false : undefined },
+        tracked.changes.map((change) =>
+          xmlElement("text:changed-region", { "text:id": change.id }, [
+            xmlElement(
+              change.kind === "insertion"
+                ? "text:insertion"
+                : change.kind === "deletion"
+                  ? "text:deletion"
+                  : "text:format-change",
+              {
+                "office:changer": change.author,
+                "dc:date": change.date,
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  return parts.join("");
 }
 
 function contentXml(body: string, styles: string[], fontFaces: string): string {
@@ -445,7 +574,7 @@ function parseFontFace(element: Element): FontEntry {
 }
 
 function documentStylesXml(
-  section: SectionOptions | undefined,
+  section: Pick<SectionOptions, "headers" | "footers" | "properties"> | undefined,
   settings: DocumentOptions["settings"],
   numbering: DocumentOptions["numbering"],
   styles: DocumentOptions["styles"],
@@ -845,6 +974,18 @@ function blockXml(
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
 ): string {
+  if ("index" in child) return indexXml((child as unknown as { index: OdtIndex }).index);
+  if ("bibliography" in child) {
+    return bibliographyIndexXml(
+      (child as unknown as { bibliography: OdtBibliography }).bibliography,
+    );
+  }
+  if ("shape" in child) return shapeXml((child as unknown as { shape: OdtShape }).shape);
+  if ("shapeHyperlink" in child) {
+    return shapeHyperlinkXml(
+      (child as unknown as { shapeHyperlink: OdtShapeHyperlink }).shapeHyperlink,
+    );
+  }
   if ("paragraph" in child)
     return paragraphXml(
       normalizeParagraph(child.paragraph),
@@ -854,6 +995,11 @@ function blockXml(
       numbering,
       charts,
     );
+  if ("bookmarkStart" in child)
+    return xmlElement("text:bookmark-start", {
+      "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
+      "text:name": child.bookmarkStart.name,
+    });
   if ("table" in child)
     return tableXml(child.table, styles, (block) =>
       blockXml(block, styles, images, notes, numbering, charts),
@@ -1068,6 +1214,62 @@ function runXml(
         "text:name": (child as { bookmark: { name: string } }).bookmark.name,
       });
     }
+    if ("bookmarkEnd" in child) {
+      return xmlElement("text:bookmark-end", {
+        "text:name": (child as unknown as { bookmarkEnd: { name: string } }).bookmarkEnd.name,
+      });
+    }
+    if ("variableSet" in child) {
+      return variableSetXml((child as unknown as { variableSet: OdtVariableSet }).variableSet);
+    }
+    if ("sequence" in child) {
+      return sequenceXml((child as unknown as { sequence: OdtSequence }).sequence);
+    }
+    if ("hiddenText" in child) {
+      return hiddenTextXml((child as unknown as { hiddenText: OdtHiddenText }).hiddenText);
+    }
+    if ("bibliographyMark" in child) {
+      return bibliographyMarkXml(
+        (child as unknown as { bibliographyMark: OdtBibliographyMark }).bibliographyMark,
+      );
+    }
+    if ("referenceMarkStart" in child) {
+      return xmlElement("text:reference-mark-start", {
+        "text:name": (child as unknown as { referenceMarkStart: { name: string } })
+          .referenceMarkStart.name,
+      });
+    }
+    if ("referenceMarkEnd" in child) {
+      return xmlElement("text:reference-mark-end", {
+        "text:name": (child as unknown as { referenceMarkEnd: OdtReferenceMarkEnd })
+          .referenceMarkEnd.name,
+      });
+    }
+    if ("bookmarkReference" in child) {
+      return bookmarkReferenceXml(
+        (child as unknown as { bookmarkReference: OdtBookmarkReference }).bookmarkReference,
+      );
+    }
+    if ("referenceReference" in child) {
+      return referenceReferenceXml(
+        (child as unknown as { referenceReference: OdtReferenceReference }).referenceReference,
+      );
+    }
+    if ("chapter" in child) {
+      return chapterXml((child as unknown as { chapter: OdtChapter }).chapter);
+    }
+    if ("expression" in child) {
+      return expressionXml((child as unknown as { expression: OdtExpression }).expression);
+    }
+    if ("shape" in child) return shapeXml((child as unknown as { shape: OdtShape }).shape);
+    if ("shapeHyperlink" in child) {
+      return shapeHyperlinkXml(
+        (child as unknown as { shapeHyperlink: OdtShapeHyperlink }).shapeHyperlink,
+      );
+    }
+    if ("annotation" in child) {
+      return annotationXml((child as unknown as { annotation: OdtAnnotation }).annotation);
+    }
     if ("footnoteReference" in child) {
       return noteXml(
         (child as { footnoteReference: number | { id: number } }).footnoteReference,
@@ -1139,6 +1341,201 @@ function runXml(
     }
     return "";
   });
+}
+
+function variableSetXml(value: OdtVariableSet): string {
+  return xmlElement(
+    "text:variable-set",
+    {
+      "text:name": value.name,
+      "office:value-type": value.valueType,
+      "office:value": value.value,
+      "text:display": value.display,
+      "text:formula": value.formula,
+    },
+    value.display === undefined ? [] : [escapeText(value.display)],
+  );
+}
+
+function bookmarkReferenceXml(value: OdtBookmarkReference): string {
+  return xmlElement(
+    "text:bookmark-ref",
+    {
+      "text:reference-format": value.referenceFormat,
+    },
+    [escapeText(value.name)],
+  );
+}
+
+function chapterXml(value: OdtChapter): string {
+  return xmlElement(
+    "text:chapter",
+    {
+      "text:display": value.display,
+      "text:outline-level": value.outlineLevel,
+    },
+    value.display === undefined ? [] : [escapeText(value.display)],
+  );
+}
+
+function expressionXml(value: OdtExpression): string {
+  return xmlElement(
+    "text:expression",
+    {
+      "text:formula": value.formula,
+      "office:value-type": value.valueType,
+      "office:value": value.value,
+      "text:display": value.display,
+    },
+    value.display === undefined ? [] : [escapeText(value.display)],
+  );
+}
+
+function sequenceXml(value: OdtSequence): string {
+  return xmlElement(
+    "text:sequence",
+    {
+      "text:name": value.name,
+      "text:ref-name": value.referenceName,
+      "text:display": value.display,
+      "text:formula": value.formula,
+    },
+    value.display === undefined ? [] : [escapeText(value.display)],
+  );
+}
+
+function hiddenTextXml(value: OdtHiddenText): string {
+  return xmlElement(
+    "text:hidden-text",
+    {
+      "text:condition": value.condition,
+      "text:is-hidden": value.hidden,
+      "text:is-fixed": value.fixed,
+    },
+    [escapeText(value.content)],
+  );
+}
+
+function bibliographyMarkXml(value: OdtBibliographyMark): string {
+  return xmlElement("text:bibliography-mark", {
+    "text:bibliography-type": value.type,
+    "text:identifier": value.identifier,
+    ...Object.fromEntries((value.fields ?? []).map((field) => [`text:${field.name}`, field.value])),
+  });
+}
+
+function annotationXml(value: OdtAnnotation): string {
+  return xmlElement(
+    "office:annotation",
+    {
+      "dc:creator": value.author,
+      "dc:date": value.date,
+      "office:display": value.display,
+    },
+    value.paragraphs.map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
+  );
+}
+
+function indexXml(value: OdtIndex): string {
+  const source = value.source;
+  return xmlElement(
+    "text:illustration-index",
+    {
+      "text:name": value.name,
+      "text:style-name": value.styleName,
+    },
+    [
+      xmlElement(
+        "text:illustration-index-source",
+        {
+          "text:index-scope": source.scope,
+          "text:use-caption": source.useCaption,
+          "text:relative-tab-stop-position": source.relativeTabStopPosition,
+        },
+        [
+          ...(source.title
+            ? [
+                xmlElement(
+                  "text:index-title-template",
+                  { "text:style-name": source.titleStyleName },
+                  [escapeText(source.title)],
+                ),
+              ]
+            : []),
+          xmlElement("text:illustration-index-entry-template", {
+            "text:style-name": "Index",
+          }),
+        ],
+      ),
+      xmlElement(
+        "text:index-body",
+        undefined,
+        value.paragraphs.map((paragraph) =>
+          xmlElement("text:p", undefined, [escapeText(paragraph)]),
+        ),
+      ),
+    ],
+  );
+}
+
+function bibliographyIndexXml(value: OdtBibliography): string {
+  const source = value.source;
+  return xmlElement(
+    "text:bibliography",
+    {
+      "text:name": value.name,
+      "text:style-name": value.styleName,
+    },
+    [
+      xmlElement("text:bibliography-source", {}, [
+        ...(source.title
+          ? [
+              xmlElement(
+                "text:index-title-template",
+                { "text:style-name": source.titleStyleName },
+                [escapeText(source.title)],
+              ),
+            ]
+          : []),
+        xmlElement("text:bibliography-entry-template", {
+          "text:bibliography-type": "article",
+          "text:style-name": "Index",
+        }),
+      ]),
+      xmlElement(
+        "text:index-body",
+        undefined,
+        value.paragraphs.map((paragraph) =>
+          xmlElement("text:p", undefined, [escapeText(paragraph)]),
+        ),
+      ),
+    ],
+  );
+}
+
+function shapeXml(value: OdtShape): string {
+  return xmlElement(`draw:${value.geometry}`, {
+    "draw:name": value.name,
+    "draw:style-name": value.styleName,
+    "svg:x": value.x ?? "0cm",
+    "svg:y": value.y ?? "0cm",
+    "svg:width": value.width ?? "0cm",
+    "svg:height": value.height ?? "0cm",
+  });
+}
+
+function shapeHyperlinkXml(value: OdtShapeHyperlink): string {
+  return xmlElement(
+    "draw:a",
+    { "xlink:type": "simple", "xlink:href": value.href },
+    value.shapes.map(shapeXml),
+  );
+}
+
+function referenceReferenceXml(value: OdtReferenceReference): string {
+  return xmlElement("text:reference-ref", { "text:reference-format": value.referenceFormat }, [
+    escapeText(value.name),
+  ]);
 }
 
 /** Inline chart renders as a draw:frame + draw:object pointing at the subdocument. */
@@ -1432,6 +1829,76 @@ function parseBlocks(
       pendingPageBreak = true;
       continue;
     }
+    if (element.name === "text:bookmark-start") {
+      result.push({
+        bookmarkStart: {
+          id:
+            attributeNumber(element, "text:id") ??
+            Number(/^bookmark-(\d+)$/.exec(attributeString(element, "xml:id") ?? "")?.[1] ?? 1),
+          name: attributeString(element, "text:name") ?? "",
+        },
+      });
+      continue;
+    }
+    if (element.name === "text:bookmark-end") {
+      result.push({
+        bookmarkEnd: { name: attributeString(element, "text:name") ?? "" },
+      } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "text:reference-mark-start") {
+      result.push({
+        paragraph: {
+          children: [
+            {
+              referenceMarkStart: { name: attributeString(element, "text:name") ?? "" },
+            } as unknown as RunOptions,
+          ],
+        },
+      });
+      continue;
+    }
+    if (element.name === "office:annotation") {
+      result.push({
+        paragraph: {
+          children: [parseAnnotation(element) as unknown as RunOptions],
+        },
+      });
+      continue;
+    }
+    if (element.name === "text:illustration-index") {
+      result.push({ index: parseIndex(element) } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "text:bibliography") {
+      result.push({
+        bibliography: parseBibliography(element),
+      } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "draw:ellipse") {
+      result.push({ shape: parseShape(element) } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "draw:rect") {
+      result.push({ shape: parseShape(element) } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "draw:a") {
+      result.push({
+        shapeHyperlink: parseShapeHyperlink(element),
+      } as unknown as SectionChild);
+      continue;
+    }
+    if (
+      [
+        "office:forms",
+        "text:sequence-decls",
+        "text:variable-decls",
+        "text:tracked-changes",
+      ].includes(element.name ?? "")
+    )
+      continue;
     if (element.name === "text:p" || element.name === "text:h" || element.name === "table:table") {
       const child = parseBlock(element, context);
       if (listDepth > 0 && "paragraph" in child) {
@@ -1540,6 +2007,77 @@ function parseRuns(
         const bookmark = { bookmark: { name: attributeString(child, "text:name") ?? "" } };
         return [bookmark as unknown as RunOptions];
       }
+      if (child.name === "text:bookmark-start")
+        return [
+          {
+            bookmarkStart: {
+              id:
+                attributeNumber(child, "text:id") ??
+                Number(/^bookmark-(\d+)$/.exec(attributeString(child, "xml:id") ?? "")?.[1] ?? 1),
+              name: attributeString(child, "text:name") ?? "",
+            },
+          } as unknown as RunOptions,
+        ];
+      if (["text:change", "text:change-start", "text:change-end"].includes(child.name ?? ""))
+        return [];
+      if (child.name === "text:bookmark-end")
+        return [
+          {
+            bookmarkEnd: { name: attributeString(child, "text:name") ?? "" },
+          } as unknown as RunOptions,
+        ];
+      if (child.name === "text:reference-mark-end")
+        return [
+          {
+            referenceMarkEnd: { name: attributeString(child, "text:name") ?? "" },
+          } as unknown as RunOptions,
+        ];
+      if (child.name === "text:bookmark-ref")
+        return [
+          {
+            bookmarkReference: {
+              name: textOf(child),
+              referenceFormat: attributeString(child, "text:reference-format"),
+            },
+          } as unknown as RunOptions,
+        ];
+      if (child.name === "text:reference-ref")
+        return [
+          {
+            referenceReference: {
+              name: textOf(child),
+              referenceFormat: attributeString(child, "text:reference-format"),
+            },
+          } as unknown as RunOptions,
+        ];
+      if (child.name === "text:chapter")
+        return [{ chapter: parseChapter(child) } as unknown as RunOptions];
+      if (child.name === "text:expression")
+        return [{ expression: parseExpression(child) } as unknown as RunOptions];
+      if (child.name === "draw:a")
+        return [{ shapeHyperlink: parseShapeHyperlink(child) } as unknown as RunOptions];
+      if (child.name === "office:annotation")
+        return [{ annotation: parseAnnotation(child) } as unknown as RunOptions];
+      if (child.name === "text:reference-mark-start")
+        return [
+          {
+            referenceMarkStart: { name: attributeString(child, "text:name") ?? "" },
+          } as unknown as RunOptions,
+        ];
+      if (child.name === "text:variable-set")
+        return [{ variableSet: parseVariableSet(child) } as unknown as RunOptions];
+      if (child.name === "text:sequence")
+        return [{ sequence: parseSequence(child) } as unknown as RunOptions];
+      if (child.name === "text:hidden-text")
+        return [{ hiddenText: parseHiddenText(child) } as unknown as RunOptions];
+      if (child.name === "text:bibliography-mark")
+        return [{ bibliographyMark: parseBibliographyMark(child) } as unknown as RunOptions];
+      if (child.name === "draw:ellipse") {
+        return [{ shape: parseShape(child) } as unknown as RunOptions];
+      }
+      if (child.name === "draw:rect") {
+        return [{ shape: parseShape(child) } as unknown as RunOptions];
+      }
       if (child.name === "text:span") {
         const properties = context.styles.get(
           attributeString(child, "text:style-name") ?? "",
@@ -1573,6 +2111,134 @@ function parseRuns(
     else merged.push(run);
     return merged;
   }, []);
+}
+
+function parseVariableSet(element: Element): OdtVariableSet {
+  return {
+    name: attributeString(element, "text:name") ?? "",
+    valueType: (attributeString(element, "office:value-type") ??
+      "string") as OdtVariableSet["valueType"],
+    value: attributeString(element, "office:value"),
+    display: textOf(element) || attributeString(element, "text:display"),
+    formula: attributeString(element, "text:formula"),
+  };
+}
+
+function parseSequence(element: Element): OdtSequence {
+  return {
+    name: attributeString(element, "text:name") ?? "",
+    referenceName: attributeString(element, "text:ref-name"),
+    display: textOf(element) || attributeString(element, "text:display"),
+    formula: attributeString(element, "text:formula"),
+  };
+}
+
+function parseChapter(element: Element): OdtChapter {
+  return {
+    display: textOf(element) || attributeString(element, "text:display"),
+    outlineLevel: attributeNumber(element, "text:outline-level"),
+  };
+}
+
+function parseExpression(element: Element): OdtExpression {
+  return {
+    formula: attributeString(element, "text:formula"),
+    valueType: (attributeString(element, "office:value-type") ??
+      undefined) as OdtExpression["valueType"],
+    value: attributeString(element, "office:value"),
+    display: textOf(element) || attributeString(element, "text:display"),
+  };
+}
+
+function parseHiddenText(element: Element): OdtHiddenText {
+  return {
+    condition: attributeString(element, "text:condition") ?? "",
+    content: textOf(element),
+    hidden: attributeString(element, "text:is-hidden") === "true" ? true : undefined,
+    fixed: attributeString(element, "text:is-fixed") === "true" ? true : undefined,
+  };
+}
+
+function parseBibliographyMark(element: Element): OdtBibliographyMark {
+  return {
+    type: attributeString(element, "text:bibliography-type") ?? "misc",
+    identifier: attributeString(element, "text:identifier"),
+    fields: Object.entries(element.attributes ?? {})
+      .filter(([name]) => name.startsWith("text:") && name !== "text:bibliography-type")
+      .map(([name, value]) => ({
+        name: name.slice("text:".length),
+        value: String(value),
+      }))
+      .filter((field) => field.name !== "identifier"),
+  };
+}
+
+function parseAnnotation(element: Element): OdtAnnotation {
+  return {
+    paragraphs: childrenNamed(element, "text:p").map((paragraph) => textOf(paragraph)),
+    author: attributeString(element, "dc:creator"),
+    date: attributeString(element, "dc:date"),
+    display: attributeString(element, "office:display") === "true" ? true : undefined,
+  };
+}
+
+function parseIndex(element: Element): OdtIndex {
+  const source = childNamed(element, "text:illustration-index-source");
+  const title = childNamed(source, "text:index-title-template");
+  return {
+    name: attributeString(element, "text:name"),
+    styleName: attributeString(element, "text:style-name"),
+    source: {
+      scope: attributeString(source, "text:index-scope"),
+      useCaption: attributeString(source, "text:use-caption") === "true" ? true : undefined,
+      relativeTabStopPosition:
+        attributeString(source, "text:relative-tab-stop-position") === "true" ? true : undefined,
+      title: title ? textOf(title) || undefined : undefined,
+      titleStyleName: attributeString(title, "text:style-name"),
+    },
+    paragraphs: childrenNamed(childNamed(element, "text:index-body"), "text:p").map((paragraph) =>
+      textOf(paragraph),
+    ),
+  };
+}
+
+function parseBibliography(element: Element): OdtBibliography {
+  const index = parseIndex({
+    ...element,
+    name: "text:illustration-index",
+    elements: (element.elements ?? []).map((child) =>
+      child.name === "text:bibliography-source"
+        ? { ...child, name: "text:illustration-index-source" }
+        : child,
+    ),
+  } as Element);
+  return {
+    name: index.name,
+    styleName: index.styleName,
+    source: index.source,
+    paragraphs: index.paragraphs,
+  };
+}
+
+function parseShape(element: Element): OdtShape {
+  return {
+    geometry: element.name === "draw:rect" ? "rect" : "ellipse",
+    name: attributeString(element, "draw:name"),
+    styleName: attributeString(element, "draw:style-name"),
+    x: attributeString(element, "svg:x"),
+    y: attributeString(element, "svg:y"),
+    width: attributeString(element, "svg:width"),
+    height: attributeString(element, "svg:height"),
+  };
+}
+
+function parseShapeHyperlink(element: Element): OdtShapeHyperlink {
+  return {
+    href: attributeString(element, "xlink:href") ?? "",
+    shapes: childrenNamed(element, "draw:ellipse")
+      .concat(childrenNamed(element, "draw:rect"))
+      .map(parseShape),
+  };
 }
 
 /** text:note stores its body in the document notes and leaves a reference run. */

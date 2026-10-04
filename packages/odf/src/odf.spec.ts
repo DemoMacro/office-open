@@ -1,17 +1,9 @@
+import { generateChartDocument, parseChartDocument } from "@office-open/odf-schema";
+import type { ChartDocumentOptions } from "@office-open/odf-schema";
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import type { ChartDocumentOptions } from "./index";
-import {
-  generateChartDocument,
-  generateOdp,
-  generateOds,
-  generateOdt,
-  parseChartDocument,
-  parseOdp,
-  parseOds,
-  parseOdt,
-} from "./index";
+import { generateOdp, generateOds, generateOdt, parseOdp, parseOds, parseOdt } from "./index";
 
 type ChartSpaceOptions = ChartDocumentOptions["chart"];
 type DocumentOptions = ReturnType<typeof parseOdt>;

@@ -1,4 +1,5 @@
 import { parse } from "@office-open/xml";
+import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -6,6 +7,7 @@ import {
   manifestXml,
   ODF_ELEMENT_NAMES,
   parseOdfNodes,
+  readOcf,
   serializeOdfNodes,
   type OdfXmlNode,
 } from "./index";
@@ -55,5 +57,17 @@ describe("OCF runtime", () => {
     expect(archive.subarray(0, 2)).toEqual(new Uint8Array([0x50, 0x4b]));
     expect(manifestXml(mimeType, files)).toContain('manifest:full-path="Object 1/"');
     expect(manifestXml(mimeType, files)).toContain('manifest:full-path="Thumbnails/"');
+  });
+
+  it("opens a manifest-identified package without a mimetype entry", () => {
+    const archive = zipSync({
+      "content.xml": strToU8(
+        '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+      ),
+      "META-INF/manifest.xml": strToU8(
+        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
+      ),
+    });
+    expect(() => readOcf(archive, "application/vnd.oasis.opendocument.text")).not.toThrow();
   });
 });

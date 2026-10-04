@@ -98,8 +98,6 @@ export function readOcf(
       binaries[path] = bytes;
     }
   }
-  const mimeType = strFromU8(entries.mimetype ?? new Uint8Array());
-  if (mimeType !== expectedMimeType) throw new OcfMimeTypeError(expectedMimeType, mimeType);
   const manifestXml = files["META-INF/manifest.xml"];
   if (!manifestXml) {
     throw new OcfManifestError("ODF package is missing META-INF/manifest.xml");
@@ -114,6 +112,15 @@ export function readOcf(
   });
   const manifest = manifestDocument.elements?.[0] ?? manifestDocument;
   if (manifest.name !== "manifest:manifest") throw new OcfManifestError("Invalid ODF manifest");
+  const rootEntry = (manifest.elements ?? []).find(
+    (entry) =>
+      entry.name === "manifest:file-entry" && manifestAttribute(entry, "full-path") === "/",
+  );
+  const mimeType = entries.mimetype
+    ? strFromU8(entries.mimetype)
+    : manifestAttribute(rootEntry!, "media-type");
+  if (mimeType && mimeType !== expectedMimeType)
+    throw new OcfMimeTypeError(expectedMimeType, mimeType);
   validateManifestPaths(manifest, ["content.xml"]);
   return { files, binaries, manifest };
 }

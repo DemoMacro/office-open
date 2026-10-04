@@ -43,7 +43,7 @@ export async function parseDocumentFile(
     case "rtf":
       return parseRtf(typeof input === "string" ? input : new TextDecoder().decode(input));
     case "odt":
-      return parseOdt(data);
+      return parseOdt(data) as DocumentOptions;
     default:
       throw new Error(`${info.format} is not a document format`);
   }

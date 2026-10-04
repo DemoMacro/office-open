@@ -55,10 +55,11 @@
     "check": "vp check --fix"
   },
   "dependencies": {
-    "@office-open/ocf": "workspace:*",
-    "@office-open/odf-schema": "workspace:*",
     "@office-open/odp": "workspace:*",
     "@office-open/ods": "workspace:*",
     "@office-open/odt": "workspace:*"
+  },
+  "devDependencies": {
+    "@office-open/odf-schema": "workspace:*"
   }
 }

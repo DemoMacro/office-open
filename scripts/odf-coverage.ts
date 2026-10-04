@@ -1,20 +1,8 @@
-/**
- * ODF codec coverage report backed by an explicit registry.
- *
- * Source text is never scanned. Codec availability is checked through the
- * owning module's public exports; RNG elements are assigned through the
- * registry's schema scopes. Generic OdfXmlNode support is intentionally kept
- * outside canonical and subdocument coverage.
- *
- * Usage:
- *   pnpm tsx scripts/odf-coverage.ts --summary
- *   pnpm tsx scripts/odf-coverage.ts --missing
- *   pnpm tsx scripts/odf-coverage.ts --format odt|ods|odp|chart|database
- */
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { pathToFileURL } from "node:url";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+import { parse, type Element } from "@office-open/xml";
 
 import { ODF_CODEC_REGISTRY } from "./lib/odf-codec-registry";
 
@@ -24,229 +12,205 @@ const SCHEMA_FILES = [
   "odf-schemas/OpenDocument-v1.3-manifest-schema.rng",
 ] as const;
 
+interface SchemaCapabilities {
+  elements: ReadonlyMap<string, ReadonlySet<string>>;
+}
+
 interface RegistryState {
   entry: (typeof ODF_CODEC_REGISTRY)[number];
-  packageMissing: boolean;
-  moduleMissing: boolean;
-  missingExports: string[];
   available: boolean;
-  coveredElements?: Set<string>;
+  missingExports: string[];
+  capabilities: ReadonlyMap<string, ReadonlySet<string>>;
 }
 
-function parseArguments(arguments_: string[]): { summary: boolean; format?: string } {
-  const formatFlag = arguments_.findIndex((argument) => argument === "--format");
-  const flagFormat = formatFlag >= 0 ? arguments_[formatFlag + 1] : undefined;
-  const positional = arguments_.find((argument, index) => {
-    if (argument === "--format") return false;
-    if (index === formatFlag + 1) return false;
-    return !argument.startsWith("--");
-  });
-  const format = flagFormat ?? positional;
-  const validFormats = new Set(
-    ODF_CODEC_REGISTRY.filter(
-      (entry) => entry.classification === "canonical" || entry.classification === "subdocument",
-    ).map((entry) => entry.id),
-  );
-  if (format !== undefined && !validFormats.has(format)) {
-    console.error(`unknown format: ${format}`);
-    console.error(`valid formats: ${[...validFormats].join(", ")}`);
-    process.exit(2);
-  }
-  return { summary: arguments_.includes("--summary"), format };
-}
-
-function schemaElements(): Map<string, Set<string>> {
-  const elements = new Map<string, Set<string>>();
+function schemaCapabilities(): SchemaCapabilities {
+  const capabilities = new Map<string, Set<string>>();
   for (const schemaFile of SCHEMA_FILES) {
     const filePath = path.join(ROOT, schemaFile);
     if (!fs.existsSync(filePath)) continue;
-    const schema = fs.readFileSync(filePath, "utf8");
-    for (const match of schema.matchAll(/<rng:element name="([^"]+)"\s*(?:\/>|>)/g)) {
-      const element = match[1]!;
-      const prefix = element.split(":")[0]!;
-      const scoped = elements.get(prefix) ?? new Set<string>();
-      scoped.add(element);
-      elements.set(prefix, scoped);
+    const grammar = parse(fs.readFileSync(filePath, "utf8"), {
+      ignoreDeclaration: true,
+    }).elements?.find((element): element is Element => element.type === "element");
+    const defines = new Map<string, Element>();
+    for (const child of grammar?.elements ?? []) {
+      if (child.type === "element" && child.name === "rng:define") {
+        defines.set(String(child.attributes?.name ?? ""), child);
+      }
+    }
+    for (const definition of defines.values()) {
+      for (const elementNode of descendants(definition, "rng:element")) {
+        const name = String(elementNode.attributes?.name ?? "");
+        if (!name || name.includes(":any")) continue;
+        const attributes = capabilities.get(name) ?? new Set<string>();
+        collectAttributes(elementNode, defines, attributes);
+        capabilities.set(name, attributes);
+      }
     }
   }
-  return elements;
+  return { elements: capabilities };
 }
 
-async function registryState(): Promise<RegistryState[]> {
+function descendants(node: Element, name: string): Element[] {
+  return (node.elements ?? []).flatMap((child): Element[] => {
+    if (child.type !== "element") return [];
+    return child.name === name ? [child, ...descendants(child, name)] : descendants(child, name);
+  });
+}
+
+function collectAttributes(
+  node: Element,
+  defines: ReadonlyMap<string, Element>,
+  result: Set<string>,
+): void {
+  for (const child of node.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "rng:attribute") {
+      const name = child.attributes?.name;
+      if (typeof name === "string") result.add(name);
+    } else if (child.name === "rng:ref" && child.attributes?.name) {
+      const target = defines.get(String(child.attributes.name));
+      if (target) collectAttributes(target, defines, result);
+    } else if (child.name !== "rng:element") {
+      collectAttributes(child, defines, result);
+    }
+  }
+}
+
+function descriptorCapabilities(
+  entry: (typeof ODF_CODEC_REGISTRY)[number],
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const result = new Map<string, Set<string>>();
+  for (const descriptor of entry.schemaElements ?? []) {
+    result.set(descriptor.name, new Set(descriptor.attributes));
+  }
+  return result;
+}
+
+async function registryStates(): Promise<RegistryState[]> {
   return Promise.all(
     ODF_CODEC_REGISTRY.map(async (entry) => {
-      const packageDirectory = path.join(ROOT, "packages", entry.owner.package);
-      const modulePath = path.join(packageDirectory, entry.owner.module);
-      const packageMissing = !fs.existsSync(path.join(packageDirectory, "package.json"));
-      const moduleMissing = !fs.existsSync(modulePath);
+      const modulePath = path.join(ROOT, "packages", entry.owner.package, entry.owner.module);
       const missingExports: string[] = [];
-
-      if (!packageMissing && !moduleMissing && entry.owner.export !== null) {
-        try {
-          const module = await import(pathToFileURL(modulePath).href);
-          const exports = [entry.owner.export, ...(entry.roundTrip ?? [])];
-          for (const name of new Set(exports)) {
-            if (!(name in module)) missingExports.push(name);
-          }
-        } catch (error) {
-          console.warn(`coverage warning: ${entry.id} module could not load`);
-          console.warn(String(error instanceof Error ? error.message : error).split("\n")[0]);
-          missingExports.push(entry.owner.export);
+      try {
+        const module = await import(pathToFileURL(modulePath).href);
+        for (const name of new Set(
+          [entry.owner.export, ...(entry.roundTrip ?? [])].filter((name): name is string =>
+            Boolean(name),
+          ),
+        )) {
+          if (!(name in module)) missingExports.push(name);
         }
+      } catch (error) {
+        console.warn(
+          `coverage warning: ${entry.id}: ${error instanceof Error ? error.message.split("\n")[0] : "module load failed"}`,
+        );
+        missingExports.push(entry.owner.export ?? "<module>");
       }
-
       return {
         entry,
-        packageMissing,
-        moduleMissing,
+        available: fs.existsSync(modulePath) && missingExports.length === 0,
         missingExports,
-        available: !packageMissing && !moduleMissing && missingExports.length === 0,
+        capabilities: descriptorCapabilities(entry),
       };
     }),
   );
 }
 
-function registryCoverage(states: readonly RegistryState[], classification: string) {
-  const selected = states.filter((state) => state.entry.classification === classification);
-  return {
-    selected,
-    total: selected.length,
-    available: selected.filter((state) => state.available).length,
-  };
-}
-
-function prefixOwner(states: readonly RegistryState[]) {
-  const priority = { canonical: 0, subdocument: 1, "generic-only": 2, unsupported: 3 } as const;
-  const owners = new Map<string, RegistryState>();
-  for (const state of [...states].sort(
-    (left, right) =>
-      priority[left.entry.classification] - priority[right.entry.classification] ||
-      left.entry.id.localeCompare(right.entry.id),
-  )) {
-    for (const prefix of state.entry.schemaPrefixes) {
-      if (!owners.has(prefix)) owners.set(prefix, state);
-    }
-  }
-  return owners;
-}
-
-function printMissing(
-  states: readonly RegistryState[],
-  elements: ReadonlyMap<string, Set<string>>,
-) {
-  const actionable = states.filter(
-    (state) => !state.available && state.entry.classification !== "unsupported",
-  );
-  if (actionable.length === 0) return;
-
-  console.log("\nMissing codecs:");
-  for (const state of actionable) {
-    const reasons: string[] = [];
-    if (state.packageMissing) reasons.push("package not integrated");
-    if (state.moduleMissing) reasons.push(`module ${state.entry.owner.module} missing`);
-    if (state.missingExports.length > 0)
-      reasons.push(`missing exports ${state.missingExports.join(", ")}`);
-    console.log(`  - ${state.entry.id}: ${reasons.join("; ")}`);
-  }
-
-  const owners = prefixOwner(states);
-  const missingByPrefix = new Map<string, string[]>();
-  for (const [prefix, scopedElements] of elements) {
-    const owner = owners.get(prefix);
-    if (!owner?.available || owner.entry.classification === "unsupported") continue;
-    const missing = [...scopedElements].filter((element) => !owner.coveredElements?.has(element));
-    if (missing.length > 0) missingByPrefix.set(prefix, missing.sort());
-  }
-
-  if (missingByPrefix.size > 0) {
-    console.log("\nMissing schema elements:");
-    for (const [prefix, missing] of missingByPrefix) {
-      console.log(`  ${prefix}: ${missing.length}`);
-      for (const element of missing) console.log(`    - ${element}`);
-    }
-  }
-}
-
-function percent(numerator: number, denominator: number): string {
+function axis(numerator: number, denominator: number): string {
   return denominator === 0 ? "n/a" : `${((numerator / denominator) * 100).toFixed(1)}%`;
 }
 
-async function main() {
-  const { summary, format } = parseArguments(process.argv.slice(2));
-  const elements = schemaElements();
-  const allStates = await registryState();
-  const states = format
-    ? allStates.filter((state) => state.entry.id === format)
-    : allStates.filter((state) => state.entry.id !== "generic-node");
-  const genericState = allStates.find((state) => state.entry.id === "generic-node");
-
-  if (elements.size === 0) {
-    console.warn("ODF coverage: Relax NG schemas unavailable");
-    process.exitCode = 1;
-  }
-
-  for (const state of states) {
-    const scoped = new Set(
-      state.entry.schemaPrefixes.flatMap((prefix) => [...(elements.get(prefix) ?? [])]),
-    );
-    state.coveredElements = scoped;
-  }
-
-  const canonical = registryCoverage(states, "canonical");
-  const subdocument = registryCoverage(states, "subdocument");
-  const semantic = states.filter((state) => state.entry.roundTrip && state.available).length;
-  const semanticTotal = states.filter((state) => state.entry.roundTrip).length;
-  const schemaElementsTotal = [...elements.values()].reduce(
-    (total, scoped) => total + scoped.size,
-    0,
+function capabilityDeltas(
+  state: RegistryState,
+  schema: SchemaCapabilities,
+): {
+  missingElements: string[];
+  missingAttributes: Array<[string, string]>;
+  extraElements: string[];
+} {
+  const missingElements = [...schema.elements.keys()].filter(
+    (name) => !state.capabilities.has(name),
   );
-  const schemaCovered = states
-    .filter((state) => state.available && state.entry.classification !== "unsupported")
-    .flatMap((state) => state.entry.schemaPrefixes)
-    .flatMap((prefix) => [...(elements.get(prefix) ?? [])]);
-  const schemaCoveredCount = new Set(schemaCovered).size;
+  const missingAttributes: Array<[string, string]> = [];
+  for (const [name, required] of schema.elements) {
+    const actual = state.capabilities.get(name);
+    if (!actual) continue;
+    missingAttributes.push(
+      ...[...required]
+        .filter((attribute) => !actual.has(attribute))
+        .map((attribute) => [name, attribute] as [string, string]),
+    );
+  }
+  const extraElements = [...state.capabilities.keys()].filter((name) => !schema.elements.has(name));
+  return { missingElements, missingAttributes, extraElements };
+}
+
+async function main(): Promise<void> {
+  const summary = process.argv.includes("--summary");
+  const schema = schemaCapabilities();
+  const states = await registryStates();
+  const ownedElements = states.flatMap((state) => [...state.capabilities.keys()]);
+  const schemaTotal = schema.elements.size;
+  const schemaCovered = new Set(ownedElements.filter((name) => schema.elements.has(name))).size;
+  const canonical = states.filter((state) => state.entry.classification === "canonical");
+  const subdocuments = states.filter((state) => state.entry.classification === "subdocument");
+  const semantic = states.filter((state) => state.entry.roundTrip);
+  const schemaCoverage =
+    schemaCovered === schemaTotal &&
+    states.every((state) => capabilityDeltas(state, schema).missingAttributes.length === 0);
+  const canonicalCoverage = canonical.every((state) => state.available) && canonical.length > 0;
+  const subdocCoverage = subdocuments.every((state) => state.available) && subdocuments.length > 0;
+  const semanticRoundTrip = semantic.every((state) => state.available) && semantic.length > 0;
 
   console.log("======================================================================");
   console.log("ODF Codec Coverage");
   console.log("======================================================================");
   console.log(
-    `Schema elements: ${schemaCoveredCount}/${schemaElementsTotal} (${percent(schemaCoveredCount, schemaElementsTotal)})`,
+    `schemaCoverage: ${axis(schemaCovered, schemaTotal)} (${schemaCovered}/${schemaTotal} elements; attributes ${schemaCoverage ? "complete" : "incomplete"})`,
   );
   console.log(
-    `Canonical codecs: ${canonical.available}/${canonical.total} (${percent(canonical.available, canonical.total)})`,
+    `canonicalCoverage: ${axis(canonical.filter((state) => state.available).length, canonical.length)}`,
   );
   console.log(
-    `Subdocuments: ${subdocument.available}/${subdocument.total} (${percent(subdocument.available, subdocument.total)})`,
+    `subdocCoverage: ${axis(subdocuments.filter((state) => state.available).length, subdocuments.length)}`,
   );
   console.log(
-    `Semantic round-trip: ${semantic}/${semanticTotal} (${percent(semantic, semanticTotal)})`,
+    `semanticRoundTrip: ${axis(semantic.filter((state) => state.available).length, semantic.length)}`,
   );
   console.log(
-    `Generic OdfXmlNode: ${genericState ? (genericState.available ? "available" : "missing") : "not registered"} (non-canonical)`,
+    `unsupported/generic-only entries: ${states.filter((state) => ["unsupported", "generic-only"].includes(state.entry.classification)).length}`,
   );
 
   if (!summary) {
-    console.log("\nRegistry:");
     for (const state of states) {
-      const stateLabel =
-        state.entry.classification === "unsupported"
-          ? "unsupported"
-          : state.available
-            ? "available"
-            : state.packageMissing
-              ? "missing package"
-              : state.moduleMissing
-                ? "missing module"
-                : "missing exports";
+      const delta = capabilityDeltas(state, schema);
       console.log(
-        `  ${state.entry.id.padEnd(10)} ${stateLabel.padEnd(17)} ${state.entry.owner.package}/${state.entry.owner.module}`,
+        `\n${state.entry.id}: ${state.available ? "available" : `missing ${state.missingExports.join(", ")}`}`,
       );
+      if (delta.missingElements.length)
+        console.log(
+          `  missing elements: ${delta.missingElements.length}\n    ${delta.missingElements.slice(0, 20).join("\n    ")}`,
+        );
+      if (delta.missingAttributes.length)
+        console.log(
+          `  missing attributes: ${delta.missingAttributes.length}\n    ${delta.missingAttributes
+            .slice(0, 20)
+            .map(([element, attribute]) => `${element} ${attribute}`)
+            .join("\n    ")}`,
+        );
+      if (delta.extraElements.length)
+        console.log(`  unknown descriptor elements: ${delta.extraElements.join(", ")}`);
     }
-    printMissing(states, elements);
   }
 
-  const required = [...canonical.selected, ...subdocument.selected];
-  if (required.some((state) => !state.available)) process.exitCode = 1;
+  const gate =
+    schemaCoverage &&
+    canonicalCoverage &&
+    subdocCoverage &&
+    semanticRoundTrip &&
+    states.every((state) => state.available) &&
+    states.every((state) => !["unsupported", "generic-only"].includes(state.entry.classification));
+  if (!gate) process.exitCode = 1;
 }
 
 await main();

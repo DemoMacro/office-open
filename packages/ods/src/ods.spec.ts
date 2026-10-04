@@ -1,7 +1,8 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOds, OdsParseError, parseOds } from "./index";
+import { generateOds, OdsParseError, parseOds, type OdsWorkbookOptions } from "./index";
+import type { OdsCellOptions } from "./semantics";
 
 describe("ODS codec", () => {
   it("round-trips a workbook through canonical WorkbookOptions", () => {
@@ -13,6 +14,61 @@ describe("ODS codec", () => {
 
   it("wraps invalid packages in OdsParseError", () => {
     expect(() => parseOds(new Uint8Array([1, 2, 3]))).toThrow(OdsParseError);
+  });
+
+  it("round-trips calculation settings, covered cells, forms, annotations, and cell graphics", () => {
+    const options: OdsWorkbookOptions = {
+      odfSemantics: {
+        calculationSettings: {
+          caseSensitive: true,
+          nullDate: "1899-12-30",
+          iteration: { enabled: true, steps: 20, maximumDifference: 0.001 },
+        },
+        forms: {
+          forms: [{ name: "Sheet form", controls: [{ kind: "form:checkbox", id: "active" }] }],
+        },
+      },
+      worksheets: [
+        {
+          annotations: [
+            { reference: "B2", paragraphs: ["Reviewed"], author: "Author", date: "2026-01-01" },
+          ],
+          cellGraphics: [
+            {
+              reference: "B2",
+              href: "Pictures/graphic.png",
+              name: "Graphic",
+              x: 0,
+              y: 0,
+              width: 360000,
+              height: 360000,
+            },
+          ],
+          rows: [
+            {
+              cells: [
+                { reference: "A1", covered: true } as OdsCellOptions,
+                { reference: "B2", value: "ODS" },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(options));
+    expect(parsed.odfSemantics).toMatchObject(options.odfSemantics ?? {});
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]).toMatchObject({
+      reference: "A1",
+      covered: true,
+    });
+    expect(parsed.worksheets?.[0]?.annotations?.[0]).toMatchObject({
+      ...options.worksheets![0]!.annotations![0],
+      reference: "B1",
+    });
+    expect(parsed.worksheets?.[0]?.cellGraphics?.[0]).toMatchObject({
+      ...options.worksheets![0]!.cellGraphics![0],
+      reference: "B1",
+    });
   });
 
   it("round-trips real chart anchors, semantics, worksheet links, and order", () => {
@@ -73,6 +129,27 @@ describe("ODS codec", () => {
     });
     expect(charts[0]).not.toHaveProperty("col");
     expect(charts[0]).not.toHaveProperty("row");
+  });
+
+  it("round-trips worksheet forms and unreferenced object frames", () => {
+    const options: OdsWorkbookOptions = {
+      worksheets: [
+        {
+          forms: {
+            forms: [{ name: "Controls", controls: [{ kind: "form:checkbox", id: "active" }] }],
+          },
+          objectGraphics: [{ reference: "", name: "Embedded", width: 720000, height: 720000 }],
+          rows: [{ cells: [{ reference: "A1", value: "ODS" }] }],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(options));
+    expect(parsed.worksheets?.[0]?.forms).toMatchObject(options.worksheets?.[0]?.forms ?? {});
+    expect(parsed.worksheets?.[0]?.objectGraphics?.[0]).toMatchObject({
+      name: "Embedded",
+      width: 720000,
+      height: 720000,
+    });
   });
 
   it("round-trips defined names and rejects unknown worksheet children", () => {

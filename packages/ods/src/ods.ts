@@ -20,8 +20,10 @@ import {
 import {
   CHART_MIME,
   chartBodyXml,
+  officeFormsXml,
   OdfSchemaError,
   parseEmbeddedCharts,
+  parseOfficeForms,
 } from "@office-open/odf-schema";
 import type {
   AlignmentOptions,
@@ -34,12 +36,20 @@ import type {
   RowOptions,
   StyleOptions,
   WorkbookOptions,
-  WorksheetOptions,
   WorksheetChartOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
+import type {
+  OdsAnnotation,
+  OdsCellGraphic,
+  OdsCellOptions,
+  OdsObjectGraphic,
+  OdsSemanticsOptions,
+  OdsWorkbookOptions,
+  OdsWorksheetOptions,
+} from "./semantics";
 
 const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 const NAMESPACES = [
@@ -49,6 +59,12 @@ const NAMESPACES = [
   'xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0"',
   'xmlns:number="urn:oasis:names:tc:opendocument:xmlns:datastyle:1.0"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
+  'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
+  'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
+  'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"',
+  'xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0"',
+  'xmlns:xforms="http://www.w3.org/2002/xforms"',
+  'xmlns:dc="http://purl.org/dc/elements/1.1/"',
 ].join(" ");
 
 const COLUMN_CONTAINERS = new Set([
@@ -78,7 +94,7 @@ interface OdsChartFrame {
 type OdsParsedChartOptions = Omit<WorksheetChartOptions, "col" | "row"> &
   Partial<Pick<WorksheetChartOptions, "col" | "row">>;
 
-export function generateOds(options: WorkbookOptions): Uint8Array {
+export function generateOds(options: OdsWorkbookOptions): Uint8Array {
   const styles: string[] = [];
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
@@ -91,7 +107,7 @@ export function generateOds(options: WorkbookOptions): Uint8Array {
     worksheetXml(worksheet, index + 1, styles, chartFrames),
   );
   const files: OdfFiles = {
-    "content.xml": contentXml(sheets.join(""), styles, options.definedNames),
+    "content.xml": contentXml(sheets.join(""), styles, options.definedNames, options.odfSemantics),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
@@ -103,7 +119,7 @@ export function generateOds(options: WorkbookOptions): Uint8Array {
   );
 }
 
-export function parseOds(data: Uint8Array): WorkbookOptions {
+export function parseOds(data: Uint8Array): OdsWorkbookOptions {
   try {
     return parseOdsWorkbook(data);
   } catch (cause) {
@@ -124,7 +140,7 @@ export function parseOds(data: Uint8Array): WorkbookOptions {
   }
 }
 
-function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
+function parseOdsWorkbook(data: Uint8Array): OdsWorkbookOptions {
   const { files, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
@@ -132,10 +148,34 @@ function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
   const dimensions = parseDimensionStyles(automaticStyles);
   const cellStyles = parseNumberStyles(automaticStyles);
   const chartPool = parseEmbeddedCharts(manifest, files);
+  const semantics = parseOdsSemantics(body);
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
   const definedNames = parseDefinedNames(body) ?? [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
-    const parsed = worksheet(table, index + 1, dimensions, cellStyles);
+    const parsed = worksheet(table, index + 1, dimensions, cellStyles) as OdsWorksheetOptions;
+    const formsElement = childNamed(table, "office:forms");
+    if (formsElement) {
+      parsed.forms = parseOfficeForms(
+        formsElement,
+        "content.xml",
+        `/office:document-content/office:body/office:spreadsheet/table:table/office:forms`,
+      );
+    }
+    const objectGraphics = childrenNamed(childNamed(table, "table:shapes"), "draw:frame")
+      .filter((frame) => {
+        const object = childNamed(frame, "draw:object") ?? childNamed(frame, "draw:object-ole");
+        return object !== undefined && !attributeString(object, "xlink:href");
+      })
+      .map((frame) => ({
+        reference: "",
+        href: attributeString(childNamed(frame, "draw:object"), "xlink:href"),
+        name: attributeString(frame, "draw:name"),
+        x: lengthToEmu(attributeString(frame, "svg:x")),
+        y: lengthToEmu(attributeString(frame, "svg:y")),
+        width: lengthToEmu(attributeString(frame, "svg:width")),
+        height: lengthToEmu(attributeString(frame, "svg:height")),
+      }));
+    if (objectGraphics.length) parsed.objectGraphics = objectGraphics;
     const name = attributeString(table, "table:name");
     const charts = embeddedCharts
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))
@@ -145,22 +185,89 @@ function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
       : parsed;
   });
   rejectUnknownSpreadsheetChildren(body);
-  return {
+  const result = {
     ...parseMeta(files),
     ...(definedNames.length > 0 ? { definedNames } : {}),
+    ...(semantics ? { odfSemantics: semantics } : {}),
     worksheets,
   };
+  return result;
 }
 
 function contentXml(
   sheets: string,
   styles: string[],
   definedNames: WorkbookOptions["definedNames"],
+  semantics?: OdsSemanticsOptions,
 ): string {
-  const expressions = definedNamesXml(definedNames);
+  const expressions = `${semanticsXml(semantics)}${definedNamesXml(definedNames)}`;
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
     "",
   )}</office:automatic-styles><office:body><office:spreadsheet>${sheets}${expressions}</office:spreadsheet></office:body></office:document-content>`;
+}
+
+function parseOdsSemantics(body: Element | undefined): OdsSemanticsOptions | undefined {
+  const result: OdsSemanticsOptions = {};
+  const forms = childNamed(body, "office:forms");
+  if (forms)
+    result.forms = parseOfficeForms(
+      forms,
+      "content.xml",
+      "/office:document-content/office:body/office:spreadsheet/office:forms",
+    );
+  const calculation = childNamed(body, "table:calculation-settings");
+  if (calculation) {
+    const nullDate = childNamed(calculation, "table:null-date");
+    const iteration = childNamed(calculation, "table:iteration");
+    result.calculationSettings = {
+      caseSensitive: attributeString(calculation, "table:case-sensitive") !== "false",
+      automaticFindLabels: attributeString(calculation, "table:automatic-find-labels") === "true",
+      regularExpressions: attributeString(calculation, "table:use-regular-expressions") === "true",
+      wildcards: attributeString(calculation, "table:use-wildcards") === "true",
+      nullDate: nullDate ? attributeString(nullDate, "table:date-value") : undefined,
+      iteration: iteration
+        ? {
+            enabled: attributeString(iteration, "table:status") === "enable",
+            steps: attributeNumber(iteration, "table:steps"),
+            maximumDifference: attributeNumber(iteration, "table:maximum-difference"),
+          }
+        : undefined,
+    };
+  }
+  return Object.keys(result).length ? result : undefined;
+}
+
+function semanticsXml(semantics: OdsSemanticsOptions | undefined): string {
+  if (!semantics) return "";
+  const calculation = semantics.calculationSettings;
+  return [
+    officeFormsXml(semantics.forms),
+    calculation
+      ? xmlElement(
+          "table:calculation-settings",
+          {
+            "table:case-sensitive": calculation.caseSensitive === false ? false : undefined,
+            "table:automatic-find-labels": calculation.automaticFindLabels,
+            "table:use-regular-expressions": calculation.regularExpressions,
+            "table:use-wildcards": calculation.wildcards,
+          },
+          [
+            ...(calculation.nullDate
+              ? [xmlElement("table:null-date", { "table:date-value": calculation.nullDate })]
+              : []),
+            ...(calculation.iteration
+              ? [
+                  xmlElement("table:iteration", {
+                    "table:status": calculation.iteration.enabled ? "enable" : "disable",
+                    "table:steps": calculation.iteration.steps,
+                    "table:maximum-difference": calculation.iteration.maximumDifference,
+                  }),
+                ]
+              : []),
+          ],
+        )
+      : "",
+  ].join("");
 }
 
 function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): string {
@@ -187,7 +294,7 @@ function stylesXml(): string {
 }
 
 function worksheetXml(
-  worksheet: WorksheetOptions,
+  worksheet: OdsWorksheetOptions,
   index: number,
   styles: string[],
   embeddedCharts: OdsChartFrame[],
@@ -220,13 +327,39 @@ function worksheetXml(
     return xmlElement(
       "table:table-row",
       { "table:style-name": styleName },
-      (row.cells ?? []).map((cell) => cellXml(cell, styles)),
+      (row.cells ?? []).map((cell) =>
+        (cell as OdsCellOptions).covered
+          ? xmlElement("table:covered-table-cell")
+          : cellXml(cell, styles, cellDecorationXml(worksheet, cell.reference ?? "")),
+      ),
     );
   });
   const rows = bodyRows.length
     ? bodyRows
     : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   const sheetName = worksheet.name ?? `Sheet${index}`;
+  const objectFrames = (worksheet.objectGraphics ?? []).map((object) =>
+    xmlElement(
+      "draw:frame",
+      {
+        "draw:name": object.name,
+        "svg:x": emuToLength(object.x ?? 0),
+        "svg:y": emuToLength(object.y ?? 0),
+        "svg:width": emuToLength(object.width ?? 0),
+        "svg:height": emuToLength(object.height ?? 0),
+      },
+      [
+        object.href
+          ? xmlElement("draw:object", {
+              "xlink:href": object.href,
+              "xlink:type": "simple",
+              "xlink:show": "embed",
+              "xlink:actuate": "onLoad",
+            })
+          : xmlElement("draw:object-ole", undefined, [xmlElement("office:binary-data")]),
+      ],
+    ),
+  );
   const frames = embeddedCharts
     .filter((entry) => entry.worksheet === sheetName)
     .map((entry) =>
@@ -261,9 +394,12 @@ function worksheetXml(
       ),
     );
   return xmlElement("table:table", { "table:name": sheetName }, [
+    officeFormsXml(worksheet.forms),
+    ...(objectFrames.length || frames.length
+      ? [xmlElement("table:shapes", undefined, [...objectFrames, ...frames])]
+      : []),
     columns.join(""),
     rows.join(""),
-    ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
   ]);
 }
 
@@ -288,14 +424,7 @@ function parseWorksheetCharts(
         ?.replace(/^\.\//, "")
         .replace(/\/$/, "");
       const chart = href ? pool.get(href) : undefined;
-      if (!href) {
-        throw unknownOdsElement(
-          frame,
-          `/office:spreadsheet/table:table[@table:name="${worksheet ?? ""}"]`,
-          "draw:object",
-          "chart frame has no object reference",
-        );
-      }
+      if (!href) continue;
       if (!chart) {
         throw unknownOdsElement(
           frame,
@@ -353,7 +482,13 @@ function columnNumber(column: string): number {
 }
 
 function rejectUnknownSpreadsheetChildren(body: Element | undefined): void {
-  const allowed = new Set(["table:table", "table:named-expressions"]);
+  const allowed = new Set([
+    "table:table",
+    "table:calculation-settings",
+    "office:forms",
+    "table:named-expressions",
+    "draw:frame",
+  ]);
   for (const child of body?.elements ?? []) {
     if (child.name && !allowed.has(child.name)) {
       const name = child.name;
@@ -398,7 +533,7 @@ function unknownOdsElement(
   );
 }
 
-function cellXml(cell: CellOptions, styles: string[]): string {
+function cellXml(cell: CellOptions, styles: string[], decorations: string[] = []): string {
   const formula = typeof cell.formula === "string" ? cell.formula : cell.formula?.formula;
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
@@ -412,10 +547,49 @@ function cellXml(cell: CellOptions, styles: string[]): string {
       "office:boolean-value": cached.type === "boolean" ? cached.value : undefined,
       "office:date-value": cached.type === "date" ? cached.value : undefined,
     },
-    cached.type === "string"
-      ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
-      : [],
+    [
+      ...(cached.type === "string"
+        ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
+        : []),
+      ...decorations,
+    ],
   );
+}
+
+function cellDecorationXml(worksheet: OdsWorksheetOptions, reference: string): string[] {
+  const annotation = worksheet.annotations?.find((entry) => entry.reference === reference);
+  const graphic = worksheet.cellGraphics?.find((entry) => entry.reference === reference);
+  return [
+    ...(annotation
+      ? [
+          xmlElement(
+            "office:annotation",
+            {
+              "dc:creator": annotation.author,
+              "dc:date": annotation.date,
+            },
+            annotation.paragraphs.map((paragraph) =>
+              xmlElement("text:p", undefined, [escapeText(paragraph)]),
+            ),
+          ),
+        ]
+      : []),
+    ...(graphic
+      ? [
+          xmlElement(
+            "draw:frame",
+            {
+              "draw:name": graphic.name,
+              "svg:x": graphic.x !== undefined ? emuToLength(graphic.x) : undefined,
+              "svg:y": graphic.y !== undefined ? emuToLength(graphic.y) : undefined,
+              "svg:width": graphic.width !== undefined ? emuToLength(graphic.width) : undefined,
+              "svg:height": graphic.height !== undefined ? emuToLength(graphic.height) : undefined,
+            },
+            [xmlElement("draw:image", { "xlink:href": graphic.href, "xlink:type": "simple" })],
+          ),
+        ]
+      : []),
+  ];
 }
 
 function cacheAttributes(value: CellOptions["value"]): {
@@ -812,16 +986,33 @@ function worksheet(
   index: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
-): WorksheetOptions {
+): OdsWorksheetOptions {
+  const annotations: OdsAnnotation[] = [];
+  const cellGraphics: OdsCellGraphic[] = [];
+  const objectGraphics: OdsObjectGraphic[] = [];
   validateTableChildren(table);
-  return {
+  const worksheetOptions = {
     name: attributeString(table, "table:name") ?? `Sheet${index}`,
     columns: tableColumns(table).map((column, columnIndex) =>
       parseColumn(column, columnIndex + 1, dimensions),
     ),
     rows: tableRows(table).map((row, rowIndex) =>
-      parseRow(row, rowIndex + 1, dimensions, cellStyles),
+      parseRow(
+        row,
+        rowIndex + 1,
+        dimensions,
+        cellStyles,
+        annotations,
+        cellGraphics,
+        objectGraphics,
+      ),
     ),
+  };
+  return {
+    ...worksheetOptions,
+    ...(annotations.length ? { annotations } : {}),
+    ...(cellGraphics.length ? { cellGraphics } : {}),
+    ...(objectGraphics.length ? { objectGraphics } : {}),
   };
 }
 
@@ -832,6 +1023,8 @@ function validateTableChildren(table: Element): void {
       child.name === "table:table-column" ||
       child.name === "table:table-row" ||
       child.name === "table:shapes" ||
+      child.name === "office:forms" ||
+      child.name === "draw:frame" ||
       COLUMN_CONTAINERS.has(child.name) ||
       ROW_CONTAINERS.has(child.name)
     ) {
@@ -876,6 +1069,9 @@ function parseRow(
   rowNumber: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
+  annotations: OdsAnnotation[],
+  cellGraphics: OdsCellGraphic[],
+  objectGraphics: OdsObjectGraphic[],
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   return {
@@ -883,8 +1079,15 @@ function parseRow(
     height: style?.height,
     hidden: style?.hidden,
     cells: (row.elements ?? [])
-      .map((cell, cellIndex) => {
+      .flatMap((cell, cellIndex) => {
+        const column = cellIndex + 1;
         if (cell.type !== "element" || !cell.name) return undefined;
+        if (cell.name === "table:covered-table-cell") {
+          return {
+            reference: `${columnName(column)}${rowNumber}`,
+            covered: true,
+          } as OdsCellOptions;
+        }
         if (cell.name !== "table:table-cell") {
           throw unknownOdsElement(
             cell,
@@ -893,7 +1096,43 @@ function parseRow(
             "element has no canonical CellOptions mapping",
           );
         }
-        return parseCell(cell, rowNumber, cellIndex + 1, cellStyles);
+        const parsed = parseCell(cell, rowNumber, column, cellStyles);
+        for (const child of cell.elements ?? []) {
+          if (child.name === "office:annotation") {
+            annotations.push({
+              reference: parsed.reference ?? "",
+              paragraphs: childrenNamed(child, "text:p").map((paragraph) => textOf(paragraph)),
+              author: attributeString(child, "dc:creator"),
+              date: attributeString(child, "dc:date"),
+            });
+          }
+          if (child.name === "draw:frame") {
+            const object = childNamed(child, "draw:object");
+            const image = childNamed(child, "draw:image");
+            const href = attributeString(object ?? image, "xlink:href");
+            if (!href) {
+              objectGraphics.push({
+                reference: parsed.reference ?? "",
+                name: attributeString(child, "draw:name"),
+                x: lengthToEmu(attributeString(child, "svg:x")),
+                y: lengthToEmu(attributeString(child, "svg:y")),
+                width: lengthToEmu(attributeString(child, "svg:width")),
+                height: lengthToEmu(attributeString(child, "svg:height")),
+              });
+              continue;
+            }
+            cellGraphics.push({
+              reference: parsed.reference ?? "",
+              href,
+              name: attributeString(child, "draw:name"),
+              x: lengthToEmu(attributeString(child, "svg:x")),
+              y: lengthToEmu(attributeString(child, "svg:y")),
+              width: lengthToEmu(attributeString(child, "svg:width")),
+              height: lengthToEmu(attributeString(child, "svg:height")),
+            });
+          }
+        }
+        return [parsed];
       })
       .filter((cell): cell is CellOptions => cell !== undefined),
   };
@@ -907,7 +1146,10 @@ function parseCell(
 ): CellOptions {
   const result: CellOptions = { reference: `${columnName(column)}${row}` };
   for (const child of cell.elements ?? []) {
-    if (child.type === "element" && child.name !== "text:p") {
+    if (
+      child.type === "element" &&
+      !["text:p", "office:annotation", "draw:frame"].includes(child.name ?? "")
+    ) {
       throw unknownOdsElement(
         child,
         `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
