@@ -10,6 +10,7 @@ import {
 } from "@office-open/core";
 import type {
   DocumentOptions,
+  ParagraphChild,
   ParagraphOptions,
   RunOptions,
   SectionChild,
@@ -126,6 +127,7 @@ interface TextCharacter {
   value: string;
   cp: number;
   paragraphEnd?: boolean;
+  hyperlink?: { url?: string; anchor?: string };
 }
 
 const FLAG_ENCRYPTED = 0x0100;
@@ -909,9 +911,12 @@ function projectChildren(
       for (const range of ranges) {
         if (cp === range.cpStart) boundaries.add(index);
       }
+      if (index > 0 && paragraph[index]!.hyperlink !== paragraph[index - 1]!.hyperlink) {
+        boundaries.add(index);
+      }
     }
     const sortedBoundaries = [...boundaries].sort((left, right) => left - right);
-    const runs: RunOptions[] = [];
+    const runs: ParagraphChild[] = [];
     for (let index = 0; index < sortedBoundaries.length - 1; index++) {
       const start = sortedBoundaries[index]!;
       const end = sortedBoundaries[index + 1]!;
@@ -922,10 +927,18 @@ function projectChildren(
       if (text.length === 0) continue;
       const cp = paragraph[start]!.cp;
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
+      const hyperlink = paragraph[start]!.hyperlink;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
       if (breakCount > 0) runs.push({ break: breakCount });
-      if (visibleText.length > 0) runs.push({ text: visibleText, ...range?.properties });
+      if (visibleText.length > 0 && hyperlink) {
+        runs.push({
+          hyperlink: { ...hyperlink },
+          children: [{ text: visibleText, ...range?.properties }],
+        });
+      } else if (visibleText.length > 0) {
+        runs.push({ text: visibleText, ...range?.properties });
+      }
     }
     const plainText = paragraph.map((character) => character.value).join("");
     const hasProperties = runs.some((run) =>
@@ -962,6 +975,28 @@ function projectStory(
     ranges,
     paragraphRanges,
   );
+}
+
+function applyHyperlinkFields(
+  characters: TextCharacter[],
+  fields: readonly { start: number; end: number; instruction: string }[],
+  rawCharacters: readonly string[],
+): void {
+  for (const field of fields) {
+    const match = /^HYPERLINK\s+(?:"([^"]*)"|(\S+))/i.exec(field.instruction.trim());
+    if (!match) continue;
+    const target = match[2] ?? match[1];
+    if (!target) continue;
+    const hyperlink = target.startsWith("#") ? { anchor: target.slice(1) } : { url: target };
+    for (
+      let cp = field.end + 1;
+      cp < rawCharacters.length && rawCharacters[cp] !== "\x15";
+      cp += 1
+    ) {
+      const character = characters.find((candidate) => candidate.cp === cp);
+      if (character) character.hyperlink = hyperlink;
+    }
+  }
 }
 
 function parseOptional<T>(parse: () => T, fallback: T): T {
@@ -1196,6 +1231,7 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       fields = [];
     }
   }
+  applyHyperlinkFields(characters, fields, rawCharacters);
   let revisions: LegacyRevisionRange[] = [];
   if (fib.comments.length > 0) {
     try {
