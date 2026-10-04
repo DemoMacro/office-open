@@ -366,6 +366,39 @@ describe("ODS mapping", () => {
       alignment: { horizontal: "center", vertical: "center", wrapText: true },
     });
   });
+
+  it("round-trips cell borders through border shorthand styles", () => {
+    const source: OdsOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  value: "Bordered",
+                  style: {
+                    border: {
+                      top: { style: "thin", color: "000000" },
+                      bottom: { style: "double", color: "4472C4" },
+                      left: { style: "dashed", color: "C00000" },
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.style).toEqual({
+      border: {
+        top: { style: "thin", color: "000000" },
+        bottom: { style: "double", color: "4472C4" },
+        left: { style: "dashed", color: "C00000" },
+      },
+    });
+  });
 });
 
 describe("ODP mapping", () => {

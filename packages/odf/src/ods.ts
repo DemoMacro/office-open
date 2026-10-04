@@ -1,5 +1,7 @@
 import type {
   AlignmentOptions,
+  BorderOptions,
+  BorderSideOptions,
   CellFillOptions,
   CellOptions,
   ColumnOptions,
@@ -19,8 +21,10 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  lengthToEmu,
   textOf,
   xmlElement,
+  type XmlAttributes,
 } from "./xml";
 
 const MIME = "application/vnd.oasis.opendocument.spreadsheet";
@@ -193,6 +197,7 @@ function cellStyleChildren(style: StyleOptions): string[] {
     "fo:background-color": odfHex(solidFillColor(fill)),
     "style:vertical-align": odfVertical(alignment?.vertical),
     "fo:wrap-option": alignment?.wrapText ? "wrap" : undefined,
+    ...borderAttributes(style.border),
   };
   const paragraphAttributes = { "fo:text-align": odfHorizontal(alignment?.horizontal) };
   const children: string[] = [];
@@ -203,6 +208,70 @@ function cellStyleChildren(style: StyleOptions): string[] {
   if (Object.values(textAttributes).some((value) => value !== undefined))
     children.push(xmlElement("style:text-properties", textAttributes));
   return children;
+}
+
+/** XLSX cell borders → ODF border shorthand with explicit RGB colors. */
+function borderAttributes(border: BorderSideOptions | undefined): XmlAttributes {
+  const attributes = {
+    "fo:border-top": odfBorder(border?.top),
+    "fo:border-bottom": odfBorder(border?.bottom),
+    "fo:border-left": odfBorder(border?.left),
+    "fo:border-right": odfBorder(border?.right),
+  };
+  return Object.values(attributes).some((value) => value !== undefined) ? attributes : {};
+}
+
+/** XLSX border side → CSS-style ODF shorthand (`width style color`). */
+function odfBorder(side: BorderOptions | undefined): string | undefined {
+  if (!side || side.style === undefined) return undefined;
+  if (side.style === "none") return "none";
+  const width = side.style === "thick" ? "2.5pt" : mediumBorder(side.style) ? "1pt" : "0.5pt";
+  const style = odfLineStyle(side.style);
+  return [width, style, odfHex(side.color)].filter(Boolean).join(" ");
+}
+
+function mediumBorder(style: BorderOptions["style"]): boolean {
+  return (
+    style === "medium" ||
+    style === "mediumDashed" ||
+    style === "mediumDashDot" ||
+    style === "mediumDashDotDot"
+  );
+}
+
+/** Closest ODF/CSS line style; compound XLSX dashes become dashed. */
+function odfLineStyle(style: NonNullable<BorderOptions["style"]>): string {
+  if (
+    style === "dashed" ||
+    style === "mediumDashed" ||
+    style === "dashDot" ||
+    style === "mediumDashDot"
+  )
+    return "dashed";
+  if (style === "dotted" || style === "dashDotDot" || style === "mediumDashDotDot") return "dotted";
+  if (style === "double") return "double";
+  return "solid";
+}
+
+/** ODF border shorthand → the closest typed XLSX border side. */
+function parseBorder(value: string | undefined): BorderOptions | undefined {
+  if (!value || value === "none") return value === "none" ? { style: "none" } : undefined;
+  const match = /^(-?\d+(?:\.\d+)?(?:cm|mm|pt|pc|in|px))\s+(\S+)(?:\s+#([0-9a-fA-F]{6}))?$/.exec(
+    value,
+  );
+  if (!match) return undefined;
+  const [, width, lineStyle, color] = match;
+  const points = lengthToEmu(width)! / 12700;
+  const style = ((): BorderOptions["style"] => {
+    if (lineStyle === "dashed") return points >= 0.75 ? "mediumDashed" : "dashed";
+    if (lineStyle === "dotted") return "dotted";
+    if (lineStyle === "double") return "double";
+    if (points >= 1.75) return "thick";
+    if (points >= 0.75) return "medium";
+    if (points < 0.25) return "hair";
+    return "thin";
+  })();
+  return { style, color: color?.toUpperCase() };
 }
 
 /** xlsx horizontal → ODF fo:text-align. */
@@ -373,6 +442,13 @@ function parseNumberStyles(container: Element | undefined): Map<string, StyleOpt
     );
     if (background) options.fill = { type: "solid", color: background };
     const cellProps = childNamed(style, "style:table-cell-properties");
+    const border: BorderSideOptions = {
+      top: parseBorder(attributeString(cellProps, "fo:border-top")),
+      bottom: parseBorder(attributeString(cellProps, "fo:border-bottom")),
+      left: parseBorder(attributeString(cellProps, "fo:border-left")),
+      right: parseBorder(attributeString(cellProps, "fo:border-right")),
+    };
+    if (Object.values(border).some((side) => side !== undefined)) options.border = border;
     const vertical = attributeString(cellProps, "style:vertical-align");
     const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";
     const horizontal = attributeString(
