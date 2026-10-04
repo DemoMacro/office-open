@@ -363,6 +363,55 @@ describe("ODT mapping", () => {
     expect(runs[1]?.hyperlink?.children?.join("")).toBe("Jump");
   });
 
+  it("round-trips custom shapes with preset geometry and graphic style", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    wpsShape: {
+                      children: [],
+                      transformation: {
+                        offset: { left: 914400, top: 914400 },
+                        width: 1828800,
+                        height: 914400,
+                      },
+                      geometry: "rect",
+                      altText: { name: "Box" },
+                      fill: { type: "solid", color: "FF0000" },
+                      outline: { width: 12700, color: "000000" },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a shape paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    const shape = paragraph.children?.at(0);
+    if (typeof shape !== "object" || !("wpsShape" in shape))
+      throw new Error("Expected a shape run");
+    expect(shape.wpsShape.transformation).toMatchObject({
+      offset: { left: 914400, top: 914400 },
+      width: 1828800,
+      height: 914400,
+    });
+    expect(shape.wpsShape.geometry).toBe("rect");
+    expect(shape.wpsShape.altText).toMatchObject({ name: "Box" });
+    expect(shape.wpsShape.fill).toMatchObject({ type: "solid", color: "FF0000" });
+    expect(shape.wpsShape.outline).toMatchObject({ width: 12700, color: "000000" });
+  });
+
   it("round-trips bookmarks as text:bookmark elements", () => {
     const source: DocumentOptions = {
       sections: [

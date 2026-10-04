@@ -1,8 +1,10 @@
 import { toUint8Array } from "@office-open/core";
+import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
 import type {
   DocumentOptions,
   ParagraphOptions,
   PictureOptions,
+  ShapeOptions,
   RunOptions,
   SectionChild,
   SectionOptions,
@@ -12,6 +14,7 @@ import type { Element } from "@office-open/xml";
 import { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles, type OdfPackageFiles } from "./package";
+import { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./preset-geometry";
 import { parseTable, tableXml } from "./table";
 import {
   attributeNumber,
@@ -186,6 +189,7 @@ type StyleMap = Map<
 interface ParseContext {
   styles: StyleMap;
   listStyles: Map<string, boolean>;
+  graphicStyles: Map<string, GraphicStyle>;
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
@@ -207,6 +211,15 @@ type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
 type FootnoteProperties = NonNullable<
   NonNullable<DocumentOptions["settings"]>["footnoteProperties"]
 >;
+
+/** Graphic style attributes that map onto shape fill and outline. */
+interface GraphicStyle {
+  fill?: string;
+  fillColor?: string;
+  stroke?: string;
+  strokeWidth?: string;
+  strokeColor?: string;
+}
 
 type AbstractNumbering = NonNullable<
   NonNullable<DocumentOptions["numbering"]>["abstractNumberings"]
@@ -338,10 +351,12 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleContainer = childNamed(content, "office:automatic-styles");
   const styleMap = parseStyles(styleContainer);
+  const graphicStyles = parseGraphicStyles(styleContainer);
   const rawNodes = parseOdfNodes(body);
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
+    graphicStyles,
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
@@ -1071,8 +1086,95 @@ function runXml(
     if ("tab" in child) return "<text:tab/>";
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
+    if ("wpsShape" in child)
+      return wpsShapeFrameXml((child as { wpsShape: ShapeOptions }).wpsShape, styles);
     return "";
   });
+}
+
+/** Inline shape renders as a positioned draw:custom-shape with preset geometry. */
+function wpsShapeFrameXml(shape: ShapeOptions, styles: string[]): string {
+  const geometry = typeof shape.geometry === "string" ? { preset: shape.geometry } : shape.geometry;
+  const offset = shape.transformation.offset;
+  return xmlElement(
+    "draw:custom-shape",
+    {
+      "text:anchor-type": "as-char",
+      "draw:style-name": addShapeStyle(shape, styles),
+      "svg:x":
+        offset?.left !== undefined
+          ? typeof offset.left === "number"
+            ? emuToLength(offset.left)
+            : offset.left
+          : undefined,
+      "svg:y":
+        offset?.top !== undefined
+          ? typeof offset.top === "number"
+            ? emuToLength(offset.top)
+            : offset.top
+          : undefined,
+      "svg:width":
+        typeof shape.transformation.width === "number"
+          ? emuToLength(shape.transformation.width)
+          : shape.transformation.width,
+      "svg:height":
+        typeof shape.transformation.height === "number"
+          ? emuToLength(shape.transformation.height)
+          : shape.transformation.height,
+      "draw:name": shape.altText?.name,
+    },
+    [
+      xmlElement(
+        "draw:enhanced-geometry",
+        { "draw:type": geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined },
+        [],
+      ),
+    ],
+  );
+}
+
+/** Solid color options reduce to the sRGB hex ODF attributes accept. */
+function hexColorValue(color: unknown): string | undefined {
+  if (typeof color === "string") return color;
+  if (typeof color === "object" && color !== null && "value" in color)
+    return String((color as { value: unknown }).value);
+  return undefined;
+}
+
+/** Shape fill and outline land in a reusable graphic style. */
+function addShapeStyle(shape: ShapeOptions, styles: string[]): string | undefined {
+  const fill = shape.fill;
+  const outline = shape.outline;
+  const fillColor =
+    fill !== undefined && typeof fill === "object" && fill.type === "solid"
+      ? hexColorValue(fill.color)
+      : undefined;
+  const attributes = {
+    "draw:fill":
+      typeof fill === "object" && fill.type === "none" ? "none" : fillColor ? "solid" : undefined,
+    "draw:fill-color": fillColor ? `#${fillColor}` : undefined,
+    "draw:stroke": outline?.type === "noFill" ? "none" : outline?.color ? "solid" : undefined,
+    "svg:stroke-width":
+      outline?.width !== undefined
+        ? typeof outline.width === "number"
+          ? emuToLength(outline.width)
+          : outline.width
+        : undefined,
+    "svg:stroke-color":
+      outline?.color !== undefined ? undefinedIfEmpty(hexColorValue(outline.color)) : undefined,
+  };
+  if (Object.values(attributes).every((value) => value === undefined)) return undefined;
+  const name = `gr${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "graphic" }, [
+      xmlElement("style:graphic-properties", attributes),
+    ]),
+  );
+  return name;
+}
+
+function undefinedIfEmpty(value: string | undefined): string | undefined {
+  return value ? `#${value}` : undefined;
 }
 
 /** Note reference renders inline as text:note carrying its body paragraphs. */
@@ -1383,6 +1485,10 @@ function parseRuns(
       }
       if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
       if (child.name === "draw:frame") return parsePictureFrame(child, context);
+      if (child.name === "draw:custom-shape") {
+        const shape = parseCustomShape(child, context);
+        return shape ? [shape as unknown as RunOptions] : [];
+      }
       return [];
     },
   );
@@ -1428,4 +1534,69 @@ function parsePictureFrame(frame: Element, context: ParseContext): RunOptions[] 
       },
     },
   ] as unknown as RunOptions[];
+}
+
+/** draw:custom-shape maps back to the shared docx shape model. */
+function parseCustomShape(
+  element: Element,
+  context: ParseContext,
+): { wpsShape: ShapeOptions } | undefined {
+  const styleName = attributeString(element, "draw:style-name");
+  const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
+  const enhanced = childNamed(element, "draw:enhanced-geometry");
+  const presetType = attributeString(enhanced, "draw:type");
+  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const x = lengthToEmu(attributeString(element, "svg:x")) ?? 0;
+  const y = lengthToEmu(attributeString(element, "svg:y")) ?? 0;
+  const width = lengthToEmu(attributeString(element, "svg:width")) ?? 0;
+  const height = lengthToEmu(attributeString(element, "svg:height")) ?? 0;
+  const fill: FillOptions | undefined =
+    graphic?.fill === "none"
+      ? ({ type: "none" } as const)
+      : graphic?.fillColor
+        ? { type: "solid", color: graphic.fillColor }
+        : undefined;
+  const outline: OutlineOptions | undefined = graphic
+    ? graphic.stroke === "none"
+      ? ({ type: "noFill" } as const)
+      : graphic.strokeColor || graphic.strokeWidth
+        ? {
+            ...(graphic.strokeWidth ? { width: lengthToEmu(graphic.strokeWidth) ?? 0 } : {}),
+            ...(graphic.strokeColor ? { type: "solidFill", color: graphic.strokeColor } : {}),
+          }
+        : undefined
+    : undefined;
+  const name = attributeString(element, "draw:name");
+  return {
+    wpsShape: {
+      children: [],
+      transformation: {
+        ...(x || y ? { offset: { ...(x ? { left: x } : {}), ...(y ? { top: y } : {}) } } : {}),
+        width,
+        height,
+      },
+      ...(name ? { altText: { name } } : {}),
+      ...(preset ? { geometry: preset } : {}),
+      ...(fill ? { fill } : {}),
+      ...(outline ? { outline } : {}),
+    },
+  };
+}
+
+/** Graphic styles carry the shape fill and stroke tokens. */
+function parseGraphicStyles(container: Element | undefined): Map<string, GraphicStyle> {
+  const result = new Map<string, GraphicStyle>();
+  for (const style of childrenNamed(container, "style:style")) {
+    if (attributeString(style, "style:family") !== "graphic") continue;
+    const name = attributeString(style, "style:name") ?? "";
+    const properties = childNamed(style, "style:graphic-properties");
+    result.set(name, {
+      fill: attributeString(properties, "draw:fill"),
+      fillColor: attributeString(properties, "draw:fill-color")?.replace("#", ""),
+      stroke: attributeString(properties, "draw:stroke"),
+      strokeWidth: attributeString(properties, "svg:stroke-width"),
+      strokeColor: attributeString(properties, "svg:stroke-color")?.replace("#", ""),
+    });
+  }
+  return result;
 }
