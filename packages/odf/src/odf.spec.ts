@@ -289,6 +289,29 @@ describe("ODS mapping", () => {
     const parsed = parseOds(generateOds(source));
     expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.value).toEqual(date);
   });
+
+  it("round-trips number formats through data styles", () => {
+    const source = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                { value: 1.5, style: { numFmt: "0.00" } },
+                { value: 0.25, style: { numFmt: "0.00%" } },
+                { value: 1200, style: { numFmt: "#,##0" } },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    const cells = parsed.worksheets![0]!.rows![0]!.cells!;
+    expect(cells[0]!.style).toEqual({ numFmt: "0.00" });
+    expect(cells[1]!.style).toEqual({ numFmt: "0.00%" });
+    expect(cells[2]!.style).toEqual({ numFmt: "#,##0" });
+  });
 });
 
 describe("ODP mapping", () => {
