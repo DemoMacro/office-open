@@ -37,16 +37,36 @@ interface CharacterProperties {
 
 type StyleMap = Map<
   string,
-  { alignment?: string; columnWidth?: number; character: CharacterProperties }
+  {
+    alignment?: string;
+    columnWidth?: number;
+    pageBreakBefore?: boolean;
+    character: CharacterProperties;
+  }
 >;
 
 export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
-  const mapped = options.sections
-    .flatMap((section) => section.children)
-    .map((child) => blockXml(child, styles))
-    .join("");
-  const body = [mapped, ...serializeOdfNodes(options.odfExtensions)].join("");
+  const blocks = options.sections.flatMap((section) => section.children);
+  const parts: string[] = [];
+  let index = 0;
+  // Consecutive bullet paragraphs of the same level group into one text:list —
+  // the ODF shape for Word's bullet-list runs.
+  while (index < blocks.length) {
+    const bulletLevel = bulletParagraphLevel(blocks[index]!);
+    if (bulletLevel === undefined) {
+      parts.push(blockXml(blocks[index]!, styles));
+      index += 1;
+      continue;
+    }
+    const group: SectionChild[] = [];
+    while (index < blocks.length && bulletParagraphLevel(blocks[index]!) === bulletLevel) {
+      group.push(blocks[index]!);
+      index += 1;
+    }
+    parts.push(listXml(group, bulletLevel, styles));
+  }
+  const body = [parts.join(""), ...serializeOdfNodes(options.odfExtensions)].join("");
   const files: OdfFiles = {
     "content.xml": contentXml(body, styles),
     "styles.xml": documentStylesXml(),
@@ -61,17 +81,12 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleMap = parseStyles(childNamed(content, "office:automatic-styles"));
   const rawNodes = parseOdfNodes(body);
-  const children = (body?.elements ?? [])
-    .filter(
-      (element) =>
-        element.name === "text:p" || element.name === "text:h" || element.name === "table:table",
-    )
-    .map((element) => parseBlock(element, styleMap));
+  const children = parseBlocks(body?.elements ?? [], styleMap);
   return {
     ...parseMeta(files),
     sections: [{ children }],
     odfExtensions: rawNodes.filter(
-      (node) => !["text:p", "text:h", "table:table"].includes(node.name),
+      (node) => !["text:p", "text:h", "table:table", "text:list"].includes(node.name),
     ),
   };
 }
@@ -96,9 +111,49 @@ function normalizeParagraph(input: string | ParagraphOptions): ParagraphOptions 
   return typeof input === "string" ? { text: input } : input;
 }
 
+function bulletParagraphLevel(child: SectionChild): number | undefined {
+  if (!("paragraph" in child)) return undefined;
+  const options = normalizeParagraph(child.paragraph);
+  return options.bullet?.level;
+}
+
+function listXml(group: SectionChild[], level: number, styles: string[]): string {
+  const styleName = addListStyle(styles);
+  // ODF nesting is 1-based: bullet level 0 renders as a single text:list,
+  // level 1 nests one text:list inside the first list-item, and so on.
+  const items = group
+    .map((child) => xmlElement("text:list-item", undefined, [blockXml(child, styles)]))
+    .join("");
+  let xml = items;
+  for (let depth = 0; depth < level; depth += 1) {
+    xml = xmlElement("text:list-item", undefined, [
+      xmlElement("text:list", { "text:style-name": styleName }, [xml]),
+    ]);
+  }
+  return xmlElement("text:list", { "text:style-name": styleName }, [xml]);
+}
+
+function addListStyle(styles: string[]): string {
+  const name = `L${styles.length + 1}`;
+  styles.push(
+    xmlElement("text:list-style", { "style:name": name }, [
+      xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
+        xmlElement("style:list-level-properties", {
+          "style:list-level-position-and-space-mode": "label-alignment",
+        }),
+        xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
+      ]),
+    ]),
+  );
+  return name;
+}
+
 function paragraphXml(options: ParagraphOptions, styles: string[]): string {
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
-  const styleName = alignment ? addParagraphStyle({ alignment }, styles) : undefined;
+  const styleName =
+    alignment || options.pageBreakBefore
+      ? addParagraphStyle({ alignment, pageBreakBefore: options.pageBreakBefore }, styles)
+      : undefined;
   const children = runXml(options, styles);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
   const attributes = {
@@ -114,16 +169,27 @@ function runXml(options: ParagraphOptions, styles: string[]): string[] {
   }
   return (options.children ?? []).map((child) => {
     if (typeof child === "string") return `<text:span>${escapeText(child)}</text:span>`;
+    if ("pageBreak" in child) return "<text:soft-page-break/>";
+    if ("columnBreak" in child) return "<text:line-break/>";
+    if ("break" in child) return lineBreakXml(child as RunOptions);
     if ("text" in child) {
       const run = child as RunOptions;
       const styleName = addCharacterStyle(characterProperties(run), styles);
-      return xmlElement("text:span", { "text:style-name": styleName }, [
-        escapeText(run.text ?? ""),
-      ]);
+      return (
+        lineBreakXml(run) +
+        xmlElement("text:span", { "text:style-name": styleName }, [escapeText(run.text ?? "")])
+      );
     }
     if ("tab" in child) return "<text:tab/>";
     return "";
   });
+}
+
+/** Run breaks render as text:line-break (ODF has no w:br/@clear equivalent). */
+function lineBreakXml(run: RunOptions): string {
+  if (!run.break) return "";
+  const count = typeof run.break === "number" ? run.break : (run.break.count ?? 1);
+  return "<text:line-break/>".repeat(Math.max(0, count));
 }
 
 function characterProperties(run: RunOptions): CharacterProperties {
@@ -139,13 +205,21 @@ function characterProperties(run: RunOptions): CharacterProperties {
   };
 }
 
-function addParagraphStyle(properties: { alignment?: string }, styles: string[]): string {
+function addParagraphStyle(
+  properties: { alignment?: string; pageBreakBefore?: boolean },
+  styles: string[],
+): string {
   const name = `P${styles.length + 1}`;
   styles.push(
     xmlElement(
       "style:style",
       { "style:name": name, "style:family": "paragraph", "style:parent-style-name": "Standard" },
-      [xmlElement("style:paragraph-properties", { "fo:text-align": properties.alignment })],
+      [
+        xmlElement("style:paragraph-properties", {
+          "fo:text-align": properties.alignment,
+          "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
+        }),
+      ],
     ),
   );
   return name;
@@ -237,6 +311,7 @@ function parseStyles(container: Element | undefined): StyleMap {
     const size = attributeString(character, "fo:font-size");
     result.set(name, {
       alignment: attributeString(paragraph, "fo:text-align"),
+      pageBreakBefore: attributeString(paragraph, "fo:break-before") === "page",
       columnWidth: columnWidth?.endsWith("cm") ? Number(columnWidth.slice(0, -2)) * 567 : undefined,
       character: {
         bold: attributeString(character, "fo:font-weight") === "bold",
@@ -261,12 +336,43 @@ function parseBlock(element: Element, styles: StyleMap): SectionChild {
   return { paragraph };
 }
 
+function parseBlocks(elements: Element[], styles: StyleMap, listDepth = 0): SectionChild[] {
+  const result: SectionChild[] = [];
+  for (const element of elements) {
+    if (element.name === "text:list") {
+      // A typed text:list unwraps to bullet paragraphs at the nesting depth;
+      // list-header content (rare) keeps the generic fall-through below.
+      for (const item of childrenNamed(element, "text:list-item")) {
+        result.push(...parseBlocks(item.elements ?? [], styles, listDepth + 1));
+      }
+      continue;
+    }
+    if (element.name === "text:soft-page-break") {
+      result.push({ pageBreak: true } as unknown as SectionChild);
+      continue;
+    }
+    if (element.name === "text:p" || element.name === "text:h" || element.name === "table:table") {
+      const child = parseBlock(element, styles);
+      if (listDepth > 0 && "paragraph" in child) {
+        const paragraph = normalizeParagraph(child.paragraph);
+        result.push({
+          paragraph: { ...paragraph, bullet: { level: listDepth - 1 } },
+        } as SectionChild);
+      } else {
+        result.push(child);
+      }
+    }
+  }
+  return result;
+}
+
 function parseParagraph(element: Element, styles: StyleMap): ParagraphOptions {
   const style = styles.get(attributeString(element, "text:style-name") ?? "");
   const headingLevel = attributeNumber(element, "text:outline-level");
   const runs = parseRuns(element, styles);
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
+  if (style?.pageBreakBefore) result.pageBreakBefore = true;
   if (headingLevel && headingLevel <= 6) {
     result.heading = `Heading${headingLevel}` as ParagraphOptions["heading"];
   }
@@ -278,6 +384,13 @@ function parseParagraph(element: Element, styles: StyleMap): ParagraphOptions {
 function parseRuns(element: Element, styles: StyleMap): (string | RunOptions | { tab: true })[] {
   return (element.elements ?? []).flatMap((child): (string | RunOptions | { tab: true })[] => {
     if (child.type === "text") return [String(child.text ?? "")];
+    if (child.name === "text:line-break") return [{ break: 1 } as unknown as RunOptions];
+    if (child.name === "text:soft-page-break")
+      return [{ pageBreak: true } as unknown as RunOptions];
+    if (child.name === "text:s") {
+      const count = attributeNumber(child, "text:c") ?? 1;
+      return [" ".repeat(count)];
+    }
     if (child.name === "text:span") {
       const properties = styles.get(attributeString(child, "text:style-name") ?? "")?.character;
       const run: RunOptions = {

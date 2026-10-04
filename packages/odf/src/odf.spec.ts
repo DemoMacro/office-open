@@ -113,6 +113,67 @@ describe("ODT mapping", () => {
       typeof cellChild.paragraph === "string" ? { text: cellChild.paragraph } : cellChild.paragraph;
     expect(cellParagraph.text).toBe("Cell");
   });
+
+  it("round-trips bullet lists, line breaks, and page breaks", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { paragraph: { text: "First", bullet: { level: 0 } } },
+            { paragraph: { text: "Nested", bullet: { level: 1 } } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a list paragraph");
+    const firstParagraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    expect(firstParagraph.text).toBe("First");
+    expect(firstParagraph.bullet).toEqual({ level: 0 });
+    const second = children[1]!;
+    if (!("paragraph" in second)) throw new Error("Expected a nested list paragraph");
+    const secondParagraph =
+      typeof second.paragraph === "string" ? { text: second.paragraph } : second.paragraph;
+    expect(secondParagraph.bullet).toEqual({ level: 1 });
+  });
+
+  it("round-trips a line break inside a run", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ text: "before", break: 2 }, { text: "after" }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    expect(paragraph.children).toBeDefined();
+    const run = paragraph.children![0]! as { break?: number; text?: string };
+    expect(run.break).toBe(1);
+  });
+
+  it("round-trips pageBreakBefore via fo:break-before", () => {
+    const source: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { text: "New page", pageBreakBefore: true } }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph =
+      typeof child.paragraph === "string" ? { pageBreakBefore: undefined } : child.paragraph;
+    expect(paragraph.pageBreakBefore).toBe(true);
+  });
 });
 
 describe("ODS mapping", () => {

@@ -44,16 +44,10 @@ describe("ODF element registry", () => {
     expect(parsed).toEqual(nodes);
   });
 
-  it("round-trips an ODT text-list extension", () => {
+  it("round-trips a generic ODT extension element", () => {
     const extension: OdfXmlNode = {
-      name: "text:list",
-      attributes: { "text:style-name": "L1" },
-      children: [
-        {
-          name: "text:list-item",
-          children: [{ name: "text:p", children: ["Generic ODF element"] }],
-        },
-      ],
+      name: "text:bookmark",
+      attributes: { "text:name": "GenericMarker" },
     };
     const parsed = parseOdt(generateOdt({ sections: [], odfExtensions: [extension] }));
     expect(parsed.odfExtensions).toEqual([extension]);
