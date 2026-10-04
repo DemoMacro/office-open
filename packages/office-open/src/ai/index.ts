@@ -20,7 +20,7 @@ export { formatToolError } from "./error";
 
 import { lintWorkbookFormulas } from "@office-open/xlsx";
 
-import { generate } from "../generate";
+import { generate, generateOfficeDocument } from "../generate";
 import {
   getSkeletonSchema,
   renderSliceTypeText,
@@ -169,6 +169,98 @@ export const xlsxTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
+export const odtTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
+  description:
+    "Generate an .odt OpenDocument text file. " +
+    "The input uses the canonical DocumentOptions schema and must include a 'sections' array. " +
+    "Conventions: " +
+    "section children are wrapper-key objects ({ paragraph: {...} }, { table: {...} }, …); " +
+    "run objects require a 'text' key (plain strings also accepted). " +
+    SKELETON_GUIDANCE,
+  inputSchema: jsonSchema<DocumentOptions>(getSkeletonSchema("docx")),
+  execute: async (options) => {
+    try {
+      const validated = validateDocumentInput("docx", options);
+      const bytes = (await generateOfficeDocument(
+        "odt",
+        validated as unknown as DocumentOptions,
+        "uint8array",
+      )) as Uint8Array;
+      return {
+        base64: generateVerifiedBase64("odt", bytes),
+        mimeType: "application/vnd.oasis.opendocument.text",
+      };
+    } catch (error) {
+      throw new Error(formatToolError("odt", error));
+    }
+  },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
+});
+
+export const odsTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
+  description:
+    "Generate an .ods OpenDocument spreadsheet. " +
+    "The input uses the canonical WorkbookOptions schema and must include a 'worksheets' array. " +
+    "Conventions: " +
+    "cells are shorthand values (string, number, boolean, null) or { value, style } objects; " +
+    "column 'width' is in Excel character units. " +
+    SKELETON_GUIDANCE,
+  inputSchema: jsonSchema<WorkbookOptions>(getSkeletonSchema("xlsx")),
+  execute: async (options) => {
+    try {
+      const validated = validateDocumentInput("xlsx", options);
+      const formulaIssues = lintWorkbookFormulas(validated as unknown as WorkbookOptions);
+      if (formulaIssues.length > 0) {
+        const lines = formulaIssues.map(
+          (issue) => `  ${issue.location}: ${issue.message} — formula "${issue.formula}"`,
+        );
+        throw new Error(
+          `Invalid ods formulas:\n${lines.join("\n")}\nFix the formula or add the missing worksheet.`,
+        );
+      }
+      const bytes = (await generateOfficeDocument(
+        "ods",
+        validated as unknown as WorkbookOptions,
+        "uint8array",
+      )) as Uint8Array;
+      return {
+        base64: generateVerifiedBase64("ods", bytes),
+        mimeType: "application/vnd.oasis.opendocument.spreadsheet",
+      };
+    } catch (error) {
+      throw new Error(formatToolError("ods", error));
+    }
+  },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
+});
+
+export const odpTool: Tool<PresentationOptions, GeneratedDocumentOutput> = tool({
+  description:
+    "Generate an .odp OpenDocument presentation. " +
+    "The input uses the canonical PresentationOptions schema and must include a 'slides' array. " +
+    "Conventions: " +
+    "shape x/y/width/height take UniversalMeasure strings ('2cm', '1in', '96px') or raw EMU numbers (914400 = 1 inch). " +
+    SKELETON_GUIDANCE,
+  inputSchema: jsonSchema<PresentationOptions>(getSkeletonSchema("pptx")),
+  execute: async (options) => {
+    try {
+      const validated = validateDocumentInput("pptx", options);
+      const bytes = (await generateOfficeDocument(
+        "odp",
+        validated as unknown as PresentationOptions,
+        "uint8array",
+      )) as Uint8Array;
+      return {
+        base64: generateVerifiedBase64("odp", bytes),
+        mimeType: "application/vnd.oasis.opendocument.presentation",
+      };
+    } catch (error) {
+      throw new Error(formatToolError("odp", error));
+    }
+  },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
+});
+
 export const schemaLookupTool: Tool<SchemaLookupInput, SchemaLookupSuccess | SchemaLookupFailure> =
   tool({
     description:
@@ -231,5 +323,8 @@ export const officeOpenTools: ToolSet = {
   "generate-docx": docxTool,
   "generate-pptx": pptxTool,
   "generate-xlsx": xlsxTool,
+  "generate-odt": odtTool,
+  "generate-ods": odsTool,
+  "generate-odp": odpTool,
   "office-open-schema-lookup": schemaLookupTool,
 } as const;

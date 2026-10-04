@@ -50,7 +50,15 @@ export function formatToolError(type: string, error: unknown): string {
   // ── General: iterable errors ──
 
   if (msg.includes("not iterable")) {
-    const field = type === "docx" ? "sections" : type === "pptx" ? "slides" : "worksheets";
+    const fields = {
+      docx: "sections",
+      odt: "sections",
+      pptx: "slides",
+      odp: "slides",
+      xlsx: "worksheets",
+      ods: "worksheets",
+    } as const;
+    const field = fields[type as keyof typeof fields] ?? "options";
     return `"${field}" must be an array. Received a non-iterable value.`;
   }
 

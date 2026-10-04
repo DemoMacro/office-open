@@ -1,29 +1,31 @@
-import { parseDocument as parseLegacyDocument } from "@office-open/doc";
 import type { DocumentOptions } from "@office-open/docx";
-import { parseDocument as parseDocxDocument } from "@office-open/docx";
-import { parseOdp, parseOds, parseOdt } from "@office-open/odf";
-import { parsePresentation as parseLegacyPresentation } from "@office-open/ppt";
-import { parsePresentation as parsePptxPresentation } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
-import { parseRtf } from "@office-open/rtf";
-import { parseWorkbook as parseXlsWorkbook } from "@office-open/xls";
-import { parseWorkbook as parseXlsxWorkbook } from "@office-open/xlsx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
-import { detectOfficeFormat, type OfficeFormatInfo } from "./formats";
+import {
+  parseDocumentFile,
+  type DocumentFileParseFormat,
+  type DocumentFileParseOptions,
+} from "./document";
+import { detectOfficeFormat } from "./formats";
+import {
+  parsePresentationFile,
+  type PresentationFileParseFormat,
+  type PresentationFileParseOptions,
+} from "./presentation";
+import {
+  parseWorkbookFile,
+  type WorkbookFileParseFormat,
+  type WorkbookFileParseOptions,
+} from "./workbook";
 
-type DocumentOfficeFormat = Extract<
-  OfficeFormatInfo["format"],
-  "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt"
->;
-type WorkbookOfficeFormat = Extract<
-  OfficeFormatInfo["format"],
-  "ods" | "xls" | "xlsx" | "xlsm" | "xltx" | "xltm"
->;
-type PresentationOfficeFormat = Extract<
-  OfficeFormatInfo["format"],
-  "odp" | "ppt" | "pptx" | "pptm" | "potx" | "potm"
->;
+type DocumentOfficeFormat = DocumentFileParseFormat;
+type WorkbookOfficeFormat = WorkbookFileParseFormat;
+type PresentationOfficeFormat = PresentationFileParseFormat;
+
+export type OfficeDocumentParseOptions = DocumentFileParseOptions;
+export type OfficeWorkbookParseOptions = WorkbookFileParseOptions;
+export type OfficePresentationParseOptions = PresentationFileParseOptions;
 
 export type ParsedOfficeDocument =
   | { type: DocumentOfficeFormat; options: DocumentOptions }
@@ -32,43 +34,26 @@ export type ParsedOfficeDocument =
 
 export async function parseOfficeDocument(
   input: Uint8Array | string,
+  options?: DocumentFileParseOptions & WorkbookFileParseOptions & PresentationFileParseOptions,
 ): Promise<ParsedOfficeDocument> {
   const info = detectOfficeFormat(input);
-  const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
-  switch (info.format) {
-    case "doc":
-      return { type: info.format, options: parseLegacyDocument(data) };
-    case "docx":
-    case "docm":
-    case "dotx":
-    case "dotm":
-      return { type: info.format, options: await parseDocxDocument(data) };
-    case "rtf":
-      return {
-        type: info.format,
-        options: parseRtf(typeof input === "string" ? input : new TextDecoder().decode(input)),
-      };
-    case "odt":
-      return { type: info.format, options: parseOdt(data) };
-    case "ods":
-      return { type: info.format, options: parseOds(data) };
-    case "odp":
-      return { type: info.format, options: parseOdp(data) };
-    case "xls":
-      return { type: info.format, options: parseXlsWorkbook(data) };
-    case "xlsx":
-    case "xlsm":
-    case "xltx":
-    case "xltm":
-      return { type: info.format, options: await parseXlsxWorkbook(data) };
-    case "ppt":
-      return { type: info.format, options: parseLegacyPresentation(data) };
-    case "pptx":
-    case "pptm":
-    case "potx":
-    case "potm":
-      return { type: info.format, options: await parsePptxPresentation(data) };
-    case "encrypted-ooxml":
-      throw new Error("Encrypted OOXML documents are not supported by the unified parser");
+  if (info.family === "document") {
+    return {
+      type: info.format as DocumentOfficeFormat,
+      options: await parseDocumentFile(input, options),
+    };
   }
+  if (info.family === "workbook") {
+    return {
+      type: info.format as WorkbookOfficeFormat,
+      options: await parseWorkbookFile(input, options),
+    };
+  }
+  if (info.family === "presentation") {
+    return {
+      type: info.format as PresentationOfficeFormat,
+      options: await parsePresentationFile(input, options),
+    };
+  }
+  throw new Error("Encrypted OOXML documents are not supported by the unified parser");
 }
