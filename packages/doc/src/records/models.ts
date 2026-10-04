@@ -33,13 +33,8 @@ export interface LegacyPictureData {
   height: number;
 }
 
-/** Internal extensions produced by the legacy DOC reader. */
-export interface LegacyDocumentOptions extends DocumentOptions {
-  bookmarks?: LegacyBookmark[];
-  revisions?: LegacyRevisionRange[];
-  fields?: LegacyField[];
-  pictures?: LegacyPictureData[];
-}
+/** Options produced by the legacy DOC reader. */
+export type LegacyDocumentOptions = DocumentOptions;
 
 /** Password for password-protected legacy DOC containers. */
 export interface LegacyParseOptions {

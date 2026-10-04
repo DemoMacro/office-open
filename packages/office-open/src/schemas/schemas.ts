@@ -13,9 +13,9 @@ import xlsxSchemaJson from "../../schemas/xlsx.schema.json";
 /** Draft-07 JSON Schema describing a format's root options object. */
 export type JsonSchema = { readonly [key: string]: unknown };
 
-export const docxSchema = docxSchemaJson as unknown as JsonSchema;
-export const pptxSchema = pptxSchemaJson as unknown as JsonSchema;
-export const xlsxSchema = xlsxSchemaJson as unknown as JsonSchema;
+export const docxSchema: JsonSchema = docxSchemaJson;
+export const pptxSchema: JsonSchema = pptxSchemaJson;
+export const xlsxSchema: JsonSchema = xlsxSchemaJson;
 
 export const SCHEMAS = {
   docx: docxSchema,
