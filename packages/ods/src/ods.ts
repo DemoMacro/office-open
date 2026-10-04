@@ -906,6 +906,16 @@ function parseCell(
   cellStyles: Map<string, StyleOptions>,
 ): CellOptions {
   const result: CellOptions = { reference: `${columnName(column)}${row}` };
+  for (const child of cell.elements ?? []) {
+    if (child.type === "element" && child.name !== "text:p") {
+      throw unknownOdsElement(
+        child,
+        `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${row}]/table:table-cell[${column}]`,
+        child.name ?? "",
+        "element has no canonical CellOptions mapping",
+      );
+    }
+  }
   const style = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
   if (style) result.style = style;
   const formula = attributeString(cell, "table:formula");

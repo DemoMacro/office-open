@@ -49,6 +49,7 @@ export interface ChartDocumentOptions {
 
 interface ChartStyle {
   graphic?: GraphicStyle;
+  styleName?: string;
   properties: Record<string, string>;
 }
 
@@ -795,6 +796,7 @@ function chartStyles(container: Element | undefined): Map<string, ChartStyle> {
     const properties = childNamed(style, "style:chart-properties");
     result.set(name, {
       graphic: graphics.get(name),
+      styleName: name,
       properties: Object.fromEntries(
         Object.entries(properties?.attributes ?? {}).map(([key, value]) => [key, String(value)]),
       ),
@@ -805,6 +807,25 @@ function chartStyles(container: Element | undefined): Map<string, ChartStyle> {
 
 function styleShape(style: ChartStyle | undefined): ShapePropertiesOptions | undefined {
   if (!style?.graphic) return undefined;
+  const unsupportedFill =
+    style.graphic.fill !== undefined &&
+    style.graphic.fill !== "none" &&
+    style.graphic.fill !== "solid" &&
+    !style.graphic.fillColor;
+  const unsupportedStroke =
+    style.graphic.stroke !== undefined &&
+    style.graphic.stroke !== "none" &&
+    style.graphic.stroke !== "solid";
+  if (unsupportedFill || unsupportedStroke) {
+    const property = unsupportedFill ? "draw:fill" : "draw:stroke";
+    const value = unsupportedFill ? style.graphic.fill : style.graphic.stroke;
+    throw unsupported(
+      CONTENT_PATH,
+      `/office:document-content/office:automatic-styles/style:style[@style:name="${style.styleName ?? ""}"]/style:graphic-properties`,
+      property,
+      `${value} has no canonical ChartSpaceOptions mapping`,
+    );
+  }
   const fill = graphicFill(style.graphic);
   const outline = graphicOutline(style.graphic);
   return fill || outline

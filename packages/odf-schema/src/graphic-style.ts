@@ -17,6 +17,8 @@ import {
 } from "@office-open/ocf";
 import type { Element } from "@office-open/xml";
 
+import { OdfSchemaError } from "./error";
+
 /** Graphic style attributes that map onto shape fill and outline. */
 export interface GraphicStyle {
   fill?: string;
@@ -85,6 +87,7 @@ export function pushShapeStyle(
   styles: string[],
   family = "graphic",
 ): string | undefined {
+  if (family === "chart") rejectUnsupportedChartStyle(fill, outline);
   const fillColor =
     fill !== undefined && fill !== null && typeof fill === "object" && fill.type === "solid"
       ? hexColorValue(fill.color)
@@ -115,4 +118,27 @@ export function pushShapeStyle(
     ]),
   );
   return name;
+}
+
+function rejectUnsupportedChartStyle(
+  fill: FillOptions | null | undefined,
+  outline: OutlineOptions | undefined,
+): void {
+  const unsupportedFill =
+    typeof fill === "object" && fill !== null && !["solid", "none"].includes(fill.type);
+  const unsupportedOutline =
+    outline?.type !== undefined && !["solidFill", "noFill"].includes(outline.type);
+  if (unsupportedFill || unsupportedOutline) {
+    const style = unsupportedFill ? "fill" : "outline";
+    const path =
+      "/office:document-content/office:automatic-styles/style:style/style:graphic-properties";
+    const reason = `${style} has no canonical ChartSpaceOptions mapping`;
+    throw new OdfSchemaError(
+      `content.xml: ${path}: style:graphic-properties: ${reason}`,
+      "content.xml",
+      path,
+      "style:graphic-properties",
+      reason,
+    );
+  }
 }

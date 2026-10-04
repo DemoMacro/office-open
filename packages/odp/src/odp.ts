@@ -763,6 +763,8 @@ function parseParagraph(
         text: textOf(child),
         ...textStyles.get(attributeString(child, "text:style-name") ?? ""),
       });
+    } else if (child.name) {
+      throw unknownSlideChild(child, `/${paragraph.name ?? "text:p"}`);
     }
   }
   if (children.length === 1 && typeof children[0] === "string") return { text: children[0] };
