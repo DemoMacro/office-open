@@ -628,6 +628,8 @@ export interface OdfXmlNode {
 
 const ODF_ELEMENT_NAME_SET = new Set<string>(ODF_ELEMENT_NAMES);
 
+const XML_NAME_PATTERN = /^(?:[A-Za-z_][A-Za-z0-9_.-]*:)?[A-Za-z_][A-Za-z0-9_.-]*$/;
+
 export function isOdfElementName(name: string): name is OdfElementName {
   return ODF_ELEMENT_NAME_SET.has(name);
 }
@@ -635,7 +637,7 @@ export function isOdfElementName(name: string): name is OdfElementName {
 export function serializeOdfNodes(nodes: (OdfXmlNode | string)[] = []): string[] {
   return nodes.flatMap((node) => {
     if (typeof node === "string") return node.trim() ? [escapeText(node)] : [];
-    if (!isOdfElementName(node.name)) return [];
+    if (!XML_NAME_PATTERN.test(node.name)) return [];
     const attributes = Object.fromEntries(
       Object.entries(node.attributes ?? {}).map(([key, value]) => [
         key,
@@ -654,7 +656,7 @@ export function parseOdfNodes(container: Element | undefined): OdfXmlNode[] {
 }
 
 export function parseOdfNode(element: Element): OdfXmlNode | undefined {
-  if (!element.name || !isOdfElementName(element.name)) return undefined;
+  if (!element.name || !XML_NAME_PATTERN.test(element.name)) return undefined;
   const children: (OdfXmlNode | string)[] = [];
   for (const child of element.elements ?? []) {
     if (child.type === "text" || child.type === "cdata") {
