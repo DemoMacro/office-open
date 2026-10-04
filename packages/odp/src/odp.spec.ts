@@ -1,7 +1,7 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdp, OdpParseError, parseOdp, type OdpPresentationOptions } from "./index";
+import { generateOdp, OdpParseError, parseOdp } from "./index";
 
 describe("ODP codec", () => {
   it("round-trips a presentation through canonical PresentationOptions", () => {
@@ -11,21 +11,6 @@ describe("ODP codec", () => {
 
   it("wraps invalid packages in OdpParseError", () => {
     expect(() => parseOdp(new Uint8Array([1, 2, 3]))).toThrow(OdpParseError);
-  });
-
-  it("round-trips page-level forms", () => {
-    const options: OdpPresentationOptions = {
-      slides: [
-        {
-          forms: {
-            forms: [{ name: "Slide form", controls: [{ kind: "form:button", id: "next" }] }],
-          },
-        },
-      ],
-    };
-    expect(parseOdp(generateOdp(options)).slides?.[0]?.forms).toMatchObject(
-      options.slides![0]!.forms ?? {},
-    );
   });
 
   it("round-trips slide charts with position, size, semantics, and order", () => {
