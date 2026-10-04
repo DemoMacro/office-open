@@ -280,6 +280,15 @@ describe("ODS mapping", () => {
       formula: "SUM(A1:B1)",
     });
   });
+
+  it("round-trips date cell values through office:date-value", () => {
+    const date = new Date("2026-02-03T04:05:06Z");
+    const source = {
+      worksheets: [{ rows: [{ cells: [{ value: date }] }] }],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.value).toEqual(date);
+  });
 });
 
 describe("ODP mapping", () => {

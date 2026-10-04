@@ -128,6 +128,7 @@ function cellXml(cell: CellOptions): string {
       "office:value-type": cached.type,
       "office:value": cached.type === "float" ? cached.value : undefined,
       "office:boolean-value": cached.type === "boolean" ? cached.value : undefined,
+      "office:date-value": cached.type === "date" ? cached.value : undefined,
     },
     cached.type === "string"
       ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
@@ -141,8 +142,14 @@ function cacheAttributes(value: CellOptions["value"]): {
 } {
   if (typeof value === "number") return { type: "float", value };
   if (typeof value === "boolean") return { type: "boolean", value };
+  if (value instanceof Date) return { type: "date", value: odfDateValue(value) };
   if (typeof value === "string") return { type: "string", value };
   return {};
+}
+
+/** ODF office:date-value is UTC ISO 8601 without timezone suffix. */
+function odfDateValue(date: Date): string {
+  return date.toISOString().slice(0, 19);
 }
 
 function addDimensionStyle(
@@ -238,6 +245,8 @@ function parseCell(cell: Element, row: number, column: number): CellOptions {
   if (valueType === "float") result.value = attributeNumber(cell, "office:value");
   else if (valueType === "boolean")
     result.value = attributeString(cell, "office:boolean-value") === "true";
+  else if (valueType === "date")
+    result.value = new Date(`${attributeString(cell, "office:date-value")}Z`);
   else if (valueType === "string") result.value = textOf(childNamed(cell, "text:p"));
   return result;
 }
