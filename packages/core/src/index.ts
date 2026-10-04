@@ -17,3 +17,4 @@ export * from "./patch";
 export * from "./theme";
 export * from "./descriptor";
 export * from "./util";
+export * from "./canonical";
