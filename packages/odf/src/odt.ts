@@ -119,6 +119,9 @@ type NoteChildren = NoteEntry["children"];
 /** Docx tab stop, indexed from the shared paragraph model. */
 type TabStop = NonNullable<ParagraphOptions["tabStops"]>[number];
 
+/** Docx font-table entry, indexed from the shared document model. */
+type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
+
 /** Note bodies keyed by reference id, threaded through ODT emission. */
 interface NotesContext {
   footnotes: Map<number, NoteChildren>;
@@ -148,7 +151,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
     ...serializeOdfNodes(options.odfExtensions),
   ].join("");
   const files: OdfPackageFiles = {
-    "content.xml": contentXml(body, styles),
+    "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(sectionProperties),
     "meta.xml": metaXml(options),
   };
@@ -230,13 +233,41 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   if (context.textSections.length > 0) result.textSections = context.textSections;
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
   if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
+  const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
+    parseFontFace,
+  );
+  if (fonts.length > 0) result.fonts = fonts;
   return result;
 }
 
-function contentXml(body: string, styles: string[]): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
+function contentXml(body: string, styles: string[], fontFaces: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3">${fontFaces}<office:automatic-styles>${styles.join(
     "",
   )}</office:automatic-styles><office:body><office:text>${body}</office:text></office:body></office:document-content>`;
+}
+
+/** Docx font table → ODF font-face declarations (no embedded data in ODF). */
+function fontFaceDecls(fonts: DocumentOptions["fonts"]): string {
+  if (!fonts?.length) return "";
+  return xmlElement("office:font-face-decls", undefined, fonts.map(fontFaceXml));
+}
+
+function fontFaceXml(font: FontEntry): string {
+  return xmlElement("style:font-face", {
+    "style:name": font.name,
+    "style:font-family-generic": font.family,
+    "style:font-pitch": font.pitch,
+    "svg:panose-1": font.panose1,
+  });
+}
+
+function parseFontFace(element: Element): FontEntry {
+  return {
+    name: attributeString(element, "style:name") ?? "",
+    family: attributeString(element, "style:font-family-generic"),
+    pitch: attributeString(element, "style:font-pitch"),
+    panose1: attributeString(element, "svg:panose-1"),
+  };
 }
 
 function documentStylesXml(properties: SectionOptions["properties"]): string {

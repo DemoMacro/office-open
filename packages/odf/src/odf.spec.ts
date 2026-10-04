@@ -432,6 +432,15 @@ describe("ODT mapping", () => {
     ]);
   });
 
+  it("round-trips font declarations through font-face-decls", () => {
+    const source: DocumentOptions = {
+      fonts: [{ name: "Arial", family: "swiss", pitch: "variable" }],
+      sections: [{ children: [{ paragraph: "Body" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    expect(parsed.fonts).toEqual([{ name: "Arial", family: "swiss", pitch: "variable" }]);
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [
