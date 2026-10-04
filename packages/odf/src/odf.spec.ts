@@ -47,6 +47,29 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
+  it("round-trips page size and margins through page-layout", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          properties: {
+            pageSize: { width: 11906, height: 16838 },
+            pageMargin: { top: 1134, right: 850, bottom: 1134, left: 850 },
+          },
+          children: [{ paragraph: "Body" }],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const properties = parsed.sections[0]?.properties;
+    expect(properties?.pageSize).toEqual({ width: 11906, height: 16838 });
+    expect(properties?.pageMargin).toEqual({
+      top: 1134,
+      right: 850,
+      bottom: 1134,
+      left: 850,
+    });
+  });
+
   it("round-trips extended core properties through meta.xml", () => {
     const source: DocumentOptions = {
       title: "Meta",

@@ -3,6 +3,7 @@ import type {
   ParagraphOptions,
   RunOptions,
   SectionChild,
+  SectionOptions,
   TableOptions,
 } from "@office-open/docx";
 import type { Element } from "@office-open/xml";
@@ -15,6 +16,7 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   lengthToEmu,
   textOf,
   xmlElement,
@@ -48,6 +50,7 @@ type StyleMap = Map<
 export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
+  const sectionProperties = options.sections[0]?.properties;
   const parts: string[] = [];
   let index = 0;
   // Consecutive bullet paragraphs of the same level group into one text:list —
@@ -69,7 +72,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   const body = [parts.join(""), ...serializeOdfNodes(options.odfExtensions)].join("");
   const files: OdfFiles = {
     "content.xml": contentXml(body, styles),
-    "styles.xml": documentStylesXml(),
+    "styles.xml": documentStylesXml(sectionProperties),
     "meta.xml": metaXml(options),
   };
   return generateOcf(MIME, files);
@@ -84,7 +87,7 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const children = parseBlocks(body?.elements ?? [], styleMap);
   return {
     ...parseMeta(files),
-    sections: [{ children }],
+    sections: [{ properties: parsePageLayout(files), children }],
     odfExtensions: rawNodes.filter(
       (node) => !["text:p", "text:h", "table:table", "text:list"].includes(node.name),
     ),
@@ -97,8 +100,62 @@ function contentXml(body: string, styles: string[]): string {
   )}</office:automatic-styles><office:body><office:text>${body}</office:text></office:body></office:document-content>`;
 }
 
-function documentStylesXml(): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
+function documentStylesXml(properties: SectionOptions["properties"]): string {
+  const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
+  const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
+  const layoutAttributes = [
+    pageSize?.width !== undefined && `fo:page-width="${twipsToLength(pageSize.width)}"`,
+    pageSize?.height !== undefined && `fo:page-height="${twipsToLength(pageSize.height)}"`,
+    pageSize?.orientation && `style:print-orientation="${pageSize.orientation}"`,
+    pageMargin?.top !== undefined && `fo:margin-top="${twipsToLength(pageMargin.top)}"`,
+    pageMargin?.right !== undefined && `fo:margin-right="${twipsToLength(pageMargin.right)}"`,
+    pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
+    pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
+  ].filter(Boolean);
+  const pageLayout = layoutAttributes.length
+    ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(
+        " ",
+      )}/></style:page-layout>`
+    : "";
+  const masterStyles = pageLayout
+    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>`
+    : "";
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
+  const styles = readXml(files, "styles.xml");
+  const layout = childNamed(
+    childNamed(childNamed(styles, "office:automatic-styles"), "style:page-layout"),
+    "style:page-layout-properties",
+  );
+  const width = lengthToTwips(attributeString(layout, "fo:page-width"));
+  const height = lengthToTwips(attributeString(layout, "fo:page-height"));
+  const orientation = attributeString(layout, "style:print-orientation");
+  const margin = {
+    top: lengthToTwips(attributeString(layout, "fo:margin-top")),
+    right: lengthToTwips(attributeString(layout, "fo:margin-right")),
+    bottom: lengthToTwips(attributeString(layout, "fo:margin-bottom")),
+    left: lengthToTwips(attributeString(layout, "fo:margin-left")),
+  };
+  const hasMargin = Object.values(margin).some((value) => value !== undefined);
+  if (width === undefined && height === undefined && !hasMargin && !orientation) return undefined;
+  return {
+    pageSize:
+      width !== undefined || height !== undefined || orientation
+        ? { width, height, orientation: orientation as "portrait" | "landscape" | undefined }
+        : false,
+    pageMargin: hasMargin ? margin : undefined,
+  };
+}
+
+function twipsToLength(value: number | string): string {
+  return emuToLength(typeof value === "number" ? value * 635 : lengthToEmu(value));
+}
+
+function lengthToTwips(value: string | undefined): number | undefined {
+  const emu = lengthToEmu(value);
+  return emu === undefined ? undefined : Math.round(emu / 635);
 }
 
 function blockXml(child: SectionChild, styles: string[]): string {
