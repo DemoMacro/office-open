@@ -1,7 +1,15 @@
-import { ODF_NAMESPACES, metaXml, parseMeta } from "./meta";
-import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml } from "./package";
-import { childNamed } from "./xml";
+import {
+  childNamed,
+  generateOcf,
+  metaXml,
+  ODF_NAMESPACES,
+  parseMeta,
+  parseOdfNodes,
+  readOcf,
+  readXml,
+  serializeOdfNodes,
+  type OdfXmlNode,
+} from "@office-open/ocf";
 
 const MIME = "application/vnd.oasis.opendocument.database";
 const NAMESPACES = `${ODF_NAMESPACES} xmlns:db="urn:oasis:names:tc:opendocument:xmlns:database:1.0"`;

@@ -2,6 +2,8 @@ import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
+import { OcfManifestError, OcfMimeTypeError, OdfXmlError } from "./error";
+
 const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 const MANIFEST_COMPATIBILITY_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3";
 
@@ -97,11 +99,11 @@ export function readOcf(
     }
   }
   const mimeType = strFromU8(entries.mimetype ?? new Uint8Array());
-  if (mimeType !== expectedMimeType) {
-    throw new Error(`Unexpected ODF MIME type: ${mimeType || "missing"}`);
-  }
+  if (mimeType !== expectedMimeType) throw new OcfMimeTypeError(expectedMimeType, mimeType);
   const manifestXml = files["META-INF/manifest.xml"];
-  if (!manifestXml) throw new Error("ODF package is missing META-INF/manifest.xml");
+  if (!manifestXml) {
+    throw new OcfManifestError("ODF package is missing META-INF/manifest.xml");
+  }
   const manifestDocument = parse(manifestXml, {
     ignoreDeclaration: true,
     ignoreDoctype: true,
@@ -111,7 +113,7 @@ export function readOcf(
     },
   });
   const manifest = manifestDocument.elements?.[0] ?? manifestDocument;
-  if (manifest.name !== "manifest:manifest") throw new Error("Invalid ODF manifest");
+  if (manifest.name !== "manifest:manifest") throw new OcfManifestError("Invalid ODF manifest");
   validateManifestPaths(manifest, ["content.xml"]);
   return { files, binaries, manifest };
 }
@@ -123,7 +125,9 @@ function validateManifestPaths(manifest: Element, actualPaths: string[]): void {
       .map((element) => String(manifestAttribute(element, "full-path") ?? "")),
   );
   for (const path of actualPaths) {
-    if (!declared.has(path)) throw new Error(`Manifest does not declare ${path}`);
+    if (!declared.has(path)) {
+      throw new OcfManifestError(`Manifest does not declare ${path}`);
+    }
   }
 }
 
@@ -134,7 +138,11 @@ function manifestAttribute(element: Element, name: string): string | undefined {
 
 export function readXml(files: OdfFiles, path: string): Element {
   const xml = files[path];
-  if (!xml) throw new Error(`ODF package is missing ${path}`);
-  const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
-  return document.elements?.[0] ?? document;
+  if (!xml) throw new OdfXmlError(path);
+  try {
+    const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
+    return document.elements?.[0] ?? document;
+  } catch (cause) {
+    throw new OdfXmlError(path, { cause });
+  }
 }

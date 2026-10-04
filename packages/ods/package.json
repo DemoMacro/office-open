@@ -1,21 +1,13 @@
 {
-  "name": "@office-open/odf",
+  "name": "@office-open/ods",
   "version": "0.14.6",
-  "description": "Temporary explicit facade for the split OpenDocument codec packages",
+  "description": "Generate and parse OpenDocument spreadsheets as canonical WorkbookOptions",
   "keywords": [
-    "chart",
-    "database",
-    "libreoffice",
     "odf",
-    "odp",
     "ods",
-    "odt",
-    "office",
     "office-open",
-    "open-document",
     "opendocument",
     "parse",
-    "presentation",
     "spreadsheet",
     "typescript"
   ],
@@ -32,7 +24,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DemoMacro/office-open.git",
-    "directory": "packages/odf"
+    "directory": "packages/ods"
   },
   "files": [
     "dist"
@@ -55,10 +47,10 @@
     "check": "vp check --fix"
   },
   "dependencies": {
+    "@office-open/core": "workspace:*",
     "@office-open/ocf": "workspace:*",
     "@office-open/odf-schema": "workspace:*",
-    "@office-open/odp": "workspace:*",
-    "@office-open/ods": "workspace:*",
-    "@office-open/odt": "workspace:*"
+    "@office-open/xlsx": "workspace:*",
+    "@office-open/xml": "workspace:*"
   }
 }

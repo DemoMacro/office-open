@@ -9,8 +9,8 @@
 ## Features
 
 - 📄 **Text Documents** — Generate and parse `.odt` paragraphs, headings, rich text, and tables
-- 📊 **Spreadsheets** — Generate and parse `.ods` worksheets, cells, formulas, columns, rows, and visibility
-- 📽️ **Presentations** — Generate and parse `.odp` slides, shapes, rich text, and page geometry
+- 📊 **Spreadsheets** — Generate and parse `.ods` worksheets, cells, formulas, named ranges, and absolutely anchored charts
+- 📽️ **Presentations** — Generate and parse `.odp` slides, shapes, rich text, page geometry, and embedded charts
 - 🎨 **Basic Styles** — Preserve common text, paragraph, dimension, and visibility styles
 - 📝 **Metadata** — Round-trip titles, subjects, creators, keywords, dates, categories, and revisions
 - 🧩 **Generic ODF Nodes** — Address ODF elements outside the specialized typed surface as extension nodes
@@ -62,15 +62,15 @@ const parsedPresentation = parseOdp(presentation);
 
 ## API
 
-- `generateOdt(options)` / `parseOdt(data)` — ODF Text (`OdtOptions`)
-- `generateOds(options)` / `parseOds(data)` — ODF Spreadsheet (`OdsOptions`)
-- `generateOdp(options)` / `parseOdp(data)` — ODF Presentation (`OdpOptions`)
+- `generateOdt(options)` / `parseOdt(data)` — ODF Text (`DocumentOptions`)
+- `generateOds(options)` / `parseOds(data)` — ODF Spreadsheet (`WorkbookOptions`)
+- `generateOdp(options)` / `parseOdp(data)` — ODF Presentation (`PresentationOptions`)
 - `generateChartDocument(options)` / `parseChartDocument(data)` — ODF Chart (`ChartDocumentOptions`)
 - `generateDatabaseDocument(options)` / `parseDatabaseDocument(data)` — ODF Database (`DatabaseDocumentOptions`)
 - `parseOdfNode`, `parseOdfNodes`, `serializeOdfNodes`, `ODF_ELEMENT_NAMES` — generic ODF node extensions
 - `generateOcf`, `manifestXml`, `readOcf`, `readXml` — ODF container and manifest helpers
 
-The high-level models follow the corresponding office-open `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions` shapes with ODF-specific extensions. ODF packages use an uncompressed leading `mimetype` and an ODF 1.3 manifest.
+The high-level models are the corresponding office-open `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions` shapes. ODF packages use an uncompressed leading `mimetype` and an ODF 1.3 manifest.
 
 ## Documentation
 
