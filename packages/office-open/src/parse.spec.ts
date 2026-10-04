@@ -1,10 +1,15 @@
+import type { OoxmlPackageFormat } from "@office-open/core";
 import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
-import { generateOdp, generateOds, generateOdt } from "@office-open/odf";
+import { generateOdp } from "@office-open/odp";
+import { generateOds } from "@office-open/ods";
+import { generateOdt } from "@office-open/odt";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generate, type GenerateOptionsMap, type GenerateType } from "./generate";
 import { parseOfficeDocument } from "./parse";
+
+const OOXML_TYPES = Object.keys(OOXML_PACKAGE_FORMATS) as OoxmlPackageFormat[];
 
 const OOXML_FIXTURES = {
   wordprocessing: { sections: [{ children: [{ paragraph: "Unified" }] }] },
@@ -19,32 +24,29 @@ const OOXML_FIXTURES = {
 } as const;
 
 describe("parseOfficeDocument", () => {
-  it.for(Object.keys(OOXML_PACKAGE_FORMATS) as GenerateType[])(
-    "parses the %s package through the unified entry",
-    async (type) => {
-      const data = await generate({
-        type,
-        options: OOXML_FIXTURES[
-          OOXML_PACKAGE_FORMATS[type].family
-        ] as GenerateOptionsMap[GenerateType],
-        outputType: "uint8array",
-      });
-      const parsed = await parseOfficeDocument(data as Uint8Array);
-      expect(parsed.type).toBe(type);
-      if (type === "docx") {
-        if (parsed.type !== "docx") throw new Error("Expected DOCX");
-        expect(parsed.options.sections).toHaveLength(1);
-      }
-      if (type === "xlsx") {
-        if (parsed.type !== "xlsx") throw new Error("Expected XLSX");
-        expect(parsed.options.worksheets).toHaveLength(1);
-      }
-      if (type === "pptx") {
-        if (parsed.type !== "pptx") throw new Error("Expected PPTX");
-        expect(parsed.options.slides).toHaveLength(1);
-      }
-    },
-  );
+  it.for(OOXML_TYPES)("parses the %s package through the unified entry", async (type) => {
+    const data = await generate({
+      type,
+      options: OOXML_FIXTURES[
+        OOXML_PACKAGE_FORMATS[type].family
+      ] as GenerateOptionsMap[GenerateType],
+      outputType: "uint8array",
+    });
+    const parsed = await parseOfficeDocument(data as Uint8Array);
+    expect(parsed.type).toBe(type);
+    if (type === "docx") {
+      if (parsed.type !== "docx") throw new Error("Expected DOCX");
+      expect(parsed.options.sections).toHaveLength(1);
+    }
+    if (type === "xlsx") {
+      if (parsed.type !== "xlsx") throw new Error("Expected XLSX");
+      expect(parsed.options.worksheets).toHaveLength(1);
+    }
+    if (type === "pptx") {
+      if (parsed.type !== "pptx") throw new Error("Expected PPTX");
+      expect(parsed.options.slides).toHaveLength(1);
+    }
+  });
 
   it("parses RTF into document options", async () => {
     const parsed = await parseOfficeDocument("{\\rtf1\\ansi Unified}");

@@ -246,6 +246,15 @@ importers:
       '@office-open/odf':
         specifier: workspace:*
         version: link:../odf
+      '@office-open/odp':
+        specifier: workspace:*
+        version: link:../odp
+      '@office-open/ods':
+        specifier: workspace:*
+        version: link:../ods
+      '@office-open/odt':
+        specifier: workspace:*
+        version: link:../odt
       '@office-open/ppt':
         specifier: workspace:*
         version: link:../ppt

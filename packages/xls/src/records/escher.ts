@@ -215,4 +215,4 @@ export function escherImages(data: Uint8Array): EscherImage[] {
   const images = parseEscher(data);
   return images.images;
 }
-import { LegacyExcelError } from "./errors";
+import { LegacyExcelError } from "../errors";

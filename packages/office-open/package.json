@@ -1,7 +1,7 @@
 {
   "name": "office-open",
   "version": "0.14.6",
-  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, and PowerPoint from plain JSON, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
+  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, and OpenDocument from plain JSON, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
   "keywords": [
     "ai",
     "ai-agent",
@@ -13,6 +13,9 @@
     "json-schema",
     "llm",
     "mcp",
+    "odp",
+    "ods",
+    "odt",
     "office",
     "office-open",
     "ooxml",
@@ -65,6 +68,18 @@
     "./xlsx": {
       "types": "./dist/xlsx.d.mts",
       "import": "./dist/xlsx.mjs"
+    },
+    "./document": {
+      "types": "./dist/document.d.mts",
+      "import": "./dist/document.mjs"
+    },
+    "./workbook": {
+      "types": "./dist/workbook.d.mts",
+      "import": "./dist/workbook.mjs"
+    },
+    "./presentation": {
+      "types": "./dist/presentation.d.mts",
+      "import": "./dist/presentation.mjs"
     },
     "./doc": {
       "types": "./dist/doc.d.mts",
@@ -138,6 +153,9 @@
     "@office-open/doc": "workspace:*",
     "@office-open/docx": "workspace:*",
     "@office-open/odf": "workspace:*",
+    "@office-open/odp": "workspace:*",
+    "@office-open/ods": "workspace:*",
+    "@office-open/odt": "workspace:*",
     "@office-open/ppt": "workspace:*",
     "@office-open/pptx": "workspace:*",
     "@office-open/rtf": "workspace:*",

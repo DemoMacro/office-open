@@ -1,5 +1,5 @@
-import { DocParseError } from "./errors";
-import type { LegacyBookmark, LegacyField, LegacyPictureData } from "./types";
+import { DocParseError } from "../errors";
+import type { LegacyBookmark, LegacyField, LegacyPictureData } from "./models";
 
 interface NumberPair {
   offset: number;

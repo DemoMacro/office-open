@@ -1,22 +1,22 @@
 import { readFile, writeFile } from "node:fs/promises";
 
-import type {
-  OoxmlPackageFormat,
-  OutputType,
-  PackerOptions,
-  ReproducibleGenerationOptions,
-} from "@office-open/core";
-import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
+import type { OutputByType, OutputType, ReproducibleGenerationOptions } from "@office-open/core";
 export { type OutputType } from "@office-open/core";
 
-import { generateDocument } from "@office-open/docx";
 import type { DocumentOptions } from "@office-open/docx";
-import { generatePresentation } from "@office-open/pptx";
 import type { PresentationOptions } from "@office-open/pptx";
-import { generateWorkbook } from "@office-open/xlsx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
-export type GenerateType = OoxmlPackageFormat;
+import { generateDocumentFile, type DocumentFileGenerateFormat } from "./document";
+import { generatePresentationFile, type PresentationFileGenerateFormat } from "./presentation";
+import { generateWorkbookFile, type WorkbookFileGenerateFormat } from "./workbook";
+
+export type OfficeGenerateFormat =
+  | DocumentFileGenerateFormat
+  | WorkbookFileGenerateFormat
+  | PresentationFileGenerateFormat;
+
+export type GenerateType = OfficeGenerateFormat;
 
 /** Map from type string to the corresponding options type. */
 export interface GenerateOptionsMap {
@@ -24,14 +24,94 @@ export interface GenerateOptionsMap {
   docm: DocumentOptions;
   dotx: DocumentOptions;
   dotm: DocumentOptions;
+  odt: DocumentOptions;
   pptx: PresentationOptions;
   pptm: PresentationOptions;
   potx: PresentationOptions;
   potm: PresentationOptions;
+  odp: PresentationOptions;
   xlsx: WorkbookOptions;
   xlsm: WorkbookOptions;
   xltx: WorkbookOptions;
   xltm: WorkbookOptions;
+  ods: WorkbookOptions;
+}
+
+interface OfficeGenerationOptions {
+  reproducible?: ReproducibleGenerationOptions;
+}
+
+export async function generateOfficeDocument<
+  F extends GenerateType,
+  T extends OutputType = "nodebuffer",
+>(
+  format: F,
+  options: GenerateOptionsMap[F],
+  output?: T,
+  generationOptions?: OfficeGenerationOptions,
+): Promise<OutputByType[T]> {
+  if (format === "odt") {
+    return generateDocumentFile(
+      format,
+      options as DocumentOptions,
+      output,
+      generationOptions?.reproducible,
+    );
+  }
+  if (format === "ods") {
+    return generateWorkbookFile(
+      format,
+      options as WorkbookOptions,
+      output,
+      generationOptions?.reproducible,
+    );
+  }
+  if (format === "odp") {
+    return generatePresentationFile(
+      format,
+      options as PresentationOptions,
+      output,
+      generationOptions?.reproducible,
+    );
+  }
+
+  const families = {
+    docx: "document",
+    docm: "document",
+    dotx: "document",
+    dotm: "document",
+    pptx: "presentation",
+    pptm: "presentation",
+    potx: "presentation",
+    potm: "presentation",
+    xlsx: "workbook",
+    xlsm: "workbook",
+    xltx: "workbook",
+    xltm: "workbook",
+  } as const;
+
+  if (families[format as keyof typeof families] === "document") {
+    return generateDocumentFile(
+      format as DocumentFileGenerateFormat,
+      options as DocumentOptions,
+      output,
+      generationOptions?.reproducible,
+    );
+  }
+  if (families[format as keyof typeof families] === "workbook") {
+    return generateWorkbookFile(
+      format as WorkbookFileGenerateFormat,
+      options as WorkbookOptions,
+      output,
+      generationOptions?.reproducible,
+    );
+  }
+  return generatePresentationFile(
+    format as PresentationFileGenerateFormat,
+    options as PresentationOptions,
+    output,
+    generationOptions?.reproducible,
+  );
 }
 
 export interface GenerateOptions<T extends GenerateType = GenerateType> {
@@ -46,30 +126,9 @@ export async function generate<T extends GenerateType>(
   options: GenerateOptions<T>,
 ): Promise<unknown> {
   const { type, options: docOptions, outputType = "nodebuffer" as OutputType } = options;
-  const packageFormat = OOXML_PACKAGE_FORMATS[type];
-  const packerOpts = {
-    type: outputType,
-    packageVariant: packageFormat.variant,
+  return generateOfficeDocument(type, docOptions, outputType, {
     reproducible: options.reproducible,
-  } as PackerOptions<OutputType>;
-
-  switch (packageFormat.family) {
-    case "wordprocessing":
-      return generateDocument(
-        docOptions as DocumentOptions,
-        packerOpts as PackerOptions<"nodebuffer">,
-      );
-    case "presentation":
-      return generatePresentation(
-        docOptions as PresentationOptions,
-        packerOpts as PackerOptions<"nodebuffer">,
-      );
-    case "spreadsheet":
-      return generateWorkbook(
-        docOptions as WorkbookOptions,
-        packerOpts as PackerOptions<"nodebuffer">,
-      );
-  }
+  });
 }
 
 export async function parseInput(input: string): Promise<Record<string, unknown>> {

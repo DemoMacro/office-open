@@ -17,21 +17,33 @@ import { SCHEMAS, type DocumentType } from "./schemas/schemas";
 
 type GenerateFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
-const FORMATS = Object.keys(OOXML_PACKAGE_FORMATS) as GenerateFormat[];
+type OfficeGenerateCommandFormat = GenerateFormat | "odt" | "ods" | "odp";
+
+const FORMATS = [
+  ...Object.keys(OOXML_PACKAGE_FORMATS),
+  "odt",
+  "ods",
+  "odp",
+] as OfficeGenerateCommandFormat[];
 
 const SCHEMA_TYPES = {
   wordprocessing: "docx",
   spreadsheet: "xlsx",
   presentation: "pptx",
+  odt: "docx",
+  ods: "xlsx",
+  odp: "pptx",
 } as const;
 
-function schemaTypeOf(format: GenerateFormat): DocumentType {
-  return SCHEMA_TYPES[OOXML_PACKAGE_FORMATS[format].family];
+function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {
+  return SCHEMA_TYPES[format as keyof typeof SCHEMA_TYPES];
 }
 
 /** Parse and validate a generate-format positional (citty positionals cannot be enums). */
 function parseGenerateFormat(raw: string | undefined): GenerateFormat {
-  if (raw && (FORMATS as readonly string[]).includes(raw)) return raw as GenerateFormat;
+  if ((FORMATS as readonly string[]).includes(raw ?? "")) {
+    return raw as OfficeGenerateCommandFormat as GenerateFormat;
+  }
   console.error(`Unknown format "${raw ?? ""}" — expected one of: ${FORMATS.join(", ")}`);
   globalThis.process.exitCode = 1;
   throw new Error("invalid format");
@@ -275,7 +287,7 @@ const mainCommand = defineCommand({
   meta: {
     name: "office-open",
     version: "0.14.6",
-    description: "Generate Office Open XML files from JSON",
+    description: "Generate OOXML and OpenDocument files from JSON",
   },
   subCommands: {
     ...convertCommands,

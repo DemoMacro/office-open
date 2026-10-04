@@ -4,13 +4,13 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Everything for AI-native Office documents in one install — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
+> Everything for AI-native Office documents in one install — Word, Excel, PowerPoint, and OpenDocument generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
 
 ## Features
 
-- **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`, and the additional format readers; no Microsoft Office required
-- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate ODF with generic nodes for the full ODF element set; convert CSV/TSV
-- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, with schema-validated retries
+- **One Install** — Import from the canonical `office-open/document`, `office-open/workbook`, and `office-open/presentation` APIs, plus per-format packages; no Microsoft Office required
+- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate canonical `.odt`, `.ods`, and `.odp`; convert CSV/TSV
+- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, `generate-odt`, `generate-ods`, and `generate-odp`, with schema-validated retries
 - **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
 - **Generate Function** — Type-agnostic `generate()` for dynamic document creation
@@ -112,6 +112,15 @@ const slice = sliceDocumentSchema("docx", ["ParagraphOptions", "RunOptions"]);
 ### Import from Sub-Packages
 
 ```typescript
+import { parseDocumentFile, generateDocumentFile } from "office-open/document";
+import { parseWorkbookFile, generateWorkbookFile } from "office-open/workbook";
+import { parsePresentationFile, generatePresentationFile } from "office-open/presentation";
+
+const odt = await generateDocumentFile("odt", { sections: [{ children: [{ paragraph: "ODT" }] }] });
+const model = await parseDocumentFile(odt);
+```
+
+```typescript
 import { generateDocument, parseDocument, patchDocument } from "office-open/docx";
 import { generatePresentation, parsePresentation, patchPresentation } from "office-open/pptx";
 import { generateWorkbook, parseWorkbook, patchWorkbook } from "office-open/xlsx";
@@ -121,23 +130,26 @@ import { parse, stringify } from "office-open/xml";
 
 ## Sub-Exports
 
-| Export Path            | Description                              |
-| ---------------------- | ---------------------------------------- |
-| `office-open`          | Main entry (re-exports all sub-packages) |
-| `office-open/docx`     | @office-open/docx                        |
-| `office-open/pptx`     | @office-open/pptx                        |
-| `office-open/xlsx`     | @office-open/xlsx                        |
-| `office-open/doc`      | @office-open/doc                         |
-| `office-open/xls`      | @office-open/xls                         |
-| `office-open/ppt`      | @office-open/ppt                         |
-| `office-open/rtf`      | @office-open/rtf                         |
-| `office-open/odf`      | @office-open/odf                         |
-| `office-open/convert`  | Cross-format, CSV, and TSV conversion    |
-| `office-open/core`     | @office-open/core                        |
-| `office-open/xml`      | @office-open/xml                         |
-| `office-open/generate` | `generate()` function                    |
-| `office-open/ai`       | Vercel AI SDK tools                      |
-| `office-open/schemas`  | JSON schemas, validation, and slicing    |
+| Export Path                | Description                              |
+| -------------------------- | ---------------------------------------- |
+| `office-open`              | Main entry (re-exports all sub-packages) |
+| `office-open/docx`         | @office-open/docx                        |
+| `office-open/pptx`         | @office-open/pptx                        |
+| `office-open/xlsx`         | @office-open/xlsx                        |
+| `office-open/document`     | Canonical document family dispatch       |
+| `office-open/workbook`     | Canonical workbook family dispatch       |
+| `office-open/presentation` | Canonical presentation family dispatch   |
+| `office-open/doc`          | @office-open/doc                         |
+| `office-open/xls`          | @office-open/xls                         |
+| `office-open/ppt`          | @office-open/ppt                         |
+| `office-open/rtf`          | @office-open/rtf                         |
+| `office-open/odf`          | @office-open/odf                         |
+| `office-open/convert`      | Cross-format, CSV, and TSV conversion    |
+| `office-open/core`         | @office-open/core                        |
+| `office-open/xml`          | @office-open/xml                         |
+| `office-open/generate`     | `generate()` function                    |
+| `office-open/ai`           | Vercel AI SDK tools                      |
+| `office-open/schemas`      | JSON schemas, validation, and slicing    |
 
 ## Format Support
 
@@ -193,6 +205,9 @@ import { parse, stringify } from "office-open/xml";
 - [@office-open/xls](https://www.npmjs.com/package/@office-open/xls) — legacy Excel (.xls)
 - [@office-open/ppt](https://www.npmjs.com/package/@office-open/ppt) — legacy PowerPoint (.ppt)
 - [@office-open/rtf](https://www.npmjs.com/package/@office-open/rtf) — Rich Text Format
+- [@office-open/odt](https://www.npmjs.com/package/@office-open/odt) — OpenDocument Text
+- [@office-open/ods](https://www.npmjs.com/package/@office-open/ods) — OpenDocument Spreadsheet
+- [@office-open/odp](https://www.npmjs.com/package/@office-open/odp) — OpenDocument Presentation
 - [@office-open/odf](https://www.npmjs.com/package/@office-open/odf) — OpenDocument
 - [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
 - [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization

@@ -9,13 +9,16 @@ import { docxTool, officeOpenTools, schemaLookupTool, xlsxTool } from "./index";
 const MAX_INPUT_SCHEMA_BYTES = 28 * 1024;
 
 describe("officeOpenTools", () => {
-  it("should export four tools with correct keys", () => {
+  it("should export seven tools with correct keys", () => {
     const keys = Object.keys(officeOpenTools);
     expect(keys).toContain("generate-docx");
     expect(keys).toContain("generate-pptx");
     expect(keys).toContain("generate-xlsx");
+    expect(keys).toContain("generate-odt");
+    expect(keys).toContain("generate-ods");
+    expect(keys).toContain("generate-odp");
     expect(keys).toContain("office-open-schema-lookup");
-    expect(keys).toHaveLength(4);
+    expect(keys).toHaveLength(7);
   });
 
   it("each tool should have a function execute", () => {

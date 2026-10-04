@@ -311,4 +311,4 @@ export function decodeFormula(
 function reference(row: number, column: number): string {
   return `${columnLabel(column)}${row + 1}`;
 }
-import { LegacyExcelError } from "./errors";
+import { LegacyExcelError } from "../errors";

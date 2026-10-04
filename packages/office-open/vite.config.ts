@@ -6,8 +6,11 @@ export default defineConfig({
     entry: [
       "src/index.ts",
       "src/docx.ts",
+      "src/document.ts",
       "src/pptx.ts",
+      "src/presentation.ts",
       "src/xlsx.ts",
+      "src/workbook.ts",
       "src/doc.ts",
       "src/xls.ts",
       "src/ppt.ts",
