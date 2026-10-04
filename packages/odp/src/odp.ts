@@ -27,9 +27,11 @@ import {
   chartBodyXml,
   graphicFill,
   graphicOutline,
+  officeFormsXml,
   OdfSchemaError,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  parseOfficeForms,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
   pushShapeStyle,
@@ -49,6 +51,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
+import type { OdpPresentationOptions, OdpSlideOptions } from "./semantics";
 
 const MIME = "application/vnd.oasis.opendocument.presentation";
 const NAMESPACES = [
@@ -60,6 +63,9 @@ const NAMESPACES = [
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
   'xmlns:xlink="http://www.w3.org/1999/xlink"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
+  'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"',
+  'xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0"',
+  'xmlns:xforms="http://www.w3.org/2002/xforms"',
 ].join(" ");
 
 interface TextProperties {
@@ -81,7 +87,7 @@ interface OdpChart {
   chart: ChartOptions;
 }
 
-export function generateOdp(options: PresentationOptions): Uint8Array {
+export function generateOdp(options: OdpPresentationOptions): Uint8Array {
   const styles: string[] = [];
   const images: OdpImage[] = [];
   const charts: OdpChart[] = [];
@@ -109,7 +115,7 @@ export function generateOdp(options: PresentationOptions): Uint8Array {
   );
 }
 
-export function parseOdp(data: Uint8Array): PresentationOptions {
+export function parseOdp(data: Uint8Array): OdpPresentationOptions {
   try {
     return parseOdpPresentation(data);
   } catch (cause) {
@@ -130,7 +136,7 @@ export function parseOdp(data: Uint8Array): PresentationOptions {
   }
 }
 
-function parseOdpPresentation(data: Uint8Array): PresentationOptions {
+function parseOdpPresentation(data: Uint8Array): OdpPresentationOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
@@ -143,7 +149,7 @@ function parseOdpPresentation(data: Uint8Array): PresentationOptions {
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
   const chartPool = parseEmbeddedCharts(manifest, files);
-  return {
+  const result = {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
@@ -157,6 +163,7 @@ function parseOdpPresentation(data: Uint8Array): PresentationOptions {
       ),
     ),
   };
+  return result;
 }
 
 function contentXml(pages: string, styles: string[]): string {
@@ -181,7 +188,7 @@ function normalizeSize(size: PresentationOptions["size"]): { width: number; heig
 }
 
 function slideXml(
-  slide: SlideOptions,
+  slide: OdpSlideOptions,
   index: number,
   styles: string[],
   images: OdpImage[],
@@ -191,6 +198,7 @@ function slideXml(
     slideChildXml(child, styles, images, charts),
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
+  const forms = officeFormsXml(slide.forms);
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
         xmlElement("draw:frame", undefined, [
@@ -203,7 +211,7 @@ function slideXml(
   return xmlElement(
     "draw:page",
     { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
-    [...frames, ...(notesXml ? [notesXml] : [])],
+    [...frames, ...(notesXml ? [notesXml] : []), forms],
   );
 }
 
@@ -408,12 +416,20 @@ function parseSlide(
   graphicStyles: Map<string, GraphicStyle>,
   chartPool: Map<string, ChartSpaceOptions>,
 ): SlideOptions {
+  const formsElement = childNamed(page, "office:forms");
+  const forms = formsElement
+    ? parseOfficeForms(
+        formsElement,
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page/office:forms",
+      )
+    : undefined;
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
   );
   const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
-  return {
+  const slideOptions = {
     children:
       page.elements?.flatMap((child): SlideChild[] => {
         if (child.name === "draw:frame") {
@@ -434,6 +450,7 @@ function parseSlide(
           return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+        if (child.name === "office:forms") return [];
         if (child.name !== "presentation:notes")
           throw unknownSlideChild(
             child,
@@ -443,6 +460,7 @@ function parseSlide(
       }) ?? [],
     ...(notesText ? { notes: notesText } : {}),
   };
+  return { ...slideOptions, ...(forms ? { forms } : {}) } as OdpSlideOptions;
 }
 
 /** Maps table-column style names to twip widths for slide tables. */
