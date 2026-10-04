@@ -73,6 +73,13 @@ interface DrawingContext {
   readonly entries: TextEntry[];
   readonly pictures: readonly (LegacyPicture | undefined)[];
   readonly usedEntryIndexes: Set<number>;
+  readonly hyperlinks: ReadonlyMap<number, { url?: string; tooltip?: string }>;
+}
+
+interface LegacyTextHyperlink {
+  readonly start: number;
+  readonly end: number;
+  readonly target: { url?: string; tooltip?: string };
 }
 
 interface LegacyAnimation {
@@ -159,6 +166,7 @@ export function parsePresentation(
 
   const documentRecord = readPersistedRecord(documentView, documentOffset, [RecordType.document]);
   assertNotEncrypted(documentRecord);
+  const hyperlinkTargets = readHyperlinkTargets(documentView, documentRecord);
 
   const documentAtom = findDirect(documentRecord, RecordType.documentAtom);
   const size = documentAtom
@@ -185,6 +193,7 @@ export function parsePresentation(
         entries: group.entries,
         pictures,
         usedEntryIndexes: new Set(),
+        hyperlinks: hyperlinkTargets,
       },
       name,
     );
@@ -195,6 +204,7 @@ export function parsePresentation(
       entries: group.entries,
       pictures,
       usedEntryIndexes: new Set(),
+      hyperlinks: hyperlinkTargets,
     };
     return readSlide(
       documentView,
@@ -1260,7 +1270,10 @@ function readContainerText(
   if (!clientTextbox) return undefined;
 
   const embeddedText = collectEmbeddedText(view, clientTextbox);
-  if (embeddedText.length > 0) return createTextBody(embeddedText);
+  if (embeddedText.length > 0) {
+    const body = createTextBody(embeddedText);
+    return applyClientHyperlinks(body, view, clientTextbox, context.hyperlinks);
+  }
 
   const reference = findDescendant(clientTextbox, RecordType.outlineTextReference);
   if (reference && reference.length >= 4) {
@@ -1272,6 +1285,73 @@ function readContainerText(
     }
   }
   return undefined;
+}
+
+function readHyperlinkTargets(
+  view: DataView,
+  document: RecordNode,
+): ReadonlyMap<number, { url?: string; tooltip?: string }> {
+  const targets = new Map<number, { url?: string; tooltip?: string }>();
+  for (const list of collectDescendants(document, RecordType.externalObjectList)) {
+    for (const link of list.children.filter((child) => child.type === RecordType.hyperlink)) {
+      const atom = findDirect(link, RecordType.hyperlinkAtom);
+      const strings = link.children.filter((child) => child.type === RecordType.interactiveString);
+      const id = atom && atom.length >= 4 ? readInt32(view, atom, 0) : undefined;
+      const url = strings[1] ? decodeUtf16(recordBody(view, strings[1])) : undefined;
+      const tooltip = strings[0] ? decodeUtf16(recordBody(view, strings[0])) : undefined;
+      if (id === undefined || !url || url.includes(",")) continue;
+      targets.set(id, { url, tooltip });
+    }
+  }
+  return targets;
+}
+
+function applyClientHyperlinks(
+  body: TextBodyOptions,
+  view: DataView,
+  clientTextbox: RecordNode,
+  targets: ReadonlyMap<number, { url?: string; tooltip?: string }>,
+): TextBodyOptions {
+  const links: LegacyTextHyperlink[] = [];
+  for (const [index, record] of clientTextbox.children.entries()) {
+    if (record.type !== RecordType.interactiveInfo) continue;
+    const atom = findDirect(record, RecordType.interactiveInfoAtom);
+    const range = clientTextbox.children[index + 1];
+    if (
+      !atom ||
+      atom.length < 8 ||
+      !range ||
+      range.type !== RecordType.interactiveText ||
+      range.length < 8
+    )
+      continue;
+    const target = targets.get(readInt32(view, atom, 4));
+    if (!target?.url) continue;
+    links.push({
+      start: readInt32(view, range, 0),
+      end: readInt32(view, range, 4),
+      target,
+    });
+  }
+  if (links.length === 0) return body;
+
+  let position = 0;
+  for (const paragraph of body.paragraphs ?? []) {
+    if (typeof paragraph === "string") continue;
+    for (const run of paragraph.children ?? []) {
+      if (typeof run === "string" || (!("text" in run) && !("hyperlink" in run))) continue;
+      const textRun = run as TextRunOptions;
+      const start = position;
+      const end = position + (textRun.text?.length ?? 0);
+      const link = links.find((candidate) => start < candidate.end && end > candidate.start);
+      if (link) {
+        textRun.hyperlink = { url: link.target.url, tooltip: link.target.tooltip };
+      }
+      position = end;
+    }
+    position += 1;
+  }
+  return body;
 }
 
 function collectEmbeddedText(view: DataView, parent: RecordNode): string[] {

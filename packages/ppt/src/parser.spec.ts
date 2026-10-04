@@ -263,6 +263,21 @@ function animatedTextShape(): number[] {
   return container(0xf004, [...anchoredTextShapeBody(), container(4116, [animationAtom(0x06)])]);
 }
 
+function hyperlinkTextShape(): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(2050), ...int32(544)]),
+    record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
+    container(0xf00d, [
+      record(3999, int32(0)),
+      record(4000, utf16("Slide text")),
+      container(4082, [
+        record(4083, [...int32(0), ...int32(1), ...Array.from<number>({ length: 8 }).fill(0)]),
+      ]),
+      record(4063, [...int32(0), ...int32(10)]),
+    ]),
+  ]);
+}
+
 function mergedTableDrawing(): number[][] {
   const cells: readonly (readonly [number, number, number, number])[] = [
     [0, 0, 200, 50],
@@ -287,7 +302,7 @@ function mergedTableDrawing(): number[][] {
 function buildDocument(
   shapeContainers: readonly number[][] = [anchoredTextShape()],
   textValues: readonly string[] = ["First\rSecond"],
-  extras: { notes?: boolean; animation?: boolean } = {},
+  extras: { notes?: boolean; animation?: boolean; hyperlink?: boolean } = {},
 ): { document: Uint8Array; currentUser: Uint8Array } {
   const slideList = container(4080, [
     record(1011, [...int32(2), ...int32(4), ...int32(1), ...int32(257), ...int32(0), ...int32(0)]),
@@ -306,6 +321,17 @@ function buildDocument(
     2,
   );
   if (extras.notes) documentChildren.push(notesList);
+  if (extras.hyperlink) {
+    documentChildren.push(
+      container(1033, [
+        container(4055, [
+          record(4051, int32(1)),
+          record(4026, utf16("Tooltip"), { instance: 0 }),
+          record(4026, utf16("https://example.com"), { instance: 16 }),
+        ]),
+      ]),
+    );
+  }
   const document = container(1000, documentChildren);
 
   const slideAtom = record(1007, [
@@ -496,6 +522,26 @@ describe("parsePresentation", () => {
     expect(slide.animations).toEqual([
       { type: "fade", class: "entrance", trigger: "onClick", delay: 120, shapeId: 2050 },
     ]);
+  });
+
+  it("projects legacy external text hyperlinks", () => {
+    const { document, currentUser } = buildDocument([hyperlinkTextShape()], ["Slide text"], {
+      hyperlink: true,
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs?.[0]).toEqual({
+      children: [
+        {
+          text: "Slide text",
+          hyperlink: { url: "https://example.com", tooltip: "Tooltip" },
+        },
+      ],
+    });
   });
 
   it("projects direct OfficeArt picture records and blip references", () => {
