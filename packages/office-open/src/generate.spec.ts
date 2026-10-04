@@ -1,7 +1,10 @@
+import type { OoxmlPackageFormat } from "@office-open/core";
 import { OOXML_PACKAGE_FORMATS, unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generate, parseInput, type GenerateOptionsMap, type GenerateType } from "./generate";
+
+const OOXML_TYPES = Object.keys(OOXML_PACKAGE_FORMATS) as OoxmlPackageFormat[];
 
 const PACKAGE_FIXTURES = {
   wordprocessing: { sections: [{ children: [{ paragraph: { children: ["Variant"] } }] }] },
@@ -73,18 +76,15 @@ describe("parseInput", () => {
 });
 
 describe("generate OOXML package variants", () => {
-  it.for(Object.keys(OOXML_PACKAGE_FORMATS) as GenerateType[])(
-    "emits the %s package and main-part content type",
-    async (type) => {
-      const format = OOXML_PACKAGE_FORMATS[type];
-      const bytes = (await generate({
-        type,
-        options: PACKAGE_FIXTURES[format.family] as GenerateOptionsMap[GenerateType],
-        outputType: "uint8array",
-      })) as Uint8Array;
-      const contentTypes = new TextDecoder().decode(unzipSync(bytes)["[Content_Types].xml"]);
+  it.for(OOXML_TYPES)("emits the %s package and main-part content type", async (type) => {
+    const format = OOXML_PACKAGE_FORMATS[type];
+    const bytes = (await generate({
+      type,
+      options: PACKAGE_FIXTURES[format.family] as GenerateOptionsMap[GenerateType],
+      outputType: "uint8array",
+    })) as Uint8Array;
+    const contentTypes = new TextDecoder().decode(unzipSync(bytes)["[Content_Types].xml"]);
 
-      expect(findOverride(contentTypes, format.mainPartPath)).toEqual(format.mainContentType);
-    },
-  );
+    expect(findOverride(contentTypes, format.mainPartPath)).toEqual(format.mainContentType);
+  });
 });
