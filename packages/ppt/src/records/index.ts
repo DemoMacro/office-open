@@ -1,3 +1,5 @@
+import { PptParseError } from "../errors";
+
 const RECORD_HEADER_SIZE = 8;
 
 export const RecordType = {
@@ -58,12 +60,7 @@ export interface RecordNode extends RecordHeader {
   readonly children: readonly RecordNode[];
 }
 
-export class LegacyPowerPointError extends Error {
-  public constructor(message: string) {
-    super(message);
-    this.name = "LegacyPowerPointError";
-  }
-}
+export class LegacyPowerPointError extends PptParseError {}
 
 export function isContainer(record: RecordHeader): boolean {
   return record.version === 15;
@@ -75,13 +72,13 @@ export function readRecordHeader(
   streamEnd = view.byteLength,
 ): RecordHeader {
   if (offset < 0 || offset + RECORD_HEADER_SIZE > streamEnd) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint record: truncated record header");
+    throw new PptParseError("Corrupt legacy PowerPoint record: truncated record header");
   }
   const packed = view.getUint16(offset, true);
   const length = view.getUint32(offset + 4, true);
   const end = offset + RECORD_HEADER_SIZE + length;
   if (end > streamEnd) {
-    throw new LegacyPowerPointError(
+    throw new PptParseError(
       `Corrupt legacy PowerPoint record at offset ${offset}: record exceeds its parent`,
     );
   }
@@ -109,7 +106,7 @@ export function readRecordTree(
   while (cursor + RECORD_HEADER_SIZE <= end) {
     if (isZeroPadding(view, cursor, end)) break;
     if (nodes.length >= maxRecords) {
-      throw new LegacyPowerPointError("Corrupt legacy PowerPoint record: too many sibling records");
+      throw new PptParseError("Corrupt legacy PowerPoint record: too many sibling records");
     }
     const header = readRecordHeader(view, cursor, end);
     const children =
@@ -123,9 +120,7 @@ export function readRecordTree(
   }
 
   if (cursor !== end && !isZeroPadding(view, cursor, end)) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint record: trailing bytes in container",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint record: trailing bytes in container");
   }
   return nodes;
 }
@@ -179,21 +174,21 @@ export function collectDescendants(
 
 export function readInt32(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 4 > record.length) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint atom: missing 32-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field");
   }
   return view.getInt32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readUint32(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 4 > record.length) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint atom: missing 32-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field");
   }
   return view.getUint32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readInt16(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 2 > record.length) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint atom: missing 16-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 16-bit field");
   }
   return view.getInt16(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
