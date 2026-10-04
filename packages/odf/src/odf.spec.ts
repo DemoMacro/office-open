@@ -553,6 +553,24 @@ describe("ODT mapping", () => {
     expect(paragraph.numbering).toEqual({ reference: "Outline", level: 0 });
   });
 
+  it("round-trips document defaults through style:default-style", () => {
+    const source: DocumentOptions = {
+      styles: {
+        default: {
+          document: {
+            paragraph: { alignment: "center", indent: { left: 567 } },
+            run: { font: "Arial", size: 12, bold: true },
+          },
+        },
+      },
+      sections: [{ children: [{ paragraph: "Body" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const defaults = parsed.styles?.default?.document;
+    expect(defaults?.paragraph).toMatchObject({ alignment: "center", indent: { left: 567 } });
+    expect(defaults?.run).toMatchObject({ font: "Arial", size: 12, bold: true });
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [

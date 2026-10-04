@@ -213,6 +213,10 @@ type AbstractNumbering = NonNullable<
 
 type NumberingLevel = AbstractNumbering["levels"][number];
 
+type DocumentDefaults = NonNullable<
+  NonNullable<NonNullable<DocumentOptions["styles"]>["default"]>["document"]
+>;
+
 type EndnoteProperties = NonNullable<NonNullable<DocumentOptions["settings"]>["endnoteProperties"]>;
 
 /** docx ST_NumberFormat tokens with a direct ODF num-format token. */
@@ -261,7 +265,12 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
-    "styles.xml": documentStylesXml(options.sections[0], options.settings, options.numbering),
+    "styles.xml": documentStylesXml(
+      options.sections[0],
+      options.settings,
+      options.numbering,
+      options.styles,
+    ),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
@@ -351,6 +360,12 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const notesConfiguration = parseNotesConfiguration(files);
   if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
     result.settings = { ...result.settings, ...notesConfiguration };
+  const defaultStyle = parseDefaultStyle(files);
+  if (defaultStyle)
+    result.styles = {
+      ...result.styles,
+      default: { ...result.styles?.default, document: defaultStyle },
+    };
   const masterHeaderFooter = parseMasterHeaderFooter(files);
   const section = result.sections[0];
   if (section) {
@@ -394,6 +409,7 @@ function documentStylesXml(
   section: SectionOptions | undefined,
   settings: DocumentOptions["settings"],
   numbering: DocumentOptions["numbering"],
+  styles: DocumentOptions["styles"],
 ): string {
   const properties = section?.properties;
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
@@ -417,7 +433,8 @@ function documentStylesXml(
   const masterStyles = needsMaster
     ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
     : "";
-  const notes = notesConfigurationXml(settings) + outlineStyleXml(numbering);
+  const notes =
+    notesConfigurationXml(settings) + outlineStyleXml(numbering) + defaultStyleXml(styles);
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
 }
 
@@ -481,6 +498,117 @@ function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefined {
   });
   if (levels.length === 0) return undefined;
   return { reference: attributeString(outline, "style:name") ?? "Outline", levels };
+}
+
+/** Docx document defaults → ODF style:default-style (paragraph family). */
+function defaultStyleXml(styles: DocumentOptions["styles"]): string {
+  const document = styles?.default?.document;
+  if (!document) return "";
+  const paragraph = document.paragraph ?? undefined;
+  const run = document.run ?? undefined;
+  const runAttributes = run
+    ? {
+        "fo:font-weight": run.bold ? "bold" : undefined,
+        "fo:font-style": run.italic ? "italic" : undefined,
+        "style:text-underline-style": run.underline?.type ? "solid" : undefined,
+        "style:text-line-through-style": run.strike ? "solid" : undefined,
+        "fo:font-size": typeof run.size === "number" ? `${run.size}pt` : undefined,
+        "fo:color":
+          typeof run.color === "string" && /^[0-9A-Fa-f]{6}$/.test(run.color)
+            ? `#${run.color}`
+            : undefined,
+        "fo:font-family": typeof run.font === "string" ? run.font : undefined,
+      }
+    : {};
+  const paragraphAttributes = paragraph
+    ? {
+        "fo:text-align": paragraph.alignment,
+        "fo:margin-left":
+          paragraph.indent?.left !== undefined ? twipsToLength(paragraph.indent.left) : undefined,
+        "fo:margin-right":
+          paragraph.indent?.right !== undefined ? twipsToLength(paragraph.indent.right) : undefined,
+        "fo:margin-top":
+          paragraph.spacing?.before !== undefined
+            ? twipsToLength(paragraph.spacing.before)
+            : undefined,
+        "fo:margin-bottom":
+          paragraph.spacing?.after !== undefined
+            ? twipsToLength(paragraph.spacing.after)
+            : undefined,
+      }
+    : {};
+  const children = [
+    ...(Object.values(paragraphAttributes).some((value) => value !== undefined)
+      ? [xmlElement("style:paragraph-properties", paragraphAttributes)]
+      : []),
+    ...(Object.values(runAttributes).some((value) => value !== undefined)
+      ? [xmlElement("style:text-properties", runAttributes)]
+      : []),
+  ];
+  if (children.length === 0) return "";
+  return xmlElement("style:default-style", { "style:family": "paragraph" }, children);
+}
+
+/** ODF style:default-style → docx document defaults. */
+function parseDefaultStyle(files: OdfFiles): DocumentDefaults | undefined {
+  const defaultStyle = childrenNamed(
+    childNamed(readXml(files, "styles.xml"), "office:styles"),
+    "style:default-style",
+  ).find((style) => attributeString(style, "style:family") === "paragraph");
+  if (!defaultStyle) return undefined;
+  const paragraphProps = childNamed(defaultStyle, "style:paragraph-properties");
+  const textProps = childNamed(defaultStyle, "style:text-properties");
+  const indentLeft = lengthToTwips(attributeString(paragraphProps, "fo:margin-left"));
+  const indentRight = lengthToTwips(attributeString(paragraphProps, "fo:margin-right"));
+  const before = lengthToTwips(attributeString(paragraphProps, "fo:margin-top"));
+  const after = lengthToTwips(attributeString(paragraphProps, "fo:margin-bottom"));
+  const alignment = attributeString(paragraphProps, "fo:text-align");
+  const paragraph = {
+    ...(alignment ? { alignment } : {}),
+    ...(indentLeft !== undefined || indentRight !== undefined
+      ? {
+          indent: {
+            ...(indentLeft !== undefined ? { left: indentLeft } : {}),
+            ...(indentRight !== undefined ? { right: indentRight } : {}),
+          },
+        }
+      : {}),
+    ...(before !== undefined || after !== undefined
+      ? {
+          spacing: {
+            ...(before !== undefined ? { before } : {}),
+            ...(after !== undefined ? { after } : {}),
+          },
+        }
+      : {}),
+  } as DocumentDefaults["paragraph"];
+  const size = attributeString(textProps, "fo:font-size");
+  const color = attributeString(textProps, "fo:color");
+  const run = {
+    bold: attributeString(textProps, "fo:font-weight") === "bold" || undefined,
+    italic: attributeString(textProps, "fo:font-style") === "italic" || undefined,
+    underline:
+      attributeString(textProps, "style:text-underline-style") === "solid"
+        ? { type: "single" as const }
+        : undefined,
+    strike: attributeString(textProps, "style:text-line-through-style") === "solid" || undefined,
+    ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
+    color: color?.startsWith("#") ? color.slice(1) : undefined,
+    font: attributeString(textProps, "fo:font-family") || undefined,
+  };
+  const hasRun = Object.values(run).some((value) => value !== undefined);
+  const hasParagraph = Object.keys(paragraph ?? {}).length > 0;
+  if (!hasParagraph && !hasRun) return undefined;
+  return {
+    ...(hasParagraph ? { paragraph } : {}),
+    ...(hasRun
+      ? {
+          run: Object.fromEntries(
+            Object.entries(run).filter(([, value]) => value !== undefined),
+          ) as DocumentDefaults["run"],
+        }
+      : {}),
+  };
 }
 
 /** Footnote/endnote numbering config → ODF text:notes-configuration elements. */
