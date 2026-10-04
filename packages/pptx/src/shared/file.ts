@@ -21,6 +21,7 @@ import type {
   CustomShowOptions,
   KinsokuOptions,
   CustomerDataOptions,
+  TagListOptions,
 } from "@parts/presentation";
 import type {
   WebPropertiesOptions,
@@ -219,6 +220,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   defaultTextStyle?: string | false;
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
+  /** User-defined tags part contents (ppt/tags/tagsN.xml); compiler wires p:custDataLst/p:tags. */
+  tags?: TagListOptions;
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
   smartTags?: { rId: string };
   colorMru?: string[];

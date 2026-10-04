@@ -27,6 +27,8 @@ import type {
   MailMergeOptions,
   OdsoOptions,
   OdsoFieldMapDataOptions,
+  MailMergeRecipientsOptions,
+  RecipientDataOptions,
   CompatibilityOptions,
   CompatSettingOptions,
   CaptionsOptions,
@@ -1090,6 +1092,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w14:discardImageEditingData", opts.w14DiscardImageEditingData));
     if (opts.w14DefaultImageDpi !== undefined)
       p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
+    p.push(onOff("w14:conflictMode", opts.w14ConflictMode));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
     p.push(strVal("w15:docId", opts.w15DocId));
 
@@ -1556,6 +1559,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const dpi = Number(w14DefaultImageDpi);
       if (!isNaN(dpi)) opts.w14DefaultImageDpi = dpi;
     }
+    const w14ConflictMode = findChild(el, "w14:conflictMode");
+    if (w14ConflictMode)
+      opts.w14ConflictMode = parseOnOff(attr(w14ConflictMode, "w14:val")) ?? true;
     if (findChild(el, "w15:chartTrackingRefBased")) opts.w15ChartTrackingRefBased = true;
     const w15DocId = readStr(findChild(el, "w15:docId"), "w15:val");
     if (w15DocId) opts.w15DocId = w15DocId;
@@ -1581,3 +1587,38 @@ function parseShapeDefaultsInner(el: Element): ShapeDefaultsOptions {
   if (sl) out.shapelayout = parseVmlShapeLayout(sl);
   return out as ShapeDefaultsOptions;
 }
+
+/** Serialize one w:recipientData entry (CT_RecipientData). */
+function stringifyRecipientData(opts: RecipientDataOptions): string {
+  return `<w:recipientData>${[
+    onOff("w:active", opts.active),
+    numVal("w:column", opts.column),
+    strVal("w:uniqueTag", opts.uniqueTag),
+  ].join("")}</w:recipientData>`;
+}
+
+/** Mail merge recipients part (w:recipients). */
+export const mailMergeRecipientsDesc: CustomDescriptor<MailMergeRecipientsOptions> = {
+  kind: "custom",
+
+  stringify(opts) {
+    const children = opts.recipients.map(stringifyRecipientData).join("");
+    return `<w:recipients xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${children}</w:recipients>`;
+  },
+
+  parse(el) {
+    const recipients: RecipientDataOptions[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:recipientData") continue;
+      const column = Number(attr(findChild(child, "w:column") ?? {}, "w:val") ?? Number.NaN);
+      const uniqueTag = readStr(findChild(child, "w:uniqueTag"), "w:val");
+      if (Number.isFinite(column) && uniqueTag) {
+        const recipient: RecipientDataOptions = { column, uniqueTag };
+        const active = readOnOff(findChild(child, "w:active"));
+        if (active !== undefined) recipient.active = active;
+        recipients.push(recipient);
+      }
+    }
+    return { recipients };
+  },
+};

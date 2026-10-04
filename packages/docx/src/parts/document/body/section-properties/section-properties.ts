@@ -82,6 +82,8 @@ export interface SectionPropertiesOptionsBase {
   };
   footnoteProperties?: FootnotePropertiesOptions;
   endnoteProperties?: EndnotePropertiesOptions;
+  /** Number of columns for the section footnotes (w15:footnoteColumns, Word 2013+). */
+  footnoteColumns?: number;
 }
 
 export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;

@@ -21,6 +21,7 @@ import type { ColorOptions } from "./formatting";
 import type { LanguageOptions } from "./language";
 import type { FontProperties } from "./run-fonts";
 import type { UnderlineType } from "./underline";
+import type { W14RunEffectsOptions } from "./w14-effects";
 
 interface RunFontReference {
   name: string;
@@ -126,7 +127,7 @@ export const HIGHLIGHT_PALETTE_RGB = {
  * Run style properties — character formatting for a run of text: font, size,
  * bold/italic, underline, color, and other character formatting.
  */
-export interface RunStylePropertiesOptions {
+export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
   noProof?: boolean;
   bold?: boolean;
   boldComplexScript?: boolean;

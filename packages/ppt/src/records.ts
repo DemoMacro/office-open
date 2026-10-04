@@ -3,6 +3,7 @@ const RECORD_HEADER_SIZE = 8;
 export const RecordType = {
   document: 1000,
   documentAtom: 1001,
+  externalObjectList: 1033,
   slide: 1006,
   slideAtom: 1007,
   notes: 1008,
@@ -13,13 +14,19 @@ export const RecordType = {
   textHeader: 3999,
   textChars: 4000,
   textBytes: 4008,
+  interactiveText: 4063,
+  interactiveString: 4026,
   dateTimeAtom: 4006,
+  hyperlinkAtom: 4051,
   animationInfoAtom: 4081,
   slideNumberAtom: 4056,
   slideListWithText: 4080,
+  interactiveInfo: 4082,
+  interactiveInfoAtom: 4083,
   userEditAtom: 4085,
   currentUserAtom: 4086,
   animationInfo: 4116,
+  hyperlink: 4055,
   persistPointerFullBlock: 6001,
   persistPointerIncrementalBlock: 6002,
   documentEncryptionAtom: 12052,
@@ -74,7 +81,9 @@ export function readRecordHeader(
   const length = view.getUint32(offset + 4, true);
   const end = offset + RECORD_HEADER_SIZE + length;
   if (end > streamEnd) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint record: record exceeds its parent");
+    throw new LegacyPowerPointError(
+      `Corrupt legacy PowerPoint record at offset ${offset}: record exceeds its parent`,
+    );
   }
   return {
     offset,

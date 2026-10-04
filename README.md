@@ -9,7 +9,7 @@ English | [简体中文](./README.zh-CN.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
 > AI-native Office documents for TypeScript and JavaScript.
-> Create Word, Excel, and PowerPoint files (.docx, .xlsx, .pptx) from plain JSON or fully typed APIs — generate, parse, and patch. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required, opens in every major office suite.
+> Create Word, Excel, and PowerPoint files (.docx, .xlsx, .pptx) from plain JSON or fully typed APIs — generate, parse, and patch. Read legacy .doc/.xls/.ppt, RTF, and ODF; generate ODT/ODS/ODP and convert CSV/TSV. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required.
 
 [Documentation](https://www.office-open.com) · [AI Integration](https://www.office-open.com/en/getting-started/ai-integration) · [Benchmarks](#performance) · [npm](https://www.npmjs.com/package/office-open)
 
@@ -18,9 +18,9 @@ English | [简体中文](./README.zh-CN.md)
 ## Features
 
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API — no server required, works offline
-- 🗂 **Multi-Format Reading** — Parse legacy Word/Excel/PowerPoint (.doc/.xls/.ppt), RTF, ODF, and all OOXML variants through the same option models; generate ODT/ODS/ODP and convert CSV/TSV
+- 🗂 **Multi-Format Reading** — Parse legacy Word/Excel/PowerPoint (.doc/.xls/.ppt), RTF, ODF, and OOXML package variants through the same option models; generate ODT/ODS/ODP and convert CSV/TSV
 - 🤖 **AI Tooling** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
-- 🧭 **100% OOXML Coverage** — All 2,191 elements and 1,923 attributes across the 18 OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and VML) are implemented for both generation and parsing — tracked by automated XSD coverage tooling
+- 🧭 **Core OOXML Coverage** — All 2,191 elements and 1,923 attributes across the 17 core OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and VML) are implemented for both generation and parsing; newer Word extension schemas are partially covered and tracked by automated XSD coverage tooling
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
 - 🔒 **Fully Typed** — Comprehensive TypeScript definitions for autocomplete and type safety across every API
 - 🔄 **Parse & Patch** — Read existing .docx, .pptx, .xlsx files for round-trip workflows, or patch templates by placeholder replacement
@@ -43,19 +43,19 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 
 ## Packages
 
-| Package                                         | Version                                                | Description                                          |
-| ----------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
-| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools          |
-| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching      |
-| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching         |
-| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching        |
-| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | Legacy Word .doc parsing                             |
-| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                            |
-| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                       |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format parsing                             |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODT, ODS, and ODP generation and parsing             |
-| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
-| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
+| Package                                         | Version                                                | Description                                            |
+| ----------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | Umbrella: all packages + CLI + AI SDK tools            |
+| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word document generation, parsing, and patching        |
+| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint generation, parsing, and patching           |
+| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | Spreadsheet generation, parsing, and patching          |
+| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | Legacy Word .doc parsing                               |
+| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                              |
+| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                         |
+| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format parsing                               |
+| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF text, spreadsheet, presentation, chart, and DB I/O |
+| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters   |
+| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization                |
 
 ## Quick Start
 
@@ -193,7 +193,6 @@ Then follow the workflow: code to the project standards, run `pnpm build && pnpm
 
 - [Documentation](https://www.office-open.com) — guides, API reference, and AI integration docs
 - [Discussions](https://github.com/DemoMacro/office-open/discussions) — questions, ideas, and show-and-tell
-- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 If office-open is useful to you, a [⭐ star](https://github.com/DemoMacro/office-open/stargazers) helps other developers find it.

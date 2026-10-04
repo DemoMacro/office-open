@@ -111,6 +111,7 @@ function buildDocument(
     characterBinTableLength?: number;
     secondCp?: number;
     fields?: boolean;
+    hyperlink?: boolean;
     annotations?: boolean;
     bookmarks?: boolean;
     drawing?: boolean | "embedded";
@@ -139,7 +140,20 @@ function buildDocument(
   wordView.setUint16(32, 14, true);
   wordView.setUint16(62, 22, true);
   const storyFixture = options.textboxes ?? options.notes ?? options.headers;
-  wordView.setUint32(76, storyFixture ? 4 : 7, true);
+  const fieldInstruction = options.hyperlink ? 'HYPERLINK "https://example.com"' : "INST";
+  const fieldBytes =
+    options.fields || options.hyperlink
+      ? new Uint8Array([
+          0x41,
+          0x13,
+          ...new TextEncoder().encode(fieldInstruction),
+          0x14,
+          ...new TextEncoder().encode("RES"),
+          0x15,
+          0x0d,
+        ])
+      : undefined;
+  wordView.setUint32(76, fieldBytes?.byteLength ?? (storyFixture ? 4 : 7), true);
   wordView.setUint32(80, options.notes ? 4 : 0, true);
   wordView.setUint32(84, options.headers ? 4 : 0, true);
   wordView.setUint32(100, options.textboxes ? 4 : 0, true);
@@ -171,12 +185,8 @@ function buildDocument(
   setFibPair(74, options.lists ? 1280 : 0, options.lists ? 10 : 0);
 
   word.set(new TextEncoder().encode("Hi\r"), 512);
-  if (options.fields) {
-    word.set(
-      Uint8Array.from([0x41, 0x13, 0x49, 0x4e, 0x53, 0x54, 0x14, 0x52, 0x45, 0x53, 0x15, 0x0d]),
-      512,
-    );
-    wordView.setUint32(76, 15, true);
+  if (fieldBytes) {
+    word.set(fieldBytes, 512);
   }
   const unicode = new Uint8Array(storyFixture ? 8 : 6);
   const unicodeView = new DataView(unicode.buffer);
@@ -190,15 +200,15 @@ function buildDocument(
     unicodeView.setUint16(2, 0x754c, true);
     unicodeView.setUint16(4, 0x000d, true);
   }
-  word.set(unicode, options.fields ? 528 : 516);
+  word.set(unicode, fieldBytes ? 576 : 516);
 
   tableView.setUint8(512, 2);
   tableView.setUint32(513, 28, true);
   tableView.setUint32(517, 0, true);
-  tableView.setUint32(521, options.secondCp ?? (options.fields ? 12 : 4), true);
-  tableView.setUint32(525, options.fields ? 15 : storyFixture ? 8 : 7, true);
+  tableView.setUint32(521, options.secondCp ?? (fieldBytes ? fieldBytes.byteLength : 4), true);
+  tableView.setUint32(525, fieldBytes ? fieldBytes.byteLength + 3 : storyFixture ? 8 : 7, true);
   tableView.setUint32(531, 0x40000400, true);
-  tableView.setUint32(539, options.fields ? 528 : 516, true);
+  tableView.setUint32(539, fieldBytes ? 576 : 516, true);
 
   tableView.setUint32(0, 512, true);
   tableView.setUint32(4, 528, true);
@@ -445,6 +455,21 @@ describe("legacy DOC parser", () => {
             .join("");
     expect(text).toBe("ARES");
     expect(JSON.stringify(children)).not.toContain("INST");
+  });
+
+  it("projects HYPERLINK field results as hyperlink children", () => {
+    const { data } = buildDocument({ hyperlink: true, fieldTable: true });
+    const children = parseDocument(data).sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first) || typeof first.paragraph === "string")
+      throw new TypeError("Expected a paragraph child");
+    expect(first.paragraph.children).toEqual([
+      { text: "A", bold: true, size: 12 },
+      {
+        hyperlink: { url: "https://example.com" },
+        children: [{ text: "RES" }],
+      },
+    ]);
   });
 
   it("degrades malformed character bin tables without losing text", () => {

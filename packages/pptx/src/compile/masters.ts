@@ -538,6 +538,7 @@ export function mapNotesAndHandoutMasters(
 ): void {
   for (const rel of options.passthroughRelationships ?? []) {
     if (rel.source !== "ppt/presentation.xml") continue;
+    if (options.tags?.length && rel.relationshipType === RELATIONSHIP_TYPES.tags) continue;
     presRels.claimSourceRel(rel);
   }
   // Notes Master — emitted when notes slides exist or the source carried one.

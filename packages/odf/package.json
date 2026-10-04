@@ -1,8 +1,39 @@
 {
   "name": "@office-open/odf",
   "version": "0.14.6",
-  "description": "Generate and parse OpenDocument text, spreadsheet, and presentation documents",
+  "description": "Generate and parse OpenDocument text, spreadsheet, presentation, chart, and database documents",
+  "keywords": [
+    "chart",
+    "database",
+    "libreoffice",
+    "odf",
+    "odp",
+    "ods",
+    "odt",
+    "office",
+    "office-open",
+    "open-document",
+    "opendocument",
+    "parse",
+    "presentation",
+    "spreadsheet",
+    "typescript"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
   "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://www.demomacro.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/odf"
+  },
   "files": [
     "dist"
   ],
@@ -24,6 +55,7 @@
     "check": "vp check --fix"
   },
   "dependencies": {
+    "@office-open/core": "workspace:*",
     "@office-open/docx": "workspace:*",
     "@office-open/pptx": "workspace:*",
     "@office-open/xlsx": "workspace:*",

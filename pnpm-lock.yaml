@@ -138,6 +138,9 @@ importers:
 
   packages/odf:
     dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx

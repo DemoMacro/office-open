@@ -832,6 +832,18 @@ export function stringifyChildDispatch(
     return `<w:moveTo w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
   }
 
+  // ── Merge-conflict text runs (w14, Word 2010+) ──
+  if ("conflictIns" in child) {
+    const { id, author, date, children } = child.conflictIns;
+    const body = stringifyTrackChangeChildren(children, ctx, false);
+    return `<w14:conflictIns w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w14:conflictIns>`;
+  }
+  if ("conflictDel" in child) {
+    const { id, author, date, children } = child.conflictDel;
+    const body = stringifyTrackChangeChildren(children, ctx, true);
+    return `<w14:conflictDel w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w14:conflictDel>`;
+  }
+
   // ── Custom XML range markers (track changes) ──
   if ("customXmlInsRangeStart" in child) {
     const o = child.customXmlInsRangeStart;
@@ -857,6 +869,20 @@ export function stringifyChildDispatch(
   }
   if ("customXmlMoveToRangeEnd" in child)
     return `<w:customXmlMoveToRangeEnd w:id="${child.customXmlMoveToRangeEnd}"/>`;
+
+  // ── Merge-conflict range markers (w14, Word 2010+) ──
+  if ("customXmlConflictInsRangeStart" in child) {
+    const o = child.customXmlConflictInsRangeStart;
+    return `<w14:customXmlConflictInsRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+  }
+  if ("customXmlConflictInsRangeEnd" in child)
+    return `<w14:customXmlConflictInsRangeEnd w:id="${child.customXmlConflictInsRangeEnd}"/>`;
+  if ("customXmlConflictDelRangeStart" in child) {
+    const o = child.customXmlConflictDelRangeStart;
+    return `<w14:customXmlConflictDelRangeStart w:id="${o.id}"${o.author ? ` w:author="${escapeXml(o.author)}"` : ""}${o.date ? ` w:date="${o.date}"` : ""}/>`;
+  }
+  if ("customXmlConflictDelRangeEnd" in child)
+    return `<w14:customXmlConflictDelRangeEnd w:id="${child.customXmlConflictDelRangeEnd}"/>`;
 
   // ── Simple field ──
   if ("simpleField" in child) {

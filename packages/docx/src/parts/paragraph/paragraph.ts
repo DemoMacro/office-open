@@ -202,6 +202,14 @@ export type ParagraphChild =
   | { customXmlMoveFromRangeEnd: number }
   | { customXmlMoveToRangeStart: { id: number; author?: string; date?: string } }
   | { customXmlMoveToRangeEnd: number }
+  // Merge-conflict range markers (w14, Word 2010+)
+  | { customXmlConflictInsRangeStart: { id: number; author?: string; date?: string } }
+  | { customXmlConflictInsRangeEnd: number }
+  | { customXmlConflictDelRangeStart: { id: number; author?: string; date?: string } }
+  | { customXmlConflictDelRangeEnd: number }
+  // Merge-conflict text runs (w14, Word 2010+ — CT_RunTrackChange wrappers)
+  | { conflictIns: ChangedProperties & { children: TrackChangeChild[] } }
+  | { conflictDel: ChangedProperties & { children: TrackChangeChild[] } }
   // Simple field
   | { simpleField: SimpleFieldOptions }
   // Form field (checkbox, dropdown list, text input)
@@ -265,4 +273,6 @@ export type ParagraphOptions = {
   paraId?: LongHexNumber;
   /** Paragraph text identifier (w14:textId, 8-digit hex string). */
   textId?: LongHexNumber;
+  /** Whether this paragraph is excluded from spell check (w14:noSpellErr). */
+  noSpellErr?: boolean;
 } & ParagraphPropertiesOptions;

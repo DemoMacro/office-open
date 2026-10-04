@@ -29,6 +29,8 @@ export * from "./object";
 export * from "./pict";
 export * from "./comments";
 export * from "./comments-extended";
+export * from "./comments-ids";
+export * from "./comments-extensible";
 export * from "./people";
 export * from "./inline";
 export * from "./bodychildren";

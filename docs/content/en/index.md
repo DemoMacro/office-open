@@ -2,7 +2,7 @@
 prose: true
 seo:
     title: Generate Office Open XML documents with JavaScript/TypeScript
-    description: Generate, parse, and patch .docx, .pptx, and .xlsx files with JSON or TypeScript — AI-native, fully typed, 100% OOXML coverage. Runs in Node.js, browsers, Deno, and Bun.
+    description: Generate, parse, and patch .docx, .pptx, and .xlsx files with JSON or TypeScript — AI-native, fully typed, and complete across 17 core OOXML schemas. Runs in Node.js, browsers, Deno, and Bun.
 ---
 
 ::page-hero{orientation="horizontal"}
@@ -43,7 +43,7 @@ bun add office-open
 Generate Office Open XML documents.
 
 #description
-Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeScript — a natural fit for AI agents and hand-written code alike.
+Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeScript, and read legacy Office, RTF, and ODF inputs — a natural fit for AI agents and hand-written code alike.
 
 #links
   :::button-link{to="/en/getting-started/installation"}
@@ -106,10 +106,10 @@ Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeSc
   <Icon name="i-lucide-shield-check" />
 
   #title
-  OOXML Complete
+  OOXML Core Complete
 
   #description
-  Every OOXML Transitional element and attribute, both generating and parsing — output opens in every major office suite.
+  Every element and attribute in the 17 core OOXML Transitional schemas, both generating and parsing — newer Word extensions are tracked separately.
   :::
 
   :::page-card
@@ -120,7 +120,7 @@ Create `.docx`, `.pptx`, and `.xlsx` files from plain JSON or fully typed TypeSc
   Modular Packages
 
   #description
-  Install just the format you need, or the unified package with CLI and AI SDK tools on top.
+  Install just the format you need — including legacy readers and ODF — or the unified package with CLI and AI SDK tools on top.
   :::
 ::
 

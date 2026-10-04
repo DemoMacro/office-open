@@ -1,8 +1,36 @@
 {
   "name": "@office-open/xls",
   "version": "0.14.6",
-  "description": "Parse legacy Microsoft Excel .xls workbooks into office-open WorkbookOptions",
+  "description": "Parse legacy Microsoft Excel .xls workbooks into office-open WorkbookOptions — no Microsoft Office required",
+  "keywords": [
+    "biff",
+    "biff8",
+    "excel",
+    "legacy",
+    "microsoft-excel",
+    "office",
+    "office-open",
+    "parse",
+    "parser",
+    "spreadsheet",
+    "typescript",
+    "xls"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
   "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://www.demomacro.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/xls"
+  },
   "files": [
     "dist"
   ],

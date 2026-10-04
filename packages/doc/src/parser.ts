@@ -1,6 +1,16 @@
-import { CompoundFileReader } from "@office-open/core";
+import {
+  CompoundFileReader,
+  decryptLegacyRc4,
+  decryptRc4CryptoApi,
+  parseLegacyRc4Verifier,
+  parseRc4CryptoApiHeader,
+  parseSummaryInformation,
+  verifyLegacyRc4Password,
+  verifyRc4CryptoApiPassword,
+} from "@office-open/core";
 import type {
   DocumentOptions,
+  ParagraphChild,
   ParagraphOptions,
   RunOptions,
   SectionChild,
@@ -117,6 +127,7 @@ interface TextCharacter {
   value: string;
   cp: number;
   paragraphEnd?: boolean;
+  hyperlink?: { url?: string; anchor?: string };
 }
 
 const FLAG_ENCRYPTED = 0x0100;
@@ -900,9 +911,12 @@ function projectChildren(
       for (const range of ranges) {
         if (cp === range.cpStart) boundaries.add(index);
       }
+      if (index > 0 && paragraph[index]!.hyperlink !== paragraph[index - 1]!.hyperlink) {
+        boundaries.add(index);
+      }
     }
     const sortedBoundaries = [...boundaries].sort((left, right) => left - right);
-    const runs: RunOptions[] = [];
+    const runs: ParagraphChild[] = [];
     for (let index = 0; index < sortedBoundaries.length - 1; index++) {
       const start = sortedBoundaries[index]!;
       const end = sortedBoundaries[index + 1]!;
@@ -913,10 +927,18 @@ function projectChildren(
       if (text.length === 0) continue;
       const cp = paragraph[start]!.cp;
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
+      const hyperlink = paragraph[start]!.hyperlink;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
       if (breakCount > 0) runs.push({ break: breakCount });
-      if (visibleText.length > 0) runs.push({ text: visibleText, ...range?.properties });
+      if (visibleText.length > 0 && hyperlink) {
+        runs.push({
+          hyperlink: { ...hyperlink },
+          children: [{ text: visibleText, ...range?.properties }],
+        });
+      } else if (visibleText.length > 0) {
+        runs.push({ text: visibleText, ...range?.properties });
+      }
     }
     const plainText = paragraph.map((character) => character.value).join("");
     const hasProperties = runs.some((run) =>
@@ -953,6 +975,28 @@ function projectStory(
     ranges,
     paragraphRanges,
   );
+}
+
+function applyHyperlinkFields(
+  characters: TextCharacter[],
+  fields: readonly { start: number; end: number; instruction: string }[],
+  rawCharacters: readonly string[],
+): void {
+  for (const field of fields) {
+    const match = /^HYPERLINK\s+(?:"([^"]*)"|(\S+))/i.exec(field.instruction.trim());
+    if (!match) continue;
+    const target = match[2] ?? match[1];
+    if (!target) continue;
+    const hyperlink = target.startsWith("#") ? { anchor: target.slice(1) } : { url: target };
+    for (
+      let cp = field.end + 1;
+      cp < rawCharacters.length && rawCharacters[cp] !== "\x15";
+      cp += 1
+    ) {
+      const character = characters.find((candidate) => candidate.cp === cp);
+      if (character) character.hyperlink = hyperlink;
+    }
+  }
 }
 
 function parseOptional<T>(parse: () => T, fallback: T): T {
@@ -1076,7 +1120,7 @@ function projectCommentStory(
   );
 }
 
-export function parseInternal(data: Uint8Array): DocumentOptions {
+export function parseInternal(data: Uint8Array, password?: string): DocumentOptions {
   let reader: CompoundFileReader;
   try {
     reader = new CompoundFileReader(data);
@@ -1088,21 +1132,29 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
   if (!reader.entry("WordDocument")) {
     throw new DocParseError("Invalid Word document: WordDocument stream is missing");
   }
-  const word = reader.read("WordDocument");
+  let word = reader.read("WordDocument");
   const legacy = readUint16(word, 0, "Invalid Word document: FIB is truncated") === 0xa5dc;
   if (legacy) {
     const fib = parseLegacyFib(word);
     return { sections: [{ children: legacyChildren(parseLegacyText(word, fib)) }] };
   }
+  const flags = readUint16(word, 10, "Invalid Word document: FIB is truncated");
+  let tablePath = (flags & FLAG_TABLE_ONE) !== 0 ? "1Table" : "0Table";
+  let table: Uint8Array | undefined = reader.entry(tablePath) ? reader.read(tablePath) : undefined;
+  let dataStream = reader.entry("Data") ? reader.read("Data") : undefined;
+  if ((flags & FLAG_ENCRYPTED) !== 0) {
+    if (!table) throw new DocParseError("Encrypted Word documents are not supported");
+    const decrypted = decryptWordStreams(word, table, reader, password);
+    word = decrypted.word;
+    table = decrypted.table;
+    tablePath = decrypted.tablePath;
+    dataStream = decrypted.data;
+  }
   const fib = parseFib(word);
-  const tablePath =
-    (readUint16(word, 10, "Invalid Word document: FIB is truncated") & FLAG_TABLE_ONE) !== 0
-      ? "1Table"
-      : "0Table";
-  if (!reader.entry(tablePath)) {
+  const metadata = readSummaryInformation(reader);
+  if (!table) {
     throw new DocParseError(`Invalid Word document: ${tablePath} stream is missing`);
   }
-  const table = reader.read(tablePath);
   if (fib.totalCharacters === 0) return { sections: [{ children: [{ paragraph: "" }] }] };
 
   const pieces = parsePieceTable(table, fib.clx);
@@ -1179,6 +1231,7 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
       fields = [];
     }
   }
+  applyHyperlinkFields(characters, fields, rawCharacters);
   let revisions: LegacyRevisionRange[] = [];
   if (fib.comments.length > 0) {
     try {
@@ -1191,7 +1244,7 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
       revisions = [];
     }
   }
-  const drawing = fib.drawing.length > 0 ? readOptionalStream(reader, "Data") : undefined;
+  const drawing = fib.drawing.length > 0 ? dataStream : undefined;
   const pictures =
     fib.drawing.length > 0 && drawing
       ? parsePictures(
@@ -1412,14 +1465,68 @@ export function parseInternal(data: Uint8Array): DocumentOptions {
         }
       : {}),
   };
+  Object.assign(result, metadata);
   if (fields.length > 0) result.fields = fields;
   if (revisions.length > 0) result.revisions = revisions;
   if (pictures.length > 0) result.pictures = pictures;
   return result;
 }
 
-function readOptionalStream(reader: CompoundFileReader, path: string): Uint8Array | undefined {
-  return reader.entry(path) ? reader.read(path) : undefined;
+function decryptWordStreams(
+  encryptedWord: Uint8Array,
+  encryptedTable: Uint8Array,
+  reader: CompoundFileReader,
+  password?: string,
+): { word: Uint8Array; table: Uint8Array; tablePath: string; data?: Uint8Array } {
+  if (password === undefined) {
+    throw new DocParseError("Encrypted Word documents are not supported");
+  }
+  const version = new DataView(
+    encryptedTable.buffer,
+    encryptedTable.byteOffset,
+    encryptedTable.byteLength,
+  );
+  if (encryptedTable.byteLength < 4 || version.getUint16(2, true) !== 0x0002) {
+    throw new DocParseError("Encrypted Word documents are not supported");
+  }
+  const majorVersion = version.getUint16(0, true);
+  const decrypt =
+    majorVersion === 1
+      ? (data: Uint8Array): Uint8Array => {
+          const verifier = parseLegacyRc4Verifier(data, 4);
+          if (!verifyLegacyRc4Password(password, verifier)) {
+            throw new DocParseError("Invalid Word document password");
+          }
+          return decryptLegacyRc4(data, password, verifier.salt);
+        }
+      : (data: Uint8Array): Uint8Array => {
+          const { keySizeBits, verifier } = parseRc4CryptoApiHeader(data, 4);
+          if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
+            throw new DocParseError("Invalid Word document password");
+          }
+          return decryptRc4CryptoApi(data, password, verifier.salt, keySizeBits);
+        };
+  const decryptedWord = decrypt(encryptedWord);
+  const decryptedWordCopy = new Uint8Array(decryptedWord);
+  decryptedWordCopy.set(encryptedWord.subarray(0, 0x44));
+  const flagsOffset = 10;
+  decryptedWordCopy[flagsOffset]! &= ~0x80;
+  decryptedWordCopy[flagsOffset + 1]! &= ~0x01;
+  new DataView(decryptedWordCopy.buffer, decryptedWordCopy.byteOffset).setUint32(14, 0, true);
+  const tablePath =
+    (readUint16(decryptedWordCopy, 10, "Invalid Word document: FIB is truncated") &
+      FLAG_TABLE_ONE) !==
+    0
+      ? "1Table"
+      : "0Table";
+  const table = decrypt(encryptedTable);
+  const data = reader.entry("Data") ? decrypt(reader.read("Data")) : undefined;
+  return { word: decryptedWordCopy, table, tablePath, data };
+}
+
+function readSummaryInformation(reader: CompoundFileReader): Omit<DocumentOptions, "sections"> {
+  const path = `${String.fromCharCode(5)}SummaryInformation`;
+  return reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
 }
 
 function applyBookmarks(

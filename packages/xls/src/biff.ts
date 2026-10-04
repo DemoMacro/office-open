@@ -1,4 +1,14 @@
-import { CompoundFileReader } from "@office-open/core";
+import {
+  CompoundFileReader,
+  decryptLegacyRc4,
+  decryptRc4CryptoApi,
+  parseLegacyRc4Verifier,
+  parseRc4CryptoApiHeader,
+  parseDocumentSummaryInformation,
+  parseSummaryInformation,
+  verifyLegacyRc4Password,
+  verifyRc4CryptoApiPassword,
+} from "@office-open/core";
 import type {
   CellOptions,
   ConditionalFormatRule,
@@ -173,6 +183,10 @@ function readRecord(stream: Uint8Array, position: number, version: BiffVersion):
   };
 }
 
+function isClearedFilePass(record: BiffRecord): boolean {
+  return record.code === RecordCode.FilePass && record.body.every((byte) => byte === 0);
+}
+
 function* recordsFrom(
   data: Uint8Array,
   cursor: number,
@@ -339,6 +353,20 @@ function detectBiffVersion(stream: Uint8Array): {
 }
 
 const BEGIN_OF_FILE_CODES = new Set([0x0009, 0x0209, 0x0409, 0x0809]);
+const PLAINTEXT_ENCRYPTION_CODES = new Set([
+  RecordCode.FilePass,
+  ...BEGIN_OF_FILE_CODES,
+  0x00e1,
+  0x0193,
+  0x0195,
+  0x0196,
+  0x0138,
+]);
+/** Password for password-protected legacy XLS containers. */
+export interface LegacyParseOptions {
+  /** Password used to verify and decrypt legacy Office RC4 containers. */
+  password?: string;
+}
 
 function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const detected = detectBiffVersion(stream);
@@ -363,7 +391,7 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   let inGlobals = false;
 
   for (const record of recordsFrom(stream, 0, workbookVersion)) {
-    if (record.code === RecordCode.FilePass)
+    if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
       throw new Error("Encrypted legacy XLS files are not supported");
     if (record.code === RecordCode.Formula || record.code === RecordCode.String) {
       throw new Error("Invalid legacy XLS file: worksheet record appears in workbook globals");
@@ -575,7 +603,7 @@ function readLegacyWorkbookGlobals(
   while (cursor < stream.byteLength) {
     const record = readRecord(stream, cursor, detected.version);
     const nextCursor = cursor + recordHeaderSize(detected.version) + record.body.byteLength;
-    if (record.code === RecordCode.FilePass)
+    if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
       throw new Error("Encrypted legacy XLS files are not supported");
     if (!BEGIN_OF_FILE_CODES.has(record.code)) {
       cursor = nextCursor;
@@ -607,7 +635,7 @@ function readLegacyWorkbookGlobals(
     while (cursor < stream.byteLength) {
       const workbookRecord = readRecord(stream, cursor, detected.version);
       cursor += recordHeaderSize(detected.version) + workbookRecord.body.byteLength;
-      if (workbookRecord.code === RecordCode.FilePass)
+      if (workbookRecord.code === RecordCode.FilePass && !isClearedFilePass(workbookRecord))
         throw new Error("Encrypted legacy XLS files are not supported");
       if (workbookRecord.code !== RecordCode.Sheethdr) continue;
       if (workbookRecord.body.byteLength < 5)
@@ -1049,7 +1077,7 @@ function parseWorksheetStream(
     }
     if (depth !== 1) continue;
 
-    if (record.code === RecordCode.FilePass)
+    if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
       throw new Error("Encrypted legacy XLS files are not supported");
     if (
       currentDrawing &&
@@ -1793,9 +1821,11 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
   return { ...globals, stream };
 }
 
-export function parseWorkbook(data: Uint8Array): WorkbookOptions {
+export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): WorkbookOptions {
   if (!(data instanceof Uint8Array)) throw new TypeError("XLS data must be a Uint8Array");
-  const state = readWorkbookStream(data);
+  const workbookData = decryptWorkbookContainer(data, options?.password) ?? data;
+  const state = readWorkbookStream(workbookData);
+  const metadata = readSummaryInformation(data);
   const worksheets: WorksheetOptions[] = state.sheets.map((sheet, index) => {
     const parsed = parseWorksheetStream(state.stream, sheet.position, state);
     return {
@@ -1811,6 +1841,7 @@ export function parseWorkbook(data: Uint8Array): WorkbookOptions {
   });
   return {
     worksheets,
+    ...metadata,
     fonts: state.fonts.length > 0 ? state.fonts : undefined,
     numFmts:
       state.numberFormats.size > 0
@@ -1824,4 +1855,140 @@ export function parseWorkbook(data: Uint8Array): WorkbookOptions {
     externalLinks: state.externalLinks.length > 0 ? state.externalLinks : undefined,
     properties: { date1904: state.date1904 },
   };
+}
+
+function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Array | undefined {
+  let stream: Uint8Array;
+  if (data.byteLength > 8 && data[0] === 0x09) {
+    stream = data;
+  } else {
+    const reader = new CompoundFileReader(data);
+    const entry = reader.entry("Workbook") ?? reader.entry("Book");
+    if (!entry || entry.type !== "stream") {
+      throw new Error("Invalid legacy XLS file: missing Workbook or Book stream");
+    }
+    stream = reader.read(entry.path);
+  }
+  const detected = detectBiffVersion(stream);
+  let filePass: { offset: number; body: Uint8Array } | undefined;
+  let cursor = 0;
+  while (cursor < stream.byteLength) {
+    const record = readRecord(stream, cursor, detected.version);
+    if (record.code === RecordCode.FilePass) {
+      filePass = { offset: cursor, body: record.body };
+      break;
+    }
+    if (record.code === RecordCode.EndOfFile) break;
+    cursor += recordHeaderSize(detected.version) + record.body.byteLength;
+  }
+  if (!filePass) return undefined;
+  if (password === undefined) {
+    throw new Error("Encrypted legacy XLS files are not supported");
+  }
+  const body = filePass.body;
+  if (body.byteLength < 2 || body[0] !== 1 || body[1] !== 0) {
+    throw new Error("Encrypted legacy XLS files are not supported");
+  }
+  const version = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  const decrypt = (() => {
+    const majorVersion = body.byteLength >= 4 ? version.getUint16(2, true) : 0;
+    const minorVersion = body.byteLength >= 6 ? version.getUint16(4, true) : 0;
+    if (majorVersion === 1 && minorVersion !== 1) {
+      throw new Error("Encrypted legacy XLS files are not supported");
+    }
+    if (majorVersion !== 1 && (minorVersion !== 0x0002 || majorVersion < 2 || majorVersion > 4)) {
+      throw new Error("Encrypted legacy XLS files are not supported");
+    }
+    if (majorVersion === 1) {
+      const verifier = parseLegacyRc4Verifier(body, 6);
+      if (!verifyLegacyRc4Password(password, verifier)) {
+        throw new Error("Invalid legacy XLS password");
+      }
+      return (data: Uint8Array): Uint8Array =>
+        decryptLegacyRc4(data, password, verifier.salt, 1024);
+    }
+    const { keySizeBits, verifier } = parseRc4CryptoApiHeader(body, 6);
+    if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
+      throw new Error("Invalid legacy XLS password");
+    }
+    return (data: Uint8Array): Uint8Array =>
+      decryptRc4CryptoApi(data, password, verifier.salt, keySizeBits, 1024);
+  })();
+
+  const records: BiffRecord[] = [];
+  cursor = 0;
+  while (cursor < stream.byteLength) {
+    const record = readRecord(stream, cursor, detected.version);
+    records.push(record);
+    cursor += recordHeaderSize(detected.version) + record.body.byteLength;
+  }
+  const headerSize = recordHeaderSize(detected.version);
+  const encryptedParts: Uint8Array[] = [];
+  for (const record of records) {
+    const part = new Uint8Array(headerSize + record.body.byteLength);
+    if (record.code !== RecordCode.FilePass && !PLAINTEXT_ENCRYPTION_CODES.has(record.code)) {
+      if (record.code === RecordCode.BoundSheet) {
+        part.set(record.body.subarray(4), headerSize + 4);
+      } else {
+        part.set(record.body, headerSize);
+      }
+    }
+    encryptedParts.push(part);
+  }
+  const decryptedBodies = decrypt(concatBytes(encryptedParts));
+  const result = new Uint8Array(
+    records.reduce(
+      (total, record) => total + recordHeaderSize(detected.version) + record.body.byteLength,
+      0,
+    ),
+  );
+  let resultOffset = 0;
+  let decryptedOffset = 0;
+  for (const record of records) {
+    result.set(stream.subarray(record.start, record.start + headerSize), resultOffset);
+    if (record.code === RecordCode.FilePass) {
+      result[resultOffset] = 0;
+      result[resultOffset + 1] = 0;
+    }
+    resultOffset += headerSize;
+    const decryptedBodyStart = decryptedOffset + headerSize;
+    if (record.code === RecordCode.FilePass) {
+      result.fill(0, resultOffset, resultOffset + record.body.byteLength);
+    } else if (PLAINTEXT_ENCRYPTION_CODES.has(record.code)) {
+      result.set(record.body, resultOffset);
+    } else if (record.code === RecordCode.BoundSheet) {
+      result.set(record.body.subarray(0, 4), resultOffset);
+      result.set(
+        decryptedBodies.subarray(
+          decryptedBodyStart + 4,
+          decryptedBodyStart + record.body.byteLength,
+        ),
+        resultOffset + 4,
+      );
+    } else {
+      result.set(
+        decryptedBodies.subarray(decryptedBodyStart, decryptedBodyStart + record.body.byteLength),
+        resultOffset,
+      );
+    }
+    decryptedOffset += headerSize + record.body.byteLength;
+    resultOffset += record.body.byteLength;
+  }
+  return result;
+}
+
+function readSummaryInformation(data: Uint8Array): WorkbookOptions {
+  try {
+    const reader = new CompoundFileReader(data);
+    const path = `${String.fromCharCode(5)}SummaryInformation`;
+    const documentPath = `${String.fromCharCode(5)}DocumentSummaryInformation`;
+    const result = reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
+    if (reader.entry(documentPath)) {
+      const values = parseDocumentSummaryInformation(reader.read(documentPath));
+      if (values.category !== undefined) result.category = values.category;
+    }
+    return result;
+  } catch {
+    return {};
+  }
 }

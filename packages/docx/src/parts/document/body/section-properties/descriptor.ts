@@ -333,6 +333,10 @@ function stringifySectionPropertiesInner(
   // Columns
   if (opts.columns) parts.push(columnsXml(opts.columns));
 
+  // Word 2013+ extension: footnote column count (w15:footnoteColumns).
+  if (opts.footnoteColumns !== undefined)
+    parts.push(`<w15:footnoteColumns w:val="${opts.footnoteColumns}"/>`);
+
   // Element order follows EG_SectPrContents in wml.xsd: formProt, vAlign,
   // noEndnote, titlePg, textDirection, bidi, rtlGutter, docGrid.
   if (opts.formProtection !== undefined)
@@ -529,6 +533,13 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     }
     if (colChildren.length > 0) column.children = colChildren;
     if (Object.keys(column).length > 0) opts.columns = column;
+  }
+
+  // Word 2013+ extension: footnote column count (w15:footnoteColumns).
+  const footnoteColumns = findChild(el, "w15:footnoteColumns");
+  if (footnoteColumns) {
+    const val = attrNum(footnoteColumns, "w:val");
+    if (val !== undefined) opts.footnoteColumns = val;
   }
 
   // Section type

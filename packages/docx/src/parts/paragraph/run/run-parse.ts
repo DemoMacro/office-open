@@ -35,6 +35,7 @@ import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeho
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
 import type { RubyContentOptions, RubyOptions, RubyPropertiesOptions } from "./ruby";
+import { parseW14RunEffect } from "./w14-effects";
 
 // On/off run properties: XML child tag → options key.
 const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions & string])[] = [
@@ -272,7 +273,12 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           if (optKey !== undefined) {
             opts[optKey] = attrBool(child, "w:val") ?? true;
           } else if (name.startsWith("w14:")) {
-            (w14Parts ??= []).push(stringifyElement(child));
+            const parsed = parseW14RunEffect(name, child);
+            if (parsed) {
+              (opts as Record<string, unknown>)[parsed[0]] = parsed[1];
+            } else {
+              (w14Parts ??= []).push(stringifyElement(child));
+            }
           }
           break;
         }

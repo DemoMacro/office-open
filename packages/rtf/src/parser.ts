@@ -5,11 +5,18 @@ import type {
   ParagraphOptions,
   SectionChild,
   SectionOptions,
+  StylesOptions,
   RunOptions,
   TableCellOptions,
   TableRowOptions,
   TableOptions,
 } from "@office-open/docx";
+
+/** RTF extensions preserved when the format has no direct DOCX equivalent. */
+export interface RtfDocumentOptions extends DocumentOptions {
+  /** Verbatim RTF shape destination contents for lossless downstream projection. */
+  shapeInstructions?: string[];
+}
 
 import { RtfParseError } from "./errors";
 import { tokenizeRtf, type RtfToken } from "./tokenizer";
@@ -44,26 +51,24 @@ type GroupFrame = {
   fontName?: string;
 };
 
-const IGNORED_DESTINATIONS = new Set([
+/** Metadata destinations that have a home on CorePropertiesOptions — captured
+ *  during parse and projected onto the returned DocumentOptions. */
+const CAPTURED_METADATA = new Set([
   "author",
   "category",
-  "company",
+  "doccomm",
+  "keywords",
+  "subject",
+  "title",
+]);
+
+const IGNORED_DESTINATIONS = new Set([
   "datafield",
   "datastore",
-  "doccomm",
   "falttext",
   "filetbl",
-  "footerf",
-  "footerl",
-  "footerr",
-  "headerf",
-  "headerl",
-  "headerr",
+  "company",
   "hlinkbase",
-  "hlink",
-  "info",
-  "keywords",
-  "listoverridetable",
   "manager",
   "operator",
   "pntext",
@@ -72,10 +77,7 @@ const IGNORED_DESTINATIONS = new Set([
   "rsidgrp",
   "rsidtbl",
   "shpinst",
-  "stylesheet",
-  "subject",
   "themedata",
-  "title",
   "xmlnstb",
 ]);
 
@@ -119,7 +121,7 @@ function runOptions(format: RunFormat): RunOptions {
   return { ...format };
 }
 
-export function parseRtf(source: string): DocumentOptions {
+export function parseRtf(source: string): RtfDocumentOptions {
   const tokens = tokenizeRtf(source);
   if (
     tokens[0]?.kind !== "group-start" ||
@@ -140,6 +142,11 @@ export function parseRtf(source: string): DocumentOptions {
   const listFormats = new Map<string, "bullet" | "decimal">();
   const headerBlocks = new Map<"default" | "first", SectionChild[]>();
   const footerBlocks = new Map<"default" | "first", SectionChild[]>();
+  const metadata = new Map<string, string>();
+  const styleDefinitions: { name: string; type: "paragraph" | "character"; basedOn?: string }[] =
+    [];
+  const shapeInstructions: string[] = [];
+  const listOverrides: { id: string; format: "bullet" | "decimal"; level: number }[] = [];
   let objectType: string | undefined;
   let bookmarkId = 1;
   const bookmarkIds = new Map<string, number>();
@@ -157,6 +164,7 @@ export function parseRtf(source: string): DocumentOptions {
   let fontName: string | undefined;
   let color: { red?: number; green?: number; blue?: number } = {};
   let tokenIndex = 0;
+  let pendingHyperlink: string | undefined;
 
   const consumeGroup = (start: number): number => {
     let depth = 1;
@@ -337,6 +345,10 @@ export function parseRtf(source: string): DocumentOptions {
 
   const appendText = (value: string) => {
     const draft = ensureParagraph();
+    if (pendingHyperlink) {
+      appendInline({ hyperlink: { url: pendingHyperlink, children: [value] } });
+      return;
+    }
     if (draft.format !== format && isFormatChanged(draft.format, format)) {
       flushRun(draft);
       draft.format = { ...format };
@@ -838,12 +850,109 @@ export function parseRtf(source: string): DocumentOptions {
           }
           continue;
         }
-        const ignored = token.word !== undefined && IGNORED_DESTINATIONS.has(token.word);
         if (token.word === "ls") {
           currentFrame.skip = false;
           applyControl(token, destination);
           continue;
         }
+        if (token.word !== undefined && CAPTURED_METADATA.has(token.word)) {
+          const end = consumeGroup(tokenIndex);
+          const value = decodeDestinationText(tokenIndex, end)[0] ?? "";
+          if (value) metadata.set(token.word, value);
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "stylesheet") {
+          const end = consumeGroup(tokenIndex);
+          for (let si = tokenIndex; si < end; si++) {
+            const st = tokens[si];
+            if (st?.kind !== "control" || (st.word !== "s" && st.word !== "cs")) continue;
+            const entry: { name: string; type: "paragraph" | "character"; basedOn?: string } = {
+              name: "",
+              type: st.word === "cs" ? "character" : "paragraph",
+            };
+            let se = si + 1;
+            let depth = 0;
+            for (let j = si + 1; j < end; j++) {
+              const t = tokens[j];
+              if (t?.kind === "group-start") {
+                depth++;
+                continue;
+              }
+              if (t?.kind === "group-end") {
+                if (depth === 0) {
+                  se = j;
+                  break;
+                }
+                depth--;
+                continue;
+              }
+              if (depth === 0 && t?.kind === "control" && (t.word === "s" || t.word === "cs")) {
+                se = j;
+                break;
+              }
+              if (t?.kind === "text" && !entry.name) entry.name = t.value.trim();
+              if (t?.kind === "control" && t.word === "basedOn" && t.param !== undefined)
+                entry.basedOn = String(t.param);
+            }
+            if (entry.name) styleDefinitions.push(entry);
+            si = se - 1;
+          }
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "listoverridetable") {
+          const end = consumeGroup(tokenIndex);
+          let currentId: string | undefined;
+          let currentFormat: "bullet" | "decimal" = "decimal";
+          let currentLevel = 0;
+          for (let li = tokenIndex; li < end; li++) {
+            const lt = tokens[li];
+            if (lt?.kind !== "control") continue;
+            if (lt.word === "ls" && lt.param !== undefined) {
+              if (currentId)
+                listOverrides.push({ id: currentId, format: currentFormat, level: currentLevel });
+              currentId = `rtf-list-override-${lt.param}`;
+              currentFormat = "decimal";
+              currentLevel = 0;
+            }
+            if (lt.word === "ilvl" && lt.param !== undefined) currentLevel = lt.param;
+            if (lt.word === "pndec") currentFormat = "decimal";
+            if (lt.word === "pnbullet") currentFormat = "bullet";
+          }
+          if (currentId)
+            listOverrides.push({ id: currentId, format: currentFormat, level: currentLevel });
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "shpinst") {
+          const end = consumeGroup(tokenIndex);
+          const parts: string[] = [];
+          for (let hi = tokenIndex; hi < end; hi++) {
+            const ht = tokens[hi];
+            if (ht?.kind === "control" && ht.word)
+              parts.push(`\\${ht.word}${ht.param !== undefined ? ht.param : ""}`);
+            else if (ht?.kind === "text") parts.push(ht.value);
+            else if (ht?.kind === "hex") parts.push(`'${ht.value}`);
+          }
+          if (parts.length > 0) shapeInstructions.push(parts.join(""));
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "hlink") {
+          const end = consumeGroup(tokenIndex);
+          const url = decodeDestinationText(tokenIndex, end)[0] ?? "";
+          if (url) {
+            pendingHyperlink = url;
+          }
+          currentFrame.skip = true;
+          continue;
+        }
+        const ignored = token.word !== undefined && IGNORED_DESTINATIONS.has(token.word);
         if (ignored) {
           currentFrame.skip = true;
           continue;
@@ -915,18 +1024,50 @@ export function parseRtf(source: string): DocumentOptions {
   }
 
   const numbering: NumberingOptions | undefined =
-    numberingReferences.size > 0
+    numberingReferences.size > 0 || listOverrides.length > 0
       ? {
-          abstractNumberings: [...numberingReferences].map((reference) => ({
-            reference,
-            levels: [
-              {
-                level: 0,
-                format: listFormats.get(reference) === "bullet" ? "bullet" : "decimal",
-                text: listFormats.get(reference) === "bullet" ? "●" : "%1.",
-              },
-            ],
-          })),
+          abstractNumberings: [
+            ...[...numberingReferences].map((reference) => ({
+              reference,
+              levels: [
+                {
+                  level: 0,
+                  format:
+                    listFormats.get(reference) === "bullet"
+                      ? ("bullet" as const)
+                      : ("decimal" as const),
+                  text: listFormats.get(reference) === "bullet" ? "●" : "%1.",
+                },
+              ],
+            })),
+            ...listOverrides.map((lo) => ({
+              reference: lo.id,
+              levels: [
+                { level: lo.level, format: lo.format, text: lo.format === "bullet" ? "●" : "%1." },
+              ],
+            })),
+          ],
+        }
+      : undefined;
+
+  const metadataEntries = Object.fromEntries(metadata);
+  const hasCoreMetadata =
+    metadataEntries.title !== undefined ||
+    metadataEntries.subject !== undefined ||
+    metadataEntries.author !== undefined ||
+    metadataEntries.keywords !== undefined ||
+    metadataEntries.doccomm !== undefined ||
+    metadataEntries.category !== undefined;
+
+  const styles: StylesOptions | undefined =
+    styleDefinitions.length > 0
+      ? {
+          paragraphStyles: styleDefinitions
+            .filter((s) => s.type === "paragraph")
+            .map((s, i) => ({ id: `rtf-style-${i}`, name: s.name, basedOn: s.basedOn })),
+          characterStyles: styleDefinitions
+            .filter((s) => s.type === "character")
+            .map((s, i) => ({ id: `rtf-cstyle-${i}`, name: s.name, basedOn: s.basedOn })),
         }
       : undefined;
 
@@ -934,5 +1075,17 @@ export function parseRtf(source: string): DocumentOptions {
     sections,
     ...(numbering ? { numbering } : {}),
     ...(footnotes.length > 0 ? { footnotes } : {}),
+    ...(hasCoreMetadata
+      ? {
+          title: metadataEntries.title,
+          subject: metadataEntries.subject,
+          creator: metadataEntries.author,
+          keywords: metadataEntries.keywords,
+          description: metadataEntries.doccomm,
+          category: metadataEntries.category,
+        }
+      : {}),
+    ...(styles ? { styles } : {}),
+    ...(shapeInstructions.length > 0 ? { shapeInstructions: [...shapeInstructions] } : {}),
   };
 }

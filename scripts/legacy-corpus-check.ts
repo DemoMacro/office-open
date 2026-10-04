@@ -42,6 +42,8 @@ const CORPUS_DIRS = [
 type LegacyFormat = "doc" | "xls" | "ppt" | "rtf" | "odt" | "ods" | "odp";
 type Outcome = "pass" | "encrypted" | "invalid" | "unexpected";
 
+const CORPUS_PASSWORDS = ["tika", "VelvetSweatshop", "Password1234_", "password"];
+
 interface FormatCounts {
   total: number;
   pass: number;
@@ -66,6 +68,7 @@ const counts: Record<LegacyFormat, FormatCounts> = {
   ods: { total: 0, ...emptyCounts() },
   odp: { total: 0, ...emptyCounts() },
 };
+const unexpectedMessages = new Map<string, number>();
 
 function walk(dir: string, out: string[] = []): string[] {
   let entries: fs.Dirent[];
@@ -97,17 +100,53 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
 
 async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
   if (format === "doc") {
-    parseLegacyDocument(data);
-    return;
+    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
+      try {
+        parseLegacyDocument(data, password ? { password } : undefined);
+        return;
+      } catch (error) {
+        if (
+          password === undefined &&
+          !/encrypted|password/i.test(String((error as Error)?.message))
+        ) {
+          throw error;
+        }
+      }
+    }
+    throw new Error("Encrypted legacy DOC input could not be decrypted");
   }
   if (format === "xls") {
-    parseLegacyWorkbook(data);
-    return;
+    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
+      try {
+        parseLegacyWorkbook(data, password ? { password } : undefined);
+        return;
+      } catch (error) {
+        if (
+          password === undefined &&
+          !/encrypted|password/i.test(String((error as Error)?.message))
+        ) {
+          throw error;
+        }
+      }
+    }
+    throw new Error("Encrypted legacy XLS input could not be decrypted");
   }
   if (format === "ppt") {
-    const options = parseLegacyPresentation(data);
-    parsePresentation(await generatePresentation(options));
-    return;
+    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
+      try {
+        const options = parseLegacyPresentation(data, password ? { password } : undefined);
+        parsePresentation(await generatePresentation(options));
+        return;
+      } catch (error) {
+        if (
+          password === undefined &&
+          !/encrypted|password/i.test(String((error as Error)?.message))
+        ) {
+          throw error;
+        }
+      }
+    }
+    throw new Error("Encrypted legacy PPT input could not be decrypted");
   }
   if (format === "rtf") {
     const options = parseRtf(Buffer.from(data).toString("latin1"));
@@ -136,6 +175,10 @@ for (const file of files) {
     result.pass++;
   } catch (error) {
     result[classify(error)]++;
+    if (classify(error) === "unexpected") {
+      const message = String((error as Error)?.message ?? error).replace(/\d+/g, "N");
+      unexpectedMessages.set(message, (unexpectedMessages.get(message) ?? 0) + 1);
+    }
   }
 }
 
@@ -154,6 +197,9 @@ for (const [format, result] of Object.entries(counts) as [LegacyFormat, FormatCo
 }
 
 if (failed) {
+  for (const [message, count] of unexpectedMessages) {
+    console.error(`unexpected x${count}: ${message}`);
+  }
   console.error("legacy corpus gate: FAILED");
   process.exit(1);
 }

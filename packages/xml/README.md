@@ -101,7 +101,6 @@ txml skips entity encoding by default (`encodeEntities: false`), which emits inv
 ## Documentation
 
 - [Documentation](https://www.office-open.com/en/xml/) — guides, API reference, and examples
-- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 ## Related Packages

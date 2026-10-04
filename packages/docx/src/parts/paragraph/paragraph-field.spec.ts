@@ -39,6 +39,16 @@ describe("paragraph-properties field consistency", () => {
     expect(opts.cnfStyle).toEqual({ evenHBand: true });
   });
 
+  it("round-trips w15:collapsed on and off states", () => {
+    const on = parsePPr("<w15:collapsed/>") as ParagraphPropertiesOptions;
+    expect(on.collapsed).toBe(true);
+    expect(stringifyParagraphProperties(on).xml).toContain("<w15:collapsed/>");
+
+    const off = parsePPr('<w15:collapsed w:val="off"/>') as ParagraphPropertiesOptions;
+    expect(off.collapsed).toBe(false);
+    expect(stringifyParagraphProperties(off).xml).toContain('<w15:collapsed w:val="off"/>');
+  });
+
   it("preserves all-zero and bare cnfStyle elements", () => {
     const allZero = parsePPr(
       `<w:cnfStyle w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" ` +

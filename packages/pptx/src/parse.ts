@@ -30,6 +30,7 @@ import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
+import { tagListDesc } from "./parts/descriptors/tags";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 export { parseArchive };
@@ -59,6 +60,8 @@ export interface PptxPartRefs {
   handoutMaster: boolean;
   /** ppt/commentAuthors.xml */
   commentAuthors?: string;
+  /** ppt/tags/tagsN.xml */
+  tags: string[];
   /** ppt/comments/commentN.xml (from slide rels) */
   comments: string[];
   /** ppt/charts/chartN.xml (from slide rels) */
@@ -211,6 +214,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   let viewProps: string | undefined;
   let tableStyles: string | undefined;
   let commentAuthors: string | undefined;
+  const tags: string[] = [];
 
   if (relsXml) {
     for (const child of relsXml.elements ?? []) {
@@ -243,6 +247,8 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
         tableStyles = path;
       } else if (type.includes("/commentAuthors")) {
         commentAuthors = path;
+      } else if (type.split("/").pop() === "tags") {
+        tags.push(path);
       }
     }
   }
@@ -262,6 +268,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     handoutMasters,
     handoutMaster: handoutMasters.length > 0,
     commentAuthors,
+    tags,
     comments: [],
     charts: [],
     diagramData: [],
@@ -531,6 +538,14 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (presPart.modifyVerifier) opts.modifyVerifier = presPart.modifyVerifier;
     if (presPart.smartTags) opts.smartTags = presPart.smartTags;
     if (presPart.ext) opts.ext = presPart.ext;
+  }
+
+  if (pptx.partRefs.tags[0]) {
+    const tagsEl = pptx.doc.get(pptx.partRefs.tags[0]);
+    if (tagsEl) {
+      const parsedTags = tagListDesc.parse(tagsEl, bareReadCtx);
+      if (parsedTags.length > 0) opts.tags = parsedTags;
+    }
   }
 
   // 2. Parse core properties
@@ -872,6 +887,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   if (pptx.presProps) rebuilt.push(pptx.presProps);
   if (pptx.viewProps) rebuilt.push(pptx.viewProps);
   if (pptx.tableStyles) rebuilt.push(pptx.tableStyles);
+  if (opts.tags && pptx.partRefs.tags[0]) rebuilt.push(pptx.partRefs.tags[0]);
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     pptx.doc,
     rebuilt,

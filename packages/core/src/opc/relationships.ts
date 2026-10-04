@@ -16,6 +16,9 @@ export const RELATIONSHIP_TYPES = {
   mediaMs: "http://schemas.microsoft.com/office/2007/relationships/media",
   commentsExtendedMs: "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
   peopleMs: "http://schemas.microsoft.com/office/2011/relationships/people",
+  commentsIdsMs: "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
+  commentsExtensibleMs:
+    "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible",
   aFChunk: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk",
   attachedTemplate:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate",
@@ -63,6 +66,8 @@ export const RELATIONSHIP_TYPES = {
   notesMaster: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
   notesSlide: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
   numbering: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+  recipientData:
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/recipientData",
   officeDocument:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
   oleObject: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
@@ -93,6 +98,7 @@ export const RELATIONSHIP_TYPES = {
   tableSingleCells:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
   tableStyles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+  tags: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags",
   theme: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
   themeManager: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeManager",
   themeOverride:

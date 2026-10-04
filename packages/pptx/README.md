@@ -153,7 +153,6 @@ Check the [demo folder](https://github.com/DemoMacro/office-open/tree/main/packa
 ## Documentation
 
 - [Documentation](https://www.office-open.com/en/pptx/) — guides, API reference, and examples
-- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 ## Related Packages

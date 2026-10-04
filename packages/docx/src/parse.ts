@@ -17,6 +17,8 @@ import { bibliographyDesc } from "@parts/bibliography";
 import { setBodyParseChild } from "@parts/bodychildren";
 import { commentsDesc } from "@parts/comments";
 import { commentsExtendedDesc } from "@parts/comments-extended";
+import { commentsExtensibleDesc } from "@parts/comments-extensible";
+import { commentsIdsDesc } from "@parts/comments-ids";
 import { corePropertiesDesc } from "@parts/core-properties";
 import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
@@ -28,7 +30,7 @@ import { glossaryDesc } from "@parts/glossary-document";
 import { setNotesParseChild } from "@parts/notes/shared";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { peopleDesc } from "@parts/people";
-import { settingsDesc } from "@parts/settings/descriptor";
+import { mailMergeRecipientsDesc, settingsDesc } from "@parts/settings/descriptor";
 import {
   buildStyleCache,
   buildNumberingCache,
@@ -65,6 +67,10 @@ export interface DocxPartRefs {
   people?: string;
   /** word/commentsExtended.xml (Word 2013+ comment metadata) */
   commentsExtended?: string;
+  /** word/commentsIds.xml (Word 2016+ durable comment ids) */
+  commentsIds?: string;
+  /** word/commentsExtensible.xml (Word 2018+ extensible comment metadata) */
+  commentsExtensible?: string;
   /** Hyperlink targets keyed by rId (external URLs) */
   hyperlinks: Map<string, string>;
   /** word/charts/chartN.xml keyed by rId */
@@ -230,6 +236,10 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.footnotes = path;
     } else if (type.includes("/endnotes")) {
       refs.endnotes = path;
+    } else if (type.endsWith("/commentsIds")) {
+      refs.commentsIds = path;
+    } else if (type.endsWith("/commentsExtensible")) {
+      refs.commentsExtensible = path;
     } else if (type.includes("/commentsExtended")) {
       refs.commentsExtended = path;
     } else if (type.includes("/comments")) {
@@ -498,6 +508,27 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       if (target) opts.settings.attachedTemplate = target;
       else delete opts.settings.attachedTemplate;
     }
+
+    const recipientRids = opts.settings.mailMerge?.odso?.recipientData ?? [];
+    if (recipientRids.length > 0) {
+      const relsEl = docx.doc.get("word/_rels/settings.xml.rels");
+      const relByRid = new Map(
+        (relsEl?.elements ?? [])
+          .filter((e) => e.name === "Relationship")
+          .map((e) => [attr(e, "Id"), e]),
+      );
+      const recipients = recipientRids
+        .map((rid) => {
+          const rel = relByRid.get(rid);
+          const target = rel ? attr(rel, "Target") : undefined;
+          if (!target) return undefined;
+          const path = resolveRelationshipTarget("word/settings.xml", target);
+          const root = docx.doc.get(path);
+          return root ? mailMergeRecipientsDesc.parse(root, ctx) : undefined;
+        })
+        .filter((part) => part !== undefined);
+      if (recipients.length > 0) opts.mailMergeRecipients = recipients;
+    }
   }
 
   // Web settings — preserve the part on round-trip even when it has no
@@ -539,11 +570,35 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       if (people.length > 0) opts.people = people;
     }
   }
-  if (docx.partRefs.commentsExtended) {
-    const commentsExEl = docx.doc.get(docx.partRefs.commentsExtended);
-    if (commentsExEl) {
-      const extended = commentsExtendedDesc.parse(commentsExEl, ctx);
-      if (extended.length > 0) opts.commentsExtended = extended;
+  if (
+    docx.partRefs.commentsExtended ||
+    docx.partRefs.commentsIds ||
+    docx.partRefs.commentsExtensible
+  ) {
+    if (docx.partRefs.commentsExtended) {
+      const commentsExEl = docx.doc.get(docx.partRefs.commentsExtended);
+      if (commentsExEl) {
+        const extended = commentsExtendedDesc.parse(commentsExEl, ctx);
+        if (extended.length > 0) opts.commentsExtended = extended;
+      }
+    }
+    if (docx.partRefs.commentsIds) {
+      const commentsIdsEl = docx.doc.get(docx.partRefs.commentsIds);
+      if (commentsIdsEl) {
+        const commentIds = ctx.withPart(docx.partRefs.commentsIds, () =>
+          commentsIdsDesc.parse(commentsIdsEl, ctx),
+        );
+        if (commentIds.length > 0) opts.commentsIds = commentIds;
+      }
+    }
+    if (docx.partRefs.commentsExtensible) {
+      const commentsExtensibleEl = docx.doc.get(docx.partRefs.commentsExtensible);
+      if (commentsExtensibleEl) {
+        const extensible = ctx.withPart(docx.partRefs.commentsExtensible, () =>
+          commentsExtensibleDesc.parse(commentsExtensibleEl, ctx),
+        );
+        if (extensible.length > 0) opts.commentsExtensible = extensible;
+      }
     }
   }
 
@@ -669,6 +724,12 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.numbering) rebuilt.push("word/numbering.xml");
   if (docx.fontTable) rebuilt.push("word/fontTable.xml");
   if (docx.webSettings) rebuilt.push("word/webSettings.xml");
+  if (opts.mailMergeRecipients?.length) {
+    rebuilt.push("word/_rels/settings.xml.rels");
+    for (let i = 0; i < opts.mailMergeRecipients.length; i++) {
+      rebuilt.push(`word/recipients${i + 1}.xml`);
+    }
+  }
   for (const section of opts.sections ?? []) {
     for (const slot of Object.values(section.headers?.partNames ?? {})) {
       if (!slot) continue;
@@ -686,6 +747,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   }
   if (opts.people) rebuilt.push(docx.partRefs.people!);
   if (opts.commentsExtended) rebuilt.push(docx.partRefs.commentsExtended!);
+  if (opts.commentsIds) rebuilt.push(docx.partRefs.commentsIds!);
+  if (opts.commentsExtensible) rebuilt.push(docx.partRefs.commentsExtensible!);
   if (opts.footnotes) {
     rebuilt.push(docx.partRefs.footnotes!, "word/_rels/footnotes.xml.rels");
   }

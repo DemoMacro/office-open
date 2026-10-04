@@ -266,6 +266,37 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.endProperties!.bold).toBe(true);
     expect(result.endProperties!.size).toBe(24);
   });
+
+  it("round-trips SDT repeatingSection with sectionTitle and lock", () => {
+    const result = roundTripSdt({
+      properties: {
+        repeatingSection: {
+          sectionTitle: "Expenses",
+          doNotAllowInsertDeleteSection: true,
+        },
+      },
+    });
+    expect(result.properties.repeatingSection?.sectionTitle).toBe("Expenses");
+    expect(result.properties.repeatingSection?.doNotAllowInsertDeleteSection).toBe(true);
+  });
+
+  it("round-trips SDT repeatingSectionItem", () => {
+    const result = roundTripSdt({ properties: { repeatingSectionItem: true } });
+    expect(result.properties.repeatingSectionItem).toBe(true);
+  });
+
+  it("round-trips SDT entityPicker", () => {
+    const result = roundTripSdt({ properties: { entityPicker: true } });
+    expect(result.properties.entityPicker).toBe(true);
+  });
+
+  it("round-trips SDT web extension flags", () => {
+    const result = roundTripSdt({
+      properties: { webExtensionLinked: true, webExtensionCreated: false },
+    });
+    expect(result.properties.webExtensionLinked).toBe(true);
+    expect(result.properties.webExtensionCreated).toBe(false);
+  });
 });
 
 // ── customXmlBlockDesc ──

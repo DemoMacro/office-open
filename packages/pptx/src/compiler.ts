@@ -63,6 +63,7 @@ import { PptxWriteContext } from "./context";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
+import { tagListDesc } from "./parts/descriptors/tags";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 function buildPresAttrOpts(
@@ -197,6 +198,7 @@ export function compilePresentation(
       "tableStyles",
       "notesMaster",
       "handoutMaster",
+      "tags",
     ]),
   );
   // Group slides into p14:sections by name (first-occurrence order); slides
@@ -228,6 +230,13 @@ export function compilePresentation(
     ...buildPresAttrOpts(options),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
+  if (options.tags?.length) {
+    const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, "tags/tags1.xml");
+    presOptions.customerData = {
+      ...presOptions.customerData,
+      tags: { rId: `rId${tagsRId}` },
+    };
+  }
   const fileRels = buildRootRelationships(
     "ppt/presentation.xml",
     hasCustomProperties,
@@ -366,6 +375,12 @@ export function compilePresentation(
     data: replacedPresentationXml,
     path: "ppt/presentation.xml",
   };
+  if (options.tags?.length) {
+    mapping["Tags"] = {
+      data: XML_DECL + (tagListDesc.stringify(options.tags, descCtx) ?? ""),
+      path: "ppt/tags/tags1.xml",
+    };
+  }
   mapping["PresentationRelationships"] = {
     data: XML_DECL + presRels.serialize(),
     path: "ppt/_rels/presentation.xml.rels",

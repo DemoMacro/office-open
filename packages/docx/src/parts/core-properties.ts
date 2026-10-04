@@ -11,11 +11,13 @@
 import type { ContentTypesInput, DataType, EncryptedContainerOptions } from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
+import type { CommentExtensibleOptions } from "@parts/comments-extensible";
+import type { CommentIdOptions } from "@parts/comments-ids";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { CommentPersonOptions } from "@parts/people";
-import type { SettingsOptions } from "@parts/settings/settings";
+import type { MailMergeRecipientsOptions, SettingsOptions } from "@parts/settings/settings";
 import type { SectionOptions } from "@shared/section";
 
 import type { AppPropertiesOptions } from "./app-properties";
@@ -76,6 +78,10 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * threading, keyed by the w14:paraId of each comment's first paragraph.
    */
   commentsExtended?: CommentExtendedOptions[];
+  /** Durable comment ids (word/commentsIds.xml). */
+  commentsIds?: CommentIdOptions[];
+  /** Extensible comment metadata (word/commentsExtensible.xml). */
+  commentsExtensible?: CommentExtensibleOptions[];
   bibliography?: BibliographyOptions;
   /** User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted. */
   footnotes?: FootnoteOptions[];
@@ -110,6 +116,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   glossary?: GlossaryDocumentOptions;
   /** Document settings (word/settings.xml). */
   settings?: SettingsOptions;
+  /** Mail merge recipient lists (word/recipientsN.xml parts). */
+  mailMergeRecipients?: MailMergeRecipientsOptions[];
   /** Web settings for browser rendering (word/webSettings.xml) */
   webSettings?: WebSettingsOptions;
   /** Content types from [Content_Types].xml (parse path only) */

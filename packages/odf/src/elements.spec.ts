@@ -14,7 +14,7 @@ describe("ODF element registry", () => {
     expect(new Set(ODF_ELEMENT_NAMES).size).toBe(610);
   });
 
-  it("round-trips generic ODF nodes and skips unknown elements", () => {
+  it("round-trips generic ODF nodes and preserves foreign namespaces", () => {
     const nodes: OdfXmlNode[] = [
       {
         name: "style:style",
@@ -41,7 +41,7 @@ describe("ODF element registry", () => {
       { ignoreDeclaration: true },
     );
     const parsed = parseOdfNodes(document.elements?.[0]);
-    expect(parsed).toEqual(nodes.filter((node) => node.name !== "unknown:element"));
+    expect(parsed).toEqual(nodes);
   });
 
   it("round-trips an ODT text-list extension", () => {

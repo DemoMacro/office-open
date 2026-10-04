@@ -42,6 +42,7 @@ import type {
   RunPropertiesOptions,
 } from "@parts/paragraph/run/properties";
 import type { FontProperties } from "@parts/paragraph/run/run-fonts";
+import { w14RunEffectsXml } from "@parts/paragraph/run/w14-effects";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { ShadingProperties } from "@shared/shading";
@@ -64,6 +65,8 @@ export function paragraphIdentityAttrs(opts: ParagraphOptions): string {
   let attr = "";
   if (opts.paraId) attr += ` w14:paraId="${opts.paraId}"`;
   if (opts.textId) attr += ` w14:textId="${opts.textId}"`;
+  if (opts.noSpellErr !== undefined)
+    attr += opts.noSpellErr ? ` w14:noSpellErr="1"` : ` w14:noSpellErr="0"`;
   if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;
   if (opts.defaultRunRsid) attr += ` w:rsidRDefault="${opts.defaultRunRsid}"`;
   if (opts.propertiesRsid) attr += ` w:rsidP="${opts.propertiesRsid}"`;
@@ -522,6 +525,9 @@ export function stringifyParagraphProperties(
   if (options.divId !== undefined) s += `<w:divId w:val="${options.divId}"/>`;
   if (options.cnfStyle) s += cnfStyleStr(options.cnfStyle);
 
+  // Word 2013+ extension (w15:collapsed — CT_OnOff) trails the base sequence.
+  if (options.collapsed !== undefined) s += onOff("w15:collapsed", options.collapsed);
+
   // Embedded run properties (w:rPr inside w:pPr) — emitted even when the rPr
   // holds only a paragraph-mark track-change marker (w:ins/w:del) or is a
   // parsed bare <w:rPr/> (emptyProperties).
@@ -721,7 +727,10 @@ export function stringifyRunPropertiesInner(
     s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
   }
 
-  // w14:* text effects — raw passthrough, emitted last (EG_RPrBase extension slot)
+  // w14:* text effects — typed emission first (EG_RPrTextEffects +
+  // EG_RPrOpenType extension slots), then any unknown w14 children preserved
+  // verbatim so unsupported extensions still round-trip.
+  s += w14RunEffectsXml(opts);
   if (opts.w14RawXml) s += opts.w14RawXml;
 
   return s.length > 0 ? s : undefined;

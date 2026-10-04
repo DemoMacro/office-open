@@ -21,6 +21,11 @@ packages/
   docx/   — @office-open/docx (DOCX)
   pptx/   — @office-open/pptx (PPTX)
   xlsx/   — @office-open/xlsx (XLSX)
+  doc/    — @office-open/doc (legacy DOC reader)
+  xls/    — @office-open/xls (legacy XLS reader)
+  ppt/    — @office-open/ppt (legacy PPT reader)
+  rtf/    — @office-open/rtf (RTF reader)
+  odf/    — @office-open/odf (ODF generate/parse)
 ooxml-schemas/  — OOXML XSD schemas (golden source of truth)
 odf-schemas/    — Official ODF 1.3 Relax NG schemas (golden source of truth)
 ```
