@@ -24,6 +24,9 @@ export interface OdfCodecEntry {
   schemaPrefixes: readonly string[];
   schemaElements?: readonly { name: string; attributes: readonly string[] }[];
   roundTrip?: readonly [generate: string, parse: string];
+  testId: string;
+  fixtureKey: string;
+  negativeCapabilities?: readonly { element: string; testId: string }[];
 }
 
 export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
@@ -34,6 +37,11 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     schemaPrefixes: ["manifest"],
     schemaElements: MANIFEST_SCHEMA_ELEMENTS,
     roundTrip: ["manifestOptionsXml", "parseManifestOptions"],
+    testId: "manifest semantic round trip",
+    fixtureKey: "manifest-package-entry",
+    negativeCapabilities: [
+      { element: "office:unknown", testId: "manifest rejects foreign element" },
+    ],
   },
   {
     id: "drawing-vocabulary",
@@ -46,6 +54,11 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     schemaPrefixes: ["dr3d", "math", "svg"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["dr3d", "math", "svg"]),
     roundTrip: ["drawingVocabularyXml", "parseDrawingVocabulary"],
+    testId: "drawing vocabulary semantic round trip",
+    fixtureKey: "drawing-vocabulary-desc",
+    negativeCapabilities: [
+      { element: "draw:unknown", testId: "drawing vocabulary rejects foreign element" },
+    ],
   },
   {
     id: "odt",
@@ -62,6 +75,11 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "text",
     ]),
     roundTrip: ["generateOdt", "parseOdt"],
+    testId: "ODT document semantic round trip",
+    fixtureKey: "odt-paragraph",
+    negativeCapabilities: [
+      { element: "office:unknown", testId: "ODT rejects foreign body element" },
+    ],
   },
   {
     id: "ods",
@@ -76,6 +94,11 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "text",
     ]),
     roundTrip: ["generateOds", "parseOds"],
+    testId: "ODS workbook semantic round trip",
+    fixtureKey: "ods-cell",
+    negativeCapabilities: [
+      { element: "office:unknown", testId: "ODS rejects foreign body element" },
+    ],
   },
   {
     id: "odp",
@@ -91,6 +114,11 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "text",
     ]),
     roundTrip: ["generateOdp", "parseOdp"],
+    testId: "ODP presentation semantic round trip",
+    fixtureKey: "odp-notes",
+    negativeCapabilities: [
+      { element: "draw:unknown", testId: "ODP rejects foreign slide element" },
+    ],
   },
   {
     id: "chart",
@@ -99,6 +127,9 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     schemaPrefixes: ["chart"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["chart"]),
     roundTrip: ["generateChartDocument", "parseChartDocument"],
+    testId: "chart subdocument semantic round trip",
+    fixtureKey: "chart-column-series",
+    negativeCapabilities: [{ element: "chart:foo", testId: "chart rejects foreign element" }],
   },
   {
     id: "database",
@@ -107,6 +138,9 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     schemaPrefixes: ["db"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["db"]),
     roundTrip: ["generateDatabaseDocument", "parseDatabaseDocument"],
+    testId: "database subdocument semantic round trip",
+    fixtureKey: "database-connection",
+    negativeCapabilities: [{ element: "db:unknown", testId: "database rejects foreign element" }],
   },
   {
     id: "forms-and-xforms",
@@ -115,5 +149,8 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     schemaPrefixes: ["form", "script", "xforms"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["form", "script", "xforms"]),
     roundTrip: ["officeFormsXml", "parseOfficeForms"],
+    testId: "form controls and XForms semantic round trip",
+    fixtureKey: "form-grid-xforms",
+    negativeCapabilities: [{ element: "form:unknown", testId: "forms reject foreign element" }],
   },
 ] as const;
