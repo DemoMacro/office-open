@@ -362,4 +362,30 @@ describe("ODP mapping", () => {
     const parsed = parseOdp(generateOdp(source));
     expect(parsed.slides![0]!.notes).toBe("Speaker note");
   });
+
+  it("round-trips slide tables through table:table", () => {
+    const source = {
+      slides: [
+        {
+          children: [
+            {
+              table: {
+                columnWidths: [1828800, 1828800],
+                rows: [
+                  { cells: [{ text: "Cell A" }, { text: "Cell B" }] },
+                  { cells: [{ text: "C" }, { text: "D", columnSpan: 1 }] },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("table" in child)) throw new Error("Expected an ODP table");
+    expect(child.table.columnWidths).toEqual([1828800, 1828800]);
+    expect(child.table.rows[0]!.cells[0]!.children).toEqual([{ text: "Cell A" }]);
+    expect(child.table.rows[1]!.cells[1]!.columnSpan).toBe(1);
+  });
 });

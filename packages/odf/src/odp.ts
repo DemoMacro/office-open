@@ -3,7 +3,13 @@ import type {
   TextBodyOptions,
   TextRunOptions,
 } from "@office-open/core";
-import type { PresentationOptions, ShapeOptions, SlideOptions } from "@office-open/pptx";
+import type {
+  PresentationOptions,
+  ShapeOptions,
+  SlideChild,
+  SlideOptions,
+  TableOptions,
+} from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
@@ -15,6 +21,7 @@ import {
   childrenNamed,
   emuToLength,
   lengthToEmu,
+  attributeNumber,
   textOf,
   xmlElement,
 } from "./xml";
@@ -76,7 +83,11 @@ export function parseOdp(data: Uint8Array): OdpOptions {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
     slides: childrenNamed(body, "draw:page").map((page) =>
-      parseSlide(page, parseTextStyles(childNamed(content, "office:automatic-styles"))),
+      parseSlide(
+        page,
+        parseTextStyles(childNamed(content, "office:automatic-styles")),
+        parseColumnWidths(childNamed(content, "office:automatic-styles")),
+      ),
     ),
     odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
   };
@@ -105,7 +116,11 @@ function normalizeSize(size: PresentationOptions["size"]): { width: number; heig
 
 function slideXml(slide: SlideOptions, index: number, styles: string[]): string {
   const frames = (slide.children ?? []).map((child) =>
-    "shape" in child ? shapeXml(child.shape, styles) : "",
+    "shape" in child
+      ? shapeXml(child.shape, styles)
+      : "table" in child
+        ? slideTableXml(child.table, styles)
+        : "",
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
@@ -184,17 +199,109 @@ function addTextStyle(properties: TextProperties, styles: string[]): string | un
   return name;
 }
 
-function parseSlide(page: Element, textStyles: Map<string, TextProperties>): SlideOptions {
+function parseSlide(
+  page: Element,
+  textStyles: Map<string, TextProperties>,
+  columnWidths: Map<string, number>,
+): SlideOptions {
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
   );
   const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
   return {
-    children: childrenNamed(page, "draw:frame").map((frame) => ({
-      shape: parseShape(frame, textStyles),
-    })),
+    children:
+      page.elements?.flatMap((child): SlideChild[] => {
+        if (child.name === "draw:frame") return [{ shape: parseShape(child, textStyles) }];
+        if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+        return [];
+      }) ?? [],
     ...(notesText ? { notes: notesText } : {}),
+  };
+}
+
+/** Maps table-column style names to twip widths for slide tables. */
+function parseColumnWidths(container: Element | undefined): Map<string, number> {
+  const result = new Map<string, number>();
+  for (const style of childrenNamed(container, "style:style")) {
+    if (attributeString(style, "style:family") !== "table-column") continue;
+    const width = attributeString(
+      childNamed(style, "style:table-column-properties"),
+      "style:column-width",
+    );
+    if (width?.endsWith("cm")) {
+      result.set(attributeString(style, "style:name") ?? "", lengthToEmu(width) ?? 0);
+    }
+  }
+  return result;
+}
+
+/** Serializes a pptx table as an ODF table:table (cells render text paragraphs). */
+function slideTableXml(table: TableOptions, styles: string[]): string {
+  const columns = (table.columnWidths ?? []).map((width) =>
+    xmlElement("table:table-column", { "table:style-name": addColumnStyle(width, styles) }),
+  );
+  const rows = table.rows.map((row) =>
+    xmlElement(
+      "table:table-row",
+      undefined,
+      row.cells.map((cell) => {
+        const content = textBodyXml(
+          cell.children ? { paragraphs: cell.children } : { text: cell.text ?? "" },
+          styles,
+        );
+        const span = cell.columnSpan;
+        const xml = xmlElement(
+          "table:table-cell",
+          { "office:value-type": "string", "table:number-columns-spanned": span },
+          content,
+        );
+        const covered = Array.from({ length: Math.max(0, (span ?? 1) - 1) }, () =>
+          xmlElement("table:covered-table-cell"),
+        );
+        return xml + covered.join("");
+      }),
+    ),
+  );
+  return xmlElement("table:table", { "table:name": `Table${styles.length + 1}` }, [
+    ...columns,
+    ...rows,
+  ]);
+}
+
+/** Column width style — pptx widths are EMU. */
+function addColumnStyle(width: number | string, styles: string[]): string {
+  const name = `TC${styles.length + 1}`;
+  styles.push(
+    xmlElement("style:style", { "style:name": name, "style:family": "table-column" }, [
+      xmlElement("style:table-column-properties", {
+        "style:column-width": typeof width === "number" ? emuToLength(width) : width,
+      }),
+    ]),
+  );
+  return name;
+}
+
+/** Parses a slide table:table back to a pptx table child. */
+function parseSlideTable(
+  element: Element,
+  textStyles: Map<string, TextProperties>,
+  columnWidths: Map<string, number>,
+): { table: TableOptions } {
+  return {
+    table: {
+      columnWidths: childrenNamed(element, "table:table-column").map(
+        (column) => columnWidths.get(attributeString(column, "table:style-name") ?? "") ?? 0,
+      ),
+      rows: childrenNamed(element, "table:table-row").map((row) => ({
+        cells: childrenNamed(row, "table:table-cell").map((cell) => ({
+          columnSpan: attributeNumber(cell, "table:number-columns-spanned"),
+          children: childrenNamed(cell, "text:p").map((paragraph) =>
+            parseParagraph(paragraph, textStyles),
+          ),
+        })),
+      })),
+    },
   };
 }
 
