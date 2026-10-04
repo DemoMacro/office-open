@@ -1,3 +1,4 @@
+import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -103,13 +104,29 @@ describe("ODT canonical projection", () => {
                 children: [
                   { bookmarkEnd: { id: 7 } },
                   { simpleField: { instruction: "REF target \\r" } },
-                  { simpleField: { instruction: "SEQ Figure", cachedValue: "1" } },
-                  { simpleField: { instruction: "VARIABLE Total", cachedValue: "2" } },
+                  { bookmarkStart: { id: 8, name: "spaced target" } },
+                  { bookmarkEnd: { id: 8 } },
+                  { simpleField: { instruction: "REF spaced\\ target \\r" } },
+                  { simpleField: { instruction: "SEQ Figure = 1 + 1", cachedValue: "1" } },
+                  {
+                    simpleField: {
+                      instruction: "VARIABLE Total = 1 + 1",
+                      cachedValue: "2",
+                    },
+                  },
+                  { simpleField: { instruction: "STYLEREF 2 \\n", cachedValue: "Section" } },
                   { simpleField: { instruction: "= 1+1", cachedValue: "2" } },
                   { simpleField: { instruction: 'IF condition "secret" ""' } },
+                  {
+                    simpleField: {
+                      instruction: 'IF condition "quoted \\"value\\"" ""',
+                    },
+                  },
+                  { simpleField: { instruction: "CITATION article", cachedValue: "Citation" } },
                 ],
               },
             },
+            { bookmarkEnd: { id: 8 } },
           ],
         },
       ],
@@ -121,6 +138,35 @@ describe("ODT canonical projection", () => {
       "variableDeclarations",
     ]);
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
+  });
+
+  it("round-trips paired inline bookmark and reference markers", () => {
+    const parsed = parseOdt(
+      odtPackage(
+        "<text:p>" +
+          "<text:bookmark-start xml:id='bookmark-7' text:name='inline target'/>" +
+          "<text:reference-mark-start text:name='reference target'/>" +
+          "marked" +
+          "<text:reference-mark-end text:name='reference target'/>" +
+          "<text:bookmark-end text:name='inline target'/>" +
+          "</text:p>",
+      ),
+    );
+    const children = parsed.sections[0]?.children[0];
+    expect(children).toEqual({
+      paragraph: {
+        children: [
+          { bookmarkStart: { id: 1, name: "inline target" } },
+          { bookmarkStart: { id: 2, name: "reference target" } },
+          "marked",
+          { bookmarkEnd: { id: 2 } },
+          { bookmarkEnd: { id: 1 } },
+        ],
+      },
+    });
+    expect(projection(parseOdt(generateOdt(parsed)).sections[0]?.children)).toEqual(
+      projection(parsed.sections[0]?.children),
+    );
   });
 
   it("round-trips annotations, indexes, bibliography, and shapes", () => {
@@ -194,6 +240,10 @@ describe("ODT canonical projection", () => {
     expect(
       parseBodyError("<text:bookmark-end text:name='missing'/>", "text:bookmark-end").reason,
     ).toContain("no canonical");
+    expect(
+      parseBodyError("<text:p><text:page-number>1</text:page-number></text:p>", "text:page-number")
+        .reason,
+    ).toContain("no canonical");
     expect(parseBodyError(tracked, "text:format-change").reason).toContain("no canonical");
     expect(
       parseBodyError(
@@ -225,6 +275,31 @@ describe("ODT canonical projection", () => {
         "draw:circle",
       ).reason,
     ).toContain("no canonical");
+  });
+
+  it("rejects canonical field instructions without ODF representations", () => {
+    const section = (children: NonNullable<ParagraphOptions["children"]>): DocumentOptions => ({
+      sections: [{ children: [{ paragraph: { children } }] }],
+    });
+    try {
+      generateOdt(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
+    } catch (cause) {
+      expect(cause).toBeInstanceOf(OdtParseError);
+      const error = cause as OdtParseError;
+      expect(error.part).toBe("content.xml");
+      expect(error.name).toBe("text:field");
+      expect(error.reason).toBe("unsupported field instruction");
+    }
+    try {
+      generateOdt(section([{ bookmarkEnd: { id: 7 } }]));
+    } catch (cause) {
+      expect(cause).toBeInstanceOf(OdtParseError);
+      const error = cause as OdtParseError;
+      expect(error.name).toBe("text:bookmark-end");
+      expect(error.reason).toBe("no canonical bookmark start");
+      return;
+    }
+    throw new Error("Expected canonical input without ODF representation to reject generation");
   });
 
   it("reports unknown body elements with structured errors", () => {
