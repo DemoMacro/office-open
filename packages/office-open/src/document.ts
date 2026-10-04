@@ -43,27 +43,31 @@ export async function parseDocumentFile(
     case "rtf":
       return parseRtf(typeof input === "string" ? input : new TextDecoder().decode(input));
     case "odt":
-      return parseOdt(data) as DocumentOptions;
+      return parseOdt(data);
     default:
       throw new Error(`${info.format} is not a document format`);
   }
 }
 
-export async function generateDocumentFile<T extends OutputType = "nodebuffer">(
-  format: DocumentFileGenerateFormat,
+export async function generateDocumentFile<
+  F extends DocumentFileGenerateFormat,
+  T extends OutputType = "nodebuffer",
+>(
+  format: F,
   options: DocumentOptions,
   output?: T,
-  reproducible?: ReproducibleGenerationOptions,
+  reproducible?: F extends "odt" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
   const outputType = (output ?? "nodebuffer") as T;
 
   if (format === "odt") {
+    if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
     return convertOutput(generateOdt(options), outputType, ODT_MIME_TYPE);
   }
 
   return generateDocument(options, {
     type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format].variant,
+    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
 }

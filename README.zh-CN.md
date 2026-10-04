@@ -43,19 +43,19 @@
 
 ## 包
 
-| 包                                              | 版本                                                   | 说明                                   |
-| ----------------------------------------------- | ------------------------------------------------------ | -------------------------------------- |
-| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | 全家桶：全部包 + CLI + AI SDK 工具     |
-| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word 文档生成、解析与补丁              |
-| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint 生成、解析与补丁            |
-| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | 电子表格生成、解析与补丁               |
-| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | 旧版 Word .doc 解析                    |
-| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                   |
-| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析              |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析                  |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF 文本、表格、演示、图表与数据库读写 |
-| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算    |
-| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化                  |
+| 包                                              | 版本                                                   | 说明                                |
+| ----------------------------------------------- | ------------------------------------------------------ | ----------------------------------- |
+| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | 全家桶：全部包 + CLI + AI SDK 工具  |
+| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word 文档生成、解析与补丁           |
+| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint 生成、解析与补丁         |
+| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | 电子表格生成、解析与补丁            |
+| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | 旧版 Word .doc 解析                 |
+| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                |
+| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析           |
+| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析               |
+| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF 文本、表格与演示读写            |
+| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算 |
+| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化               |
 
 ## 格式能力
 
@@ -64,12 +64,11 @@
 | OOXML `.docx`/`.xlsx`/`.pptx` | ✅   | ✅   | ✅   | 双向包编解码器               |
 | 旧版 `.doc`/`.xls`/`.ppt`     | ✅   | ❌   | ❌   | 投影为 OOXML options 模型    |
 | `.rtf`                        | ✅   | ❌   | ❌   | 只读投影到 `DocumentOptions` |
-| ODF `.odt`/`.ods`/`.odp`      | ✅   | ✅   | ❌   | 格式族读写编解码器           |
-| ODF 图表与数据库              | ✅   | ✅   | ❌   | 底层文档编解码器             |
+| ODF `.odt`/`.ods`/`.odp`      | ✅   | ✅   | ❌   | 规范格式族读写编解码器       |
 
 能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式和 RTF 没有写入器，ODF 编解码器也不提供补丁操作。
 
-包依赖图遵循格式归属：`ocf` 负责 ODF 容器；`odf-schema` 负责共享 ODF 模型，运行时可依赖 `ocf`/`xml`，但只能类型引用 `core`；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `ocf`/`odf-schema`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部编解码器。
+包依赖图遵循格式归属：`ocf` 负责 ODF 容器与通用节点；`odf-schema` 负责共享图表/数据库模型，运行时可依赖 `ocf`/`xml`，但只能类型引用 `core`；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `ocf`/`odf-schema`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部编解码器。
 
 ## 快速开始
 
@@ -87,7 +86,7 @@ yarn add office-open
 bun add office-open
 ```
 
-`office-open` 打包了三个格式包以及 CLI、JSON Schema 和 AI SDK 工具。想要更小的体积？见[包](#包)一节按格式选用 `@office-open/*` 包。
+`office-open` 打包各格式包以及 CLI、JSON Schema 和 AI SDK 工具。想要更小的体积？见[包](#包)一节按格式选用 `@office-open/*` 包。
 
 ```typescript
 import { generateDocumentSync } from "office-open/docx";
@@ -146,7 +145,7 @@ import { officeOpenTools } from "office-open/ai";
 const result = await generateText({
   model,
   prompt: "创建一份季度报告文档",
-  tools: officeOpenTools, // generate-docx / generate-pptx / generate-xlsx + schema 查询
+  tools: officeOpenTools, // OOXML/ODF 生成工具 + schema 查询
 });
 ```
 

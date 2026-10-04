@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
+import { parseCommentRanges } from "./mappers/document";
 import type { LegacyDocumentOptions } from "./records/models";
+import { parseFields, parsePictures } from "./records/structures";
+import { parsePieceTable } from "./streams/pieces";
 
 const END_OF_CHAIN = 0xfffffffe;
 const FAT_SECT = 0xfffffffd;
@@ -119,6 +122,7 @@ function buildDocument(
     fields?: boolean;
     hyperlink?: boolean;
     annotations?: boolean;
+    annotationLength?: number;
     bookmarks?: boolean;
     drawing?: boolean | "embedded";
     fieldTable?: boolean;
@@ -148,7 +152,7 @@ function buildDocument(
   const storyFixture = options.textboxes ?? options.notes ?? options.headers;
   const fieldInstruction = options.hyperlink ? 'HYPERLINK "https://example.com"' : "INST";
   const fieldBytes =
-    options.fields || options.hyperlink
+    options.fields || options.hyperlink || options.fieldTable
       ? new Uint8Array([
           0x41,
           0x13,
@@ -176,7 +180,11 @@ function buildDocument(
   setFibPair(3, 720, options.notes ? 16 : 0);
   setFibPair(11, 720, options.headers ? 56 : 0);
   setFibPair(1, options.stylesheet ? 768 : 0, options.stylesheet ? 28 : 0);
-  setFibPair(4, options.annotations ? 944 : 0, options.annotations ? 8 : 0);
+  setFibPair(
+    4,
+    options.annotations ? 944 : 0,
+    options.annotations ? (options.annotationLength ?? 12) : 0,
+  );
   setFibPair(6, options.sectionProperties ? 800 : 0, options.sectionProperties ? 20 : 0);
   setFibPair(16, options.fieldTable ? 912 : 0, options.fieldTable ? 16 : 0);
   setFibPair(21, options.bookmarks ? 832 : 0, options.bookmarks ? 8 : 0);
@@ -697,28 +705,45 @@ describe("legacy DOC parser", () => {
     expect(children.at(-1)).toEqual({ bookmarkEnd: { id: 1 } });
   });
 
-  it("decodes annotation references as revision ranges", () => {
+  it("projects annotation references as canonical revision ranges", () => {
     const { data } = buildDocument({ annotations: true });
-    expect(parseLegacyDocument(data).revisions).toEqual([{ start: 0, end: 3, inserted: true }]);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    const paragraph = extractParagraph(children[0]!);
+    expect(paragraph.children).toEqual([
+      {
+        insertion: {
+          author: "Unknown",
+          date: "1970-01-01T00:00:00Z",
+          children: [{ text: "Hi", bold: true, size: 12 }],
+        },
+      },
+    ]);
   });
 
-  it("decodes main-document field instructions from PlcffldMom", () => {
+  it("projects main-document field instructions into canonical field runs", () => {
     const { data } = buildDocument({ fieldTable: true });
-    expect(parseLegacyDocument(data).fields).toHaveLength(1);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: { children: [{ complexField: { instruction: expect.any(String) } }] },
+    });
   });
 
-  it("parses Escher BStore and Data-stream BLIP picture data", () => {
+  it("projects Escher BStore pictures into canonical inline pictures", () => {
     const { data } = buildDocument({ drawing: true });
-    expect(parseLegacyDocument(data).pictures).toEqual([
-      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
-    ]);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: {
+        children: [{ picture: { type: "png", transformation: { width: 4, height: 3 } } }],
+      },
+    });
   });
 
-  it("parses an embedded BLIP without consulting the Data stream", () => {
+  it("projects embedded BLIP pictures without consulting the Data stream", () => {
     const { data } = buildDocument({ drawing: "embedded" });
-    expect(parseLegacyDocument(data).pictures).toEqual([
-      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
-    ]);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: { children: [{ picture: { type: "png" } }] },
+    });
   });
 
   it("converts PlfLst and PlfLfo to numbering definitions", () => {
@@ -740,6 +765,114 @@ describe("legacy DOC parser", () => {
       { paragraph: "The quick brown fox jumps over the lazy dog" },
       { paragraph: "" },
     ]);
+  });
+});
+
+describe("legacy DOC structured record errors", () => {
+  it("rejects truncated and invalid piece tables", () => {
+    const truncated = new Uint8Array([2, 32]);
+    expect(() => parsePieceTable(truncated, { offset: 0, length: 2 })).toThrow(DocParseError);
+
+    const invalid = new Uint8Array(33);
+    const invalidView = new DataView(invalid.buffer);
+    invalid[0] = 2;
+    invalidView.setUint32(1, 28, true);
+    invalidView.setUint32(5, 1, true);
+    invalidView.setUint32(9, 4, true);
+    invalidView.setUint32(13, 4, true);
+    let error: DocParseError | undefined;
+    try {
+      parsePieceTable(invalid, { offset: 0, length: 33 });
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "table",
+      path: "CLX/PieceTable",
+      reason: "invalid-first-character-position",
+    });
+  });
+
+  it("rejects malformed fields with structured context", () => {
+    const malformedTable = new Uint8Array(10);
+    const view = new DataView(malformedTable.buffer);
+    view.setUint32(0, 0, true);
+    view.setUint32(4, 1, true);
+    malformedTable[8] = 0x13;
+    let error: DocParseError | undefined;
+    try {
+      parseFields(["I", "N"], malformedTable, { offset: 0, length: 10 });
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "stream",
+      path: "WordDocument",
+      recordName: "ComplexField",
+      reason: "missing-required-record",
+    });
+  });
+
+  it("rejects truncated annotation ranges with structured context", () => {
+    let error: DocParseError | undefined;
+    try {
+      parseCommentRanges(new Uint8Array(16), { offset: 0, length: 11 });
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "table",
+      path: "PlcfandRef",
+      reason: "invalid-record-length",
+    });
+  });
+
+  it("rejects truncated Escher BLIP records with structured context", () => {
+    const drawing = new Uint8Array([0xe0, 0x06, 0x1e, 0xf0, 0, 0, 0, 0]);
+    let error: DocParseError | undefined;
+    try {
+      parsePictures(drawing, new Uint8Array());
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "data",
+      path: "Escher/BLIP",
+      reason: "out-of-range",
+    });
+  });
+
+  it("rejects invalid Data-stream BLIP lookups with structured context", () => {
+    const drawing = new Uint8Array(60);
+    const view = new DataView(drawing.buffer);
+    view.setUint16(0, 0x000f, true);
+    view.setUint16(2, 0xf000, true);
+    view.setUint32(4, 52, true);
+    view.setUint16(8, 0x0000, true);
+    view.setUint16(10, 0xf007, true);
+    view.setUint32(12, 36, true);
+    view.setUint32(44, 100, true);
+    let error: DocParseError | undefined;
+    try {
+      parsePictures(drawing, new Uint8Array());
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "data",
+      path: "Data",
+      reason: "out-of-range",
+    });
   });
 });
 

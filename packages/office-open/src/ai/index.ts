@@ -43,6 +43,10 @@ const SKELETON_GUIDANCE =
   "office-open-schema-lookup tool, e.g. { type: 'docx', definitions: ['ParagraphOptions', 'RunOptions'] }. " +
   "Invalid input is rejected with instance-path errors; fix and retry.";
 
+function canonicalDocumentOptions(value: Record<string, unknown>): DocumentOptions {
+  return JSON.parse(JSON.stringify(value)) as DocumentOptions;
+}
+
 /**
  * The generate tools return the file as base64 for the client UI, but the
  * model only needs the outcome — full base64 in the model context would burn
@@ -89,7 +93,7 @@ export const docxTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
       const validated = validateDocumentInput("docx", options);
       const bytes = (await generate({
         type: "docx",
-        options: validated as unknown as DocumentOptions,
+        options: canonicalDocumentOptions(validated),
         outputType: "uint8array",
       })) as Uint8Array;
       return {
@@ -118,7 +122,7 @@ export const pptxTool: Tool<PresentationOptions, GeneratedDocumentOutput> = tool
       const validated = validateDocumentInput("pptx", options);
       const bytes = (await generate({
         type: "pptx",
-        options: validated as unknown as PresentationOptions,
+        options: validated as PresentationOptions,
         outputType: "uint8array",
       })) as Uint8Array;
       return {
@@ -144,7 +148,7 @@ export const xlsxTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("xlsx", options);
-      const formulaIssues = lintWorkbookFormulas(validated as unknown as WorkbookOptions);
+      const formulaIssues = lintWorkbookFormulas(validated as WorkbookOptions);
       if (formulaIssues.length > 0) {
         const lines = formulaIssues.map(
           (i) => `  ${i.location}: ${i.message} — formula "${i.formula}"`,
@@ -155,7 +159,7 @@ export const xlsxTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
       }
       const bytes = (await generate({
         type: "xlsx",
-        options: validated as unknown as WorkbookOptions,
+        options: validated as WorkbookOptions,
         outputType: "uint8array",
       })) as Uint8Array;
       return {
@@ -183,7 +187,7 @@ export const odtTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
       const validated = validateDocumentInput("docx", options);
       const bytes = (await generateOfficeDocument(
         "odt",
-        validated as unknown as DocumentOptions,
+        canonicalDocumentOptions(validated),
         "uint8array",
       )) as Uint8Array;
       return {
@@ -209,7 +213,7 @@ export const odsTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("xlsx", options);
-      const formulaIssues = lintWorkbookFormulas(validated as unknown as WorkbookOptions);
+      const formulaIssues = lintWorkbookFormulas(validated as WorkbookOptions);
       if (formulaIssues.length > 0) {
         const lines = formulaIssues.map(
           (issue) => `  ${issue.location}: ${issue.message} — formula "${issue.formula}"`,
@@ -220,7 +224,7 @@ export const odsTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
       }
       const bytes = (await generateOfficeDocument(
         "ods",
-        validated as unknown as WorkbookOptions,
+        validated as WorkbookOptions,
         "uint8array",
       )) as Uint8Array;
       return {
@@ -247,7 +251,7 @@ export const odpTool: Tool<PresentationOptions, GeneratedDocumentOutput> = tool(
       const validated = validateDocumentInput("pptx", options);
       const bytes = (await generateOfficeDocument(
         "odp",
-        validated as unknown as PresentationOptions,
+        validated as PresentationOptions,
         "uint8array",
       )) as Uint8Array;
       return {

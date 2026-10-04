@@ -27,11 +27,9 @@ import {
   chartBodyXml,
   graphicFill,
   graphicOutline,
-  officeFormsXml,
   OdfSchemaError,
   parseEmbeddedCharts,
   parseGraphicStyles,
-  parseOfficeForms,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
   pushShapeStyle,
@@ -198,7 +196,6 @@ function slideXml(
     slideChildXml(child, styles, images, charts),
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
-  const forms = officeFormsXml(slide.forms);
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
         xmlElement("draw:frame", undefined, [
@@ -211,7 +208,7 @@ function slideXml(
   return xmlElement(
     "draw:page",
     { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
-    [...frames, ...(notesXml ? [notesXml] : []), forms],
+    [...frames, ...(notesXml ? [notesXml] : [])],
   );
 }
 
@@ -417,13 +414,15 @@ function parseSlide(
   chartPool: Map<string, ChartSpaceOptions>,
 ): SlideOptions {
   const formsElement = childNamed(page, "office:forms");
-  const forms = formsElement
-    ? parseOfficeForms(
-        formsElement,
-        "content.xml",
-        "/office:document-content/office:body/office:presentation/draw:page/office:forms",
-      )
-    : undefined;
+  if (formsElement) {
+    throw new OdpParseError(
+      "content.xml: /draw:page/office:forms: ODF forms have no canonical PresentationOptions equivalent",
+      "content.xml",
+      "/office:document-content/office:body/office:presentation/draw:page/office:forms",
+      "office:forms",
+      "ODF forms have no canonical PresentationOptions equivalent",
+    );
+  }
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
@@ -450,7 +449,6 @@ function parseSlide(
           return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-        if (child.name === "office:forms") return [];
         if (child.name !== "presentation:notes")
           throw unknownSlideChild(
             child,
@@ -460,7 +458,7 @@ function parseSlide(
       }) ?? [],
     ...(notesText ? { notes: notesText } : {}),
   };
-  return { ...slideOptions, ...(forms ? { forms } : {}) } as OdpSlideOptions;
+  return slideOptions;
 }
 
 /** Maps table-column style names to twip widths for slide tables. */

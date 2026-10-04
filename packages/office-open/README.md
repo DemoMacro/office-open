@@ -160,7 +160,7 @@ import { parse, stringify } from "office-open/xml";
 | PPTX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
 | DOC, XLS, PPT        | ✅    | ❌       | Parse-only projection to existing option families |
 | RTF                  | ✅    | ❌       | Parse-only projection to `DocumentOptions`        |
-| ODT, ODS, ODP        | ✅    | ✅       | ODF generation and parsing, plus generic nodes    |
+| ODT, ODS, ODP        | ✅    | ✅       | Canonical typed generation and parsing; no patch  |
 | CSV, TSV             | ✅    | ✅       | Conversion to and from `WorkbookOptions`          |
 
 ## JSON Document Structures

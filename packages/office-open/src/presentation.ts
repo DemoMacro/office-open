@@ -49,21 +49,25 @@ export async function parsePresentationFile(
   }
 }
 
-export async function generatePresentationFile<T extends OutputType = "nodebuffer">(
-  format: PresentationFileGenerateFormat,
+export async function generatePresentationFile<
+  F extends PresentationFileGenerateFormat,
+  T extends OutputType = "nodebuffer",
+>(
+  format: F,
   options: PresentationOptions,
   output?: T,
-  reproducible?: ReproducibleGenerationOptions,
+  reproducible?: F extends "odp" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
   const outputType = (output ?? "nodebuffer") as T;
 
   if (format === "odp") {
+    if (reproducible) throw new Error("Reproducible generation is not supported for ODP");
     return convertOutput(generateOdp(options), outputType, ODP_MIME_TYPE);
   }
 
   return generatePresentation(options, {
     type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format].variant,
+    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
 }
