@@ -36,6 +36,7 @@ const SCHEMA_TYPES = {
 } as const;
 
 function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {
+  if (format === "docx" || format === "pptx" || format === "xlsx") return format;
   return SCHEMA_TYPES[format as keyof typeof SCHEMA_TYPES];
 }
 
@@ -51,6 +52,7 @@ function parseGenerateFormat(raw: string | undefined): GenerateFormat {
 
 /** Parse and validate a schema-family positional. */
 function parseSchemaFormat(raw: string | undefined): DocumentType {
+  if (raw === "docx" || raw === "pptx" || raw === "xlsx") return raw;
   const format = parseGenerateFormat(raw);
   return schemaTypeOf(format);
 }
