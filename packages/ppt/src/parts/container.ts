@@ -5,7 +5,14 @@ import { PptParseError } from "../errors";
 
 export function readSummaryInformation(reader: CompoundFileReader): PresentationOptions {
   const path = `${String.fromCharCode(5)}SummaryInformation`;
-  return reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
+  try {
+    return reader.entry(path) ? parseSummaryInformation(reader.read(path)) : {};
+  } catch (error) {
+    throw new PptParseError(
+      `Invalid legacy PowerPoint summary information: ${(error as Error).message}`,
+      { part: "stream", path, reason: "invalid-metadata" },
+    );
+  }
 }
 
 export function assertCfbSignature(data: Uint8Array): void {
