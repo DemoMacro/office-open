@@ -205,7 +205,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
     }
 
     // <!DOCTYPE
-    if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 9) === "!DOCTYPE") {
+    if (xmlString.charCodeAt(i) === 0x21 && xmlString.slice(i, i + 8) === "!DOCTYPE") {
       const end = xmlString.indexOf(">", i + 9);
       if (end === -1) break;
       const doctype = xmlString.slice(i + 9, end).trim();
