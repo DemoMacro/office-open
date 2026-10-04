@@ -2,7 +2,7 @@ import { parse, type Element } from "@office-open/xml";
 
 import { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml } from "./package";
+import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
 import {
   attributeString,
   childNamed,
@@ -146,6 +146,22 @@ export function parseChartBody(xml: string): ChartChartOptions | undefined {
   const body = childNamed(childNamed(root, "office:body"), "office:chart");
   const chart = childNamed(body, "chart:chart");
   return chart ? parseChart(chart) : undefined;
+}
+
+/** Embedded chart subdocuments from the manifest, keyed by their object name. */
+export function parseEmbeddedCharts(
+  manifest: Element,
+  files: OdfFiles,
+): Map<string, ChartChartOptions> {
+  const result = new Map<string, ChartChartOptions>();
+  for (const entry of childrenNamed(manifest, "manifest:file-entry")) {
+    const fullPath = attributeString(entry, "manifest:full-path");
+    if (!fullPath || fullPath === "/" || !fullPath.endsWith("/")) continue;
+    const content = files[`${fullPath}content.xml`];
+    const chart = content ? parseChartBody(content) : undefined;
+    if (chart) result.set(fullPath.replace(/\/$/, ""), chart);
+  }
+  return result;
 }
 
 function chartContentXml(body: string): string {

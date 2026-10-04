@@ -13,6 +13,7 @@ import type {
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { chartBodyXml, CHART_MIME, parseEmbeddedCharts, type ChartChartOptions } from "./chart";
 import { escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
@@ -21,6 +22,7 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   lengthToEmu,
   textOf,
   xmlElement,
@@ -43,12 +45,31 @@ interface DimensionStyle {
   hidden?: boolean;
 }
 
-export type OdsOptions = WorkbookOptions & { odfExtensions?: OdfXmlNode[] };
+export type OdsOptions = WorkbookOptions & {
+  odfExtensions?: OdfXmlNode[];
+  /**
+   * Embedded chart subdocuments anchored on worksheets. `worksheet` names the
+   * hosting sheet; charts without a match land on the first worksheet.
+   */
+  embeddedCharts?: EmbeddedChartOptions[];
+};
+
+/** A draw:frame + draw:object chart anchored on a worksheet. */
+export interface EmbeddedChartOptions {
+  /** Object name (draw:name) and subdocument directory. */
+  name: string;
+  worksheet?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  chart: ChartChartOptions;
+}
 
 export function generateOds(options: OdsOptions): Uint8Array {
   const styles: string[] = [];
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>
-    worksheetXml(worksheet, index + 1, styles),
+    worksheetXml(worksheet, index + 1, styles, options.embeddedCharts ?? []),
   );
   const files: OdfFiles = {
     "content.xml": contentXml(
@@ -58,19 +79,30 @@ export function generateOds(options: OdsOptions): Uint8Array {
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
-  return generateOcf(MIME, files);
+  for (const entry of options.embeddedCharts ?? [])
+    files[`${entry.name}/content.xml`] = chartBodyXml(entry.chart);
+  return generateOcf(
+    MIME,
+    files,
+    Object.fromEntries(
+      (options.embeddedCharts ?? []).map((entry) => [`${entry.name}/`, CHART_MIME]),
+    ),
+  );
 }
 
 export function parseOds(data: Uint8Array): OdsOptions {
-  const { files } = readOcf(data, MIME);
+  const { files, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
   const automaticStyles = childNamed(content, "office:automatic-styles");
   const dimensions = parseDimensionStyles(automaticStyles);
   const cellStyles = parseNumberStyles(automaticStyles);
   const rawNodes = parseOdfNodes(body);
+  const chartPool = parseEmbeddedCharts(manifest, files);
+  const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
   return {
     ...parseMeta(files),
+    ...(embeddedCharts.length > 0 ? { embeddedCharts } : {}),
     worksheets: childrenNamed(body, "table:table").map((table, index) =>
       worksheet(table, index + 1, dimensions, cellStyles),
     ),
@@ -88,7 +120,12 @@ function stylesXml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
 }
 
-function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string[]): string {
+function worksheetXml(
+  worksheet: WorksheetOptions,
+  index: number,
+  styles: string[],
+  embeddedCharts: EmbeddedChartOptions[],
+): string {
   const explicitColumns = (worksheet.columns ?? []).flatMap((column) => {
     const count = Math.max(1, (column.max ?? column.min) - column.min + 1);
     const styleName =
@@ -123,10 +160,67 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
   const rows = bodyRows.length
     ? bodyRows
     : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
-  return xmlElement("table:table", { "table:name": worksheet.name ?? `Sheet${index}` }, [
+  const sheetName = worksheet.name ?? `Sheet${index}`;
+  const frames = embeddedCharts
+    .filter((entry, position) =>
+      entry.worksheet ? entry.worksheet === sheetName : position === 0 && index === 1,
+    )
+    .map((entry) =>
+      xmlElement(
+        "draw:frame",
+        {
+          "draw:name": entry.name,
+          "svg:x": entry.x !== undefined ? emuToLength(entry.x) : undefined,
+          "svg:y": entry.y !== undefined ? emuToLength(entry.y) : undefined,
+          "svg:width": entry.width !== undefined ? emuToLength(entry.width) : undefined,
+          "svg:height": entry.height !== undefined ? emuToLength(entry.height) : undefined,
+        },
+        [
+          xmlElement("draw:object", {
+            "xlink:href": entry.name,
+            "xlink:type": "simple",
+            "xlink:show": "embed",
+            "xlink:actuate": "onLoad",
+          }),
+        ],
+      ),
+    );
+  return xmlElement("table:table", { "table:name": sheetName }, [
     columns.join(""),
     rows.join(""),
+    ...(frames.length ? [xmlElement("table:shapes", undefined, frames)] : []),
   ]);
+}
+
+/** Worksheet-anchored draw:frame chart objects resolved from the pool. */
+function parseWorksheetCharts(
+  body: Element | undefined,
+  pool: Map<string, ChartChartOptions>,
+): EmbeddedChartOptions[] {
+  const charts: EmbeddedChartOptions[] = [];
+  for (const table of childrenNamed(body, "table:table")) {
+    const worksheet = attributeString(table, "table:name");
+    for (const frame of [
+      ...childrenNamed(table, "draw:frame"),
+      ...childrenNamed(childNamed(table, "table:shapes"), "draw:frame"),
+    ]) {
+      const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
+        ?.replace(/^\.\//, "")
+        .replace(/\/$/, "");
+      const chart = href ? pool.get(href) : undefined;
+      if (!chart || !href) continue;
+      charts.push({
+        name: href,
+        ...(worksheet ? { worksheet } : {}),
+        x: lengthToEmu(attributeString(frame, "svg:x")),
+        y: lengthToEmu(attributeString(frame, "svg:y")),
+        width: lengthToEmu(attributeString(frame, "svg:width")),
+        height: lengthToEmu(attributeString(frame, "svg:height")),
+        chart,
+      });
+    }
+  }
+  return charts;
 }
 
 function cellXml(cell: CellOptions, styles: string[]): string {

@@ -1144,6 +1144,31 @@ describe("ODP mapping", () => {
     expect(child.picture.width).toBe(1828800);
   });
 
+  it("round-trips worksheet charts through draw:object subdocuments", () => {
+    const source: OdsOptions = {
+      worksheets: [{ name: "Data", rows: [{ cells: [{ value: 1 }] }] }],
+      embeddedCharts: [
+        {
+          name: "Object 1",
+          worksheet: "Data",
+          x: 914400,
+          y: 914400,
+          width: 3657600,
+          height: 2743200,
+          chart: { class: "chart:bar", plotArea: {} },
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    const chart = parsed.embeddedCharts?.at(0);
+    if (!chart) throw new Error("Expected an embedded ODS chart");
+    expect(chart.name).toBe("Object 1");
+    expect(chart.worksheet).toBe("Data");
+    expect(chart.x).toBe(914400);
+    expect(chart.width).toBe(3657600);
+    expect(chart.chart.class).toBe("chart:bar");
+  });
+
   it("round-trips lines through draw:line", () => {
     const source: OdpOptions = {
       slides: [{ children: [{ line: { x1: 914400, y1: 914400, x2: 3657600, y2: 3657600 } }] }],

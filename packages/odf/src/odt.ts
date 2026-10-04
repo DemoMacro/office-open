@@ -12,7 +12,7 @@ import type {
 } from "@office-open/docx";
 import type { Element } from "@office-open/xml";
 
-import { chartBodyXml, CHART_MIME, parseChartBody, type ChartChartOptions } from "./chart";
+import { chartBodyXml, CHART_MIME, parseEmbeddedCharts, type ChartChartOptions } from "./chart";
 import {
   graphicFill,
   graphicOutline,
@@ -366,7 +366,7 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const styleContainer = childNamed(content, "office:automatic-styles");
   const styleMap = parseStyles(styleContainer);
   const graphicStyles = parseGraphicStyles(styleContainer);
-  const chartBodies = parseChartBodies(manifest, files);
+  const chartBodies = parseEmbeddedCharts(manifest, files);
   const rawNodes = parseOdfNodes(body);
   const context: ParseContext = {
     styles: styleMap,
@@ -413,19 +413,6 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   if (section) {
     if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
-  }
-  return result;
-}
-
-/** Chart subdocuments declared in the manifest, keyed by their object name. */
-function parseChartBodies(manifest: Element, files: OdfFiles): Map<string, ChartChartOptions> {
-  const result = new Map<string, ChartChartOptions>();
-  for (const entry of childrenNamed(manifest, "manifest:file-entry")) {
-    const fullPath = attributeString(entry, "manifest:full-path");
-    if (!fullPath || fullPath === "/" || !fullPath.endsWith("/")) continue;
-    const content = files[`${fullPath}content.xml`];
-    const chart = content ? parseChartBody(content) : undefined;
-    if (chart) result.set(fullPath.replace(/\/$/, ""), chart);
   }
   return result;
 }
