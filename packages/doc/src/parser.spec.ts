@@ -1,6 +1,7 @@
 import type { ParagraphOptions, SectionChild } from "@office-open/docx";
 import { describe, expect, it } from "vitest";
 
+import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
 import type { LegacyDocumentOptions } from "./records/models";
 
@@ -424,6 +425,98 @@ function buildLegacyDocument(): Uint8Array {
 }
 
 describe("legacy DOC parser", () => {
+  it("reports structured low-level parse failures", () => {
+    const actions: readonly (readonly [string, () => unknown])[] = [
+      ["truncated-header", () => parseDocument(buildDocument().data.slice(0, 256))],
+      [
+        "bad-record-length",
+        () => {
+          const { word, table } = buildDocument();
+          new DataView(table.buffer).setUint32(513, 0xffffffff, true);
+          return parseDocument(
+            buildContainer([
+              { path: "WordDocument", data: word },
+              { path: "1Table", data: table },
+            ]),
+          );
+        },
+      ],
+      [
+        "invalid-container-traversal",
+        () => {
+          const data = new Uint8Array(buildDocument().data);
+          new DataView(data.buffer).setUint32(1024 + 76, 0xfffffff0, true);
+          return parseDocument(data);
+        },
+      ],
+      [
+        "impossible-offset",
+        () => {
+          const { table, word } = buildDocument();
+          new DataView(table.buffer).setUint32(531, 0x7fffffff, true);
+          return parseDocument(
+            buildContainer([
+              { path: "WordDocument", data: word },
+              { path: "1Table", data: table },
+            ]),
+          );
+        },
+      ],
+      [
+        "unsupported-required-structure",
+        () => {
+          const { word, table } = buildDocument();
+          table[512] = 9;
+          return parseDocument(
+            buildContainer([
+              { path: "WordDocument", data: word },
+              { path: "1Table", data: table },
+            ]),
+          );
+        },
+      ],
+      [
+        "encrypted-unsupported",
+        () => {
+          const { word, table } = buildDocument();
+          const view = new DataView(word.buffer);
+          view.setUint16(10, view.getUint16(10, true) | 0x0100, true);
+          return parseDocument(
+            buildContainer([
+              { path: "WordDocument", data: word },
+              { path: "1Table", data: table },
+            ]),
+          );
+        },
+      ],
+    ];
+
+    for (const [reason, action] of actions) {
+      let error: DocParseError | undefined;
+      try {
+        action();
+      } catch (thrown) {
+        error = thrown as DocParseError;
+      }
+      expect(error, reason).toBeInstanceOf(DocParseError);
+      expect(error!.context.format, reason).toBe("doc");
+      expect(error!.context.reason, reason).toMatch(
+        /invalid-container|invalid-record-length|invalid-file-character-position|out-of-range|unknown-required-record|unsupported-required-structure|encrypted-unsupported/,
+      );
+      expect(error!.context.path, reason).toBeDefined();
+    }
+
+    try {
+      parseDocument(buildDocument().data.slice(0, 256));
+    } catch (error) {
+      expect((error as DocParseError).context).toMatchObject({
+        format: "doc",
+        part: "container",
+        path: "/",
+      });
+    }
+  });
+
   it("projects compressed and Unicode pieces with character properties", () => {
     const { data } = buildDocument();
     const document = parseDocument(data);

@@ -168,7 +168,13 @@ const WINDOWS_1252_HIGH = new Map<number, string>([
 
 function requireRange(bytes: Uint8Array, offset: number, length: number, message: string): void {
   if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message);
+    throw new DocParseError(message, {
+      part: "stream",
+      offset,
+      length,
+      byteRange: [offset, offset + length],
+      reason: "out-of-range",
+    });
   }
 }
 
@@ -192,7 +198,14 @@ function parseFib(word: Uint8Array): Fib {
   const streamMessage = "Invalid Word document: FIB is truncated";
   requireRange(word, 0, FIB_BASE_LENGTH, streamMessage);
   if (readUint16(word, 0, streamMessage) !== FIB_SIGNATURE) {
-    throw new DocParseError("Invalid Word document: FIB signature is not 0xA5EC");
+    throw new DocParseError("Invalid Word document: FIB signature is not 0xA5EC", {
+      part: "stream",
+      path: "WordDocument",
+      recordName: "FIB",
+      offset: 0,
+      length: 2,
+      reason: "unsupported-required-structure",
+    });
   }
   const flags = readUint16(word, 10, streamMessage);
   if ((flags & FLAG_ENCRYPTED) !== 0) {
@@ -284,7 +297,14 @@ function parseLegacyFib(word: Uint8Array): LegacyFib {
     nFib > 105 ||
     (readUint16(word, 10, message) & FLAG_ENCRYPTED) !== 0
   ) {
-    throw new DocParseError("Invalid Word document: unsupported FIB signature");
+    throw new DocParseError("Invalid Word document: unsupported FIB signature", {
+      part: "stream",
+      path: "WordDocument",
+      recordName: "FIB",
+      offset: 0,
+      length: 2,
+      reason: "unsupported-required-structure",
+    });
   }
   return {
     fcMin: readUint32(word, 24, message),
@@ -1030,10 +1050,15 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   } catch (error) {
     throw new DocParseError(
       `Input is not a supported Compound File Binary document: ${(error as Error).message}`,
+      { part: "container", path: "/", reason: "invalid-container" },
     );
   }
   if (!reader.entry("WordDocument")) {
-    throw new DocParseError("Invalid Word document: WordDocument stream is missing");
+    throw new DocParseError("Invalid Word document: WordDocument stream is missing", {
+      part: "stream",
+      path: "WordDocument",
+      reason: "missing-required-stream",
+    });
   }
   let word = reader.read("WordDocument");
   const legacy = readUint16(word, 0, "Invalid Word document: FIB is truncated") === 0xa5dc;
@@ -1046,7 +1071,13 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   let table: Uint8Array | undefined = reader.entry(tablePath) ? reader.read(tablePath) : undefined;
   let dataStream = reader.entry("Data") ? reader.read("Data") : undefined;
   if ((flags & FLAG_ENCRYPTED) !== 0) {
-    if (!table) throw new DocParseError("Encrypted Word documents are not supported");
+    if (!table) {
+      throw new DocParseError("Encrypted Word documents are not supported", {
+        part: "table",
+        path: tablePath,
+        reason: "encrypted-unsupported",
+      });
+    }
     const decrypted = decryptWordStreams(word, table, reader, password);
     word = decrypted.word;
     table = decrypted.table;
@@ -1056,7 +1087,11 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const fib = parseFib(word);
   const metadata = readSummaryInformation(reader);
   if (!table) {
-    throw new DocParseError(`Invalid Word document: ${tablePath} stream is missing`);
+    throw new DocParseError(`Invalid Word document: ${tablePath} stream is missing`, {
+      part: "table",
+      path: tablePath,
+      reason: "missing-required-stream",
+    });
   }
   if (fib.totalCharacters === 0) return { sections: [{ children: [{ paragraph: "" }] }] };
 
