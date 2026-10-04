@@ -278,6 +278,52 @@ describe("ODT mapping", () => {
     expect(secondParagraph.numbering).toMatchObject({ level: 0 });
   });
 
+  it("round-trips list level indent and suffix through a numbering definition", () => {
+    const source: DocumentOptions = {
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "num",
+            levels: [
+              {
+                level: 0,
+                format: "decimal",
+                text: "%1.",
+                start: 1,
+                suffix: "tab",
+                paragraph: { indent: { left: 720, hanging: 360 } },
+              },
+            ],
+          },
+        ],
+      },
+      sections: [
+        {
+          children: [
+            { paragraph: { text: "One", numbering: { reference: "num", level: 0 } } },
+            { paragraph: { text: "Two", numbering: { reference: "num", level: 0 } } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const definition = parsed.numbering?.abstractNumberings?.find(
+      (entry) => entry.reference === "num",
+    );
+    expect(definition?.levels[0]).toMatchObject({
+      format: "decimal",
+      text: "%1.",
+      start: 1,
+      suffix: "tab",
+      paragraph: { indent: { left: 720, hanging: 360 } },
+    });
+    const first = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a list paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    expect(paragraph.numbering).toEqual({ reference: "num", level: 0 });
+  });
+
   it("round-trips hyperlinks as text:a elements", () => {
     const source: DocumentOptions = {
       sections: [
