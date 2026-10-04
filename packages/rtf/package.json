@@ -1,8 +1,34 @@
 {
   "name": "@office-open/rtf",
   "version": "0.14.6",
-  "description": "Parse Rich Text Format documents into office-open DocumentOptions",
+  "description": "Parse Rich Text Format documents into office-open DocumentOptions — no Microsoft Office required",
+  "keywords": [
+    "document",
+    "legacy",
+    "microsoft-word",
+    "office",
+    "office-open",
+    "parse",
+    "parser",
+    "rich-text",
+    "rtf",
+    "typescript"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
   "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://www.demomacro.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/rtf"
+  },
   "files": [
     "dist"
   ],

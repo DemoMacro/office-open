@@ -4,12 +4,12 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Everything for AI-native Office documents in one install — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) generation from JSON, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
+> Everything for AI-native Office documents in one install — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
 
 ## Features
 
-- **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`; no Microsoft Office required
-- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate ODF documents; convert CSV/TSV
+- **One Install** — Import from `office-open/docx`, `office-open/pptx`, `office-open/xlsx`, and the additional format readers; no Microsoft Office required
+- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate ODF with generic nodes for the full ODF element set; convert CSV/TSV
 - **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, with schema-validated retries
 - **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
@@ -148,7 +148,7 @@ import { parse, stringify } from "office-open/xml";
 | PPTX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
 | DOC, XLS, PPT        | ✅    | ❌       | Parse-only projection to existing option families |
 | RTF                  | ✅    | ❌       | Parse-only projection to `DocumentOptions`        |
-| ODT, ODS, ODP        | ✅    | ✅       | ODF generation and parsing                        |
+| ODT, ODS, ODP        | ✅    | ✅       | ODF generation and parsing, plus generic nodes    |
 | CSV, TSV             | ✅    | ✅       | Conversion to and from `WorkbookOptions`          |
 
 ## JSON Document Structures
@@ -182,7 +182,6 @@ import { parse, stringify } from "office-open/xml";
 
 - [Documentation](https://www.office-open.com) — getting started, per-format guides, and AI integration
 - [AI Integration Guide](https://www.office-open.com/en/getting-started/ai-integration) — MCP server, Agent Skill, and schema slicing
-- [Changelog](https://github.com/DemoMacro/office-open/releases) — release notes
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 ## Related Packages
@@ -190,6 +189,11 @@ import { parse, stringify } from "office-open/xml";
 - [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx)
 - [@office-open/pptx](https://www.npmjs.com/package/@office-open/pptx) — PowerPoint (.pptx)
 - [@office-open/xlsx](https://www.npmjs.com/package/@office-open/xlsx) — Excel (.xlsx)
+- [@office-open/doc](https://www.npmjs.com/package/@office-open/doc) — legacy Word (.doc)
+- [@office-open/xls](https://www.npmjs.com/package/@office-open/xls) — legacy Excel (.xls)
+- [@office-open/ppt](https://www.npmjs.com/package/@office-open/ppt) — legacy PowerPoint (.ppt)
+- [@office-open/rtf](https://www.npmjs.com/package/@office-open/rtf) — Rich Text Format
+- [@office-open/odf](https://www.npmjs.com/package/@office-open/odf) — OpenDocument
 - [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
 - [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
 

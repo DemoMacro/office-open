@@ -9,7 +9,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
 > AI 原生的 Office 文档库，面向 TypeScript 和 JavaScript。
-> 用纯 JSON 或全类型 API 创建 Word、Excel、PowerPoint 文件（.docx、.xlsx、.pptx）——生成、解析、补丁三合一。为 AI 智能体、LLM 工具调用与手写代码而生；无需 Microsoft Office，生成的文件在主流办公套件中均可打开。
+> 用纯 JSON 或全类型 API 创建 Word、Excel、PowerPoint 文件（.docx、.xlsx、.pptx）——生成、解析、补丁三合一。读取旧版 .doc/.xls/.ppt、RTF 与 ODF；生成 ODT/ODS/ODP 并转换 CSV/TSV。为 AI 智能体、LLM 工具调用与手写代码而生；无需 Microsoft Office。
 
 [文档](https://www.office-open.com) · [AI 集成](https://www.office-open.com/en/getting-started/ai-integration) · [性能基准](#性能基准) · [npm](https://www.npmjs.com/package/office-open)
 
@@ -18,9 +18,9 @@
 ## 特性
 
 - 📄 **三格式一体** — Word (.docx)、Excel (.xlsx)、PowerPoint (.pptx) 共用一套连贯 API——无需服务器，离线可用
-- 🗂 **多格式读取** — 通过同一套 options 模型解析旧版 Word/Excel/PowerPoint（.doc/.xls/.ppt）、RTF、ODF 与全部 OOXML 变体；支持生成 ODT/ODS/ODP 与转换 CSV/TSV
+- 🗂 **多格式读取** — 通过同一套 options 模型解析旧版 Word/Excel/PowerPoint（.doc/.xls/.ppt）、RTF、ODF 与 OOXML 包变体；支持生成 ODT/ODS/ODP 与转换 CSV/TSV
 - 🤖 **AI 工具链** — 由 TypeScript API 冻结的 Draft-07 JSON Schema、按需切片适配 LLM 上下文预算（CLI + SDK 工具）、Vercel AI SDK 工具定义、可安装的 Agent Skill
-- 🧭 **100% OOXML 覆盖** — 18 个 OOXML Transitional schema（WordprocessingML、PresentationML、SpreadsheetML、DrawingML、共享 math 与 VML）的全部 2,191 个元素与 1,923 个属性均已实现生成与解析——由自动化 XSD 覆盖率工具持续追踪
+- 🧭 **核心 OOXML 覆盖** — 17 个核心 OOXML Transitional schema（WordprocessingML、PresentationML、SpreadsheetML、DrawingML、共享 math 与 VML）的全部 2,191 个元素与 1,923 个属性均已实现生成与解析；较新的 Word 扩展 schema 为部分覆盖，并由自动化 XSD 覆盖率工具持续追踪
 - 📐 **符合规范** — 输出通过 OOXML Transitional XSD schema（ISO/IEC 29500）校验，并经实测可在 Microsoft Office、WPS Office、LibreOffice、Google Workspace 中打开
 - 🔒 **全量类型** — 每个 API 都有完整 TypeScript 定义，自动补全与类型安全全覆盖
 - 🔄 **解析与补丁** — 读回现有 .docx、.pptx、.xlsx 文件做往返（round-trip）工作流，或按占位符替换补丁模板
@@ -43,19 +43,19 @@
 
 ## 包
 
-| 包                                              | 版本                                                   | 说明                                |
-| ----------------------------------------------- | ------------------------------------------------------ | ----------------------------------- |
-| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | 全家桶：全部包 + CLI + AI SDK 工具  |
-| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word 文档生成、解析与补丁           |
-| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint 生成、解析与补丁         |
-| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | 电子表格生成、解析与补丁            |
-| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | 旧版 Word .doc 解析                 |
-| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                |
-| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析           |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析               |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODT、ODS、ODP 生成与解析            |
-| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算 |
-| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化               |
+| 包                                              | 版本                                                   | 说明                                   |
+| ----------------------------------------------- | ------------------------------------------------------ | -------------------------------------- |
+| [office-open](./packages/office-open/README.md) | ![npm](https://img.shields.io/npm/v/office-open)       | 全家桶：全部包 + CLI + AI SDK 工具     |
+| [@office-open/docx](./packages/docx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/docx) | Word 文档生成、解析与补丁              |
+| [@office-open/pptx](./packages/pptx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/pptx) | PowerPoint 生成、解析与补丁            |
+| [@office-open/xlsx](./packages/xlsx/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/xlsx) | 电子表格生成、解析与补丁               |
+| [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | 旧版 Word .doc 解析                    |
+| [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                   |
+| [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析              |
+| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析                  |
+| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF 文本、表格、演示、图表与数据库读写 |
+| [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算    |
+| [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化                  |
 
 ## 快速开始
 

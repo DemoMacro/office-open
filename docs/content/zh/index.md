@@ -2,7 +2,7 @@
 prose: true
 seo:
     title: 使用 JavaScript/TypeScript 生成 Office Open XML 文档
-    description: 用 JSON 或 TypeScript 生成、解析和修补 .docx、.pptx 和 .xlsx 文件——AI 原生、全类型、100% OOXML 覆盖。支持 Node.js、浏览器、Deno 和 Bun。
+    description: 用 JSON 或 TypeScript 生成、解析和修补 .docx、.pptx 和 .xlsx 文件——AI 原生、全类型，并完整覆盖 17 个核心 OOXML schema。支持 Node.js、浏览器、Deno 和 Bun。
 ---
 
 ::page-hero{orientation="horizontal"}
@@ -43,7 +43,7 @@ bun add office-open
 生成 Office Open XML 文档。
 
 #description
-用纯 JSON 或全类型 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件——AI 代理与手写代码同样顺手。
+用纯 JSON 或全类型 TypeScript 创建 `.docx`、`.pptx` 和 `.xlsx` 文件，并读取旧版 Office、RTF 与 ODF 输入——AI 代理与手写代码同样顺手。
 
 #links
   :::button-link{to="/zh/getting-started/installation"}
@@ -106,10 +106,10 @@ bun add office-open
   <Icon name="i-lucide-shield-check" />
 
   #title
-  OOXML 完整实现
+  核心 OOXML 完整实现
 
   #description
-  完整覆盖 OOXML Transitional 全部元素与属性，生成解析双向——主流办公套件全部直接打开。
+  完整覆盖 17 个核心 OOXML Transitional schema 的全部元素与属性，生成解析双向；较新的 Word 扩展另行追踪。
   :::
 
   :::page-card
@@ -120,7 +120,7 @@ bun add office-open
   模块化包
 
   #description
-  按格式按需安装，统一包另附 CLI 与 AI SDK 工具。
+  按格式按需安装——包括旧版格式读取与 ODF——统一包另附 CLI 与 AI SDK 工具。
   :::
 ::
 

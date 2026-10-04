@@ -1,8 +1,35 @@
 {
   "name": "@office-open/doc",
   "version": "0.14.6",
-  "description": "Parse legacy Microsoft Word .doc documents into office-open DocumentOptions",
+  "description": "Parse legacy Microsoft Word .doc documents into office-open DocumentOptions — no Microsoft Office required",
+  "keywords": [
+    "binary",
+    "doc",
+    "document",
+    "legacy",
+    "microsoft-word",
+    "office",
+    "office-open",
+    "parse",
+    "parser",
+    "typescript",
+    "word"
+  ],
+  "homepage": "https://www.office-open.com",
+  "bugs": {
+    "url": "https://github.com/DemoMacro/office-open/issues"
+  },
   "license": "MIT",
+  "author": {
+    "name": "Demo Macro",
+    "email": "abc@imst.xyz",
+    "url": "https://www.demomacro.com/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DemoMacro/office-open.git",
+    "directory": "packages/doc"
+  },
   "files": [
     "dist"
   ],

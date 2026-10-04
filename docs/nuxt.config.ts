@@ -125,11 +125,11 @@ export default defineNuxtConfig({
     domain: "https://www.office-open.com",
     title: "Office Open",
     description:
-      "TypeScript toolkit for Office documents — generate, parse, and patch .docx, .pptx, .xlsx with spec-compliant OOXML output",
+      "TypeScript toolkit for Office documents — generate, parse, and patch .docx, .pptx, and .xlsx; read legacy Office, RTF, and ODF with spec-compliant OOXML output",
     full: {
       title: "Office Open — Full Documentation",
       description:
-        "Complete API reference and guides for @office-open/docx, @office-open/pptx, and @office-open/core.",
+        "Complete API reference and guides for OOXML formats, legacy Office readers, RTF, ODF, and @office-open/core.",
     },
     contentRawMarkdown: {
       excludeCollections: ["landing_en", "landing_zh"],
