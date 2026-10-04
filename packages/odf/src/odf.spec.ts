@@ -449,4 +449,30 @@ describe("ODP mapping", () => {
     expect(child.line.x1).toBe(914400);
     expect(child.line.y2).toBe(3657600);
   });
+
+  it("round-trips groups through draw:g", () => {
+    const source: OdpOptions = {
+      slides: [
+        {
+          children: [
+            {
+              group: {
+                children: [
+                  { line: { x1: 914400, y1: 914400, x2: 1828800, y2: 1828800 } },
+                  { shape: { x: 1828800, y: 1828800, width: 914400, height: 914400 } },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("group" in child)) throw new Error("Expected an ODP group");
+    expect(child.group.children).toHaveLength(2);
+    const nested = child.group.children[0]!;
+    if (!("line" in nested)) throw new Error("Expected a nested line");
+    expect(nested.line.x2).toBe(1828800);
+  });
 });

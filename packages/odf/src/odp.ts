@@ -136,19 +136,7 @@ function slideXml(
   styles: string[],
   images: OdpImage[],
 ): string {
-  const frames = (slide.children ?? []).map((child) =>
-    "shape" in child
-      ? shapeXml(child.shape, styles)
-      : "table" in child
-        ? slideTableXml(child.table, styles)
-        : "connector" in child
-          ? connectorXml(child.connector)
-          : "line" in child
-            ? lineXml(child.line)
-            : "picture" in child
-              ? pictureFrameXml(child.picture, images)
-              : "",
-  );
+  const frames = (slide.children ?? []).map((child) => slideChildXml(child, styles, images));
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
@@ -164,6 +152,22 @@ function slideXml(
     { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
     [...frames, ...(notesXml ? [notesXml] : [])],
   );
+}
+
+/** Recursive SlideChild → ODF dispatcher shared by slides and draw:g groups. */
+function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]): string {
+  if ("shape" in child) return shapeXml(child.shape, styles);
+  if ("table" in child) return slideTableXml(child.table, styles);
+  if ("connector" in child) return connectorXml(child.connector);
+  if ("line" in child) return lineXml(child.line);
+  if ("picture" in child) return pictureFrameXml(child.picture, images);
+  if ("group" in child)
+    return xmlElement(
+      "draw:g",
+      { "draw:name": child.group.name },
+      child.group.children.map((nested) => slideChildXml(nested, styles, images)),
+    );
+  return "";
 }
 
 function shapeXml(shape: ShapeOptions, styles: string[]): string {
@@ -300,6 +304,7 @@ function parseSlide(
           return [{ shape: parseShape(child, textStyles) }];
         }
         if (child.name === "draw:line") return [parseLine(child)];
+        if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
         return [];
@@ -433,6 +438,34 @@ function parseLine(element: Element): { line: LineShapeOptions } {
       y2: lengthToEmu(attributeString(element, "svg:y2")),
     },
   };
+}
+
+/** Parses a draw:g group back to a pptx group child (children only). */
+function parseGroup(
+  element: Element,
+  textStyles: Map<string, TextProperties>,
+  columnWidths: Map<string, number>,
+  binaries: Record<string, Uint8Array>,
+): SlideChild[] {
+  const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
+    if (child.name === "draw:frame") {
+      const picture = parsePictureFrame(child, binaries);
+      return picture ? [picture] : [{ shape: parseShape(child, textStyles) }];
+    }
+    if (child.name === "draw:line") return [parseLine(child)];
+    if (child.name === "draw:connector") return [parseConnector(child)];
+    if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
+    if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+    return [];
+  });
+  return [
+    {
+      group: {
+        name: attributeString(element, "draw:name"),
+        children,
+      },
+    },
+  ];
 }
 
 /** Reads a draw:{start,end}-shape/-glue-point pair as a glued endpoint. */
