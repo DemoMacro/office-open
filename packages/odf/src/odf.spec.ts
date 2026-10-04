@@ -2,7 +2,17 @@ import type { DocumentOptions } from "@office-open/docx";
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdp, generateOds, generateOdt, parseOdp, parseOds, parseOdt } from "./index";
+import {
+  generateChartDocument,
+  generateOdp,
+  generateOds,
+  generateOdt,
+  parseChartDocument,
+  parseOdp,
+  parseOds,
+  parseOdt,
+} from "./index";
+import type { ChartChartOptions } from "./index";
 import { type OdpOptions } from "./odp";
 import { type OdsOptions } from "./ods";
 
@@ -248,6 +258,56 @@ describe("ODT mapping", () => {
 });
 
 describe("ODS mapping", () => {
+  it("round-trips typed chart subdocument structure", () => {
+    const chart: ChartChartOptions = {
+      class: "chart:bar",
+      width: 5760000,
+      height: 3240000,
+      href: "..",
+      styleName: "ch1",
+      title: { text: "Chart title", x: 0, y: 0, width: 5760000, height: 448056 },
+      legend: {
+        position: "end",
+        x: 5402208,
+        y: 1512360,
+        expansion: "high",
+        styleName: "ch2",
+      },
+      plotArea: {
+        x: 115200,
+        y: 64800,
+        width: 5172120,
+        height: 3110400,
+        styleName: "ch3",
+        cellRange: "Sheet1.A1:Sheet1.A2",
+        dataSourceHasLabels: "row",
+        axes: [
+          { dimension: "x", name: "primary-x", styleName: "ch4" },
+          {
+            dimension: "y",
+            name: "primary-y",
+            styleName: "ch5",
+            grids: [{ class: "major", styleName: "ch6" }],
+          },
+        ],
+        series: [
+          {
+            values: "Sheet1.A2:Sheet1.A2",
+            label: "Sheet1.A1:Sheet1.A1",
+            class: "chart:bar",
+            styleName: "ch7",
+            domains: ["Sheet1.A1:Sheet1.A1"],
+            dataPoints: [{ repeated: 1 }],
+          },
+        ],
+        wall: { styleName: "ch8" },
+        floor: { styleName: "ch9" },
+      },
+    };
+    const parsed = parseChartDocument(generateChartDocument({ title: "Chart", chart })).chart!;
+    expect(parsed).toMatchObject(chart);
+  });
+
   it("round-trips sheets, dimensions, cached formulas, and primitive values", () => {
     const source = {
       title: "ODS round trip",

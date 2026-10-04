@@ -2,7 +2,20 @@ export { generateOdt, parseOdt } from "./odt";
 export { generateOds, parseOds } from "./ods";
 export { generateOdp, parseOdp } from "./odp";
 export { generateChartDocument, parseChartDocument } from "./chart";
-export type { ChartDocumentOptions } from "./chart";
+export type {
+  ChartAxisOptions,
+  ChartChartOptions,
+  ChartDataPointOptions,
+  ChartDocumentOptions,
+  ChartGridOptions,
+  ChartLegendOptions,
+  ChartCornerLegendOptions,
+  ChartPlotAreaOptions,
+  ChartSeriesOptions,
+  ChartTitleOptions,
+  ChartWallOptions,
+  ChartStandardLegendOptions,
+} from "./chart";
 export { generateDatabaseDocument, parseDatabaseDocument } from "./db";
 export type { DatabaseDocumentOptions } from "./db";
 export {

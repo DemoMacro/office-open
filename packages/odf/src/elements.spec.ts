@@ -71,10 +71,14 @@ describe("ODF element registry", () => {
   it("round-trips chart and database subdocuments", () => {
     const chart = {
       title: "Chart",
-      body: [{ name: "chart:chart", attributes: { "chart:class": "chart:bar" } }],
+      chart: {
+        class: "chart:bar",
+        plotArea: { axes: [], series: [] },
+      },
     };
     const parsedChart = parseChartDocument(generateChartDocument(chart));
-    expect(parsedChart).toEqual(chart);
+    expect(parsedChart.title).toBe(chart.title);
+    expect(parsedChart.chart).toMatchObject(chart.chart);
 
     const database = {
       title: "Database",
