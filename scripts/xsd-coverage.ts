@@ -498,8 +498,9 @@ function extractUsedElements(config: XsdConfig): Set<string> {
         found.add(m[2]);
       }
 
-      // Pattern 2: findChild(el, "prefix:name") — parse path
-      const findChildRe = /findChild\([^,]+,\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      // Pattern 2: findChild(el, "prefix:name") / firstChildXml(el, "name") — parse path
+      const findChildRe =
+        /\b(?:findChild|firstChildXml)\([^,]+,\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
       while ((m = findChildRe.exec(src)) !== null) {
         found.add(m[2]);
       }
