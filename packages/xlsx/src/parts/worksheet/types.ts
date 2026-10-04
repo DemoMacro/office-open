@@ -6,6 +6,8 @@
 import type {
   BasePictureOptions,
   ChartSpaceOptions,
+  CellGraphicOptions,
+  CoveredCellOptions,
   DataType,
   NonVisualDrawingPropertiesOptions,
   PositiveUniversalMeasure,
@@ -171,6 +173,10 @@ export interface CellOptions {
    * string table, matching the source cell type.
    */
   error?: string;
+  /** Placeholder semantics for non-origin cells in a merged range. */
+  covered?: CoveredCellOptions;
+  /** Graphics anchored to this spreadsheet cell. */
+  graphics?: CellGraphicOptions[];
 }
 
 /** Cell formula type (maps to ST_CellFormulaType). */

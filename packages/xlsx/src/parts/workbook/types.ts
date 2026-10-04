@@ -1,4 +1,4 @@
-import type { Base64, Guid, UnsignedShortHex } from "@office-open/core";
+import type { Base64, FormContainerOptions, Guid, UnsignedShortHex } from "@office-open/core";
 /**
  * Workbook — option types for SpreadsheetML documents.
  *
@@ -300,6 +300,18 @@ export interface CalculationPropertiesOptions {
   refMode?: "A1" | "R1C1";
   /** Full precision (default true) */
   fullPrecision?: boolean;
+  /** Whether formula text matching is case-sensitive; omit for the format default. */
+  caseSensitive?: boolean;
+  /** Whether calculations preserve displayed rounding precision. */
+  precisionAsShown?: boolean;
+  /** Whether label matching automatically finds adjacent label ranges. */
+  automaticLabelSearch?: boolean;
+  /** Whether matching treats `.` as a regular-expression wildcard. */
+  regularExpressionSearch?: boolean;
+  /** Whether matching uses wildcard characters. */
+  wildcardSearch?: boolean;
+  /** Epoch used for serial dates. */
+  nullDate?: { year: number; month: number; day: number };
   /** Calc completed (CT_CalcPr `@calcCompleted`) */
   calcCompleted?: boolean;
 }
@@ -446,6 +458,8 @@ export interface WorkbookDescriptorOptions {
   fileSharing?: FileSharingOptions;
   properties?: WorkbookPropertiesOptions;
   calculation?: CalculationPropertiesOptions;
+  /** Workbook-level form containers. */
+  forms?: FormContainerOptions[];
   /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
   oleSize?: string;
   bookView?: WorkbookViewOptions;
