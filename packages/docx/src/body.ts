@@ -1943,6 +1943,54 @@ function parseRunLevelChildren(
         if (id !== undefined) childList.push({ customXmlMoveToRangeEnd: id });
         break;
       }
+      case "w14:customXmlConflictInsRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlConflictInsRangeStart: m });
+        break;
+      }
+      case "w14:customXmlConflictInsRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlConflictInsRangeEnd: id });
+        break;
+      }
+      case "w14:customXmlConflictDelRangeStart": {
+        const m = parseCustomXmlRangeStart(child);
+        if (m) childList.push({ customXmlConflictDelRangeStart: m });
+        break;
+      }
+      case "w14:customXmlConflictDelRangeEnd": {
+        const id = attrNum(child, "w:id");
+        if (id !== undefined) childList.push({ customXmlConflictDelRangeEnd: id });
+        break;
+      }
+      case "w14:conflictIns": {
+        const children = parseTrackChangeRuns(child, ctx);
+        if (children.length > 0) {
+          childList.push({
+            conflictIns: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children,
+            },
+          });
+        }
+        break;
+      }
+      case "w14:conflictDel": {
+        const children = parseTrackChangeRuns(child, ctx);
+        if (children.length > 0) {
+          childList.push({
+            conflictDel: {
+              id: attrNum(child, "w:id") ?? 0,
+              author: attr(child, "w:author") ?? "",
+              date: attr(child, "w:date") ?? "",
+              children,
+            },
+          });
+        }
+        break;
+      }
       case "w:sdt": {
         const sdtPr = findChild(child, "w:sdtPr");
         const properties = sdtPr ? parseSdtProperties(sdtPr) : {};
@@ -2004,6 +2052,10 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   if (paraId) opts.paraId = paraId;
   const textId = attr(el, "w14:textId");
   if (textId) opts.textId = textId;
+  const noSpellErr = attr(el, "w14:noSpellErr");
+  if (noSpellErr !== undefined) {
+    opts.noSpellErr = noSpellErr === "1" || noSpellErr.toLowerCase() === "true";
+  }
   const rsid = attr(el, "w:rsidR");
   if (rsid) opts.additionRsid = rsid;
   const defaultRunRsid = attr(el, "w:rsidRDefault");

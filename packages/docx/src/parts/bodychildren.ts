@@ -342,6 +342,8 @@ export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleS
     parts.push(`<w15:repeatingSection>${inner}</w15:repeatingSection>`);
   } else if (opts.repeatingSectionItem) {
     parts.push("<w15:repeatingSectionItem/>");
+  } else if (opts.entityPicker) {
+    parts.push("<w14:entityPicker/>");
   }
 
   // Word 2013+ extension flags (CT_OnOff) — siblings outside the type choice.

@@ -81,6 +81,9 @@ export type {
   SphereCoords,
   Point3D,
   Vector3D,
+  CameraPreset,
+  LightRigType,
+  LightRigDirection,
 } from "./three-d/scene-3d";
 export { createShape3D } from "./three-d/shape-3d";
 export type { Shape3DOptions } from "./three-d/shape-3d";

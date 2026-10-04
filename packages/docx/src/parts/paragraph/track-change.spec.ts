@@ -61,6 +61,49 @@ describe("fresh revision markers without an id", () => {
 });
 
 describe("track-change round-trip", () => {
+  it("round-trips w14:noSpellErr on the paragraph", () => {
+    const doc = parseXml(`<w:p ${W_NS} w14:noSpellErr="1"><w:r><w:t>text</w:t></w:r></w:p>`);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const xml = stringifyParagraph(parseParagraph(el, readCtx), writeCtx);
+    expect(xml).toContain('w14:noSpellErr="1"');
+  });
+
+  it("round-trips w14 conflictIns and conflictDel run wrappers", () => {
+    const xml = roundTrip(
+      '<w14:conflictIns w:id="7" w:author="Bob" w:date="2021-02-03T00:00:00Z">' +
+        "<w:r><w:t>kept</w:t></w:r>" +
+        "</w14:conflictIns>" +
+        '<w14:conflictDel w:id="8" w:author="Bob" w:date="2021-02-03T00:00:00Z">' +
+        "<w:r><w:delText>dropped</w:delText></w:r>" +
+        "</w14:conflictDel>",
+    );
+    expect(xml).toContain(
+      '<w14:conflictIns w:id="7" w:author="Bob" w:date="2021-02-03T00:00:00Z">',
+    );
+    expect(xml).toContain("kept");
+    expect(xml).toContain(
+      '<w14:conflictDel w:id="8" w:author="Bob" w:date="2021-02-03T00:00:00Z">',
+    );
+    expect(xml).toContain("dropped");
+  });
+
+  it("round-trips w14 customXml conflict range markers", () => {
+    const xml = roundTrip(
+      '<w14:customXmlConflictInsRangeStart w:id="9" w:author="Cara" w:date="2021-03-04T00:00:00Z"/>' +
+        "<w:r><w:t>body</w:t></w:r>" +
+        '<w14:customXmlConflictInsRangeEnd w:id="9"/>' +
+        '<w14:customXmlConflictDelRangeStart w:id="10"/>' +
+        '<w14:customXmlConflictDelRangeEnd w:id="10"/>',
+    );
+    expect(xml).toContain(
+      '<w14:customXmlConflictInsRangeStart w:id="9" w:author="Cara" w:date="2021-03-04T00:00:00Z"/>',
+    );
+    expect(xml).toContain('<w14:customXmlConflictInsRangeEnd w:id="9"/>');
+    expect(xml).toContain('<w14:customXmlConflictDelRangeStart w:id="10"/>');
+    expect(xml).toContain('<w14:customXmlConflictDelRangeEnd w:id="10"/>');
+  });
+
   it("re-emits a plain deleted text run as w:delText", () => {
     // The dispatch text fast path emits w:t; a run inside w:del must keep the
     // delText spelling regardless of how the run shape is serialized.

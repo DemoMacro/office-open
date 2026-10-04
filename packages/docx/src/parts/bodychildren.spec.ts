@@ -285,6 +285,11 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.repeatingSectionItem).toBe(true);
   });
 
+  it("round-trips SDT entityPicker", () => {
+    const result = roundTripSdt({ properties: { entityPicker: true } });
+    expect(result.properties.entityPicker).toBe(true);
+  });
+
   it("round-trips SDT web extension flags", () => {
     const result = roundTripSdt({
       properties: { webExtensionLinked: true, webExtensionCreated: false },

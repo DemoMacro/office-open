@@ -1092,6 +1092,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w14:discardImageEditingData", opts.w14DiscardImageEditingData));
     if (opts.w14DefaultImageDpi !== undefined)
       p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
+    p.push(onOff("w14:conflictMode", opts.w14ConflictMode));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
     p.push(strVal("w15:docId", opts.w15DocId));
 
@@ -1558,6 +1559,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const dpi = Number(w14DefaultImageDpi);
       if (!isNaN(dpi)) opts.w14DefaultImageDpi = dpi;
     }
+    const w14ConflictMode = findChild(el, "w14:conflictMode");
+    if (w14ConflictMode)
+      opts.w14ConflictMode = parseOnOff(attr(w14ConflictMode, "w14:val")) ?? true;
     if (findChild(el, "w15:chartTrackingRefBased")) opts.w15ChartTrackingRefBased = true;
     const w15DocId = readStr(findChild(el, "w15:docId"), "w15:val");
     if (w15DocId) opts.w15DocId = w15DocId;

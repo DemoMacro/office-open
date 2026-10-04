@@ -216,6 +216,8 @@ export interface SdtPropertiesOptions {
   repeatingSection?: SdtRepeatingSectionOptions;
   /** Repeating section item SDT (Word 2013+, w15:repeatingSectionItem) */
   repeatingSectionItem?: boolean;
+  /** Entity picker SDT (Word 2010+, w14:entityPicker) */
+  entityPicker?: boolean;
   /** Web extension linked flag (Word 2013+, w15:webExtensionLinked) */
   webExtensionLinked?: boolean;
   /** Web extension created flag (Word 2013+, w15:webExtensionCreated) */

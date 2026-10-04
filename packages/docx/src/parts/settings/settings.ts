@@ -191,6 +191,8 @@ export interface SettingsOptions {
   w14DiscardImageEditingData?: boolean;
   /** Default image DPI for pictures inserted in this document (w14:defaultImageDpi) */
   w14DefaultImageDpi?: number;
+  /** Conflict resolution mode for merge results (w14:conflictMode) */
+  w14ConflictMode?: boolean;
   /** Track chart references by document (w15:chartTrackingRefBased) */
   w15ChartTrackingRefBased?: boolean;
   /** Word 2013 document identifier (w15:docId/`@w15:val`, GUID format) */

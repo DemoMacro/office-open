@@ -12672,6 +12672,72 @@
         {
           "additionalProperties": false,
           "properties": {
+            "customXmlConflictInsRangeStart": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+            }
+          },
+          "required": ["customXmlConflictInsRangeStart"],
+          "title": "customXmlConflictInsRangeStart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "customXmlConflictInsRangeEnd": {
+              "type": "number"
+            }
+          },
+          "required": ["customXmlConflictInsRangeEnd"],
+          "title": "customXmlConflictInsRangeEnd",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "customXmlConflictDelRangeStart": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+            }
+          },
+          "required": ["customXmlConflictDelRangeStart"],
+          "title": "customXmlConflictDelRangeStart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "customXmlConflictDelRangeEnd": {
+              "type": "number"
+            }
+          },
+          "required": ["customXmlConflictDelRangeEnd"],
+          "title": "customXmlConflictDelRangeEnd",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "conflictIns": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+            }
+          },
+          "required": ["conflictIns"],
+          "title": "conflictIns",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "conflictDel": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+            }
+          },
+          "required": ["conflictDel"],
+          "title": "conflictDel",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "simpleField": {
               "$ref": "#/definitions/SimpleFieldOptions"
             }
@@ -12773,7 +12839,7 @@
           "additionalProperties": false,
           "properties": {
             "bdo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/49/properties/dir"
+              "$ref": "#/definitions/ParagraphChild/anyOf/55/properties/dir"
             }
           },
           "required": ["bdo"],
@@ -13056,6 +13122,9 @@
         },
         "mirrorIndents": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/mirrorIndents"
+        },
+        "noSpellErr": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/noSpellErr"
         },
         "numbering": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/numbering"
@@ -13615,6 +13684,9 @@
           },
           "type": "array"
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -13721,6 +13793,9 @@
           ],
           "description": "Footnote reference as a top-level field — the parse path flattens a pure reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }` with no children. w:footnoteReference is an EG_RunInnerContent member."
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "description": "Fixed text highlight palette (w:highlight); \"lightGray\"/\"darkGray\" etc., not arbitrary colors.",
           "enum": [
@@ -13770,11 +13845,20 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
+        },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
         },
         "outline": {
           "type": "boolean"
@@ -13790,6 +13874,12 @@
           ],
           "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
+        },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
         },
@@ -13799,11 +13889,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "description": "Font size in points. Internally stored as half-points in XML (×2).",
@@ -13829,8 +13925,17 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
         "text": {
           "type": "string"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "additionalProperties": false,
@@ -15694,6 +15799,9 @@
         "children": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/children"
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -15745,6 +15853,9 @@
         "footnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
@@ -15763,17 +15874,32 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
         },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
+        },
         "outline": {
           "type": "boolean"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -15788,11 +15914,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/size"
@@ -15816,8 +15948,17 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
         "text": {
           "type": "string"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
@@ -15867,6 +16008,9 @@
             }
           ]
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -15912,6 +16056,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
@@ -15934,17 +16081,32 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
         },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
+        },
         "outline": {
           "type": "boolean"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -15955,11 +16117,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/size"
@@ -15982,6 +16150,15 @@
         "style": {
           "description": "Reference to a character style by name",
           "type": "string"
+        },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
@@ -16028,6 +16205,9 @@
             }
           ]
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -16069,6 +16249,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
@@ -16087,17 +16270,32 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
         },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
+        },
         "outline": {
           "type": "boolean"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -16108,11 +16306,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/size"
@@ -16135,6 +16339,15 @@
         "style": {
           "description": "Reference to a character style by name",
           "type": "string"
+        },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
@@ -16180,6 +16393,9 @@
             }
           ]
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -16221,6 +16437,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
@@ -16239,17 +16458,32 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
         },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
+        },
         "outline": {
           "type": "boolean"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -16260,11 +16494,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/size"
@@ -16283,6 +16523,15 @@
         },
         "strike": {
           "type": "boolean"
+        },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
@@ -16719,6 +16968,10 @@
         "dropDownList": {
           "$ref": "#/definitions/SdtDropDownListOptions",
           "description": "DropDownList SDT (selection only)"
+        },
+        "entityPicker": {
+          "description": "Entity picker SDT (Word 2010+, w14:entityPicker)",
+          "type": "boolean"
         },
         "equation": {
           "description": "Equation SDT",
@@ -17469,6 +17722,10 @@
                 },
                 "mirrorIndents": {
                   "description": "Whether to swap left and right indent positions on odd pages for mirrored layouts",
+                  "type": "boolean"
+                },
+                "noSpellErr": {
+                  "description": "Whether this paragraph is excluded from spell check (w14:noSpellErr).",
                   "type": "boolean"
                 },
                 "numbering": {
@@ -18722,6 +18979,10 @@
           "description": "Default document view mode",
           "enum": ["none", "print", "outline", "masterPages", "normal", "web"],
           "type": "string"
+        },
+        "w14ConflictMode": {
+          "description": "Conflict resolution mode for merge results (w14:conflictMode)",
+          "type": "boolean"
         },
         "w14DefaultImageDpi": {
           "description": "Default image DPI for pictures inserted in this document (w14:defaultImageDpi)",
@@ -20397,6 +20658,9 @@
         "children": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/children"
         },
+        "cntxtAlts": {
+          "type": "boolean"
+        },
         "color": {
           "anyOf": [
             {
@@ -20448,6 +20712,9 @@
         "footnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
+        "glow": {
+          "$ref": "#/definitions/W14GlowOptions"
+        },
         "highlight": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/highlight"
         },
@@ -20471,17 +20738,32 @@
         "language": {
           "$ref": "#/definitions/LanguageOptions"
         },
+        "ligatures": {
+          "$ref": "#/definitions/W14Ligatures"
+        },
         "math": {
           "type": "boolean"
         },
         "noProof": {
           "type": "boolean"
         },
+        "numForm": {
+          "$ref": "#/definitions/W14NumberForm"
+        },
+        "numSpacing": {
+          "$ref": "#/definitions/W14NumberSpacing"
+        },
         "outline": {
           "type": "boolean"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "props3d": {
+          "$ref": "#/definitions/W14Props3dOptions"
+        },
+        "reflection": {
+          "$ref": "#/definitions/W14ReflectionOptions"
         },
         "revision": {
           "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -20496,11 +20778,17 @@
         "scale": {
           "type": "number"
         },
+        "scene3d": {
+          "$ref": "#/definitions/W14Scene3dOptions"
+        },
         "shading": {
           "$ref": "#/definitions/ShadingProperties"
         },
         "shadow": {
           "type": "boolean"
+        },
+        "shadowEffect": {
+          "$ref": "#/definitions/W14ShadowOptions"
         },
         "size": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/size"
@@ -20524,12 +20812,21 @@
           "description": "Reference to a character style by name",
           "type": "string"
         },
+        "stylisticSets": {
+          "$ref": "#/definitions/W14StylisticSetsOptions"
+        },
         "symbolFont": {
           "description": "The font to use for the symbol (e.g., \"Wingdings\", \"Symbol\")",
           "type": "string"
         },
         "text": {
           "type": "string"
+        },
+        "textFill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "textOutline": {
+          "$ref": "#/definitions/W14TextOutlineOptions"
         },
         "underline": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/underline"
@@ -28518,6 +28815,478 @@
     "VmlWrapType": {
       "enum": ["topAndBottom", "square", "none", "tight", "through"],
       "type": "string"
+    },
+    "W14ColorOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "srgb": {
+              "$ref": "#/definitions/W14SrgbColorOptions"
+            }
+          },
+          "required": ["srgb"],
+          "title": "srgb",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "scheme": {
+              "$ref": "#/definitions/W14SchemeColorOptions"
+            }
+          },
+          "required": ["scheme"],
+          "title": "scheme",
+          "type": "object"
+        }
+      ]
+    },
+    "W14FillOptions": {
+      "additionalProperties": false,
+      "description": "Text fill — at most one branch set.",
+      "properties": {
+        "gradient": {
+          "$ref": "#/definitions/W14GradientFillOptions"
+        },
+        "noFill": {
+          "type": "boolean"
+        },
+        "solid": {
+          "$ref": "#/definitions/W14ColorOptions"
+        }
+      },
+      "type": "object"
+    },
+    "W14GlowOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/W14ColorOptions"
+        },
+        "radius": {
+          "description": "Glow radius in EMU (63500 = 5pt).",
+          "type": "number"
+        }
+      },
+      "required": ["color"],
+      "type": "object"
+    },
+    "W14GradientFillOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "linear": {
+          "additionalProperties": false,
+          "description": "Linear shade — angle in degrees.",
+          "properties": {
+            "angle": {
+              "type": "number"
+            },
+            "scaled": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "path": {
+          "$ref": "#/definitions/W14PathShadeOptions",
+          "description": "Path shade."
+        },
+        "stops": {
+          "description": "Two to ten stops, ordered by position.",
+          "items": {
+            "$ref": "#/definitions/W14GradientStopOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["stops"],
+      "type": "object"
+    },
+    "W14GradientStopOptions": {
+      "additionalProperties": false,
+      "description": "Gradient stop position in integer percent (0 = 0%, 100 = 100%).",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/W14ColorOptions"
+        },
+        "position": {
+          "type": "number"
+        }
+      },
+      "required": ["position", "color"],
+      "type": "object"
+    },
+    "W14Ligatures": {
+      "description": "Ligature set.",
+      "enum": [
+        "none",
+        "standard",
+        "contextual",
+        "historical",
+        "discretional",
+        "standardContextual",
+        "standardHistorical",
+        "contextualHistorical",
+        "standardDiscretional",
+        "contextualDiscretional",
+        "historicalDiscretional",
+        "standardContextualHistorical",
+        "standardContextualDiscretional",
+        "standardHistoricalDiscretional",
+        "contextualHistoricalDiscretional",
+        "all"
+      ],
+      "type": "string"
+    },
+    "W14NumberForm": {
+      "description": "Digit form.",
+      "enum": ["default", "lining", "oldStyle"],
+      "type": "string"
+    },
+    "W14NumberSpacing": {
+      "description": "Digit spacing.",
+      "enum": ["default", "proportional", "tabular"],
+      "type": "string"
+    },
+    "W14PathShadeOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "fillToRect": {
+          "additionalProperties": false,
+          "description": "Gradient rectangle inset in integer percent (left/top/right/bottom).",
+          "properties": {
+            "bottom": {
+              "type": "number"
+            },
+            "left": {
+              "type": "number"
+            },
+            "right": {
+              "type": "number"
+            },
+            "top": {
+              "type": "number"
+            }
+          },
+          "type": "object"
+        },
+        "shape": {
+          "description": "Path shade geometry.",
+          "enum": ["circle", "rect", "shape"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "W14Props3dOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "bottomBevel": {
+          "$ref": "#/definitions/BevelOptions"
+        },
+        "contourColor": {
+          "$ref": "#/definitions/W14ColorOptions"
+        },
+        "contourWidth": {
+          "type": "number"
+        },
+        "extrusionColor": {
+          "$ref": "#/definitions/W14ColorOptions"
+        },
+        "extrusionHeight": {
+          "type": "number"
+        },
+        "material": {
+          "$ref": "#/definitions/PresetMaterial"
+        },
+        "topBevel": {
+          "$ref": "#/definitions/BevelOptions"
+        }
+      },
+      "type": "object"
+    },
+    "W14ReflectionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/RectAlignment"
+        },
+        "blurRadius": {
+          "type": "number"
+        },
+        "direction": {
+          "type": "number"
+        },
+        "distance": {
+          "type": "number"
+        },
+        "endAlpha": {
+          "type": "number"
+        },
+        "endPosition": {
+          "type": "number"
+        },
+        "fadeDirection": {
+          "type": "number"
+        },
+        "horizontalScale": {
+          "type": "number"
+        },
+        "horizontalSkew": {
+          "type": "number"
+        },
+        "startAlpha": {
+          "type": "number"
+        },
+        "startPosition": {
+          "type": "number"
+        },
+        "verticalScale": {
+          "type": "number"
+        },
+        "verticalSkew": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "W14Scene3dOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "camera": {
+          "additionalProperties": false,
+          "properties": {
+            "preset": {
+              "$ref": "#/definitions/CameraPreset"
+            }
+          },
+          "required": ["preset"],
+          "type": "object"
+        },
+        "lightRig": {
+          "$ref": "#/definitions/LightRigOptions"
+        }
+      },
+      "required": ["camera", "lightRig"],
+      "type": "object"
+    },
+    "W14SchemeColorOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alpha": {
+          "type": "number"
+        },
+        "hueMod": {
+          "type": "number"
+        },
+        "lum": {
+          "type": "number"
+        },
+        "lumMod": {
+          "type": "number"
+        },
+        "lumOff": {
+          "type": "number"
+        },
+        "sat": {
+          "type": "number"
+        },
+        "satMod": {
+          "type": "number"
+        },
+        "satOff": {
+          "type": "number"
+        },
+        "shade": {
+          "type": "number"
+        },
+        "tint": {
+          "type": "number"
+        },
+        "val": {
+          "$ref": "#/definitions/W14SchemeColorValue",
+          "description": "Scheme slot, e.g. \"accent1\" or \"placeholder\" (phClr)."
+        }
+      },
+      "required": ["val"],
+      "type": "object"
+    },
+    "W14SchemeColorValue": {
+      "description": "w14 scheme slot — full words; tokens dk1→dark1, phClr→placeholder.",
+      "enum": [
+        "background1",
+        "text1",
+        "background2",
+        "text2",
+        "dark1",
+        "light1",
+        "dark2",
+        "light2",
+        "accent1",
+        "accent2",
+        "accent3",
+        "accent4",
+        "accent5",
+        "accent6",
+        "hyperlink",
+        "followedHyperlink",
+        "placeholder"
+      ],
+      "type": "string"
+    },
+    "W14ShadowOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/RectAlignment"
+        },
+        "blurRadius": {
+          "type": "number"
+        },
+        "color": {
+          "$ref": "#/definitions/W14ColorOptions"
+        },
+        "direction": {
+          "description": "Shadow direction in degrees.",
+          "type": "number"
+        },
+        "distance": {
+          "type": "number"
+        },
+        "horizontalScale": {
+          "type": "number"
+        },
+        "horizontalSkew": {
+          "description": "Horizontal skew in degrees.",
+          "type": "number"
+        },
+        "verticalScale": {
+          "type": "number"
+        },
+        "verticalSkew": {
+          "description": "Vertical skew in degrees.",
+          "type": "number"
+        }
+      },
+      "required": ["color"],
+      "type": "object"
+    },
+    "W14SrgbColorOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alpha": {
+          "type": "number"
+        },
+        "hueMod": {
+          "type": "number"
+        },
+        "lum": {
+          "type": "number"
+        },
+        "lumMod": {
+          "type": "number"
+        },
+        "lumOff": {
+          "type": "number"
+        },
+        "sat": {
+          "type": "number"
+        },
+        "satMod": {
+          "type": "number"
+        },
+        "satOff": {
+          "type": "number"
+        },
+        "shade": {
+          "type": "number"
+        },
+        "tint": {
+          "type": "number"
+        },
+        "val": {
+          "description": "6-digit hex RGB, e.g. \"4472C4\".",
+          "type": "string"
+        }
+      },
+      "required": ["val"],
+      "type": "object"
+    },
+    "W14StylisticSetOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "id": {
+          "description": "OpenType stylistic set ID (1–20).",
+          "type": "number"
+        }
+      },
+      "required": ["id"],
+      "type": "object"
+    },
+    "W14StylisticSetsOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "sets": {
+          "items": {
+            "$ref": "#/definitions/W14StylisticSetOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "W14TextOutlineOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/PenAlignment"
+        },
+        "cap": {
+          "enum": ["round", "square", "flat"],
+          "type": "string"
+        },
+        "compound": {
+          "$ref": "#/definitions/CompoundLine"
+        },
+        "dash": {
+          "$ref": "#/definitions/PresetDash"
+        },
+        "fill": {
+          "$ref": "#/definitions/W14FillOptions"
+        },
+        "join": {
+          "anyOf": [
+            {
+              "const": "round",
+              "type": "string"
+            },
+            {
+              "const": "bevel",
+              "type": "string"
+            },
+            {
+              "additionalProperties": false,
+              "properties": {
+                "miterLimit": {
+                  "type": "number"
+                }
+              },
+              "required": ["miterLimit"],
+              "title": "miterLimit",
+              "type": "object"
+            }
+          ]
+        },
+        "width": {
+          "description": "Line width in EMU (12700 = 1pt).",
+          "type": "number"
+        }
+      },
+      "type": "object"
     },
     "WebFrameOptions": {
       "additionalProperties": false,

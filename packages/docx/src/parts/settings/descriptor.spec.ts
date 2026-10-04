@@ -25,6 +25,11 @@ function roundTrip(opts: SettingsOptions): SettingsOptions {
 }
 
 describe("settingsDesc round-trip", () => {
+  it("round-trips w14:conflictMode", () => {
+    const result = roundTrip({ w14ConflictMode: true });
+    expect(result.w14ConflictMode).toBe(true);
+  });
+
   it("round-trips view", () => {
     const result = roundTrip({ view: "print" });
     expect(result.view).toBe("print");

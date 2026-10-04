@@ -190,6 +190,8 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     opts.repeatingSection = rsOpts;
   } else if (findChild(el, "w15:repeatingSectionItem")) {
     opts.repeatingSectionItem = true;
+  } else if (findChild(el, "w14:entityPicker")) {
+    opts.entityPicker = true;
   }
 
   // Word 2013+ extension flags (CT_OnOff) — siblings outside the type choice.
