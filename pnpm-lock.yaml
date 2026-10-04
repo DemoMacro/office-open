@@ -148,22 +148,6 @@ importers:
         specifier: 0.8.3
         version: 0.8.3
 
-  packages/odf:
-    dependencies:
-      '@office-open/odp':
-        specifier: workspace:*
-        version: link:../odp
-      '@office-open/ods':
-        specifier: workspace:*
-        version: link:../ods
-      '@office-open/odt':
-        specifier: workspace:*
-        version: link:../odt
-    devDependencies:
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
-
   packages/odf-schema:
     dependencies:
       '@office-open/core':
@@ -241,9 +225,6 @@ importers:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
-      '@office-open/odf':
-        specifier: workspace:*
-        version: link:../odf
       '@office-open/odp':
         specifier: workspace:*
         version: link:../odp

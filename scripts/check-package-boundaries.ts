@@ -59,7 +59,6 @@ const ARCHITECTURE: Record<string, ArchitectureRule> = {
 };
 
 const TARGET_PACKAGES = new Set(["ocf", "odf-schema", "odt", "ods", "odp"]);
-const ODF_REEXPORT_PACKAGES = new Set(["odt", "ods", "odp"]);
 
 function stripComments(source: string): string {
   return source
@@ -112,17 +111,6 @@ function exportedStars(source: string): string[] {
   ].map((match) => packageName(match[1]!));
 }
 
-function reexportedPackages(source: string): Set<string> {
-  const code = stripComments(source);
-  return new Set(
-    [
-      ...code.matchAll(
-        /(?:^|\n)\s*export\s+(?:type\s+)?\{[^}]*\}\s+from\s+["'](@office-open\/[^"']+)["']/g,
-      ),
-    ].map((match) => packageName(match[1]!)),
-  );
-}
-
 function declaredDependencies(packageDirectory: string): Set<string> {
   const manifest = JSON.parse(fs.readFileSync(path.join(packageDirectory, "package.json"), "utf8"));
   return new Set(
@@ -165,7 +153,6 @@ for (const entry of fs.readdirSync(PACKAGES, { withFileTypes: true })) {
   for (const file of walkSources(directory)) {
     const relativeFile = path.relative(ROOT, file).replaceAll("\\", "/");
     const source = fs.readFileSync(file, "utf8");
-    const reexports = entry.name === "odf" ? reexportedPackages(source) : undefined;
     const isPackageTest = relativeFile.endsWith(".spec.ts");
 
     for (const imported of importedPackages(source)) {
@@ -176,20 +163,6 @@ for (const entry of fs.readdirSync(PACKAGES, { withFileTypes: true })) {
       }
 
       const rule = ARCHITECTURE[entry.name];
-      if (entry.name === "odf" && !isPackageTest) {
-        if (!reexports?.has(imported.name)) {
-          problems.push(
-            `${relativeFile} implementation import violates transitional odf facade: ${imported.name}`,
-          );
-          continue;
-        }
-        if (!ODF_REEXPORT_PACKAGES.has(imported.name.slice(WORKSPACE_PREFIX.length))) {
-          problems.push(
-            `${relativeFile} transitional odf re-export must target odt, ods, or odp: ${imported.name}`,
-          );
-          continue;
-        }
-      }
       if (!rule) continue;
       const importedId = imported.name.slice(WORKSPACE_PREFIX.length);
       if (rule.denied?.has(importedId)) {

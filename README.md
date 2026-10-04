@@ -53,7 +53,9 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                            |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                       |
 | [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format parsing                             |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF text, spreadsheet, and presentation I/O          |
+| [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument text generation and parsing             |
+| [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument spreadsheet generation and parsing      |
+| [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument presentation generation and parsing     |
 | [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters |
 | [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization              |
 

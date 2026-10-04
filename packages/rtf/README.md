@@ -63,7 +63,7 @@ The projected model follows the office-open `DocumentOptions` shape. Unrecognize
 - [office-open](https://www.npmjs.com/package/office-open) — all formats + CLI + AI SDK tools in one install
 - [@office-open/docx](https://www.npmjs.com/package/@office-open/docx) — Word (.docx) generation and parsing
 - [@office-open/doc](https://www.npmjs.com/package/@office-open/doc) — legacy Word (.doc) parsing
-- [@office-open/odf](https://www.npmjs.com/package/@office-open/odf) — OpenDocument generation and parsing
+- [@office-open/odt](https://www.npmjs.com/package/@office-open/odt) — OpenDocument Text generation and parsing
 
 ## License
 
