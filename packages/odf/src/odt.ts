@@ -1,17 +1,29 @@
 import { toUint8Array } from "@office-open/core";
+import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
 import type {
   DocumentOptions,
+  ChartOptions,
   ParagraphOptions,
   PictureOptions,
+  ShapeOptions,
   RunOptions,
   SectionChild,
   SectionOptions,
 } from "@office-open/docx";
 import type { Element } from "@office-open/xml";
 
+import { chartBodyXml, CHART_MIME, parseEmbeddedCharts, type ChartChartOptions } from "./chart";
+import {
+  graphicFill,
+  graphicOutline,
+  parseGraphicStyles,
+  pushShapeStyle,
+  type GraphicStyle,
+} from "./graphic-style";
 import { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfFiles, type OdfPackageFiles } from "./package";
+import { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./preset-geometry";
 import { parseTable, tableXml } from "./table";
 import {
   attributeNumber,
@@ -27,7 +39,133 @@ import {
 const MIME = "application/vnd.oasis.opendocument.text";
 const NAMESPACES = ODF_NAMESPACES;
 
-export type OdtOptions = DocumentOptions & { odfExtensions?: OdfXmlNode[] };
+export type OdtOptions = DocumentOptions & {
+  odfExtensions?: OdfXmlNode[];
+  textSections?: OdtTextSectionOptions[];
+};
+
+/** A text:section wrapper; children remain body blocks in document order. */
+export interface OdtTextSectionOptions {
+  /** Section identifier emitted as text:name (for example, "Notes"). */
+  name: string;
+  styleName?: string;
+  protected?: boolean;
+  children?: SectionChild[];
+}
+
+/** Section headers/footers render as master-page style:header/style:footer. */
+function masterHeaderFooter(section: SectionOptions | undefined): string {
+  return (
+    headerFooterXml(section?.headers?.default, "style:header") +
+    headerFooterXml(section?.footers?.default, "style:footer")
+  );
+}
+
+function headerFooterXml(children: SectionChild[] | undefined, element: string): string {
+  const blocks = (children ?? [])
+    .filter((child) => "paragraph" in child)
+    .map((child) => headerParagraphXml(normalizeParagraph(child.paragraph)));
+  if (blocks.length === 0) return "";
+  return xmlElement(element, undefined, blocks);
+}
+
+function headerParagraphXml(options: ParagraphOptions): string {
+  if (options.text !== undefined && options.children === undefined)
+    return xmlElement("text:p", undefined, [spacesXml(options.text)]);
+  return xmlElement(
+    "text:p",
+    undefined,
+    (options.children ?? []).map((child) => {
+      if (typeof child === "string") return spacesXml(child);
+      if ("simpleField" in child)
+        return headerFieldXml(
+          (child as { simpleField: { instruction?: string; cachedValue?: string } }).simpleField,
+        );
+      if ("text" in child) return spacesXml(String((child as { text?: string }).text ?? ""));
+      return "";
+    }),
+  );
+}
+
+function headerFieldXml(field: { instruction?: string; cachedValue?: string }): string {
+  const value = field.cachedValue ?? "1";
+  if (/NUMPAGES/i.test(field.instruction ?? ""))
+    return xmlElement("text:page-count", undefined, [value]);
+  return xmlElement("text:page-number", { "text:select-page": "current" }, [value]);
+}
+
+/** Master-page header/footer paragraphs → docx section header/footer children. */
+function parseMasterHeaderFooter(files: OdfFiles): {
+  headers?: SectionOptions["headers"];
+  footers?: SectionOptions["headers"];
+} {
+  const master = childNamed(
+    childNamed(readXml(files, "styles.xml"), "office:master-styles"),
+    "style:master-page",
+  );
+  const header = childNamed(master, "style:header");
+  const footer = childNamed(master, "style:footer");
+  const headerParagraphs = header ? parseHeaderParagraphs(header) : [];
+  const footerParagraphs = footer ? parseHeaderParagraphs(footer) : [];
+  return {
+    headers: headerParagraphs.length > 0 ? { default: headerParagraphs } : undefined,
+    footers: footerParagraphs.length > 0 ? { default: footerParagraphs } : undefined,
+  };
+}
+
+function parseHeaderParagraphs(container: Element): SectionChild[] {
+  return childrenNamed(container, "text:p").map((paragraph) => {
+    const runs = parseHeaderRuns(paragraph);
+    const options: ParagraphOptions =
+      runs.length === 1 && typeof runs[0] === "string" ? { text: runs[0] } : { children: runs };
+    return { paragraph: options } as SectionChild;
+  });
+}
+
+function parseHeaderRuns(paragraph: Element): NonNullable<ParagraphOptions["children"]> {
+  return (paragraph.elements ?? []).flatMap((child): NonNullable<ParagraphOptions["children"]> => {
+    if (child.type === "text") return [String(child.text ?? "")];
+    if (child.name === "text:page-number")
+      return [{ simpleField: { instruction: " PAGE ", cachedValue: textOf(child) ?? "" } }];
+    if (child.name === "text:page-count")
+      return [{ simpleField: { instruction: " NUMPAGES ", cachedValue: textOf(child) ?? "" } }];
+    return [];
+  });
+}
+
+/** ODF style:tab-stop → the closest typed docx tab stop. */
+function parseTabStop(element: Element): TabStop {
+  const type = attributeString(element, "style:type");
+  const leaderText = attributeString(element, "style:leader-text");
+  return {
+    type: type === "char" ? "decimal" : ((type ?? "left") as TabStop["type"]),
+    position: lengthToTwips(attributeString(element, "style:position")) ?? 0,
+    leader:
+      leaderText === "."
+        ? "dot"
+        : leaderText === "-"
+          ? "hyphen"
+          : leaderText === "_"
+            ? "underscore"
+            : leaderText === "·"
+              ? "middleDot"
+              : undefined,
+  };
+}
+
+/** Runs of two or more spaces emit text:s so XML whitespace folding keeps them. */
+function spacesXml(text: string): string {
+  const parts: string[] = [];
+  let index = 0;
+  for (const match of text.matchAll(/ {2,}/g)) {
+    const start = match.index ?? 0;
+    parts.push(escapeText(text.slice(index, start)));
+    parts.push(xmlElement("text:s", { "text:c": match[0].length }));
+    index = start + match[0].length;
+  }
+  parts.push(escapeText(text.slice(index)));
+  return parts.join("");
+}
 
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 interface OdtImage {
@@ -51,6 +189,7 @@ type StyleMap = Map<
     alignment?: string;
     columnWidth?: number;
     pageBreakBefore?: boolean;
+    tabStops?: TabStop[];
     character: CharacterProperties;
   }
 >;
@@ -58,51 +197,190 @@ type StyleMap = Map<
 /** Shared lookup state threaded through the ODT parse pipeline. */
 interface ParseContext {
   styles: StyleMap;
+  listStyles: Map<string, boolean>;
+  graphicStyles: Map<string, GraphicStyle>;
+  chartBodies: Map<string, ChartChartOptions>;
+  listDefinitions: AbstractNumbering[];
+  outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
+  textSections: OdtTextSectionOptions[];
+  notes: { footnotes: NoteEntry[]; endnotes: NoteEntry[] };
+}
+
+/** Footnote/endnote entry, indexed from the shared docx document model. */
+type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
+
+type NoteChildren = NoteEntry["children"];
+
+/** Docx tab stop, indexed from the shared paragraph model. */
+type TabStop = NonNullable<ParagraphOptions["tabStops"]>[number];
+
+/** Docx font-table entry, indexed from the shared document model. */
+type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
+
+type FootnoteProperties = NonNullable<
+  NonNullable<DocumentOptions["settings"]>["footnoteProperties"]
+>;
+
+type AbstractNumbering = NonNullable<
+  NonNullable<DocumentOptions["numbering"]>["abstractNumberings"]
+>[number];
+
+type NumberingLevel = AbstractNumbering["levels"][number];
+
+type DocumentDefaults = NonNullable<
+  NonNullable<NonNullable<DocumentOptions["styles"]>["default"]>["document"]
+>;
+
+type EndnoteProperties = NonNullable<NonNullable<DocumentOptions["settings"]>["endnoteProperties"]>;
+
+/** docx ST_NumberFormat tokens with a direct ODF num-format token. */
+const NUM_FORMAT_ODF: Record<string, string> = {
+  decimal: "1",
+  lowerLetter: "a",
+  upperLetter: "A",
+  lowerRoman: "i",
+  upperRoman: "I",
+};
+
+const NUM_FORMAT_DOCX: Record<string, FootnoteProperties["numFmt"]> = {
+  "1": "decimal",
+  a: "lowerLetter",
+  A: "upperLetter",
+  i: "lowerRoman",
+  I: "upperRoman",
+} as Record<string, FootnoteProperties["numFmt"]>;
+
+/** Note bodies keyed by reference id, threaded through ODT emission. */
+interface NotesContext {
+  footnotes: Map<number, NoteChildren>;
+  endnotes: Map<number, NoteChildren>;
+}
+
+/** Embedded chart subdocument collected during generation. */
+interface OdtChart {
+  path: string;
+  chart: ChartChartOptions;
 }
 
 export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
-  const sectionProperties = options.sections[0]?.properties;
   const images: OdtImage[] = [];
+  const charts: OdtChart[] = [];
+  const notes = notesContext(options);
+  const sections = (options.textSections ?? []).map((section) =>
+    xmlElement(
+      "text:section",
+      {
+        "text:name": section.name,
+        "text:style-name": section.styleName,
+        "text:protected": section.protected,
+      },
+      [blocksXml(section.children ?? [], styles, images, notes, options.numbering, charts)],
+    ),
+  );
+  const body = [
+    blocksXml(blocks, styles, images, notes, options.numbering, charts),
+    ...sections,
+    ...serializeOdfNodes(options.odfExtensions),
+  ].join("");
+  const files: OdfPackageFiles = {
+    "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
+    "styles.xml": documentStylesXml(
+      options.sections[0],
+      options.settings,
+      options.numbering,
+      options.styles,
+    ),
+    "meta.xml": metaXml(options),
+  };
+  for (const image of images) files[image.path] = image.data;
+  for (const entry of charts) files[`${entry.path}/content.xml`] = chartBodyXml(entry.chart);
+  return generateOcf(
+    MIME,
+    files,
+    Object.fromEntries(charts.map((entry) => [`${entry.path}/`, CHART_MIME])),
+  );
+}
+
+/** Note ids auto-assign 1, 2, … per class, matching the docx model. */
+function notesContext(options: OdtOptions): NotesContext {
+  const footnotes = new Map<number, NoteChildren>();
+  let nextFootnoteId = 1;
+  for (const note of options.footnotes ?? []) {
+    const id = note.id ?? nextFootnoteId;
+    footnotes.set(id, note.children);
+    nextFootnoteId = id + 1;
+  }
+  const endnotes = new Map<number, NoteChildren>();
+  let nextEndnoteId = 1;
+  for (const note of options.endnotes ?? []) {
+    const id = note.id ?? nextEndnoteId;
+    endnotes.set(id, note.children);
+    nextEndnoteId = id + 1;
+  }
+  return { footnotes, endnotes };
+}
+
+function blocksXml(
+  blocks: SectionChild[],
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+): string {
   const parts: string[] = [];
   let index = 0;
-  // Consecutive bullet paragraphs of the same level group into one text:list —
-  // the ODF shape for Word's bullet-list runs.
+  // Consecutive list paragraphs of the same level and kind group into one
+  // text:list — the ODF shape for Word's bullet/numbering runs.
   while (index < blocks.length) {
-    const bulletLevel = bulletParagraphLevel(blocks[index]!);
-    if (bulletLevel === undefined) {
-      parts.push(blockXml(blocks[index]!, styles, images));
+    const listInfo = listParagraphLevel(blocks[index]!);
+    if (listInfo === undefined) {
+      parts.push(blockXml(blocks[index]!, styles, images, notes, numbering, charts));
       index += 1;
       continue;
     }
     const group: SectionChild[] = [];
-    while (index < blocks.length && bulletParagraphLevel(blocks[index]!) === bulletLevel) {
+    while (index < blocks.length) {
+      const info = listParagraphLevel(blocks[index]!);
+      if (
+        info?.level !== listInfo.level ||
+        info?.ordered !== listInfo.ordered ||
+        info?.reference !== listInfo.reference
+      )
+        break;
       group.push(blocks[index]!);
       index += 1;
     }
-    parts.push(listXml(group, bulletLevel, styles, images));
+    parts.push(listXml(group, listInfo, styles, images, notes, numbering, charts));
   }
-  const body = [parts.join(""), ...serializeOdfNodes(options.odfExtensions)].join("");
-  const files: OdfPackageFiles = {
-    "content.xml": contentXml(body, styles),
-    "styles.xml": documentStylesXml(sectionProperties),
-    "meta.xml": metaXml(options),
-  };
-  for (const image of images) files[image.path] = image.data;
-  return generateOcf(MIME, files);
+  return parts.join("");
 }
 
 export function parseOdt(data: Uint8Array): OdtOptions {
-  const { files, binaries } = readOcf(data, MIME);
+  const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
-  const styleMap = parseStyles(childNamed(content, "office:automatic-styles"));
+  const styleContainer = childNamed(content, "office:automatic-styles");
+  const styleMap = parseStyles(styleContainer);
+  const graphicStyles = parseGraphicStyles(styleContainer);
+  const chartBodies = parseEmbeddedCharts(manifest, files);
   const rawNodes = parseOdfNodes(body);
-  const context: ParseContext = { styles: styleMap, binaries };
+  const context: ParseContext = {
+    styles: styleMap,
+    listStyles: parseListStyles(styleContainer),
+    graphicStyles,
+    chartBodies,
+    listDefinitions: parseListNumberings(styleContainer),
+    outline: parseOutlineStyle(files),
+    binaries,
+    textSections: [],
+    notes: { footnotes: [], endnotes: [] },
+  };
   const children = parseBlocks(body?.elements ?? [], context);
-  return {
+  const result: OdtOptions = {
     ...parseMeta(files),
     sections: [{ properties: parsePageLayout(files), children }],
     odfExtensions: rawNodes.filter(
@@ -110,15 +388,72 @@ export function parseOdt(data: Uint8Array): OdtOptions {
         !["text:p", "text:h", "table:table", "text:list", "text:section"].includes(node.name),
     ),
   };
+  if (context.textSections.length > 0) result.textSections = context.textSections;
+  if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
+  if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
+  const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
+    parseFontFace,
+  );
+  if (fonts.length > 0) result.fonts = fonts;
+  const numberings = context.outline
+    ? [context.outline, ...context.listDefinitions]
+    : context.listDefinitions;
+  if (numberings.length > 0) result.numbering = { abstractNumberings: numberings };
+  const notesConfiguration = parseNotesConfiguration(files);
+  if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
+    result.settings = { ...result.settings, ...notesConfiguration };
+  const defaultStyle = parseDefaultStyle(files);
+  if (defaultStyle)
+    result.styles = {
+      ...result.styles,
+      default: { ...result.styles?.default, document: defaultStyle },
+    };
+  const masterHeaderFooter = parseMasterHeaderFooter(files);
+  const section = result.sections[0];
+  if (section) {
+    if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
+    if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
+  }
+  return result;
 }
 
-function contentXml(body: string, styles: string[]): string {
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
+function contentXml(body: string, styles: string[], fontFaces: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3">${fontFaces}<office:automatic-styles>${styles.join(
     "",
   )}</office:automatic-styles><office:body><office:text>${body}</office:text></office:body></office:document-content>`;
 }
 
-function documentStylesXml(properties: SectionOptions["properties"]): string {
+/** Docx font table → ODF font-face declarations (no embedded data in ODF). */
+function fontFaceDecls(fonts: DocumentOptions["fonts"]): string {
+  if (!fonts?.length) return "";
+  return xmlElement("office:font-face-decls", undefined, fonts.map(fontFaceXml));
+}
+
+function fontFaceXml(font: FontEntry): string {
+  return xmlElement("style:font-face", {
+    "style:name": font.name,
+    "style:font-family-generic": font.family,
+    "style:font-pitch": font.pitch,
+    "svg:panose-1": font.panose1,
+  });
+}
+
+function parseFontFace(element: Element): FontEntry {
+  return {
+    name: attributeString(element, "style:name") ?? "",
+    family: attributeString(element, "style:font-family-generic"),
+    pitch: attributeString(element, "style:font-pitch"),
+    panose1: attributeString(element, "svg:panose-1"),
+  };
+}
+
+function documentStylesXml(
+  section: SectionOptions | undefined,
+  settings: DocumentOptions["settings"],
+  numbering: DocumentOptions["numbering"],
+  styles: DocumentOptions["styles"],
+): string {
+  const properties = section?.properties;
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
   const layoutAttributes = [
@@ -130,15 +465,344 @@ function documentStylesXml(properties: SectionOptions["properties"]): string {
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
   ].filter(Boolean);
-  const pageLayout = layoutAttributes.length
+  const headerFooter = masterHeaderFooter(section);
+  const needsMaster = layoutAttributes.length > 0 || headerFooter !== "";
+  const pageLayout = needsMaster
     ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(
         " ",
       )}/></style:page-layout>`
     : "";
-  const masterStyles = pageLayout
-    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>`
+  const masterStyles = needsMaster
+    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
     : "";
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+  const notes =
+    notesConfigurationXml(settings) + outlineStyleXml(numbering) + defaultStyleXml(styles);
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+/** Heading-linked abstract numbering renders as text:outline-style. */
+function outlineStyleXml(numbering: DocumentOptions["numbering"]): string {
+  const abstract = numbering?.abstractNumberings?.find((entry) =>
+    entry.levels.some((level) => level.paragraphStyle?.startsWith("Heading")),
+  );
+  if (!abstract) return "";
+  return xmlElement(
+    "text:outline-style",
+    { "style:name": abstract.reference },
+    abstract.levels.map(outlineLevelXml),
+  );
+}
+
+function outlineLevelXml(level: NumberingLevel): string {
+  const template = level.text ?? "";
+  const tokens = template.match(/%\d/g) ?? [];
+  const prefix = template.split(/%\d/)[0] ?? "";
+  const suffix = template.split(/%\d/).at(-1) ?? "";
+  return xmlElement("text:outline-level-style", {
+    "text:level": level.level + 1,
+    "text:style-name": level.paragraphStyle,
+    "style:num-format": level.format ? (NUM_FORMAT_ODF[level.format] ?? level.format) : undefined,
+    "style:num-prefix": prefix || undefined,
+    "style:num-suffix": suffix || undefined,
+    "text:display-levels": tokens.length > 0 ? tokens.length : undefined,
+    "text:start-value": level.start,
+  });
+}
+
+/** text:outline-style → a heading-linked abstract numbering definition. */
+function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefined {
+  const outline = childNamed(
+    childNamed(readXml(files, "styles.xml"), "office:styles"),
+    "text:outline-style",
+  );
+  const levels = childrenNamed(outline, "text:outline-level-style").map((level) => {
+    const oneBased = attributeNumber(level, "text:level") ?? 1;
+    const display = attributeNumber(level, "text:display-levels") ?? 1;
+    const prefix = attributeString(level, "style:num-prefix") ?? "";
+    const suffix = attributeString(level, "style:num-suffix") ?? "";
+    const tokens = Array.from(
+      { length: display },
+      (_, index) => `%${oneBased - display + 1 + index}`,
+    ).join(".");
+    const rawFormat = attributeString(level, "style:num-format");
+    const start = attributeNumber(level, "text:start-value");
+    return {
+      level: oneBased - 1,
+      ...(rawFormat
+        ? { format: (NUM_FORMAT_DOCX[rawFormat] ?? rawFormat) as NumberingLevel["format"] }
+        : {}),
+      text: `${prefix}${tokens}${suffix}`,
+      ...(start !== undefined ? { start } : {}),
+      ...(attributeString(level, "text:style-name")
+        ? { paragraphStyle: attributeString(level, "text:style-name") }
+        : {}),
+    } as NumberingLevel;
+  });
+  if (levels.length === 0) return undefined;
+  return { reference: attributeString(outline, "style:name") ?? "Outline", levels };
+}
+
+/** Docx level suffix → ODF text:label-followed-by token. */
+const SUFFIX_ODF: Record<string, string> = {
+  nothing: "nothing",
+  space: "space",
+  tab: "listtab",
+};
+
+/** ODF text:label-followed-by token → docx level suffix. */
+const SUFFIX_DOCX: Record<string, string> = {
+  listtab: "tab",
+  nothing: "nothing",
+  space: "space",
+};
+
+/** Non-outline abstract numberings render as reusable text:list-style definitions. */
+function listStyleXml(definition: AbstractNumbering): string {
+  return xmlElement(
+    "text:list-style",
+    { "style:name": definition.reference },
+    definition.levels.map(listLevelXml),
+  );
+}
+
+function listLevelXml(level: NumberingLevel): string {
+  const isBullet = level.format === "bullet";
+  const template = level.text ?? "";
+  const tokens = template.match(/%\d/g) ?? [];
+  const prefix = template.split(/%\d/)[0] ?? "";
+  const suffix = template.split(/%\d/).at(-1) ?? "";
+  const indent = level.paragraph?.indent;
+  const marginLeft = typeof indent?.left === "number" ? indent.left : undefined;
+  const hanging = typeof indent?.hanging === "number" ? indent.hanging : undefined;
+  const hasLabelAlignment =
+    marginLeft !== undefined || hanging !== undefined || level.suffix !== undefined;
+  const properties = hasLabelAlignment
+    ? [
+        xmlElement(
+          "style:list-level-properties",
+          { "style:list-level-position-and-space-mode": "label-alignment" },
+          [
+            xmlElement("style:list-level-label-alignment", {
+              "text:label-followed-by": level.suffix ? SUFFIX_ODF[level.suffix] : undefined,
+              "fo:margin-left": marginLeft !== undefined ? twipsToLength(marginLeft) : undefined,
+              "fo:text-indent": hanging !== undefined ? twipsToLength(-hanging) : undefined,
+            }),
+          ],
+        ),
+      ]
+    : [];
+  return xmlElement(
+    isBullet ? "text:list-level-style-bullet" : "text:list-level-style-number",
+    {
+      "text:level": level.level + 1,
+      "style:num-format": isBullet
+        ? undefined
+        : level.format
+          ? (NUM_FORMAT_ODF[level.format] ?? level.format)
+          : undefined,
+      "style:num-prefix": !isBullet && prefix ? prefix : undefined,
+      "style:num-suffix": !isBullet && suffix ? suffix : undefined,
+      "text:display-levels": !isBullet && tokens.length > 0 ? tokens.length : undefined,
+      "text:bullet-char": isBullet ? template || "•" : undefined,
+      "text:start-value": isBullet ? undefined : level.start,
+    },
+    properties,
+  );
+}
+
+/** Docx document defaults → ODF style:default-style (paragraph family). */
+function defaultStyleXml(styles: DocumentOptions["styles"]): string {
+  const document = styles?.default?.document;
+  if (!document) return "";
+  const paragraph = document.paragraph ?? undefined;
+  const run = document.run ?? undefined;
+  const runAttributes = run
+    ? {
+        "fo:font-weight": run.bold ? "bold" : undefined,
+        "fo:font-style": run.italic ? "italic" : undefined,
+        "style:text-underline-style": run.underline?.type ? "solid" : undefined,
+        "style:text-line-through-style": run.strike ? "solid" : undefined,
+        "fo:font-size": typeof run.size === "number" ? `${run.size}pt` : undefined,
+        "fo:color":
+          typeof run.color === "string" && /^[0-9A-Fa-f]{6}$/.test(run.color)
+            ? `#${run.color}`
+            : undefined,
+        "fo:font-family": typeof run.font === "string" ? run.font : undefined,
+      }
+    : {};
+  const paragraphAttributes = paragraph
+    ? {
+        "fo:text-align": paragraph.alignment,
+        "fo:margin-left":
+          paragraph.indent?.left !== undefined ? twipsToLength(paragraph.indent.left) : undefined,
+        "fo:margin-right":
+          paragraph.indent?.right !== undefined ? twipsToLength(paragraph.indent.right) : undefined,
+        "fo:margin-top":
+          paragraph.spacing?.before !== undefined
+            ? twipsToLength(paragraph.spacing.before)
+            : undefined,
+        "fo:margin-bottom":
+          paragraph.spacing?.after !== undefined
+            ? twipsToLength(paragraph.spacing.after)
+            : undefined,
+      }
+    : {};
+  const children = [
+    ...(Object.values(paragraphAttributes).some((value) => value !== undefined)
+      ? [xmlElement("style:paragraph-properties", paragraphAttributes)]
+      : []),
+    ...(Object.values(runAttributes).some((value) => value !== undefined)
+      ? [xmlElement("style:text-properties", runAttributes)]
+      : []),
+  ];
+  if (children.length === 0) return "";
+  return xmlElement("style:default-style", { "style:family": "paragraph" }, children);
+}
+
+/** ODF style:default-style → docx document defaults. */
+function parseDefaultStyle(files: OdfFiles): DocumentDefaults | undefined {
+  const defaultStyle = childrenNamed(
+    childNamed(readXml(files, "styles.xml"), "office:styles"),
+    "style:default-style",
+  ).find((style) => attributeString(style, "style:family") === "paragraph");
+  if (!defaultStyle) return undefined;
+  const paragraphProps = childNamed(defaultStyle, "style:paragraph-properties");
+  const textProps = childNamed(defaultStyle, "style:text-properties");
+  const indentLeft = lengthToTwips(attributeString(paragraphProps, "fo:margin-left"));
+  const indentRight = lengthToTwips(attributeString(paragraphProps, "fo:margin-right"));
+  const before = lengthToTwips(attributeString(paragraphProps, "fo:margin-top"));
+  const after = lengthToTwips(attributeString(paragraphProps, "fo:margin-bottom"));
+  const alignment = attributeString(paragraphProps, "fo:text-align");
+  const paragraph = {
+    ...(alignment ? { alignment } : {}),
+    ...(indentLeft !== undefined || indentRight !== undefined
+      ? {
+          indent: {
+            ...(indentLeft !== undefined ? { left: indentLeft } : {}),
+            ...(indentRight !== undefined ? { right: indentRight } : {}),
+          },
+        }
+      : {}),
+    ...(before !== undefined || after !== undefined
+      ? {
+          spacing: {
+            ...(before !== undefined ? { before } : {}),
+            ...(after !== undefined ? { after } : {}),
+          },
+        }
+      : {}),
+  } as DocumentDefaults["paragraph"];
+  const size = attributeString(textProps, "fo:font-size");
+  const color = attributeString(textProps, "fo:color");
+  const run = {
+    bold: attributeString(textProps, "fo:font-weight") === "bold" || undefined,
+    italic: attributeString(textProps, "fo:font-style") === "italic" || undefined,
+    underline:
+      attributeString(textProps, "style:text-underline-style") === "solid"
+        ? { type: "single" as const }
+        : undefined,
+    strike: attributeString(textProps, "style:text-line-through-style") === "solid" || undefined,
+    ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
+    color: color?.startsWith("#") ? color.slice(1) : undefined,
+    font: attributeString(textProps, "fo:font-family") || undefined,
+  };
+  const hasRun = Object.values(run).some((value) => value !== undefined);
+  const hasParagraph = Object.keys(paragraph ?? {}).length > 0;
+  if (!hasParagraph && !hasRun) return undefined;
+  return {
+    ...(hasParagraph ? { paragraph } : {}),
+    ...(hasRun
+      ? {
+          run: Object.fromEntries(
+            Object.entries(run).filter(([, value]) => value !== undefined),
+          ) as DocumentDefaults["run"],
+        }
+      : {}),
+  };
+}
+
+/** Footnote/endnote numbering config → ODF text:notes-configuration elements. */
+function notesConfigurationXml(settings: DocumentOptions["settings"]): string {
+  return (
+    notesConfigXml("footnote", settings?.footnoteProperties) +
+    notesConfigXml("endnote", settings?.endnoteProperties)
+  );
+}
+
+function notesConfigXml(
+  noteClass: "footnote" | "endnote",
+  properties: FootnoteProperties | EndnoteProperties | undefined,
+): string {
+  if (!properties) return "";
+  const numFmt =
+    properties.format ?? (properties.numFmt ? NUM_FORMAT_ODF[properties.numFmt] : undefined);
+  return xmlElement("text:notes-configuration", {
+    "text:note-class": noteClass,
+    "style:num-format": numFmt,
+    "text:start-value": properties.numStart,
+    "text:start-numbering-at":
+      properties.numRestart === "continuous"
+        ? "document"
+        : properties.numRestart === "eachSect"
+          ? "chapter"
+          : properties.numRestart === "eachPage"
+            ? "page"
+            : undefined,
+    "text:footnotes-position":
+      properties.pos === "pageBottom"
+        ? "page"
+        : properties.pos === "beneathText"
+          ? "text"
+          : properties.pos === "sectEnd"
+            ? "section"
+            : properties.pos === "docEnd"
+              ? "document"
+              : undefined,
+  });
+}
+
+/** ODF notes-configuration → docx footnote/endnote document properties. */
+function parseNotesConfiguration(files: OdfFiles): {
+  footnoteProperties?: FootnoteProperties;
+  endnoteProperties?: EndnoteProperties;
+} {
+  const styles = readXml(files, "styles.xml");
+  const result: { footnoteProperties?: FootnoteProperties; endnoteProperties?: EndnoteProperties } =
+    {};
+  for (const config of childrenNamed(
+    childNamed(styles, "office:styles"),
+    "text:notes-configuration",
+  )) {
+    const noteClass = attributeString(config, "text:note-class");
+    if (noteClass !== "footnote" && noteClass !== "endnote") continue;
+    const rawNumFormat = attributeString(config, "style:num-format");
+    const mappedNumFormat = rawNumFormat ? NUM_FORMAT_DOCX[rawNumFormat] : undefined;
+    const base = {
+      pos: docxNotePosition(attributeString(config, "text:footnotes-position")),
+      numFmt: mappedNumFormat,
+      format: mappedNumFormat ? undefined : rawNumFormat,
+      numStart: attributeNumber(config, "text:start-value"),
+      numRestart: docxNumberRestart(attributeString(config, "text:start-numbering-at")),
+    };
+    if (noteClass === "footnote") result.footnoteProperties = base as FootnoteProperties;
+    else result.endnoteProperties = base as EndnoteProperties;
+  }
+  return result;
+}
+
+function docxNotePosition(value: string | undefined): FootnoteProperties["pos"] {
+  if (value === "page") return "pageBottom";
+  if (value === "text") return "beneathText";
+  if (value === "section") return "sectEnd";
+  if (value === "document") return "docEnd";
+  return undefined;
+}
+
+function docxNumberRestart(value: string | undefined): FootnoteProperties["numRestart"] {
+  if (value === "document") return "continuous";
+  if (value === "chapter") return "eachSect";
+  if (value === "page") return "eachPage";
+  return undefined;
 }
 
 function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
@@ -176,11 +840,27 @@ function lengthToTwips(value: string | undefined): number | undefined {
   return emu === undefined ? undefined : Math.round(emu / 635);
 }
 
-function blockXml(child: SectionChild, styles: string[], images: OdtImage[]): string {
+function blockXml(
+  child: SectionChild,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+): string {
   if ("paragraph" in child)
-    return paragraphXml(normalizeParagraph(child.paragraph), styles, images);
+    return paragraphXml(
+      normalizeParagraph(child.paragraph),
+      styles,
+      images,
+      notes,
+      numbering,
+      charts,
+    );
   if ("table" in child)
-    return tableXml(child.table, styles, (block) => blockXml(block, styles, images));
+    return tableXml(child.table, styles, (block) =>
+      blockXml(block, styles, images, notes, numbering, charts),
+    );
   return "";
 }
 
@@ -188,26 +868,40 @@ function normalizeParagraph(input: string | ParagraphOptions): ParagraphOptions 
   return typeof input === "string" ? { text: input } : input;
 }
 
-function bulletParagraphLevel(child: SectionChild): number | undefined {
+function listParagraphLevel(
+  child: SectionChild,
+): { level: number; ordered: boolean; reference?: string } | undefined {
   if (!("paragraph" in child)) return undefined;
   const options = normalizeParagraph(child.paragraph);
-  return options.bullet?.level;
+  if (options.heading) return undefined;
+  if (options.bullet?.level !== undefined) return { level: options.bullet.level, ordered: false };
+  const numbering = options.numbering;
+  if (typeof numbering === "object" && "reference" in numbering)
+    return { level: numbering.level ?? 0, ordered: true, reference: numbering.reference };
+  return undefined;
 }
 
 function listXml(
   group: SectionChild[],
-  level: number,
+  info: { level: number; ordered: boolean; reference?: string },
   styles: string[],
   images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
-  const styleName = addListStyle(styles);
-  // ODF nesting is 1-based: bullet level 0 renders as a single text:list,
+  const styleName = addListStyle(styles, info, numbering);
+  // ODF nesting is 1-based: list level 0 renders as a single text:list,
   // level 1 nests one text:list inside the first list-item, and so on.
   const items = group
-    .map((child) => xmlElement("text:list-item", undefined, [blockXml(child, styles, images)]))
+    .map((child) =>
+      xmlElement("text:list-item", undefined, [
+        blockXml(child, styles, images, notes, numbering, charts),
+      ]),
+    )
     .join("");
   let xml = items;
-  for (let depth = 0; depth < level; depth += 1) {
+  for (let depth = 0; depth < info.level; depth += 1) {
     xml = xmlElement("text:list-item", undefined, [
       xmlElement("text:list", { "text:style-name": styleName }, [xml]),
     ]);
@@ -215,28 +909,121 @@ function listXml(
   return xmlElement("text:list", { "text:style-name": styleName }, [xml]);
 }
 
-function addListStyle(styles: string[]): string {
+function addListStyle(
+  styles: string[],
+  info: { level: number; ordered: boolean; reference?: string },
+  numbering: DocumentOptions["numbering"],
+): string {
+  const definition = info.ordered
+    ? numbering?.abstractNumberings?.find((entry) => entry.reference === info.reference)
+    : undefined;
+  if (definition) {
+    if (
+      !styles.some((xml) => xml.startsWith(`<text:list-style style:name="${definition.reference}"`))
+    )
+      styles.push(listStyleXml(definition));
+    return definition.reference;
+  }
   const name = `L${styles.length + 1}`;
   styles.push(
     xmlElement("text:list-style", { "style:name": name }, [
-      xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
-        xmlElement("style:list-level-properties", {
-          "style:list-level-position-and-space-mode": "label-alignment",
-        }),
-        xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
-      ]),
+      info.ordered
+        ? xmlElement("text:list-level-style-number", { "text:level": 1, "style:num-format": "1" }, [
+            xmlElement("style:list-level-properties", {
+              "style:list-level-position-and-space-mode": "label-alignment",
+            }),
+          ])
+        : xmlElement("text:list-level-style-bullet", { "text:level": 1, "text:bullet-char": "•" }, [
+            xmlElement("style:list-level-properties", {
+              "style:list-level-position-and-space-mode": "label-alignment",
+            }),
+            xmlElement("style:text-properties", { "fo:font-family": "OpenSymbol" }),
+          ]),
     ]),
   );
   return name;
 }
 
-function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string {
+/** List styles record whether each name resolves to a numbering run. */
+function parseListStyles(container: Element | undefined): Map<string, boolean> {
+  const result = new Map<string, boolean>();
+  for (const style of childrenNamed(container, "text:list-style")) {
+    const name = attributeString(style, "style:name") ?? "";
+    result.set(name, childrenNamed(style, "text:list-level-style-number").length > 0);
+  }
+  return result;
+}
+
+/** text:list-style definitions → abstract numberings keyed by style name. */
+function parseListNumberings(container: Element | undefined): AbstractNumbering[] {
+  const definitions: AbstractNumbering[] = [];
+  for (const style of childrenNamed(container, "text:list-style")) {
+    const name = attributeString(style, "style:name");
+    if (!name) continue;
+    const levels = [
+      ...childrenNamed(style, "text:list-level-style-number"),
+      ...childrenNamed(style, "text:list-level-style-bullet"),
+    ].map(parseListLevel);
+    if (levels.length > 0) definitions.push({ reference: name, levels });
+  }
+  return definitions;
+}
+
+function parseListLevel(element: Element): NumberingLevel {
+  const isBullet = element.name === "text:list-level-style-bullet";
+  const oneBased = attributeNumber(element, "text:level") ?? 1;
+  const display = attributeNumber(element, "text:display-levels") ?? 1;
+  const prefix = attributeString(element, "style:num-prefix") ?? "";
+  const suffix = attributeString(element, "style:num-suffix") ?? "";
+  const tokens = Array.from(
+    { length: display },
+    (_, index) => `%${oneBased - display + 1 + index}`,
+  ).join(".");
+  const rawFormat = attributeString(element, "style:num-format");
+  const start = attributeNumber(element, "text:start-value");
+  const labelAlignment = childNamed(
+    childNamed(element, "style:list-level-properties"),
+    "style:list-level-label-alignment",
+  );
+  const marginLeft = lengthToTwips(attributeString(labelAlignment, "fo:margin-left"));
+  const textIndent = lengthToTwips(attributeString(labelAlignment, "fo:text-indent"));
+  const followedBy = attributeString(labelAlignment, "text:label-followed-by");
+  const indent: { left?: number; hanging?: number } = {};
+  if (marginLeft !== undefined) indent.left = marginLeft;
+  if (textIndent !== undefined && textIndent < 0) indent.hanging = -textIndent;
+  return {
+    level: oneBased - 1,
+    format: isBullet
+      ? "bullet"
+      : ((NUM_FORMAT_DOCX[rawFormat ?? ""] ?? rawFormat) as NumberingLevel["format"]),
+    text: isBullet
+      ? (attributeString(element, "text:bullet-char") ?? "•")
+      : `${prefix}${tokens}${suffix}`,
+    ...(start !== undefined ? { start } : {}),
+    ...(followedBy && SUFFIX_DOCX[followedBy]
+      ? { suffix: SUFFIX_DOCX[followedBy] as NumberingLevel["suffix"] }
+      : {}),
+    ...(Object.keys(indent).length > 0 ? { paragraph: { indent } } : {}),
+  } as NumberingLevel;
+}
+
+function paragraphXml(
+  options: ParagraphOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+): string {
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
   const styleName =
-    alignment || options.pageBreakBefore
-      ? addParagraphStyle({ alignment, pageBreakBefore: options.pageBreakBefore }, styles)
+    alignment || options.pageBreakBefore || options.tabStops?.length
+      ? addParagraphStyle(
+          { alignment, pageBreakBefore: options.pageBreakBefore, tabStops: options.tabStops },
+          styles,
+        )
       : undefined;
-  const children = runXml(options, styles, images);
+  const children = runXml(options, styles, images, notes, numbering, charts);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
   const attributes = {
     "text:style-name": styleName,
@@ -245,28 +1032,191 @@ function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtIm
   return xmlElement(heading ? "text:h" : "text:p", attributes, children);
 }
 
-function runXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string[] {
+function runXml(
+  options: ParagraphOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+): string[] {
   if (options.text !== undefined && options.children === undefined) {
-    return [escapeText(options.text)];
+    return [spacesXml(options.text)];
   }
   return (options.children ?? []).map((child) => {
-    if (typeof child === "string") return `<text:span>${escapeText(child)}</text:span>`;
+    if (typeof child === "string") return `<text:span>${spacesXml(child)}</text:span>`;
     if ("pageBreak" in child) return "<text:soft-page-break/>";
     if ("columnBreak" in child) return "<text:line-break/>";
     if ("break" in child) return lineBreakXml(child as RunOptions);
+    if ("bookmark" in child) {
+      return xmlElement("text:bookmark", {
+        "text:name": (child as { bookmark: { name: string } }).bookmark.name,
+      });
+    }
+    if ("footnoteReference" in child) {
+      return noteXml(
+        (child as { footnoteReference: number | { id: number } }).footnoteReference,
+        notes,
+        "footnote",
+        styles,
+        images,
+        numbering,
+        charts,
+      );
+    }
+    if ("endnoteReference" in child) {
+      return noteXml(
+        (child as { endnoteReference: number | { id: number } }).endnoteReference,
+        notes,
+        "endnote",
+        styles,
+        images,
+        numbering,
+        charts,
+      );
+    }
+    if ("hyperlink" in child) {
+      const link = (
+        child as {
+          hyperlink: {
+            url?: string;
+            anchor?: string;
+            tooltip?: string;
+            targetFrame?: string;
+            children?: Array<string | { text?: string }>;
+          };
+          text?: string;
+        }
+      ).hyperlink;
+      const href = link.url ?? (link.anchor !== undefined ? `#${link.anchor}` : undefined);
+      if (href === undefined) return "";
+      const inner = link.children
+        ? link.children
+            .map((c) => (typeof c === "string" ? spacesXml(c) : spacesXml(c.text ?? "")))
+            .join("")
+        : spacesXml((child as { text?: string }).text ?? "");
+      return xmlElement(
+        "text:a",
+        {
+          "xlink:type": "simple",
+          "xlink:href": href,
+          "office:title": link.tooltip,
+          "office:target-frame-name": link.targetFrame,
+        },
+        [inner],
+      );
+    }
     if ("text" in child) {
       const run = child as RunOptions;
       const styleName = addCharacterStyle(characterProperties(run), styles);
       return (
         lineBreakXml(run) +
-        xmlElement("text:span", { "text:style-name": styleName }, [escapeText(run.text ?? "")])
+        xmlElement("text:span", { "text:style-name": styleName }, [spacesXml(run.text ?? "")])
       );
     }
     if ("tab" in child) return "<text:tab/>";
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
+    if ("wpsShape" in child)
+      return wpsShapeFrameXml((child as { wpsShape: ShapeOptions }).wpsShape, styles);
+    if ("chart" in child) {
+      const chart = (child as { chart: ChartOptions | ChartChartOptions }).chart;
+      return "transformation" in chart ? "" : chartFrameXml(chart, charts);
+    }
     return "";
   });
+}
+
+/** Inline chart renders as a draw:frame + draw:object pointing at the subdocument. */
+function chartFrameXml(chart: ChartChartOptions, charts: OdtChart[]): string {
+  const path = `Object ${charts.length + 1}`;
+  charts.push({ path, chart });
+  return xmlElement(
+    "draw:frame",
+    {
+      "text:anchor-type": "as-char",
+      "svg:width": chart.width !== undefined ? emuToLength(chart.width) : undefined,
+      "svg:height": chart.height !== undefined ? emuToLength(chart.height) : undefined,
+    },
+    [xmlElement("draw:object", { "xlink:href": `./${path}`, "xlink:type": "simple" })],
+  );
+}
+
+/** Inline shape renders as a positioned draw:custom-shape with preset geometry. */
+function wpsShapeFrameXml(shape: ShapeOptions, styles: string[]): string {
+  const geometry = typeof shape.geometry === "string" ? { preset: shape.geometry } : shape.geometry;
+  const offset = shape.transformation.offset;
+  return xmlElement(
+    "draw:custom-shape",
+    {
+      "text:anchor-type": "as-char",
+      "draw:style-name": addShapeStyle(shape, styles),
+      "svg:x":
+        offset?.left !== undefined
+          ? typeof offset.left === "number"
+            ? emuToLength(offset.left)
+            : offset.left
+          : undefined,
+      "svg:y":
+        offset?.top !== undefined
+          ? typeof offset.top === "number"
+            ? emuToLength(offset.top)
+            : offset.top
+          : undefined,
+      "svg:width":
+        typeof shape.transformation.width === "number"
+          ? emuToLength(shape.transformation.width)
+          : shape.transformation.width,
+      "svg:height":
+        typeof shape.transformation.height === "number"
+          ? emuToLength(shape.transformation.height)
+          : shape.transformation.height,
+      "draw:name": shape.altText?.name,
+    },
+    [
+      xmlElement(
+        "draw:enhanced-geometry",
+        { "draw:type": geometry?.preset ? presetGeometryOdf(geometry.preset) : undefined },
+        [],
+      ),
+    ],
+  );
+}
+
+/** Shape fill and outline land in a reusable graphic style. */
+function addShapeStyle(shape: ShapeOptions, styles: string[]): string | undefined {
+  return pushShapeStyle(shape.fill, shape.outline, styles);
+}
+
+/** Note reference renders inline as text:note carrying its body paragraphs. */
+function noteXml(
+  reference: number | { id: number },
+  notes: NotesContext,
+  noteClass: "footnote" | "endnote",
+  styles: string[],
+  images: OdtImage[],
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+): string {
+  const id = typeof reference === "number" ? reference : reference.id;
+  const children = (noteClass === "endnote" ? notes.endnotes : notes.footnotes).get(id) ?? [];
+  return xmlElement("text:note", { "text:id": `${noteClass}${id}`, "text:note-class": noteClass }, [
+    xmlElement("text:note-citation", undefined, [String(id)]),
+    xmlElement("text:note-body", undefined, [
+      blocksXml(
+        children.map((noteChild) =>
+          typeof noteChild === "string" || !("paragraph" in noteChild || "table" in noteChild)
+            ? ({ paragraph: noteChild } as SectionChild)
+            : (noteChild as SectionChild),
+        ),
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+      ),
+    ]),
+  ]);
 }
 
 /** Run breaks render as text:line-break (ODF has no w:br/@clear equivalent). */
@@ -309,7 +1259,7 @@ function characterProperties(run: RunOptions): CharacterProperties {
 }
 
 function addParagraphStyle(
-  properties: { alignment?: string; pageBreakBefore?: boolean },
+  properties: { alignment?: string; pageBreakBefore?: boolean; tabStops?: TabStop[] },
   styles: string[],
 ): string {
   const name = `P${styles.length + 1}`;
@@ -318,14 +1268,46 @@ function addParagraphStyle(
       "style:style",
       { "style:name": name, "style:family": "paragraph", "style:parent-style-name": "Standard" },
       [
-        xmlElement("style:paragraph-properties", {
-          "fo:text-align": properties.alignment,
-          "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
-        }),
+        xmlElement(
+          "style:paragraph-properties",
+          {
+            "fo:text-align": properties.alignment,
+            "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
+          },
+          properties.tabStops?.length
+            ? [xmlElement("style:tab-stops", undefined, properties.tabStops.map(tabStopXml))]
+            : undefined,
+        ),
       ],
     ),
   );
   return name;
+}
+
+/** Tab stop → ODF style:tab-stop; decimal maps to char with a dot. */
+function tabStopXml(tab: TabStop): string {
+  if (
+    tab.type !== "left" &&
+    tab.type !== "center" &&
+    tab.type !== "right" &&
+    tab.type !== "decimal"
+  )
+    return "";
+  return xmlElement("style:tab-stop", {
+    "style:position": twipsToLength(tab.position),
+    "style:type": tab.type === "left" ? undefined : tab.type === "decimal" ? "char" : tab.type,
+    "style:char": tab.type === "decimal" ? "." : undefined,
+    "style:leader-text":
+      tab.leader === "dot"
+        ? "."
+        : tab.leader === "hyphen"
+          ? "-"
+          : tab.leader === "underscore"
+            ? "_"
+            : tab.leader === "middleDot"
+              ? "·"
+              : undefined,
+  });
 }
 
 function addCharacterStyle(properties: CharacterProperties, styles: string[]): string | undefined {
@@ -351,6 +1333,9 @@ function parseStyles(container: Element | undefined): StyleMap {
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
     const paragraph = childNamed(style, "style:paragraph-properties");
+    const tabStops = childrenNamed(childNamed(paragraph, "style:tab-stops"), "style:tab-stop").map(
+      parseTabStop,
+    );
     const character = childNamed(style, "style:text-properties");
     const columnWidth = attributeString(
       childNamed(style, "style:table-column-properties"),
@@ -361,6 +1346,7 @@ function parseStyles(container: Element | undefined): StyleMap {
     result.set(name, {
       alignment: attributeString(paragraph, "fo:text-align"),
       pageBreakBefore: attributeString(paragraph, "fo:break-before") === "page",
+      tabStops: tabStops.length > 0 ? tabStops : undefined,
       columnWidth: columnWidth?.endsWith("cm") ? Number(columnWidth.slice(0, -2)) * 567 : undefined,
       character: {
         bold: attributeString(character, "fo:font-weight") === "bold",
@@ -390,20 +1376,39 @@ function parseBlock(element: Element, context: ParseContext): SectionChild {
   return { paragraph };
 }
 
-function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0): SectionChild[] {
+function parseBlocks(
+  elements: Element[],
+  context: ParseContext,
+  listDepth = 0,
+  listState?: { name: string; ordered: boolean },
+): SectionChild[] {
   const result: SectionChild[] = [];
   for (const element of elements) {
     if (element.name === "text:section") {
-      // Typed sections flatten: their typed children merge in document order
-      // (the wrapper's name/protected attributes stay an authoring concern).
-      result.push(...parseBlocks(element.elements ?? [], context, listDepth));
+      const textSection: OdtTextSectionOptions = {
+        name: attributeString(element, "text:name") ?? "",
+        styleName: attributeString(element, "text:style-name"),
+        protected:
+          attributeString(element, "text:protected") === undefined
+            ? undefined
+            : attributeString(element, "text:protected") === "true",
+        children: [],
+      };
+      context.textSections.push(textSection);
+      textSection.children = parseBlocks(element.elements ?? [], context, listDepth, listState);
+      // Typed sections flatten into document children; the wrapper is retained
+      // separately so name/style/protection metadata round-trip.
+      result.push(...textSection.children);
       continue;
     }
     if (element.name === "text:list") {
-      // A typed text:list unwraps to bullet paragraphs at the nesting depth;
-      // list-header content (rare) keeps the generic fall-through below.
+      // A typed text:list unwraps to bullet or numbered paragraphs at the
+      // nesting depth, judged by its referenced list style; list-header
+      // content (rare) keeps the generic fall-through below.
+      const name = attributeString(element, "text:style-name") ?? "";
+      const state = { name, ordered: context.listStyles.get(name) ?? false };
       for (const item of childrenNamed(element, "text:list-item")) {
-        result.push(...parseBlocks(item.elements ?? [], context, listDepth + 1));
+        result.push(...parseBlocks(item.elements ?? [], context, listDepth + 1, state));
       }
       continue;
     }
@@ -416,7 +1421,9 @@ function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0):
       if (listDepth > 0 && "paragraph" in child) {
         const paragraph = normalizeParagraph(child.paragraph);
         result.push({
-          paragraph: { ...paragraph, bullet: { level: listDepth - 1 } },
+          paragraph: listState?.ordered
+            ? { ...paragraph, numbering: { reference: listState.name, level: listDepth - 1 } }
+            : { ...paragraph, bullet: { level: listDepth - 1 } },
         } as SectionChild);
       } else {
         result.push(child);
@@ -433,8 +1440,14 @@ function parseParagraph(element: Element, context: ParseContext): ParagraphOptio
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
   if (style?.pageBreakBefore) result.pageBreakBefore = true;
+  if (style?.tabStops) result.tabStops = style.tabStops;
   if (headingLevel && headingLevel <= 6) {
     result.heading = `Heading${headingLevel}` as ParagraphOptions["heading"];
+  }
+  if (result.heading && context.outline) {
+    const outlineLevel = Number(/Heading([1-9])$/.exec(result.heading)?.[1]);
+    if (outlineLevel && context.outline.levels.some((level) => level.level === outlineLevel - 1))
+      result.numbering = { reference: context.outline.reference, level: outlineLevel - 1 };
   }
   if (runs.length === 1 && typeof runs[0] === "string") result.text = runs[0];
   else if (runs.length > 0) result.children = runs as ParagraphOptions["children"];
@@ -445,30 +1458,78 @@ function parseRuns(
   element: Element,
   context: ParseContext,
 ): (string | RunOptions | { tab: true })[] {
-  return (element.elements ?? []).flatMap((child): (string | RunOptions | { tab: true })[] => {
-    if (child.type === "text") return [String(child.text ?? "")];
-    if (child.name === "text:line-break") return [{ break: 1 } as unknown as RunOptions];
-    if (child.name === "text:soft-page-break")
-      return [{ pageBreak: true } as unknown as RunOptions];
-    if (child.name === "text:s") {
-      const count = attributeNumber(child, "text:c") ?? 1;
-      return [" ".repeat(count)];
-    }
-    if (child.name === "text:span") {
-      const properties = context.styles.get(
-        attributeString(child, "text:style-name") ?? "",
-      )?.character;
-      const run: RunOptions = {
-        text: textOf(child),
-        ...properties,
-        underline: properties?.underline ? { type: "single" } : undefined,
-      };
-      return [run];
-    }
-    if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
-    if (child.name === "draw:frame") return parsePictureFrame(child, context);
-    return [];
-  });
+  const runs = (element.elements ?? []).flatMap(
+    (child): (string | RunOptions | { tab: true })[] => {
+      if (child.type === "text") return [String(child.text ?? "")];
+      if (child.name === "text:line-break") return [{ break: 1 } as unknown as RunOptions];
+      if (child.name === "text:soft-page-break")
+        return [{ pageBreak: true } as unknown as RunOptions];
+      if (child.name === "text:s") {
+        const count = attributeNumber(child, "text:c") ?? 1;
+        return [" ".repeat(count)];
+      }
+      if (child.name === "text:a") {
+        const href = attributeString(child, "xlink:href") ?? "";
+        const link = {
+          hyperlink: {
+            ...(href.startsWith("#") ? { anchor: href.slice(1) } : { url: href }),
+            tooltip: attributeString(child, "office:title"),
+            targetFrame: attributeString(child, "office:target-frame-name"),
+            children: parseRuns(child, context),
+          },
+        };
+        return [link as unknown as RunOptions];
+      }
+      if (child.name === "text:note") return parseNote(child, context);
+      if (child.name === "text:bookmark") {
+        const bookmark = { bookmark: { name: attributeString(child, "text:name") ?? "" } };
+        return [bookmark as unknown as RunOptions];
+      }
+      if (child.name === "text:span") {
+        const properties = context.styles.get(
+          attributeString(child, "text:style-name") ?? "",
+        )?.character;
+        const run: RunOptions = {
+          text: textOf(child),
+          ...properties,
+          underline: properties?.underline ? { type: "single" } : undefined,
+        };
+        return [run];
+      }
+      if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
+      if (child.name === "draw:frame")
+        return childNamed(child, "draw:object")
+          ? parseChartFrame(child, context)
+          : parsePictureFrame(child, context);
+      if (child.name === "draw:object") return parseChartFrame(child, context);
+      if (child.name === "draw:custom-shape") {
+        const shape = parseCustomShape(child, context);
+        return shape ? [shape as unknown as RunOptions] : [];
+      }
+      return [];
+    },
+  );
+  // Adjacent plain runs (for example text:s splits) merge back into one string
+  // so text shorthand survives the round trip.
+  return runs.reduce<(string | RunOptions | { tab: true })[]>((merged, run) => {
+    const last = merged.at(-1);
+    if (typeof last === "string" && typeof run === "string") merged[merged.length - 1] = last + run;
+    else merged.push(run);
+    return merged;
+  }, []);
+}
+
+/** text:note stores its body in the document notes and leaves a reference run. */
+function parseNote(element: Element, context: ParseContext): (string | RunOptions)[] {
+  const body = childNamed(element, "text:note-body");
+  const children = body ? parseBlocks(body.elements ?? [], context) : [];
+  const isEndnote = attributeString(element, "text:note-class") === "endnote";
+  const notes = isEndnote ? context.notes.endnotes : context.notes.footnotes;
+  notes.push({ id: notes.length + 1, children });
+  const reference = isEndnote
+    ? { endnoteReference: notes.length }
+    : { footnoteReference: notes.length };
+  return [reference as unknown as RunOptions];
 }
 
 /** draw:frame + draw:image maps back to an inline picture run. */
@@ -490,4 +1551,47 @@ function parsePictureFrame(frame: Element, context: ParseContext): RunOptions[] 
       },
     },
   ] as unknown as RunOptions[];
+}
+
+/** draw:frame + draw:object resolves an embedded chart subdocument. */
+function parseChartFrame(frame: Element, context: ParseContext): RunOptions[] {
+  const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
+    ?.replace(/^\.\//, "")
+    .replace(/^\//, "");
+  const chart = href ? context.chartBodies.get(href) : undefined;
+  if (!chart) return [];
+  return [{ chart } as unknown as RunOptions];
+}
+
+/** draw:custom-shape maps back to the shared docx shape model. */
+function parseCustomShape(
+  element: Element,
+  context: ParseContext,
+): { wpsShape: ShapeOptions } | undefined {
+  const styleName = attributeString(element, "draw:style-name");
+  const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
+  const enhanced = childNamed(element, "draw:enhanced-geometry");
+  const presetType = attributeString(enhanced, "draw:type");
+  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const x = lengthToEmu(attributeString(element, "svg:x")) ?? 0;
+  const y = lengthToEmu(attributeString(element, "svg:y")) ?? 0;
+  const width = lengthToEmu(attributeString(element, "svg:width")) ?? 0;
+  const height = lengthToEmu(attributeString(element, "svg:height")) ?? 0;
+  const fill: FillOptions | undefined = graphicFill(graphic);
+  const outline: OutlineOptions | undefined = graphicOutline(graphic);
+  const name = attributeString(element, "draw:name");
+  return {
+    wpsShape: {
+      children: [],
+      transformation: {
+        ...(x || y ? { offset: { ...(x ? { left: x } : {}), ...(y ? { top: y } : {}) } } : {}),
+        width,
+        height,
+      },
+      ...(name ? { altText: { name } } : {}),
+      ...(preset ? { geometry: preset } : {}),
+      ...(fill ? { fill } : {}),
+      ...(outline ? { outline } : {}),
+    },
+  };
 }

@@ -23,6 +23,7 @@ import type {
   WorksheetOptions,
 } from "@office-open/xlsx";
 
+import { LegacyExcelError } from "./errors";
 import { escherImages, escherPictures } from "./escher";
 import { decodeFormula } from "./formula";
 
@@ -154,7 +155,7 @@ interface PendingConditional {
 
 function requireBytes(data: Uint8Array, length: number, description: string): void {
   if (length < 0 || length > data.byteLength) {
-    throw new Error(`Invalid legacy XLS file: truncated ${description}`);
+    throw new LegacyExcelError(`Invalid legacy XLS file: truncated ${description}`);
   }
 }
 
@@ -166,13 +167,13 @@ function readRecord(stream: Uint8Array, position: number, version: BiffVersion):
   const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const headerSize = recordHeaderSize(version);
   if (position < 0 || position + headerSize > stream.byteLength) {
-    throw new Error("Invalid legacy XLS file: truncated BIFF record header");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF record header");
   }
   const code = view.getUint16(position, true);
   const length = view.getUint16(position + 2, true);
   const bodyStart = position + headerSize;
   if (bodyStart + length > stream.byteLength) {
-    throw new Error(
+    throw new LegacyExcelError(
       `Invalid legacy XLS file: truncated BIFF record 0x${code.toString(16).padStart(4, "0")}`,
     );
   }
@@ -199,7 +200,7 @@ function* recordsFrom(
     yield record;
     if (record.code === RecordCode.EndOfFile && stopAtFirstEndOfFile) return;
   }
-  throw new Error("Invalid legacy XLS file: workbook stream ends before End Of File");
+  throw new LegacyExcelError("Invalid legacy XLS file: workbook stream ends before End Of File");
 }
 
 function decodeBiffString(
@@ -225,7 +226,7 @@ function decodeBiffString(
   cursor += byteLength + richRunCount * 4;
   if (hasExtension) {
     if (cursor + 4 > body.byteLength)
-      throw new Error("Invalid legacy XLS file: truncated rich string");
+      throw new LegacyExcelError("Invalid legacy XLS file: truncated rich string");
     cursor += view.getUint32(cursor, true);
   }
   return { value, offset: cursor };
@@ -325,10 +326,11 @@ function detectBiffVersion(stream: Uint8Array): {
   workbookLayout: "standard" | "biff4w";
 } {
   if (stream.byteLength < 6)
-    throw new Error("Invalid legacy XLS file: workbook stream is truncated");
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
   const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const code = view.getUint16(0, true);
-  if (code === 0) throw new Error("Invalid legacy XLS file: workbook stream is truncated");
+  if (code === 0)
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
   if (code === RecordCode.EndOfFile) return { version: 8, workbookLayout: "standard" };
   if (code === 0x0009) return { version: 2, workbookLayout: "standard" };
   if (code === 0x0209)
@@ -348,7 +350,7 @@ function detectBiffVersion(stream: Uint8Array): {
   if (code !== 0x0809) return { version: 8, workbookLayout: "standard" };
   const recordVersion = view.getUint16(4, true);
   if (recordVersion !== 0x0500 && recordVersion !== 0x0600)
-    throw new Error(`Unsupported legacy XLS BIFF version: ${recordVersion}`);
+    throw new LegacyExcelError(`Unsupported legacy XLS BIFF version: ${recordVersion}`);
   return { version: recordVersion === 0x0600 ? 8 : 5, workbookLayout: "standard" };
 }
 
@@ -392,14 +394,16 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
 
   for (const record of recordsFrom(stream, 0, workbookVersion)) {
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new Error("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     if (record.code === RecordCode.Formula || record.code === RecordCode.String) {
-      throw new Error("Invalid legacy XLS file: worksheet record appears in workbook globals");
+      throw new LegacyExcelError(
+        "Invalid legacy XLS file: worksheet record appears in workbook globals",
+      );
     }
     if (record.code === 0x0809) {
-      if (inGlobals) throw new Error("Invalid legacy XLS file: nested workbook globals");
+      if (inGlobals) throw new LegacyExcelError("Invalid legacy XLS file: nested workbook globals");
       if (record.body.byteLength < 4)
-        throw new Error("Invalid legacy XLS file: truncated Begin Of File");
+        throw new LegacyExcelError("Invalid legacy XLS file: truncated Begin Of File");
       // The version token was validated by detectBiffVersion.
       inGlobals = true;
       continue;
@@ -419,7 +423,7 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     switch (record.code) {
       case RecordCode.SharedStringTable: {
         if (record.body.byteLength < 8)
-          throw new Error("Invalid legacy XLS file: truncated shared string table");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated shared string table");
         sharedStringParts = [record.body];
         break;
       }
@@ -429,7 +433,7 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
       }
       case RecordCode.BoundSheet: {
         if (record.body.byteLength < 6)
-          throw new Error("Invalid legacy XLS file: truncated sheet definition");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated sheet definition");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -453,14 +457,14 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
               ? readShortBiff8String(record.body, 6).value
               : readBiff5String(record.body, 6, encodingForCodepage(codepage)).value;
         } catch {
-          throw new Error("Invalid legacy XLS file: truncated sheet name");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated sheet name");
         }
         sheets.push({ position, state, name });
         break;
       }
       case RecordCode.Codepage: {
         if (record.body.byteLength < 2)
-          throw new Error("Invalid legacy XLS file: truncated CODEPAGE");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated CODEPAGE");
         codepage = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -470,7 +474,7 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
       }
       case RecordCode.DateMode: {
         if (record.body.byteLength < 2)
-          throw new Error("Invalid legacy XLS file: truncated DATEMODE");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated DATEMODE");
         date1904 =
           new DataView(
             record.body.buffer,
@@ -570,9 +574,9 @@ function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     );
 
   if (workbookVersion === undefined)
-    throw new Error("Invalid legacy XLS file: missing Begin Of File");
+    throw new LegacyExcelError("Invalid legacy XLS file: missing Begin Of File");
   if (sheets.length === 0)
-    throw new Error("Invalid legacy XLS file: workbook has no sheet definitions");
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook has no sheet definitions");
   return {
     version: workbookVersion,
     workbookLayout: "standard",
@@ -604,12 +608,12 @@ function readLegacyWorkbookGlobals(
     const record = readRecord(stream, cursor, detected.version);
     const nextCursor = cursor + recordHeaderSize(detected.version) + record.body.byteLength;
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new Error("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     if (!BEGIN_OF_FILE_CODES.has(record.code)) {
       cursor = nextCursor;
       continue;
     }
-    if (sawBegin) throw new Error("Invalid legacy XLS file: nested workbook globals");
+    if (sawBegin) throw new LegacyExcelError("Invalid legacy XLS file: nested workbook globals");
     sawBegin = true;
     if (detected.workbookLayout === "standard") {
       sheets.push({ position: 0, state: "visible", name: "Sheet 1" });
@@ -636,10 +640,10 @@ function readLegacyWorkbookGlobals(
       const workbookRecord = readRecord(stream, cursor, detected.version);
       cursor += recordHeaderSize(detected.version) + workbookRecord.body.byteLength;
       if (workbookRecord.code === RecordCode.FilePass && !isClearedFilePass(workbookRecord))
-        throw new Error("Encrypted legacy XLS files are not supported");
+        throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
       if (workbookRecord.code !== RecordCode.Sheethdr) continue;
       if (workbookRecord.body.byteLength < 5)
-        throw new Error("Invalid legacy XLS file: truncated BIFF4W sheet header");
+        throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF4W sheet header");
       const sheetLength = new DataView(
         workbookRecord.body.buffer,
         workbookRecord.body.byteOffset,
@@ -652,9 +656,9 @@ function readLegacyWorkbookGlobals(
     }
   }
 
-  if (!sawBegin) throw new Error("Invalid legacy XLS file: missing Begin Of File");
+  if (!sawBegin) throw new LegacyExcelError("Invalid legacy XLS file: missing Begin Of File");
   if (sheets.length === 0)
-    throw new Error("Invalid legacy XLS file: workbook has no sheet definitions");
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook has no sheet definitions");
   return {
     ...detected,
     sharedStrings: [],
@@ -749,7 +753,8 @@ function parseSupbook(
 }
 
 function parseExternSheet(body: Uint8Array): { firstSheet: number; lastSheet: number }[] {
-  if (body.byteLength < 2) throw new Error("Invalid legacy XLS file: truncated EXTERNSHEET");
+  if (body.byteLength < 2)
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated EXTERNSHEET");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const count = view.getUint16(0, true);
   if (body.byteLength < 2 + count * 6) return [];
@@ -765,7 +770,7 @@ function parseName(
   encoding: string,
   externSheetNames: Map<number, string>,
 ): DefinedNameOptions {
-  if (body.byteLength < 14) throw new Error("Invalid legacy XLS file: truncated NAME");
+  if (body.byteLength < 14) throw new LegacyExcelError("Invalid legacy XLS file: truncated NAME");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const flags = view.getUint16(0, true);
   const formulaLength = view.getUint16(4, true);
@@ -806,30 +811,30 @@ function readNulTerminatedUnicode(
   offset: number,
 ): { value: string; offset: number } {
   if (offset + 4 > body.byteLength)
-    throw new Error("Invalid legacy XLS file: truncated unicode string");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated unicode string");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const byteLength = view.getUint32(offset, true) * 2;
   offset += 4;
   if (offset + byteLength > body.byteLength)
-    throw new Error("Invalid legacy XLS file: truncated unicode string");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated unicode string");
   const raw = body.subarray(offset, offset + byteLength - 2);
   return { value: new TextDecoder("utf-16le").decode(raw), offset: offset + byteLength };
 }
 
 function readByteCountUnicode(body: Uint8Array, offset: number): { value: string; offset: number } {
   if (offset + 4 > body.byteLength)
-    throw new Error("Invalid legacy XLS file: truncated unicode string");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated unicode string");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const byteLength = view.getUint32(offset, true);
   offset += 4;
   if (offset + byteLength > body.byteLength)
-    throw new Error("Invalid legacy XLS file: truncated unicode string");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated unicode string");
   const raw = body.subarray(offset, offset + byteLength - 2);
   return { value: new TextDecoder("utf-16le").decode(raw), offset: offset + byteLength };
 }
 
 function parseHyperlink(body: Uint8Array): HyperlinkOptions {
-  if (body.byteLength < 32) throw new Error("Invalid legacy XLS file: truncated HLINK");
+  if (body.byteLength < 32) throw new LegacyExcelError("Invalid legacy XLS file: truncated HLINK");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const row = view.getUint16(0, true);
   const column = view.getUint16(4, true);
@@ -890,7 +895,7 @@ function parseSharedStrings(
     partIndex++;
     offset = 0;
     if (!parts[partIndex])
-      throw new Error("Invalid legacy XLS file: truncated shared string table");
+      throw new LegacyExcelError("Invalid legacy XLS file: truncated shared string table");
   };
   const beginCharacter = (): void => {
     ensureByte();
@@ -1022,7 +1027,9 @@ function errorLiteral(code: number): string {
   };
   const literal = literals[code];
   if (!literal)
-    throw new Error(`Invalid legacy XLS file: unknown formula error code 0x${code.toString(16)}`);
+    throw new LegacyExcelError(
+      `Invalid legacy XLS file: unknown formula error code 0x${code.toString(16)}`,
+    );
   return literal;
 }
 
@@ -1078,7 +1085,7 @@ function parseWorksheetStream(
     if (depth !== 1) continue;
 
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new Error("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     if (
       currentDrawing &&
       record.code !== RecordCode.Continue &&
@@ -1120,7 +1127,7 @@ function parseWorksheetStream(
               ? readBiff2String(record.body).value
               : readBiff35String(record.body).value;
       } catch {
-        throw new Error("Invalid legacy XLS file: truncated formula string");
+        throw new LegacyExcelError("Invalid legacy XLS file: truncated formula string");
       }
       ensureRow(sheet, pendingFormula.row).cells!.push({
         ...makeCell(
@@ -1145,7 +1152,7 @@ function parseWorksheetStream(
       case RecordCode.Dimensions: {
         const minimumLength = state.version === 8 ? 14 : state.version === 2 ? 8 : 10;
         if (record.body.byteLength < minimumLength) {
-          throw new Error("Invalid legacy XLS file: truncated dimensions");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated dimensions");
         }
         const view = new DataView(
           record.body.buffer,
@@ -1170,7 +1177,8 @@ function parseWorksheetStream(
         break;
       }
       case RecordCode.Row: {
-        if (record.body.byteLength < 16) throw new Error("Invalid legacy XLS file: truncated row");
+        if (record.body.byteLength < 16)
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated row");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1193,7 +1201,7 @@ function parseWorksheetStream(
       case RecordCode.Blank:
       case RecordCode.Biff2Blank: {
         if (record.body.byteLength < 6)
-          throw new Error("Invalid legacy XLS file: truncated blank cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated blank cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1211,7 +1219,7 @@ function parseWorksheetStream(
       case RecordCode.BoolErr:
       case RecordCode.Biff2BoolErr: {
         if (record.body.byteLength < 8)
-          throw new Error("Invalid legacy XLS file: truncated boolean/error cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated boolean/error cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1229,7 +1237,7 @@ function parseWorksheetStream(
       }
       case RecordCode.MulBlank: {
         if (record.body.byteLength < 10)
-          throw new Error("Invalid legacy XLS file: truncated multiple blank cells");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated multiple blank cells");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1240,7 +1248,9 @@ function parseWorksheetStream(
         const lastColumn = view.getUint16(record.body.byteLength - 2, true);
         const count = lastColumn - firstColumn + 1;
         if (record.body.byteLength < 6 + count * 2) {
-          throw new Error("Invalid legacy XLS file: multiple blank cell range is truncated");
+          throw new LegacyExcelError(
+            "Invalid legacy XLS file: multiple blank cell range is truncated",
+          );
         }
         const rowOptions = ensureRow(sheet, row);
         for (let index = 0; index < count; index++) {
@@ -1254,7 +1264,7 @@ function parseWorksheetStream(
       case RecordCode.Number: {
         if (state.version === 2) {
           if (record.body.byteLength < 15)
-            throw new Error("Invalid legacy XLS file: truncated BIFF2 number cell");
+            throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 number cell");
           const view = new DataView(
             record.body.buffer,
             record.body.byteOffset,
@@ -1266,7 +1276,7 @@ function parseWorksheetStream(
           break;
         }
         if (record.body.byteLength < 14)
-          throw new Error("Invalid legacy XLS file: truncated number cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated number cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1281,7 +1291,7 @@ function parseWorksheetStream(
       }
       case RecordCode.Biff2Integer: {
         if (record.body.byteLength < 9)
-          throw new Error("Invalid legacy XLS file: truncated BIFF2 integer cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 integer cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1300,7 +1310,7 @@ function parseWorksheetStream(
       }
       case RecordCode.Label: {
         if (record.body.byteLength < 7)
-          throw new Error("Invalid legacy XLS file: truncated label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1316,14 +1326,14 @@ function parseWorksheetStream(
               ? readBiff8String(record.body, 6)
               : readBiff35String(record.body, 6);
         } catch {
-          throw new Error("Invalid legacy XLS file: truncated label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated label cell");
         }
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.Biff2Label: {
         if (record.body.byteLength < 8)
-          throw new Error("Invalid legacy XLS file: truncated BIFF2 label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1333,7 +1343,7 @@ function parseWorksheetStream(
         try {
           text = readBiff2String(record.body, 7);
         } catch {
-          throw new Error("Invalid legacy XLS file: truncated BIFF2 label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 label cell");
         }
         ensureRow(sheet, view.getUint16(0, true)).cells!.push(
           makeCell(view.getUint16(0, true), view.getUint16(2, true), 0, text.value, state),
@@ -1342,7 +1352,7 @@ function parseWorksheetStream(
       }
       case RecordCode.RichLabel: {
         if (record.body.byteLength < 7)
-          throw new Error("Invalid legacy XLS file: truncated rich label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated rich label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1355,14 +1365,14 @@ function parseWorksheetStream(
         try {
           text = readBiff8String(record.body, 6);
         } catch {
-          throw new Error("Invalid legacy XLS file: truncated rich label cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated rich label cell");
         }
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.LabelSst: {
         if (record.body.byteLength < 10)
-          throw new Error("Invalid legacy XLS file: truncated shared string cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated shared string cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1374,13 +1384,13 @@ function parseWorksheetStream(
         const index = view.getUint32(6, true);
         const value = state.sharedStrings[index];
         if (value === undefined)
-          throw new Error(`Invalid legacy XLS file: missing shared string ${index}`);
+          throw new LegacyExcelError(`Invalid legacy XLS file: missing shared string ${index}`);
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, value, state));
         break;
       }
       case RecordCode.Rk: {
         if (record.body.byteLength < 10)
-          throw new Error("Invalid legacy XLS file: truncated RK cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated RK cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1395,7 +1405,7 @@ function parseWorksheetStream(
       }
       case RecordCode.MulRk: {
         if (record.body.byteLength < 10)
-          throw new Error("Invalid legacy XLS file: truncated multiple RK cells");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated multiple RK cells");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1406,7 +1416,9 @@ function parseWorksheetStream(
         const lastColumn = view.getUint16(record.body.byteLength - 2, true);
         const count = lastColumn - firstColumn + 1;
         if (record.body.byteLength < 6 + count * 6) {
-          throw new Error("Invalid legacy XLS file: multiple RK cell range is truncated");
+          throw new LegacyExcelError(
+            "Invalid legacy XLS file: multiple RK cell range is truncated",
+          );
         }
         const rowOptions = ensureRow(sheet, row);
         for (let index = 0; index < count; index++) {
@@ -1420,7 +1432,7 @@ function parseWorksheetStream(
       }
       case RecordCode.Formula: {
         if (record.body.byteLength < 22)
-          throw new Error("Invalid legacy XLS file: truncated formula cell");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated formula cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1530,7 +1542,7 @@ function parseWorksheetStream(
       }
       case RecordCode.ColInfo: {
         if (record.body.byteLength < 10)
-          throw new Error("Invalid legacy XLS file: truncated COLINFO");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated COLINFO");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1616,7 +1628,8 @@ function parseWorksheetStream(
         break;
       }
       case RecordCode.Note: {
-        if (record.body.byteLength < 8) throw new Error("Invalid legacy XLS file: truncated NOTE");
+        if (record.body.byteLength < 8)
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated NOTE");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1651,7 +1664,7 @@ function parseWorksheetStream(
       }
       case RecordCode.CondFmt: {
         if (record.body.byteLength < 14)
-          throw new Error("Invalid legacy XLS file: truncated CONDFMT");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated CONDFMT");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1659,7 +1672,7 @@ function parseWorksheetStream(
         );
         const rangeCount = view.getUint16(12, true);
         if (record.body.byteLength < 14 + rangeCount * 8)
-          throw new Error("Invalid legacy XLS file: truncated CONDFMT ranges");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated CONDFMT ranges");
         const range = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1677,7 +1690,9 @@ function parseWorksheetStream(
       }
       case RecordCode.ConditionalFormat: {
         if (!conditional || record.body.byteLength < 12)
-          throw new Error("Invalid legacy XLS file: conditional format rule outside CONDFMT");
+          throw new LegacyExcelError(
+            "Invalid legacy XLS file: conditional format rule outside CONDFMT",
+          );
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1753,7 +1768,7 @@ function parseWorksheetStream(
       case RecordCode.TopMargin:
       case RecordCode.BottomMargin: {
         if (record.body.byteLength < 8)
-          throw new Error("Invalid legacy XLS file: truncated page margin");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated page margin");
         const value = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1773,7 +1788,7 @@ function parseWorksheetStream(
       }
       case RecordCode.PageSetup: {
         if (record.body.byteLength < 32)
-          throw new Error("Invalid legacy XLS file: truncated PAGESETUP");
+          throw new LegacyExcelError("Invalid legacy XLS file: truncated PAGESETUP");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -1800,7 +1815,8 @@ function parseWorksheetStream(
     }
   }
 
-  if (depth !== 0) throw new Error("Invalid legacy XLS file: sheet stream has no Begin Of File");
+  if (depth !== 0)
+    throw new LegacyExcelError("Invalid legacy XLS file: sheet stream has no Begin Of File");
   return { ...sheet, extras: worksheetExtras };
 }
 
@@ -1812,19 +1828,30 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
   const reader = new CompoundFileReader(data);
   const entry = reader.entry("Workbook") ?? reader.entry("Book");
   if (!entry || entry.type !== "stream") {
-    throw new Error("Invalid legacy XLS file: missing Workbook or Book stream");
+    throw new LegacyExcelError("Invalid legacy XLS file: missing Workbook or Book stream");
   }
   const stream = reader.read(entry.path);
   if (stream.byteLength < 8)
-    throw new Error("Invalid legacy XLS file: workbook stream is truncated");
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
   const globals = readWorkbookGlobals(stream);
   return { ...globals, stream };
 }
 
 export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): WorkbookOptions {
-  if (!(data instanceof Uint8Array)) throw new TypeError("XLS data must be a Uint8Array");
-  const workbookData = decryptWorkbookContainer(data, options?.password) ?? data;
-  const state = readWorkbookStream(workbookData);
+  if (!(data instanceof Uint8Array)) throw new LegacyExcelError("XLS data must be a Uint8Array");
+  let workbookData: Uint8Array;
+  try {
+    workbookData = decryptWorkbookContainer(data, options?.password) ?? data;
+  } catch (error) {
+    throw toLegacyExcelError(error);
+  }
+  const state = (() => {
+    try {
+      return readWorkbookStream(workbookData);
+    } catch (error) {
+      throw toLegacyExcelError(error);
+    }
+  })();
   const metadata = readSummaryInformation(data);
   const worksheets: WorksheetOptions[] = state.sheets.map((sheet, index) => {
     const parsed = parseWorksheetStream(state.stream, sheet.position, state);
@@ -1857,6 +1884,11 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
   };
 }
 
+function toLegacyExcelError(error: unknown): LegacyExcelError {
+  if (error instanceof LegacyExcelError) return error;
+  return new LegacyExcelError(error instanceof Error ? error.message : String(error));
+}
+
 function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Array | undefined {
   let stream: Uint8Array;
   if (data.byteLength > 8 && data[0] === 0x09) {
@@ -1865,7 +1897,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     const reader = new CompoundFileReader(data);
     const entry = reader.entry("Workbook") ?? reader.entry("Book");
     if (!entry || entry.type !== "stream") {
-      throw new Error("Invalid legacy XLS file: missing Workbook or Book stream");
+      throw new LegacyExcelError("Invalid legacy XLS file: missing Workbook or Book stream");
     }
     stream = reader.read(entry.path);
   }
@@ -1883,33 +1915,33 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
   }
   if (!filePass) return undefined;
   if (password === undefined) {
-    throw new Error("Encrypted legacy XLS files are not supported");
+    throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
   }
   const body = filePass.body;
   if (body.byteLength < 2 || body[0] !== 1 || body[1] !== 0) {
-    throw new Error("Encrypted legacy XLS files are not supported");
+    throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
   }
   const version = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const decrypt = (() => {
     const majorVersion = body.byteLength >= 4 ? version.getUint16(2, true) : 0;
     const minorVersion = body.byteLength >= 6 ? version.getUint16(4, true) : 0;
     if (majorVersion === 1 && minorVersion !== 1) {
-      throw new Error("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     }
     if (majorVersion !== 1 && (minorVersion !== 0x0002 || majorVersion < 2 || majorVersion > 4)) {
-      throw new Error("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     }
     if (majorVersion === 1) {
       const verifier = parseLegacyRc4Verifier(body, 6);
       if (!verifyLegacyRc4Password(password, verifier)) {
-        throw new Error("Invalid legacy XLS password");
+        throw new LegacyExcelError("Invalid legacy XLS password");
       }
       return (data: Uint8Array): Uint8Array =>
         decryptLegacyRc4(data, password, verifier.salt, 1024);
     }
     const { keySizeBits, verifier } = parseRc4CryptoApiHeader(body, 6);
     if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-      throw new Error("Invalid legacy XLS password");
+      throw new LegacyExcelError("Invalid legacy XLS password");
     }
     return (data: Uint8Array): Uint8Array =>
       decryptRc4CryptoApi(data, password, verifier.salt, keySizeBits, 1024);

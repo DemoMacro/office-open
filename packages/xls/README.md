@@ -54,6 +54,7 @@ const options = parseWorkbook(data, { password: "secret" });
 
 - `parseWorkbook(data, options?)` — read an `.xls` file into `WorkbookOptions`
 - `LegacyParseOptions` — parse-time options, including `password`
+- `LegacyExcelError` — thrown for invalid, truncated, unsupported, or encrypted input
 
 The projected model follows the office-open `WorkbookOptions` shape where BIFF8 has a direct counterpart. Unsupported legacy records are skipped without aborting the workbook.
 

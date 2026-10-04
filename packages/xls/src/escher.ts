@@ -94,7 +94,8 @@ function isBlip(type: number, inBstore: boolean): boolean {
 }
 
 function parseAnchor(body: Uint8Array): EscherAnchor {
-  if (body.byteLength < 18) throw new Error("Invalid legacy XLS file: truncated Escher anchor");
+  if (body.byteLength < 18)
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated Escher anchor");
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   return {
     fromRow: view.getInt16(2, true),
@@ -214,3 +215,4 @@ export function escherImages(data: Uint8Array): EscherImage[] {
   const images = parseEscher(data);
   return images.images;
 }
+import { LegacyExcelError } from "./errors";

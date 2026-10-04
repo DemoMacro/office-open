@@ -15,6 +15,7 @@ import {
 import type { ChartChartOptions } from "./index";
 import { type OdpOptions } from "./odp";
 import { type OdsOptions } from "./ods";
+import type { OdtTextSectionOptions } from "./odt";
 
 describe("ODF package contract", () => {
   it("stores an uncompressed leading mimetype and a complete manifest", () => {
@@ -68,6 +69,28 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
+  it("round-trips typed text sections", () => {
+    const sections: OdtTextSectionOptions[] = [
+      {
+        name: "Notes",
+        styleName: "S1",
+        protected: true,
+        children: [{ paragraph: { text: "Inside" } }],
+      },
+    ];
+    const parsed = parseOdt(
+      generateOdt({
+        sections: [{ children: [{ paragraph: "Before" }] }],
+        textSections: sections,
+      }),
+    );
+    expect(parsed.sections![0]!.children).toEqual([
+      { paragraph: { text: "Before" } },
+      { paragraph: { text: "Inside" } },
+    ]);
+    expect(parsed.textSections).toEqual(sections);
+  });
+
   it("round-trips inline pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: DocumentOptions = {
@@ -228,6 +251,419 @@ describe("ODT mapping", () => {
     const secondParagraph =
       typeof second.paragraph === "string" ? { text: second.paragraph } : second.paragraph;
     expect(secondParagraph.bullet).toEqual({ level: 1 });
+  });
+
+  it("round-trips numbered lists through a number list style", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { paragraph: { text: "First", numbering: { reference: "num", level: 0 } } },
+            { paragraph: { text: "Second", numbering: { reference: "num", level: 0 } } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a list paragraph");
+    const firstParagraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    expect(firstParagraph.numbering).toMatchObject({ level: 0 });
+    const second = children[1]!;
+    if (!("paragraph" in second)) throw new Error("Expected a list paragraph");
+    const secondParagraph =
+      typeof second.paragraph === "string" ? { text: second.paragraph } : second.paragraph;
+    expect(secondParagraph.numbering).toMatchObject({ level: 0 });
+  });
+
+  it("round-trips list level indent and suffix through a numbering definition", () => {
+    const source: DocumentOptions = {
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "num",
+            levels: [
+              {
+                level: 0,
+                format: "decimal",
+                text: "%1.",
+                start: 1,
+                suffix: "tab",
+                paragraph: { indent: { left: 720, hanging: 360 } },
+              },
+            ],
+          },
+        ],
+      },
+      sections: [
+        {
+          children: [
+            { paragraph: { text: "One", numbering: { reference: "num", level: 0 } } },
+            { paragraph: { text: "Two", numbering: { reference: "num", level: 0 } } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const definition = parsed.numbering?.abstractNumberings?.find(
+      (entry) => entry.reference === "num",
+    );
+    expect(definition?.levels[0]).toMatchObject({
+      format: "decimal",
+      text: "%1.",
+      start: 1,
+      suffix: "tab",
+      paragraph: { indent: { left: 720, hanging: 360 } },
+    });
+    const first = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a list paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    expect(paragraph.numbering).toEqual({ reference: "num", level: 0 });
+  });
+
+  it("round-trips hyperlinks as text:a elements", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    hyperlink: {
+                      url: "https://example.com",
+                      tooltip: "Example",
+                      children: ["Site"],
+                    },
+                  },
+                  { hyperlink: { anchor: "top", children: ["Jump"] } },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{
+      hyperlink?: { url?: string; anchor?: string; tooltip?: string; children?: string[] };
+    }>;
+    expect(runs[0]?.hyperlink).toMatchObject({
+      url: "https://example.com",
+      tooltip: "Example",
+    });
+    expect(runs[0]?.hyperlink?.children?.join("")).toBe("Site");
+    expect(runs[1]?.hyperlink).toMatchObject({ anchor: "top" });
+    expect(runs[1]?.hyperlink?.children?.join("")).toBe("Jump");
+  });
+
+  it("round-trips custom shapes with preset geometry and graphic style", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    wpsShape: {
+                      children: [],
+                      transformation: {
+                        offset: { left: 914400, top: 914400 },
+                        width: 1828800,
+                        height: 914400,
+                      },
+                      geometry: "rect",
+                      altText: { name: "Box" },
+                      fill: { type: "solid", color: "FF0000" },
+                      outline: { width: 12700, color: "000000" },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a shape paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    const shape = paragraph.children?.at(0);
+    if (typeof shape !== "object" || !("wpsShape" in shape))
+      throw new Error("Expected a shape run");
+    expect(shape.wpsShape.transformation).toMatchObject({
+      offset: { left: 914400, top: 914400 },
+      width: 1828800,
+      height: 914400,
+    });
+    expect(shape.wpsShape.geometry).toBe("rect");
+    expect(shape.wpsShape.altText).toMatchObject({ name: "Box" });
+    expect(shape.wpsShape.fill).toMatchObject({ type: "solid", color: "FF0000" });
+    expect(shape.wpsShape.outline).toMatchObject({ width: 12700, color: "000000" });
+  });
+
+  it("round-trips bookmarks as text:bookmark elements", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { paragraph: { children: [{ bookmark: { name: "intro" } }, { text: "Body" }] } },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ bookmark?: { name: string } }>;
+    expect(runs[0]?.bookmark).toEqual({ name: "intro" });
+  });
+
+  it("round-trips footnotes through text:note bodies", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ footnoteReference: 1 }, { text: "Body" }],
+              },
+            },
+          ],
+        },
+      ],
+      footnotes: [{ id: 1, children: [{ paragraph: "Note text" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ footnoteReference?: number }>;
+    expect(runs[0]?.footnoteReference).toBe(1);
+    const note = parsed.footnotes?.[0];
+    expect(note?.id).toBe(1);
+    const noteChild = note?.children[0];
+    if (!noteChild || typeof noteChild === "string" || !("paragraph" in noteChild))
+      throw new Error("Expected a note paragraph");
+    expect(noteChild.paragraph).toEqual({ text: "Note text" });
+  });
+
+  it("round-trips endnotes through text:note bodies", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ endnoteReference: 1 }, { text: "Body" }],
+              },
+            },
+          ],
+        },
+      ],
+      endnotes: [{ id: 1, children: [{ paragraph: "Endnote text" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ endnoteReference?: number }>;
+    expect(runs[0]?.endnoteReference).toBe(1);
+    const note = parsed.endnotes?.[0];
+    expect(note?.id).toBe(1);
+    const noteChild = note?.children[0];
+    if (!noteChild || typeof noteChild === "string" || !("paragraph" in noteChild))
+      throw new Error("Expected a note paragraph");
+    expect(noteChild.paragraph).toEqual({ text: "Endnote text" });
+  });
+
+  it("preserves runs of multiple spaces through text:s", () => {
+    const source: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { text: "a  b   c" } }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { text: "" } : child.paragraph;
+    expect(paragraph.text).toBe("a  b   c");
+  });
+
+  it("round-trips tab stops through paragraph tab-stop styles", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                text: "Tabbed",
+                tabStops: [
+                  { type: "right", position: 9026, leader: "dot" },
+                  { type: "decimal", position: 4513 },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+    expect(paragraph.tabStops).toEqual([
+      { type: "right", position: 9026, leader: "dot" },
+      { type: "decimal", position: 4513 },
+    ]);
+  });
+
+  it("round-trips font declarations through font-face-decls", () => {
+    const source: DocumentOptions = {
+      fonts: [{ name: "Arial", family: "swiss", pitch: "variable" }],
+      sections: [{ children: [{ paragraph: "Body" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    expect(parsed.fonts).toEqual([{ name: "Arial", family: "swiss", pitch: "variable" }]);
+  });
+
+  it("round-trips footnote numbering configuration", () => {
+    const source: DocumentOptions = {
+      sections: [{ children: [{ paragraph: "Body" }] }],
+      settings: {
+        footnoteProperties: { pos: "pageBottom", numFmt: "decimal", numStart: 2 },
+        endnoteProperties: { pos: "docEnd", numFmt: "lowerRoman" },
+      },
+    };
+    const parsed = parseOdt(generateOdt(source));
+    expect(parsed.settings?.footnoteProperties).toMatchObject({
+      pos: "pageBottom",
+      numFmt: "decimal",
+      numStart: 2,
+    });
+    expect(parsed.settings?.endnoteProperties).toMatchObject({
+      pos: "docEnd",
+      numFmt: "lowerRoman",
+    });
+  });
+
+  it("round-trips headers and footers through the master page", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          headers: {
+            default: [
+              {
+                paragraph: {
+                  children: [
+                    "Header ",
+                    { simpleField: { instruction: " PAGE ", cachedValue: "1" } },
+                  ],
+                },
+              },
+            ],
+          },
+          footers: {
+            default: [{ paragraph: { text: "Footer text" } }],
+          },
+          children: [{ paragraph: "Body" }],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const headerParagraph = parsed.sections[0]!.headers!.default![0]!;
+    if (!("paragraph" in headerParagraph)) throw new Error("Expected a header paragraph");
+    const header = typeof headerParagraph.paragraph === "string" ? {} : headerParagraph.paragraph;
+    expect(header.children).toEqual([
+      "Header ",
+      { simpleField: { instruction: " PAGE ", cachedValue: "1" } },
+    ]);
+    const footerParagraph = parsed.sections[0]!.footers!.default![0]!;
+    if (!("paragraph" in footerParagraph)) throw new Error("Expected a footer paragraph");
+    const footer = typeof footerParagraph.paragraph === "string" ? {} : footerParagraph.paragraph;
+    expect(footer.text).toBe("Footer text");
+  });
+
+  it("round-trips heading outline numbering through text:outline-style", () => {
+    const source: DocumentOptions = {
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "Outline",
+            levels: [
+              { level: 0, format: "decimal", text: "%1.", start: 1, paragraphStyle: "Heading1" },
+              {
+                level: 1,
+                format: "lowerLetter",
+                text: "%2)",
+                start: 1,
+                paragraphStyle: "Heading2",
+              },
+            ],
+          },
+        ],
+      },
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                heading: "Heading1",
+                text: "Chapter",
+                numbering: { reference: "Outline", level: 0 },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const numbering = parsed.numbering?.abstractNumberings?.[0];
+    expect(numbering?.reference).toBe("Outline");
+    expect(numbering?.levels[0]).toMatchObject({
+      level: 0,
+      format: "decimal",
+      text: "%1.",
+      paragraphStyle: "Heading1",
+    });
+    expect(numbering?.levels[1]).toMatchObject({
+      level: 1,
+      format: "lowerLetter",
+      text: "%2)",
+      paragraphStyle: "Heading2",
+    });
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+    expect(paragraph.heading).toBe("Heading1");
+    expect(paragraph.numbering).toEqual({ reference: "Outline", level: 0 });
+  });
+
+  it("round-trips document defaults through style:default-style", () => {
+    const source: DocumentOptions = {
+      styles: {
+        default: {
+          document: {
+            paragraph: { alignment: "center", indent: { left: 567 } },
+            run: { font: "Arial", size: 12, bold: true },
+          },
+        },
+      },
+      sections: [{ children: [{ paragraph: "Body" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const defaults = parsed.styles?.default?.document;
+    expect(defaults?.paragraph).toMatchObject({ alignment: "center", indent: { left: 567 } });
+    expect(defaults?.run).toMatchObject({ font: "Arial", size: 12, bold: true });
   });
 
   it("round-trips a line break inside a run", () => {
@@ -468,6 +904,39 @@ describe("ODS mapping", () => {
       },
     });
   });
+
+  it("round-trips diagonal cell borders through ODF diagonal styles", () => {
+    const source: OdsOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  value: "Diagonal",
+                  style: {
+                    border: {
+                      diagonal: { style: "thin", color: "7030A0" },
+                      diagonalDown: true,
+                      diagonalUp: true,
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.style).toEqual({
+      border: {
+        diagonal: { style: "thin", color: "7030A0" },
+        diagonalDown: true,
+        diagonalUp: true,
+      },
+    });
+  });
 });
 
 describe("ODP mapping", () => {
@@ -573,6 +1042,87 @@ describe("ODP mapping", () => {
     expect(child.connector.endConnection).toEqual({ id: 5, index: 1 });
   });
 
+  it("round-trips slide custom shapes through draw:custom-shape", () => {
+    const source: OdpOptions = {
+      slides: [
+        {
+          children: [
+            {
+              shape: {
+                name: "Banner",
+                x: 914400,
+                y: 914400,
+                width: 3657600,
+                height: 1828800,
+                textBody: { text: "Shape text" },
+                properties: {
+                  geometry: "rect",
+                  fill: { type: "solid", color: "FF0000" },
+                  outline: { width: 12700, color: "000000" },
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new Error("Expected an ODP shape");
+    expect(child.shape.x).toBe(914400);
+    expect(child.shape.width).toBe(3657600);
+    expect(child.shape.name).toBe("Banner");
+    expect(child.shape.textBody).toMatchObject({ paragraphs: [{ text: "Shape text" }] });
+    expect(child.shape.properties?.geometry).toBe("rect");
+    expect(child.shape.properties?.fill).toMatchObject({ type: "solid", color: "FF0000" });
+    expect(child.shape.properties?.outline).toMatchObject({ width: 12700, color: "000000" });
+  });
+
+  it("round-trips embedded charts through draw:object subdocuments", () => {
+    const source = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    chart: {
+                      class: "chart:bar",
+                      width: 3657600,
+                      height: 2743200,
+                      title: { text: "Chart title" },
+                      plotArea: {},
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source as DocumentOptions));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a chart paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    const chart = paragraph.children?.at(0);
+    if (
+      typeof chart !== "object" ||
+      !("chart" in chart) ||
+      typeof chart.chart !== "object" ||
+      chart.chart === null ||
+      !("class" in chart.chart)
+    )
+      throw new Error("Expected an ODF chart run");
+    const chartOptions = chart.chart as unknown as ChartChartOptions;
+    expect(chartOptions.class).toBe("chart:bar");
+    expect(chartOptions.width).toBe(3657600);
+    expect(chartOptions.title).toMatchObject({ text: "Chart title" });
+  });
+
   it("round-trips slide pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: OdpOptions = {
@@ -592,6 +1142,31 @@ describe("ODP mapping", () => {
     expect(child.picture.type).toBe("png");
     expect(child.picture.x).toBe(914400);
     expect(child.picture.width).toBe(1828800);
+  });
+
+  it("round-trips worksheet charts through draw:object subdocuments", () => {
+    const source: OdsOptions = {
+      worksheets: [{ name: "Data", rows: [{ cells: [{ value: 1 }] }] }],
+      embeddedCharts: [
+        {
+          name: "Object 1",
+          worksheet: "Data",
+          x: 914400,
+          y: 914400,
+          width: 3657600,
+          height: 2743200,
+          chart: { class: "chart:bar", plotArea: {} },
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    const chart = parsed.embeddedCharts?.at(0);
+    if (!chart) throw new Error("Expected an embedded ODS chart");
+    expect(chart.name).toBe("Object 1");
+    expect(chart.worksheet).toBe("Data");
+    expect(chart.x).toBe(914400);
+    expect(chart.width).toBe(3657600);
+    expect(chart.chart.class).toBe("chart:bar");
   });
 
   it("round-trips lines through draw:line", () => {

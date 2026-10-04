@@ -1,8 +1,8 @@
-import type { Element } from "@office-open/xml";
+import { parse, type Element } from "@office-open/xml";
 
 import { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml } from "./package";
+import { generateOcf, readOcf, readXml, type OdfFiles } from "./package";
 import {
   attributeString,
   childNamed,
@@ -14,6 +14,7 @@ import {
 } from "./xml";
 
 const MIME = "application/vnd.oasis.opendocument.chart";
+export const CHART_MIME = MIME;
 const NAMESPACES = `${ODF_NAMESPACES} xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0"`;
 const childAttribute = attributeString;
 
@@ -126,11 +127,41 @@ export function generateChartDocument(options: ChartDocumentOptions): Uint8Array
   });
 }
 
+/** Serializes an embedded chart subdocument body (its content.xml). */
+export function chartBodyXml(chart: ChartChartOptions): string {
+  return chartContentXml(chartXml(chart));
+}
+
 export function parseChartDocument(data: Uint8Array): ChartDocumentOptions {
   const { files } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:chart");
   return { ...parseMeta(files), chart: parseChart(childNamed(body, "chart:chart")) };
+}
+
+/** Parses an embedded chart body; undefined when the XML is not a chart document. */
+export function parseChartBody(xml: string): ChartChartOptions | undefined {
+  const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
+  const root = document.elements?.[0] ?? document;
+  const body = childNamed(childNamed(root, "office:body"), "office:chart");
+  const chart = childNamed(body, "chart:chart");
+  return chart ? parseChart(chart) : undefined;
+}
+
+/** Embedded chart subdocuments from the manifest, keyed by their object name. */
+export function parseEmbeddedCharts(
+  manifest: Element,
+  files: OdfFiles,
+): Map<string, ChartChartOptions> {
+  const result = new Map<string, ChartChartOptions>();
+  for (const entry of childrenNamed(manifest, "manifest:file-entry")) {
+    const fullPath = attributeString(entry, "manifest:full-path");
+    if (!fullPath || fullPath === "/" || !fullPath.endsWith("/")) continue;
+    const content = files[`${fullPath}content.xml`];
+    const chart = content ? parseChartBody(content) : undefined;
+    if (chart) result.set(fullPath.replace(/\/$/, ""), chart);
+  }
+  return result;
 }
 
 function chartContentXml(body: string): string {

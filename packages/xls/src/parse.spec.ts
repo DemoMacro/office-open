@@ -2,7 +2,7 @@ import type { CellOptions, WorksheetOptions } from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
 
 import { buildSmallContainer } from "./cfb-builder";
-import { parseWorkbook } from "./index";
+import { LegacyExcelError, parseWorkbook } from "./index";
 
 const BIFF5_TOKEN = 0x0500;
 const BIFF8_TOKEN = 0x0600;
@@ -1172,5 +1172,21 @@ describe("parseWorkbook", () => {
       endOfFile(),
     ]);
     expect(() => parseWorkbook(xls(encrypted))).toThrow(/Encrypted legacy XLS/);
+
+    const actions = [
+      () => parseWorkbook(new Uint8Array([1, 2, 3])),
+      () => parseWorkbook(xls(new Uint8Array([1, 2, 3]), "Other")),
+      () => parseWorkbook(xls(new Uint8Array(10))),
+      () => parseWorkbook(xls(encrypted)),
+    ];
+    const errors = actions.map((action) => {
+      try {
+        action();
+      } catch (error) {
+        return error;
+      }
+      throw new Error("Expected parseWorkbook to throw");
+    });
+    for (const error of errors) expect(error).toBeInstanceOf(LegacyExcelError);
   });
 });

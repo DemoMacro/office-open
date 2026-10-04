@@ -16,9 +16,17 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
+import {
+  graphicFill,
+  graphicOutline,
+  type GraphicStyle,
+  parseGraphicStyles,
+  pushShapeStyle,
+} from "./graphic-style";
 import { escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNode, parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfPackageFiles } from "./package";
+import { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./preset-geometry";
 import {
   attributeString,
   childNamed,
@@ -93,6 +101,7 @@ export function parseOdp(data: Uint8Array): OdpOptions {
   );
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
+  const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
   const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
@@ -103,6 +112,7 @@ export function parseOdp(data: Uint8Array): OdpOptions {
         parseTextStyles(childNamed(content, "office:automatic-styles")),
         parseColumnWidths(childNamed(content, "office:automatic-styles")),
         binaries,
+        graphicStyles,
       ),
     ),
     odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
@@ -156,7 +166,10 @@ function slideXml(
 
 /** Recursive SlideChild → ODF dispatcher shared by slides and draw:g groups. */
 function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]): string {
-  if ("shape" in child) return shapeXml(child.shape, styles);
+  if ("shape" in child) {
+    if (child.shape.properties?.geometry !== undefined) return customShapeXml(child.shape, styles);
+    return shapeXml(child.shape, styles);
+  }
   if ("table" in child) return slideTableXml(child.table, styles);
   if ("connector" in child) return connectorXml(child.connector);
   if ("line" in child) return lineXml(child.line);
@@ -169,6 +182,36 @@ function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]):
     );
   if ("rawXml" in child) return child.rawXml;
   return "";
+}
+
+/** Shape with preset geometry renders as draw:custom-shape + enhanced-geometry. */
+function customShapeXml(shape: ShapeOptions, styles: string[]): string {
+  const geometry = shape.properties?.geometry;
+  const preset =
+    geometry === undefined ? undefined : typeof geometry === "string" ? geometry : geometry.preset;
+  return xmlElement(
+    "draw:custom-shape",
+    {
+      "draw:style-name": pushShapeStyle(
+        shape.properties?.fill ?? undefined,
+        shape.properties?.outline ?? undefined,
+        styles,
+      ),
+      "svg:x": toOdfLength(shape.x),
+      "svg:y": toOdfLength(shape.y),
+      "svg:width": toOdfLength(shape.width),
+      "svg:height": toOdfLength(shape.height),
+      "draw:name": shape.name,
+    },
+    [
+      xmlElement(
+        "draw:enhanced-geometry",
+        { "draw:type": preset ? presetGeometryOdf(preset) : undefined },
+        [],
+      ),
+      ...textBodyXml(shape.textBody, styles),
+    ],
+  );
 }
 
 function shapeXml(shape: ShapeOptions, styles: string[]): string {
@@ -290,6 +333,7 @@ function parseSlide(
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
+  graphicStyles: Map<string, GraphicStyle>,
 ): SlideOptions {
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
@@ -305,6 +349,8 @@ function parseSlide(
           if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
           return [parseUnknownSlideChild(child)];
         }
+        if (child.name === "draw:custom-shape")
+          return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
         if (child.name === "draw:line") return [parseLine(child)];
         if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
         if (child.name === "draw:connector") return [parseConnector(child)];
@@ -414,6 +460,44 @@ function parseShape(frame: Element, textStyles: Map<string, TextProperties>): Sh
         parseParagraph(paragraph, textStyles),
       ),
     },
+  };
+}
+
+/** draw:custom-shape maps to the shared pptx shape with preset geometry. */
+function parseCustomSlideShape(
+  element: Element,
+  textStyles: Map<string, TextProperties>,
+  graphicStyles: Map<string, GraphicStyle>,
+): ShapeOptions {
+  const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
+  const enhanced = childNamed(element, "draw:enhanced-geometry");
+  const presetType = attributeString(enhanced, "draw:type");
+  const preset = presetType ? PRESET_GEOMETRY_DOCX[presetType] : undefined;
+  const paragraphs = childrenNamed(element, "text:p");
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
+  return {
+    name: attributeString(element, "draw:name"),
+    x: lengthToEmu(attributeString(element, "svg:x")),
+    y: lengthToEmu(attributeString(element, "svg:y")),
+    width: lengthToEmu(attributeString(element, "svg:width")),
+    height: lengthToEmu(attributeString(element, "svg:height")),
+    ...(paragraphs.length > 0
+      ? {
+          textBody: {
+            paragraphs: paragraphs.map((paragraph) => parseParagraph(paragraph, textStyles)),
+          },
+        }
+      : {}),
+    ...(preset || fill || outline
+      ? {
+          properties: {
+            ...(preset ? { geometry: preset } : {}),
+            ...(fill ? { fill } : {}),
+            ...(outline ? { outline } : {}),
+          },
+        }
+      : {}),
   };
 }
 

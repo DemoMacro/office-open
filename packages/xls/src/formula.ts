@@ -57,7 +57,7 @@ class FormulaReader {
 
   require(length: number): void {
     if (this.cursor + length > this.data.byteLength) {
-      throw new Error("Invalid legacy XLS file: truncated formula");
+      throw new LegacyExcelError("Invalid legacy XLS file: truncated formula");
     }
   }
 
@@ -154,7 +154,7 @@ export function decodeFormula(
         const right = operands.pop();
         const left = operands.pop();
         if (left === undefined || right === undefined)
-          throw new Error("Invalid legacy XLS file: malformed formula operation");
+          throw new LegacyExcelError("Invalid legacy XLS file: malformed formula operation");
         operands.push(`${left}${BINARY_OPERATORS[token]}${right}`);
         break;
       }
@@ -162,14 +162,14 @@ export function decodeFormula(
       case 0x12: {
         const operand = operands.pop();
         if (operand === undefined)
-          throw new Error("Invalid legacy XLS file: malformed unary formula");
+          throw new LegacyExcelError("Invalid legacy XLS file: malformed unary formula");
         operands.push(token === 0x13 ? `-${operand}` : `+${operand}`);
         break;
       }
       case 0x15: {
         const operand = operands.pop();
         if (operand === undefined)
-          throw new Error("Invalid legacy XLS file: malformed parenthesized formula");
+          throw new LegacyExcelError("Invalid legacy XLS file: malformed parenthesized formula");
         operands.push(`(${operand})`);
         break;
       }
@@ -288,7 +288,7 @@ export function decodeFormula(
         break;
       }
       default:
-        throw new Error(
+        throw new LegacyExcelError(
           `Invalid legacy XLS file: unsupported formula token 0x${token.toString(16).padStart(2, "0")}`,
         );
     }
@@ -303,7 +303,7 @@ export function decodeFormula(
   }
 
   if (operands.length !== 1 || pendingFunction) {
-    throw new Error("Invalid legacy XLS file: malformed formula token stream");
+    throw new LegacyExcelError("Invalid legacy XLS file: malformed formula token stream");
   }
   return { formula: operands[0]!, consumed: data.byteLength };
 }
@@ -311,3 +311,4 @@ export function decodeFormula(
 function reference(row: number, column: number): string {
   return `${columnLabel(column)}${row + 1}`;
 }
+import { LegacyExcelError } from "./errors";
