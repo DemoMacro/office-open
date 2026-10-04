@@ -30,5 +30,6 @@
     "declarationMap": true,
     "esModuleInterop": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "references": [{ "path": "../odt" }, { "path": "../ods" }, { "path": "../odp" }]
 }
