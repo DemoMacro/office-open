@@ -17,7 +17,12 @@ import {
   type OdfFiles,
   type XmlAttributes,
 } from "@office-open/ocf";
-import { CHART_MIME, chartBodyXml, parseEmbeddedCharts } from "@office-open/odf-schema";
+import {
+  CHART_MIME,
+  chartBodyXml,
+  OdfSchemaError,
+  parseEmbeddedCharts,
+} from "@office-open/odf-schema";
 import type {
   AlignmentOptions,
   BorderOptions,
@@ -46,6 +51,17 @@ const NAMESPACES = [
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
 ].join(" ");
 
+const COLUMN_CONTAINERS = new Set([
+  "table:table-columns",
+  "table:table-header-columns",
+  "table:table-column-group",
+]);
+const ROW_CONTAINERS = new Set([
+  "table:table-rows",
+  "table:table-header-rows",
+  "table:table-row-group",
+]);
+
 interface DimensionStyle {
   width?: number;
   height?: number;
@@ -56,8 +72,11 @@ interface DimensionStyle {
 interface OdsChartFrame {
   name: string;
   worksheet: string;
-  chart: WorksheetChartOptions;
+  chart: OdsParsedChartOptions;
 }
+
+type OdsParsedChartOptions = Omit<WorksheetChartOptions, "col" | "row"> &
+  Partial<Pick<WorksheetChartOptions, "col" | "row">>;
 
 export function generateOds(options: WorkbookOptions): Uint8Array {
   const styles: string[] = [];
@@ -72,7 +91,7 @@ export function generateOds(options: WorkbookOptions): Uint8Array {
     worksheetXml(worksheet, index + 1, styles, chartFrames),
   );
   const files: OdfFiles = {
-    "content.xml": contentXml(sheets.join(""), styles),
+    "content.xml": contentXml(sheets.join(""), styles, options.definedNames),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
@@ -89,11 +108,18 @@ export function parseOds(data: Uint8Array): WorkbookOptions {
     return parseOdsWorkbook(data);
   } catch (cause) {
     if (cause instanceof OdsParseError) throw cause;
+    if (cause instanceof OdfSchemaError) {
+      throw new OdsParseError(cause.message, cause.part, cause.path, cause.name, cause.reason, {
+        cause,
+      });
+    }
     throw new OdsParseError(
       cause instanceof Error ? cause.message : "Unable to parse ODS package",
-      {
-        cause,
-      },
+      "mimetype",
+      "/mimetype",
+      "mimetype",
+      "invalid ODS package",
+      { cause },
     );
   }
 }
@@ -107,6 +133,7 @@ function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
   const cellStyles = parseNumberStyles(automaticStyles);
   const chartPool = parseEmbeddedCharts(manifest, files);
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
+  const definedNames = parseDefinedNames(body) ?? [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
     const parsed = worksheet(table, index + 1, dimensions, cellStyles);
     const name = attributeString(table, "table:name");
@@ -114,19 +141,45 @@ function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
       .filter((entry) => entry.worksheet === (name ?? `Sheet${index + 1}`))
       .map((entry) => entry.chart);
     return charts.length > 0
-      ? { ...parsed, charts: [...(parsed.charts ?? []), ...charts] }
+      ? { ...parsed, charts: [...(parsed.charts ?? []), ...(charts as WorksheetChartOptions[])] }
       : parsed;
   });
+  rejectUnknownSpreadsheetChildren(body);
   return {
     ...parseMeta(files),
+    ...(definedNames.length > 0 ? { definedNames } : {}),
     worksheets,
   };
 }
 
-function contentXml(sheets: string, styles: string[]): string {
+function contentXml(
+  sheets: string,
+  styles: string[],
+  definedNames: WorkbookOptions["definedNames"],
+): string {
+  const expressions = definedNamesXml(definedNames);
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
     "",
-  )}</office:automatic-styles><office:body><office:spreadsheet>${sheets}</office:spreadsheet></office:body></office:document-content>`;
+  )}</office:automatic-styles><office:body><office:spreadsheet>${sheets}${expressions}</office:spreadsheet></office:body></office:document-content>`;
+}
+
+function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): string {
+  if (!definedNames?.length) return "";
+  return xmlElement(
+    "table:named-expressions",
+    undefined,
+    definedNames.map((definedName) =>
+      /^[A-Za-z0-9_]+![A-Z]+[0-9]+(?::[A-Z]+[0-9]+)?$/.test(definedName.value)
+        ? xmlElement("table:named-range", {
+            "table:name": definedName.name,
+            "table:cell-range-address": definedName.value,
+          })
+        : xmlElement("table:named-expression", {
+            "table:name": definedName.name,
+            "table:expression": definedName.value,
+          }),
+    ),
+  );
 }
 
 function stylesXml(): string {
@@ -175,18 +228,27 @@ function worksheetXml(
     : [xmlElement("table:table-row", undefined, [xmlElement("table:table-cell")])];
   const sheetName = worksheet.name ?? `Sheet${index}`;
   const frames = embeddedCharts
-    .filter((entry, position) =>
-      entry.worksheet ? entry.worksheet === sheetName : position === 0 && index === 1,
-    )
+    .filter((entry) => entry.worksheet === sheetName)
     .map((entry) =>
       xmlElement(
         "draw:frame",
         {
           "draw:name": entry.name,
-          "svg:x": emuToLength(entry.chart.absoluteX ?? entry.chart.colOffset ?? 0),
-          "svg:y": emuToLength(entry.chart.absoluteY ?? entry.chart.rowOffset ?? 0),
+          "svg:x": emuToLength(
+            entry.chart.absoluteX ?? entry.chart.colOffset ?? entry.chart.col ?? 0,
+          ),
+          "svg:y": emuToLength(
+            entry.chart.absoluteY ?? entry.chart.rowOffset ?? entry.chart.row ?? 0,
+          ),
           "svg:width": emuToLength(entry.chart.extentCx ?? 400000),
           "svg:height": emuToLength(entry.chart.extentCy ?? 300000),
+          ...(entry.chart.toCol !== undefined && entry.chart.toRow !== undefined
+            ? {
+                "table:end-cell-address": cellAddress(entry.chart.toCol, entry.chart.toRow),
+                "table:end-x": emuToLength(entry.chart.toColOffset ?? 0),
+                "table:end-y": emuToLength(entry.chart.toRowOffset ?? 0),
+              }
+            : {}),
         },
         [
           xmlElement("draw:object", {
@@ -213,24 +275,43 @@ function parseWorksheetCharts(
   const charts: OdsChartFrame[] = [];
   for (const table of childrenNamed(body, "table:table")) {
     const worksheet = attributeString(table, "table:name");
-    for (const frame of [
-      ...childrenNamed(table, "draw:frame"),
-      ...childrenNamed(childNamed(table, "table:shapes"), "draw:frame"),
-    ]) {
+    const frames: Element[] = [];
+    for (const child of table.elements ?? []) {
+      if (child.name === "draw:frame") frames.push(child);
+      if (child.name === "table:shapes") {
+        for (const nested of child.elements ?? [])
+          if (nested.name === "draw:frame") frames.push(nested);
+      }
+    }
+    for (const frame of frames) {
       const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
         ?.replace(/^\.\//, "")
         .replace(/\/$/, "");
       const chart = href ? pool.get(href) : undefined;
-      if (!chart || !href) continue;
+      if (!href) {
+        throw unknownOdsElement(
+          frame,
+          `/office:spreadsheet/table:table[@table:name="${worksheet ?? ""}"]`,
+          "draw:object",
+          "chart frame has no object reference",
+        );
+      }
+      if (!chart) {
+        throw unknownOdsElement(
+          frame,
+          `/office:spreadsheet/table:table[@table:name="${worksheet ?? ""}"]`,
+          href,
+          "referenced chart subdocument is missing",
+        );
+      }
       charts.push({
         name: href,
         worksheet: worksheet ?? "",
         chart: {
           ...chart,
           name: href,
-          col: 1,
-          row: 1,
           anchorType: "absolute",
+          ...endAnchor(frame),
           absoluteX: lengthToEmu(attributeString(frame, "svg:x")),
           absoluteY: lengthToEmu(attributeString(frame, "svg:y")),
           extentCx: lengthToEmu(attributeString(frame, "svg:width")) ?? 400000,
@@ -240,6 +321,81 @@ function parseWorksheetCharts(
     }
   }
   return charts;
+}
+
+function endAnchor(frame: Element): Pick<WorksheetChartOptions, "toCol" | "toRow"> {
+  const address = attributeString(frame, "table:end-cell-address");
+  const match = /^([A-Z]+)([0-9]+)$/.exec(address ?? "");
+  if (!match) return {};
+  return {
+    toCol: columnNumber(match[1]!),
+    toRow: Number(match[2]),
+  };
+}
+
+function cellAddress(column: number, row: number): string {
+  let value = column;
+  let letters = "";
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    letters = String.fromCharCode(65 + remainder) + letters;
+    value = Math.floor((value - 1) / 26);
+  }
+  return `${letters}${row}`;
+}
+
+function columnNumber(column: string): number {
+  let total = 0;
+  for (let index = 0; index < column.length; index += 1) {
+    total = total * 26 + column.charCodeAt(index) - 64;
+  }
+  return total;
+}
+
+function rejectUnknownSpreadsheetChildren(body: Element | undefined): void {
+  const allowed = new Set(["table:table", "table:named-expressions"]);
+  for (const child of body?.elements ?? []) {
+    if (child.name && !allowed.has(child.name)) {
+      const name = child.name;
+      throw new OdsParseError(
+        `content.xml: /office:document-content/office:body/office:spreadsheet/${name}: no canonical WorkbookOptions mapping`,
+        "content.xml",
+        `/office:document-content/office:body/office:spreadsheet/${name}`,
+        name,
+        "no canonical WorkbookOptions mapping",
+      );
+    }
+  }
+}
+
+function parseDefinedNames(body: Element | undefined): WorkbookOptions["definedNames"] {
+  const expressions = childNamed(body, "table:named-expressions");
+  return [
+    ...childrenNamed(expressions, "table:named-range").map((range) => ({
+      name: attributeString(range, "table:name") ?? "",
+      value: attributeString(range, "table:cell-range-address") ?? "",
+    })),
+    ...childrenNamed(expressions, "table:named-expression").map((expression) => ({
+      name: attributeString(expression, "table:name") ?? "",
+      value: attributeString(expression, "table:expression") ?? "",
+    })),
+  ];
+}
+
+function unknownOdsElement(
+  element: Element,
+  parent: string,
+  name: string,
+  reason: string,
+): OdsParseError {
+  const path = `${parent}/${element.name ?? name}`;
+  return new OdsParseError(
+    `content.xml: ${path}: ${name}: ${reason}`,
+    "content.xml",
+    path,
+    name,
+    reason,
+  );
 }
 
 function cellXml(cell: CellOptions, styles: string[]): string {
@@ -657,24 +813,62 @@ function worksheet(
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
 ): WorksheetOptions {
+  validateTableChildren(table);
   return {
     name: attributeString(table, "table:name") ?? `Sheet${index}`,
-    columns: parseColumns(table, dimensions),
-    rows: childrenNamed(table, "table:table-row").map((row, rowIndex) =>
+    columns: tableColumns(table).map((column, columnIndex) =>
+      parseColumn(column, columnIndex + 1, dimensions),
+    ),
+    rows: tableRows(table).map((row, rowIndex) =>
       parseRow(row, rowIndex + 1, dimensions, cellStyles),
     ),
   };
 }
 
-function parseColumns(table: Element, dimensions: Map<string, DimensionStyle>): ColumnOptions[] {
-  const columns: ColumnOptions[] = [];
-  let column = 1;
-  for (const element of childrenNamed(table, "table:table-column")) {
-    const style = dimensions.get(attributeString(element, "table:style-name") ?? "");
-    columns.push({ min: column, max: column, width: style?.width, hidden: style?.hidden });
-    column += 1;
+function validateTableChildren(table: Element): void {
+  for (const child of table.elements ?? []) {
+    if (child.type !== "element" || !child.name) continue;
+    if (
+      child.name === "table:table-column" ||
+      child.name === "table:table-row" ||
+      child.name === "table:shapes" ||
+      COLUMN_CONTAINERS.has(child.name) ||
+      ROW_CONTAINERS.has(child.name)
+    ) {
+      continue;
+    }
+    throw unknownOdsElement(
+      child,
+      `/office:document-content/office:body/office:spreadsheet/table:table[@table:name="${attributeString(table, "table:name") ?? ""}"]`,
+      child.name,
+      "element has no canonical WorksheetOptions mapping",
+    );
   }
-  return columns;
+}
+
+function tableColumns(table: Element): Element[] {
+  return (table.elements ?? []).flatMap((child) => {
+    if (child.name === "table:table-column") return [child];
+    if (COLUMN_CONTAINERS.has(child.name ?? "")) return tableColumns(child);
+    return [];
+  });
+}
+
+function tableRows(table: Element): Element[] {
+  return (table.elements ?? []).flatMap((child) => {
+    if (child.name === "table:table-row") return [child];
+    if (ROW_CONTAINERS.has(child.name ?? "")) return tableRows(child);
+    return [];
+  });
+}
+
+function parseColumn(
+  element: Element,
+  column: number,
+  dimensions: Map<string, DimensionStyle>,
+): ColumnOptions {
+  const style = dimensions.get(attributeString(element, "table:style-name") ?? "");
+  return { min: column, max: column, width: style?.width, hidden: style?.hidden };
 }
 
 function parseRow(
@@ -688,10 +882,20 @@ function parseRow(
     rowNumber,
     height: style?.height,
     hidden: style?.hidden,
-    cells:
-      row.elements
-        ?.filter((cell) => cell.name === "table:table-cell")
-        .map((cell, cellIndex) => parseCell(cell, rowNumber, cellIndex + 1, cellStyles)) ?? [],
+    cells: (row.elements ?? [])
+      .map((cell, cellIndex) => {
+        if (cell.type !== "element" || !cell.name) return undefined;
+        if (cell.name !== "table:table-cell") {
+          throw unknownOdsElement(
+            cell,
+            `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${rowNumber}]`,
+            cell.name,
+            "element has no canonical CellOptions mapping",
+          );
+        }
+        return parseCell(cell, rowNumber, cellIndex + 1, cellStyles);
+      })
+      .filter((cell): cell is CellOptions => cell !== undefined),
   };
 }
 
