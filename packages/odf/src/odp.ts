@@ -25,6 +25,7 @@ const NAMESPACES = [
   'xmlns:style="urn:oasis:names:tc:opendocument:xmlns:style:1.0"',
   'xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"',
   'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
+  'xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"',
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
 ].join(" ");
@@ -106,10 +107,20 @@ function slideXml(slide: SlideOptions, index: number, styles: string[]): string 
   const frames = (slide.children ?? []).map((child) =>
     "shape" in child ? shapeXml(child.shape, styles) : "",
   );
+  const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
+  const notesXml = notes
+    ? xmlElement("presentation:notes", undefined, [
+        xmlElement("draw:frame", undefined, [
+          xmlElement("draw:text-box", undefined, [
+            xmlElement("text:p", undefined, [escapeText(notes)]),
+          ]),
+        ]),
+      ])
+    : undefined;
   return xmlElement(
     "draw:page",
     { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
-    frames,
+    [...frames, ...(notesXml ? [notesXml] : [])],
   );
 }
 
@@ -174,10 +185,16 @@ function addTextStyle(properties: TextProperties, styles: string[]): string | un
 }
 
 function parseSlide(page: Element, textStyles: Map<string, TextProperties>): SlideOptions {
+  const notes = childNamed(
+    childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
+    "draw:text-box",
+  );
+  const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
   return {
     children: childrenNamed(page, "draw:frame").map((frame) => ({
       shape: parseShape(frame, textStyles),
     })),
+    ...(notesText ? { notes: notesText } : {}),
   };
 }
 

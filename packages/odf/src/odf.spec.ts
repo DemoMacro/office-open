@@ -356,4 +356,10 @@ describe("ODP mapping", () => {
       children: [{ text: "Bold", bold: true, size: 20 }],
     });
   });
+
+  it("round-trips speaker notes through presentation:notes", () => {
+    const source = { slides: [{ notes: "Speaker note" }] };
+    const parsed = parseOdp(generateOdp(source));
+    expect(parsed.slides![0]!.notes).toBe("Speaker note");
+  });
 });
