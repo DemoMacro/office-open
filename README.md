@@ -57,6 +57,20 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | Shared OOXML infrastructure, charts, unit converters   |
 | [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | Low-level XML parsing and serialization                |
 
+## Format Capabilities
+
+| Family                        | Parse | Generate | Patch | Notes                                     |
+| ----------------------------- | ----- | -------- | ----- | ----------------------------------------- |
+| OOXML `.docx`/`.xlsx`/`.pptx` | ✅    | ✅       | ✅    | Bidirectional package codecs              |
+| Legacy `.doc`/`.xls`/`.ppt`   | ✅    | ❌       | ❌    | Projected to the OOXML option models      |
+| `.rtf`                        | ✅    | ❌       | ❌    | Read-only projection to `DocumentOptions` |
+| ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ❌    | Format-family read/write codecs           |
+| ODF chart and database        | ✅    | ✅       | ❌    | Low-level document codecs                 |
+
+The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy and RTF have no writers, and ODF codecs do not expose patch operations.
+
+The package graph follows format ownership: `ocf` owns ODF containers, `odf-schema` owns shared ODF models and may use `ocf`/`xml` at runtime with `core` types only, each ODF document codec may type-import its OOXML peer while using `ocf`/`odf-schema` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every codec.
+
 ## Quick Start
 
 ```bash

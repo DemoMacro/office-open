@@ -1,153 +1,252 @@
 /**
- * ODF Relax NG Coverage Analysis Tool
+ * ODF codec coverage report backed by an explicit registry.
  *
- * Parses the ODF 1.3 Relax NG schemas, extracts all element declarations,
- * scans the ODF package for implementations, and generates a coverage report.
- *
- * Detection strategy mirrors xsd-coverage.ts: elements are implemented when
- * their prefixed name appears in XML construction/parsing contexts
- * (`"text:p"` string literals or `<text:p` template literals).
+ * Source text is never scanned. Codec availability is checked through the
+ * owning module's public exports; RNG elements are assigned through the
+ * registry's schema scopes. Generic OdfXmlNode support is intentionally kept
+ * outside canonical and subdocument coverage.
  *
  * Usage:
- *   pnpm tsx scripts/odf-coverage.ts             # full report
- *   pnpm tsx scripts/odf-coverage.ts text        # one prefix only
- *   pnpm tsx scripts/odf-coverage.ts --missing   # show missing elements (default)
- *   pnpm tsx scripts/odf-coverage.ts --summary   # only summary table
+ *   pnpm tsx scripts/odf-coverage.ts --summary
+ *   pnpm tsx scripts/odf-coverage.ts --missing
+ *   pnpm tsx scripts/odf-coverage.ts --format odt|ods|odp|chart|database
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 import { fileURLToPath } from "node:url";
 
-import { parseOdfNode, serializeOdfNodes } from "../packages/odf/src/odf-node";
+import { ODF_CODEC_REGISTRY } from "./lib/odf-codec-registry";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const SEARCH_DIRS = ["packages/odf/src"];
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const SCHEMA_FILES = [
+  "odf-schemas/OpenDocument-v1.3-schema.rng",
+  "odf-schemas/OpenDocument-v1.3-manifest-schema.rng",
+] as const;
 
-const SCHEMA_FILES: Array<[string, string]> = [
-  ["odf-schemas/OpenDocument-v1.3-schema.rng", "odf"],
-  ["odf-schemas/OpenDocument-v1.3-manifest-schema.rng", "manifest"],
-];
-
-interface PrefixStats {
-  elements: string[];
-  dedicated: string[];
-  generic: string[];
+interface RegistryState {
+  entry: (typeof ODF_CODEC_REGISTRY)[number];
+  packageMissing: boolean;
+  moduleMissing: boolean;
+  missingExports: string[];
+  available: boolean;
+  coveredElements?: Set<string>;
 }
 
-function stripComments(code: string): string {
-  return code.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
-}
-
-function loadDedicatedCode(): string {
-  let code = "";
-  for (const dir of SEARCH_DIRS) {
-    const absDir = path.resolve(ROOT_DIR, dir);
-    for (const file of fs.readdirSync(absDir)) {
-      if (file.endsWith(".ts") && !file.endsWith(".spec.ts") && file !== "odf-node.ts") {
-        code += fs.readFileSync(path.join(absDir, file), "utf8");
-      }
-    }
-  }
-  return stripComments(code);
-}
-
-function isDedicated(code: string, element: string): boolean {
-  return code.includes(`"${element}"`) || code.includes(`<${element}`);
-}
-
-function hasGenericRuntime(element: string): boolean {
-  const node = {
-    name: element,
-    attributes: { "office:name": "coverage-probe" },
-    children: ["coverage-probe"],
-  };
-  const [serialized] = serializeOdfNodes([node]);
-  const parsed = parseOdfNode({
-    type: "element",
-    name: element,
-    attributes: { "office:name": "coverage-probe" },
-    elements: [{ type: "text", text: "coverage-probe" }],
+function parseArguments(arguments_: string[]): { summary: boolean; format?: string } {
+  const formatFlag = arguments_.findIndex((argument) => argument === "--format");
+  const flagFormat = formatFlag >= 0 ? arguments_[formatFlag + 1] : undefined;
+  const positional = arguments_.find((argument, index) => {
+    if (argument === "--format") return false;
+    if (index === formatFlag + 1) return false;
+    return !argument.startsWith("--");
   });
-  return serialized !== undefined && JSON.stringify(parsed) === JSON.stringify(node);
+  const format = flagFormat ?? positional;
+  const validFormats = new Set(
+    ODF_CODEC_REGISTRY.filter(
+      (entry) => entry.classification === "canonical" || entry.classification === "subdocument",
+    ).map((entry) => entry.id),
+  );
+  if (format !== undefined && !validFormats.has(format)) {
+    console.error(`unknown format: ${format}`);
+    console.error(`valid formats: ${[...validFormats].join(", ")}`);
+    process.exit(2);
+  }
+  return { summary: arguments_.includes("--summary"), format };
 }
 
-function main() {
-  const args = process.argv.slice(2);
-  const showMissing = !args.includes("--summary");
-  const prefixFilter = args.find((arg) => !arg.startsWith("--"));
-
-  const code = loadDedicatedCode();
-  const prefixes = new Map<string, PrefixStats>();
-
-  for (const [schemaFile] of SCHEMA_FILES) {
-    const rng = fs.readFileSync(path.resolve(ROOT_DIR, schemaFile), "utf8");
-    for (const match of rng.matchAll(/<rng:element name="([^"]+)"/g)) {
+function schemaElements(): Map<string, Set<string>> {
+  const elements = new Map<string, Set<string>>();
+  for (const schemaFile of SCHEMA_FILES) {
+    const filePath = path.join(ROOT, schemaFile);
+    if (!fs.existsSync(filePath)) continue;
+    const schema = fs.readFileSync(filePath, "utf8");
+    for (const match of schema.matchAll(/<rng:element name="([^"]+)"\s*(?:\/>|>)/g)) {
       const element = match[1]!;
-      const prefix = element.split(":")[0] ?? "";
-      const stats = prefixes.get(prefix) ?? { elements: [], dedicated: [], generic: [] };
-      if (!stats.elements.includes(element)) stats.elements.push(element);
-      if (isDedicated(code, element) && !stats.dedicated.includes(element))
-        stats.dedicated.push(element);
-      prefixes.set(prefix, stats);
+      const prefix = element.split(":")[0]!;
+      const scoped = elements.get(prefix) ?? new Set<string>();
+      scoped.add(element);
+      elements.set(prefix, scoped);
     }
   }
+  return elements;
+}
 
-  for (const stats of prefixes.values()) {
-    stats.generic = stats.elements.filter((element) => hasGenericRuntime(element));
-  }
+async function registryState(): Promise<RegistryState[]> {
+  return Promise.all(
+    ODF_CODEC_REGISTRY.map(async (entry) => {
+      const packageDirectory = path.join(ROOT, "packages", entry.owner.package);
+      const modulePath = path.join(packageDirectory, entry.owner.module);
+      const packageMissing = !fs.existsSync(path.join(packageDirectory, "package.json"));
+      const moduleMissing = !fs.existsSync(modulePath);
+      const missingExports: string[] = [];
 
-  const rows = [...prefixes.entries()]
-    .filter(([prefix]) => !prefixFilter || prefix === prefixFilter)
-    .sort((a, b) => b[1].elements.length - a[1].elements.length);
+      if (!packageMissing && !moduleMissing && entry.owner.export !== null) {
+        try {
+          const module = await import(pathToFileURL(modulePath).href);
+          const exports = [entry.owner.export, ...(entry.roundTrip ?? [])];
+          for (const name of new Set(exports)) {
+            if (!(name in module)) missingExports.push(name);
+          }
+        } catch (error) {
+          console.warn(`coverage warning: ${entry.id} module could not load`);
+          console.warn(String(error instanceof Error ? error.message : error).split("\n")[0]);
+          missingExports.push(entry.owner.export);
+        }
+      }
 
-  let totalElements = 0;
-  let totalDedicated = 0;
-  let totalGeneric = 0;
-  let totalCovered = 0;
-  for (const [, stats] of rows) {
-    totalElements += stats.elements.length;
-    totalDedicated += stats.dedicated.length;
-    totalGeneric += stats.generic.length;
-    totalCovered += stats.elements.filter(
-      (element) => stats.dedicated.includes(element) || stats.generic.includes(element),
-    ).length;
-  }
-
-  console.log("======================================================================");
-  console.log("ODF Relax NG Coverage");
-  console.log("======================================================================");
-  console.log("| Prefix      | Elements | Dedicated | Generic | Coverage |");
-  console.log("|-------------|----------|-----------|---------|----------|");
-  for (const [prefix, stats] of rows) {
-    const covered = stats.elements.filter(
-      (element) => stats.dedicated.includes(element) || stats.generic.includes(element),
-    ).length;
-    const percent = ((covered / stats.elements.length) * 100).toFixed(1);
-    console.log(
-      `| ${prefix.padEnd(11)} | ${String(stats.elements.length).padEnd(8)} | ${(stats.dedicated.length + "/" + stats.elements.length).padEnd(9)} | ${(stats.generic.length + "/" + stats.elements.length).padEnd(7)} | ${percent.padStart(7)}% |`,
-    );
-  }
-  console.log("|-------------|----------|-----------|---------|----------|");
-  const dedicatedPercent = ((totalDedicated / totalElements) * 100).toFixed(1);
-  const totalPercent = ((totalCovered / totalElements) * 100).toFixed(1);
-  console.log(
-    `| **TOTAL**   | **${totalElements}** | **${totalDedicated}/${totalElements} (${dedicatedPercent}%)** | **${totalGeneric}/${totalElements}** | **${totalCovered}/${totalElements} (${totalPercent}%)** |`,
+      return {
+        entry,
+        packageMissing,
+        moduleMissing,
+        missingExports,
+        available: !packageMissing && !moduleMissing && missingExports.length === 0,
+      };
+    }),
   );
-  console.log(
-    "\nCoverage taxonomy: Dedicated = typed implementation outside odf-node; Generic = actual OdfXmlNode serialize/parse probe; Coverage = either category.",
-  );
+}
 
-  if (showMissing) {
-    for (const [prefix, stats] of rows) {
-      const missing = stats.elements.filter(
-        (element) => !stats.dedicated.includes(element) && !stats.generic.includes(element),
-      );
-      if (missing.length === 0) continue;
-      console.log(`\nMissing ${prefix}: (${missing.length})`);
-      for (const element of missing) console.log(`  - ${element}`);
+function registryCoverage(states: readonly RegistryState[], classification: string) {
+  const selected = states.filter((state) => state.entry.classification === classification);
+  return {
+    selected,
+    total: selected.length,
+    available: selected.filter((state) => state.available).length,
+  };
+}
+
+function prefixOwner(states: readonly RegistryState[]) {
+  const priority = { canonical: 0, subdocument: 1, "generic-only": 2, unsupported: 3 } as const;
+  const owners = new Map<string, RegistryState>();
+  for (const state of [...states].sort(
+    (left, right) =>
+      priority[left.entry.classification] - priority[right.entry.classification] ||
+      left.entry.id.localeCompare(right.entry.id),
+  )) {
+    for (const prefix of state.entry.schemaPrefixes) {
+      if (!owners.has(prefix)) owners.set(prefix, state);
+    }
+  }
+  return owners;
+}
+
+function printMissing(
+  states: readonly RegistryState[],
+  elements: ReadonlyMap<string, Set<string>>,
+) {
+  const actionable = states.filter(
+    (state) => !state.available && state.entry.classification !== "unsupported",
+  );
+  if (actionable.length === 0) return;
+
+  console.log("\nMissing codecs:");
+  for (const state of actionable) {
+    const reasons: string[] = [];
+    if (state.packageMissing) reasons.push("package not integrated");
+    if (state.moduleMissing) reasons.push(`module ${state.entry.owner.module} missing`);
+    if (state.missingExports.length > 0)
+      reasons.push(`missing exports ${state.missingExports.join(", ")}`);
+    console.log(`  - ${state.entry.id}: ${reasons.join("; ")}`);
+  }
+
+  const owners = prefixOwner(states);
+  const missingByPrefix = new Map<string, string[]>();
+  for (const [prefix, scopedElements] of elements) {
+    const owner = owners.get(prefix);
+    if (!owner?.available || owner.entry.classification === "unsupported") continue;
+    const missing = [...scopedElements].filter((element) => !owner.coveredElements?.has(element));
+    if (missing.length > 0) missingByPrefix.set(prefix, missing.sort());
+  }
+
+  if (missingByPrefix.size > 0) {
+    console.log("\nMissing schema elements:");
+    for (const [prefix, missing] of missingByPrefix) {
+      console.log(`  ${prefix}: ${missing.length}`);
+      for (const element of missing) console.log(`    - ${element}`);
     }
   }
 }
 
-main();
+function percent(numerator: number, denominator: number): string {
+  return denominator === 0 ? "n/a" : `${((numerator / denominator) * 100).toFixed(1)}%`;
+}
+
+async function main() {
+  const { summary, format } = parseArguments(process.argv.slice(2));
+  const elements = schemaElements();
+  const allStates = await registryState();
+  const states = format
+    ? allStates.filter((state) => state.entry.id === format)
+    : allStates.filter((state) => state.entry.id !== "generic-node");
+  const genericState = allStates.find((state) => state.entry.id === "generic-node");
+
+  if (elements.size === 0) {
+    console.warn("ODF coverage: Relax NG schemas unavailable");
+    process.exitCode = 1;
+  }
+
+  for (const state of states) {
+    const scoped = new Set(
+      state.entry.schemaPrefixes.flatMap((prefix) => [...(elements.get(prefix) ?? [])]),
+    );
+    state.coveredElements = scoped;
+  }
+
+  const canonical = registryCoverage(states, "canonical");
+  const subdocument = registryCoverage(states, "subdocument");
+  const semantic = states.filter((state) => state.entry.roundTrip && state.available).length;
+  const semanticTotal = states.filter((state) => state.entry.roundTrip).length;
+  const schemaElementsTotal = [...elements.values()].reduce(
+    (total, scoped) => total + scoped.size,
+    0,
+  );
+  const schemaCovered = states
+    .filter((state) => state.available && state.entry.classification !== "unsupported")
+    .flatMap((state) => state.entry.schemaPrefixes)
+    .flatMap((prefix) => [...(elements.get(prefix) ?? [])]);
+  const schemaCoveredCount = new Set(schemaCovered).size;
+
+  console.log("======================================================================");
+  console.log("ODF Codec Coverage");
+  console.log("======================================================================");
+  console.log(
+    `Schema elements: ${schemaCoveredCount}/${schemaElementsTotal} (${percent(schemaCoveredCount, schemaElementsTotal)})`,
+  );
+  console.log(
+    `Canonical codecs: ${canonical.available}/${canonical.total} (${percent(canonical.available, canonical.total)})`,
+  );
+  console.log(
+    `Subdocuments: ${subdocument.available}/${subdocument.total} (${percent(subdocument.available, subdocument.total)})`,
+  );
+  console.log(
+    `Semantic round-trip: ${semantic}/${semanticTotal} (${percent(semantic, semanticTotal)})`,
+  );
+  console.log(
+    `Generic OdfXmlNode: ${genericState ? (genericState.available ? "available" : "missing") : "not registered"} (non-canonical)`,
+  );
+
+  if (!summary) {
+    console.log("\nRegistry:");
+    for (const state of states) {
+      const stateLabel =
+        state.entry.classification === "unsupported"
+          ? "unsupported"
+          : state.available
+            ? "available"
+            : state.packageMissing
+              ? "missing package"
+              : state.moduleMissing
+                ? "missing module"
+                : "missing exports";
+      console.log(
+        `  ${state.entry.id.padEnd(10)} ${stateLabel.padEnd(17)} ${state.entry.owner.package}/${state.entry.owner.module}`,
+      );
+    }
+    printMissing(states, elements);
+  }
+
+  const required = [...canonical.selected, ...subdocument.selected];
+  if (required.some((state) => !state.available)) process.exitCode = 1;
+}
+
+await main();

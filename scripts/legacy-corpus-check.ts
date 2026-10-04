@@ -14,14 +14,9 @@ import { fileURLToPath } from "node:url";
 
 import { parseDocument as parseLegacyDocument } from "../packages/doc/dist/index.mjs";
 import { generateDocument, parseDocument } from "../packages/docx/dist/index.mjs";
-import {
-  generateOdp,
-  generateOds,
-  generateOdt,
-  parseOdp,
-  parseOds,
-  parseOdt,
-} from "../packages/odf/dist/index.mjs";
+import { generateOdp, parseOdp } from "../packages/odp/dist/index.mjs";
+import { generateOds, parseOds } from "../packages/ods/dist/index.mjs";
+import { generateOdt, parseOdt } from "../packages/odt/dist/index.mjs";
 import { parsePresentation as parseLegacyPresentation } from "../packages/ppt/dist/index.mjs";
 import { generatePresentation, parsePresentation } from "../packages/pptx/dist/index.mjs";
 import { parseRtf } from "../packages/rtf/dist/index.mjs";
@@ -70,8 +65,6 @@ const counts: Record<LegacyFormat, FormatCounts> = {
   ods: { total: 0, ...emptyCounts() },
   odp: { total: 0, ...emptyCounts() },
 };
-const unexpectedMessages = new Map<string, number>();
-
 function walk(dir: string, out: string[] = []): string[] {
   let entries: fs.Dirent[];
   try {
@@ -182,10 +175,6 @@ for (const file of files) {
     result.pass++;
   } catch (error) {
     result[classify(error)]++;
-    if (classify(error) === "unexpected") {
-      const message = String((error as Error)?.message ?? error).replace(/\d+/g, "N");
-      unexpectedMessages.set(message, (unexpectedMessages.get(message) ?? 0) + 1);
-    }
   }
 }
 
@@ -204,9 +193,6 @@ for (const [format, result] of Object.entries(counts) as [LegacyFormat, FormatCo
 }
 
 if (failed) {
-  for (const [message, count] of unexpectedMessages) {
-    console.error(`unexpected x${count}: ${message}`);
-  }
   console.error("legacy corpus gate: FAILED");
   process.exit(1);
 }
