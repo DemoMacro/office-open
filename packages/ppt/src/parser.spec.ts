@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { PptParseError } from "./errors";
 import { parsePresentation } from "./parser";
 
 const CFB_SIGNATURE = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1] as const;
@@ -470,6 +471,100 @@ function validFixture(): Uint8Array {
 }
 
 describe("parsePresentation", () => {
+  it("reports structured low-level parse failures", () => {
+    const currentUserWith = (mutate: (view: DataView) => void): Uint8Array => {
+      const currentUser = new Uint8Array(4096);
+      currentUser.set(currentUserAtom(0, false));
+      mutate(new DataView(currentUser.buffer));
+      return currentUser;
+    };
+    const badLength = buildDocument();
+    new DataView(badLength.document.buffer).setUint32(4, 0xffffffff, true);
+    const impossibleOffset = buildDocument();
+    new DataView(impossibleOffset.currentUser.buffer).setUint32(16, 0xffffffff, true);
+    const unsupported = buildDocument();
+    new DataView(unsupported.currentUser.buffer).setUint16(2, 0xffff, true);
+    const actions: readonly (readonly [string, () => unknown])[] = [
+      ["truncated-header", () => parsePresentation(new Uint8Array(512))],
+      [
+        "bad-record-length",
+        () =>
+          parsePresentation(
+            buildCfb([
+              { name: "PowerPoint Document", data: badLength.document },
+              { name: "Current User", data: badLength.currentUser },
+            ]),
+          ),
+      ],
+      [
+        "invalid-container-traversal",
+        () => {
+          const fixture = new Uint8Array(validFixture());
+          new DataView(fixture.buffer).setUint32(1024 + 76, 0xfffffff0, true);
+          return parsePresentation(fixture);
+        },
+      ],
+      [
+        "impossible-offset",
+        () =>
+          parsePresentation(
+            buildCfb([
+              { name: "PowerPoint Document", data: impossibleOffset.document },
+              { name: "Current User", data: impossibleOffset.currentUser },
+            ]),
+          ),
+      ],
+      [
+        "unsupported-required-structure",
+        () =>
+          parsePresentation(
+            buildCfb([
+              { name: "PowerPoint Document", data: unsupported.document },
+              { name: "Current User", data: unsupported.currentUser },
+            ]),
+          ),
+      ],
+      [
+        "encrypted-unsupported",
+        () =>
+          parsePresentation(
+            buildCfb([
+              { name: "PowerPoint Document", data: buildDocument().document },
+              {
+                name: "Current User",
+                data: currentUserWith((view) => view.setUint32(12, 0xf3d1c4df, true)),
+              },
+            ]),
+          ),
+      ],
+    ];
+
+    for (const [category, action] of actions) {
+      let error: PptParseError | undefined;
+      try {
+        action();
+      } catch (thrown) {
+        error = thrown as PptParseError;
+      }
+      expect(error, category).toBeInstanceOf(PptParseError);
+      expect(error!.context.format, category).toBe("ppt");
+      expect(error!.context.reason, category).toMatch(
+        /invalid-container|invalid-container-signature|invalid-record-length|impossible-offset|truncated-header|unsupported-required-structure|encrypted-unsupported/,
+      );
+      expect(error!.context.path, category).toBeDefined();
+    }
+
+    try {
+      parsePresentation(new Uint8Array(512));
+    } catch (error) {
+      expect((error as PptParseError).context).toMatchObject({
+        format: "ppt",
+        part: "container",
+        path: "/",
+      });
+    }
+  });
+
   it("projects persisted slides, anchored text shapes, and paragraph runs", () => {
     const options = parsePresentation(validFixture());
     expect(options.size).toEqual({ width: 9_144_000, height: 6_858_000 });

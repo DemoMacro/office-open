@@ -27,7 +27,14 @@ export function parsePieceTable(table: Uint8Array, clx: NumberPair): Piece[] {
   const rangeMessage = "Invalid DOC CLX: piece table is outside the table stream";
   requireRange(table, clx.offset, clx.length, rangeMessage);
   if (clx.length === 0)
-    throw new DocParseError("Invalid Word document: CLX piece table is missing");
+    throw new DocParseError("Invalid Word document: CLX piece table is missing", {
+      part: "table",
+      path: "CLX",
+      recordName: "PieceTable",
+      offset: clx.offset,
+      length: clx.length,
+      reason: "missing-required-record",
+    });
 
   let position = clx.offset;
   const end = clx.offset + clx.length;
@@ -44,14 +51,35 @@ export function parsePieceTable(table: Uint8Array, clx: NumberPair): Piece[] {
       const tableStart = position + 5;
       requireRange(table, tableStart, length, rangeMessage);
       if (tableStart + length !== end) {
-        throw new DocParseError("Invalid DOC CLX: piece table does not terminate CLX");
+        throw new DocParseError("Invalid DOC CLX: piece table does not terminate CLX", {
+          part: "table",
+          path: "CLX",
+          recordName: "PieceTable",
+          offset: tableStart,
+          length,
+          byteRange: [tableStart, tableStart + length],
+          reason: "invalid-record-boundary",
+        });
       }
       if (length < 12 || (length - 4) % 12 !== 0) {
-        throw new DocParseError("Invalid DOC CLX: malformed piece table size");
+        throw new DocParseError("Invalid DOC CLX: malformed piece table size", {
+          part: "table",
+          path: "CLX",
+          recordName: "PieceTable",
+          offset: position,
+          length,
+          reason: "invalid-record-length",
+        });
       }
       return parsePieces(table, tableStart, length);
     }
-    throw new DocParseError(`Invalid DOC CLX: unknown record type ${kind}`);
+    throw new DocParseError(`Invalid DOC CLX: unknown record type ${kind}`, {
+      part: "table",
+      path: "CLX",
+      recordType: kind,
+      offset: position,
+      reason: "unknown-required-record",
+    });
   }
   throw new DocParseError("Invalid DOC CLX: piece table marker is missing");
 }
@@ -72,10 +100,24 @@ function parsePieces(table: Uint8Array, start: number, length: number): Piece[] 
       "Invalid DOC piece table: CP is outside the piece table",
     );
     if (index === 0 && cpStart !== 0) {
-      throw new DocParseError("Invalid DOC piece table: first CP is not zero");
+      throw new DocParseError("Invalid DOC piece table: first CP is not zero", {
+        part: "table",
+        path: "CLX/PieceTable",
+        recordName: "PCD",
+        offset: cpOffset,
+        length,
+        reason: "invalid-first-character-position",
+      });
     }
     if (cpEnd <= cpStart || (index > 0 && cpStart !== pieces[index - 1]!.cpEnd)) {
-      throw new DocParseError("Invalid DOC piece table: CP boundaries are not contiguous");
+      throw new DocParseError("Invalid DOC piece table: CP boundaries are not contiguous", {
+        part: "table",
+        path: "CLX/PieceTable",
+        recordName: "PCD",
+        offset: cpOffset,
+        length,
+        reason: "invalid-boundaries",
+      });
     }
 
     const pcdOffset = start + (pieceCount + 1) * 4 + index * 8;
@@ -86,7 +128,15 @@ function parsePieces(table: Uint8Array, start: number, length: number): Piece[] 
     );
     const { fc, compressed } = transformPieceFc(fcValue);
     if (!Number.isSafeInteger(fc) || fc < 0) {
-      throw new DocParseError("Invalid DOC piece table: invalid compressed FC");
+      throw new DocParseError("Invalid DOC piece table: invalid compressed FC", {
+        part: "table",
+        path: "CLX/PieceTable",
+        recordName: "PCD",
+        offset: pcdOffset,
+        length: 8,
+        byteRange: [pcdOffset, pcdOffset + 8],
+        reason: "invalid-file-character-position",
+      });
     }
     pieces.push({ cpStart, cpEnd, fc, compressed });
   }
@@ -95,7 +145,14 @@ function parsePieces(table: Uint8Array, start: number, length: number): Piece[] 
 
 function requireRange(bytes: Uint8Array, offset: number, length: number, message: string): void {
   if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message);
+    throw new DocParseError(message, {
+      part: "table",
+      path: "CLX",
+      offset,
+      length,
+      byteRange: [offset, offset + length],
+      reason: "out-of-range",
+    });
   }
 }
 

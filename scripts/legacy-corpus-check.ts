@@ -178,8 +178,8 @@ for (const file of files) {
   }
 }
 
-if (!CORPUS_DIRS.some((dir) => fs.existsSync(dir))) {
-  console.error("legacy corpus gate: corpus not cloned — run pnpm corpus:setup first");
+if (!CORPUS_DIRS.every((dir) => fs.existsSync(dir))) {
+  console.error("legacy corpus gate: corpus is incomplete — run pnpm corpus:setup first");
   process.exit(1);
 }
 
@@ -190,6 +190,10 @@ for (const [format, result] of Object.entries(counts) as [LegacyFormat, FormatCo
     `${format.padEnd(6)} ${String(result.total).padStart(5)} ${String(result.pass).padStart(4)} ${String(result.encrypted).padStart(9)} ${String(result.invalid).padStart(7)} ${String(result.unexpected).padStart(10)}`,
   );
   if (result.unexpected > 0) failed = true;
+  if (result.total === 0) {
+    failed = true;
+    console.log(`${format.padEnd(6)} empty corpus`);
+  }
 }
 
 if (failed) {

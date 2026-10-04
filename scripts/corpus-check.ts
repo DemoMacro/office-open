@@ -274,14 +274,14 @@ const baseline = loadBaseline();
 const nextBaseline: Baseline = {};
 let failed = false;
 
+if (LIBRARIES.some((lib) => !fs.existsSync(path.resolve(ROOT_DIR, lib.dest)))) {
+  console.error("corpus gate: corpus is incomplete — run pnpm corpus:setup first");
+  process.exit(1);
+}
+
 for (const lib of LIBRARIES) {
   if (only && lib.id !== only) continue;
   const dest = path.resolve(ROOT_DIR, lib.dest);
-  if (!fs.existsSync(dest)) {
-    console.log(`\n[${lib.id}] not cloned — run with --setup first (skipped)`);
-    continue;
-  }
-
   console.log(`\n[${lib.id}] ${lib.dest}`);
   const result = await runLibrary(lib);
   const libBaseline = baseline[lib.id];

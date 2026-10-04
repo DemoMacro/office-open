@@ -55,8 +55,7 @@ const options = parseDocument(data, { password: "secret" });
 
 - `parseDocument(data, options?)` — read a `.doc` file into `DocumentOptions`
 - `DocParseOptions` — parse-time options, including `password`
-- `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input
-- `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input
+- `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
 
 The projected model follows the office-open `DocumentOptions` shape where the legacy format has a direct counterpart. Unsupported legacy records are skipped without aborting the document.
 

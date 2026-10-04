@@ -19,7 +19,11 @@ export function decryptWordStreams(
   password?: string,
 ): { word: Uint8Array; table: Uint8Array; tablePath: string; data?: Uint8Array } {
   if (password === undefined) {
-    throw new DocParseError("Encrypted Word documents are not supported");
+    throw new DocParseError("Encrypted Word documents are not supported", {
+      part: "stream",
+      path: "WordDocument",
+      reason: "encrypted-unsupported",
+    });
   }
   const version = new DataView(
     encryptedTable.buffer,
@@ -27,7 +31,13 @@ export function decryptWordStreams(
     encryptedTable.byteLength,
   );
   if (encryptedTable.byteLength < 4 || version.getUint16(2, true) !== 0x0002) {
-    throw new DocParseError("Encrypted Word documents are not supported");
+    throw new DocParseError("Encrypted Word documents are not supported", {
+      part: "table",
+      path: "encryption",
+      offset: 0,
+      length: 4,
+      reason: "invalid-encryption-version",
+    });
   }
   const majorVersion = version.getUint16(0, true);
   const decrypt =
@@ -35,14 +45,22 @@ export function decryptWordStreams(
       ? (data: Uint8Array): Uint8Array => {
           const verifier = parseLegacyRc4Verifier(data, 4);
           if (!verifyLegacyRc4Password(password, verifier)) {
-            throw new DocParseError("Invalid Word document password");
+            throw new DocParseError("Invalid Word document password", {
+              part: "table",
+              path: "encryption",
+              reason: "invalid-password",
+            });
           }
           return decryptLegacyRc4(data, password, verifier.salt);
         }
       : (data: Uint8Array): Uint8Array => {
           const { keySizeBits, verifier } = parseRc4CryptoApiHeader(data, 4);
           if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-            throw new DocParseError("Invalid Word document password");
+            throw new DocParseError("Invalid Word document password", {
+              part: "table",
+              path: "encryption",
+              reason: "invalid-password",
+            });
           }
           return decryptRc4CryptoApi(data, password, verifier.salt, keySizeBits);
         };
@@ -66,7 +84,13 @@ export function decryptWordStreams(
 
 function requireRange(bytes: Uint8Array, offset: number, length: number, message: string): void {
   if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message);
+    throw new DocParseError(message, {
+      part: "stream",
+      offset,
+      length,
+      byteRange: [offset, offset + length],
+      reason: "out-of-range",
+    });
   }
 }
 

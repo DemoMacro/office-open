@@ -1,0 +1,57 @@
+name: Coverage Gates
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  static:
+    name: Static gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - run: pnpm run boundaries:check
+      - run: pnpm run docs:parity
+
+  ooxml:
+    name: OOXML gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - run: pnpm run xsd:coverage
+      - run: npx tsx scripts/validate.ts
+      - run: pnpm run containers:check
+
+  odf:
+    name: ODF gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - run: pnpm run validate:odf
+      - run: pnpm run coverage:odf
+
+  legacy:
+    name: Legacy gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - run: pnpm run coverage:legacy
+      - run: pnpm run corpus:setup
+      - run: pnpm run corpus:check
+      - run: pnpm run legacy:corpus
+
+  cross-format:
+    name: Cross-format gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: "./.github/actions/install-and-build"
+      - run: pnpm run cross-format:check
