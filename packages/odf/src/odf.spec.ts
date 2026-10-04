@@ -441,6 +441,26 @@ describe("ODT mapping", () => {
     expect(parsed.fonts).toEqual([{ name: "Arial", family: "swiss", pitch: "variable" }]);
   });
 
+  it("round-trips footnote numbering configuration", () => {
+    const source: DocumentOptions = {
+      sections: [{ children: [{ paragraph: "Body" }] }],
+      settings: {
+        footnoteProperties: { pos: "pageBottom", numFmt: "decimal", numStart: 2 },
+        endnoteProperties: { pos: "docEnd", numFmt: "lowerRoman" },
+      },
+    };
+    const parsed = parseOdt(generateOdt(source));
+    expect(parsed.settings?.footnoteProperties).toMatchObject({
+      pos: "pageBottom",
+      numFmt: "decimal",
+      numStart: 2,
+    });
+    expect(parsed.settings?.endnoteProperties).toMatchObject({
+      pos: "docEnd",
+      numFmt: "lowerRoman",
+    });
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [

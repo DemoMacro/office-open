@@ -122,6 +122,29 @@ type TabStop = NonNullable<ParagraphOptions["tabStops"]>[number];
 /** Docx font-table entry, indexed from the shared document model. */
 type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
 
+type FootnoteProperties = NonNullable<
+  NonNullable<DocumentOptions["settings"]>["footnoteProperties"]
+>;
+
+type EndnoteProperties = NonNullable<NonNullable<DocumentOptions["settings"]>["endnoteProperties"]>;
+
+/** docx ST_NumberFormat tokens with a direct ODF num-format token. */
+const NUM_FORMAT_ODF: Record<string, string> = {
+  decimal: "1",
+  lowerLetter: "a",
+  upperLetter: "A",
+  lowerRoman: "i",
+  upperRoman: "I",
+};
+
+const NUM_FORMAT_DOCX: Record<string, FootnoteProperties["numFmt"]> = {
+  "1": "decimal",
+  a: "lowerLetter",
+  A: "upperLetter",
+  i: "lowerRoman",
+  I: "upperRoman",
+} as Record<string, FootnoteProperties["numFmt"]>;
+
 /** Note bodies keyed by reference id, threaded through ODT emission. */
 interface NotesContext {
   footnotes: Map<number, NoteChildren>;
@@ -152,7 +175,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
-    "styles.xml": documentStylesXml(sectionProperties),
+    "styles.xml": documentStylesXml(sectionProperties, options.settings),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
@@ -237,6 +260,9 @@ export function parseOdt(data: Uint8Array): OdtOptions {
     parseFontFace,
   );
   if (fonts.length > 0) result.fonts = fonts;
+  const notesConfiguration = parseNotesConfiguration(files);
+  if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
+    result.settings = { ...result.settings, ...notesConfiguration };
   return result;
 }
 
@@ -270,7 +296,10 @@ function parseFontFace(element: Element): FontEntry {
   };
 }
 
-function documentStylesXml(properties: SectionOptions["properties"]): string {
+function documentStylesXml(
+  properties: SectionOptions["properties"],
+  settings: DocumentOptions["settings"],
+): string {
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
   const layoutAttributes = [
@@ -290,7 +319,92 @@ function documentStylesXml(properties: SectionOptions["properties"]): string {
   const masterStyles = pageLayout
     ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>`
     : "";
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+  const notes = notesConfigurationXml(settings);
+  return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+/** Footnote/endnote numbering config → ODF text:notes-configuration elements. */
+function notesConfigurationXml(settings: DocumentOptions["settings"]): string {
+  return (
+    notesConfigXml("footnote", settings?.footnoteProperties) +
+    notesConfigXml("endnote", settings?.endnoteProperties)
+  );
+}
+
+function notesConfigXml(
+  noteClass: "footnote" | "endnote",
+  properties: FootnoteProperties | EndnoteProperties | undefined,
+): string {
+  if (!properties) return "";
+  const numFmt =
+    properties.format ?? (properties.numFmt ? NUM_FORMAT_ODF[properties.numFmt] : undefined);
+  return xmlElement("text:notes-configuration", {
+    "text:note-class": noteClass,
+    "style:num-format": numFmt,
+    "text:start-value": properties.numStart,
+    "text:start-numbering-at":
+      properties.numRestart === "continuous"
+        ? "document"
+        : properties.numRestart === "eachSect"
+          ? "chapter"
+          : properties.numRestart === "eachPage"
+            ? "page"
+            : undefined,
+    "text:footnotes-position":
+      properties.pos === "pageBottom"
+        ? "page"
+        : properties.pos === "beneathText"
+          ? "text"
+          : properties.pos === "sectEnd"
+            ? "section"
+            : properties.pos === "docEnd"
+              ? "document"
+              : undefined,
+  });
+}
+
+/** ODF notes-configuration → docx footnote/endnote document properties. */
+function parseNotesConfiguration(files: OdfFiles): {
+  footnoteProperties?: FootnoteProperties;
+  endnoteProperties?: EndnoteProperties;
+} {
+  const styles = readXml(files, "styles.xml");
+  const result: { footnoteProperties?: FootnoteProperties; endnoteProperties?: EndnoteProperties } =
+    {};
+  for (const config of childrenNamed(
+    childNamed(styles, "office:styles"),
+    "text:notes-configuration",
+  )) {
+    const noteClass = attributeString(config, "text:note-class");
+    if (noteClass !== "footnote" && noteClass !== "endnote") continue;
+    const rawNumFormat = attributeString(config, "style:num-format");
+    const mappedNumFormat = rawNumFormat ? NUM_FORMAT_DOCX[rawNumFormat] : undefined;
+    const base = {
+      pos: docxNotePosition(attributeString(config, "text:footnotes-position")),
+      numFmt: mappedNumFormat,
+      format: mappedNumFormat ? undefined : rawNumFormat,
+      numStart: attributeNumber(config, "text:start-value"),
+      numRestart: docxNumberRestart(attributeString(config, "text:start-numbering-at")),
+    };
+    if (noteClass === "footnote") result.footnoteProperties = base as FootnoteProperties;
+    else result.endnoteProperties = base as EndnoteProperties;
+  }
+  return result;
+}
+
+function docxNotePosition(value: string | undefined): FootnoteProperties["pos"] {
+  if (value === "page") return "pageBottom";
+  if (value === "text") return "beneathText";
+  if (value === "section") return "sectEnd";
+  if (value === "document") return "docEnd";
+  return undefined;
+}
+
+function docxNumberRestart(value: string | undefined): FootnoteProperties["numRestart"] {
+  if (value === "document") return "continuous";
+  if (value === "chapter") return "eachSect";
+  if (value === "page") return "eachPage";
+  return undefined;
 }
 
 function parsePageLayout(files: OdfFiles): SectionOptions["properties"] {
