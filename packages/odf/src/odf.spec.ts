@@ -1152,14 +1152,21 @@ describe("ODP mapping", () => {
     expect(nested.line.x2).toBe(1828800);
   });
 
-  it("preserves chart frames verbatim through rawXml", () => {
+  it("round-trips slide chart frames through chart subdocuments", () => {
     const source: PresentationOptions = {
       slides: [
         {
           children: [
             {
-              rawXml:
-                '<draw:frame svg:x="1cm" svg:y="1cm"><draw:object xlink:href="./Object 1"/></draw:frame>',
+              chart: {
+                name: "Object 1",
+                type: "column",
+                x: 914400,
+                y: 914400,
+                width: 3657600,
+                height: 2743200,
+                series: [{ name: "Sales", values: [1] }],
+              },
             },
           ],
         },
@@ -1167,11 +1174,13 @@ describe("ODP mapping", () => {
     };
     const parsed = parseOdp(generateOdp(source));
     const child = parsed.slides![0]!.children![0]!;
-    if (!("rawXml" in child)) throw new Error("Expected rawXml preservation");
-    expect(child.rawXml).toContain("draw:object");
+    if (!("chart" in child)) throw new Error("Expected a chart frame");
+    expect(child.chart.name).toBe("Object 1");
+    expect(child.chart.x).toBe(914400);
+    expect(child.chart.type).toBe("column");
   });
 
-  it("flattens text sections in document order", () => {
+  it("preserves text sections and document order", () => {
     const data = generateOdt({
       sections: [{ children: [{ paragraph: "Before" }, { paragraph: "After" }] }],
     });
@@ -1183,15 +1192,15 @@ describe("ODP mapping", () => {
       ),
     );
     const parsed = parseOdt(zipSync(entries));
-    const texts = parsed.sections[0]!.children.map((child) =>
-      "paragraph" in child && typeof child.paragraph === "object"
-        ? child.paragraph.text
-        : "paragraph" in child
-          ? typeof child.paragraph === "string"
-            ? child.paragraph
-            : undefined
-          : undefined,
-    );
-    expect(texts).toEqual(["Before", "Inside", "After"]);
+    expect(parsed.sections[0]!.children).toEqual([
+      { paragraph: { text: "Before" } },
+      {
+        sdt: {
+          properties: { alias: "S1" },
+          children: [{ paragraph: { text: "Inside" } }],
+        },
+      },
+      { paragraph: { text: "After" } },
+    ]);
   });
 });
