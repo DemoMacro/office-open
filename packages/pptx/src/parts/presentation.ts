@@ -84,6 +84,15 @@ export interface CustomerDataOptions {
   tags?: { rId: string };
 }
 
+/** One name/value pair (p:tag — CT_StringTag). */
+export interface StringTagOptions {
+  name: string;
+  val: string;
+}
+
+/** User-defined tags part (ppt/tags/tagsN.xml — p:tagLst). */
+export type TagListOptions = StringTagOptions[];
+
 export interface PresentationPartOptions {
   slideWidth?: number;
   slideHeight?: number;
@@ -141,6 +150,8 @@ export interface PresentationPartOptions {
    */
   defaultTextStyle?: string | false;
   customerData?: CustomerDataOptions;
+  /** User-defined tags part contents; compiler wires p:custDataLst/p:tags. */
+  tags?: TagListOptions;
   /** Slide sections (p14:sectionLst); slides are grouped by name. */
   sections?: PresentationSectionGroup[];
   /**

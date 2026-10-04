@@ -15,7 +15,7 @@ import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { CommentPersonOptions } from "@parts/people";
-import type { SettingsOptions } from "@parts/settings/settings";
+import type { MailMergeRecipientsOptions, SettingsOptions } from "@parts/settings/settings";
 import type { SectionOptions } from "@shared/section";
 
 import type { AppPropertiesOptions } from "./app-properties";
@@ -110,6 +110,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   glossary?: GlossaryDocumentOptions;
   /** Document settings (word/settings.xml). */
   settings?: SettingsOptions;
+  /** Mail merge recipient lists (word/recipientsN.xml parts). */
+  mailMergeRecipients?: MailMergeRecipientsOptions[];
   /** Web settings for browser rendering (word/webSettings.xml) */
   webSettings?: WebSettingsOptions;
   /** Content types from [Content_Types].xml (parse path only) */

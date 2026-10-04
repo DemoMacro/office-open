@@ -126,6 +126,12 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
+      path: "word/recipients${i}.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.mailMergeRecipientData+xml",
+      presence: { kind: "repeated", countFrom: "mailMergeRecipients" },
+    },
+    {
       path: "word/fontTable.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
       presence: { kind: "conditional", flag: "freshCompile" },
@@ -384,6 +390,11 @@ export const PPTX_PARTS = {
       contentType:
         "application/vnd.openxmlformats-officedocument.presentationml.commentAuthors+xml",
       presence: { kind: "conditional", flag: "any slide has comments" },
+    },
+    {
+      path: "ppt/tags/tags${i}.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.presentationml.tags+xml",
+      presence: { kind: "repeated", countFrom: "tags" },
     },
     {
       path: "ppt/comments/comment${i}.xml",

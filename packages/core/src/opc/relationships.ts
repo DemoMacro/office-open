@@ -63,6 +63,8 @@ export const RELATIONSHIP_TYPES = {
   notesMaster: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
   notesSlide: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",
   numbering: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering",
+  recipientData:
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/recipientData",
   officeDocument:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
   oleObject: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
@@ -93,6 +95,7 @@ export const RELATIONSHIP_TYPES = {
   tableSingleCells:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
   tableStyles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
+  tags: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags",
   theme: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
   themeManager: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeManager",
   themeOverride:

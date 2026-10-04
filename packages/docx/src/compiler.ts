@@ -38,6 +38,7 @@ import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/cor
 import type { OoxmlPackageVariant } from "@office-open/core";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
+import type { MailMergeOptions } from "@parts/settings/settings";
 
 import { stringifyDocumentXml, stringifyBodyChild, type BodyContext } from "./body";
 import { compileDocumentEntries } from "./compile/document";
@@ -54,6 +55,7 @@ import {
   webSettingsDesc,
   bibliographyDesc,
   settingsDesc,
+  mailMergeRecipientsDesc,
   glossaryDesc,
   peopleDesc,
   commentsExtendedDesc,
@@ -99,6 +101,27 @@ export function compileDocument(
 ): Zippable {
   const packageFormat = ooxmlPackageFormatInfo("wordprocessing", packageVariant);
   const ctx = new DocxWriteContext(options, reproducible);
+  if (options.mailMergeRecipients) {
+    const settings = ctx._settingsOptions;
+    const odso = settings.mailMerge?.odso;
+    const recipientData = [...(odso?.recipientData ?? [])];
+    const hasAttachedTemplate = settings.attachedTemplate !== undefined;
+    const mailMerge = (settings.mailMerge ?? {
+      mainDocumentType: "letter",
+      dataType: "database",
+    }) as MailMergeOptions;
+    for (let i = recipientData.length; i < options.mailMergeRecipients.length; i++) {
+      let id = hasAttachedTemplate ? 2 : 1;
+      while (recipientData.includes(`rId${id}`)) id++;
+      recipientData.push(`rId${id}`);
+    }
+    if (recipientData.length > 0) {
+      ctx._settingsOptions = {
+        ...settings,
+        mailMerge: { ...mailMerge, odso: { ...odso, recipientData } },
+      };
+    }
+  }
   const xmlifiedFileMapping = xmlifyContext(ctx);
   const files = compileMapping(xmlifiedFileMapping, overrides);
 
@@ -183,6 +206,7 @@ interface XmlifyedFileMapping {
   Endnotes?: XmlifyedFile;
   EndnotesRelationships?: XmlifyedFile;
   Settings: XmlifyedFile;
+  MailMergeRecipients?: XmlifyedFile[];
   Comments?: XmlifyedFile;
   CommentsRelationships?: XmlifyedFile;
   People?: XmlifyedFile;
@@ -203,6 +227,9 @@ interface XmlifyedFileMapping {
 }
 
 function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
+  const mailMergeRecipients = ctx._options.mailMergeRecipients ?? [];
+  const recipientData =
+    ctx._settingsOptions.mailMerge?.odso?.recipientData?.slice(0, mailMergeRecipients.length) ?? [];
   const mkCtx = (viewWrapper: DocxContext["viewWrapper"] = ctx.document): DocxContext => {
     const bodyCtx: DocxContext = {
       fileData: ctx,
@@ -332,22 +359,42 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       data: XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? ""),
       path: "word/settings.xml",
     },
-    ...(ctx._settingsOptions.attachedTemplate !== undefined
-      ? (() => {
-          const rels = new Relationships();
-          rels.addRelationship(
-            1,
-            RELATIONSHIP_TYPES.attachedTemplate,
-            ctx._settingsOptions.attachedTemplate,
-            TargetModeType.EXTERNAL,
-          );
-          return {
-            SettingsRelationships: {
-              data: XML_DECL + rels.serialize(),
-              path: "word/_rels/settings.xml.rels",
-            },
-          };
-        })()
+    ...(mailMergeRecipients.length > 0
+      ? {
+          MailMergeRecipients: mailMergeRecipients.map((part, index) => ({
+            data: XML_DECL + (mailMergeRecipientsDesc.stringify(part, ctx) ?? ""),
+            path: `word/recipients${index + 1}.xml`,
+          })),
+        }
+      : {}),
+    ...(ctx._settingsOptions.attachedTemplate !== undefined || recipientData.length > 0
+      ? {
+          SettingsRelationships: {
+            data: (() => {
+              const rels = new Relationships();
+              if (ctx._settingsOptions.attachedTemplate !== undefined) {
+                rels.addRelationship(
+                  1,
+                  RELATIONSHIP_TYPES.attachedTemplate,
+                  ctx._settingsOptions.attachedTemplate,
+                  TargetModeType.EXTERNAL,
+                );
+              }
+              recipientData.forEach((rId, index) => {
+                const id = /^rId(\d+)$/.exec(rId)?.[1];
+                if (id) {
+                  rels.addRelationship(
+                    Number(id),
+                    RELATIONSHIP_TYPES.recipientData,
+                    `recipients${index + 1}.xml`,
+                  );
+                }
+              });
+              return XML_DECL + rels.serialize();
+            })(),
+            path: "word/_rels/settings.xml.rels",
+          },
+        }
       : {}),
     Styles: {
       data: (() => {

@@ -9679,6 +9679,10 @@
         "tableStyles": {
           "$ref": "#/definitions/TableStyleListOptions"
         },
+        "tags": {
+          "$ref": "#/definitions/TagListOptions",
+          "description": "User-defined tags part contents (ppt/tags/tagsN.xml); compiler wires p:custDataLst/p:tags."
+        },
         "title": {
           "type": "string"
         },
@@ -12039,6 +12043,20 @@
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
+    "StringTagOptions": {
+      "additionalProperties": false,
+      "description": "One name/value pair (p:tag —).",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "val": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "val"],
+      "type": "object"
+    },
     "StyleDefinitionOptions": {
       "additionalProperties": false,
       "description": "dgm:styleDef — the quickStyle part root.",
@@ -12779,6 +12797,13 @@
         }
       },
       "type": "object"
+    },
+    "TagListOptions": {
+      "description": "User-defined tags part (ppt/tags/tagsN.xml — p:tagLst).",
+      "items": {
+        "$ref": "#/definitions/StringTagOptions"
+      },
+      "type": "array"
     },
     "TextAlignment": {
       "description": "Paragraph alignment; \"justify\" stretches lines to full width, \"distribute\" justifies including the last line, \"lowJustification\" aligns to a low baseline, \"thaiDistributed\" is Thai-style distribution.",

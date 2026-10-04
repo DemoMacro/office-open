@@ -479,6 +479,21 @@ export interface OdsoOptions {
   recipientData?: string[];
 }
 
+/** One recipient entry in word/recipients.xml (CT_RecipientData). */
+export interface RecipientDataOptions {
+  /** Whether the recipient is included in the merge (w:active). */
+  active?: boolean;
+  /** Zero-based source column for this recipient (w:column, required). */
+  column: number;
+  /** Stable recipient hash as base64 (w:uniqueTag/@w:val, required). */
+  uniqueTag: Base64;
+}
+
+/** One word/recipients.xml part (w:recipients). */
+export interface MailMergeRecipientsOptions {
+  recipients: RecipientDataOptions[];
+}
+
 /** Mail merge configuration (CT_MailMerge) */
 export interface MailMergeOptions {
   /** Main document type (required) */

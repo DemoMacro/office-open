@@ -2,7 +2,7 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { settingsDesc } from "./descriptor";
+import { mailMergeRecipientsDesc, settingsDesc } from "./descriptor";
 import type { CompatibilityOptions, SettingsOptions } from "./settings";
 
 const writeCtx = {
@@ -279,5 +279,21 @@ describe("settings compat/style-pane fidelity", () => {
       writeCtx,
     )!;
     expect(xml).toContain("<w14:enableOpenTypeKerning/>");
+  });
+});
+
+describe("mailMergeRecipientsDesc round-trip", () => {
+  it("round-trips active flags, columns, and unique tags", () => {
+    const opts = {
+      recipients: [
+        { active: false, column: 0, uniqueTag: "AAAA" },
+        { column: 2, uniqueTag: "BB==" },
+      ],
+    };
+    const xml = mailMergeRecipientsDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<w:active w:val="0"/>');
+    expect(xml).toContain('<w:column w:val="2"/>');
+    expect(xml).toContain('<w:uniqueTag w:val="BB=="/>');
+    expect(mailMergeRecipientsDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual(opts);
   });
 });

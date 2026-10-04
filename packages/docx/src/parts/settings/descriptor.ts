@@ -27,6 +27,8 @@ import type {
   MailMergeOptions,
   OdsoOptions,
   OdsoFieldMapDataOptions,
+  MailMergeRecipientsOptions,
+  RecipientDataOptions,
   CompatibilityOptions,
   CompatSettingOptions,
   CaptionsOptions,
@@ -1581,3 +1583,38 @@ function parseShapeDefaultsInner(el: Element): ShapeDefaultsOptions {
   if (sl) out.shapelayout = parseVmlShapeLayout(sl);
   return out as ShapeDefaultsOptions;
 }
+
+/** Serialize one w:recipientData entry (CT_RecipientData). */
+function stringifyRecipientData(opts: RecipientDataOptions): string {
+  return `<w:recipientData>${[
+    onOff("w:active", opts.active),
+    numVal("w:column", opts.column),
+    strVal("w:uniqueTag", opts.uniqueTag),
+  ].join("")}</w:recipientData>`;
+}
+
+/** Mail merge recipients part (w:recipients). */
+export const mailMergeRecipientsDesc: CustomDescriptor<MailMergeRecipientsOptions> = {
+  kind: "custom",
+
+  stringify(opts) {
+    const children = opts.recipients.map(stringifyRecipientData).join("");
+    return `<w:recipients xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">${children}</w:recipients>`;
+  },
+
+  parse(el) {
+    const recipients: RecipientDataOptions[] = [];
+    for (const child of el.elements ?? []) {
+      if (child.name !== "w:recipientData") continue;
+      const column = Number(attr(findChild(child, "w:column") ?? {}, "w:val") ?? Number.NaN);
+      const uniqueTag = readStr(findChild(child, "w:uniqueTag"), "w:val");
+      if (Number.isFinite(column) && uniqueTag) {
+        const recipient: RecipientDataOptions = { column, uniqueTag };
+        const active = readOnOff(findChild(child, "w:active"));
+        if (active !== undefined) recipient.active = active;
+        recipients.push(recipient);
+      }
+    }
+    return { recipients };
+  },
+};

@@ -36,6 +36,7 @@ export { themeDesc } from "./descriptors/theme";
 export { slideLayoutDesc } from "./descriptors/slide-layout";
 export { timingDesc } from "./descriptors/animation";
 export { commentAuthorsDesc, slideCommentsDesc } from "./descriptors/comments";
+export { tagListDesc } from "./descriptors/tags";
 export { backgroundDesc } from "./descriptors/background";
 export { presentationPropertiesDesc } from "./descriptors/presentation-properties";
 export { slideDesc } from "./descriptors/slide";

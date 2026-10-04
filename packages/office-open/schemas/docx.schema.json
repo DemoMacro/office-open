@@ -5991,6 +5991,13 @@
         "lastPrinted": {
           "type": "string"
         },
+        "mailMergeRecipients": {
+          "description": "Mail merge recipient lists (word/recipientsN.xml parts).",
+          "items": {
+            "$ref": "#/definitions/MailMergeRecipientsOptions"
+          },
+          "type": "array"
+        },
         "modified": {
           "description": "Last modified timestamp (W3CDTF); same null/undefined semantics as the created field.",
           "type": ["string", "null"]
@@ -9312,6 +9319,20 @@
         }
       },
       "required": ["mainDocumentType", "dataType"],
+      "type": "object"
+    },
+    "MailMergeRecipientsOptions": {
+      "additionalProperties": false,
+      "description": "One word/recipients.xml part (w:recipients).",
+      "properties": {
+        "recipients": {
+          "items": {
+            "$ref": "#/definitions/RecipientDataOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["recipients"],
       "type": "object"
     },
     "MailMergeSourceType": {
@@ -15207,6 +15228,26 @@
         }
       },
       "required": ["w", "h", "fontSz"],
+      "type": "object"
+    },
+    "RecipientDataOptions": {
+      "additionalProperties": false,
+      "description": "One recipient entry in word/recipients.xml.",
+      "properties": {
+        "active": {
+          "description": "Whether the recipient is included in the merge (w:active).",
+          "type": "boolean"
+        },
+        "column": {
+          "description": "Zero-based source column for this recipient (w:column, required).",
+          "type": "number"
+        },
+        "uniqueTag": {
+          "$ref": "#/definitions/Base64",
+          "description": "Stable recipient hash as base64 (w:uniqueTag/@w:val, required)."
+        }
+      },
+      "required": ["column", "uniqueTag"],
       "type": "object"
     },
     "RectAlignment": {

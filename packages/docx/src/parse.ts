@@ -28,7 +28,7 @@ import { glossaryDesc } from "@parts/glossary-document";
 import { setNotesParseChild } from "@parts/notes/shared";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { peopleDesc } from "@parts/people";
-import { settingsDesc } from "@parts/settings/descriptor";
+import { mailMergeRecipientsDesc, settingsDesc } from "@parts/settings/descriptor";
 import {
   buildStyleCache,
   buildNumberingCache,
@@ -498,6 +498,27 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       if (target) opts.settings.attachedTemplate = target;
       else delete opts.settings.attachedTemplate;
     }
+
+    const recipientRids = opts.settings.mailMerge?.odso?.recipientData ?? [];
+    if (recipientRids.length > 0) {
+      const relsEl = docx.doc.get("word/_rels/settings.xml.rels");
+      const relByRid = new Map(
+        (relsEl?.elements ?? [])
+          .filter((e) => e.name === "Relationship")
+          .map((e) => [attr(e, "Id"), e]),
+      );
+      const recipients = recipientRids
+        .map((rid) => {
+          const rel = relByRid.get(rid);
+          const target = rel ? attr(rel, "Target") : undefined;
+          if (!target) return undefined;
+          const path = resolveRelationshipTarget("word/settings.xml", target);
+          const root = docx.doc.get(path);
+          return root ? mailMergeRecipientsDesc.parse(root, ctx) : undefined;
+        })
+        .filter((part) => part !== undefined);
+      if (recipients.length > 0) opts.mailMergeRecipients = recipients;
+    }
   }
 
   // Web settings — preserve the part on round-trip even when it has no
@@ -669,6 +690,12 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.numbering) rebuilt.push("word/numbering.xml");
   if (docx.fontTable) rebuilt.push("word/fontTable.xml");
   if (docx.webSettings) rebuilt.push("word/webSettings.xml");
+  if (opts.mailMergeRecipients?.length) {
+    rebuilt.push("word/_rels/settings.xml.rels");
+    for (let i = 0; i < opts.mailMergeRecipients.length; i++) {
+      rebuilt.push(`word/recipients${i + 1}.xml`);
+    }
+  }
   for (const section of opts.sections ?? []) {
     for (const slot of Object.values(section.headers?.partNames ?? {})) {
       if (!slot) continue;
