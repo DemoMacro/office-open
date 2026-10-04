@@ -1078,6 +1078,51 @@ describe("ODP mapping", () => {
     expect(child.shape.properties?.outline).toMatchObject({ width: 12700, color: "000000" });
   });
 
+  it("round-trips embedded charts through draw:object subdocuments", () => {
+    const source = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    chart: {
+                      class: "chart:bar",
+                      width: 3657600,
+                      height: 2743200,
+                      title: { text: "Chart title" },
+                      plotArea: {},
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source as DocumentOptions));
+    const children = parsed.sections[0]!.children;
+    const first = children[0]!;
+    if (!("paragraph" in first)) throw new Error("Expected a chart paragraph");
+    const paragraph =
+      typeof first.paragraph === "string" ? { text: first.paragraph } : first.paragraph;
+    const chart = paragraph.children?.at(0);
+    if (
+      typeof chart !== "object" ||
+      !("chart" in chart) ||
+      typeof chart.chart !== "object" ||
+      chart.chart === null ||
+      !("class" in chart.chart)
+    )
+      throw new Error("Expected an ODF chart run");
+    const chartOptions = chart.chart as unknown as ChartChartOptions;
+    expect(chartOptions.class).toBe("chart:bar");
+    expect(chartOptions.width).toBe(3657600);
+    expect(chartOptions.title).toMatchObject({ text: "Chart title" });
+  });
+
   it("round-trips slide pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: OdpOptions = {

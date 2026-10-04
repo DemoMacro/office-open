@@ -15,14 +15,20 @@ export interface OdfPackageFiles {
   [path: string]: OdfFileContent;
 }
 
-export function manifestXml(mimeType: string, files: OdfPackageFiles): string {
+export function manifestXml(
+  mimeType: string,
+  files: OdfPackageFiles,
+  mediaTypes: Record<string, string> = {},
+): string {
   const paths = ["mimetype", ...directoryPaths(Object.keys(files)), ...Object.keys(files)];
   const entries = ["/", ...paths]
     .map(
       (path) =>
         `<manifest:file-entry manifest:full-path="${path}"${
           path === "/" ? ` manifest:version="1.3"` : ""
-        } manifest:media-type="${path === "mimetype" ? mimeType : mediaType(path)}"/>`,
+        } manifest:media-type="${
+          path === "mimetype" ? mimeType : (mediaTypes[path] ?? mediaType(path))
+        }"/>`,
     )
     .join("");
   return `<?xml version="1.0" encoding="UTF-8"?><manifest:manifest xmlns:manifest="${MANIFEST_NS}" manifest:version="1.3">${entries}</manifest:manifest>`;
@@ -55,7 +61,11 @@ function directoryPaths(paths: string[]): string[] {
   ];
 }
 
-export function generateOcf(mimeType: string, files: OdfPackageFiles): Uint8Array {
+export function generateOcf(
+  mimeType: string,
+  files: OdfPackageFiles,
+  mediaTypes: Record<string, string> = {},
+): Uint8Array {
   return zipSync(
     {
       mimetype: [strToU8(mimeType), { level: 0 }],
@@ -65,7 +75,7 @@ export function generateOcf(mimeType: string, files: OdfPackageFiles): Uint8Arra
           typeof content === "string" ? strToU8(content) : [content, { level: 6 }],
         ]),
       ),
-      "META-INF/manifest.xml": strToU8(manifestXml(mimeType, files)),
+      "META-INF/manifest.xml": strToU8(manifestXml(mimeType, files, mediaTypes)),
     },
     { level: 6 },
   );

@@ -2,6 +2,7 @@ import { toUint8Array } from "@office-open/core";
 import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
 import type {
   DocumentOptions,
+  ChartOptions,
   ParagraphOptions,
   PictureOptions,
   ShapeOptions,
@@ -11,6 +12,7 @@ import type {
 } from "@office-open/docx";
 import type { Element } from "@office-open/xml";
 
+import { chartBodyXml, CHART_MIME, parseChartBody, type ChartChartOptions } from "./chart";
 import {
   graphicFill,
   graphicOutline,
@@ -197,6 +199,7 @@ interface ParseContext {
   styles: StyleMap;
   listStyles: Map<string, boolean>;
   graphicStyles: Map<string, GraphicStyle>;
+  chartBodies: Map<string, ChartChartOptions>;
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
@@ -254,10 +257,17 @@ interface NotesContext {
   endnotes: Map<number, NoteChildren>;
 }
 
+/** Embedded chart subdocument collected during generation. */
+interface OdtChart {
+  path: string;
+  chart: ChartChartOptions;
+}
+
 export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
+  const charts: OdtChart[] = [];
   const notes = notesContext(options);
   const sections = (options.textSections ?? []).map((section) =>
     xmlElement(
@@ -267,11 +277,11 @@ export function generateOdt(options: OdtOptions): Uint8Array {
         "text:style-name": section.styleName,
         "text:protected": section.protected,
       },
-      [blocksXml(section.children ?? [], styles, images, notes, options.numbering)],
+      [blocksXml(section.children ?? [], styles, images, notes, options.numbering, charts)],
     ),
   );
   const body = [
-    blocksXml(blocks, styles, images, notes, options.numbering),
+    blocksXml(blocks, styles, images, notes, options.numbering, charts),
     ...sections,
     ...serializeOdfNodes(options.odfExtensions),
   ].join("");
@@ -286,7 +296,12 @@ export function generateOdt(options: OdtOptions): Uint8Array {
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
-  return generateOcf(MIME, files);
+  for (const entry of charts) files[`${entry.path}/content.xml`] = chartBodyXml(entry.chart);
+  return generateOcf(
+    MIME,
+    files,
+    Object.fromEntries(charts.map((entry) => [`${entry.path}/`, CHART_MIME])),
+  );
 }
 
 /** Note ids auto-assign 1, 2, … per class, matching the docx model. */
@@ -314,6 +329,7 @@ function blocksXml(
   images: OdtImage[],
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
   const parts: string[] = [];
   let index = 0;
@@ -322,7 +338,7 @@ function blocksXml(
   while (index < blocks.length) {
     const listInfo = listParagraphLevel(blocks[index]!);
     if (listInfo === undefined) {
-      parts.push(blockXml(blocks[index]!, styles, images, notes, numbering));
+      parts.push(blockXml(blocks[index]!, styles, images, notes, numbering, charts));
       index += 1;
       continue;
     }
@@ -338,23 +354,25 @@ function blocksXml(
       group.push(blocks[index]!);
       index += 1;
     }
-    parts.push(listXml(group, listInfo, styles, images, notes, numbering));
+    parts.push(listXml(group, listInfo, styles, images, notes, numbering, charts));
   }
   return parts.join("");
 }
 
 export function parseOdt(data: Uint8Array): OdtOptions {
-  const { files, binaries } = readOcf(data, MIME);
+  const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleContainer = childNamed(content, "office:automatic-styles");
   const styleMap = parseStyles(styleContainer);
   const graphicStyles = parseGraphicStyles(styleContainer);
+  const chartBodies = parseChartBodies(manifest, files);
   const rawNodes = parseOdfNodes(body);
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
     graphicStyles,
+    chartBodies,
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
@@ -395,6 +413,19 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   if (section) {
     if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
+  }
+  return result;
+}
+
+/** Chart subdocuments declared in the manifest, keyed by their object name. */
+function parseChartBodies(manifest: Element, files: OdfFiles): Map<string, ChartChartOptions> {
+  const result = new Map<string, ChartChartOptions>();
+  for (const entry of childrenNamed(manifest, "manifest:file-entry")) {
+    const fullPath = attributeString(entry, "manifest:full-path");
+    if (!fullPath || fullPath === "/" || !fullPath.endsWith("/")) continue;
+    const content = files[`${fullPath}content.xml`];
+    const chart = content ? parseChartBody(content) : undefined;
+    if (chart) result.set(fullPath.replace(/\/$/, ""), chart);
   }
   return result;
 }
@@ -828,12 +859,20 @@ function blockXml(
   images: OdtImage[],
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
   if ("paragraph" in child)
-    return paragraphXml(normalizeParagraph(child.paragraph), styles, images, notes, numbering);
+    return paragraphXml(
+      normalizeParagraph(child.paragraph),
+      styles,
+      images,
+      notes,
+      numbering,
+      charts,
+    );
   if ("table" in child)
     return tableXml(child.table, styles, (block) =>
-      blockXml(block, styles, images, notes, numbering),
+      blockXml(block, styles, images, notes, numbering, charts),
     );
   return "";
 }
@@ -862,13 +901,16 @@ function listXml(
   images: OdtImage[],
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
   const styleName = addListStyle(styles, info, numbering);
   // ODF nesting is 1-based: list level 0 renders as a single text:list,
   // level 1 nests one text:list inside the first list-item, and so on.
   const items = group
     .map((child) =>
-      xmlElement("text:list-item", undefined, [blockXml(child, styles, images, notes, numbering)]),
+      xmlElement("text:list-item", undefined, [
+        blockXml(child, styles, images, notes, numbering, charts),
+      ]),
     )
     .join("");
   let xml = items;
@@ -984,6 +1026,7 @@ function paragraphXml(
   images: OdtImage[],
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
   const styleName =
@@ -993,7 +1036,7 @@ function paragraphXml(
           styles,
         )
       : undefined;
-  const children = runXml(options, styles, images, notes, numbering);
+  const children = runXml(options, styles, images, notes, numbering, charts);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
   const attributes = {
     "text:style-name": styleName,
@@ -1008,6 +1051,7 @@ function runXml(
   images: OdtImage[],
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string[] {
   if (options.text !== undefined && options.children === undefined) {
     return [spacesXml(options.text)];
@@ -1030,6 +1074,7 @@ function runXml(
         styles,
         images,
         numbering,
+        charts,
       );
     }
     if ("endnoteReference" in child) {
@@ -1040,6 +1085,7 @@ function runXml(
         styles,
         images,
         numbering,
+        charts,
       );
     }
     if ("hyperlink" in child) {
@@ -1086,8 +1132,27 @@ function runXml(
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
     if ("wpsShape" in child)
       return wpsShapeFrameXml((child as { wpsShape: ShapeOptions }).wpsShape, styles);
+    if ("chart" in child) {
+      const chart = (child as { chart: ChartOptions | ChartChartOptions }).chart;
+      return "transformation" in chart ? "" : chartFrameXml(chart, charts);
+    }
     return "";
   });
+}
+
+/** Inline chart renders as a draw:frame + draw:object pointing at the subdocument. */
+function chartFrameXml(chart: ChartChartOptions, charts: OdtChart[]): string {
+  const path = `Object ${charts.length + 1}`;
+  charts.push({ path, chart });
+  return xmlElement(
+    "draw:frame",
+    {
+      "text:anchor-type": "as-char",
+      "svg:width": chart.width !== undefined ? emuToLength(chart.width) : undefined,
+      "svg:height": chart.height !== undefined ? emuToLength(chart.height) : undefined,
+    },
+    [xmlElement("draw:object", { "xlink:href": `./${path}`, "xlink:type": "simple" })],
+  );
 }
 
 /** Inline shape renders as a positioned draw:custom-shape with preset geometry. */
@@ -1144,6 +1209,7 @@ function noteXml(
   styles: string[],
   images: OdtImage[],
   numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
 ): string {
   const id = typeof reference === "number" ? reference : reference.id;
   const children = (noteClass === "endnote" ? notes.endnotes : notes.footnotes).get(id) ?? [];
@@ -1160,6 +1226,7 @@ function noteXml(
         images,
         notes,
         numbering,
+        charts,
       ),
     ]),
   ]);
@@ -1443,7 +1510,11 @@ function parseRuns(
         return [run];
       }
       if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
-      if (child.name === "draw:frame") return parsePictureFrame(child, context);
+      if (child.name === "draw:frame")
+        return childNamed(child, "draw:object")
+          ? parseChartFrame(child, context)
+          : parsePictureFrame(child, context);
+      if (child.name === "draw:object") return parseChartFrame(child, context);
       if (child.name === "draw:custom-shape") {
         const shape = parseCustomShape(child, context);
         return shape ? [shape as unknown as RunOptions] : [];
@@ -1493,6 +1564,16 @@ function parsePictureFrame(frame: Element, context: ParseContext): RunOptions[] 
       },
     },
   ] as unknown as RunOptions[];
+}
+
+/** draw:frame + draw:object resolves an embedded chart subdocument. */
+function parseChartFrame(frame: Element, context: ParseContext): RunOptions[] {
+  const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
+    ?.replace(/^\.\//, "")
+    .replace(/^\//, "");
+  const chart = href ? context.chartBodies.get(href) : undefined;
+  if (!chart) return [];
+  return [{ chart } as unknown as RunOptions];
 }
 
 /** draw:custom-shape maps back to the shared docx shape model. */
