@@ -3,6 +3,7 @@ import type { Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
 const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
+const MANIFEST_COMPATIBILITY_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3";
 
 export type OdfFileContent = string | Uint8Array;
 
@@ -91,7 +92,14 @@ export function readOcf(
   }
   const manifestXml = files["META-INF/manifest.xml"];
   if (!manifestXml) throw new Error("ODF package is missing META-INF/manifest.xml");
-  const manifestDocument = parse(manifestXml, { ignoreDeclaration: true });
+  const manifestDocument = parse(manifestXml, {
+    ignoreDeclaration: true,
+    ignoreDoctype: true,
+    normalizeNamespaces: {
+      [MANIFEST_NS]: "manifest",
+      [MANIFEST_COMPATIBILITY_NS]: "manifest",
+    },
+  });
   const manifest = manifestDocument.elements?.[0] ?? manifestDocument;
   if (manifest.name !== "manifest:manifest") throw new Error("Invalid ODF manifest");
   validateManifestPaths(manifest, ["content.xml"]);
@@ -102,16 +110,21 @@ function validateManifestPaths(manifest: Element, actualPaths: string[]): void {
   const declared = new Set(
     (manifest.elements ?? [])
       .filter((element) => element.name === "manifest:file-entry")
-      .map((element) => String(element.attributes?.["manifest:full-path"] ?? "")),
+      .map((element) => String(manifestAttribute(element, "full-path") ?? "")),
   );
   for (const path of actualPaths) {
     if (!declared.has(path)) throw new Error(`Manifest does not declare ${path}`);
   }
 }
 
+function manifestAttribute(element: Element, name: string): string | undefined {
+  const value = element.attributes?.[`manifest:${name}`] ?? element.attributes?.[name];
+  return value === undefined ? undefined : String(value);
+}
+
 export function readXml(files: OdfFiles, path: string): Element {
   const xml = files[path];
   if (!xml) throw new Error(`ODF package is missing ${path}`);
-  const document = parse(xml, { ignoreDeclaration: true });
+  const document = parse(xml, { ignoreDeclaration: true, ignoreDoctype: true });
   return document.elements?.[0] ?? document;
 }

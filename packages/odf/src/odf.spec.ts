@@ -50,6 +50,15 @@ describe("ODF package contract", () => {
     expect(() => parseOdt(zipSync(entries))).not.toThrow();
   });
 
+  it("accepts default-namespace manifests from compatibility writers", () => {
+    const data = generateOdt({ sections: [{ children: [{ paragraph: "ODF" }] }] });
+    const entries = unzipSync(data);
+    entries["META-INF/manifest.xml"] = new TextEncoder().encode(
+      '<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE manifest><manifest xmlns="urn:oasis:names:tc:opendocument:xmlns:manifest:1.3" version="1.3"><file-entry full-path="/" version="1.3" media-type="application/vnd.oasis.opendocument.text"/><file-entry full-path="mimetype" media-type="application/vnd.oasis.opendocument.text"/><file-entry full-path="content.xml" media-type="text/xml"/><file-entry full-path="styles.xml" media-type="text/xml"/><file-entry full-path="meta.xml" media-type="text/xml"/></manifest>',
+    );
+    expect(() => parseOdt(zipSync(entries))).not.toThrow();
+  });
+
   it("treats document metadata as optional", () => {
     const data = generateOdt({ sections: [] });
     const entries = unzipSync(data);
