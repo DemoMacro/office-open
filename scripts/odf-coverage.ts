@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parse, type Element } from "@office-open/xml";
 
 import { ODF_CODEC_REGISTRY } from "./lib/odf-codec-registry";
+import { runOdfCoverageFixture, runOdfNegativeFixture } from "./lib/odf-coverage-fixtures";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const SCHEMA_FILES = [
@@ -25,9 +26,11 @@ interface RegistryState {
 
 function schemaCapabilities(): SchemaCapabilities {
   const capabilities = new Map<string, Set<string>>();
+  let loaded = 0;
   for (const schemaFile of SCHEMA_FILES) {
     const filePath = path.join(ROOT, schemaFile);
     if (!fs.existsSync(filePath)) continue;
+    loaded += 1;
     const grammar = parse(fs.readFileSync(filePath, "utf8"), {
       ignoreDeclaration: true,
     }).elements?.find((element): element is Element => element.type === "element");
@@ -46,6 +49,9 @@ function schemaCapabilities(): SchemaCapabilities {
         capabilities.set(name, attributes);
       }
     }
+  }
+  if (loaded !== SCHEMA_FILES.length || capabilities.size === 0) {
+    throw new Error(`ODF RNG schemas are incomplete (${loaded}/${SCHEMA_FILES.length} files)`);
   }
   return { elements: capabilities };
 }
@@ -101,10 +107,11 @@ async function registryStates(): Promise<RegistryState[]> {
           if (!(name in module)) missingExports.push(name);
         }
       } catch (error) {
-        console.warn(
-          `coverage warning: ${entry.id}: ${error instanceof Error ? error.message.split("\n")[0] : "module load failed"}`,
+        missingExports.push(
+          error instanceof Error
+            ? error.message.split("\n")[0]
+            : (entry.owner.export ?? "<module>"),
         );
-        missingExports.push(entry.owner.export ?? "<module>");
       }
       return {
         entry,
@@ -120,53 +127,99 @@ function axis(numerator: number, denominator: number): string {
   return denominator === 0 ? "n/a" : `${((numerator / denominator) * 100).toFixed(1)}%`;
 }
 
-function capabilityDeltas(
-  state: RegistryState,
-  schema: SchemaCapabilities,
-): {
-  missingElements: string[];
-  missingAttributes: Array<[string, string]>;
-  extraElements: string[];
-} {
-  const missingElements = [...schema.elements.keys()].filter(
-    (name) => !state.capabilities.has(name),
-  );
-  const missingAttributes: Array<[string, string]> = [];
-  for (const [name, required] of schema.elements) {
-    const actual = state.capabilities.get(name);
-    if (!actual) continue;
-    missingAttributes.push(
-      ...[...required]
-        .filter((attribute) => !actual.has(attribute))
-        .map((attribute) => [name, attribute] as [string, string]),
-    );
+function ownershipFailures(schema: SchemaCapabilities, states: readonly RegistryState[]): string[] {
+  const owned = new Set<string>();
+  const failures: string[] = [];
+  for (const state of states) {
+    for (const [name, attributes] of state.capabilities) {
+      const required = schema.elements.get(name);
+      if (!required) continue;
+      owned.add(name);
+      const missing = [...required].filter((attribute) => !attributes.has(attribute));
+      if (missing.length > 0) {
+        failures.push(`${name}: missing attributes ${missing.join(", ")}`);
+      }
+    }
   }
-  const extraElements = [...state.capabilities.keys()].filter((name) => !schema.elements.has(name));
-  return { missingElements, missingAttributes, extraElements };
+  const missing = [...schema.elements.keys()].filter((name) => !owned.has(name));
+  if (missing.length > 0) {
+    failures.push(`schema elements without a named mapper: ${missing.length}`);
+  }
+  const extra = states.flatMap((state) =>
+    [...state.capabilities.keys()].filter((name) => !schema.elements.has(name)),
+  );
+  if (extra.length > 0) {
+    failures.push(`registry elements outside the RNG universe: ${extra.join(", ")}`);
+  }
+  for (const entry of states) {
+    for (const capability of entry.entry.negativeCapabilities ?? []) {
+      if (owned.has(capability.element)) {
+        failures.push(
+          `${entry.entry.id}: strict-throw element is marked covered: ${capability.element}`,
+        );
+      }
+    }
+  }
+  return failures;
 }
 
 async function main(): Promise<void> {
   const summary = process.argv.includes("--summary");
   const schema = schemaCapabilities();
   const states = await registryStates();
-  const ownedElements = states.flatMap((state) => [...state.capabilities.keys()]);
-  const schemaTotal = schema.elements.size;
-  const schemaCovered = new Set(ownedElements.filter((name) => schema.elements.has(name))).size;
+  const failures: string[] = [];
+
+  for (const state of states) {
+    const entry = state.entry;
+    if (entry.classification === "unsupported" || entry.classification === "generic-only") {
+      failures.push(`${entry.id}: ${entry.classification} ownership cannot pass`);
+    }
+    if (!entry.schemaElements?.length) failures.push(`${entry.id}: no schema elements`);
+    if (!entry.testId || !entry.fixtureKey) {
+      failures.push(`${entry.id}: missing executable test id or fixture key`);
+    }
+    if (!state.available) {
+      failures.push(`${entry.id}: unavailable (${state.missingExports.join("; ")})`);
+    }
+  }
+
+  for (const entry of ODF_CODEC_REGISTRY) {
+    try {
+      runOdfCoverageFixture(entry.fixtureKey as Parameters<typeof runOdfCoverageFixture>[0]);
+    } catch (error) {
+      failures.push(
+        `${entry.id}/${entry.testId}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    for (const negative of entry.negativeCapabilities ?? []) {
+      try {
+        runOdfNegativeFixture(negative.testId as Parameters<typeof runOdfNegativeFixture>[0]);
+      } catch (error) {
+        failures.push(
+          `${entry.id}/${negative.testId}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+
+  failures.push(...ownershipFailures(schema, states));
+
+  const ownedElements = new Set(states.flatMap((state) => [...state.capabilities.keys()]));
+  const schemaCovered = [...schema.elements.keys()].filter((name) =>
+    ownedElements.has(name),
+  ).length;
   const canonical = states.filter((state) => state.entry.classification === "canonical");
   const subdocuments = states.filter((state) => state.entry.classification === "subdocument");
-  const semantic = states.filter((state) => state.entry.roundTrip);
-  const schemaCoverage =
-    schemaCovered === schemaTotal &&
-    states.every((state) => capabilityDeltas(state, schema).missingAttributes.length === 0);
-  const canonicalCoverage = canonical.every((state) => state.available) && canonical.length > 0;
-  const subdocCoverage = subdocuments.every((state) => state.available) && subdocuments.length > 0;
-  const semanticRoundTrip = semantic.every((state) => state.available) && semantic.length > 0;
+  const negativeCount = states.reduce(
+    (total, state) => total + (state.entry.negativeCapabilities?.length ?? 0),
+    0,
+  );
 
   console.log("======================================================================");
   console.log("ODF Codec Coverage");
   console.log("======================================================================");
   console.log(
-    `schemaCoverage: ${axis(schemaCovered, schemaTotal)} (${schemaCovered}/${schemaTotal} elements; attributes ${schemaCoverage ? "complete" : "incomplete"})`,
+    `schemaCoverage: ${axis(schemaCovered, schema.elements.size)} (${schemaCovered}/${schema.elements.size} elements; owned by named mappers)`,
   );
   console.log(
     `canonicalCoverage: ${axis(canonical.filter((state) => state.available).length, canonical.length)}`,
@@ -174,43 +227,21 @@ async function main(): Promise<void> {
   console.log(
     `subdocCoverage: ${axis(subdocuments.filter((state) => state.available).length, subdocuments.length)}`,
   );
-  console.log(
-    `semanticRoundTrip: ${axis(semantic.filter((state) => state.available).length, semantic.length)}`,
-  );
+  console.log(`executable fixture tests: ${states.length}`);
+  console.log(`strict-throw negative tests: ${negativeCount}`);
   console.log(
     `unsupported/generic-only entries: ${states.filter((state) => ["unsupported", "generic-only"].includes(state.entry.classification)).length}`,
   );
 
   if (!summary) {
-    for (const state of states) {
-      const delta = capabilityDeltas(state, schema);
-      console.log(
-        `\n${state.entry.id}: ${state.available ? "available" : `missing ${state.missingExports.join(", ")}`}`,
-      );
-      if (delta.missingElements.length)
-        console.log(
-          `  missing elements: ${delta.missingElements.length}\n    ${delta.missingElements.slice(0, 20).join("\n    ")}`,
-        );
-      if (delta.missingAttributes.length)
-        console.log(
-          `  missing attributes: ${delta.missingAttributes.length}\n    ${delta.missingAttributes
-            .slice(0, 20)
-            .map(([element, attribute]) => `${element} ${attribute}`)
-            .join("\n    ")}`,
-        );
-      if (delta.extraElements.length)
-        console.log(`  unknown descriptor elements: ${delta.extraElements.join(", ")}`);
-    }
+    for (const failure of failures) console.log(`  FAIL ${failure}`);
   }
-
-  const gate =
-    schemaCoverage &&
-    canonicalCoverage &&
-    subdocCoverage &&
-    semanticRoundTrip &&
-    states.every((state) => state.available) &&
-    states.every((state) => !["unsupported", "generic-only"].includes(state.entry.classification));
-  if (!gate) process.exitCode = 1;
+  if (failures.length > 0) {
+    console.error(`ODF coverage gate: FAILED (${failures.length} failures)`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log("ODF coverage gate: OK");
 }
 
 await main();

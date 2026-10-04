@@ -46,13 +46,7 @@ export default defineConfig({
       },
     },
     environment: "happy-dom",
-    exclude: [
-      ...configDefaults.exclude,
-      "**/build/**",
-      "**/demo/**",
-      "**/docs/**",
-      "**/scripts/**",
-    ],
-    include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts"],
+    exclude: [...configDefaults.exclude, "**/build/**", "**/demo/**", "**/docs/**"],
+    include: ["**/src/**/*.spec.ts", "**/packages/**/*.spec.ts", "scripts/**/*.spec.ts"],
   },
 });
