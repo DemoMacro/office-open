@@ -1,6 +1,7 @@
 import type { ParagraphOptions, SectionChild } from "@office-open/docx";
 import { describe, expect, it } from "vitest";
 
+import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
 import type { LegacyDocumentOptions } from "./records/models";
 
@@ -604,28 +605,35 @@ describe("legacy DOC parser", () => {
     expect(children.at(-1)).toEqual({ bookmarkEnd: { id: 1 } });
   });
 
-  it("decodes annotation references as revision ranges", () => {
+  it("rejects revisions that cannot preserve required change metadata", () => {
     const { data } = buildDocument({ annotations: true });
-    expect(parseLegacyDocument(data).revisions).toEqual([{ start: 0, end: 3, inserted: true }]);
+    expect(() => parseLegacyDocument(data)).toThrow(DocParseError);
   });
 
-  it("decodes main-document field instructions from PlcffldMom", () => {
+  it("projects main-document field instructions into canonical field runs", () => {
     const { data } = buildDocument({ fieldTable: true });
-    expect(parseLegacyDocument(data).fields).toHaveLength(1);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: { children: [{ complexField: { instruction: expect.any(String) } }] },
+    });
   });
 
-  it("parses Escher BStore and Data-stream BLIP picture data", () => {
+  it("projects Escher BStore pictures into canonical inline pictures", () => {
     const { data } = buildDocument({ drawing: true });
-    expect(parseLegacyDocument(data).pictures).toEqual([
-      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
-    ]);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: {
+        children: [{ picture: { type: "png", transformation: { width: 4, height: 3 } } }],
+      },
+    });
   });
 
-  it("parses an embedded BLIP without consulting the Data stream", () => {
+  it("projects embedded BLIP pictures without consulting the Data stream", () => {
     const { data } = buildDocument({ drawing: "embedded" });
-    expect(parseLegacyDocument(data).pictures).toEqual([
-      { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
-    ]);
+    const children = parseLegacyDocument(data).sections[0]!.children;
+    expect(children[0]).toMatchObject({
+      paragraph: { children: [{ picture: { type: "png" } }] },
+    });
   });
 
   it("converts PlfLst and PlfLfo to numbering definitions", () => {

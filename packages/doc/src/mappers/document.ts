@@ -13,7 +13,7 @@ import type {
 import { readSummaryInformation } from "../cfb/container";
 import { decryptWordStreams } from "../cfb/encryption";
 import { DocParseError } from "../errors";
-import type { LegacyDocumentOptions, LegacyRevisionRange } from "../records/models";
+import type { LegacyRevisionRange } from "../records/models";
 import {
   parseBookmarks,
   parseFields,
@@ -1272,7 +1272,7 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
         }
       : {}),
   };
-  const result: LegacyDocumentOptions = {
+  const result: DocumentOptions = {
     sections: [
       {
         children: sectionChildrenWithBookmarks,
@@ -1372,9 +1372,35 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       : {}),
   };
   Object.assign(result, metadata);
-  if (fields.length > 0) result.fields = fields;
-  if (revisions.length > 0) result.revisions = revisions;
-  if (pictures.length > 0) result.pictures = pictures;
+  const section = result.sections[0];
+  if (section) {
+    const canonicalFields = fields
+      .filter((field) => !/^HYPERLINK\b/i.test(field.instruction.trim()))
+      .map((field) => ({ complexField: { instruction: field.instruction } }));
+    const canonicalPictures = pictures.map((picture): ParagraphChild => {
+      if (picture.type === "unknown") {
+        throw new DocParseError("Unknown DOC picture format has no canonical picture mapping");
+      }
+      const type = picture.type === "jpeg" ? "jpg" : picture.type === "tiff" ? "tif" : picture.type;
+      return {
+        picture: {
+          type,
+          data: picture.data,
+          transformation: { width: picture.width, height: picture.height },
+        },
+      };
+    });
+    if (revisions.length > 0) {
+      throw new DocParseError(
+        "DOC revision authors and dates have no canonical insertion/deletion mapping",
+      );
+    }
+    section.children = [
+      ...canonicalPictures.map((picture) => ({ paragraph: { children: [picture] } })),
+      ...canonicalFields.map((field) => ({ paragraph: { children: [field] } })),
+      ...section.children,
+    ];
+  }
   return result;
 }
 
