@@ -190,7 +190,9 @@ describe("parseRtf rich destinations", () => {
       },
     });
     expect(document.description).toBe("Summary");
-    expect(document.shapeInstructions).toEqual(["\\shptop1000"]);
+    expect((document as { shapeInstructions?: string[] }).shapeInstructions).toEqual([
+      "\\shptop1000",
+    ]);
   });
 
   it("projects HYPERLINK, PAGE, and DATE fields", () => {
