@@ -1,29 +1,3 @@
 export { generateOdt, parseOdt } from "./odt";
 export { OdtParseError } from "./error";
-export type {
-  OdtInlineChild,
-  OdtAnnotation,
-  OdtBookmarkReference,
-  OdtBibliographyMark,
-  OdtBibliography,
-  OdtChapter,
-  OdtExpression,
-  OdtFieldValue,
-  OdtHiddenText,
-  OdtIndex,
-  OdtIndexSource,
-  OdtReferenceMarkEnd,
-  OdtReferenceReference,
-  OdtDocumentOptions,
-  OdtSequenceDeclaration,
-  OdtSemanticsOptions,
-  OdtSequence,
-  OdtTrackedChange,
-  OdtShape,
-  OdtShapeHyperlink,
-  OdtVariableDeclaration,
-  OdtVariableSet,
-  OdtParagraphOptions,
-  OdtSectionChild,
-  OdtSectionOptions,
-} from "./semantics";
+export type { OdtDocumentOptions } from "./semantics";
