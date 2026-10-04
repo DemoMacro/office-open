@@ -47,6 +47,22 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
+  it("round-trips extended core properties through meta.xml", () => {
+    const source: DocumentOptions = {
+      title: "Meta",
+      category: "Report",
+      language: "zh-CN",
+      identifier: "DOC-42",
+      lastPrinted: "2026-02-03T04:05:06Z",
+      sections: [{ children: [{ paragraph: "Body" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    expect(parsed.category).toBe("Report");
+    expect(parsed.language).toBe("zh-CN");
+    expect(parsed.identifier).toBe("DOC-42");
+    expect(parsed.lastPrinted).toBe("2026-02-03T04:05:06Z");
+  });
+
   it("round-trips paragraphs, run formatting, and tables", () => {
     const source: DocumentOptions = {
       title: "ODT round trip",
