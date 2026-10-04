@@ -7,8 +7,6 @@
  */
 
 import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
-import type { Element } from "@office-open/xml";
-
 import {
   attributeString,
   childNamed,
@@ -16,7 +14,8 @@ import {
   emuToLength,
   lengthToEmu,
   xmlElement,
-} from "./xml";
+} from "@office-open/ocf";
+import type { Element } from "@office-open/xml";
 
 /** Graphic style attributes that map onto shape fill and outline. */
 export interface GraphicStyle {

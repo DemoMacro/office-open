@@ -136,7 +136,85 @@ importers:
         specifier: workspace:*
         version: link:../xml
 
+  packages/ocf:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+      fflate:
+        specifier: 0.8.3
+        version: 0.8.3
+
   packages/odf:
+    dependencies:
+      '@office-open/ocf':
+        specifier: workspace:*
+        version: link:../ocf
+      '@office-open/odf-schema':
+        specifier: workspace:*
+        version: link:../odf-schema
+      '@office-open/odp':
+        specifier: workspace:*
+        version: link:../odp
+      '@office-open/ods':
+        specifier: workspace:*
+        version: link:../ods
+      '@office-open/odt':
+        specifier: workspace:*
+        version: link:../odt
+
+  packages/odf-schema:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/ocf':
+        specifier: workspace:*
+        version: link:../ocf
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+
+  packages/odp:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/ocf':
+        specifier: workspace:*
+        version: link:../ocf
+      '@office-open/odf-schema':
+        specifier: workspace:*
+        version: link:../odf-schema
+      '@office-open/pptx':
+        specifier: workspace:*
+        version: link:../pptx
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+
+  packages/ods:
+    dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+      '@office-open/ocf':
+        specifier: workspace:*
+        version: link:../ocf
+      '@office-open/odf-schema':
+        specifier: workspace:*
+        version: link:../odf-schema
+      '@office-open/xlsx':
+        specifier: workspace:*
+        version: link:../xlsx
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
+
+  packages/odt:
     dependencies:
       '@office-open/core':
         specifier: workspace:*
@@ -144,18 +222,15 @@ importers:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
-      '@office-open/pptx':
+      '@office-open/ocf':
         specifier: workspace:*
-        version: link:../pptx
-      '@office-open/xlsx':
+        version: link:../ocf
+      '@office-open/odf-schema':
         specifier: workspace:*
-        version: link:../xlsx
+        version: link:../odf-schema
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
-      fflate:
-        specifier: 0.8.3
-        version: 0.8.3
 
   packages/office-open:
     dependencies:

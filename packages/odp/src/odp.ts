@@ -4,6 +4,34 @@ import type {
   TextRunOptions,
 } from "@office-open/core";
 import { toUint8Array, type EndpointConnectionOptions } from "@office-open/core";
+import {
+  attributeNumber,
+  attributeString,
+  childNamed,
+  childrenNamed,
+  emuToLength,
+  escapeText,
+  generateOcf,
+  lengthToEmu,
+  metaXml,
+  parseMeta,
+  parseOdfNode,
+  readOcf,
+  readXml,
+  serializeOdfNodes,
+  textOf,
+  xmlElement,
+  type OdfPackageFiles,
+} from "@office-open/ocf";
+import {
+  graphicFill,
+  graphicOutline,
+  parseGraphicStyles,
+  PRESET_GEOMETRY_DOCX,
+  presetGeometryOdf,
+  pushShapeStyle,
+} from "@office-open/odf-schema";
+import type { GraphicStyle } from "@office-open/odf-schema";
 import type {
   ConnectorOptions,
   LineShapeOptions,
@@ -16,27 +44,7 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
-import {
-  graphicFill,
-  graphicOutline,
-  type GraphicStyle,
-  parseGraphicStyles,
-  pushShapeStyle,
-} from "./graphic-style";
-import { escapeText, metaXml, parseMeta } from "./meta";
-import { parseOdfNode, parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml, type OdfPackageFiles } from "./package";
-import { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./preset-geometry";
-import {
-  attributeString,
-  childNamed,
-  childrenNamed,
-  emuToLength,
-  lengthToEmu,
-  attributeNumber,
-  textOf,
-  xmlElement,
-} from "./xml";
+import { OdpParseError } from "./error";
 
 const MIME = "application/vnd.oasis.opendocument.presentation";
 const NAMESPACES = [
@@ -57,15 +65,13 @@ interface TextProperties {
   size?: number;
 }
 
-export type OdpOptions = PresentationOptions & { odfExtensions?: OdfXmlNode[] };
-
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 interface OdpImage {
   path: string;
   data: Uint8Array;
 }
 
-export function generateOdp(options: OdpOptions): Uint8Array {
+export function generateOdp(options: PresentationOptions): Uint8Array {
   const styles: string[] = [];
   const images: OdpImage[] = [];
   const size = normalizeSize(options.size);
@@ -79,10 +85,7 @@ export function generateOdp(options: OdpOptions): Uint8Array {
     slideXml(slide, index + 1, styles, images),
   );
   const files: OdfPackageFiles = {
-    "content.xml": contentXml(
-      [...pages, ...serializeOdfNodes(options.odfExtensions)].join(""),
-      styles,
-    ),
+    "content.xml": contentXml(pages.join(""), styles),
     "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
@@ -90,7 +93,21 @@ export function generateOdp(options: OdpOptions): Uint8Array {
   return generateOcf(MIME, files);
 }
 
-export function parseOdp(data: Uint8Array): OdpOptions {
+export function parseOdp(data: Uint8Array): PresentationOptions {
+  try {
+    return parseOdpPresentation(data);
+  } catch (cause) {
+    if (cause instanceof OdpParseError) throw cause;
+    throw new OdpParseError(
+      cause instanceof Error ? cause.message : "Unable to parse ODP package",
+      {
+        cause,
+      },
+    );
+  }
+}
+
+function parseOdpPresentation(data: Uint8Array): PresentationOptions {
   const { files, binaries } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
@@ -102,7 +119,6 @@ export function parseOdp(data: Uint8Array): OdpOptions {
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
-  const rawNodes = parseOdfNodes(body);
   return {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
@@ -115,7 +131,6 @@ export function parseOdp(data: Uint8Array): OdpOptions {
         graphicStyles,
       ),
     ),
-    odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
   };
 }
 
