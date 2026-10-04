@@ -36,8 +36,10 @@ import {
   chartBodyXml,
   graphicFill,
   graphicOutline,
+  officeFormsXml,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  parseOfficeForms,
   OdfSchemaError,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
@@ -47,10 +49,11 @@ import type { GraphicStyle } from "@office-open/odf-schema";
 import type { Element } from "@office-open/xml";
 
 import { OdtParseError } from "./error";
+import type { OdtDocumentOptions, OdtSemanticsOptions } from "./semantics";
 import { parseTable, tableXml } from "./table";
 
 const MIME = "application/vnd.oasis.opendocument.text";
-const NAMESPACES = ODF_NAMESPACES;
+const NAMESPACES = `${ODF_NAMESPACES} xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0" xmlns:script="urn:oasis:names:tc:opendocument:xmlns:script:1.0" xmlns:xforms="http://www.w3.org/2002/xforms"`;
 
 /** Section headers/footers render as master-page style:header/style:footer. */
 function masterHeaderFooter(section: SectionOptions | undefined): string {
@@ -261,13 +264,16 @@ interface OdtChart {
   chart: ChartSpaceOptions;
 }
 
-export function generateOdt(options: DocumentOptions): Uint8Array {
+export function generateOdt(options: OdtDocumentOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
   const notes = notesContext(options);
-  const body = [blocksXml(blocks, styles, images, notes, options.numbering, charts)].join("");
+  const body = [
+    semanticsXml(options.odfSemantics),
+    blocksXml(blocks, styles, images, notes, options.numbering, charts),
+  ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -342,7 +348,7 @@ function blocksXml(
   return parts.join("");
 }
 
-export function parseOdt(data: Uint8Array): DocumentOptions {
+export function parseOdt(data: Uint8Array): OdtDocumentOptions {
   try {
     return parseOdtDocument(data);
   } catch (cause) {
@@ -363,7 +369,7 @@ export function parseOdt(data: Uint8Array): DocumentOptions {
   }
 }
 
-function parseOdtDocument(data: Uint8Array): DocumentOptions {
+function parseOdtDocument(data: Uint8Array): OdtDocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
@@ -381,11 +387,13 @@ function parseOdtDocument(data: Uint8Array): DocumentOptions {
     binaries,
     notes: { footnotes: [], endnotes: [] },
   };
+  const semantics = parseSemantics(body);
   const children = parseBlocks(body?.elements ?? [], context);
-  const result: DocumentOptions = {
+  const result: OdtDocumentOptions = {
     ...parseMeta(files),
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  if (semantics) result.odfSemantics = semantics;
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
   if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
   const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
@@ -412,6 +420,109 @@ function parseOdtDocument(data: Uint8Array): DocumentOptions {
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
   }
   return result;
+}
+
+function parseSemantics(body: Element | undefined): OdtSemanticsOptions | undefined {
+  const result: OdtSemanticsOptions = {};
+  const forms = childNamed(body, "office:forms");
+  if (forms)
+    result.forms = parseOfficeForms(
+      forms,
+      "content.xml",
+      "/office:document-content/office:body/office:text/office:forms",
+    );
+  const sequences = childNamed(body, "text:sequence-decls");
+  const sequenceDeclarations = childrenNamed(sequences, "text:sequence-decl").map((element) => ({
+    name: attributeString(element, "text:name") ?? "",
+    displayOutlineLevel: attributeNumber(element, "text:display-outline-level") ?? 0,
+    separationCharacter: attributeString(element, "text:separation-character"),
+  }));
+  if (sequenceDeclarations.length) result.sequenceDeclarations = sequenceDeclarations;
+  const variables = childNamed(body, "text:variable-decls");
+  const variableDeclarations = childrenNamed(variables, "text:variable-decl").map((element) => ({
+    name: attributeString(element, "text:name") ?? "",
+    valueType: (attributeString(element, "office:value-type") ?? "string") as NonNullable<
+      OdtSemanticsOptions["variableDeclarations"]
+    >[number]["valueType"],
+  }));
+  if (variableDeclarations.length) result.variableDeclarations = variableDeclarations;
+  const tracked = childNamed(body, "text:tracked-changes");
+  const changes = childrenNamed(tracked, "text:changed-region").flatMap((region) => {
+    const child = region.elements?.find((element) =>
+      ["text:insertion", "text:deletion", "text:format-change"].includes(element.name ?? ""),
+    );
+    if (!child?.name) return [];
+    return [
+      {
+        id: attributeString(region, "text:id") ?? attributeString(region, "xml:id") ?? "",
+        kind: child.name.replace("text:", "") as "insertion" | "deletion" | "format-change",
+        author: attributeString(child, "office:changer") ?? undefined,
+        date: attributeString(child, "dc:date") ?? undefined,
+      },
+    ];
+  });
+  if (tracked || changes.length)
+    result.trackedChanges = {
+      trackChanges: attributeString(tracked, "text:track-changes") !== "false",
+      changes,
+    };
+  return Object.keys(result).length ? result : undefined;
+}
+
+function semanticsXml(semantics: OdtSemanticsOptions | undefined): string {
+  if (!semantics) return "";
+  const parts = [
+    officeFormsXml(semantics.forms),
+    semantics.sequenceDeclarations?.length
+      ? xmlElement(
+          "text:sequence-decls",
+          undefined,
+          semantics.sequenceDeclarations.map((declaration) =>
+            xmlElement("text:sequence-decl", {
+              "text:name": declaration.name,
+              "text:display-outline-level": declaration.displayOutlineLevel,
+              "text:separation-character": declaration.separationCharacter,
+            }),
+          ),
+        )
+      : "",
+    semantics.variableDeclarations?.length
+      ? xmlElement(
+          "text:variable-decls",
+          undefined,
+          semantics.variableDeclarations.map((declaration) =>
+            xmlElement("text:variable-decl", {
+              "text:name": declaration.name,
+              "office:value-type": declaration.valueType,
+            }),
+          ),
+        )
+      : "",
+  ];
+  const tracked = semantics.trackedChanges;
+  if (tracked)
+    parts.push(
+      xmlElement(
+        "text:tracked-changes",
+        { "text:track-changes": tracked.trackChanges === false ? false : undefined },
+        tracked.changes.map((change) =>
+          xmlElement("text:changed-region", { "text:id": change.id }, [
+            xmlElement(
+              change.kind === "insertion"
+                ? "text:insertion"
+                : change.kind === "deletion"
+                  ? "text:deletion"
+                  : "text:format-change",
+              {
+                "office:changer": change.author,
+                "dc:date": change.date,
+              },
+            ),
+          ]),
+        ),
+      ),
+    );
+  return parts.join("");
 }
 
 function contentXml(body: string, styles: string[], fontFaces: string): string {
@@ -854,6 +965,11 @@ function blockXml(
       numbering,
       charts,
     );
+  if ("bookmarkStart" in child)
+    return xmlElement("text:bookmark-start", {
+      "text:id": child.bookmarkStart.id,
+      "text:name": child.bookmarkStart.name,
+    });
   if ("table" in child)
     return tableXml(child.table, styles, (block) =>
       blockXml(block, styles, images, notes, numbering, charts),
@@ -1432,6 +1548,24 @@ function parseBlocks(
       pendingPageBreak = true;
       continue;
     }
+    if (element.name === "text:bookmark-start") {
+      result.push({
+        bookmarkStart: {
+          id: attributeNumber(element, "text:id") ?? 1,
+          name: attributeString(element, "text:name") ?? "",
+        },
+      });
+      continue;
+    }
+    if (
+      [
+        "office:forms",
+        "text:sequence-decls",
+        "text:variable-decls",
+        "text:tracked-changes",
+      ].includes(element.name ?? "")
+    )
+      continue;
     if (element.name === "text:p" || element.name === "text:h" || element.name === "table:table") {
       const child = parseBlock(element, context);
       if (listDepth > 0 && "paragraph" in child) {
@@ -1540,6 +1674,17 @@ function parseRuns(
         const bookmark = { bookmark: { name: attributeString(child, "text:name") ?? "" } };
         return [bookmark as unknown as RunOptions];
       }
+      if (child.name === "text:bookmark-start")
+        return [
+          {
+            bookmarkStart: {
+              id: attributeNumber(child, "text:id") ?? 1,
+              name: attributeString(child, "text:name") ?? "",
+            },
+          } as unknown as RunOptions,
+        ];
+      if (["text:change", "text:change-start", "text:change-end"].includes(child.name ?? ""))
+        return [];
       if (child.name === "text:span") {
         const properties = context.styles.get(
           attributeString(child, "text:style-name") ?? "",

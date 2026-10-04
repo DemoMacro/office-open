@@ -1,11 +1,15 @@
 import type { ChartSpaceOptions } from "@office-open/core";
+import { parse } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
   type ChartDocumentOptions,
+  type DatabaseDocumentOptions,
   generateChartDocument,
   generateDatabaseDocument,
+  officeFormsXml,
   OdfSchemaError,
+  parseOfficeForms,
   parseChartBody,
   parseChartDocument,
   parseDatabaseDocument,
@@ -126,11 +130,107 @@ describe("ODF schema codecs", () => {
     });
   });
 
-  it("round-trips database subdocuments as generic ODF nodes", () => {
+  it("round-trips database subdocuments as a constrained database model", () => {
     const database = {
       title: "Database",
-      body: [{ name: "db:data-source", attributes: { "db:name": "Library" } }],
+      dataSource: {
+        name: "db:data-source",
+        children: [
+          {
+            name: "db:connection-data",
+            children: [{ name: "db:database-description", text: "Library catalog" }],
+          },
+          {
+            name: "db:forms",
+            forms: {
+              forms: [
+                {
+                  name: "Search",
+                  controls: [
+                    {
+                      kind: "form:combobox",
+                      id: "search-box",
+                      name: "query",
+                      properties: [{ name: "ReadOnly", value: { type: "boolean", value: true } }],
+                      events: [
+                        { eventName: "change", language: "Basic", macroName: "Search.Change" },
+                      ],
+                      options: [{ attributes: { "form:value": "books" }, label: "Books" }],
+                      xformsModel: {
+                        attributes: { id: "search-model" },
+                        children: [
+                          { name: "xforms:instance", attributes: { id: "data" }, text: "books" },
+                        ],
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ],
+      },
     };
-    expect(parseDatabaseDocument(generateDatabaseDocument(database))).toEqual(database);
+    const parsed = parseDatabaseDocument(
+      generateDatabaseDocument(database as DatabaseDocumentOptions),
+    );
+    expect(parsed.dataSource).toMatchObject(database.dataSource);
+    expect(parsed.dataSource.children?.[1]?.forms?.forms[0]?.controls[0]?.kind).toBe(
+      "form:combobox",
+    );
+  });
+
+  it("round-trips form properties, events, options, columns, and XForms", () => {
+    const forms = {
+      forms: [
+        {
+          name: "Library",
+          controls: [
+            {
+              kind: "form:grid" as const,
+              id: "grid",
+              columns: [
+                {
+                  attributes: { "form:name": "title" },
+                  controls: [
+                    {
+                      kind: "form:text" as const,
+                      id: "title",
+                      attributes: { "form:disabled": true },
+                    },
+                  ],
+                  properties: [
+                    { name: "DataField", value: { type: "string" as const, value: "title" } },
+                  ],
+                  events: [{ eventName: "click", language: "Basic", macroName: "Grid.Click" }],
+                },
+              ],
+            },
+          ],
+          properties: [
+            { name: "DataSource", value: { type: "string" as const, value: "Library" } },
+          ],
+          events: [{ eventName: "load", language: "Basic", macroName: "Form.Load" }],
+        },
+      ],
+    };
+    expect(
+      parseOfficeForms(parse(officeFormsXml(forms), { ignoreDeclaration: true }).elements?.[0]),
+    ).toMatchObject(forms);
+  });
+
+  it("rejects unknown form elements and attributes with structured diagnostics", () => {
+    const namespaces =
+      'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
+    const unknownElement = parse(
+      `<office:forms ${namespaces}><form:form><form:unknown form:id="x"/></form:form></office:forms>`,
+      { ignoreDeclaration: true },
+    ).elements?.[0];
+    expect(() => parseOfficeForms(unknownElement)).toThrow(OdfSchemaError);
+    const unknownAttribute = parse(
+      `<office:forms ${namespaces}><form:form form:unknown="x"/></office:forms>`,
+      { ignoreDeclaration: true },
+    ).elements?.[0];
+    expect(() => parseOfficeForms(unknownAttribute)).toThrow(OdfSchemaError);
   });
 });

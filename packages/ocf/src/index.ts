@@ -10,6 +10,20 @@ export {
 } from "./xml";
 export { generateOcf, manifestXml, readOcf, readXml } from "./package";
 export type { OdfFileContent, OdfFiles, OdfPackageFiles } from "./package";
+export {
+  MANIFEST_ATTRIBUTES,
+  MANIFEST_ELEMENTS,
+  MANIFEST_SCHEMA_ELEMENTS,
+  manifestOptionsXml,
+  parseManifestOptions,
+} from "./manifest-model";
+export type {
+  ManifestAttributeName,
+  ManifestAttributes,
+  ManifestElementName,
+  OcfManifestElement,
+  OcfManifestOptions,
+} from "./manifest-model";
 export { OcfError, OcfManifestError, OcfMimeTypeError, OdfXmlError } from "./error";
 export { ODF_NAMESPACES, escapeText, metaXml, parseMeta } from "./meta";
 export {
