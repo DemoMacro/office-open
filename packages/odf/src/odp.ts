@@ -6,6 +6,7 @@ import type {
 import { toUint8Array, type EndpointConnectionOptions } from "@office-open/core";
 import type {
   ConnectorOptions,
+  LineShapeOptions,
   PictureOptions,
   PresentationOptions,
   ShapeOptions,
@@ -142,9 +143,11 @@ function slideXml(
         ? slideTableXml(child.table, styles)
         : "connector" in child
           ? connectorXml(child.connector)
-          : "picture" in child
-            ? pictureFrameXml(child.picture, images)
-            : "",
+          : "line" in child
+            ? lineXml(child.line)
+            : "picture" in child
+              ? pictureFrameXml(child.picture, images)
+              : "",
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
@@ -213,6 +216,17 @@ function connectorXml(connector: ConnectorOptions): string {
     "draw:start-glue-point": connector.startConnection?.index,
     "draw:end-shape": connector.endConnection ? String(connector.endConnection.id) : undefined,
     "draw:end-glue-point": connector.endConnection?.index,
+  });
+}
+
+/** Serializes a straight line as draw:line. */
+function lineXml(line: LineShapeOptions): string {
+  return xmlElement("draw:line", {
+    "draw:name": line.name,
+    "svg:x1": toOdfLength(line.x1),
+    "svg:y1": toOdfLength(line.y1),
+    "svg:x2": toOdfLength(line.x2),
+    "svg:y2": toOdfLength(line.y2),
   });
 }
 
@@ -285,6 +299,7 @@ function parseSlide(
           if (picture) return [picture];
           return [{ shape: parseShape(child, textStyles) }];
         }
+        if (child.name === "draw:line") return [parseLine(child)];
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
         return [];
@@ -404,6 +419,18 @@ function parseConnector(element: Element): { connector: ConnectorOptions } {
       y2: lengthToEmu(attributeString(element, "svg:y2")),
       startConnection: endpointConnection(element, "start"),
       endConnection: endpointConnection(element, "end"),
+    },
+  };
+}
+
+/** Parses a draw:line back to a pptx line child. */
+function parseLine(element: Element): { line: LineShapeOptions } {
+  return {
+    line: {
+      x1: lengthToEmu(attributeString(element, "svg:x1")),
+      y1: lengthToEmu(attributeString(element, "svg:y1")),
+      x2: lengthToEmu(attributeString(element, "svg:x2")),
+      y2: lengthToEmu(attributeString(element, "svg:y2")),
     },
   };
 }

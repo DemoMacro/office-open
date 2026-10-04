@@ -438,4 +438,15 @@ describe("ODP mapping", () => {
     expect(child.picture.x).toBe(914400);
     expect(child.picture.width).toBe(1828800);
   });
+
+  it("round-trips lines through draw:line", () => {
+    const source: OdpOptions = {
+      slides: [{ children: [{ line: { x1: 914400, y1: 914400, x2: 3657600, y2: 3657600 } }] }],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("line" in child)) throw new Error("Expected an ODP line");
+    expect(child.line.x1).toBe(914400);
+    expect(child.line.y2).toBe(3657600);
+  });
 });
