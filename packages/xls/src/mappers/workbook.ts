@@ -1721,8 +1721,15 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
   }
   const reader = new CompoundFileReader(data);
   const stream = readRequiredStream(reader, reader.entry("Workbook") ? "Workbook" : "Book");
-  if (stream.byteLength < 8)
-    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
+  if (stream.byteLength < 8) {
+    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated", {
+      part: "stream",
+      path: "Workbook",
+      offset: 0,
+      length: 8,
+      reason: "truncated-header",
+    });
+  }
   const globals = readWorkbookGlobals(stream);
   return { ...globals, stream };
 }
@@ -1776,7 +1783,11 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
 
 function toLegacyExcelError(error: unknown): LegacyExcelError {
   if (error instanceof LegacyExcelError) return error;
-  return new LegacyExcelError(error instanceof Error ? error.message : String(error));
+  return new LegacyExcelError(error instanceof Error ? error.message : String(error), {
+    part: "container",
+    path: "/",
+    reason: "invalid-container",
+  });
 }
 
 function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Array | undefined {
@@ -1787,7 +1798,11 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     const reader = new CompoundFileReader(data);
     const entry = reader.entry("Workbook") ?? reader.entry("Book");
     if (!entry || entry.type !== "stream") {
-      throw new LegacyExcelError("Invalid legacy XLS file: missing Workbook or Book stream");
+      throw new LegacyExcelError("Invalid legacy XLS file: missing Workbook or Book stream", {
+        part: "stream",
+        path: "Workbook",
+        reason: "missing-required-stream",
+      });
     }
     stream = reader.read(entry.path);
   }
@@ -1805,33 +1820,72 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
   }
   if (!filePass) return undefined;
   if (password === undefined) {
-    throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
+    throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+      part: "stream",
+      path: "Workbook",
+      recordType: "0x002f",
+      recordName: "FilePass",
+      offset: filePass.offset,
+      reason: "encrypted-unsupported",
+    });
   }
   const body = filePass.body;
   if (body.byteLength < 2 || body[0] !== 1 || body[1] !== 0) {
-    throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
+    throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+      part: "stream",
+      path: "Workbook",
+      recordType: "0x002f",
+      recordName: "FilePass",
+      offset: filePass.offset,
+      length: body.byteLength,
+      reason: "invalid-encryption-version",
+    });
   }
   const version = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const decrypt = (() => {
     const majorVersion = body.byteLength >= 4 ? version.getUint16(2, true) : 0;
     const minorVersion = body.byteLength >= 6 ? version.getUint16(4, true) : 0;
     if (majorVersion === 1 && minorVersion !== 1) {
-      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+        part: "stream",
+        path: "Workbook",
+        recordName: "FilePass",
+        offset: filePass.offset,
+        reason: "invalid-encryption-version",
+      });
     }
     if (majorVersion !== 1 && (minorVersion !== 0x0002 || majorVersion < 2 || majorVersion > 4)) {
-      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
+      throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+        part: "stream",
+        path: "Workbook",
+        recordName: "FilePass",
+        offset: filePass.offset,
+        reason: "invalid-encryption-version",
+      });
     }
     if (majorVersion === 1) {
       const verifier = parseLegacyRc4Verifier(body, 6);
       if (!verifyLegacyRc4Password(password, verifier)) {
-        throw new LegacyExcelError("Invalid legacy XLS password");
+        throw new LegacyExcelError("Invalid legacy XLS password", {
+          part: "stream",
+          path: "Workbook",
+          recordName: "FilePass",
+          offset: filePass.offset,
+          reason: "invalid-password",
+        });
       }
       return (data: Uint8Array): Uint8Array =>
         decryptLegacyRc4(data, password, verifier.salt, 1024);
     }
     const { keySizeBits, verifier } = parseRc4CryptoApiHeader(body, 6);
     if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-      throw new LegacyExcelError("Invalid legacy XLS password");
+      throw new LegacyExcelError("Invalid legacy XLS password", {
+        part: "stream",
+        path: "Workbook",
+        recordName: "FilePass",
+        offset: filePass.offset,
+        reason: "invalid-password",
+      });
     }
     return (data: Uint8Array): Uint8Array =>
       decryptRc4CryptoApi(data, password, verifier.salt, keySizeBits, 1024);

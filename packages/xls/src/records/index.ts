@@ -69,7 +69,12 @@ export type BiffVersion = 2 | 3 | 4 | 5 | 8;
 
 export function requireBytes(data: Uint8Array, length: number, description: string): void {
   if (length < 0 || length > data.byteLength) {
-    throw new LegacyExcelError(`Invalid legacy XLS file: truncated ${description}`);
+    throw new LegacyExcelError(`Invalid legacy XLS file: truncated ${description}`, {
+      part: "stream",
+      recordName: description,
+      length,
+      reason: "out-of-range",
+    });
   }
 }
 
@@ -81,7 +86,13 @@ export function readRecord(stream: Uint8Array, position: number, version: BiffVe
   const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const headerSize = recordHeaderSize(version);
   if (position < 0 || position + headerSize > stream.byteLength) {
-    throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF record header");
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF record header", {
+      part: "stream",
+      offset: position,
+      length: headerSize,
+      byteRange: [position, position + headerSize],
+      reason: "truncated-header",
+    });
   }
   const code = view.getUint16(position, true);
   const length = view.getUint16(position + 2, true);
@@ -89,6 +100,14 @@ export function readRecord(stream: Uint8Array, position: number, version: BiffVe
   if (bodyStart + length > stream.byteLength) {
     throw new LegacyExcelError(
       `Invalid legacy XLS file: truncated BIFF record 0x${code.toString(16).padStart(4, "0")}`,
+      {
+        part: "stream",
+        recordType: `0x${code.toString(16).padStart(4, "0")}`,
+        offset: position,
+        length,
+        byteRange: [bodyStart, bodyStart + length],
+        reason: "invalid-record-length",
+      },
     );
   }
   return { code, start: position, body: stream.slice(bodyStart, bodyStart + length) };
@@ -110,5 +129,11 @@ export function* recordsFrom(
     yield record;
     if (record.code === RecordCode.EndOfFile && stopAtFirstEndOfFile) return;
   }
-  throw new LegacyExcelError("Invalid legacy XLS file: workbook stream ends before End Of File");
+  throw new LegacyExcelError("Invalid legacy XLS file: workbook stream ends before End Of File", {
+    part: "stream",
+    path: "Workbook",
+    recordName: "End Of File",
+    offset: cursor,
+    reason: "missing-required-record",
+  });
 }

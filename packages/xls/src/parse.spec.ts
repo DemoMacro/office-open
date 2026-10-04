@@ -619,6 +619,70 @@ function cell(worksheet: WorksheetOptions, reference: string): CellOptions {
 }
 
 describe("parseWorkbook", () => {
+  it("reports structured low-level parse failures", () => {
+    const malformedRecord = (code: number, declaredLength: number): Uint8Array => {
+      const bytes = new Uint8Array(4);
+      const view = new DataView(bytes.buffer);
+      view.setUint16(0, code, true);
+      view.setUint16(2, declaredLength, true);
+      return bytes;
+    };
+    const impossibleStreamContainer = xls(beginOfFile(BIFF8_TOKEN));
+    new DataView(impossibleStreamContainer.buffer).setUint32(512 + 128 + 116, 0xfffffff0, true);
+    const actions: readonly (readonly [string, () => unknown])[] = [
+      ["truncated-header", () => parseWorkbook(new Uint8Array(256))],
+      [
+        "bad-record-length",
+        () =>
+          parseWorkbook(xls(concat([beginOfFile(BIFF8_TOKEN), malformedRecord(0x0085, 0xffff)]))),
+      ],
+      ["invalid-container-traversal", () => parseWorkbook(impossibleStreamContainer)],
+      [
+        "unsupported-required-structure",
+        () => parseWorkbook(xls(record(0x00ff, new Uint8Array(4)))),
+      ],
+      [
+        "encrypted-unsupported",
+        () =>
+          parseWorkbook(
+            xls(
+              concat([
+                record(0x002f, new Uint8Array(6)),
+                beginOfFile(BIFF8_TOKEN, 0x0005),
+                boundSheet(8, 0, "Sheet"),
+                endOfFile(),
+              ]),
+            ),
+          ),
+      ],
+    ];
+
+    for (const [category, action] of actions) {
+      let error: XlsParseError | undefined;
+      try {
+        action();
+      } catch (thrown) {
+        error = thrown as XlsParseError;
+      }
+      expect(error, category).toBeInstanceOf(XlsParseError);
+      expect(error!.context.format, category).toBe("xls");
+      expect(error!.context.reason, category).toMatch(
+        /invalid-container|invalid-record-length|missing-required-record|truncated-header|encrypted-unsupported/,
+      );
+      expect(error!.context.path, category).toBeDefined();
+    }
+
+    try {
+      parseWorkbook(new Uint8Array(256));
+    } catch (error) {
+      expect((error as XlsParseError).context).toMatchObject({
+        format: "xls",
+        part: "container",
+        path: "/",
+      });
+    }
+  });
+
   it("parses a raw BIFF2 worksheet stream", () => {
     const data = concat([
       biff2BeginOfFile(),
