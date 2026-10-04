@@ -18,6 +18,10 @@
 
 The specialized ODF surface is intentionally compact today. Generic node support keeps all ODF Relax NG elements addressable for parsing and serialization; specialized typed coverage continues to expand separately.
 
+### Target Architecture
+
+The ODF surface is split by dependency direction: `@office-open/ocf` owns OCF container I/O, `@office-open/odf-schema` owns shared ODF models and generic nodes plus low-level chart/database codecs, and `@office-open/odt`, `@office-open/ods`, and `@office-open/odp` own their format APIs. Document codecs type-import only their OOXML peer and runtime-import `ocf`/`odf-schema`; peer codecs never import one another. `@office-open/odf` remains the transitional aggregate during package extraction.
+
 ## Installation
 
 ```bash

@@ -57,6 +57,20 @@
 | [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算    |
 | [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化                  |
 
+## 格式能力
+
+| 格式族                        | 解析 | 生成 | 补丁 | 说明                         |
+| ----------------------------- | ---- | ---- | ---- | ---------------------------- |
+| OOXML `.docx`/`.xlsx`/`.pptx` | ✅   | ✅   | ✅   | 双向包编解码器               |
+| 旧版 `.doc`/`.xls`/`.ppt`     | ✅   | ❌   | ❌   | 投影为 OOXML options 模型    |
+| `.rtf`                        | ✅   | ❌   | ❌   | 只读投影到 `DocumentOptions` |
+| ODF `.odt`/`.ods`/`.odp`      | ✅   | ✅   | ❌   | 格式族读写编解码器           |
+| ODF 图表与数据库              | ✅   | ✅   | ❌   | 底层文档编解码器             |
+
+能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式和 RTF 没有写入器，ODF 编解码器也不提供补丁操作。
+
+包依赖图遵循格式归属：`ocf` 负责 ODF 容器；`odf-schema` 负责共享 ODF 模型，运行时可依赖 `ocf`/`xml`，但只能类型引用 `core`；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `ocf`/`odf-schema`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部编解码器。
+
 ## 快速开始
 
 ```bash
