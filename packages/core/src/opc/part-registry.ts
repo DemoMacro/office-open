@@ -172,6 +172,17 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "hasCommentsExtended" },
     },
     {
+      path: "word/commentsIds.xml",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsIds+xml",
+      presence: { kind: "conditional", flag: "hasCommentsIds" },
+    },
+    {
+      path: "word/commentsExtensible.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtensible+xml",
+      presence: { kind: "conditional", flag: "hasCommentsExtensible" },
+    },
+    {
       path: "word/header${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
       presence: { kind: "repeated", countFrom: "headerCount" },

@@ -58,7 +58,9 @@ import {
   mailMergeRecipientsDesc,
   glossaryDesc,
   peopleDesc,
+  commentsIdsDesc,
   commentsExtendedDesc,
+  commentsExtensibleDesc,
 } from "./parts";
 
 /** Reusable TextEncoder (stateless, safe to share). */
@@ -299,6 +301,24 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
             data:
               XML_DECL + (commentsExtendedDesc.stringify(ctx._options.commentsExtended, ctx) ?? ""),
             path: "word/commentsExtended.xml",
+          },
+        }
+      : {}),
+    ...(ctx._options.commentsIds?.length
+      ? {
+          CommentsIds: {
+            data: XML_DECL + (commentsIdsDesc.stringify(ctx._options.commentsIds, ctx) ?? ""),
+            path: "word/commentsIds.xml",
+          },
+        }
+      : {}),
+    ...(ctx._options.commentsExtensible?.length
+      ? {
+          CommentsExtensible: {
+            data:
+              XML_DECL +
+              (commentsExtensibleDesc.stringify(ctx._options.commentsExtensible, ctx) ?? ""),
+            path: "word/commentsExtensible.xml",
           },
         }
       : {}),

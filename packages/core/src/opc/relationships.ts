@@ -16,6 +16,9 @@ export const RELATIONSHIP_TYPES = {
   mediaMs: "http://schemas.microsoft.com/office/2007/relationships/media",
   commentsExtendedMs: "http://schemas.microsoft.com/office/2011/relationships/commentsExtended",
   peopleMs: "http://schemas.microsoft.com/office/2011/relationships/people",
+  commentsIdsMs: "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
+  commentsExtensibleMs:
+    "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible",
   aFChunk: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk",
   attachedTemplate:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate",

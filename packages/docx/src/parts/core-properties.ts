@@ -11,6 +11,8 @@
 import type { ContentTypesInput, DataType, EncryptedContainerOptions } from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
+import type { CommentExtensibleOptions } from "@parts/comments-extensible";
+import type { CommentIdOptions } from "@parts/comments-ids";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
@@ -76,6 +78,10 @@ export interface DocumentOptions extends CorePropertiesOptions {
    * threading, keyed by the w14:paraId of each comment's first paragraph.
    */
   commentsExtended?: CommentExtendedOptions[];
+  /** Durable comment ids (word/commentsIds.xml). */
+  commentsIds?: CommentIdOptions[];
+  /** Extensible comment metadata (word/commentsExtensible.xml). */
+  commentsExtensible?: CommentExtensibleOptions[];
   bibliography?: BibliographyOptions;
   /** User footnotes (word/footnotes.xml). `id` auto-assigns 1, 2, … when omitted. */
   footnotes?: FootnoteOptions[];

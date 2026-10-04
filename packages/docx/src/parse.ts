@@ -17,6 +17,8 @@ import { bibliographyDesc } from "@parts/bibliography";
 import { setBodyParseChild } from "@parts/bodychildren";
 import { commentsDesc } from "@parts/comments";
 import { commentsExtendedDesc } from "@parts/comments-extended";
+import { commentsExtensibleDesc } from "@parts/comments-extensible";
+import { commentsIdsDesc } from "@parts/comments-ids";
 import { corePropertiesDesc } from "@parts/core-properties";
 import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
@@ -65,6 +67,10 @@ export interface DocxPartRefs {
   people?: string;
   /** word/commentsExtended.xml (Word 2013+ comment metadata) */
   commentsExtended?: string;
+  /** word/commentsIds.xml (Word 2016+ durable comment ids) */
+  commentsIds?: string;
+  /** word/commentsExtensible.xml (Word 2018+ extensible comment metadata) */
+  commentsExtensible?: string;
   /** Hyperlink targets keyed by rId (external URLs) */
   hyperlinks: Map<string, string>;
   /** word/charts/chartN.xml keyed by rId */
@@ -230,6 +236,10 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.footnotes = path;
     } else if (type.includes("/endnotes")) {
       refs.endnotes = path;
+    } else if (type.endsWith("/commentsIds")) {
+      refs.commentsIds = path;
+    } else if (type.endsWith("/commentsExtensible")) {
+      refs.commentsExtensible = path;
     } else if (type.includes("/commentsExtended")) {
       refs.commentsExtended = path;
     } else if (type.includes("/comments")) {
@@ -560,11 +570,35 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       if (people.length > 0) opts.people = people;
     }
   }
-  if (docx.partRefs.commentsExtended) {
-    const commentsExEl = docx.doc.get(docx.partRefs.commentsExtended);
-    if (commentsExEl) {
-      const extended = commentsExtendedDesc.parse(commentsExEl, ctx);
-      if (extended.length > 0) opts.commentsExtended = extended;
+  if (
+    docx.partRefs.commentsExtended ||
+    docx.partRefs.commentsIds ||
+    docx.partRefs.commentsExtensible
+  ) {
+    if (docx.partRefs.commentsExtended) {
+      const commentsExEl = docx.doc.get(docx.partRefs.commentsExtended);
+      if (commentsExEl) {
+        const extended = commentsExtendedDesc.parse(commentsExEl, ctx);
+        if (extended.length > 0) opts.commentsExtended = extended;
+      }
+    }
+    if (docx.partRefs.commentsIds) {
+      const commentsIdsEl = docx.doc.get(docx.partRefs.commentsIds);
+      if (commentsIdsEl) {
+        const commentIds = ctx.withPart(docx.partRefs.commentsIds, () =>
+          commentsIdsDesc.parse(commentsIdsEl, ctx),
+        );
+        if (commentIds.length > 0) opts.commentsIds = commentIds;
+      }
+    }
+    if (docx.partRefs.commentsExtensible) {
+      const commentsExtensibleEl = docx.doc.get(docx.partRefs.commentsExtensible);
+      if (commentsExtensibleEl) {
+        const extensible = ctx.withPart(docx.partRefs.commentsExtensible, () =>
+          commentsExtensibleDesc.parse(commentsExtensibleEl, ctx),
+        );
+        if (extensible.length > 0) opts.commentsExtensible = extensible;
+      }
     }
   }
 
@@ -713,6 +747,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   }
   if (opts.people) rebuilt.push(docx.partRefs.people!);
   if (opts.commentsExtended) rebuilt.push(docx.partRefs.commentsExtended!);
+  if (opts.commentsIds) rebuilt.push(docx.partRefs.commentsIds!);
+  if (opts.commentsExtensible) rebuilt.push(docx.partRefs.commentsExtensible!);
   if (opts.footnotes) {
     rebuilt.push(docx.partRefs.footnotes!, "word/_rels/footnotes.xml.rels");
   }
