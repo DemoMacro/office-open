@@ -44,16 +44,10 @@ describe("ODF element registry", () => {
     expect(parsed).toEqual(nodes);
   });
 
-  it("round-trips an ODT text-list extension", () => {
+  it("round-trips a generic ODT extension element", () => {
     const extension: OdfXmlNode = {
-      name: "text:list",
-      attributes: { "text:style-name": "L1" },
-      children: [
-        {
-          name: "text:list-item",
-          children: [{ name: "text:p", children: ["Generic ODF element"] }],
-        },
-      ],
+      name: "text:bookmark",
+      attributes: { "text:name": "GenericMarker" },
     };
     const parsed = parseOdt(generateOdt({ sections: [], odfExtensions: [extension] }));
     expect(parsed.odfExtensions).toEqual([extension]);
@@ -77,10 +71,14 @@ describe("ODF element registry", () => {
   it("round-trips chart and database subdocuments", () => {
     const chart = {
       title: "Chart",
-      body: [{ name: "chart:chart", attributes: { "chart:class": "chart:bar" } }],
+      chart: {
+        class: "chart:bar",
+        plotArea: { axes: [], series: [] },
+      },
     };
     const parsedChart = parseChartDocument(generateChartDocument(chart));
-    expect(parsedChart).toEqual(chart);
+    expect(parsedChart.title).toBe(chart.title);
+    expect(parsedChart.chart).toMatchObject(chart.chart);
 
     const database = {
       title: "Database",

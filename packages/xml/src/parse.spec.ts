@@ -105,6 +105,14 @@ describe("parse", () => {
     expect(result.elements?.[0]?.attributes?.["w:val"]).toBe("1");
     expect(result.elements?.[0]?.attributes?.["xml:space"]).toBe("preserve");
   });
+
+  it("ignores document type declarations", () => {
+    const document = parse(
+      '<?xml version="1.0"?><!DOCTYPE root><root><child>Value</child></root>',
+      { ignoreDeclaration: true, ignoreDoctype: true },
+    );
+    expect(document.elements?.[0]).toMatchObject({ name: "root" });
+  });
 });
 
 describe("parse (custom)", () => {

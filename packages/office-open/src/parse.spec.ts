@@ -31,6 +31,18 @@ describe("parseOfficeDocument", () => {
       });
       const parsed = await parseOfficeDocument(data as Uint8Array);
       expect(parsed.type).toBe(type);
+      if (type === "docx") {
+        if (parsed.type !== "docx") throw new Error("Expected DOCX");
+        expect(parsed.options.sections).toHaveLength(1);
+      }
+      if (type === "xlsx") {
+        if (parsed.type !== "xlsx") throw new Error("Expected XLSX");
+        expect(parsed.options.worksheets).toHaveLength(1);
+      }
+      if (type === "pptx") {
+        if (parsed.type !== "pptx") throw new Error("Expected PPTX");
+        expect(parsed.options.slides).toHaveLength(1);
+      }
     },
   );
 

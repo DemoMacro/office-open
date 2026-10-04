@@ -12,10 +12,23 @@ import type { WorkbookOptions } from "@office-open/xlsx";
 
 import { detectOfficeFormat, type OfficeFormatInfo } from "./formats";
 
+type DocumentOfficeFormat = Extract<
+  OfficeFormatInfo["format"],
+  "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt"
+>;
+type WorkbookOfficeFormat = Extract<
+  OfficeFormatInfo["format"],
+  "ods" | "xls" | "xlsx" | "xlsm" | "xltx" | "xltm"
+>;
+type PresentationOfficeFormat = Extract<
+  OfficeFormatInfo["format"],
+  "odp" | "ppt" | "pptx" | "pptm" | "potx" | "potm"
+>;
+
 export type ParsedOfficeDocument =
-  | { type: OfficeFormatInfo["format"]; options: DocumentOptions }
-  | { type: OfficeFormatInfo["format"]; options: WorkbookOptions }
-  | { type: OfficeFormatInfo["format"]; options: PresentationOptions };
+  | { type: DocumentOfficeFormat; options: DocumentOptions }
+  | { type: WorkbookOfficeFormat; options: WorkbookOptions }
+  | { type: PresentationOfficeFormat; options: PresentationOptions };
 
 export async function parseOfficeDocument(
   input: Uint8Array | string,
