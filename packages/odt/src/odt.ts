@@ -2,6 +2,7 @@ import { toUint8Array } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core";
 import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
 import type {
+  BlockContentChild,
   ChartOptions,
   DocumentOptions,
   ParagraphOptions,
@@ -37,6 +38,7 @@ import {
   graphicOutline,
   parseEmbeddedCharts,
   parseGraphicStyles,
+  OdfSchemaError,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
   pushShapeStyle,
@@ -49,15 +51,6 @@ import { parseTable, tableXml } from "./table";
 
 const MIME = "application/vnd.oasis.opendocument.text";
 const NAMESPACES = ODF_NAMESPACES;
-
-/** A text:section wrapper; children remain body blocks in document order. */
-interface OdtTextSectionData {
-  /** Section identifier emitted as text:name (for example, "Notes"). */
-  name: string;
-  styleName?: string;
-  protected?: boolean;
-  children?: SectionChild[];
-}
 
 /** Section headers/footers render as master-page style:header/style:footer. */
 function masterHeaderFooter(section: SectionOptions | undefined): string {
@@ -209,7 +202,6 @@ interface ParseContext {
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
-  textSections: OdtTextSectionData[];
   notes: { footnotes: NoteEntry[]; endnotes: NoteEntry[] };
 }
 
@@ -355,11 +347,18 @@ export function parseOdt(data: Uint8Array): DocumentOptions {
     return parseOdtDocument(data);
   } catch (cause) {
     if (cause instanceof OdtParseError) throw cause;
+    if (cause instanceof OdfSchemaError) {
+      throw new OdtParseError(cause.message, cause.part, cause.path, cause.name, cause.reason, {
+        cause,
+      });
+    }
     throw new OdtParseError(
       cause instanceof Error ? cause.message : "Unable to parse ODT package",
-      {
-        cause,
-      },
+      "mimetype",
+      "/mimetype",
+      "mimetype",
+      "invalid ODT package",
+      { cause },
     );
   }
 }
@@ -380,7 +379,6 @@ function parseOdtDocument(data: Uint8Array): DocumentOptions {
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
-    textSections: [],
     notes: { footnotes: [], endnotes: [] },
   };
   const children = parseBlocks(body?.elements ?? [], context);
@@ -860,7 +858,25 @@ function blockXml(
     return tableXml(child.table, styles, (block) =>
       blockXml(block, styles, images, notes, numbering, charts),
     );
+  if ("sdt" in child) {
+    const styleName = /^odf:text-section(?:;style=([\s\S]*))?$/.exec(
+      child.sdt.properties.tag ?? "",
+    )?.[1];
+    return xmlElement(
+      "text:section",
+      {
+        "text:name": child.sdt.properties.alias ?? "",
+        "text:style-name": styleName ? decodeStyleName(styleName) : undefined,
+        "text:protected": child.sdt.properties.lock === "sdtLocked" ? true : undefined,
+      },
+      [blocksXml(child.sdt.children ?? [], styles, images, notes, numbering, charts)],
+    );
+  }
   return "";
+}
+
+function decodeStyleName(value: string): string {
+  return value.replace(/\\([\\;])/g, "$1");
 }
 
 function normalizeParagraph(input: string | ParagraphOptions): ParagraphOptions {
@@ -1381,22 +1397,24 @@ function parseBlocks(
   listState?: { name: string; ordered: boolean },
 ): SectionChild[] {
   const result: SectionChild[] = [];
+  let pendingPageBreak = false;
   for (const element of elements) {
     if (element.name === "text:section") {
-      const textSection: OdtTextSectionData = {
-        name: attributeString(element, "text:name") ?? "",
-        styleName: attributeString(element, "text:style-name"),
-        protected:
-          attributeString(element, "text:protected") === undefined
-            ? undefined
-            : attributeString(element, "text:protected") === "true",
-        children: [],
-      };
-      context.textSections.push(textSection);
-      textSection.children = parseBlocks(element.elements ?? [], context, listDepth, listState);
-      // Typed sections flatten into document children; the wrapper is retained
-      // separately so name/style/protection metadata round-trip.
-      result.push(...textSection.children);
+      const styleName = attributeString(element, "text:style-name");
+      result.push({
+        sdt: {
+          properties: {
+            alias: attributeString(element, "text:name") ?? "",
+            ...(styleName ? { tag: encodeSectionTag(styleName) } : {}),
+            ...(attributeString(element, "text:protected") === "true"
+              ? { lock: "sdtLocked" as const }
+              : {}),
+          },
+          children: blockChildren(
+            parseBlocks(element.elements ?? [], context, listDepth, listState),
+          ),
+        },
+      });
       continue;
     }
     if (element.name === "text:list") {
@@ -1411,24 +1429,63 @@ function parseBlocks(
       continue;
     }
     if (element.name === "text:soft-page-break") {
-      result.push({ pageBreak: true } as unknown as SectionChild);
+      pendingPageBreak = true;
       continue;
     }
     if (element.name === "text:p" || element.name === "text:h" || element.name === "table:table") {
       const child = parseBlock(element, context);
       if (listDepth > 0 && "paragraph" in child) {
         const paragraph = normalizeParagraph(child.paragraph);
-        result.push({
+        const mappedChild = {
           paragraph: listState?.ordered
             ? { ...paragraph, numbering: { reference: listState.name, level: listDepth - 1 } }
             : { ...paragraph, bullet: { level: listDepth - 1 } },
-        } as SectionChild);
+        } as SectionChild;
+        result.push(pendingPageBreak ? withPageBreakBefore(mappedChild) : mappedChild);
+        pendingPageBreak = false;
       } else {
-        result.push(child);
+        result.push(pendingPageBreak ? withPageBreakBefore(child) : child);
+        pendingPageBreak = false;
       }
+    } else if (element.name) {
+      throw unknownOdtElement(element);
     }
   }
+  if (pendingPageBreak) {
+    throw new OdtParseError(
+      "content.xml: /office:document-content/office:body/office:text/text:soft-page-break: no following block receives the page break",
+      "content.xml",
+      "/office:document-content/office:body/office:text/text:soft-page-break",
+      "text:soft-page-break",
+      "no following block receives the page break",
+    );
+  }
   return result;
+}
+
+function blockChildren(children: SectionChild[]): BlockContentChild[] {
+  return children.filter((child): child is BlockContentChild => !("altChunk" in child));
+}
+
+function unknownOdtElement(element: Element): OdtParseError {
+  const name = element.name ?? "";
+  const path = `/office:document-content/office:body/office:text/${name}`;
+  return new OdtParseError(
+    `content.xml: ${path}: ${name}: no canonical DocumentOptions mapping`,
+    "content.xml",
+    path,
+    name,
+    "no canonical DocumentOptions mapping",
+  );
+}
+
+function withPageBreakBefore(child: SectionChild): SectionChild {
+  if (!("paragraph" in child) || typeof child.paragraph === "string") return child;
+  return { paragraph: { ...child.paragraph, pageBreakBefore: true } };
+}
+
+function encodeSectionTag(styleName: string): string {
+  return `odf:text-section;style=${styleName.replace(/([\\;])/g, "\\$1")}`;
 }
 
 function parseParagraph(element: Element, context: ParseContext): ParagraphOptions {
@@ -1504,6 +1561,7 @@ function parseRuns(
         const shape = parseCustomShape(child, context);
         return shape ? [shape as unknown as RunOptions] : [];
       }
+      if (child.name) throw unknownOdtElement(child);
       return [];
     },
   );
