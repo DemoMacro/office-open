@@ -3,7 +3,9 @@ import type {
   TextBodyOptions,
   TextRunOptions,
 } from "@office-open/core";
+import type { EndpointConnectionOptions } from "@office-open/core";
 import type {
+  ConnectorOptions,
   PresentationOptions,
   ShapeOptions,
   SlideChild,
@@ -120,7 +122,9 @@ function slideXml(slide: SlideOptions, index: number, styles: string[]): string 
       ? shapeXml(child.shape, styles)
       : "table" in child
         ? slideTableXml(child.table, styles)
-        : "",
+        : "connector" in child
+          ? connectorXml(child.connector)
+          : "",
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
@@ -174,6 +178,30 @@ function textBodyXml(body: TextBodyOptions | undefined, styles: string[]): strin
   });
 }
 
+/** Serializes a connector as a straight draw:connector with endpoint gluing. */
+function connectorXml(connector: ConnectorOptions): string {
+  return xmlElement("draw:connector", {
+    "draw:type": "line",
+    "draw:name": connector.name,
+    "svg:x1": toOdfLength(connector.x1),
+    "svg:y1": toOdfLength(connector.y1),
+    "svg:x2": toOdfLength(connector.x2),
+    "svg:y2": toOdfLength(connector.y2),
+    "draw:start-shape": connector.startConnection
+      ? String(connector.startConnection.id)
+      : undefined,
+    "draw:start-glue-point": connector.startConnection?.index,
+    "draw:end-shape": connector.endConnection ? String(connector.endConnection.id) : undefined,
+    "draw:end-glue-point": connector.endConnection?.index,
+  });
+}
+
+/** pptx EMU numbers pass through; universal measures resolve to EMU first. */
+function toOdfLength(value: number | string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return emuToLength(typeof value === "number" ? value : (lengthToEmu(value) ?? 0));
+}
+
 function textProperties(run: TextRunOptions): TextProperties {
   return {
     bold: run.bold,
@@ -213,6 +241,7 @@ function parseSlide(
     children:
       page.elements?.flatMap((child): SlideChild[] => {
         if (child.name === "draw:frame") return [{ shape: parseShape(child, textStyles) }];
+        if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
         return [];
       }) ?? [],
@@ -319,6 +348,30 @@ function parseShape(frame: Element, textStyles: Map<string, TextProperties>): Sh
       ),
     },
   };
+}
+
+/** Parses a draw:connector back to a pptx connector child. */
+function parseConnector(element: Element): { connector: ConnectorOptions } {
+  return {
+    connector: {
+      x1: lengthToEmu(attributeString(element, "svg:x1")),
+      y1: lengthToEmu(attributeString(element, "svg:y1")),
+      x2: lengthToEmu(attributeString(element, "svg:x2")),
+      y2: lengthToEmu(attributeString(element, "svg:y2")),
+      startConnection: endpointConnection(element, "start"),
+      endConnection: endpointConnection(element, "end"),
+    },
+  };
+}
+
+/** Reads a draw:{start,end}-shape/-glue-point pair as a glued endpoint. */
+function endpointConnection(
+  element: Element,
+  end: "start" | "end",
+): EndpointConnectionOptions | undefined {
+  const id = Number(attributeString(element, `draw:${end}-shape`));
+  const index = attributeNumber(element, `draw:${end}-glue-point`);
+  return Number.isInteger(id) && id > 0 && index !== undefined ? { id, index } : undefined;
 }
 
 function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {

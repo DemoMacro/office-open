@@ -388,4 +388,32 @@ describe("ODP mapping", () => {
     expect(child.table.rows[0]!.cells[0]!.children).toEqual([{ text: "Cell A" }]);
     expect(child.table.rows[1]!.cells[1]!.columnSpan).toBe(1);
   });
+
+  it("round-trips connectors through draw:connector", () => {
+    const source = {
+      slides: [
+        {
+          children: [
+            {
+              connector: {
+                x1: 914400,
+                y1: 914400,
+                x2: 3657600,
+                y2: 3657600,
+                startConnection: { id: 2, index: 3 },
+                endConnection: { id: 5, index: 1 },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("connector" in child)) throw new Error("Expected an ODP connector");
+    expect(child.connector.x1).toBe(914400);
+    expect(child.connector.y2).toBe(3657600);
+    expect(child.connector.startConnection).toEqual({ id: 2, index: 3 });
+    expect(child.connector.endConnection).toEqual({ id: 5, index: 1 });
+  });
 });
