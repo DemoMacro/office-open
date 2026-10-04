@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { generateOdp, generateOds, generateOdt, parseOdp, parseOds, parseOdt } from "./index";
 import { type OdpOptions } from "./odp";
+import { type OdsOptions } from "./ods";
 
 describe("ODF package contract", () => {
   it("stores an uncompressed leading mimetype and a complete manifest", () => {
@@ -312,6 +313,33 @@ describe("ODS mapping", () => {
     expect(cells[0]!.style).toEqual({ numFmt: "0.00" });
     expect(cells[1]!.style).toEqual({ numFmt: "0.00%" });
     expect(cells[2]!.style).toEqual({ numFmt: "#,##0" });
+  });
+
+  it("round-trips cell fonts and fills through table-cell styles", () => {
+    const source: OdsOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  value: "Styled",
+                  style: {
+                    font: { bold: true, italic: true, color: "4472C4", size: 12 },
+                    fill: { type: "solid", color: "C6EFCE" },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.style).toEqual({
+      font: { bold: true, italic: true, color: "4472C4", size: 12 },
+      fill: { type: "solid", color: "C6EFCE" },
+    });
   });
 });
 

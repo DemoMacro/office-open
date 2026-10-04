@@ -1,7 +1,10 @@
 import type {
+  CellFillOptions,
   CellOptions,
   ColumnOptions,
+  FontOptions,
   RowOptions,
+  StyleOptions,
   WorkbookOptions,
   WorksheetOptions,
 } from "@office-open/xlsx";
@@ -124,11 +127,11 @@ function worksheetXml(worksheet: WorksheetOptions, index: number, styles: string
 function cellXml(cell: CellOptions, styles: string[]): string {
   const formula = typeof cell.formula === "string" ? cell.formula : cell.formula?.formula;
   const cached = cacheAttributes(cell.value);
-  const numFmt = typeof cell.style === "object" ? cell.style.numFmt : undefined;
+  const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   return xmlElement(
     "table:table-cell",
     {
-      "table:style-name": numFmt ? addNumberStyle(numFmt, styles) : undefined,
+      "table:style-name": styleOptions ? addCellStyle(styleOptions, styles) : undefined,
       "table:formula": formula ? `of:=${formula}` : undefined,
       "office:value-type": cached.type,
       "office:value": cached.type === "float" ? cached.value : undefined,
@@ -152,20 +155,57 @@ function cacheAttributes(value: CellOptions["value"]): {
   return {};
 }
 
-/** Registers a numFmt as a data style + table-cell style; returns the cell style name. */
-function addNumberStyle(numFmt: string, styles: string[]): string {
-  const data = numFmtDataStyle(numFmt);
+/** Registers a table-cell style (numFmt data style + font/fill); returns its name. */
+function addCellStyle(style: StyleOptions, styles: string[]): string {
+  const data = style.numFmt ? numFmtDataStyle(style.numFmt) : undefined;
   const dataName = `N${styles.length + 1}`;
-  styles.push(xmlElement(data.name, { "style:name": dataName }, data.children));
+  if (data) styles.push(xmlElement(data.name, { "style:name": dataName }, data.children));
   const styleName = `ce${styles.length + 1}`;
   styles.push(
-    xmlElement("style:style", {
-      "style:name": styleName,
-      "style:family": "table-cell",
-      "style:data-style-name": dataName,
-    }),
+    xmlElement(
+      "style:style",
+      {
+        "style:name": styleName,
+        "style:family": "table-cell",
+        "style:data-style-name": data ? dataName : undefined,
+      },
+      cellStyleChildren(style),
+    ),
   );
   return styleName;
+}
+
+/** Font/fill properties as ODF style children; empty array when styleless. */
+function cellStyleChildren(style: StyleOptions): string[] {
+  const font = style.font;
+  const fill = style.fill;
+  const textAttributes = {
+    "fo:color": odfHex(font?.color),
+    "fo:font-size": font?.size !== undefined ? `${font.size}pt` : undefined,
+    "fo:font-weight": font?.bold ? "bold" : undefined,
+    "fo:font-style": font?.italic ? "italic" : undefined,
+    "fo:underline-style": font?.underline ? "solid" : undefined,
+    "fo:text-line-through-style": font?.strike ? "solid" : undefined,
+  };
+  const cellAttributes = {
+    "fo:background-color": odfHex(solidFillColor(fill)),
+  };
+  const children: string[] = [];
+  if (Object.values(cellAttributes).some((value) => value !== undefined))
+    children.push(xmlElement("style:table-cell-properties", cellAttributes));
+  if (Object.values(textAttributes).some((value) => value !== undefined))
+    children.push(xmlElement("style:text-properties", textAttributes));
+  return children;
+}
+
+/** Solid-fill foreground color; pattern/gradient fills keep their typed shape. */
+function solidFillColor(fill: CellFillOptions | undefined): string | undefined {
+  return fill?.type === undefined || fill.type === "solid" ? fill?.color : undefined;
+}
+
+/** xlsx hex (RRGGBB or AARRGGBB) → ODF #RRGGBB. */
+function odfHex(hex: string | undefined): string | undefined {
+  return hex ? `#${hex.slice(-6)}` : undefined;
 }
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
@@ -274,10 +314,10 @@ function parseDimensionStyles(container: Element | undefined): Map<string, Dimen
   return result;
 }
 
-/** Maps table-cell style names back to their numFmt codes via data styles. */
-function parseNumberStyles(container: Element | undefined): Map<string, string> {
+/** Maps table-cell style names back to typed StyleOptions via data styles. */
+function parseNumberStyles(container: Element | undefined): Map<string, StyleOptions> {
   const dataStyles = new Map<string, string>();
-  const cellStyles = new Map<string, string>();
+  const cellStyles = new Map<string, StyleOptions>();
   for (const element of container?.elements ?? []) {
     if (
       element.name === "number:number-style" ||
@@ -291,11 +331,35 @@ function parseNumberStyles(container: Element | undefined): Map<string, string> 
   }
   for (const style of childrenNamed(container, "style:style")) {
     if (attributeString(style, "style:family") !== "table-cell") continue;
+    const options: StyleOptions = {};
     const dataName = attributeString(style, "style:data-style-name");
-    const format = dataName ? dataStyles.get(dataName) : undefined;
-    if (format) cellStyles.set(attributeString(style, "style:name") ?? "", format);
+    const numFmt = dataName ? dataStyles.get(dataName) : undefined;
+    if (numFmt) options.numFmt = numFmt;
+    const text = childNamed(style, "style:text-properties");
+    const size = attributeString(text, "fo:font-size");
+    const font: FontOptions = {
+      color: odfColor(attributeString(text, "fo:color")),
+      size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
+      bold: attributeString(text, "fo:font-weight") === "bold" || undefined,
+      italic: attributeString(text, "fo:font-style") === "italic" || undefined,
+      underline: attributeString(text, "fo:underline-style") === "solid" || undefined,
+      strike: attributeString(text, "fo:text-line-through-style") === "solid" || undefined,
+    };
+    if (Object.values(font).some((value) => value !== undefined)) options.font = font;
+    const background = odfColor(
+      attributeString(childNamed(style, "style:table-cell-properties"), "fo:background-color"),
+    );
+    if (background) options.fill = { type: "solid", color: background };
+    if (Object.keys(options).length > 0) {
+      cellStyles.set(attributeString(style, "style:name") ?? "", options);
+    }
   }
   return cellStyles;
+}
+
+/** ODF #RRGGBB → xlsx RRGGBB hex. */
+function odfColor(value: string | undefined): string | undefined {
+  return value?.startsWith("#") ? value.slice(1) : undefined;
 }
 
 /** Reconstructs an Excel numFmt code from ODF number:* style children. */
@@ -351,7 +415,7 @@ function worksheet(
   table: Element,
   index: number,
   dimensions: Map<string, DimensionStyle>,
-  cellStyles: Map<string, string>,
+  cellStyles: Map<string, StyleOptions>,
 ): WorksheetOptions {
   return {
     name: attributeString(table, "table:name") ?? `Sheet${index}`,
@@ -377,7 +441,7 @@ function parseRow(
   row: Element,
   rowNumber: number,
   dimensions: Map<string, DimensionStyle>,
-  cellStyles: Map<string, string>,
+  cellStyles: Map<string, StyleOptions>,
 ): RowOptions {
   const style = dimensions.get(attributeString(row, "table:style-name") ?? "");
   return {
@@ -395,11 +459,11 @@ function parseCell(
   cell: Element,
   row: number,
   column: number,
-  cellStyles: Map<string, string>,
+  cellStyles: Map<string, StyleOptions>,
 ): CellOptions {
   const result: CellOptions = { reference: `${columnName(column)}${row}` };
-  const numFmt = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
-  if (numFmt) result.style = { numFmt };
+  const style = cellStyles.get(attributeString(cell, "table:style-name") ?? "");
+  if (style) result.style = style;
   const formula = attributeString(cell, "table:formula");
   if (formula) result.formula = formula.replace(/^of:=/, "");
   const valueType = attributeString(cell, "office:value-type");
