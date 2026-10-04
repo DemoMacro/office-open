@@ -475,4 +475,23 @@ describe("ODP mapping", () => {
     if (!("line" in nested)) throw new Error("Expected a nested line");
     expect(nested.line.x2).toBe(1828800);
   });
+
+  it("preserves chart frames verbatim through rawXml", () => {
+    const source: OdpOptions = {
+      slides: [
+        {
+          children: [
+            {
+              rawXml:
+                '<draw:frame svg:x="1cm" svg:y="1cm"><draw:object xlink:href="./Object 1"/></draw:frame>',
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("rawXml" in child)) throw new Error("Expected rawXml preservation");
+    expect(child.rawXml).toContain("draw:object");
+  });
 });

@@ -17,7 +17,7 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
-import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
+import { parseOdfNode, parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
 import { generateOcf, readOcf, readXml, type OdfPackageFiles } from "./package";
 import {
   attributeString,
@@ -167,6 +167,7 @@ function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]):
       { "draw:name": child.group.name },
       child.group.children.map((nested) => slideChildXml(nested, styles, images)),
     );
+  if ("rawXml" in child) return child.rawXml;
   return "";
 }
 
@@ -301,12 +302,14 @@ function parseSlide(
         if (child.name === "draw:frame") {
           const picture = parsePictureFrame(child, binaries);
           if (picture) return [picture];
-          return [{ shape: parseShape(child, textStyles) }];
+          if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
+          return [parseUnknownSlideChild(child)];
         }
         if (child.name === "draw:line") return [parseLine(child)];
         if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
+        if (child.name !== "presentation:notes") return [parseUnknownSlideChild(child)];
         return [];
       }) ?? [],
     ...(notesText ? { notes: notesText } : {}),
@@ -450,13 +453,15 @@ function parseGroup(
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
     if (child.name === "draw:frame") {
       const picture = parsePictureFrame(child, binaries);
-      return picture ? [picture] : [{ shape: parseShape(child, textStyles) }];
+      if (picture) return [picture];
+      if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
+      return [parseUnknownSlideChild(child)];
     }
     if (child.name === "draw:line") return [parseLine(child)];
     if (child.name === "draw:connector") return [parseConnector(child)];
     if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-    return [];
+    return [parseUnknownSlideChild(child)];
   });
   return [
     {
@@ -466,6 +471,13 @@ function parseGroup(
       },
     },
   ];
+}
+
+/** Preserves unrecognized slide children verbatim instead of dropping them. */
+function parseUnknownSlideChild(element: Element): SlideChild {
+  const node = parseOdfNode(element);
+  if (!node) return { rawXml: "" };
+  return { rawXml: serializeOdfNodes([node]).join("") };
 }
 
 /** Reads a draw:{start,end}-shape/-glue-point pair as a glued endpoint. */
