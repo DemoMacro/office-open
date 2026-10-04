@@ -123,6 +123,18 @@ export interface SdtCheckboxOptions {
 }
 
 /**
+ * Options for a repeating section content control (CT_SdtRepeatedSection,
+ * w15:repeatingSection, Word 2013+). Repeating sections clone their content
+ * when users add entries via the control's insertion UI.
+ */
+export interface SdtRepeatingSectionOptions {
+  /** Title shown for each section instance */
+  sectionTitle?: string;
+  /** Whether users are prevented from inserting or deleting sections */
+  doNotAllowInsertDeleteSection?: boolean;
+}
+
+/**
  * Data binding options (CT_DataBinding).
  */
 export interface SdtDataBindingOptions {
@@ -200,6 +212,14 @@ export interface SdtPropertiesOptions {
   bibliography?: boolean;
   /** Checkbox content control SDT (Word 2010+, w14:checkbox) */
   checkbox?: SdtCheckboxOptions;
+  /** Repeating section SDT (Word 2013+, w15:repeatingSection) */
+  repeatingSection?: SdtRepeatingSectionOptions;
+  /** Repeating section item SDT (Word 2013+, w15:repeatingSectionItem) */
+  repeatingSectionItem?: boolean;
+  /** Web extension linked flag (Word 2013+, w15:webExtensionLinked) */
+  webExtensionLinked?: boolean;
+  /** Web extension created flag (Word 2013+, w15:webExtensionCreated) */
+  webExtensionCreated?: boolean;
 
   /**
    * Visual chrome of the content control in Word 2013+ (w15:appearance):

@@ -3829,6 +3829,46 @@
       "required": ["paraId"],
       "type": "object"
     },
+    "CommentExtensibleOptions": {
+      "additionalProperties": false,
+      "description": "Options for one extensible-comment entry (w16cex:commentExtensible).",
+      "properties": {
+        "dateUtc": {
+          "description": "UTC comment date (w16cex:dateUtc).",
+          "type": "string"
+        },
+        "durableId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Durable comment id (w16cex:durableId, required)."
+        },
+        "ext": {
+          "description": "Raw w16:extLst inner XML for future Microsoft extensions. Round-trip only.",
+          "type": "string"
+        },
+        "intelligentPlaceholder": {
+          "description": "Placeholder indicator used by modern Word comment experiences.",
+          "type": "boolean"
+        }
+      },
+      "required": ["durableId"],
+      "type": "object"
+    },
+    "CommentIdOptions": {
+      "additionalProperties": false,
+      "description": "Options for one durable comment identifier (w16cid:commentId).",
+      "properties": {
+        "durableId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Word's durable identifier for the comment (w16cid:durableId, required)."
+        },
+        "paraId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "w14:paraId of the comment's first paragraph (w16cid:paraId, required)."
+        }
+      },
+      "required": ["paraId", "durableId"],
+      "type": "object"
+    },
     "CommentOptions": {
       "additionalProperties": false,
       "description": "Options for creating a single comment.",
@@ -5841,6 +5881,20 @@
           "description": "Comment metadata (word/commentsExtended.xml) — resolved state and reply threading, keyed by the w14:paraId of each comment's first paragraph.",
           "items": {
             "$ref": "#/definitions/CommentExtendedOptions"
+          },
+          "type": "array"
+        },
+        "commentsExtensible": {
+          "description": "Extensible comment metadata (word/commentsExtensible.xml).",
+          "items": {
+            "$ref": "#/definitions/CommentExtensibleOptions"
+          },
+          "type": "array"
+        },
+        "commentsIds": {
+          "description": "Durable comment ids (word/commentsIds.xml).",
+          "items": {
+            "$ref": "#/definitions/CommentIdOptions"
           },
           "type": "array"
         },
@@ -8782,6 +8836,9 @@
         "cnfStyle": {
           "$ref": "#/definitions/CnfConditionalOptions",
           "description": "Conditional formatting style for table rows/cells"
+        },
+        "collapsed": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
         },
         "contextualSpacing": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
@@ -12949,6 +13006,9 @@
           "$ref": "#/definitions/CnfConditionalOptions",
           "description": "Conditional formatting style for table rows/cells"
         },
+        "collapsed": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
+        },
         "contextualSpacing": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
@@ -13134,6 +13194,9 @@
         "cnfStyle": {
           "$ref": "#/definitions/CnfConditionalOptions",
           "description": "Conditional formatting style for table rows/cells"
+        },
+        "collapsed": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
         },
         "contextualSpacing": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
@@ -13921,6 +13984,9 @@
         "cnfStyle": {
           "$ref": "#/definitions/CnfConditionalOptions",
           "description": "Conditional formatting style for table rows/cells"
+        },
+        "collapsed": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
         },
         "contextualSpacing": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
@@ -16689,6 +16755,14 @@
           },
           "type": "object"
         },
+        "repeatingSection": {
+          "$ref": "#/definitions/SdtRepeatingSectionOptions",
+          "description": "Repeating section SDT (Word 2013+, w15:repeatingSection)"
+        },
+        "repeatingSectionItem": {
+          "description": "Repeating section item SDT (Word 2013+, w15:repeatingSectionItem)",
+          "type": "boolean"
+        },
         "richText": {
           "description": "Rich text SDT",
           "type": "boolean"
@@ -16716,6 +16790,29 @@
         "text": {
           "$ref": "#/definitions/SdtTextOptions",
           "description": "Plain text SDT"
+        },
+        "webExtensionCreated": {
+          "description": "Web extension created flag (Word 2013+, w15:webExtensionCreated)",
+          "type": "boolean"
+        },
+        "webExtensionLinked": {
+          "description": "Web extension linked flag (Word 2013+, w15:webExtensionLinked)",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "SdtRepeatingSectionOptions": {
+      "additionalProperties": false,
+      "description": "Options for a repeating section content control. Repeating sections clone their content when users add entries via the control's insertion UI.",
+      "properties": {
+        "doNotAllowInsertDeleteSection": {
+          "description": "Whether users are prevented from inserting or deleting sections",
+          "type": "boolean"
+        },
+        "sectionTitle": {
+          "description": "Title shown for each section instance",
+          "type": "string"
         }
       },
       "type": "object"
@@ -17120,6 +17217,10 @@
                 "cnfStyle": {
                   "$ref": "#/definitions/CnfConditionalOptions",
                   "description": "Conditional formatting style for table rows/cells"
+                },
+                "collapsed": {
+                  "description": "Whether the paragraph body starts collapsed (w15:collapsed, Word 2013+). Word shows collapsible headings expanded unless this flag is present.",
+                  "type": "boolean"
                 },
                 "contextualSpacing": {
                   "description": "Whether to ignore spacing before/after when adjacent paragraphs have the same style",
@@ -17826,6 +17927,9 @@
         "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
         },
+        "footnoteColumns": {
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/footnoteColumns"
+        },
         "footnoteProperties": {
           "$ref": "#/definitions/FootnotePropertiesOptions"
         },
@@ -17903,6 +18007,10 @@
         },
         "endnoteProperties": {
           "$ref": "#/definitions/EndnotePropertiesOptions"
+        },
+        "footnoteColumns": {
+          "description": "Number of columns for the section footnotes (w15:footnoteColumns, Word 2013+).",
+          "type": "number"
         },
         "footnoteProperties": {
           "$ref": "#/definitions/FootnotePropertiesOptions"

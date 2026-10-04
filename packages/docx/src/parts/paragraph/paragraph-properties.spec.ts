@@ -3,6 +3,13 @@ import { describe, expect, it } from "vite-plus/test";
 import { stringifyParagraphProperties } from "./stringify";
 
 describe("stringifyParagraphProperties single-writer channels", () => {
+  it("emits w15:collapsed with explicit on and off states", () => {
+    const on = stringifyParagraphProperties({ collapsed: true });
+    expect(on.xml).toContain("<w15:collapsed/>");
+    const off = stringifyParagraphProperties({ collapsed: false });
+    expect(off.xml).toContain('<w15:collapsed w:val="off"/>');
+  });
+
   it("emits one w:pStyle when heading and bullet are combined", () => {
     // CT_PPrBase allows exactly one w:pStyle; heading wins over the
     // ListParagraph sugar.

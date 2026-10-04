@@ -522,6 +522,9 @@ export function stringifyParagraphProperties(
   if (options.divId !== undefined) s += `<w:divId w:val="${options.divId}"/>`;
   if (options.cnfStyle) s += cnfStyleStr(options.cnfStyle);
 
+  // Word 2013+ extension (w15:collapsed — CT_OnOff) trails the base sequence.
+  if (options.collapsed !== undefined) s += onOff("w15:collapsed", options.collapsed);
+
   // Embedded run properties (w:rPr inside w:pPr) — emitted even when the rPr
   // holds only a paragraph-mark track-change marker (w:ins/w:del) or is a
   // parsed bare <w:rPr/> (emptyProperties).

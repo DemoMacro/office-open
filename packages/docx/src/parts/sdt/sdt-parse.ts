@@ -180,7 +180,23 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
         font: attr(uncheckedState, "w14:font"),
       };
     opts.checkbox = cbObj;
+  } else if (findChild(el, "w15:repeatingSection")) {
+    const rs = findChild(el, "w15:repeatingSection")!;
+    const rsOpts: NonNullable<SdtPropertiesOptions["repeatingSection"]> = {};
+    const sectionTitle = findChild(rs, "w15:sectionTitle");
+    if (sectionTitle) rsOpts.sectionTitle = attr(sectionTitle, "w:val");
+    const doNotAllow = findChild(rs, "w15:doNotAllowInsertDeleteSection");
+    if (doNotAllow) rsOpts.doNotAllowInsertDeleteSection = attrBool(doNotAllow, "w:val") ?? true;
+    opts.repeatingSection = rsOpts;
+  } else if (findChild(el, "w15:repeatingSectionItem")) {
+    opts.repeatingSectionItem = true;
   }
+
+  // Word 2013+ extension flags (CT_OnOff) — siblings outside the type choice.
+  const webExtLinked = findChild(el, "w15:webExtensionLinked");
+  if (webExtLinked) opts.webExtensionLinked = attrBool(webExtLinked, "w:val") ?? true;
+  const webExtCreated = findChild(el, "w15:webExtensionCreated");
+  if (webExtCreated) opts.webExtensionCreated = attrBool(webExtCreated, "w:val") ?? true;
 
   // w15:appearance (Word 2013+) — ST_SdtAppearance: boundingBox/tags/hidden
   const appearance = findChild(el, "w15:appearance");

@@ -328,7 +328,27 @@ export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleS
     parts.push("<w:bibliography/>");
   } else if (opts.checkbox) {
     parts.push(sdtCheckboxXml(opts.checkbox));
+  } else if (opts.repeatingSection) {
+    const inner =
+      (opts.repeatingSection.sectionTitle !== undefined
+        ? `<w15:sectionTitle w:val="${escapeXml(opts.repeatingSection.sectionTitle)}"/>`
+        : "") +
+      (opts.repeatingSection.doNotAllowInsertDeleteSection !== undefined
+        ? onOff(
+            "w15:doNotAllowInsertDeleteSection",
+            opts.repeatingSection.doNotAllowInsertDeleteSection,
+          )
+        : "");
+    parts.push(`<w15:repeatingSection>${inner}</w15:repeatingSection>`);
+  } else if (opts.repeatingSectionItem) {
+    parts.push("<w15:repeatingSectionItem/>");
   }
+
+  // Word 2013+ extension flags (CT_OnOff) — siblings outside the type choice.
+  if (opts.webExtensionLinked !== undefined)
+    parts.push(onOff("w15:webExtensionLinked", opts.webExtensionLinked));
+  if (opts.webExtensionCreated !== undefined)
+    parts.push(onOff("w15:webExtensionCreated", opts.webExtensionCreated));
 
   // w15:appearance (Word 2013+) trails the CT_SdtPr sequence.
   if (opts.appearance) parts.push(`<w15:appearance w15:val="${opts.appearance}"/>`);

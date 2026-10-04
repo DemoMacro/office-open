@@ -87,6 +87,11 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(pageSize(result).height).toBe(15840);
   });
 
+  it("round-trips w15:footnoteColumns", () => {
+    const result = roundTrip({ footnoteColumns: 2 });
+    expect(result.footnoteColumns).toBe(2);
+  });
+
   it("parses portrait page size without swapping (w = logical width)", () => {
     const xml =
       '<w:sectPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +

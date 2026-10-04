@@ -841,6 +841,10 @@ export function parseParagraphProperties(
     if (cnf) opts.cnfStyle = cnf;
   }
 
+  // Word 2013+ extension: collapsed paragraph body (w15:collapsed — CT_OnOff).
+  const collapsed = findChild(el, "w15:collapsed");
+  if (collapsed) opts.collapsed = attrBool(collapsed, "w:val") ?? true;
+
   // Run properties (paragraph-level defaults) — the paragraph-mark
   // track-change markers (w:ins/w:del inside w:rPr) ride along on them.
   const rPr = findChild(el, "w:rPr");

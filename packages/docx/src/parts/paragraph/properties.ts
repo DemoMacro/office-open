@@ -147,6 +147,11 @@ export interface LevelParagraphStylePropertiesOptions {
   divId?: number;
   /** Conditional formatting style for table rows/cells */
   cnfStyle?: CnfConditionalOptions;
+  /**
+   * Whether the paragraph body starts collapsed (w15:collapsed, Word 2013+).
+   * Word shows collapsible headings expanded unless this flag is present.
+   */
+  collapsed?: boolean;
 }
 
 /**
