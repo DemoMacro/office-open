@@ -27,6 +27,16 @@ export interface OdsCellGraphic {
   height?: number;
 }
 
+export interface OdsObjectGraphic {
+  reference: string;
+  href?: string;
+  name?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
 export interface OdsSemanticsOptions {
   calculationSettings?: OdsCalculationSettings;
   forms?: OfficeFormsOptions;
@@ -36,6 +46,8 @@ export type OdsCellOptions = CellOptions & { covered?: boolean };
 export interface OdsWorksheetOptions extends WorksheetOptions {
   annotations?: OdsAnnotation[];
   cellGraphics?: OdsCellGraphic[];
+  forms?: OfficeFormsOptions;
+  objectGraphics?: OdsObjectGraphic[];
 }
 export interface OdsWorkbookOptions extends WorkbookOptions {
   odfSemantics?: OdsSemanticsOptions;
