@@ -107,4 +107,103 @@ describe("ODS codec", () => {
       reason: "element has no canonical WorksheetOptions mapping",
     });
   });
+
+  it("round-trips cell object frames and rejects unknown frame children", () => {
+    const object = {
+      type: "object" as const,
+      href: "embedded-object",
+      name: "Legacy object",
+      description: "Embedded legacy object",
+      x: 360000,
+      y: 720000,
+      width: 2160000,
+      height: 1440000,
+    };
+    const parsed = parseOds(
+      generateOds({ worksheets: [{ rows: [{ cells: [{ value: 1, graphics: [object] }] }] }] }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.graphics).toEqual([object]);
+
+    const oleContent = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value="1"><draw:frame draw:name="Legacy object" svg:x="1cm" svg:y="2cm" svg:width="6cm" svg:height="4cm"><draw:object-ole xlink:href="./embedded-object" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/><svg:desc>Embedded legacy object</svg:desc><draw:unknown/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    let error: unknown;
+    try {
+      parseOds(
+        generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+          "content.xml": oleContent,
+        }),
+      );
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdsParseError);
+    expect(error).toMatchObject({ part: "content.xml", name: "draw:unknown" });
+  });
+
+  it("round-trips calculation settings, forms, and covered cells", () => {
+    const calculation = {
+      iterate: true,
+      iterateCount: 5,
+      iterateDelta: 0.01,
+      caseSensitive: false,
+      precisionAsShown: true,
+      automaticLabelSearch: true,
+      regularExpressionSearch: true,
+      wildcardSearch: true,
+      nullDate: { year: 1900, month: 1, day: 1 },
+    };
+    const forms = [
+      {
+        name: "Inputs",
+        automaticFocus: true,
+        designMode: true,
+        controls: [
+          { control: "text" as const, id: "text", name: "Name", value: "Value", maxLength: 24 },
+          { control: "checkBox" as const, id: "check", checked: true },
+          {
+            control: "dropDownList" as const,
+            id: "list",
+            entries: ["One", "Two"],
+            selectedIndex: 1,
+          },
+        ],
+      },
+    ];
+    const parsed = parseOds(
+      generateOds({
+        calculation,
+        forms,
+        worksheets: [
+          {
+            rows: [{ cells: [{ value: 1 }, { covered: { reference: "B1", text: "covered" } }] }],
+          },
+        ],
+      }),
+    );
+    expect(parsed.calculation).toEqual(calculation);
+    expect(parsed.forms).toEqual(forms);
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[1]?.covered).toEqual({
+      reference: "B1",
+      text: "covered",
+    });
+  });
+
+  it("rejects unknown calculation-setting children", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:calculation-settings><table:unknown/></table:calculation-settings></office:spreadsheet></office:body></office:document-content>`;
+    let error: unknown;
+    try {
+      parseOds(
+        generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+          "content.xml": content,
+        }),
+      );
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdsParseError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      name: "table:unknown",
+      reason: "element has no canonical calculation mapping",
+    });
+  });
 });

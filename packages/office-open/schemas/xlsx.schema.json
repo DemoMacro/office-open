@@ -1557,6 +1557,10 @@
       "additionalProperties": false,
       "description": "Calculation properties",
       "properties": {
+        "automaticLabelSearch": {
+          "description": "Whether label matching automatically finds adjacent label ranges.",
+          "type": "boolean"
+        },
         "calcCompleted": {
           "description": "Calc completed",
           "type": "boolean"
@@ -1572,6 +1576,10 @@
         },
         "calcOnSave": {
           "description": "Calc on save (default true)",
+          "type": "boolean"
+        },
+        "caseSensitive": {
+          "description": "Whether formula text matching is case-sensitive; omit for the format default.",
           "type": "boolean"
         },
         "concurrentCalc": {
@@ -1604,10 +1612,39 @@
           "description": "Iterate delta (default 0.001)",
           "type": "number"
         },
+        "nullDate": {
+          "additionalProperties": false,
+          "description": "Epoch used for serial dates.",
+          "properties": {
+            "day": {
+              "type": "number"
+            },
+            "month": {
+              "type": "number"
+            },
+            "year": {
+              "type": "number"
+            }
+          },
+          "required": ["year", "month", "day"],
+          "type": "object"
+        },
+        "precisionAsShown": {
+          "description": "Whether calculations preserve displayed rounding precision.",
+          "type": "boolean"
+        },
         "refMode": {
           "description": "Reference mode",
           "enum": ["A1", "R1C1"],
           "type": "string"
+        },
+        "regularExpressionSearch": {
+          "description": "Whether matching treats `.` as a regular-expression wildcard.",
+          "type": "boolean"
+        },
+        "wildcardSearch": {
+          "description": "Whether matching uses wildcard characters.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -1829,12 +1866,187 @@
       "required": ["position", "color"],
       "type": "object"
     },
+    "CellGraphicOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/CellImageGraphicOptions"
+        },
+        {
+          "$ref": "#/definitions/CellObjectGraphicOptions"
+        }
+      ]
+    },
+    "CellImageGraphicOptions": {
+      "additionalProperties": false,
+      "description": "Image graphic anchored to a spreadsheet cell.",
+      "properties": {
+        "data": {
+          "description": "Image bytes encoded with base64.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Accessible image description.",
+          "type": "string"
+        },
+        "endCellAddress": {
+          "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
+          "type": "string"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "height": {
+          "description": "Graphic height in EMU.",
+          "type": "number"
+        },
+        "href": {
+          "description": "Image package URI, without the leading slash.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Drawing identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible image name.",
+          "type": "string"
+        },
+        "relativeHeight": {
+          "description": "Relative frame height from the package style system.",
+          "type": "string"
+        },
+        "relativeWidth": {
+          "description": "Relative frame width from the package style system.",
+          "type": "string"
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Text style reference for labels attached to the frame.",
+          "type": "string"
+        },
+        "type": {
+          "const": "image",
+          "description": "Image graphic discriminant.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Graphic width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Horizontal offset from the cell in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Vertical offset from the cell in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["type", "href", "data"],
+      "type": "object"
+    },
+    "CellObjectGraphicOptions": {
+      "additionalProperties": false,
+      "description": "Embedded object graphic anchored to a spreadsheet cell.",
+      "properties": {
+        "chart": {
+          "$ref": "#/definitions/ChartSpaceOptions",
+          "description": "Embedded chart subdocument."
+        },
+        "description": {
+          "description": "Accessible object description.",
+          "type": "string"
+        },
+        "endCellAddress": {
+          "$ref": "#/definitions/CellImageGraphicOptions/properties/endCellAddress"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "height": {
+          "description": "Graphic height in EMU.",
+          "type": "number"
+        },
+        "href": {
+          "description": "Object package URI, without a leading `./` or slash.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Drawing identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible object name.",
+          "type": "string"
+        },
+        "relativeHeight": {
+          "description": "Relative frame height from the package style system.",
+          "type": "string"
+        },
+        "relativeWidth": {
+          "description": "Relative frame width from the package style system.",
+          "type": "string"
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Text style reference for labels attached to the frame.",
+          "type": "string"
+        },
+        "type": {
+          "const": "object",
+          "description": "Object graphic discriminant.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Graphic width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Horizontal offset from the cell in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Vertical offset from the cell in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["type", "href"],
+      "type": "object"
+    },
     "CellOptions": {
       "additionalProperties": false,
       "properties": {
         "cellMetadataId": {
           "description": "Cell metadata block id, 1-based index into metadata.cellMetadata",
           "type": "number"
+        },
+        "covered": {
+          "$ref": "#/definitions/CoveredCellOptions",
+          "description": "Placeholder semantics for non-origin cells in a merged range."
         },
         "error": {
           "description": "Error value — an Excel error literal like `#N/A` or `#DIV/0!`. Emitted as `t=\"e\"` instead of registering into the shared string table, matching the source cell type.",
@@ -1850,6 +2062,13 @@
             }
           ],
           "description": "Formula options. When set, value becomes the cached result. A bare string is shorthand for `{ formula: \"...\" }`."
+        },
+        "graphics": {
+          "description": "Graphics anchored to this spreadsheet cell.",
+          "items": {
+            "$ref": "#/definitions/CellGraphicOptions"
+          },
+          "type": "array"
         },
         "reference": {
           "type": "string"
@@ -2358,20 +2577,33 @@
       "additionalProperties": false,
       "properties": {
         "autoTitleDeleted": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/autoTitleDeleted"
+          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
+          "type": "boolean"
         },
         "axes": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/axes"
+          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
+          "items": {
+            "$ref": "#/definitions/AxisOptions"
+          },
+          "type": "array"
         },
         "axisIds": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/axisIds"
+          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
         },
         "backWall": {
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D back wall (c:backWall)."
         },
         "bandFormats": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/bandFormats"
+          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
+          "items": {
+            "$ref": "#/definitions/BandFormatOptions"
+          },
+          "type": "array"
         },
         "bubbleScale": {
           "description": "Bubble scale as percent of default size (c:bubbleScale).",
@@ -2384,20 +2616,69 @@
           "type": "array"
         },
         "categoryFormatCode": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/categoryFormatCode"
+          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
+          "type": "string"
         },
         "categoryFormula": {
           "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
           "type": "string"
         },
         "categoryLabels": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/categoryLabels"
+          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "colorMappingOverride": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/colorMappingOverride"
+          "additionalProperties": false,
+          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
+          "properties": {
+            "accent1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent3": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent4": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent5": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent6": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "followedHyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "hyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            }
+          },
+          "type": "object"
         },
         "customSplitPoints": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/customSplitPoints"
+          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions",
@@ -2408,20 +2689,32 @@
           "description": "Plot-area data table (c:dTable)."
         },
         "date1904": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/date1904"
+          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
+          "type": "boolean"
         },
         "dialect": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/dialect"
+          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
+          "enum": ["transitional", "strict"],
+          "type": "string"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/dropLines"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Drop lines (c:dropLines, line/area/stock)."
         },
         "ext": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/ext"
+          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
+          "type": "string"
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -2448,20 +2741,41 @@
           "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
         },
         "highLowLines": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/highLowLines"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
         },
         "lang": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/lang"
+          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
+          "type": "string"
         },
         "legendEntries": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/legendEntries"
+          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
+          "items": {
+            "$ref": "#/definitions/LegendEntryOptions"
+          },
+          "type": "array"
         },
         "legendLayout": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/legendLayout"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ManualLayoutOptions"
+            }
+          ],
+          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
         },
         "legendOverlay": {
           "description": "Legend overlaps the plot (c:overlay).",
@@ -2480,13 +2794,22 @@
           "description": "Legend text (c:legend's c:txPr, a) — round-trip."
         },
         "markers": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/markers"
+          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
+          "type": "boolean"
         },
         "multiLevelCategories": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/multiLevelCategories"
+          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
+          "items": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": "array"
         },
         "numericCategories": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/numericCategories"
+          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
+          "type": "boolean"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -2497,7 +2820,11 @@
           "type": "number"
         },
         "pivotFormats": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/pivotFormats"
+          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
+          "items": {
+            "$ref": "#/definitions/ChartPivotFormatOptions"
+          },
+          "type": "array"
         },
         "pivotSource": {
           "$ref": "#/definitions/PivotSourceOptions",
@@ -2512,7 +2839,8 @@
           "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/plotVisOnly"
+          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
+          "type": "boolean"
         },
         "printSettings": {
           "$ref": "#/definitions/PrintSettingsOptions",
@@ -2527,19 +2855,52 @@
           "description": "Radar variant (c:radarStyle, default \"standard\")."
         },
         "roundedCorners": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/roundedCorners"
+          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
+          "type": "boolean"
         },
         "secondPieSize": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/secondPieSize"
+          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
+          "type": ["number", "string"]
         },
         "secondaryGroups": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/secondaryGroups"
+          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
+          "items": {
+            "$ref": "#/definitions/SecondaryChartGroupOptions"
+          },
+          "type": "array"
         },
         "series": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/series"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/ChartSeriesData"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/ScatterSeriesData"
+              },
+              "type": "array"
+            },
+            {
+              "items": {
+                "$ref": "#/definitions/BubbleSeriesData"
+              },
+              "type": "array"
+            }
+          ]
         },
         "seriesLines": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/seriesLines"
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -2569,7 +2930,8 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/smooth"
+          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
+          "type": "boolean"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
@@ -2594,7 +2956,15 @@
           "type": "boolean"
         },
         "title": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/title"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/ChartTitleOptions"
+            }
+          ],
+          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
         },
         "type": {
           "$ref": "#/definitions/ChartType"
@@ -2604,14 +2974,16 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/upDownBarsGapWidth"
+          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
+          "type": "number"
         },
         "userShapes": {
           "$ref": "#/definitions/ChartUserShapesOptions",
           "description": "User-drawn shapes layered over the chart (c:userShapes, after printSettings)."
         },
         "varyColors": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/varyColors"
+          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
+          "type": "boolean"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"
@@ -2897,6 +3269,46 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "CheckBoxControlOptions": {
+      "additionalProperties": false,
+      "description": "Checkbox form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "checked": {
+          "description": "Current checked state.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "checkBox",
+          "description": "Checkbox control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control"],
       "type": "object"
     },
     "ColorChangeEffectOptions": {
@@ -3629,7 +4041,7 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
@@ -3640,7 +4052,7 @@
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "$ref": "#/definitions/PictureOptions/properties/extentCx"
@@ -3669,7 +4081,7 @@
           "type": "string"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -3852,6 +4264,27 @@
         }
       },
       "required": ["shapeId", "rId"],
+      "type": "object"
+    },
+    "CoveredCellOptions": {
+      "additionalProperties": false,
+      "description": "A placeholder covering the non-origin cells of a merged range.",
+      "properties": {
+        "reference": {
+          "description": "Covered-cell reference, such as `B2`.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Placeholder text retained from the covered cell.",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "Declared source value type retained for round-trip.",
+          "enum": ["float", "string", "date", "boolean", "percentage", "currency", "time"],
+          "type": "string"
+        }
+      },
+      "required": ["reference"],
       "type": "object"
     },
     "CustomCellStyleOptions": {
@@ -5165,6 +5598,53 @@
       "required": ["rId"],
       "type": "object"
     },
+    "DropDownListControlOptions": {
+      "additionalProperties": false,
+      "description": "Dropdown form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "dropDownList",
+          "description": "Dropdown control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "entries": {
+          "description": "Selectable labels in display order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "selectedIndex": {
+          "description": "Zero-based selected entry index.",
+          "type": "number"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control", "entries"],
+      "type": "object"
+    },
     "DuotoneEffectOptions": {
       "additionalProperties": false,
       "description": "Options for duotone effect.",
@@ -6345,6 +6825,46 @@
       },
       "type": "object"
     },
+    "FormContainerOptions": {
+      "additionalProperties": false,
+      "description": "A named container holding one or more form controls.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "controls": {
+          "description": "Controls contained by this form.",
+          "items": {
+            "$ref": "#/definitions/FormControlOptions"
+          },
+          "type": "array"
+        },
+        "designMode": {
+          "description": "Whether controls are shown in design mode rather than active mode.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Container name shown to form consumers.",
+          "type": "string"
+        }
+      },
+      "required": ["controls"],
+      "type": "object"
+    },
+    "FormControlOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TextControlOptions"
+        },
+        {
+          "$ref": "#/definitions/CheckBoxControlOptions"
+        },
+        {
+          "$ref": "#/definitions/DropDownListControlOptions"
+        }
+      ]
+    },
     "FormatSchemeOptions": {
       "additionalProperties": false,
       "description": "Format scheme / style matrix — a:fmtScheme.",
@@ -6661,14 +7181,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "endConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
           "description": "a:endCxn — end endpoint glued to a shape connection site."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -6686,7 +7206,7 @@
           "type": "string"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
@@ -6767,14 +7287,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "$ref": "#/definitions/PictureOptions/properties/extentCx"
@@ -6806,7 +7326,7 @@
           "type": "boolean"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -6868,10 +7388,10 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -6889,7 +7409,7 @@
           "type": "string"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
@@ -8214,17 +8734,20 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
+          "type": "string"
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
+          "type": "string"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
+          "type": "string"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -9320,16 +9843,14 @@
           "description": "Image binary (base64 string, data URL, or Uint8Array). Absent on a linked-only picture whose source is an external URL (no bytes in the package) — that shape carries `sourceUrl` instead."
         },
         "description": {
-          "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
-          "type": "string"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Verbatim `a:extLst` inner XML for extensions beyond creationId (a14 picture effects, useLocalDpi, …). Round-trip only: takes precedence over `creationId`, which it subsumes when the source list carries both.",
-          "type": "string"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "anyOf": [
@@ -9370,8 +9891,7 @@
           "type": "boolean"
         },
         "name": {
-          "description": "XSD `@name` (required in XML); API-optional, the descriptor synthesizes a fallback.",
-          "type": "string"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "preferRelativeResize": {
           "description": "Relative-resize hint (cNvPicPr/@preferRelativeResize). Absent = attribute omitted (defaults true); explicit true/false round-trips the attribute.",
@@ -13059,7 +13579,7 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "$ref": "#/definitions/WorksheetChartOptions/properties/upDownBarsGapWidth"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/upDownBarsGapWidth"
         },
         "varyColors": {
           "description": "Vary data-point colors (group-level c:varyColors).",
@@ -13208,14 +13728,14 @@
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "$ref": "#/definitions/PictureOptions/properties/extentCx"
@@ -13244,7 +13764,7 @@
           "type": "string"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -14872,6 +15392,55 @@
       },
       "type": "object"
     },
+    "TextControlOptions": {
+      "additionalProperties": false,
+      "description": "Text-entry form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "text",
+          "description": "Text-entry control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "maxLength": {
+          "description": "Maximum accepted character count.",
+          "type": "number"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        },
+        "value": {
+          "description": "Current text value.",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "Declared stored value type for the text control.",
+          "enum": ["float", "string", "date", "time"],
+          "type": "string"
+        }
+      },
+      "required": ["control"],
+      "type": "object"
+    },
     "TextFieldOptions": {
       "additionalProperties": false,
       "properties": {
@@ -16489,6 +17058,13 @@
           },
           "type": "array"
         },
+        "forms": {
+          "description": "Workbook-level form containers.",
+          "items": {
+            "$ref": "#/definitions/FormContainerOptions"
+          },
+          "type": "array"
+        },
         "functionGroups": {
           "description": "Custom VBA function group names",
           "items": {
@@ -16909,33 +17485,20 @@
           "description": "Anchor type (default \"twoCell\")."
         },
         "autoTitleDeleted": {
-          "description": "Auto-generated title suppressed (c:autoTitleDeleted) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/autoTitleDeleted"
         },
         "axes": {
-          "description": "Per-axis configuration. Omitted, the library emits sensible default axes derived from chart type; provided, each axis is serialized verbatim and parsed back, enabling full round-trip of gridlines/units/tick marks/etc.",
-          "items": {
-            "$ref": "#/definitions/AxisOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/axes"
         },
         "axisIds": {
-          "description": "Axis references (c:axId sequence on the chart group) — round-trip. Normally derived from `axes`; kept when the source sequence differs (legacy Word writes a dangling `axId val=\"0\"` for a missing third axis).",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/axisIds"
         },
         "backWall": {
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D back wall (c:backWall)."
         },
         "bandFormats": {
-          "description": "Surface chart color bands (c:bandFmts, after ser in surface charts).",
-          "items": {
-            "$ref": "#/definitions/BandFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/bandFormats"
         },
         "bubbleScale": {
           "description": "Bubble scale as percent of default size (c:bubbleScale).",
@@ -16948,19 +17511,14 @@
           "type": "array"
         },
         "categoryFormatCode": {
-          "description": "Category number format (c:numCache > c:formatCode, numeric categories).",
-          "type": "string"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/categoryFormatCode"
         },
         "categoryFormula": {
           "description": "Category reference formula (c:cat > c:*Ref > c:f) — round-trip.",
           "type": "string"
         },
         "categoryLabels": {
-          "description": "Literal category labels, emitted as c:strLit (c:cat > c:strLit).",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/categoryLabels"
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -16970,58 +17528,14 @@
           "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "colorMappingOverride": {
-          "additionalProperties": false,
-          "description": "Theme color mapping override (c:clrMapOvr, before c:chart).",
-          "properties": {
-            "accent1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent3": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent4": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent5": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent6": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "followedHyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "hyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/colorMappingOverride"
         },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
         "customSplitPoints": {
-          "description": "ofPie custom split point indices (c:custSplit > c:secondPiePt, with splitType \"cust\").",
-          "items": {
-            "type": "number"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/customSplitPoints"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions",
@@ -17032,39 +17546,27 @@
           "description": "Plot-area data table (c:dTable)."
         },
         "date1904": {
-          "description": "1904 date system (c:date1904) — emitted only when the source had it.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/date1904"
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "dialect": {
-          "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
-          "enum": ["transitional", "strict"],
-          "type": "string"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/dialect"
         },
         "displayBlanksAs": {
           "$ref": "#/definitions/DisplayBlanksAs",
           "description": "How blank cells are plotted (c:dispBlanksAs)."
         },
         "dropLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Drop lines (c:dropLines, line/area/stock)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/dropLines"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/ext"
         },
         "extentCx": {
           "$ref": "#/definitions/PictureOptions/properties/extentCx"
@@ -17105,15 +17607,7 @@
           "type": "boolean"
         },
         "highLowLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "High-low lines (c:hiLowLines, line/stock 2D)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/highLowLines"
         },
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
@@ -17124,26 +17618,13 @@
           "description": "Click hyperlink on the chart frame itself (a:hlinkClick inside xdr:cNvPr)."
         },
         "lang": {
-          "description": "Chart UI language (c:lang, e.g. \"en-US\") — emitted only when set.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/lang"
         },
         "legendEntries": {
-          "description": "Legend entry overrides (c:legendEntry, inside c:legend).",
-          "items": {
-            "$ref": "#/definitions/LegendEntryOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/legendEntries"
         },
         "legendLayout": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ManualLayoutOptions"
-            }
-          ],
-          "description": "Legend manual layout (c:legend's c:layout) — true emits the bare `<c:layout/>` form, an object the manual layout."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/legendLayout"
         },
         "legendOverlay": {
           "description": "Legend overlaps the plot (c:overlay).",
@@ -17170,25 +17651,16 @@
           "type": "string"
         },
         "markers": {
-          "description": "Show line-chart markers (c:marker on c:lineChart, 2D only). Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/markers"
         },
         "multiLevelCategories": {
-          "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
-          "items": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/multiLevelCategories"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "numericCategories": {
-          "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/numericCategories"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -17199,11 +17671,7 @@
           "type": "number"
         },
         "pivotFormats": {
-          "description": "Pivot chart per-series formats (c:pivotFmts, after autoTitleDeleted).",
-          "items": {
-            "$ref": "#/definitions/ChartPivotFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/pivotFormats"
         },
         "pivotSource": {
           "$ref": "#/definitions/PivotSourceOptions",
@@ -17218,8 +17686,7 @@
           "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
         },
         "plotVisOnly": {
-          "description": "Plot visible cells only (c:plotVisOnly, defaults to true when omitted).",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/plotVisOnly"
         },
         "printSettings": {
           "$ref": "#/definitions/PrintSettingsOptions",
@@ -17238,8 +17705,7 @@
           "description": "Radar variant (c:radarStyle, default \"standard\")."
         },
         "roundedCorners": {
-          "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/roundedCorners"
         },
         "row": {
           "description": "1-based row (from marker)",
@@ -17249,48 +17715,16 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "secondPieSize": {
-          "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
-          "type": ["number", "string"]
+          "$ref": "#/definitions/ChartSpaceOptions/properties/secondPieSize"
         },
         "secondaryGroups": {
-          "description": "Second chart group in a combo chart (e.g. lines over bars on two axes). Shares the plot area, categories, and the axes list; carries its own series and group-level flags.",
-          "items": {
-            "$ref": "#/definitions/SecondaryChartGroupOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/secondaryGroups"
         },
         "series": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/definitions/ChartSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/ScatterSeriesData"
-              },
-              "type": "array"
-            },
-            {
-              "items": {
-                "$ref": "#/definitions/BubbleSeriesData"
-              },
-              "type": "array"
-            }
-          ]
+          "$ref": "#/definitions/ChartSpaceOptions/properties/series"
         },
         "seriesLines": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "$ref": "#/definitions/ChartLinesOptions"
-            }
-          ],
-          "description": "Series lines (c:serLines, stock / 2D bar / 3D area)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/seriesLines"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -17324,8 +17758,7 @@
           "description": "What the bubble size represents (c:sizeRepresents)."
         },
         "smooth": {
-          "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/smooth"
         },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
@@ -17350,15 +17783,7 @@
           "type": "boolean"
         },
         "title": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "$ref": "#/definitions/ChartTitleOptions"
-            }
-          ],
-          "description": "Chart title (c:title). An empty string round-trips a title placeholder that carries no text (bare `<c:title/>`, the legacy-Word auto-title form)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/title"
         },
         "toCol": {
           "description": "To cell column (1-based) for twoCellAnchor. Defaults to col + 1.",
@@ -17382,16 +17807,14 @@
           "type": "boolean"
         },
         "upDownBarsGapWidth": {
-          "description": "Gap width inside the up/down bars container (c:upDownBars > c:gapWidth).",
-          "type": "number"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/upDownBarsGapWidth"
         },
         "userShapes": {
           "$ref": "#/definitions/ChartUserShapesOptions",
           "description": "User-drawn shapes layered over the chart (c:userShapes, after printSettings)."
         },
         "varyColors": {
-          "description": "Vary data-point colors (chart-group-level c:varyColors). Emitted only when set — the corpus is mixed and fresh output stays bare.",
-          "type": "boolean"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/varyColors"
         },
         "view3D": {
           "$ref": "#/definitions/View3DOptions"
@@ -17755,14 +18178,14 @@
           "type": "string"
         },
         "description": {
-          "$ref": "#/definitions/PictureOptions/properties/description"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
         },
         "ext": {
-          "$ref": "#/definitions/PictureOptions/properties/ext"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "$ref": "#/definitions/PictureOptions/properties/extentCx"
@@ -17791,7 +18214,7 @@
           "type": "string"
         },
         "name": {
-          "$ref": "#/definitions/PictureOptions/properties/name"
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",

@@ -1,7 +1,7 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdt, OdtParseError, parseOdt, type OdtDocumentOptions } from "./index";
+import { generateOdt, OdtParseError, parseOdt, type DocumentOptions } from "./index";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
 
@@ -42,7 +42,7 @@ describe("ODT canonical projection", () => {
   });
 
   it("round-trips revisions through canonical insertion and deletion children", () => {
-    const options: OdtDocumentOptions = {
+    const options: DocumentOptions = {
       sections: [
         {
           children: [
@@ -82,18 +82,18 @@ describe("ODT canonical projection", () => {
     const field = {
       formField: { name: "Name", textInput: { value: "Value" } },
     };
-    const options: OdtDocumentOptions = {
+    const options: DocumentOptions = {
       sections: [{ children: [{ paragraph: { children: [field] } }] }],
     };
     const parsed = parseOdt(generateOdt(options));
-    expect(Object.keys(parsed).sort()).toEqual(["sections"]);
-    expect(projection(parsed.sections[0]?.children)).toEqual([
-      { paragraph: { children: [field] } },
+    expect(Object.keys(parsed).sort()).toEqual(["forms", "sections"]);
+    expect(parsed.forms).toEqual([
+      { controls: [{ control: "text", name: "Name", value: "Value" }] },
     ]);
   });
 
   it("round-trips bookmarks, references, variables, sequences, and hidden text", () => {
-    const options: OdtDocumentOptions = {
+    const options: DocumentOptions = {
       sections: [
         {
           children: [
@@ -115,12 +115,16 @@ describe("ODT canonical projection", () => {
       ],
     };
     const parsed = parseOdt(generateOdt(options));
-    expect(Object.keys(parsed).sort()).toEqual(["sections"]);
+    expect(Object.keys(parsed).sort()).toEqual([
+      "sections",
+      "sequenceDeclarations",
+      "variableDeclarations",
+    ]);
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
 
   it("round-trips annotations, indexes, bibliography, and shapes", () => {
-    const options: OdtDocumentOptions = {
+    const options: DocumentOptions = {
       sections: [
         {
           children: [
@@ -193,10 +197,10 @@ describe("ODT canonical projection", () => {
     expect(parseBodyError(tracked, "text:format-change").reason).toContain("no canonical");
     expect(
       parseBodyError(
-        "<text:sequence-decls><text:sequence-decl text:name='Figure' text:display-outline-level='1'/></text:sequence-decls>",
+        "<text:sequence-decls><text:sequence-decl text:name='Figure' text:unknown='true'/></text:sequence-decls>",
         "text:sequence-decl",
       ).reason,
-    ).toContain("no canonical");
+    ).toContain("attribute has no canonical");
     expect(
       parseBodyError(
         "<text:p><office:annotation office:display='true'><text:p>shown</text:p></office:annotation></text:p>",

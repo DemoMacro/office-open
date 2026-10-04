@@ -1,4 +1,8 @@
-import type { ChartSpaceOptions } from "@office-open/core";
+import type {
+  ChartSpaceOptions,
+  FormContainerOptions,
+  FormControlOptions,
+} from "@office-open/core";
 import {
   attributeNumber,
   attributeString,
@@ -14,7 +18,7 @@ import {
   readXml,
   textOf,
   xmlElement,
-  type OdfFiles,
+  type OdfPackageFiles,
   type XmlAttributes,
 } from "@office-open/ocf";
 import {
@@ -36,11 +40,11 @@ import type {
   StyleOptions,
   WorkbookOptions,
   WorksheetChartOptions,
+  WorksheetOptions,
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
-import type { OdsWorkbookOptions, OdsWorksheetOptions } from "./semantics";
 
 const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 const NAMESPACES = [
@@ -84,7 +88,7 @@ interface OdsChartFrame {
 
 type OdsParsedChartOptions = WorksheetChartOptions;
 
-export function generateOds(options: OdsWorkbookOptions): Uint8Array {
+export function generateOds(options: WorkbookOptions): Uint8Array {
   const styles: string[] = [];
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
@@ -96,20 +100,82 @@ export function generateOds(options: OdsWorkbookOptions): Uint8Array {
   const sheets = (options.worksheets ?? []).map((worksheet, index) =>
     worksheetXml(worksheet, index + 1, styles, chartFrames),
   );
-  const files: OdfFiles = {
-    "content.xml": contentXml(sheets.join(""), styles, options.definedNames, options.calculation),
+  const files: OdfPackageFiles = {
+    "content.xml": contentXml(
+      sheets.join(""),
+      styles,
+      options.definedNames,
+      options.calculation,
+      options.forms,
+    ),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
   for (const entry of chartFrames) files[`${entry.name}/content.xml`] = chartBodyXml(entry.chart);
+  for (const worksheet of options.worksheets ?? []) {
+    for (const row of worksheet.rows ?? []) {
+      for (const cell of row.cells ?? []) {
+        for (const graphic of cell.graphics ?? []) {
+          if (graphic.type === "image") files[graphic.href] = base64ToBytes(graphic.data);
+          else {
+            if (graphic.chart) files[`${graphic.href}/content.xml`] = chartBodyXml(graphic.chart);
+          }
+        }
+      }
+    }
+  }
   return generateOcf(
     MIME,
     files,
-    Object.fromEntries(chartFrames.map((entry) => [`${entry.name}/`, CHART_MIME])),
+    Object.fromEntries([
+      ...chartFrames.map((entry) => [`${entry.name}/`, CHART_MIME]),
+      ...(options.worksheets ?? []).flatMap((worksheet) =>
+        (worksheet.rows ?? []).flatMap((row) =>
+          (row.cells ?? []).flatMap((cell) =>
+            (cell.graphics ?? []).map((graphic) => [
+              graphic.type === "image" ? graphic.href : `${graphic.href}/`,
+              graphic.type === "image" ? imageMediaType(graphic.href) : CHART_MIME,
+            ]),
+          ),
+        ),
+      ),
+    ]),
   );
 }
 
-export function parseOds(data: Uint8Array): OdsWorkbookOptions {
+function base64ToBytes(value: string): Uint8Array {
+  return Uint8Array.from(atob(value), (character) => character.charCodeAt(0));
+}
+
+function bytesToBase64(value: Uint8Array): string {
+  let binary = "";
+  for (const byte of value) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function imageMediaType(href: string): string {
+  const types: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    bmp: "image/bmp",
+    svg: "image/svg+xml",
+  };
+  return types[href.split(".").pop() ?? ""] ?? "application/octet-stream";
+}
+
+function unsupportedOdsValue(name: string, reason: string): OdsParseError {
+  return new OdsParseError(
+    `content.xml: ${name} ${reason}`,
+    "content.xml",
+    "/office:document-content/office:body/office:spreadsheet",
+    name,
+    "no canonical ODS mapping",
+  );
+}
+
+export function parseOds(data: Uint8Array): WorkbookOptions {
   try {
     return parseOdsWorkbook(data);
   } catch (cause) {
@@ -130,8 +196,8 @@ export function parseOds(data: Uint8Array): OdsWorkbookOptions {
   }
 }
 
-function parseOdsWorkbook(data: Uint8Array): OdsWorkbookOptions {
-  const { files, manifest } = readOcf(data, MIME);
+function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
+  const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
   const automaticStyles = childNamed(content, "office:automatic-styles");
@@ -139,6 +205,7 @@ function parseOdsWorkbook(data: Uint8Array): OdsWorkbookOptions {
   const cellStyles = parseNumberStyles(automaticStyles);
   const chartPool = parseEmbeddedCharts(manifest, files);
   const calcProperties = parseOdsSemantics(body);
+  const forms = parseForms(body);
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
   const definedNames = parseDefinedNames(body) ?? [];
   const worksheets = childrenNamed(body, "table:table").map((table, index) => {
@@ -151,11 +218,29 @@ function parseOdsWorkbook(data: Uint8Array): OdsWorkbookOptions {
       ? { ...parsed, charts: [...(parsed.charts ?? []), ...charts] }
       : parsed;
   });
+  for (const worksheet of worksheets) {
+    for (const row of worksheet.rows ?? []) {
+      for (const cell of row.cells ?? []) {
+        for (const graphic of cell.graphics ?? []) {
+          if (graphic.type === "image") {
+            const binary = binaries[graphic.href];
+            graphic.data = binary ? bytesToBase64(binary) : "";
+            if (!graphic.data)
+              throw unsupportedOdsValue(graphic.href, "referenced image is missing");
+          } else {
+            const chart = chartPool.get(graphic.href);
+            if (chart) graphic.chart = chart;
+          }
+        }
+      }
+    }
+  }
   rejectUnknownSpreadsheetChildren(body);
   const result = {
     ...parseMeta(files),
     ...(definedNames.length > 0 ? { definedNames } : {}),
     ...(calcProperties ? { calculation: calcProperties } : {}),
+    ...(forms.length > 0 ? { forms } : {}),
     worksheets,
   };
   return result;
@@ -166,64 +251,284 @@ function contentXml(
   styles: string[],
   definedNames: WorkbookOptions["definedNames"],
   calculation?: WorkbookOptions["calculation"],
+  forms?: WorkbookOptions["forms"],
 ): string {
-  const expressions = `${semanticsXml(calculation)}${definedNamesXml(definedNames)}`;
+  const expressions = `${formsXml(forms)}${semanticsXml(calculation)}${definedNamesXml(
+    definedNames,
+  )}`;
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
     "",
   )}</office:automatic-styles><office:body><office:spreadsheet>${sheets}${expressions}</office:spreadsheet></office:body></office:document-content>`;
 }
 
 function parseOdsSemantics(body: Element | undefined): WorkbookOptions["calculation"] {
-  if (childNamed(body, "office:forms")) {
-    throw new OdsParseError(
-      "content.xml: /office:spreadsheet/office:forms: ODF forms have no canonical WorkbookOptions equivalent",
-      "content.xml",
-      "/office:document-content/office:body/office:spreadsheet/office:forms",
-      "office:forms",
-      "ODF forms have no canonical WorkbookOptions equivalent",
-    );
-  }
   const calculation = childNamed(body, "table:calculation-settings");
   if (!calculation) return undefined;
-  if (
-    attributeString(calculation, "table:case-sensitive") === "false" ||
-    attributeString(calculation, "table:automatic-find-labels") === "true" ||
-    attributeString(calculation, "table:use-regular-expressions") === "true" ||
-    attributeString(calculation, "table:use-wildcards") === "true" ||
-    childNamed(calculation, "table:null-date")
-  ) {
-    throw new OdsParseError(
-      "content.xml: /office:spreadsheet/table:calculation-settings: semantics have no canonical WorkbookOptions equivalent",
-      "content.xml",
+  const iteration = childNamed(calculation, "table:iteration");
+  const result: NonNullable<WorkbookOptions["calculation"]> = {
+    ...(iteration
+      ? {
+          iterate: attributeString(iteration, "table:status") === "enable",
+          ...(attributeNumber(iteration, "table:steps") !== undefined
+            ? { iterateCount: attributeNumber(iteration, "table:steps") }
+            : {}),
+          ...(attributeNumber(iteration, "table:maximum-difference") !== undefined
+            ? { iterateDelta: attributeNumber(iteration, "table:maximum-difference") }
+            : {}),
+        }
+      : {}),
+    ...(attributeString(calculation, "table:case-sensitive") === "false"
+      ? { caseSensitive: false }
+      : {}),
+    ...(attributeString(calculation, "table:precision-as-shown") === "true"
+      ? { precisionAsShown: true }
+      : {}),
+    ...(attributeString(calculation, "table:automatic-find-labels") === "true"
+      ? { automaticLabelSearch: true }
+      : {}),
+    ...(attributeString(calculation, "table:use-regular-expressions") === "true"
+      ? { regularExpressionSearch: true }
+      : {}),
+    ...(attributeString(calculation, "table:use-wildcards") === "true"
+      ? { wildcardSearch: true }
+      : {}),
+  };
+  const nullDate = childNamed(calculation, "table:null-date");
+  if (nullDate) {
+    result.nullDate = {
+      year: attributeNumber(nullDate, "table:date-value-year") ?? 1899,
+      month: attributeNumber(nullDate, "table:date-value-month") ?? 12,
+      day: attributeNumber(nullDate, "table:date-value-day") ?? 30,
+    };
+  }
+  assertCalculationChildren(calculation, result);
+  return result;
+}
+
+function assertCalculationChildren(
+  calculation: Element,
+  result: NonNullable<WorkbookOptions["calculation"]>,
+): void {
+  for (const child of calculation.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "table:iteration") {
+      assertElementNames(child, ["table:status", "table:steps", "table:maximum-difference"]);
+      continue;
+    }
+    if (child.name === "table:null-date") {
+      assertElementNames(child, [
+        "table:date-value-year",
+        "table:date-value-month",
+        "table:date-value-day",
+      ]);
+      if (!result.nullDate) result.nullDate = { year: 1899, month: 12, day: 30 };
+      continue;
+    }
+    throw unknownOdsElement(
+      child,
       "/office:document-content/office:body/office:spreadsheet/table:calculation-settings",
-      "table:calculation-settings",
-      "semantics have no canonical WorkbookOptions equivalent",
+      child.name ?? "",
+      "element has no canonical calculation mapping",
     );
   }
-  const iteration = childNamed(calculation, "table:iteration");
-  if (!iteration) return {};
-  return {
-    iterate: attributeString(iteration, "table:status") === "enable",
-    iterateCount: attributeNumber(iteration, "table:steps"),
-    iterateDelta: attributeNumber(iteration, "table:maximum-difference"),
+}
+
+function formsXml(forms: WorkbookOptions["forms"]): string {
+  if (!forms?.length) return "";
+  return xmlElement(
+    "office:forms",
+    {
+      "form:automatic-focus": forms[0]?.automaticFocus,
+      "form:apply-design-mode": forms[0]?.designMode,
+    },
+    forms.map((form) =>
+      xmlElement(
+        "form:form",
+        { "form:name": form.name },
+        form.controls.map((control) => formControlXml(control)),
+      ),
+    ),
+  );
+}
+
+function formControlXml(control: FormControlOptions): string {
+  const common = {
+    "form:id": control.id,
+    "form:name": control.name,
+    "form:disabled": control.disabled,
+    "form:tab-index": control.tabIndex,
+    "form:automatic-focus": control.automaticFocus,
   };
+  if (control.control === "checkBox")
+    return xmlElement("form:checkbox", {
+      ...common,
+      "form:current-state": control.checked ? "checked" : "unchecked",
+    });
+  if (control.control === "dropDownList")
+    return xmlElement(
+      "form:listbox",
+      common,
+      control.entries.map((label, optionIndex) =>
+        xmlElement(
+          "form:option",
+          { "form:selected": control.selectedIndex === optionIndex || undefined },
+          [escapeText(label)],
+        ),
+      ),
+    );
+  return xmlElement("form:text", {
+    ...common,
+    "office:value-type": control.valueType,
+    "form:current-value": control.value,
+    "form:max-length": control.maxLength,
+  });
+}
+
+function parseForms(body: Element | undefined): FormContainerOptions[] {
+  return descendantElements(body)
+    .filter((element) => element.name === "office:forms")
+    .flatMap((element) => {
+      assertElementNames(
+        element,
+        ["form:automatic-focus", "form:apply-design-mode"],
+        ["form:form"],
+      );
+      return childrenNamed(element, "form:form").map((form) => {
+        assertElementNames(form, ["form:name"], ["form:text", "form:checkbox", "form:listbox"]);
+        return {
+          ...(attributeString(form, "form:name")
+            ? { name: attributeString(form, "form:name") }
+            : {}),
+          ...(attributeString(element, "form:automatic-focus") === "true"
+            ? { automaticFocus: true }
+            : {}),
+          ...(attributeString(element, "form:apply-design-mode") === "true"
+            ? { designMode: true }
+            : {}),
+          controls:
+            form.elements
+              ?.filter((child) => child.type === "element")
+              .map((control) => parseFormControl(control)) ?? [],
+        };
+      });
+    });
+}
+
+function descendantElements(element: Element | undefined): Element[] {
+  return (element?.elements ?? []).flatMap((child) =>
+    child.type === "element" ? [child, ...descendantElements(child)] : [],
+  );
+}
+
+function parseFormControl(control: Element): FormControlOptions {
+  assertElementNames(
+    control,
+    [
+      "form:id",
+      "form:name",
+      "form:disabled",
+      "form:tab-index",
+      "form:automatic-focus",
+      "office:value-type",
+      "form:current-value",
+      "form:max-length",
+      "form:current-state",
+      "form:selected",
+    ],
+    ["form:option", "form:item"],
+  );
+  const common = {
+    ...(attributeString(control, "form:id") ? { id: attributeString(control, "form:id") } : {}),
+    ...(attributeString(control, "form:name")
+      ? { name: attributeString(control, "form:name") }
+      : {}),
+    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
+    ...(attributeNumber(control, "form:tab-index") !== undefined
+      ? { tabIndex: attributeNumber(control, "form:tab-index") }
+      : {}),
+    ...(attributeString(control, "form:automatic-focus") === "true"
+      ? { automaticFocus: true }
+      : {}),
+  };
+  if (control.name === "form:text")
+    return {
+      control: "text",
+      ...common,
+      ...(attributeString(control, "form:current-value")
+        ? { value: attributeString(control, "form:current-value") }
+        : {}),
+      ...(attributeString(control, "office:value-type")
+        ? { valueType: attributeString(control, "office:value-type") as "float" | "string" }
+        : {}),
+      ...(attributeNumber(control, "form:max-length") !== undefined
+        ? { maxLength: attributeNumber(control, "form:max-length") }
+        : {}),
+    };
+  if (control.name === "form:checkbox") {
+    const state = attributeString(control, "form:current-state");
+    if (state !== "checked" && state !== "unchecked")
+      throw unknownOdsElement(control, "", control.name ?? "", "invalid checkbox state");
+    return { control: "checkBox", ...common, checked: state === "checked" };
+  }
+  if (control.name === "form:listbox") {
+    const entries = childrenNamed(control, "form:option").map((option) => textOf(option));
+    const selected = childrenNamed(control, "form:option").findIndex(
+      (option) => attributeString(option, "form:selected") === "true",
+    );
+    return {
+      control: "dropDownList",
+      ...common,
+      entries,
+      ...(selected >= 0 ? { selectedIndex: selected } : {}),
+    };
+  }
+  throw unknownOdsElement(
+    control,
+    "/office:spreadsheet/office:forms",
+    control.name ?? "",
+    "element has no canonical control mapping",
+  );
 }
 
 function semanticsXml(calculation: WorkbookOptions["calculation"]): string {
   if (!calculation) return "";
+  const hasSettings =
+    calculation.iterate !== undefined ||
+    calculation.caseSensitive !== undefined ||
+    calculation.precisionAsShown !== undefined ||
+    calculation.automaticLabelSearch !== undefined ||
+    calculation.regularExpressionSearch !== undefined ||
+    calculation.wildcardSearch !== undefined ||
+    calculation.nullDate !== undefined;
+  if (!hasSettings) return "";
   const iteration = {
     "table:status":
       calculation.iterate === undefined ? undefined : calculation.iterate ? "enable" : "disable",
     "table:steps": calculation.iterateCount,
     "table:maximum-difference": calculation.iterateDelta,
   };
-  return [
-    calculation.iterate === undefined
-      ? ""
-      : xmlElement("table:calculation-settings", undefined, [
-          xmlElement("table:iteration", iteration),
-        ]),
-  ].join("");
+  return xmlElement(
+    "table:calculation-settings",
+    {
+      "table:case-sensitive": calculation.caseSensitive,
+      "table:precision-as-shown": calculation.precisionAsShown,
+      "table:automatic-find-labels": calculation.automaticLabelSearch,
+      "table:use-regular-expressions": calculation.regularExpressionSearch,
+      "table:use-wildcards": calculation.wildcardSearch,
+    },
+    [
+      ...(calculation.iterate !== undefined ? [xmlElement("table:iteration", iteration)] : []),
+      ...(calculation.nullDate
+        ? [
+            xmlElement("table:null-date", {
+              "table:date-value-year": calculation.nullDate.year,
+              "table:date-value-month": calculation.nullDate.month,
+              "table:date-value-day": calculation.nullDate.day,
+            }),
+          ]
+        : []),
+    ],
+  );
 }
 
 function definedNamesXml(definedNames: WorkbookOptions["definedNames"]): string {
@@ -250,7 +555,7 @@ function stylesXml(): string {
 }
 
 function worksheetXml(
-  worksheet: OdsWorksheetOptions,
+  worksheet: WorksheetOptions,
   index: number,
   styles: string[],
   embeddedCharts: OdsChartFrame[],
@@ -416,6 +721,7 @@ function rejectUnknownSpreadsheetChildren(body: Element | undefined): void {
   const allowed = new Set([
     "table:table",
     "table:calculation-settings",
+    "office:forms",
     "table:named-expressions",
     "draw:frame",
   ]);
@@ -463,7 +769,48 @@ function unknownOdsElement(
   );
 }
 
+function assertElementNames(
+  element: Element,
+  allowedAttributes: string[],
+  allowedChildren: string[] = [],
+): void {
+  const unknown = Object.keys(element.attributes ?? {}).filter(
+    (name) => !allowedAttributes.includes(name),
+  );
+  if (unknown.length) {
+    throw unknownOdsElement(
+      element,
+      `/office:document-content/office:body${element.name === "form:form" ? "/office:spreadsheet/office:forms" : ""}`,
+      unknown[0] ?? "",
+      "attribute has no canonical mapping",
+    );
+  }
+  for (const child of element.elements ?? []) {
+    if (child.type === "element" && !allowedChildren.includes(child.name ?? "")) {
+      throw unknownOdsElement(
+        element,
+        `/office:document-content/office:body${element.name === "form:form" ? "/office:spreadsheet/office:forms" : ""}`,
+        child.name ?? "",
+        "child has no canonical mapping",
+      );
+    }
+  }
+}
+
 function cellXml(cell: CellOptions, styles: string[], decorations: string[] = []): string {
+  if (cell.covered) {
+    return xmlElement(
+      "table:covered-table-cell",
+      {
+        "table:style-name":
+          typeof cell.style === "object" ? addCellStyle(cell.style, styles) : undefined,
+        "office:value-type": cell.covered.valueType,
+      },
+      cell.covered.text === undefined
+        ? []
+        : [xmlElement("text:p", undefined, [escapeText(cell.covered.text)])],
+    );
+  }
   const formula = typeof cell.formula === "string" ? cell.formula : cell.formula?.formula;
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
@@ -482,8 +829,40 @@ function cellXml(cell: CellOptions, styles: string[], decorations: string[] = []
         ? [xmlElement("text:p", undefined, [escapeText(String(cached.value ?? ""))])]
         : []),
       ...decorations,
+      ...(cell.graphics ?? []).map((graphic) => cellGraphicXml(graphic)),
     ],
   );
+}
+
+function cellGraphicXml(graphic: NonNullable<CellOptions["graphics"]>[number]): string {
+  const common = {
+    "draw:name": graphic.name,
+    "svg:x": emuToLength(graphic.x),
+    "svg:y": emuToLength(graphic.y),
+    "svg:width": emuToLength(graphic.width),
+    "svg:height": emuToLength(graphic.height),
+    "draw:z-index": graphic.zIndex,
+    "table:end-cell-address": graphic.endCellAddress,
+    ...(graphic.endX !== undefined ? { "table:end-x": emuToLength(graphic.endX) } : {}),
+    ...(graphic.endY !== undefined ? { "table:end-y": emuToLength(graphic.endY) } : {}),
+    "draw:id": graphic.id,
+    "draw:style-name": graphic.styleName,
+    "draw:text-style-name": graphic.textStyleName,
+    "style:rel-width": graphic.relativeWidth,
+    "style:rel-height": graphic.relativeHeight,
+  };
+  const link = {
+    "xlink:href": graphic.href,
+    "xlink:type": "simple",
+    "xlink:show": "embed",
+    "xlink:actuate": "onLoad",
+  };
+  return xmlElement("draw:frame", common, [
+    xmlElement(graphic.type === "image" ? "draw:image" : "draw:object", link),
+    ...(graphic.description
+      ? [xmlElement("svg:desc", undefined, [escapeText(graphic.description)])]
+      : []),
+  ]);
 }
 
 function commentPlainText(text: CommentOptions["text"]): string {
@@ -491,7 +870,7 @@ function commentPlainText(text: CommentOptions["text"]): string {
   return text.runs?.map((run) => run.text).join("") ?? text.text ?? "";
 }
 
-function cellDecorationXml(worksheet: OdsWorksheetOptions, reference: string): string[] {
+function cellDecorationXml(worksheet: WorksheetOptions, reference: string): string[] {
   const comment = worksheet.comments?.find((entry) => entry.cell === reference);
   return comment
     ? [
@@ -900,7 +1279,7 @@ function worksheet(
   index: number,
   dimensions: Map<string, DimensionStyle>,
   cellStyles: Map<string, StyleOptions>,
-): OdsWorksheetOptions {
+): WorksheetOptions {
   const comments: CommentOptions[] = [];
   validateTableChildren(table);
   const worksheetOptions = {
@@ -924,6 +1303,7 @@ function validateTableChildren(table: Element): void {
     if (
       child.name === "table:table-column" ||
       child.name === "table:table-row" ||
+      child.name === "office:forms" ||
       child.name === "table:shapes" ||
       child.name === "draw:frame" ||
       COLUMN_CONTAINERS.has(child.name) ||
@@ -982,12 +1362,35 @@ function parseRow(
         const column = cellIndex + 1;
         if (cell.type !== "element" || !cell.name) return undefined;
         if (cell.name === "table:covered-table-cell") {
-          throw unknownOdsElement(
+          assertElementNames(
             cell,
-            `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${rowNumber}]`,
-            cell.name,
-            "covered cell has no standalone canonical CellOptions mapping",
+            ["table:style-name", "office:value-type", "calcext:value-type"],
+            ["text:p"],
           );
+          return [
+            {
+              reference: `${columnName(column)}${rowNumber}`,
+              covered: {
+                reference: `${columnName(column)}${rowNumber}`,
+                ...(childNamed(cell, "text:p") ? { text: textOf(childNamed(cell, "text:p")) } : {}),
+                ...(attributeString(cell, "office:value-type")
+                  ? {
+                      valueType: attributeString(cell, "office:value-type") as
+                        | "float"
+                        | "string"
+                        | "date"
+                        | "boolean"
+                        | "percentage"
+                        | "currency"
+                        | "time",
+                    }
+                  : {}),
+              },
+              ...(cellStyles.get(attributeString(cell, "table:style-name") ?? "")
+                ? { style: cellStyles.get(attributeString(cell, "table:style-name") ?? "") }
+                : {}),
+            },
+          ];
         }
         if (cell.name !== "table:table-cell") {
           throw unknownOdsElement(
@@ -1009,17 +1412,122 @@ function parseRow(
             });
           }
           if (child.name === "draw:frame") {
-            const object = childNamed(child, "draw:object");
+            const object = childNamed(child, "draw:object") ?? childNamed(child, "draw:object-ole");
             const image = childNamed(child, "draw:image");
             const href = attributeString(object ?? image, "xlink:href");
-            throw unknownOdsElement(
+            const description = textOf(childNamed(child, "svg:desc"));
+            if (!href) {
+              throw unknownOdsElement(
+                child,
+                `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${rowNumber}]/table:table-cell[${column}]`,
+                child.name!,
+                "graphic href is required",
+              );
+            }
+            assertElementNames(
               child,
-              `/office:document-content/office:body/office:spreadsheet/table:table/table:table-row[${rowNumber}]/table:table-cell[${column}]`,
-              child.name!,
-              href
-                ? "cell graphic has no canonical image mapping"
-                : "cell graphic has no canonical object mapping",
+              [
+                "draw:name",
+                "svg:x",
+                "svg:y",
+                "svg:width",
+                "svg:height",
+                "draw:z-index",
+                "table:end-cell-address",
+                "draw:id",
+                "table:end-x",
+                "table:end-y",
+                "draw:style-name",
+                "draw:text-style-name",
+                "xmlns:presentation",
+                "style:rel-width",
+                "style:rel-height",
+              ],
+              ["draw:image", "draw:object", "draw:object-ole", "svg:desc"],
             );
+            parsed.graphics = [
+              ...(parsed.graphics ?? []),
+              object
+                ? {
+                    type: "object",
+                    href: href.replace(/^\.\//, "").replace(/^\//, ""),
+                    ...(attributeString(child, "draw:name")
+                      ? { name: attributeString(child, "draw:name") }
+                      : {}),
+                    ...(description ? { description } : {}),
+                    x: lengthToEmu(attributeString(child, "svg:x")),
+                    y: lengthToEmu(attributeString(child, "svg:y")),
+                    width: lengthToEmu(attributeString(child, "svg:width")),
+                    height: lengthToEmu(attributeString(child, "svg:height")),
+                    ...(attributeNumber(child, "draw:z-index") !== undefined
+                      ? { zIndex: attributeNumber(child, "draw:z-index") }
+                      : {}),
+                    ...(attributeString(child, "table:end-cell-address")
+                      ? { endCellAddress: attributeString(child, "table:end-cell-address") }
+                      : {}),
+                    ...(attributeString(child, "draw:id")
+                      ? { id: attributeString(child, "draw:id") }
+                      : {}),
+                    ...(attributeString(child, "table:end-x") !== undefined
+                      ? { endX: lengthToEmu(attributeString(child, "table:end-x")) }
+                      : {}),
+                    ...(attributeString(child, "table:end-y") !== undefined
+                      ? { endY: lengthToEmu(attributeString(child, "table:end-y")) }
+                      : {}),
+                    ...(attributeString(child, "draw:style-name")
+                      ? { styleName: attributeString(child, "draw:style-name") }
+                      : {}),
+                    ...(attributeString(child, "draw:text-style-name")
+                      ? { textStyleName: attributeString(child, "draw:text-style-name") }
+                      : {}),
+                    ...(attributeString(child, "style:rel-width")
+                      ? { relativeWidth: attributeString(child, "style:rel-width") }
+                      : {}),
+                    ...(attributeString(child, "style:rel-height")
+                      ? { relativeHeight: attributeString(child, "style:rel-height") }
+                      : {}),
+                  }
+                : {
+                    type: "image",
+                    href: href.replace(/^\//, ""),
+                    data: "",
+                    ...(attributeString(child, "draw:name")
+                      ? { name: attributeString(child, "draw:name") }
+                      : {}),
+                    ...(description ? { description } : {}),
+                    x: lengthToEmu(attributeString(child, "svg:x")),
+                    y: lengthToEmu(attributeString(child, "svg:y")),
+                    width: lengthToEmu(attributeString(child, "svg:width")),
+                    height: lengthToEmu(attributeString(child, "svg:height")),
+                    ...(attributeNumber(child, "draw:z-index") !== undefined
+                      ? { zIndex: attributeNumber(child, "draw:z-index") }
+                      : {}),
+                    ...(attributeString(child, "table:end-cell-address")
+                      ? { endCellAddress: attributeString(child, "table:end-cell-address") }
+                      : {}),
+                    ...(attributeString(child, "draw:id")
+                      ? { id: attributeString(child, "draw:id") }
+                      : {}),
+                    ...(attributeString(child, "table:end-x") !== undefined
+                      ? { endX: lengthToEmu(attributeString(child, "table:end-x")) }
+                      : {}),
+                    ...(attributeString(child, "table:end-y") !== undefined
+                      ? { endY: lengthToEmu(attributeString(child, "table:end-y")) }
+                      : {}),
+                    ...(attributeString(child, "draw:style-name")
+                      ? { styleName: attributeString(child, "draw:style-name") }
+                      : {}),
+                    ...(attributeString(child, "draw:text-style-name")
+                      ? { textStyleName: attributeString(child, "draw:text-style-name") }
+                      : {}),
+                    ...(attributeString(child, "style:rel-width")
+                      ? { relativeWidth: attributeString(child, "style:rel-width") }
+                      : {}),
+                    ...(attributeString(child, "style:rel-height")
+                      ? { relativeHeight: attributeString(child, "style:rel-height") }
+                      : {}),
+                  },
+            ];
           }
         }
         return [parsed];

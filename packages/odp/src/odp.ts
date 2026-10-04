@@ -1,5 +1,7 @@
 import type {
   ChartSpaceOptions,
+  FormContainerOptions,
+  FormControlOptions,
   ParagraphDescriptorOptions,
   TextBodyOptions,
   TextRunOptions,
@@ -49,7 +51,6 @@ import type {
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
-import type { OdpPresentationOptions, OdpSlideOptions } from "./semantics";
 
 const MIME = "application/vnd.oasis.opendocument.presentation";
 const NAMESPACES = [
@@ -85,7 +86,7 @@ interface OdpChart {
   chart: ChartOptions;
 }
 
-export function generateOdp(options: OdpPresentationOptions): Uint8Array {
+export function generateOdp(options: PresentationOptions): Uint8Array {
   const styles: string[] = [];
   const images: OdpImage[] = [];
   const charts: OdpChart[] = [];
@@ -113,7 +114,7 @@ export function generateOdp(options: OdpPresentationOptions): Uint8Array {
   );
 }
 
-export function parseOdp(data: Uint8Array): OdpPresentationOptions {
+export function parseOdp(data: Uint8Array): PresentationOptions {
   try {
     return parseOdpPresentation(data);
   } catch (cause) {
@@ -134,7 +135,7 @@ export function parseOdp(data: Uint8Array): OdpPresentationOptions {
   }
 }
 
-function parseOdpPresentation(data: Uint8Array): OdpPresentationOptions {
+function parseOdpPresentation(data: Uint8Array): PresentationOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
@@ -186,7 +187,7 @@ function normalizeSize(size: PresentationOptions["size"]): { width: number; heig
 }
 
 function slideXml(
-  slide: OdpSlideOptions,
+  slide: SlideOptions,
   index: number,
   styles: string[],
   images: OdpImage[],
@@ -208,8 +209,62 @@ function slideXml(
   return xmlElement(
     "draw:page",
     { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
-    [...frames, ...(notesXml ? [notesXml] : [])],
+    [
+      ...(slide.forms?.length ? [formsXml(slide.forms)] : []),
+      ...frames,
+      ...(notesXml ? [notesXml] : []),
+    ],
   );
+}
+
+function formsXml(forms: FormContainerOptions[]): string {
+  return xmlElement(
+    "office:forms",
+    {
+      "form:automatic-focus": forms[0]?.automaticFocus,
+      "form:apply-design-mode": forms[0]?.designMode,
+    },
+    forms.map((form) =>
+      xmlElement(
+        "form:form",
+        { "form:name": form.name },
+        form.controls.map((control) => formControlXml(control)),
+      ),
+    ),
+  );
+}
+
+function formControlXml(control: FormControlOptions): string {
+  const common = {
+    "form:id": control.id,
+    "form:name": control.name,
+    "form:disabled": control.disabled,
+    "form:tab-index": control.tabIndex,
+    "form:automatic-focus": control.automaticFocus,
+  };
+  if (control.control === "checkBox")
+    return xmlElement("form:checkbox", {
+      ...common,
+      "form:current-state": control.checked ? "checked" : "unchecked",
+    });
+  if (control.control === "dropDownList")
+    return xmlElement(
+      "form:listbox",
+      common,
+      control.entries.map((label, optionIndex) =>
+        xmlElement(
+          "form:option",
+          { "form:selected": control.selectedIndex === optionIndex || undefined },
+          [escapeText(label)],
+        ),
+      ),
+    );
+  return xmlElement("form:text", {
+    ...common,
+    "office:value-type": control.valueType,
+    "form:current-value": control.value,
+    "form:max-length": control.maxLength,
+  });
 }
 
 /** Recursive SlideChild → ODF dispatcher shared by slides and draw:g groups. */
@@ -413,22 +468,14 @@ function parseSlide(
   graphicStyles: Map<string, GraphicStyle>,
   chartPool: Map<string, ChartSpaceOptions>,
 ): SlideOptions {
-  const formsElement = childNamed(page, "office:forms");
-  if (formsElement) {
-    throw new OdpParseError(
-      "content.xml: /draw:page/office:forms: ODF forms have no canonical PresentationOptions equivalent",
-      "content.xml",
-      "/office:document-content/office:body/office:presentation/draw:page/office:forms",
-      "office:forms",
-      "ODF forms have no canonical PresentationOptions equivalent",
-    );
-  }
+  const forms = parseForms(page);
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
   );
   const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
   const slideOptions = {
+    ...(forms.length > 0 ? { forms } : {}),
     children:
       page.elements?.flatMap((child): SlideChild[] => {
         if (child.name === "draw:frame") {
@@ -449,7 +496,7 @@ function parseSlide(
           return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-        if (child.name !== "presentation:notes")
+        if (child.name !== "presentation:notes" && child.name !== "office:forms")
           throw unknownSlideChild(
             child,
             "/office:document-content/office:body/office:presentation/draw:page",
@@ -661,6 +708,124 @@ function parseGroup(
 }
 
 /** Rejects unrecognized slide content instead of emitting generic XML. */
+function assertElementNames(
+  element: Element,
+  allowedAttributes: string[],
+  allowedChildren: string[] = [],
+): void {
+  const unknown = Object.keys(element.attributes ?? {}).filter(
+    (name) => !allowedAttributes.includes(name),
+  );
+  if (unknown.length) throw unknownSlideChild(element, "/draw:page/office:forms");
+  for (const child of element.elements ?? []) {
+    if (child.type === "element" && !allowedChildren.includes(child.name ?? ""))
+      throw unknownSlideChild(child, "/draw:page/office:forms");
+  }
+}
+
+function parseForms(page: Element): FormContainerOptions[] {
+  const element = childNamed(page, "office:forms");
+  if (!element) return [];
+  assertElementNames(
+    element,
+    ["form:automatic-focus", "form:apply-design-mode"],
+    ["form:form", "office:forms"],
+  );
+  return descendantElements(element)
+    .filter((form) => form.name === "form:form")
+    .map((form) => {
+      assertElementNames(
+        form,
+        ["form:name"],
+        ["form:text", "form:checkbox", "form:listbox", "form:form"],
+      );
+      return {
+        ...(attributeString(form, "form:name") ? { name: attributeString(form, "form:name") } : {}),
+        ...(attributeString(element, "form:automatic-focus") === "true"
+          ? { automaticFocus: true }
+          : {}),
+        ...(attributeString(element, "form:apply-design-mode") === "true"
+          ? { designMode: true }
+          : {}),
+        controls:
+          form.elements
+            ?.filter((child) => child.type === "element" && child.name !== "form:form")
+            .map((control) => parseFormControl(control)) ?? [],
+      };
+    });
+}
+
+function descendantElements(element: Element): Element[] {
+  return (element.elements ?? []).flatMap((child) =>
+    child.type === "element" ? [child, ...descendantElements(child)] : [],
+  );
+}
+
+function parseFormControl(control: Element): FormControlOptions {
+  assertElementNames(
+    control,
+    [
+      "form:id",
+      "form:name",
+      "form:disabled",
+      "form:tab-index",
+      "office:value-type",
+      "form:automatic-focus",
+      "form:current-value",
+      "form:max-length",
+      "form:current-state",
+      "form:selected",
+    ],
+    ["form:option", "form:item"],
+  );
+  const common = {
+    ...(attributeString(control, "form:id") ? { id: attributeString(control, "form:id") } : {}),
+    ...(attributeString(control, "form:name")
+      ? { name: attributeString(control, "form:name") }
+      : {}),
+    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
+    ...(attributeNumber(control, "form:tab-index") !== undefined
+      ? { tabIndex: attributeNumber(control, "form:tab-index") }
+      : {}),
+    ...(attributeString(control, "form:automatic-focus") === "true"
+      ? { automaticFocus: true }
+      : {}),
+  };
+  if (control.name === "form:text")
+    return {
+      control: "text",
+      ...common,
+      ...(attributeString(control, "form:current-value")
+        ? { value: attributeString(control, "form:current-value") }
+        : {}),
+      ...(attributeString(control, "office:value-type")
+        ? { valueType: attributeString(control, "office:value-type") as "float" | "string" }
+        : {}),
+      ...(attributeNumber(control, "form:max-length") !== undefined
+        ? { maxLength: attributeNumber(control, "form:max-length") }
+        : {}),
+    };
+  if (control.name === "form:checkbox") {
+    const state = attributeString(control, "form:current-state");
+    if (state !== "checked" && state !== "unchecked")
+      throw unknownSlideChild(control, "/office:forms");
+    return { control: "checkBox", ...common, checked: state === "checked" };
+  }
+  if (control.name === "form:listbox") {
+    const entries = childrenNamed(control, "form:option").map((option) => textOf(option));
+    const selected = childrenNamed(control, "form:option").findIndex(
+      (option) => attributeString(option, "form:selected") === "true",
+    );
+    return {
+      control: "dropDownList",
+      ...common,
+      entries,
+      ...(selected >= 0 ? { selectedIndex: selected } : {}),
+    };
+  }
+  throw unknownSlideChild(control, "/office:forms");
+}
+
 function unknownSlideChild(element: Element, parentPath: string): OdpParseError {
   const name = element.name ?? "(unknown)";
   const path = `${parentPath}/${name}`;

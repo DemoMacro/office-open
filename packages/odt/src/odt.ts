@@ -1,5 +1,10 @@
 import { toUint8Array } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core";
+import type {
+  FormContainerOptions,
+  SequenceDeclarationOptions,
+  VariableDeclarationOptions,
+} from "@office-open/core";
 import type { FillOptions, OutlineOptions } from "@office-open/core/drawing";
 import type {
   BlockContentChild,
@@ -49,7 +54,6 @@ import type { GraphicStyle } from "@office-open/odf-schema";
 import type { Element } from "@office-open/xml";
 
 import { OdtParseError } from "./error";
-import type { OdtDocumentOptions } from "./semantics";
 import { parseTable, tableXml } from "./table";
 
 const MIME = "application/vnd.oasis.opendocument.text";
@@ -62,6 +66,7 @@ type TrackChangeChild = CanonicalTrackChange["children"][number];
 type CanonicalSimpleField = Extract<ParagraphChild, { simpleField: unknown }>["simpleField"];
 type PictureType = NonNullable<PictureOptions["type"]>;
 type RasterPictureType = Exclude<PictureType, "svg">;
+type CanonicalFormControl = NonNullable<FormContainerOptions["controls"][number]>;
 
 function isRasterPictureType(value: string): value is RasterPictureType {
   return ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"].includes(value);
@@ -233,12 +238,18 @@ interface ParseContext {
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
-  notes: { footnotes: NoteEntry[]; endnotes: NoteEntry[] };
+  notes: {
+    footnotes: NoteEntry[];
+    endnotes: NoteEntry[];
+    forms: FormContainerOptions[];
+  };
   bookmarkIds: Map<string, number>;
   changes: Map<
     string,
     ChangedProperties & { kind: "insertion" | "deletion"; children?: Element[] }
   >;
+  declaredSequences: SequenceDeclarationOptions[];
+  declaredVariables: VariableDeclarationOptions[];
   pendingSequences: Set<string>;
   pendingVariables: Map<string, "float" | "string">;
   trackRevisions?: boolean;
@@ -248,9 +259,6 @@ interface ParseContext {
 type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
 
 type NoteChildren = NoteEntry["children"];
-
-/** Canonical form field used as the OOXML-family equivalent of a simple ODF control. */
-type CanonicalFormField = FormFieldOptions;
 
 /** Canonical tracked change metadata and deleted content for ODF emission. */
 type CanonicalRevision = ChangedProperties & { children?: TrackChangeChild[] };
@@ -299,10 +307,10 @@ interface NotesContext {
   footnotes: Map<number, NoteChildren>;
   endnotes: Map<number, NoteChildren>;
   bookmarkNames: Map<number, string>;
-  forms: CanonicalFormField[];
-  revisions: Map<number, CanonicalRevision>;
   sequenceNames: Set<string>;
   variableTypes: Map<string, "float" | "string">;
+  forms: FormContainerOptions[];
+  revisions: Map<number, CanonicalRevision>;
 }
 
 /** Embedded chart subdocument collected during generation. */
@@ -311,7 +319,7 @@ interface OdtChart {
   chart: ChartSpaceOptions;
 }
 
-export function generateOdt(options: OdtDocumentOptions): Uint8Array {
+export function generateOdt(options: DocumentOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
@@ -319,7 +327,7 @@ export function generateOdt(options: OdtDocumentOptions): Uint8Array {
   const notes = notesContext(options);
   collectBookmarkNames(blocks, notes.bookmarkNames);
   const bodyBlocks = blocksXml(blocks, styles, images, notes, options.numbering, charts);
-  const body = declarationsXml(notes) + bodyBlocks;
+  const body = declarationsXml(options, notes) + bodyBlocks;
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
     "styles.xml": documentStylesXml(
@@ -359,10 +367,17 @@ function notesContext(options: DocumentOptions): NotesContext {
     footnotes,
     endnotes,
     bookmarkNames: new Map(),
-    forms: [],
+    sequenceNames: new Set(
+      (options.sequenceDeclarations ?? []).map((declaration) => declaration.name),
+    ),
+    variableTypes: new Map(
+      (options.variableDeclarations ?? []).map((declaration) => [
+        declaration.name,
+        declaration.valueType,
+      ]),
+    ),
+    forms: options.forms ?? [],
     revisions: new Map(),
-    sequenceNames: new Set(),
-    variableTypes: new Map(),
   };
 }
 
@@ -409,7 +424,7 @@ function blocksXml(
   return parts.join("");
 }
 
-export function parseOdt(data: Uint8Array): OdtDocumentOptions {
+export function parseOdt(data: Uint8Array): DocumentOptions {
   try {
     return parseOdtDocument(data);
   } catch (cause) {
@@ -430,7 +445,7 @@ export function parseOdt(data: Uint8Array): OdtDocumentOptions {
   }
 }
 
-function parseOdtDocument(data: Uint8Array): OdtDocumentOptions {
+function parseOdtDocument(data: Uint8Array): DocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
@@ -446,31 +461,15 @@ function parseOdtDocument(data: Uint8Array): OdtDocumentOptions {
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
-    notes: { footnotes: [], endnotes: [] },
+    notes: { footnotes: [], endnotes: [], forms: [] },
     bookmarkIds: new Map(),
     changes: new Map(),
+    declaredSequences: [],
+    declaredVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
   };
   const children = parseBlocks(body?.elements ?? [], context);
-  if (context.pendingSequences.size) {
-    throw new OdtParseError(
-      `content.xml: sequence declaration without a canonical sequence field: ${[...context.pendingSequences].join(", ")}`,
-      "content.xml",
-      "/office:document-content/office:body/office:text/text:sequence-decls",
-      "text:sequence-decl",
-      "declaration has no canonical field",
-    );
-  }
-  if (context.pendingVariables.size) {
-    throw new OdtParseError(
-      `content.xml: variable declaration without a canonical variable field: ${[...context.pendingVariables.keys()].join(", ")}`,
-      "content.xml",
-      "/office:document-content/office:body/office:text/text:variable-decls",
-      "text:variable-decl",
-      "declaration has no canonical field",
-    );
-  }
   const meta = Object.fromEntries(
     Object.entries(parseMeta(files)).filter(([, value]) => value !== undefined),
   );
@@ -478,6 +477,9 @@ function parseOdtDocument(data: Uint8Array): OdtDocumentOptions {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  if (context.notes.forms.length > 0) result.forms = context.notes.forms;
+  if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
+  if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
   if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
   if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
   const fonts = childrenNamed(childNamed(content, "office:font-face-decls"), "style:font-face").map(
@@ -1298,11 +1300,12 @@ function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): strin
       referenceFormat: odfReferenceFormat(match.groups?.switch),
     });
   }
-  match = /^SEQ\s+(?<name>[^\s]+)$/.exec(instruction);
+  match = /^SEQ\s+(?<name>[^\s]+?)(?:\s*=\s*(?<formula>[\s\S]+))?$/.exec(instruction);
   if (match) {
     notes.sequenceNames.add(decodeFieldArgument(match.groups?.name ?? ""));
     return sequenceXml({
       name: decodeFieldArgument(match.groups?.name ?? ""),
+      formula: match.groups?.formula,
       display: field.cachedValue,
     });
   }
@@ -1342,6 +1345,12 @@ function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): strin
       display: field.cachedValue,
     });
   }
+  match = /^CITATION\s+(?<type>[^\s]+)$/.exec(instruction);
+  if (match)
+    return bibliographyMarkXml(
+      decodeFieldArgument(match.groups?.type ?? "custom"),
+      field.cachedValue,
+    );
   throw new OdtParseError(
     `content.xml: field instruction has no ODT mapping: ${instruction}`,
     "content.xml",
@@ -1368,42 +1377,31 @@ function fieldReferenceSwitch(format: string | undefined): string {
 }
 
 function formFieldXml(field: FormFieldOptions, notes: NotesContext): string {
-  const common = new Set(["name", "enabled", "tabIndex"]);
-  const variants = Object.keys(field).filter((key) => !common.has(key));
-  const variant = variants.find((key) => ["checkBox", "dropDownList", "textInput"].includes(key));
-  const unsupported = variants.filter((key) => key !== variant);
-  if (!variant || unsupported.length) {
-    throw unsupportedOdtValue(
-      "form field",
-      `property ${(variant ? unsupported : variants).join(", ")} has no ODT mapping`,
-    );
-  }
-  if (variant === "checkBox") {
-    const options = field.checkBox ?? {};
-    const allowed = new Set(["checked", "default"]);
-    const optionExtras = Object.keys(options).filter((key) => !allowed.has(key));
-    if (optionExtras.length) throw unsupportedOdtValue("checkbox", optionExtras.join(", "));
-    if (options.default !== undefined && options.default !== options.checked) {
-      throw unsupportedOdtValue("checkbox", "default state has no ODT mapping");
-    }
-    notes.forms.push({ ...field });
-    return "";
-  }
-  if (variant === "dropDownList") {
-    const options = field.dropDownList ?? {};
-    const allowed = new Set(["entries", "result"]);
-    const optionExtras = Object.keys(options).filter((key) => !allowed.has(key));
-    if (optionExtras.length) throw unsupportedOdtValue("dropdown", optionExtras.join(", "));
-    notes.forms.push({ ...field });
-    return "";
-  }
-  const options = field.textInput ?? {};
-  const allowed = new Set(["type", "default", "value", "maxLength"]);
-  const optionExtras = Object.keys(options).filter((key) => !allowed.has(key));
-  if (optionExtras.length || (options.type !== undefined && options.type !== "regular")) {
-    throw unsupportedOdtValue("text input", optionExtras.join(", ") || options.type || "type");
-  }
-  notes.forms.push({ ...field });
+  const common = {
+    ...(field.name ? { name: field.name } : {}),
+    ...(field.enabled === false ? { disabled: true } : {}),
+    ...(field.tabIndex !== undefined ? { tabIndex: field.tabIndex } : {}),
+  };
+  const control: CanonicalFormControl = field.checkBox
+    ? { control: "checkBox", ...common, checked: field.checkBox.checked }
+    : field.dropDownList
+      ? {
+          control: "dropDownList",
+          ...common,
+          entries: field.dropDownList.entries,
+          ...(field.dropDownList.result !== undefined
+            ? { selectedIndex: field.dropDownList.result }
+            : {}),
+        }
+      : {
+          control: "text",
+          ...common,
+          ...(field.textInput?.value !== undefined ? { value: field.textInput.value } : {}),
+          ...(field.textInput?.maxLength !== undefined
+            ? { maxLength: field.textInput.maxLength }
+            : {}),
+        };
+  notes.forms.push({ controls: [control] });
   return "";
 }
 
@@ -1425,67 +1423,53 @@ function insertionXml(
   );
 }
 
-function declarationsXml(notes: NotesContext): string {
-  const forms = notes.forms.map((field, index) => {
-    const id = `field${index + 1}`;
-    const common = {
-      "form:id": id,
-      "form:name": field.name,
-      "form:disabled": field.enabled === false ? true : undefined,
-      "form:tab-index": field.tabIndex,
-    };
-    if (field.checkBox) {
-      return xmlElement("form:form", { "form:name": field.name ?? id }, [
-        xmlElement("form:checkbox", {
-          ...common,
-          "form:current-state": field.checkBox.checked ? "checked" : "unchecked",
-        }),
-      ]);
-    }
-    if (field.dropDownList) {
-      return xmlElement("form:form", { "form:name": field.name ?? id }, [
-        xmlElement(
-          "form:listbox",
-          common,
-          field.dropDownList.entries.map((label, optionIndex) =>
-            xmlElement(
-              "form:option",
-              {
-                "form:selected": field.dropDownList?.result === optionIndex || undefined,
-              },
-              [escapeText(label)],
-            ),
+function declarationsXml(options: DocumentOptions, notes: NotesContext): string {
+  const formXml = notes.forms.map((form) =>
+    xmlElement(
+      "form:form",
+      { "form:name": form.name },
+      form.controls.map((control) => formControlXml(control)),
+    ),
+  );
+  const implicitSequenceDeclarations = [...notes.sequenceNames]
+    .filter(
+      (name) => !options.sequenceDeclarations?.some((declaration) => declaration.name === name),
+    )
+    .map((name): SequenceDeclarationOptions => ({ name }));
+  const sequenceDecls =
+    options.sequenceDeclarations?.length || implicitSequenceDeclarations.length
+      ? xmlElement(
+          "text:sequence-decls",
+          undefined,
+          [...(options.sequenceDeclarations ?? []), ...implicitSequenceDeclarations].map(
+            (declaration) =>
+              xmlElement("text:sequence-decl", {
+                "text:name": declaration.name,
+                "text:display-outline-level": declaration.displayOutlineLevel,
+                "text:outline-level-separator": declaration.outlineSeparator,
+              }),
           ),
-        ),
-      ]);
-    }
-    if (!field.textInput) throw unsupportedOdtValue("form field", "control type is required");
-    return xmlElement("form:form", { "form:name": field.name ?? id }, [
-      xmlElement("form:text", {
-        ...common,
-        "form:current-value": field.textInput.value ?? field.textInput.default,
-        "form:max-length": field.textInput.maxLength,
-      }),
-    ]);
-  });
-  const sequenceDecls = notes.sequenceNames.size
-    ? xmlElement(
-        "text:sequence-decls",
-        undefined,
-        [...notes.sequenceNames].map((name) =>
-          xmlElement("text:sequence-decl", { "text:name": name }),
-        ),
-      )
-    : "";
-  const variableDecls = notes.variableTypes.size
-    ? xmlElement(
-        "text:variable-decls",
-        undefined,
-        [...notes.variableTypes].map(([name, valueType]) =>
-          xmlElement("text:variable-decl", { "text:name": name, "office:value-type": valueType }),
-        ),
-      )
-    : "";
+        )
+      : "";
+  const implicitVariableDeclarations = [...notes.variableTypes]
+    .filter(
+      ([name]) => !options.variableDeclarations?.some((declaration) => declaration.name === name),
+    )
+    .map(([name, valueType]): VariableDeclarationOptions => ({ name, valueType }));
+  const variableDecls =
+    options.variableDeclarations?.length || implicitVariableDeclarations.length
+      ? xmlElement(
+          "text:variable-decls",
+          undefined,
+          [...(options.variableDeclarations ?? []), ...implicitVariableDeclarations].map(
+            (declaration) =>
+              xmlElement("text:variable-decl", {
+                "text:name": declaration.name,
+                "office:value-type": declaration.valueType,
+              }),
+          ),
+        )
+      : "";
   const revisions = notes.revisions.size
     ? xmlElement(
         "text:tracked-changes",
@@ -1509,18 +1493,49 @@ function declarationsXml(notes: NotesContext): string {
         ),
       )
     : "";
-  const formsXml = forms.length ? xmlElement("office:forms", undefined, forms) : "";
+  const formsXml = formXml.length
+    ? xmlElement(
+        "office:forms",
+        {
+          "form:automatic-focus": formXml[0] ? notes.forms[0]?.automaticFocus : undefined,
+          "form:apply-design-mode": formXml[0] ? notes.forms[0]?.designMode : undefined,
+        },
+        formXml,
+      )
+    : "";
   return formsXml + sequenceDecls + variableDecls + revisions;
 }
 
-function unsupportedOdtValue(name: string, reason: string): OdtParseError {
-  return new OdtParseError(
-    `content.xml: ${name} ${reason}`,
-    "content.xml",
-    "/office:document-content/office:body/office:text",
-    name,
-    "no canonical ODT mapping",
-  );
+function formControlXml(control: CanonicalFormControl): string {
+  const common = {
+    "form:id": control.id,
+    "form:name": control.name,
+    "form:disabled": control.disabled,
+    "form:tab-index": control.tabIndex,
+    "form:automatic-focus": control.automaticFocus,
+  };
+  if (control.control === "checkBox")
+    return xmlElement("form:checkbox", {
+      ...common,
+      "form:current-state": control.checked ? "checked" : "unchecked",
+    });
+  if (control.control === "dropDownList")
+    return xmlElement(
+      "form:listbox",
+      common,
+      control.entries.map((label, optionIndex) =>
+        xmlElement(
+          "form:option",
+          { "form:selected": control.selectedIndex === optionIndex || undefined },
+          [escapeText(label)],
+        ),
+      ),
+    );
+  return xmlElement("form:text", {
+    ...common,
+    "form:current-value": control.value,
+    "form:max-length": control.maxLength,
+  });
 }
 
 function malformedOdtElement(name: string, reason: string): OdtParseError {
@@ -1634,6 +1649,14 @@ function annotationXml(
       "dc:date": date instanceof Date ? date.toISOString() : (date ?? undefined),
     },
     paragraphs.map((paragraph) => xmlElement("text:p", undefined, [escapeText(paragraph)])),
+  );
+}
+
+function bibliographyMarkXml(bibliographyType: string, cachedValue?: string): string {
+  return xmlElement(
+    "text:bibliography-mark",
+    { "text:bibliography-type": bibliographyType },
+    cachedValue ? [escapeText(cachedValue)] : [],
   );
 }
 
@@ -2284,7 +2307,17 @@ function parseRuns(
         return [sequenceField(value)];
       }
       if (child.name === "text:hidden-text") return [hiddenTextField(parseHiddenText(child))];
-      if (child.name === "text:bibliography-mark") throw unknownOdtElement(child);
+      if (child.name === "text:bibliography-mark")
+        return [
+          {
+            simpleField: {
+              instruction: `CITATION ${encodeFieldArgument(
+                attributeString(child, "text:bibliography-type") ?? "custom",
+              )}`,
+              cachedValue: textOf(child) || undefined,
+            },
+          },
+        ];
       if (child.name === "office:annotation") return [parseAnnotation(child)];
       if (child.name === "draw:a") return [parseShapeHyperlink(child)];
       if (child.name === "draw:ellipse" || child.name === "draw:rect")
@@ -2362,30 +2395,29 @@ function assertElementNames(
   }
 }
 
-function parseForms(element: Element, _context: ParseContext): SectionChild[] {
+function parseForms(element: Element, context: ParseContext): SectionChild[] {
   const forms = childrenNamed(element, "form:form");
-  if (forms.length !== 1) {
-    throw new OdtParseError(
-      "content.xml: ODF form grouping has no single canonical form-field equivalent",
-      "content.xml",
-      "/office:document-content/office:body/office:text/office:forms",
-      "office:forms",
-      "unsupported form grouping",
-    );
-  }
-  const form = forms[0]!;
-  assertElementNames(form, ["form:name"], ["form:text", "form:checkbox", "form:listbox"]);
-  const controls = form.elements?.filter((child) => child.type === "element") ?? [];
-  if (controls.length !== 1) {
-    throw new OdtParseError(
-      "content.xml: ODF form grouping has no single canonical form-field equivalent",
-      "content.xml",
-      "/office:document-content/office:body/office:text/office:forms/form:form",
-      "form:form",
-      "unsupported form grouping",
-    );
-  }
-  const control = controls[0]!;
+  const parsedForms = forms.map((form) => {
+    assertElementNames(form, ["form:name"], ["form:text", "form:checkbox", "form:listbox"]);
+    return {
+      ...(attributeString(form, "form:name") ? { name: attributeString(form, "form:name") } : {}),
+      ...(attributeString(element, "form:automatic-focus") === "true"
+        ? { automaticFocus: true }
+        : {}),
+      ...(attributeString(element, "form:apply-design-mode") === "true"
+        ? { designMode: true }
+        : {}),
+      controls:
+        form.elements
+          ?.filter((child) => child.type === "element")
+          .map((control) => parseFormControl(control)) ?? [],
+    };
+  });
+  context.notes.forms.push(...parsedForms);
+  return [];
+}
+
+function parseFormControl(control: Element): CanonicalFormControl {
   const id = attributeString(control, "form:id");
   const name = attributeString(control, "form:name");
   if (id && !/^field\d+$/.test(id)) {
@@ -2394,12 +2426,12 @@ function parseForms(element: Element, _context: ParseContext): SectionChild[] {
   }
   const common = {
     ...((name ?? id) ? { name: name ?? id } : {}),
-    ...(attributeString(control, "form:disabled") === "true" ? { enabled: false } : {}),
+    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
     ...(attributeNumber(control, "form:tab-index") !== undefined
       ? { tabIndex: attributeNumber(control, "form:tab-index") }
       : {}),
   };
-  const field: ParagraphChild = (() => {
+  return (() => {
     if (control.name === "form:text") {
       assertElementNames(
         control,
@@ -2415,15 +2447,12 @@ function parseForms(element: Element, _context: ParseContext): SectionChild[] {
       );
       const value = attributeString(control, "form:current-value");
       return {
-        formField: {
-          ...common,
-          textInput: {
-            ...(value ? { value } : {}),
-            ...(attributeNumber(control, "form:max-length") !== undefined
-              ? { maxLength: attributeNumber(control, "form:max-length") }
-              : {}),
-          },
-        },
+        control: "text",
+        ...common,
+        ...(value ? { value } : {}),
+        ...(attributeNumber(control, "form:max-length") !== undefined
+          ? { maxLength: attributeNumber(control, "form:max-length") }
+          : {}),
       };
     }
     if (control.name === "form:checkbox") {
@@ -2434,11 +2463,15 @@ function parseForms(element: Element, _context: ParseContext): SectionChild[] {
       );
       const state = attributeString(control, "form:current-state");
       if (state !== "checked" && state !== "unchecked") throw unknownOdtElement(control);
-      return { formField: { ...common, checkBox: { checked: state === "checked" } } };
+      return {
+        control: "checkBox",
+        ...common,
+        checked: state === "checked",
+      };
     }
     assertElementNames(
       control,
-      ["form:id", "form:name", "form:disabled", "form:tab-index"],
+      ["form:id", "form:name", "form:disabled", "form:tab-index", "form:automatic-focus"],
       ["form:option", "form:item"],
     );
     const entries = (control.elements ?? [])
@@ -2451,26 +2484,32 @@ function parseForms(element: Element, _context: ParseContext): SectionChild[] {
       (child) => attributeString(child, "form:selected") === "true",
     );
     return {
-      formField: {
-        ...common,
-        dropDownList: {
-          entries,
-          ...(selectedIndex >= 0 ? { result: selectedIndex } : {}),
-        },
-      },
+      control: "dropDownList",
+      ...common,
+      entries,
+      ...(selectedIndex >= 0 ? { selectedIndex } : {}),
     };
   })();
-  return [{ paragraph: { children: [field] } }];
 }
 
 function parseSequenceDeclarations(element: Element, context: ParseContext): void {
   assertElementNames(element, [], ["text:sequence-decl"]);
   for (const declaration of childrenNamed(element, "text:sequence-decl")) {
-    assertElementNames(declaration, ["text:name", "text:display-outline-level"]);
+    assertElementNames(declaration, [
+      "text:name",
+      "text:display-outline-level",
+      "text:outline-level-separator",
+    ]);
     const name = attributeString(declaration, "text:name");
     if (!name) throw unknownOdtElement(declaration);
     const level = attributeNumber(declaration, "text:display-outline-level") ?? 0;
-    if (level !== 0) throw unknownOdtElement(declaration);
+    context.declaredSequences.push({
+      name,
+      ...(level ? { displayOutlineLevel: level } : {}),
+      ...(attributeString(declaration, "text:outline-level-separator") !== undefined
+        ? { outlineSeparator: attributeString(declaration, "text:outline-level-separator") }
+        : {}),
+    });
     context.pendingSequences.add(name);
   }
 }
@@ -2484,6 +2523,7 @@ function parseVariableDeclarations(element: Element, context: ParseContext): voi
     if (!name || (valueType !== "float" && valueType !== "string")) {
       throw unknownOdtElement(declaration);
     }
+    context.declaredVariables.push({ name, valueType });
     context.pendingVariables.set(name, valueType);
   }
 }
@@ -2544,12 +2584,9 @@ function variableField(value: ReturnType<typeof parseVariableSet>): {
 function sequenceField(value: ReturnType<typeof parseSequence>): {
   simpleField: CanonicalSimpleField;
 } {
-  if (value.referenceName || value.formula) {
-    throw malformedOdtElement("text:sequence", "sequence metadata has no canonical mapping");
-  }
   return {
     simpleField: {
-      instruction: `SEQ ${encodeFieldArgument(value.name)}`,
+      instruction: `SEQ ${encodeFieldArgument(value.name)}${value.formula ? ` = ${value.formula}` : ""}`,
       cachedValue: value.display,
     },
   };
@@ -2676,11 +2713,6 @@ function parseIndex(element: Element): Extract<SectionChild, { toc: unknown }>["
   const title = childNamed(source, "text:index-title-template");
   const scope = attributeString(source, "text:index-scope");
   if (scope !== undefined && scope !== "document") throw unknownOdtElement(element);
-  if (attributeString(source, "text:relative-tab-stop-position") === "true")
-    throw unknownOdtElement(element);
-  if (attributeString(element, "text:style-name") || attributeString(title, "text:style-name")) {
-    throw unknownOdtElement(element);
-  }
   const entries = childrenNamed(childNamed(element, "text:index-body"), "text:p").map(
     (paragraph): SectionChild => ({ paragraph: { text: textOf(paragraph) } }),
   );
@@ -2693,12 +2725,14 @@ function parseIndex(element: Element): Extract<SectionChild, { toc: unknown }>["
 }
 
 function parseBibliography(element: Element): Extract<SectionChild, { sdt: unknown }>["sdt"] {
-  if (attributeString(element, "text:style-name")) throw unknownOdtElement(element);
   return {
     properties: {
       alias: attributeString(element, "text:name"),
       bibliography: true,
       richText: true,
+      ...(attributeString(element, "text:style-name")
+        ? { runProperties: { style: attributeString(element, "text:style-name") } }
+        : {}),
     },
     children: childrenNamed(element, "text:index-body").flatMap((body) =>
       childrenNamed(body, "text:p").map((paragraph) => ({
