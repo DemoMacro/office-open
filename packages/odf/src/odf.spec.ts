@@ -335,6 +335,64 @@ describe("ODT mapping", () => {
     expect(runs[0]?.bookmark).toEqual({ name: "intro" });
   });
 
+  it("round-trips footnotes through text:note bodies", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ footnoteReference: 1 }, { text: "Body" }],
+              },
+            },
+          ],
+        },
+      ],
+      footnotes: [{ id: 1, children: [{ paragraph: "Note text" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ footnoteReference?: number }>;
+    expect(runs[0]?.footnoteReference).toBe(1);
+    const note = parsed.footnotes?.[0];
+    expect(note?.id).toBe(1);
+    const noteChild = note?.children[0];
+    if (!noteChild || typeof noteChild === "string" || !("paragraph" in noteChild))
+      throw new Error("Expected a note paragraph");
+    expect(noteChild.paragraph).toEqual({ text: "Note text" });
+  });
+
+  it("round-trips endnotes through text:note bodies", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ endnoteReference: 1 }, { text: "Body" }],
+              },
+            },
+          ],
+        },
+      ],
+      endnotes: [{ id: 1, children: [{ paragraph: "Endnote text" }] }],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? { children: [] } : child.paragraph;
+    const runs = paragraph.children as Array<{ endnoteReference?: number }>;
+    expect(runs[0]?.endnoteReference).toBe(1);
+    const note = parsed.endnotes?.[0];
+    expect(note?.id).toBe(1);
+    const noteChild = note?.children[0];
+    if (!noteChild || typeof noteChild === "string" || !("paragraph" in noteChild))
+      throw new Error("Expected a note paragraph");
+    expect(noteChild.paragraph).toEqual({ text: "Endnote text" });
+  });
+
   it("preserves runs of multiple spaces through text:s", () => {
     const source: DocumentOptions = {
       sections: [{ children: [{ paragraph: { text: "a  b   c" } }] }],

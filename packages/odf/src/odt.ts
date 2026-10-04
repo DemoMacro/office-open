@@ -87,6 +87,18 @@ interface ParseContext {
   listStyles: Map<string, boolean>;
   binaries: Record<string, Uint8Array>;
   textSections: OdtTextSectionOptions[];
+  notes: { footnotes: NoteEntry[]; endnotes: NoteEntry[] };
+}
+
+/** Footnote/endnote entry, indexed from the shared docx document model. */
+type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
+
+type NoteChildren = NoteEntry["children"];
+
+/** Note bodies keyed by reference id, threaded through ODT emission. */
+interface NotesContext {
+  footnotes: Map<number, NoteChildren>;
+  endnotes: Map<number, NoteChildren>;
 }
 
 export function generateOdt(options: OdtOptions): Uint8Array {
@@ -94,6 +106,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   const blocks = options.sections.flatMap((section) => section.children);
   const sectionProperties = options.sections[0]?.properties;
   const images: OdtImage[] = [];
+  const notes = notesContext(options);
   const sections = (options.textSections ?? []).map((section) =>
     xmlElement(
       "text:section",
@@ -102,11 +115,11 @@ export function generateOdt(options: OdtOptions): Uint8Array {
         "text:style-name": section.styleName,
         "text:protected": section.protected,
       },
-      [blocksXml(section.children ?? [], styles, images)],
+      [blocksXml(section.children ?? [], styles, images, notes)],
     ),
   );
   const body = [
-    blocksXml(blocks, styles, images),
+    blocksXml(blocks, styles, images, notes),
     ...sections,
     ...serializeOdfNodes(options.odfExtensions),
   ].join("");
@@ -119,7 +132,31 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   return generateOcf(MIME, files);
 }
 
-function blocksXml(blocks: SectionChild[], styles: string[], images: OdtImage[]): string {
+/** Note ids auto-assign 1, 2, … per class, matching the docx model. */
+function notesContext(options: OdtOptions): NotesContext {
+  const footnotes = new Map<number, NoteChildren>();
+  let nextFootnoteId = 1;
+  for (const note of options.footnotes ?? []) {
+    const id = note.id ?? nextFootnoteId;
+    footnotes.set(id, note.children);
+    nextFootnoteId = id + 1;
+  }
+  const endnotes = new Map<number, NoteChildren>();
+  let nextEndnoteId = 1;
+  for (const note of options.endnotes ?? []) {
+    const id = note.id ?? nextEndnoteId;
+    endnotes.set(id, note.children);
+    nextEndnoteId = id + 1;
+  }
+  return { footnotes, endnotes };
+}
+
+function blocksXml(
+  blocks: SectionChild[],
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+): string {
   const parts: string[] = [];
   let index = 0;
   // Consecutive list paragraphs of the same level and kind group into one
@@ -127,7 +164,7 @@ function blocksXml(blocks: SectionChild[], styles: string[], images: OdtImage[])
   while (index < blocks.length) {
     const listInfo = listParagraphLevel(blocks[index]!);
     if (listInfo === undefined) {
-      parts.push(blockXml(blocks[index]!, styles, images));
+      parts.push(blockXml(blocks[index]!, styles, images, notes));
       index += 1;
       continue;
     }
@@ -138,7 +175,7 @@ function blocksXml(blocks: SectionChild[], styles: string[], images: OdtImage[])
       group.push(blocks[index]!);
       index += 1;
     }
-    parts.push(listXml(group, listInfo.level, listInfo.ordered, styles, images));
+    parts.push(listXml(group, listInfo.level, listInfo.ordered, styles, images, notes));
   }
   return parts.join("");
 }
@@ -155,6 +192,7 @@ export function parseOdt(data: Uint8Array): OdtOptions {
     listStyles: parseListStyles(styleContainer),
     binaries,
     textSections: [],
+    notes: { footnotes: [], endnotes: [] },
   };
   const children = parseBlocks(body?.elements ?? [], context);
   const result: OdtOptions = {
@@ -166,6 +204,8 @@ export function parseOdt(data: Uint8Array): OdtOptions {
     ),
   };
   if (context.textSections.length > 0) result.textSections = context.textSections;
+  if (context.notes.footnotes.length > 0) result.footnotes = context.notes.footnotes;
+  if (context.notes.endnotes.length > 0) result.endnotes = context.notes.endnotes;
   return result;
 }
 
@@ -233,11 +273,16 @@ function lengthToTwips(value: string | undefined): number | undefined {
   return emu === undefined ? undefined : Math.round(emu / 635);
 }
 
-function blockXml(child: SectionChild, styles: string[], images: OdtImage[]): string {
+function blockXml(
+  child: SectionChild,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+): string {
   if ("paragraph" in child)
-    return paragraphXml(normalizeParagraph(child.paragraph), styles, images);
+    return paragraphXml(normalizeParagraph(child.paragraph), styles, images, notes);
   if ("table" in child)
-    return tableXml(child.table, styles, (block) => blockXml(block, styles, images));
+    return tableXml(child.table, styles, (block) => blockXml(block, styles, images, notes));
   return "";
 }
 
@@ -261,12 +306,15 @@ function listXml(
   ordered: boolean,
   styles: string[],
   images: OdtImage[],
+  notes: NotesContext,
 ): string {
   const styleName = addListStyle(styles, ordered);
   // ODF nesting is 1-based: list level 0 renders as a single text:list,
   // level 1 nests one text:list inside the first list-item, and so on.
   const items = group
-    .map((child) => xmlElement("text:list-item", undefined, [blockXml(child, styles, images)]))
+    .map((child) =>
+      xmlElement("text:list-item", undefined, [blockXml(child, styles, images, notes)]),
+    )
     .join("");
   let xml = items;
   for (let depth = 0; depth < level; depth += 1) {
@@ -308,13 +356,18 @@ function parseListStyles(container: Element | undefined): Map<string, boolean> {
   return result;
 }
 
-function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string {
+function paragraphXml(
+  options: ParagraphOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+): string {
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
   const styleName =
     alignment || options.pageBreakBefore
       ? addParagraphStyle({ alignment, pageBreakBefore: options.pageBreakBefore }, styles)
       : undefined;
-  const children = runXml(options, styles, images);
+  const children = runXml(options, styles, images, notes);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
   const attributes = {
     "text:style-name": styleName,
@@ -323,7 +376,12 @@ function paragraphXml(options: ParagraphOptions, styles: string[], images: OdtIm
   return xmlElement(heading ? "text:h" : "text:p", attributes, children);
 }
 
-function runXml(options: ParagraphOptions, styles: string[], images: OdtImage[]): string[] {
+function runXml(
+  options: ParagraphOptions,
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+): string[] {
   if (options.text !== undefined && options.children === undefined) {
     return [spacesXml(options.text)];
   }
@@ -336,6 +394,24 @@ function runXml(options: ParagraphOptions, styles: string[], images: OdtImage[])
       return xmlElement("text:bookmark", {
         "text:name": (child as { bookmark: { name: string } }).bookmark.name,
       });
+    }
+    if ("footnoteReference" in child) {
+      return noteXml(
+        (child as { footnoteReference: number | { id: number } }).footnoteReference,
+        notes,
+        "footnote",
+        styles,
+        images,
+      );
+    }
+    if ("endnoteReference" in child) {
+      return noteXml(
+        (child as { endnoteReference: number | { id: number } }).endnoteReference,
+        notes,
+        "endnote",
+        styles,
+        images,
+      );
     }
     if ("hyperlink" in child) {
       const link = (
@@ -381,6 +457,33 @@ function runXml(options: ParagraphOptions, styles: string[], images: OdtImage[])
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
     return "";
   });
+}
+
+/** Note reference renders inline as text:note carrying its body paragraphs. */
+function noteXml(
+  reference: number | { id: number },
+  notes: NotesContext,
+  noteClass: "footnote" | "endnote",
+  styles: string[],
+  images: OdtImage[],
+): string {
+  const id = typeof reference === "number" ? reference : reference.id;
+  const children = (noteClass === "endnote" ? notes.endnotes : notes.footnotes).get(id) ?? [];
+  return xmlElement("text:note", { "text:id": `${noteClass}${id}`, "text:note-class": noteClass }, [
+    xmlElement("text:note-citation", undefined, [String(id)]),
+    xmlElement("text:note-body", undefined, [
+      blocksXml(
+        children.map((noteChild) =>
+          typeof noteChild === "string" || !("paragraph" in noteChild || "table" in noteChild)
+            ? ({ paragraph: noteChild } as SectionChild)
+            : (noteChild as SectionChild),
+        ),
+        styles,
+        images,
+        notes,
+      ),
+    ]),
+  ]);
 }
 
 /** Run breaks render as text:line-break (ODF has no w:br/@clear equivalent). */
@@ -602,6 +705,7 @@ function parseRuns(
         };
         return [link as unknown as RunOptions];
       }
+      if (child.name === "text:note") return parseNote(child, context);
       if (child.name === "text:bookmark") {
         const bookmark = { bookmark: { name: attributeString(child, "text:name") ?? "" } };
         return [bookmark as unknown as RunOptions];
@@ -630,6 +734,19 @@ function parseRuns(
     else merged.push(run);
     return merged;
   }, []);
+}
+
+/** text:note stores its body in the document notes and leaves a reference run. */
+function parseNote(element: Element, context: ParseContext): (string | RunOptions)[] {
+  const body = childNamed(element, "text:note-body");
+  const children = body ? parseBlocks(body.elements ?? [], context) : [];
+  const isEndnote = attributeString(element, "text:note-class") === "endnote";
+  const notes = isEndnote ? context.notes.endnotes : context.notes.footnotes;
+  notes.push({ id: notes.length + 1, children });
+  const reference = isEndnote
+    ? { endnoteReference: notes.length }
+    : { footnoteReference: notes.length };
+  return [reference as unknown as RunOptions];
 }
 
 /** draw:frame + draw:image maps back to an inline picture run. */
