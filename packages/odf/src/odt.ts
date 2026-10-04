@@ -41,6 +41,26 @@ export interface OdtTextSectionOptions {
   children?: SectionChild[];
 }
 
+/** ODF style:tab-stop → the closest typed docx tab stop. */
+function parseTabStop(element: Element): TabStop {
+  const type = attributeString(element, "style:type");
+  const leaderText = attributeString(element, "style:leader-text");
+  return {
+    type: type === "char" ? "decimal" : ((type ?? "left") as TabStop["type"]),
+    position: lengthToTwips(attributeString(element, "style:position")) ?? 0,
+    leader:
+      leaderText === "."
+        ? "dot"
+        : leaderText === "-"
+          ? "hyphen"
+          : leaderText === "_"
+            ? "underscore"
+            : leaderText === "·"
+              ? "middleDot"
+              : undefined,
+  };
+}
+
 /** Runs of two or more spaces emit text:s so XML whitespace folding keeps them. */
 function spacesXml(text: string): string {
   const parts: string[] = [];
@@ -77,6 +97,7 @@ type StyleMap = Map<
     alignment?: string;
     columnWidth?: number;
     pageBreakBefore?: boolean;
+    tabStops?: TabStop[];
     character: CharacterProperties;
   }
 >;
@@ -94,6 +115,9 @@ interface ParseContext {
 type NoteEntry = NonNullable<DocumentOptions["footnotes"]>[number];
 
 type NoteChildren = NoteEntry["children"];
+
+/** Docx tab stop, indexed from the shared paragraph model. */
+type TabStop = NonNullable<ParagraphOptions["tabStops"]>[number];
 
 /** Note bodies keyed by reference id, threaded through ODT emission. */
 interface NotesContext {
@@ -364,8 +388,11 @@ function paragraphXml(
 ): string {
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
   const styleName =
-    alignment || options.pageBreakBefore
-      ? addParagraphStyle({ alignment, pageBreakBefore: options.pageBreakBefore }, styles)
+    alignment || options.pageBreakBefore || options.tabStops?.length
+      ? addParagraphStyle(
+          { alignment, pageBreakBefore: options.pageBreakBefore, tabStops: options.tabStops },
+          styles,
+        )
       : undefined;
   const children = runXml(options, styles, images, notes);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
@@ -526,7 +553,7 @@ function characterProperties(run: RunOptions): CharacterProperties {
 }
 
 function addParagraphStyle(
-  properties: { alignment?: string; pageBreakBefore?: boolean },
+  properties: { alignment?: string; pageBreakBefore?: boolean; tabStops?: TabStop[] },
   styles: string[],
 ): string {
   const name = `P${styles.length + 1}`;
@@ -535,14 +562,46 @@ function addParagraphStyle(
       "style:style",
       { "style:name": name, "style:family": "paragraph", "style:parent-style-name": "Standard" },
       [
-        xmlElement("style:paragraph-properties", {
-          "fo:text-align": properties.alignment,
-          "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
-        }),
+        xmlElement(
+          "style:paragraph-properties",
+          {
+            "fo:text-align": properties.alignment,
+            "fo:break-before": properties.pageBreakBefore ? "page" : undefined,
+          },
+          properties.tabStops?.length
+            ? [xmlElement("style:tab-stops", undefined, properties.tabStops.map(tabStopXml))]
+            : undefined,
+        ),
       ],
     ),
   );
   return name;
+}
+
+/** Tab stop → ODF style:tab-stop; decimal maps to char with a dot. */
+function tabStopXml(tab: TabStop): string {
+  if (
+    tab.type !== "left" &&
+    tab.type !== "center" &&
+    tab.type !== "right" &&
+    tab.type !== "decimal"
+  )
+    return "";
+  return xmlElement("style:tab-stop", {
+    "style:position": twipsToLength(tab.position),
+    "style:type": tab.type === "left" ? undefined : tab.type === "decimal" ? "char" : tab.type,
+    "style:char": tab.type === "decimal" ? "." : undefined,
+    "style:leader-text":
+      tab.leader === "dot"
+        ? "."
+        : tab.leader === "hyphen"
+          ? "-"
+          : tab.leader === "underscore"
+            ? "_"
+            : tab.leader === "middleDot"
+              ? "·"
+              : undefined,
+  });
 }
 
 function addCharacterStyle(properties: CharacterProperties, styles: string[]): string | undefined {
@@ -568,6 +627,9 @@ function parseStyles(container: Element | undefined): StyleMap {
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
     const paragraph = childNamed(style, "style:paragraph-properties");
+    const tabStops = childrenNamed(childNamed(paragraph, "style:tab-stops"), "style:tab-stop").map(
+      parseTabStop,
+    );
     const character = childNamed(style, "style:text-properties");
     const columnWidth = attributeString(
       childNamed(style, "style:table-column-properties"),
@@ -578,6 +640,7 @@ function parseStyles(container: Element | undefined): StyleMap {
     result.set(name, {
       alignment: attributeString(paragraph, "fo:text-align"),
       pageBreakBefore: attributeString(paragraph, "fo:break-before") === "page",
+      tabStops: tabStops.length > 0 ? tabStops : undefined,
       columnWidth: columnWidth?.endsWith("cm") ? Number(columnWidth.slice(0, -2)) * 567 : undefined,
       character: {
         bold: attributeString(character, "fo:font-weight") === "bold",
@@ -671,6 +734,7 @@ function parseParagraph(element: Element, context: ParseContext): ParagraphOptio
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
   if (style?.pageBreakBefore) result.pageBreakBefore = true;
+  if (style?.tabStops) result.tabStops = style.tabStops;
   if (headingLevel && headingLevel <= 6) {
     result.heading = `Heading${headingLevel}` as ParagraphOptions["heading"];
   }

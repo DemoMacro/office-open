@@ -404,6 +404,34 @@ describe("ODT mapping", () => {
     expect(paragraph.text).toBe("a  b   c");
   });
 
+  it("round-trips tab stops through paragraph tab-stop styles", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                text: "Tabbed",
+                tabStops: [
+                  { type: "right", position: 9026, leader: "dot" },
+                  { type: "decimal", position: 4513 },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+    expect(paragraph.tabStops).toEqual([
+      { type: "right", position: 9026, leader: "dot" },
+      { type: "decimal", position: 4513 },
+    ]);
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [
