@@ -178,6 +178,21 @@ describe("parseRtf rich destinations", () => {
     });
   });
 
+  it("projects direct hyperlinks, comments, and shape instructions", () => {
+    const document = parseRtf(
+      String.raw`{\rtf1{\hlink https://example.com}Link{\doccomm Summary}{\shpinst\shptop1000}}`,
+    );
+    expect(document.sections[0]?.children[0]).toEqual({
+      paragraph: {
+        children: [
+          { children: [{ hyperlink: { url: "https://example.com", children: ["Link"] } }] },
+        ],
+      },
+    });
+    expect(document.description).toBe("Summary");
+    expect(document.shapeInstructions).toEqual(["\\shptop1000"]);
+  });
+
   it("projects HYPERLINK, PAGE, and DATE fields", () => {
     const paragraph = firstParagraph(
       String.raw`{\rtf1{\field{\*\fldinst HYPERLINK "https://example.com"}{\fldrslt Link}}\par{\field{\*\fldinst PAGE}{\fldrslt 1}}\par{\field{\*\fldinst DATE}{\fldrslt Today}}}`,
