@@ -41,6 +41,86 @@ export interface OdtTextSectionOptions {
   children?: SectionChild[];
 }
 
+/** Section headers/footers render as master-page style:header/style:footer. */
+function masterHeaderFooter(section: SectionOptions | undefined): string {
+  return (
+    headerFooterXml(section?.headers?.default, "style:header") +
+    headerFooterXml(section?.footers?.default, "style:footer")
+  );
+}
+
+function headerFooterXml(children: SectionChild[] | undefined, element: string): string {
+  const blocks = (children ?? [])
+    .filter((child) => "paragraph" in child)
+    .map((child) => headerParagraphXml(normalizeParagraph(child.paragraph)));
+  if (blocks.length === 0) return "";
+  return xmlElement(element, undefined, blocks);
+}
+
+function headerParagraphXml(options: ParagraphOptions): string {
+  if (options.text !== undefined && options.children === undefined)
+    return xmlElement("text:p", undefined, [spacesXml(options.text)]);
+  return xmlElement(
+    "text:p",
+    undefined,
+    (options.children ?? []).map((child) => {
+      if (typeof child === "string") return spacesXml(child);
+      if ("simpleField" in child)
+        return headerFieldXml(
+          (child as { simpleField: { instruction?: string; cachedValue?: string } }).simpleField,
+        );
+      if ("text" in child) return spacesXml(String((child as { text?: string }).text ?? ""));
+      return "";
+    }),
+  );
+}
+
+function headerFieldXml(field: { instruction?: string; cachedValue?: string }): string {
+  const value = field.cachedValue ?? "1";
+  if (/NUMPAGES/i.test(field.instruction ?? ""))
+    return xmlElement("text:page-count", undefined, [value]);
+  return xmlElement("text:page-number", { "text:select-page": "current" }, [value]);
+}
+
+/** Master-page header/footer paragraphs → docx section header/footer children. */
+function parseMasterHeaderFooter(files: OdfFiles): {
+  headers?: SectionOptions["headers"];
+  footers?: SectionOptions["headers"];
+} {
+  const master = childNamed(
+    childNamed(readXml(files, "styles.xml"), "office:master-styles"),
+    "style:master-page",
+  );
+  const header = childNamed(master, "style:header");
+  const footer = childNamed(master, "style:footer");
+  const headerParagraphs = header ? parseHeaderParagraphs(header) : [];
+  const footerParagraphs = footer ? parseHeaderParagraphs(footer) : [];
+  return {
+    headers: headerParagraphs.length > 0 ? { default: headerParagraphs } : undefined,
+    footers: footerParagraphs.length > 0 ? { default: footerParagraphs } : undefined,
+  };
+}
+
+function parseHeaderParagraphs(container: Element): SectionChild[] {
+  return childrenNamed(container, "text:p").map((paragraph) => {
+    const runs = parseHeaderRuns(paragraph);
+    const options: ParagraphOptions =
+      runs.length === 1 && typeof runs[0] === "string" ? { text: runs[0] } : { children: runs };
+    return { paragraph: options } as SectionChild;
+  });
+}
+
+function parseHeaderRuns(paragraph: Element): NonNullable<ParagraphOptions["children"]> {
+  return (paragraph.elements ?? []).flatMap((child): NonNullable<ParagraphOptions["children"]> => {
+    if (child.type === "text") return [String(child.text ?? "")];
+    if (child.name === "text:page-number")
+      return [{ simpleField: { instruction: " PAGE ", cachedValue: textOf(child) ?? "" } }];
+    if (child.name === "text:page-count")
+      return [{ simpleField: { instruction: " NUMPAGES ", cachedValue: textOf(child) ?? "" } }];
+    return [];
+  });
+}
+
 /** ODF style:tab-stop → the closest typed docx tab stop. */
 function parseTabStop(element: Element): TabStop {
   const type = attributeString(element, "style:type");
@@ -154,7 +234,6 @@ interface NotesContext {
 export function generateOdt(options: OdtOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
-  const sectionProperties = options.sections[0]?.properties;
   const images: OdtImage[] = [];
   const notes = notesContext(options);
   const sections = (options.textSections ?? []).map((section) =>
@@ -175,7 +254,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
-    "styles.xml": documentStylesXml(sectionProperties, options.settings),
+    "styles.xml": documentStylesXml(options.sections[0], options.settings),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
@@ -263,6 +342,12 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const notesConfiguration = parseNotesConfiguration(files);
   if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
     result.settings = { ...result.settings, ...notesConfiguration };
+  const masterHeaderFooter = parseMasterHeaderFooter(files);
+  const section = result.sections[0];
+  if (section) {
+    if (masterHeaderFooter.headers) section.headers = masterHeaderFooter.headers;
+    if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
+  }
   return result;
 }
 
@@ -297,9 +382,10 @@ function parseFontFace(element: Element): FontEntry {
 }
 
 function documentStylesXml(
-  properties: SectionOptions["properties"],
+  section: SectionOptions | undefined,
   settings: DocumentOptions["settings"],
 ): string {
+  const properties = section?.properties;
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
   const pageMargin = typeof properties?.pageMargin === "object" ? properties.pageMargin : undefined;
   const layoutAttributes = [
@@ -311,13 +397,15 @@ function documentStylesXml(
     pageMargin?.bottom !== undefined && `fo:margin-bottom="${twipsToLength(pageMargin.bottom)}"`,
     pageMargin?.left !== undefined && `fo:margin-left="${twipsToLength(pageMargin.left)}"`,
   ].filter(Boolean);
-  const pageLayout = layoutAttributes.length
+  const headerFooter = masterHeaderFooter(section);
+  const needsMaster = layoutAttributes.length > 0 || headerFooter !== "";
+  const pageLayout = needsMaster
     ? `<style:page-layout style:name="pm1"><style:page-layout-properties ${layoutAttributes.join(
         " ",
       )}/></style:page-layout>`
     : "";
-  const masterStyles = pageLayout
-    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1"/></office:master-styles>`
+  const masterStyles = needsMaster
+    ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
     : "";
   const notes = notesConfigurationXml(settings);
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;

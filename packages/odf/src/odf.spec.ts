@@ -461,6 +461,43 @@ describe("ODT mapping", () => {
     });
   });
 
+  it("round-trips headers and footers through the master page", () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          headers: {
+            default: [
+              {
+                paragraph: {
+                  children: [
+                    "Header ",
+                    { simpleField: { instruction: " PAGE ", cachedValue: "1" } },
+                  ],
+                },
+              },
+            ],
+          },
+          footers: {
+            default: [{ paragraph: { text: "Footer text" } }],
+          },
+          children: [{ paragraph: "Body" }],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const headerParagraph = parsed.sections[0]!.headers!.default![0]!;
+    if (!("paragraph" in headerParagraph)) throw new Error("Expected a header paragraph");
+    const header = typeof headerParagraph.paragraph === "string" ? {} : headerParagraph.paragraph;
+    expect(header.children).toEqual([
+      "Header ",
+      { simpleField: { instruction: " PAGE ", cachedValue: "1" } },
+    ]);
+    const footerParagraph = parsed.sections[0]!.footers!.default![0]!;
+    if (!("paragraph" in footerParagraph)) throw new Error("Expected a footer paragraph");
+    const footer = typeof footerParagraph.paragraph === "string" ? {} : footerParagraph.paragraph;
+    expect(footer.text).toBe("Footer text");
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [
