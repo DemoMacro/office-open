@@ -72,7 +72,13 @@ export function readRecordHeader(
   streamEnd = view.byteLength,
 ): RecordHeader {
   if (offset < 0 || offset + RECORD_HEADER_SIZE > streamEnd) {
-    throw new PptParseError("Corrupt legacy PowerPoint record: truncated record header");
+    throw new PptParseError("Corrupt legacy PowerPoint record: truncated record header", {
+      part: "stream",
+      offset,
+      length: RECORD_HEADER_SIZE,
+      byteRange: [offset, offset + RECORD_HEADER_SIZE],
+      reason: "truncated-header",
+    });
   }
   const packed = view.getUint16(offset, true);
   const length = view.getUint32(offset + 4, true);
@@ -80,6 +86,14 @@ export function readRecordHeader(
   if (end > streamEnd) {
     throw new PptParseError(
       `Corrupt legacy PowerPoint record at offset ${offset}: record exceeds its parent`,
+      {
+        part: "stream",
+        recordType: view.getUint16(offset + 2, true),
+        offset,
+        length,
+        byteRange: [offset, end],
+        reason: "invalid-record-length",
+      },
     );
   }
   return {
@@ -106,7 +120,11 @@ export function readRecordTree(
   while (cursor + RECORD_HEADER_SIZE <= end) {
     if (isZeroPadding(view, cursor, end)) break;
     if (nodes.length >= maxRecords) {
-      throw new PptParseError("Corrupt legacy PowerPoint record: too many sibling records");
+      throw new PptParseError("Corrupt legacy PowerPoint record: too many sibling records", {
+        part: "record",
+        offset: cursor,
+        reason: "record-limit-exceeded",
+      });
     }
     const header = readRecordHeader(view, cursor, end);
     const children =
@@ -120,7 +138,13 @@ export function readRecordTree(
   }
 
   if (cursor !== end && !isZeroPadding(view, cursor, end)) {
-    throw new PptParseError("Corrupt legacy PowerPoint record: trailing bytes in container");
+    throw new PptParseError("Corrupt legacy PowerPoint record: trailing bytes in container", {
+      part: "record",
+      offset: cursor,
+      length: end - cursor,
+      byteRange: [cursor, end],
+      reason: "invalid-record-boundary",
+    });
   }
   return nodes;
 }
@@ -174,21 +198,51 @@ export function collectDescendants(
 
 export function readInt32(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 4 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field", {
+      part: "record",
+      recordType: record.type,
+      offset: record.offset + RECORD_HEADER_SIZE + offset,
+      length: 4,
+      byteRange: [
+        record.offset + RECORD_HEADER_SIZE + offset,
+        record.offset + RECORD_HEADER_SIZE + offset + 4,
+      ],
+      reason: "out-of-range",
+    });
   }
   return view.getInt32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readUint32(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 4 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field", {
+      part: "record",
+      recordType: record.type,
+      offset: record.offset + RECORD_HEADER_SIZE + offset,
+      length: 4,
+      byteRange: [
+        record.offset + RECORD_HEADER_SIZE + offset,
+        record.offset + RECORD_HEADER_SIZE + offset + 4,
+      ],
+      reason: "out-of-range",
+    });
   }
   return view.getUint32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readInt16(view: DataView, record: RecordHeader, offset: number): number {
   if (offset < 0 || offset + 2 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 16-bit field");
+    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 16-bit field", {
+      part: "record",
+      recordType: record.type,
+      offset: record.offset + RECORD_HEADER_SIZE + offset,
+      length: 2,
+      byteRange: [
+        record.offset + RECORD_HEADER_SIZE + offset,
+        record.offset + RECORD_HEADER_SIZE + offset + 2,
+      ],
+      reason: "out-of-range",
+    });
   }
   return view.getInt16(record.offset + RECORD_HEADER_SIZE + offset, true);
 }

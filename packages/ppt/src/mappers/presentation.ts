@@ -105,7 +105,13 @@ export function parsePresentation(
   data: Uint8Array,
   options?: LegacyParseOptions,
 ): PresentationOptions {
-  if (!(data instanceof Uint8Array)) throw new TypeError("parsePresentation expects a Uint8Array");
+  if (!(data instanceof Uint8Array)) {
+    throw new LegacyPowerPointError("parsePresentation expects a Uint8Array", {
+      part: "container",
+      path: "/",
+      reason: "invalid-input-type",
+    });
+  }
   assertCfbSignature(data);
 
   let reader: CompoundFileReader;
@@ -114,6 +120,7 @@ export function parsePresentation(
   } catch (error) {
     throw new LegacyPowerPointError(
       `Invalid CFB container: ${error instanceof Error ? error.message : String(error)}`,
+      { part: "container", path: "/", reason: "invalid-container" },
     );
   }
 
@@ -126,10 +133,27 @@ export function parsePresentation(
   if (currentUser.byteLength < 28) {
     throw new LegacyPowerPointError(
       "Unsupported or corrupt legacy PowerPoint file: Current User atom is too short",
+      {
+        part: "stream",
+        path: CURRENT_USER_STREAM,
+        recordType: RecordType.currentUserAtom,
+        recordName: "CurrentUserAtom",
+        offset: 0,
+        length: 28,
+        reason: "truncated-header",
+      },
     );
   }
   if (currentUserView.getUint16(2, true) !== RecordType.currentUserAtom) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid Current User atom");
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid Current User atom", {
+      part: "stream",
+      path: CURRENT_USER_STREAM,
+      recordType: currentUserView.getUint16(2, true),
+      recordName: "CurrentUserAtom",
+      offset: 2,
+      length: 2,
+      reason: "unsupported-required-structure",
+    });
   }
 
   const encryptionToken = currentUserView.getUint32(12, true);
@@ -146,7 +170,14 @@ export function parsePresentation(
     currentUser = new Uint8Array(currentUser);
     createView(currentUser).setUint32(12, NON_ENCRYPTED_TOKEN, true);
   } else if (encryptionToken !== NON_ENCRYPTED_TOKEN) {
-    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported");
+    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported", {
+      part: "stream",
+      path: CURRENT_USER_STREAM,
+      recordName: "CurrentUserAtom",
+      offset: 12,
+      length: 4,
+      reason: "encrypted-unsupported",
+    });
   }
 
   const editOffset = readStreamOffset(
@@ -157,7 +188,15 @@ export function parsePresentation(
   );
   const userEdit = readRecordHeader(documentView, editOffset);
   if (userEdit.type !== RecordType.userEditAtom || userEdit.length < 28) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid UserEditAtom");
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid UserEditAtom", {
+      part: "record",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordType: userEdit.type,
+      recordName: "UserEditAtom",
+      offset: userEdit.offset,
+      length: userEdit.length,
+      reason: "unsupported-required-structure",
+    });
   }
 
   const persistReferences = readPersistReferences(documentView, userEdit.offset);
@@ -235,20 +274,50 @@ function decryptPowerPointDocument(
   password?: string,
 ): Uint8Array {
   if (password === undefined) {
-    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported");
+    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported", {
+      part: "stream",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordName: "UserEditAtom",
+      offset: userEdit.offset,
+      reason: "encrypted-unsupported",
+    });
   }
   if (userEdit.length < 32) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption reference");
+    throw new LegacyPowerPointError(
+      "Corrupt legacy PowerPoint file: invalid encryption reference",
+      {
+        part: "record",
+        path: POWERPOINT_DOCUMENT_STREAM,
+        recordName: "UserEditAtom",
+        offset: userEdit.offset,
+        length: 32,
+        reason: "invalid-record-length",
+      },
+    );
   }
   const references = readPersistReferences(encryptedView, userEdit.offset);
   const encryptionReference = readUint32(encryptedView, userEdit, 28);
   const encryptionOffset = references.get(encryptionReference);
   if (encryptionOffset === undefined) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing encryption record");
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing encryption record", {
+      part: "record",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordType: encryptionReference,
+      recordName: "PersistObject",
+      reason: "missing-required-record",
+    });
   }
   const encryptionRecord = readRecordHeader(encryptedView, encryptionOffset);
   if (encryptionRecord.type !== RecordType.documentEncryptionAtom) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption record");
+    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption record", {
+      part: "record",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordType: encryptionRecord.type,
+      recordName: "PersistObject",
+      offset: encryptionRecord.offset,
+      length: encryptionRecord.length,
+      reason: "unsupported-required-structure",
+    });
   }
   const encryptionData = new Uint8Array(
     encryptedView.buffer,
@@ -257,7 +326,14 @@ function decryptPowerPointDocument(
   );
   const { keySizeBits, verifier } = parseRc4CryptoApiHeader(encryptionData, 4);
   if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-    throw new LegacyPowerPointError("Invalid legacy PowerPoint password");
+    throw new LegacyPowerPointError("Invalid legacy PowerPoint password", {
+      part: "record",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordType: RecordType.documentEncryptionAtom,
+      recordName: "DocumentEncryptionAtom",
+      offset: encryptionRecord.offset,
+      reason: "invalid-password",
+    });
   }
 
   const result = new Uint8Array(
