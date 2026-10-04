@@ -53,9 +53,9 @@ const options = parseDocument(data, { password: "secret" });
 
 ## API
 
-- `parseDocument(data, options?)` — read a `.doc` file into `LegacyDocumentOptions`
-- `LegacyDocumentOptions` — the projected Word document model
-- `LegacyParseOptions` — parse-time options, including `password`
+- `parseDocument(data, options?)` — read a `.doc` file into `DocumentOptions`
+- `DocParseOptions` — parse-time options, including `password`
+- `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input
 - `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input
 
 The projected model follows the office-open `DocumentOptions` shape where the legacy format has a direct counterpart. Unsupported legacy records are skipped without aborting the document.

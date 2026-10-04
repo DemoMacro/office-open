@@ -2,6 +2,7 @@ import type { ParagraphOptions, SectionChild } from "@office-open/docx";
 import { describe, expect, it } from "vitest";
 
 import { parseDocument } from "./index";
+import type { LegacyDocumentOptions } from "./records/models";
 
 const END_OF_CHAIN = 0xfffffffe;
 const FAT_SECT = 0xfffffffd;
@@ -17,6 +18,10 @@ function fillName(bytes: Uint8Array, offset: number, name: string): void {
   }
   view.setUint16(offset + name.length * 2, 0, true);
   view.setUint16(offset + 64, (name.length + 1) * 2, true);
+}
+
+function parseLegacyDocument(data: Uint8Array): LegacyDocumentOptions {
+  return parseDocument(data) as LegacyDocumentOptions;
 }
 
 function writeDirectoryEntry(
@@ -532,7 +537,7 @@ describe("legacy DOC parser", () => {
       paragraphGrpprl: [0x03, 0x24, 0x01],
     });
     const paragraph = parseDocument(data).sections[0]!.children[0]!;
-    const run = extractParagraph(paragraph).children?.[0]!;
+    const run = extractParagraph(paragraph).children?.[0];
     expect(run).toMatchObject({ text: "Hi", bold: true, size: 12 });
   });
 
@@ -601,24 +606,24 @@ describe("legacy DOC parser", () => {
 
   it("decodes annotation references as revision ranges", () => {
     const { data } = buildDocument({ annotations: true });
-    expect(parseDocument(data).revisions).toEqual([{ start: 0, end: 3, inserted: true }]);
+    expect(parseLegacyDocument(data).revisions).toEqual([{ start: 0, end: 3, inserted: true }]);
   });
 
   it("decodes main-document field instructions from PlcffldMom", () => {
     const { data } = buildDocument({ fieldTable: true });
-    expect(parseDocument(data).fields).toHaveLength(1);
+    expect(parseLegacyDocument(data).fields).toHaveLength(1);
   });
 
   it("parses Escher BStore and Data-stream BLIP picture data", () => {
     const { data } = buildDocument({ drawing: true });
-    expect(parseDocument(data).pictures).toEqual([
+    expect(parseLegacyDocument(data).pictures).toEqual([
       { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
     ]);
   });
 
   it("parses an embedded BLIP without consulting the Data stream", () => {
     const { data } = buildDocument({ drawing: "embedded" });
-    expect(parseDocument(data).pictures).toEqual([
+    expect(parseLegacyDocument(data).pictures).toEqual([
       { type: "png", width: 4, height: 3, data: expect.any(Uint8Array) },
     ]);
   });

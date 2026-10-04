@@ -1,2 +1,2 @@
-export { parseWorkbook, type LegacyParseOptions } from "./biff";
-export { LegacyExcelError } from "./errors";
+export { parseWorkbook, type XlsParseOptions } from "./parser";
+export { XlsParseError } from "./errors";

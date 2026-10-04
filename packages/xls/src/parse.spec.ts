@@ -1,8 +1,8 @@
 import type { CellOptions, WorksheetOptions } from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
 
-import { buildSmallContainer } from "./cfb-builder";
-import { LegacyExcelError, parseWorkbook } from "./index";
+import { buildSmallContainer } from "./cfb/test-container";
+import { XlsParseError, parseWorkbook } from "./index";
 
 const BIFF5_TOKEN = 0x0500;
 const BIFF8_TOKEN = 0x0600;
@@ -1187,6 +1187,6 @@ describe("parseWorkbook", () => {
       }
       throw new Error("Expected parseWorkbook to throw");
     });
-    for (const error of errors) expect(error).toBeInstanceOf(LegacyExcelError);
+    for (const error of errors) expect(error).toBeInstanceOf(XlsParseError);
   });
 });

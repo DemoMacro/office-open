@@ -1,4 +1,4 @@
-import { RtfParseError } from "./errors";
+import { RtfParseError } from "../errors";
 
 export type RtfToken =
   | { kind: "group-start"; position: number }

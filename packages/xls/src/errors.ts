@@ -1,7 +1,9 @@
 /** Legacy XLS input cannot be decoded safely or is not supported. */
-export class LegacyExcelError extends Error {
+export class XlsParseError extends Error {
   public constructor(message: string) {
     super(message);
-    this.name = "LegacyExcelError";
+    this.name = "XlsParseError";
   }
 }
+
+export class LegacyExcelError extends XlsParseError {}
