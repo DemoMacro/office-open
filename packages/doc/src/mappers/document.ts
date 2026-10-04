@@ -8,6 +8,7 @@ import type {
   TableCellOptions,
   TableOptions,
   TableRowOptions,
+  TrackChangeChild,
 } from "@office-open/docx";
 
 import { readSummaryInformation } from "../cfb/container";
@@ -109,6 +110,7 @@ interface TextCharacter {
   cp: number;
   paragraphEnd?: boolean;
   hyperlink?: { url?: string; anchor?: string };
+  revision?: { inserted: boolean };
 }
 
 const FLAG_ENCRYPTED = 0x0100;
@@ -837,6 +839,12 @@ function projectChildren(
       if (index > 0 && paragraph[index]!.hyperlink !== paragraph[index - 1]!.hyperlink) {
         boundaries.add(index);
       }
+      if (
+        index > 0 &&
+        paragraph[index]!.revision?.inserted !== paragraph[index - 1]!.revision?.inserted
+      ) {
+        boundaries.add(index);
+      }
     }
     const sortedBoundaries = [...boundaries].sort((left, right) => left - right);
     const runs: ParagraphChild[] = [];
@@ -851,16 +859,31 @@ function projectChildren(
       const cp = paragraph[start]!.cp;
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
       const hyperlink = paragraph[start]!.hyperlink;
+      const revision = paragraph[start]!.revision;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
-      if (breakCount > 0) runs.push({ break: breakCount });
+      const revisionChildren: ParagraphChild[] = [];
+      if (breakCount > 0) revisionChildren.push({ break: breakCount });
       if (visibleText.length > 0 && hyperlink) {
-        runs.push({
+        revisionChildren.push({
           hyperlink: { ...hyperlink },
           children: [{ text: visibleText, ...range?.properties }],
         });
       } else if (visibleText.length > 0) {
-        runs.push({ text: visibleText, ...range?.properties });
+        revisionChildren.push({ text: visibleText, ...range?.properties });
+      }
+      if (revision) {
+        const children = revisionChildren.flatMap((child): TrackChangeChild[] =>
+          "text" in child ? [child] : [],
+        );
+        const change = {
+          author: LEGACY_REVISION_AUTHOR,
+          date: LEGACY_REVISION_DATE,
+          children,
+        };
+        runs.push(revision.inserted ? { insertion: change } : { deletion: change });
+      } else {
+        runs.push(...revisionChildren);
       }
     }
     const plainText = paragraph.map((character) => character.value).join("");
@@ -1166,31 +1189,37 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   }
   let fields: ReturnType<typeof parseFields> = [];
   if (fib.fields.length > 0) {
-    try {
-      fields = parseFields(rawCharacters, table, fib.fields);
-    } catch {
-      fields = [];
-    }
+    fields = parseOptional(() => parseFields(rawCharacters, table, fib.fields), []);
   }
   applyHyperlinkFields(characters, fields, rawCharacters);
   let revisions: LegacyRevisionRange[] = [];
   if (fib.comments.length > 0) {
-    try {
-      revisions = parseCommentRanges(table, fib.comments).map((comment) => ({
-        start: comment.start,
-        end: comment.end,
-        inserted: (comment.data[1]! & 0x01) === 0,
-      }));
-    } catch {
-      revisions = [];
+    revisions = parseOptional(
+      () =>
+        parseCommentRanges(table, fib.comments).map((comment) => ({
+          start: comment.start,
+          end: comment.end,
+          inserted: (comment.data[1]! & 0x01) === 0,
+        })),
+      [],
+    );
+  }
+  for (const revision of revisions) {
+    for (const character of characters) {
+      if (character.cp >= revision.start && character.cp < revision.end) {
+        character.revision = { inserted: revision.inserted };
+      }
     }
   }
-  const drawing = fib.drawing.length > 0 ? dataStream : undefined;
   const pictures =
-    fib.drawing.length > 0 && drawing
-      ? parsePictures(
-          table.subarray(fib.drawing.offset, fib.drawing.offset + fib.drawing.length),
-          drawing,
+    fib.drawing.length > 0 && dataStream
+      ? parseOptional(
+          () =>
+            parsePictures(
+              table.subarray(fib.drawing.offset, fib.drawing.offset + fib.drawing.length),
+              dataStream,
+            ),
+          [],
         )
       : [];
   let lists: ReturnType<typeof parseLists> | undefined;
@@ -1425,11 +1454,6 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
         },
       };
     });
-    if (revisions.length > 0) {
-      throw new DocParseError(
-        "DOC revision authors and dates have no canonical insertion/deletion mapping",
-      );
-    }
     section.children = [
       ...canonicalPictures.map((picture) => ({ paragraph: { children: [picture] } })),
       ...canonicalFields.map((field) => ({ paragraph: { children: [field] } })),
@@ -1438,6 +1462,9 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   }
   return result;
 }
+
+const LEGACY_REVISION_AUTHOR = "Unknown";
+const LEGACY_REVISION_DATE = "1970-01-01T00:00:00Z";
 
 function applyBookmarks(
   children: SectionChild[],
@@ -1468,16 +1495,39 @@ function applyBookmarks(
   });
 }
 
-function parseCommentRanges(
+export function parseCommentRanges(
   table: Uint8Array,
   range: NumberPair,
 ): Array<{ start: number; end: number; data: Uint8Array }> {
   const message = "Invalid DOC annotation references: they are outside the table stream";
   requireRange(table, range.offset, range.length, message);
-  if (range.length < 8 || (range.length - 4) % 4 !== 0) {
-    throw new DocParseError("Invalid DOC annotation references: malformed CP count");
+  if (range.length < 8 || range.length % 4 !== 0) {
+    throw new DocParseError("Invalid DOC annotation references: malformed CP count", {
+      part: "table",
+      path: "PlcfandRef",
+      recordName: "PLC",
+      offset: range.offset,
+      length: range.length,
+      byteRange: [range.offset, range.offset + range.length],
+      reason: "invalid-record-length",
+    });
   }
   const count = (range.length - 4) / 4;
+  const descriptorLength = range.length - (count + 1) * 4;
+  if (descriptorLength !== 0 && descriptorLength !== count * 4) {
+    throw new DocParseError("Invalid DOC annotation references: truncated descriptors", {
+      part: "table",
+      path: "PlcfandRef",
+      recordName: "FRD",
+      offset: range.offset + (count + 1) * 4,
+      length: count * 4,
+      byteRange: [
+        range.offset + (count + 1) * 4,
+        range.offset + (count + 1) * 4 + descriptorLength,
+      ],
+      reason: "invalid-record-length",
+    });
+  }
   const values: Array<{ start: number; end: number; data: Uint8Array }> = [];
   for (let index = 0; index < count; index += 1) {
     const start = readUint32(table, range.offset + index * 4, message);
@@ -1486,7 +1536,7 @@ function parseCommentRanges(
     values.push({
       start,
       end,
-      data: table.subarray(dataOffset, dataOffset + 4),
+      data: descriptorLength === 0 ? new Uint8Array(4) : table.subarray(dataOffset, dataOffset + 4),
     });
   }
   return values;
