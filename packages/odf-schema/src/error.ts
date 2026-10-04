@@ -1,7 +1,13 @@
-/** Base error for invalid ODF schema structures. */
+/** Structured error raised for an ODF element that cannot be mapped canonically. */
 export class OdfSchemaError extends Error {
-  constructor(message: string, options?: ErrorOptions) {
+  constructor(
+    message: string,
+    readonly part: string,
+    readonly path: string,
+    readonly name: string,
+    readonly reason: string,
+    options?: ErrorOptions,
+  ) {
     super(message, options);
-    this.name = new.target.name;
   }
 }

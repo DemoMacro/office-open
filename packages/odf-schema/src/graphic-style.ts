@@ -27,10 +27,13 @@ export interface GraphicStyle {
 }
 
 /** Parses the graphic-family styles from a style container. */
-export function parseGraphicStyles(container: Element | undefined): Map<string, GraphicStyle> {
+export function parseGraphicStyles(
+  container: Element | undefined,
+  family = "graphic",
+): Map<string, GraphicStyle> {
   const result = new Map<string, GraphicStyle>();
   for (const style of childrenNamed(container, "style:style")) {
-    if (attributeString(style, "style:family") !== "graphic") continue;
+    if (attributeString(style, "style:family") !== family) continue;
     const name = attributeString(style, "style:name") ?? "";
     const properties = childNamed(style, "style:graphic-properties");
     result.set(name, {
@@ -77,17 +80,22 @@ export function graphicOutline(graphic: GraphicStyle | undefined): OutlineOption
 
 /** Shape fill/outline land in a reusable graphic style pushed onto the styles buffer. */
 export function pushShapeStyle(
-  fill: FillOptions | undefined,
+  fill: FillOptions | null | undefined,
   outline: OutlineOptions | undefined,
   styles: string[],
+  family = "graphic",
 ): string | undefined {
   const fillColor =
-    fill !== undefined && typeof fill === "object" && fill.type === "solid"
+    fill !== undefined && fill !== null && typeof fill === "object" && fill.type === "solid"
       ? hexColorValue(fill.color)
       : undefined;
   const attributes = {
     "draw:fill":
-      typeof fill === "object" && fill.type === "none" ? "none" : fillColor ? "solid" : undefined,
+      fill !== null && typeof fill === "object" && fill.type === "none"
+        ? "none"
+        : fillColor
+          ? "solid"
+          : undefined,
     "draw:fill-color": odfColor(fillColor),
     "draw:stroke": outline?.type === "noFill" ? "none" : outline?.color ? "solid" : undefined,
     "svg:stroke-width":
@@ -102,7 +110,7 @@ export function pushShapeStyle(
   if (Object.values(attributes).every((value) => value === undefined)) return undefined;
   const name = `gr${styles.length + 1}`;
   styles.push(
-    xmlElement("style:style", { "style:name": name, "style:family": "graphic" }, [
+    xmlElement("style:style", { "style:name": name, "style:family": family }, [
       xmlElement("style:graphic-properties", attributes),
     ]),
   );
