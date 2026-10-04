@@ -53,7 +53,9 @@
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析           |
 | [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析               |
-| [@office-open/odf](./packages/odf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odf)  | ODF 文本、表格与演示读写            |
+| [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument 文本生成与解析         |
+| [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument 表格生成与解析         |
+| [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument 演示生成与解析         |
 | [@office-open/core](./packages/core/README.md)  | ![npm](https://img.shields.io/npm/v/@office-open/core) | 共享 OOXML 基础设施、图表、单位换算 |
 | [@office-open/xml](./packages/xml/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xml)  | 底层 XML 解析与序列化               |
 
@@ -68,7 +70,7 @@
 
 能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式和 RTF 没有写入器，ODF 编解码器也不提供补丁操作。
 
-包依赖图遵循格式归属：`ocf` 负责 ODF 容器与通用节点；`odf-schema` 负责共享图表/数据库模型，运行时可依赖 `ocf`/`xml`，但只能类型引用 `core`；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `ocf`/`odf-schema`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部编解码器。
+包依赖图遵循格式归属：`odf` 负责 OCF 容器、XML 运行时、元数据以及共享图表/数据库编解码器；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `odf`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部公开文档编解码器。
 
 ## 快速开始
 

@@ -1,6 +1,6 @@
 import type { Element } from "@office-open/xml";
 
-import { escapeText } from "./meta";
+import { escapeText } from "./xml";
 import { xmlElement } from "./xml";
 
 export const ODF_ELEMENT_NAMES = [

@@ -1,23 +1,20 @@
 {
   "name": "@office-open/odf",
   "version": "0.14.6",
-  "description": "Temporary explicit facade for the split OpenDocument codec packages",
+  "description": "Shared OpenDocument container, XML runtime, metadata, chart, database, form, and drawing codecs",
   "keywords": [
     "chart",
+    "container",
     "database",
-    "libreoffice",
+    "forms",
+    "manifest",
+    "ocf",
     "odf",
-    "odp",
-    "ods",
-    "odt",
-    "office",
     "office-open",
-    "open-document",
     "opendocument",
-    "parse",
-    "presentation",
-    "spreadsheet",
-    "typescript"
+    "typescript",
+    "xml",
+    "zip"
   ],
   "homepage": "https://www.office-open.com",
   "bugs": {
@@ -55,11 +52,10 @@
     "check": "vp check --fix"
   },
   "dependencies": {
-    "@office-open/odp": "workspace:*",
-    "@office-open/ods": "workspace:*",
-    "@office-open/odt": "workspace:*"
+    "@office-open/xml": "workspace:*",
+    "fflate": "0.8.3"
   },
   "devDependencies": {
-    "@office-open/odf-schema": "workspace:*"
+    "@office-open/core": "workspace:*"
   }
 }

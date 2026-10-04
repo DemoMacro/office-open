@@ -97,10 +97,6 @@
       "types": "./dist/rtf.d.mts",
       "import": "./dist/rtf.mjs"
     },
-    "./odf": {
-      "types": "./dist/odf.d.mts",
-      "import": "./dist/odf.mjs"
-    },
     "./formats": {
       "types": "./dist/formats.d.mts",
       "import": "./dist/formats.mjs"
@@ -152,7 +148,6 @@
     "@office-open/core": "workspace:*",
     "@office-open/doc": "workspace:*",
     "@office-open/docx": "workspace:*",
-    "@office-open/odf": "workspace:*",
     "@office-open/odp": "workspace:*",
     "@office-open/ods": "workspace:*",
     "@office-open/odt": "workspace:*",

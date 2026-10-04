@@ -49,9 +49,10 @@
   },
   "dependencies": {
     "@office-open/core": "workspace:*",
+    "@office-open/odf": "workspace:*"
+  },
+  "devDependencies": {
     "@office-open/docx": "workspace:*",
-    "@office-open/ocf": "workspace:*",
-    "@office-open/odf-schema": "workspace:*",
     "@office-open/xml": "workspace:*"
   }
 }

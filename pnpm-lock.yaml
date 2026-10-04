@@ -136,57 +136,28 @@ importers:
         specifier: workspace:*
         version: link:../xml
 
-  packages/ocf:
+  packages/odf:
     dependencies:
-      '@office-open/core':
-        specifier: workspace:*
-        version: link:../core
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
       fflate:
         specifier: 0.8.3
         version: 0.8.3
-
-  packages/odf:
-    dependencies:
-      '@office-open/odp':
-        specifier: workspace:*
-        version: link:../odp
-      '@office-open/ods':
-        specifier: workspace:*
-        version: link:../ods
-      '@office-open/odt':
-        specifier: workspace:*
-        version: link:../odt
     devDependencies:
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
-
-  packages/odf-schema:
-    dependencies:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
-      '@office-open/ocf':
-        specifier: workspace:*
-        version: link:../ocf
-      '@office-open/xml':
-        specifier: workspace:*
-        version: link:../xml
 
   packages/odp:
     dependencies:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
-      '@office-open/ocf':
+      '@office-open/odf':
         specifier: workspace:*
-        version: link:../ocf
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
+        version: link:../odf
+    devDependencies:
       '@office-open/pptx':
         specifier: workspace:*
         version: link:../pptx
@@ -196,15 +167,13 @@ importers:
 
   packages/ods:
     dependencies:
+      '@office-open/odf':
+        specifier: workspace:*
+        version: link:../odf
+    devDependencies:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
-      '@office-open/ocf':
-        specifier: workspace:*
-        version: link:../ocf
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
       '@office-open/xlsx':
         specifier: workspace:*
         version: link:../xlsx
@@ -217,15 +186,13 @@ importers:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+      '@office-open/odf':
+        specifier: workspace:*
+        version: link:../odf
+    devDependencies:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
-      '@office-open/ocf':
-        specifier: workspace:*
-        version: link:../ocf
-      '@office-open/odf-schema':
-        specifier: workspace:*
-        version: link:../odf-schema
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
@@ -241,9 +208,6 @@ importers:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
-      '@office-open/odf':
-        specifier: workspace:*
-        version: link:../odf
       '@office-open/odp':
         specifier: workspace:*
         version: link:../odp

@@ -15,14 +15,9 @@ import { unzipSync } from "fflate";
 import { RelaxNGValidator, XmlDocument } from "libxml2-wasm";
 
 import type { DocumentOptions } from "../packages/docx/src";
-import {
-  generateOdp,
-  generateOds,
-  generateOdt,
-  parseOdp,
-  parseOds,
-  parseOdt,
-} from "../packages/odf/src";
+import { generateOdp, parseOdp } from "../packages/odp/src";
+import { generateOds, parseOds } from "../packages/ods/src";
+import { generateOdt, parseOdt } from "../packages/odt/src";
 import type { PresentationOptions } from "../packages/pptx/src";
 import type { WorkbookOptions } from "../packages/xlsx/src";
 

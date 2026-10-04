@@ -15,7 +15,6 @@ export default defineConfig({
       "src/xls.ts",
       "src/ppt.ts",
       "src/rtf.ts",
-      "src/odf.ts",
       "src/formats.ts",
       "src/detect.ts",
       "src/parse.ts",

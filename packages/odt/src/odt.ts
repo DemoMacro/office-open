@@ -22,35 +22,33 @@ import type {
 import {
   attributeNumber,
   attributeString,
+  CHART_MIME,
+  chartBodyXml,
   childNamed,
   childrenNamed,
   emuToLength,
   escapeText,
   generateOcf,
+  graphicFill,
+  graphicOutline,
   lengthToEmu,
   metaXml,
   ODF_NAMESPACES,
+  OdfSchemaError,
+  parseEmbeddedCharts,
+  parseGraphicStyles,
   parseMeta,
+  PRESET_GEOMETRY_DOCX,
+  presetGeometryOdf,
+  pushShapeStyle,
   readOcf,
   readXml,
   textOf,
   xmlElement,
+  type GraphicStyle,
   type OdfFiles,
   type OdfPackageFiles,
-} from "@office-open/ocf";
-import {
-  CHART_MIME,
-  chartBodyXml,
-  graphicFill,
-  graphicOutline,
-  parseEmbeddedCharts,
-  parseGraphicStyles,
-  OdfSchemaError,
-  PRESET_GEOMETRY_DOCX,
-  presetGeometryOdf,
-  pushShapeStyle,
-} from "@office-open/odf-schema";
-import type { GraphicStyle } from "@office-open/odf-schema";
+} from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdtParseError } from "./error";
@@ -326,6 +324,15 @@ export function generateOdt(options: DocumentOptions): Uint8Array {
   const charts: OdtChart[] = [];
   const notes = notesContext(options);
   collectBookmarkNames(blocks, notes.bookmarkNames);
+  for (const note of [...(options.footnotes ?? []), ...(options.endnotes ?? [])])
+    collectBookmarkNames(
+      note.children.map((noteChild) =>
+        typeof noteChild === "string" || !("paragraph" in noteChild || "table" in noteChild)
+          ? ({ paragraph: noteChild } as SectionChild)
+          : (noteChild as SectionChild),
+      ),
+      notes.bookmarkNames,
+    );
   const bodyBlocks = blocksXml(blocks, styles, images, notes, options.numbering, charts);
   const body = declarationsXml(options, notes) + bodyBlocks;
   const files: OdfPackageFiles = {
@@ -384,7 +391,29 @@ function notesContext(options: DocumentOptions): NotesContext {
 function collectBookmarkNames(children: SectionChild[], names: Map<number, string>): void {
   for (const child of children) {
     if ("bookmarkStart" in child) names.set(child.bookmarkStart.id, child.bookmarkStart.name);
+    if ("paragraph" in child && typeof child.paragraph !== "string")
+      collectInlineBookmarkNames(child.paragraph.children ?? [], names);
+    if ("table" in child)
+      for (const row of child.table.rows)
+        if ("cells" in row)
+          for (const cell of row.cells)
+            if ("children" in cell) collectBookmarkNames(cell.children, names);
     if ("sdt" in child) collectBookmarkNames(child.sdt.children ?? [], names);
+    if ("textbox" in child) collectBookmarkNames(child.textbox.children ?? [], names);
+    if ("toc" in child) collectBookmarkNames(child.toc.entries ?? [], names);
+  }
+}
+
+function collectInlineBookmarkNames(
+  children: NonNullable<ParagraphOptions["children"]>,
+  names: Map<number, string>,
+): void {
+  for (const child of children) {
+    if (typeof child === "string") continue;
+    if ("bookmarkStart" in child) names.set(child.bookmarkStart.id, child.bookmarkStart.name);
+    if ("hyperlink" in child) collectInlineBookmarkNames(child.hyperlink.children ?? [], names);
+    if ("insertion" in child) collectInlineBookmarkNames(child.insertion.children, names);
+    if ("deletion" in child) collectInlineBookmarkNames(child.deletion.children, names);
   }
 }
 
@@ -954,9 +983,10 @@ function blockXml(
     );
   if ("bookmarkStart" in child)
     return xmlElement("text:bookmark-start", {
-      "text:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
+      "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
       "text:name": child.bookmarkStart.name,
     });
+  if ("bookmarkEnd" in child) return bookmarkEndXml(child.bookmarkEnd.id, notes);
   if ("table" in child)
     return tableXml(child.table, styles, (block) =>
       blockXml(block, styles, images, notes, numbering, charts),
@@ -1168,7 +1198,7 @@ function runXml(
     return [spacesXml(options.text)];
   }
   return (options.children ?? []).map((child) => {
-    if (typeof child === "string") return `<text:span>${spacesXml(child)}</text:span>`;
+    if (typeof child === "string") return spacesXml(child);
     if ("pageBreak" in child) return "<text:soft-page-break/>";
     if ("columnBreak" in child) return "<text:line-break/>";
     if ("break" in child) return lineBreakXml(child as RunOptions);
@@ -1177,10 +1207,14 @@ function runXml(
         "text:name": (child as { bookmark: { name: string } }).bookmark.name,
       });
     }
-    if ("bookmarkEnd" in child) {
-      return xmlElement("text:bookmark-end", {
-        "text:name": notes.bookmarkNames.get(child.bookmarkEnd.id) ?? "",
+    if ("bookmarkStart" in child) {
+      return xmlElement("text:bookmark-start", {
+        "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
+        "text:name": child.bookmarkStart.name,
       });
+    }
+    if ("bookmarkEnd" in child) {
+      return bookmarkEndXml(child.bookmarkEnd.id, notes);
     }
     if ("simpleField" in child) {
       return simpleFieldXml(child.simpleField, notes);
@@ -1293,47 +1327,55 @@ function runXml(
 
 function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): string {
   const instruction = field.instruction.trim();
-  let match = /^REF\s+(?<name>[^\s]+)(?:\s+(?<switch>\\[a-zA-Z]))?$/.exec(instruction);
-  if (match) {
+  const argument = decodeFieldToken(instruction, instruction.indexOf(" ") + 1);
+  const remainder = instruction.slice(argument.next).trim();
+  if (instruction.startsWith("REF ")) {
+    if (odfReferenceFormat(remainder) === undefined && remainder !== "") {
+      throw unsupportedField(instruction);
+    }
     return bookmarkReferenceXml({
-      name: decodeFieldArgument(match.groups?.name ?? ""),
-      referenceFormat: odfReferenceFormat(match.groups?.switch),
+      name: argument.value,
+      referenceFormat: odfReferenceFormat(remainder),
     });
   }
-  match = /^SEQ\s+(?<name>[^\s]+?)(?:\s*=\s*(?<formula>[\s\S]+))?$/.exec(instruction);
-  if (match) {
-    notes.sequenceNames.add(decodeFieldArgument(match.groups?.name ?? ""));
+  let formula: string | undefined;
+  if (instruction.startsWith("SEQ ")) {
+    if (remainder && !remainder.startsWith("=")) throw unsupportedField(instruction);
+    if (remainder) formula = remainder.slice(1).trim();
+    notes.sequenceNames.add(argument.value);
     return sequenceXml({
-      name: decodeFieldArgument(match.groups?.name ?? ""),
-      formula: match.groups?.formula,
+      name: argument.value,
+      formula,
       display: field.cachedValue,
     });
   }
-  match = /^STYLEREF\s+(?<level>[1-9])\s+\\n$/.exec(instruction);
-  if (match) {
+  if (instruction.startsWith("STYLEREF ")) {
+    const match = /^STYLEREF\s+(?<level>[1-9])\s+\\n$/.exec(instruction);
+    if (!match) throw unsupportedField(instruction);
     return chapterXml({
       display: field.cachedValue,
       outlineLevel: Number(match.groups?.level),
     });
   }
-  match = /^VARIABLE\s+(?<name>[^\s]+?)(?:\s*=\s*(?<formula>[\s\S]+))?$/.exec(instruction);
-  if (match) {
-    const name = decodeFieldArgument(match.groups?.name ?? "");
+  if (instruction.startsWith("VARIABLE ")) {
+    if (remainder && !remainder.startsWith("=")) throw unsupportedField(instruction);
+    if (remainder) formula = remainder.slice(1).trim();
     const valueType = Number.isFinite(Number(field.cachedValue)) ? "float" : "string";
-    notes.variableTypes.set(name, valueType);
+    notes.variableTypes.set(argument.value, valueType);
     return variableSetXml({
-      name,
+      name: argument.value,
       valueType,
       value: field.cachedValue,
       display: field.cachedValue,
-      formula: match.groups?.formula,
+      formula,
     });
   }
-  match = /^IF\s+(?<condition>[\s\S]+)\s+"(?<content>[^"]*)"\s+""$/.exec(instruction);
-  if (match) {
+  if (instruction.startsWith("IF ")) {
+    const match = /^"(?<content>(?:[^\\"]|\\[\s\S])*)"\s+""$/.exec(remainder);
+    if (!match) throw unsupportedField(instruction);
     return hiddenTextXml({
-      condition: decodeFieldArgument(match.groups?.condition ?? ""),
-      content: match.groups?.content ?? "",
+      condition: argument.value,
+      content: decodeFieldArgument(match.groups?.content ?? ""),
       hidden: field.cachedValue === undefined ? true : undefined,
     });
   }
@@ -1345,13 +1387,41 @@ function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): strin
       display: field.cachedValue,
     });
   }
-  match = /^CITATION\s+(?<type>[^\s]+)$/.exec(instruction);
-  if (match)
-    return bibliographyMarkXml(
-      decodeFieldArgument(match.groups?.type ?? "custom"),
-      field.cachedValue,
-    );
-  throw new OdtParseError(
+  if (instruction.startsWith("CITATION ")) {
+    if (remainder) throw unsupportedField(instruction);
+    return bibliographyMarkXml(argument.value, field.cachedValue);
+  }
+  throw unsupportedField(instruction);
+}
+
+function decodeFieldArgument(value: string): string {
+  return value.replace(/\\([\\"])/g, "$1");
+}
+
+function decodeFieldToken(instruction: string, start: number): { value: string; next: number } {
+  let index = start;
+  let value = "";
+  while (index < instruction.length) {
+    const character = instruction[index];
+    if (character === undefined) break;
+    if (character === "\\" && index + 1 < instruction.length) {
+      const next = instruction[index + 1]!;
+      if (next === "\\" || next === '"' || /\s/.test(next)) {
+        value += next;
+        index += 2;
+        continue;
+      }
+      break;
+    }
+    if (/\s/.test(character)) break;
+    value += character;
+    index += 1;
+  }
+  return { value, next: index };
+}
+
+function unsupportedField(instruction: string): OdtParseError {
+  return new OdtParseError(
     `content.xml: field instruction has no ODT mapping: ${instruction}`,
     "content.xml",
     "/office:document-content/office:body/office:text",
@@ -1360,8 +1430,14 @@ function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext): strin
   );
 }
 
-function decodeFieldArgument(value: string): string {
-  return value.replace(/\\([\\"])/g, "$1");
+function orphanBookmarkEnd(id: number): OdtParseError {
+  return new OdtParseError(
+    `content.xml: bookmark end ${id} has no canonical bookmark start`,
+    "content.xml",
+    "/office:document-content/office:body/office:text/text:bookmark-end",
+    "text:bookmark-end",
+    "no canonical bookmark start",
+  );
 }
 
 function odfReferenceFormat(fieldSwitch: string | undefined): string | undefined {
@@ -1571,6 +1647,12 @@ function bookmarkReferenceXml(value: { name: string; referenceFormat?: string })
     },
     [escapeText(value.name)],
   );
+}
+
+function bookmarkEndXml(id: number, notes: NotesContext): string {
+  const name = notes.bookmarkNames.get(id);
+  if (!name) throw orphanBookmarkEnd(id);
+  return xmlElement("text:bookmark-end", { "text:name": name });
 }
 
 function chapterXml(value: { display?: string; outlineLevel?: number }): string {
@@ -2622,7 +2704,10 @@ function hiddenTextField(value: ReturnType<typeof parseHiddenText>): {
   }
   return {
     simpleField: {
-      instruction: `IF ${encodeFieldArgument(value.condition)} "${value.content}" ""`,
+      instruction: `IF ${encodeFieldArgument(value.condition)} "${value.content.replace(
+        /([\\"])/g,
+        "\\$1",
+      )}" ""`,
       cachedValue: value.hidden ? undefined : value.content,
     },
   };

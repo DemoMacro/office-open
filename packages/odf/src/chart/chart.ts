@@ -6,27 +6,9 @@ import type {
   ScatterSeriesData,
   ShapePropertiesOptions,
 } from "@office-open/core";
-import {
-  attributeString,
-  childNamed,
-  childrenNamed,
-  escapeText,
-  generateOcf,
-  metaXml,
-  ODF_NAMESPACES,
-  parseMeta,
-  parseOdfNode,
-  parseOdfNodes,
-  readOcf,
-  readXml,
-  textOf,
-  xmlElement,
-  type OdfFiles,
-  type OdfXmlNode,
-} from "@office-open/ocf";
 import { parse, type Element } from "@office-open/xml";
 
-import { OdfSchemaError } from "./error";
+import { generateOcf, readOcf, readXml, type OdfFiles } from "../container/package";
 import {
   graphicFill,
   graphicOutline,
@@ -34,7 +16,18 @@ import {
   parseGraphicStyles,
   pushShapeStyle,
   type GraphicStyle,
-} from "./graphic-style";
+} from "../drawing/graphic-style";
+import { OdfSchemaError } from "../errors";
+import { metaXml, ODF_NAMESPACES, parseMeta } from "../meta/core-properties";
+import { parseOdfNode, parseOdfNodes, type OdfXmlNode } from "../runtime/odf-node";
+import {
+  attributeString,
+  childNamed,
+  childrenNamed,
+  escapeText,
+  textOf,
+  xmlElement,
+} from "../runtime/xml";
 
 const MIME = "application/vnd.oasis.opendocument.chart";
 export const CHART_MIME = MIME;

@@ -40,6 +40,7 @@
     "models:generate": "tsx scripts/xsd-content-model.ts",
     "models:check": "tsx scripts/xsd-content-model.ts --check",
     "containers:check": "tsx scripts/check-containers.ts",
+    "outputs:check": "tsx scripts/check-package-outputs.ts",
     "corpus:check": "tsx scripts/corpus-check.ts",
     "legacy:corpus": "tsx scripts/legacy-corpus-check.ts",
     "cross-format:check": "tsx scripts/cross-format-check.ts",

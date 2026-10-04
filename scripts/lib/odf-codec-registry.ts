@@ -1,10 +1,10 @@
-import { MANIFEST_SCHEMA_ELEMENTS } from "../../packages/ocf/src/manifest-model";
-import { DATABASE_SCHEMA_ELEMENTS } from "../../packages/odf-schema/src/db";
-import { FORM_SCHEMA_ELEMENTS } from "../../packages/odf-schema/src/forms";
 import {
+  DATABASE_SCHEMA_ELEMENTS,
   DRAWING_VOCABULARY_SCHEMA_ELEMENTS,
+  FORM_SCHEMA_ELEMENTS,
   MATH_SCHEMA_ELEMENTS,
-} from "../../packages/odf-schema/src/xml-vocabulary";
+  MANIFEST_SCHEMA_ELEMENTS,
+} from "../../packages/odf/src/index";
 import { rngElementDescriptors } from "./odf-rng-capabilities";
 
 const ODF_SCHEMA = ["odf-schemas/OpenDocument-v1.3-schema.rng"] as const;
@@ -33,7 +33,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "manifest",
     classification: "subdocument",
-    owner: { package: "ocf", module: "src/manifest-model.ts", export: "parseManifestOptions" },
+    owner: { package: "odf", module: "src/container/manifest.ts", export: "parseManifestOptions" },
     schemaPrefixes: ["manifest"],
     schemaElements: MANIFEST_SCHEMA_ELEMENTS,
     roundTrip: ["manifestOptionsXml", "parseManifestOptions"],
@@ -47,8 +47,8 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
     id: "drawing-vocabulary",
     classification: "subdocument",
     owner: {
-      package: "odf-schema",
-      module: "src/xml-vocabulary.ts",
+      package: "odf",
+      module: "src/runtime/xml-vocabulary.ts",
       export: "parseDrawingVocabulary",
     },
     schemaPrefixes: ["dr3d", "math", "svg"],
@@ -123,7 +123,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "chart",
     classification: "subdocument",
-    owner: { package: "odf-schema", module: "src/chart.ts", export: "parseChartDocument" },
+    owner: { package: "odf", module: "src/chart/chart.ts", export: "parseChartDocument" },
     schemaPrefixes: ["chart"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["chart"]),
     roundTrip: ["generateChartDocument", "parseChartDocument"],
@@ -134,7 +134,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "database",
     classification: "subdocument",
-    owner: { package: "odf-schema", module: "src/db.ts", export: "parseDatabaseDocument" },
+    owner: { package: "odf", module: "src/database/database.ts", export: "parseDatabaseDocument" },
     schemaPrefixes: ["db"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["db"]),
     roundTrip: ["generateDatabaseDocument", "parseDatabaseDocument"],
@@ -145,7 +145,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "forms-and-xforms",
     classification: "subdocument",
-    owner: { package: "odf-schema", module: "src/forms.ts", export: "parseOfficeForms" },
+    owner: { package: "odf", module: "src/forms/forms.ts", export: "parseOfficeForms" },
     schemaPrefixes: ["form", "script", "xforms"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, ["form", "script", "xforms"]),
     roundTrip: ["officeFormsXml", "parseOfficeForms"],

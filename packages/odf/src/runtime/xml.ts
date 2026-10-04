@@ -3,6 +3,10 @@ import type { Element } from "@office-open/xml";
 
 export type XmlAttributes = Record<string, string | number | boolean | undefined>;
 
+export function escapeText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export function xmlElement(
   name: string,
   attributes?: XmlAttributes,

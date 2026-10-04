@@ -143,7 +143,6 @@ import { parse, stringify } from "office-open/xml";
 | `office-open/xls`          | @office-open/xls                         |
 | `office-open/ppt`          | @office-open/ppt                         |
 | `office-open/rtf`          | @office-open/rtf                         |
-| `office-open/odf`          | @office-open/odf                         |
 | `office-open/convert`      | Cross-format, CSV, and TSV conversion    |
 | `office-open/core`         | @office-open/core                        |
 | `office-open/xml`          | @office-open/xml                         |
@@ -208,7 +207,6 @@ import { parse, stringify } from "office-open/xml";
 - [@office-open/odt](https://www.npmjs.com/package/@office-open/odt) — OpenDocument Text
 - [@office-open/ods](https://www.npmjs.com/package/@office-open/ods) — OpenDocument Spreadsheet
 - [@office-open/odp](https://www.npmjs.com/package/@office-open/odp) — OpenDocument Presentation
-- [@office-open/odf](https://www.npmjs.com/package/@office-open/odf) — OpenDocument
 - [@office-open/core](https://www.npmjs.com/package/@office-open/core) — shared OOXML infrastructure
 - [@office-open/xml](https://www.npmjs.com/package/@office-open/xml) — XML parsing and serialization
 

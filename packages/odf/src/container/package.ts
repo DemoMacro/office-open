@@ -2,7 +2,7 @@ import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
-import { OcfManifestError, OcfMimeTypeError, OdfXmlError } from "./error";
+import { OcfManifestError, OcfMimeTypeError, OdfXmlError } from "../errors";
 
 const MANIFEST_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0";
 const MANIFEST_COMPATIBILITY_NS = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.3";

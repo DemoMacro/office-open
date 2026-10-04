@@ -304,7 +304,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           },
         }
       : {}),
-    ...(ctx._options.commentsIds?.length
+    ...(ctx._options.commentsIds != null
       ? {
           CommentsIds: {
             data: XML_DECL + (commentsIdsDesc.stringify(ctx._options.commentsIds, ctx) ?? ""),
@@ -312,7 +312,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           },
         }
       : {}),
-    ...(ctx._options.commentsExtensible?.length
+    ...(ctx._options.commentsExtensible != null
       ? {
           CommentsExtensible: {
             data:
