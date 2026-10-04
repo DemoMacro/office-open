@@ -1,4 +1,9 @@
-import type { DataType, EncryptedContainerOptions, TableStyleListOptions } from "@office-open/core";
+import type {
+  DataType,
+  EncryptedContainerOptions,
+  FormContainerOptions,
+  TableStyleListOptions,
+} from "@office-open/core";
 import type { ContentTypesInput } from "@office-open/core";
 import type {
   AppPropertiesOptions,
@@ -122,6 +127,8 @@ export interface SlideOptions {
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
   notes?: string | NotesSlideOptions;
+  /** Form containers anchored to this slide. */
+  forms?: FormContainerOptions[];
   /**
    * Slide transition. Structured form covers plain p:transition; a string is
    * the verbatim mc block a source emits for reader-version extensions

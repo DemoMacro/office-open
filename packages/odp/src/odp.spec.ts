@@ -13,6 +13,54 @@ describe("ODP codec", () => {
     expect(() => parseOdp(new Uint8Array([1, 2, 3]))).toThrow(OdpParseError);
   });
 
+  it("round-trips slide form containers and controls", () => {
+    const forms = [
+      {
+        name: "Responses",
+        automaticFocus: true,
+        designMode: true,
+        controls: [
+          {
+            control: "text" as const,
+            id: "name",
+            name: "Name",
+            value: "Value",
+            valueType: "string" as const,
+            maxLength: 24,
+            disabled: true,
+            tabIndex: 2,
+            automaticFocus: true,
+          },
+          { control: "checkBox" as const, id: "accepted", checked: true },
+          {
+            control: "dropDownList" as const,
+            id: "choice",
+            entries: ["One", "Two"],
+            selectedIndex: 1,
+          },
+        ],
+      },
+    ];
+    const parsed = parseOdp(generateOdp({ slides: [{ forms }] }));
+    expect(parsed.slides?.[0]?.forms).toEqual(forms);
+  });
+
+  it("rejects unknown form controls with structured errors", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"><office:body><office:presentation><draw:page><office:forms><form:form><form:unknown/></form:form></office:forms></draw:page></office:presentation></office:body></office:document-content>`;
+    let error: unknown;
+    try {
+      parseOdp(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": content,
+        }),
+      );
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdpParseError);
+    expect(error).toMatchObject({ part: "content.xml", name: "form:unknown" });
+  });
+
   it("round-trips slide charts with position, size, semantics, and order", () => {
     const parsed = parseOdp(
       generateOdp({

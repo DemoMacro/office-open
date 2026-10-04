@@ -3604,6 +3604,46 @@
       "required": ["anchors"],
       "type": "object"
     },
+    "CheckBoxControlOptions": {
+      "additionalProperties": false,
+      "description": "Checkbox form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "checked": {
+          "description": "Current checked state.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "checkBox",
+          "description": "Checkbox control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control"],
+      "type": "object"
+    },
     "ChildOrder": {
       "description": "(dgm:layoutNode `@chOrder`).",
       "enum": ["b", "t"],
@@ -4958,6 +4998,53 @@
       },
       "type": "object"
     },
+    "DropDownListControlOptions": {
+      "additionalProperties": false,
+      "description": "Dropdown form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "dropDownList",
+          "description": "Dropdown control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "entries": {
+          "description": "Selectable labels in display order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "selectedIndex": {
+          "description": "Zero-based selected entry index.",
+          "type": "number"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        }
+      },
+      "required": ["control", "entries"],
+      "type": "object"
+    },
     "DuotoneEffectOptions": {
       "additionalProperties": false,
       "description": "Options for duotone effect.",
@@ -5821,6 +5908,46 @@
         }
       },
       "type": "object"
+    },
+    "FormContainerOptions": {
+      "additionalProperties": false,
+      "description": "A named container holding one or more form controls.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "controls": {
+          "description": "Controls contained by this form.",
+          "items": {
+            "$ref": "#/definitions/FormControlOptions"
+          },
+          "type": "array"
+        },
+        "designMode": {
+          "description": "Whether controls are shown in design mode rather than active mode.",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Container name shown to form consumers.",
+          "type": "string"
+        }
+      },
+      "required": ["controls"],
+      "type": "object"
+    },
+    "FormControlOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/TextControlOptions"
+        },
+        {
+          "$ref": "#/definitions/CheckBoxControlOptions"
+        },
+        {
+          "$ref": "#/definitions/DropDownListControlOptions"
+        }
+      ]
     },
     "FormatSchemeOptions": {
       "additionalProperties": false,
@@ -11627,6 +11754,13 @@
         "ext": {
           "$ref": "#/definitions/MasterDefinition/properties/ext"
         },
+        "forms": {
+          "description": "Form containers anchored to this slide.",
+          "items": {
+            "$ref": "#/definitions/FormContainerOptions"
+          },
+          "type": "array"
+        },
         "headerFooter": {
           "$ref": "#/definitions/SlideHeaderFooterOptions"
         },
@@ -13092,6 +13226,55 @@
           "description": "EG_TextUnderlineLine — underline line. `true` = a:uLnTx (follow the text line); an OutlineOptions = a:uLn."
         }
       },
+      "type": "object"
+    },
+    "TextControlOptions": {
+      "additionalProperties": false,
+      "description": "Text-entry form control.",
+      "properties": {
+        "automaticFocus": {
+          "description": "Whether the container requests initial keyboard focus.",
+          "type": "boolean"
+        },
+        "control": {
+          "const": "text",
+          "description": "Text-entry control discriminant.",
+          "type": "string"
+        },
+        "designMode": {
+          "$ref": "#/definitions/FormContainerOptions/properties/designMode"
+        },
+        "disabled": {
+          "description": "Whether keyboard interaction is disabled.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Stable control identifier.",
+          "type": "string"
+        },
+        "maxLength": {
+          "description": "Maximum accepted character count.",
+          "type": "number"
+        },
+        "name": {
+          "description": "User-visible control name.",
+          "type": "string"
+        },
+        "tabIndex": {
+          "description": "Tab order position.",
+          "type": "number"
+        },
+        "value": {
+          "description": "Current text value.",
+          "type": "string"
+        },
+        "valueType": {
+          "description": "Declared stored value type for the text control.",
+          "enum": ["float", "string", "date", "time"],
+          "type": "string"
+        }
+      },
+      "required": ["control"],
       "type": "object"
     },
     "TextFieldOptions": {

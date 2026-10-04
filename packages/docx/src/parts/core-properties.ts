@@ -8,7 +8,14 @@
  *
  * @module
  */
-import type { ContentTypesInput, DataType, EncryptedContainerOptions } from "@office-open/core";
+import type {
+  ContentTypesInput,
+  DataType,
+  EncryptedContainerOptions,
+  FormContainerOptions,
+  SequenceDeclarationOptions,
+  VariableDeclarationOptions,
+} from "@office-open/core";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
 import type { CommentExtensibleOptions } from "@parts/comments-extensible";
@@ -58,6 +65,12 @@ import type { WebSettingsOptions } from "./web-settings";
  */
 export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
+  /** Declared sequence names and numbering semantics used by sequence fields. */
+  sequenceDeclarations?: SequenceDeclarationOptions[];
+  /** Declared variable names and value types used by variable fields. */
+  variableDeclarations?: VariableDeclarationOptions[];
+  /** Document-level form containers independent of inline form fields. */
+  forms?: FormContainerOptions[];
   /**
    * Encrypted source (OLE2/CFB container). Round-trip only: the original
    * bytes are re-emitted unchanged, every other field stays empty (`sections:

@@ -11,6 +11,7 @@ import type {
   CustomPropertyOptions,
   DataType,
   EncryptedContainerOptions,
+  FormContainerOptions,
 } from "@office-open/core";
 import type { ThemeOptions } from "@office-open/core/theme";
 import type {
@@ -56,6 +57,8 @@ import type { MapInfoOptions } from "./xml-mapping";
 /** Root options for a .xlsx package — maps to workbook.xml plus its satellite parts. */
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
+  /** Workbook-level form containers. */
+  forms?: FormContainerOptions[];
   /**
    * Source file is an encrypted OOXML package (OLE2/CFB container). Round-trip
    * only: the original bytes are re-emitted verbatim; all other fields stay
