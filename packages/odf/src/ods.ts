@@ -217,6 +217,9 @@ function borderAttributes(border: BorderSideOptions | undefined): XmlAttributes 
     "fo:border-bottom": odfBorder(border?.bottom),
     "fo:border-left": odfBorder(border?.left),
     "fo:border-right": odfBorder(border?.right),
+    // xlsx diagonal flags map onto ODF's two named diagonal directions.
+    "style:diagonal-tl-br": border?.diagonalDown ? odfBorder(border.diagonal) : undefined,
+    "style:diagonal-bl-tr": border?.diagonalUp ? odfBorder(border.diagonal) : undefined,
   };
   return Object.values(attributes).some((value) => value !== undefined) ? attributes : {};
 }
@@ -448,6 +451,13 @@ function parseNumberStyles(container: Element | undefined): Map<string, StyleOpt
       left: parseBorder(attributeString(cellProps, "fo:border-left")),
       right: parseBorder(attributeString(cellProps, "fo:border-right")),
     };
+    const diagonalDown = parseBorder(attributeString(cellProps, "style:diagonal-tl-br"));
+    const diagonalUp = parseBorder(attributeString(cellProps, "style:diagonal-bl-tr"));
+    if (diagonalDown !== undefined || diagonalUp !== undefined) {
+      border.diagonal = diagonalDown ?? diagonalUp;
+      border.diagonalDown = diagonalDown !== undefined || undefined;
+      border.diagonalUp = diagonalUp !== undefined || undefined;
+    }
     if (Object.values(border).some((side) => side !== undefined)) options.border = border;
     const vertical = attributeString(cellProps, "style:vertical-align");
     const wrapText = attributeString(cellProps, "fo:wrap-option") === "wrap";

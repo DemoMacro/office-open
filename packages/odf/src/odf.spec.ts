@@ -642,6 +642,39 @@ describe("ODS mapping", () => {
       },
     });
   });
+
+  it("round-trips diagonal cell borders through ODF diagonal styles", () => {
+    const source: OdsOptions = {
+      worksheets: [
+        {
+          rows: [
+            {
+              cells: [
+                {
+                  value: "Diagonal",
+                  style: {
+                    border: {
+                      diagonal: { style: "thin", color: "7030A0" },
+                      diagonalDown: true,
+                      diagonalUp: true,
+                    },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOds(generateOds(source));
+    expect(parsed.worksheets![0]!.rows![0]!.cells![0]!.style).toEqual({
+      border: {
+        diagonal: { style: "thin", color: "7030A0" },
+        diagonalDown: true,
+        diagonalUp: true,
+      },
+    });
+  });
 });
 
 describe("ODP mapping", () => {
