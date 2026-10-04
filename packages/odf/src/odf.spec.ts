@@ -1,7 +1,7 @@
-import type { DocumentOptions } from "@office-open/docx";
 import { strFromU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { ChartDocumentOptions } from "./index";
 import {
   generateChartDocument,
   generateOdp,
@@ -12,10 +12,11 @@ import {
   parseOds,
   parseOdt,
 } from "./index";
-import type { ChartChartOptions } from "./index";
-import { type OdpOptions } from "./odp";
-import { type OdsOptions } from "./ods";
-import type { OdtTextSectionOptions } from "./odt";
+
+type ChartSpaceOptions = ChartDocumentOptions["chart"];
+type DocumentOptions = ReturnType<typeof parseOdt>;
+type PresentationOptions = ReturnType<typeof parseOdp>;
+type WorkbookOptions = ReturnType<typeof parseOds>;
 
 describe("ODF package contract", () => {
   it("stores an uncompressed leading mimetype and a complete manifest", () => {
@@ -69,28 +70,6 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
-  it("round-trips typed text sections", () => {
-    const sections: OdtTextSectionOptions[] = [
-      {
-        name: "Notes",
-        styleName: "S1",
-        protected: true,
-        children: [{ paragraph: { text: "Inside" } }],
-      },
-    ];
-    const parsed = parseOdt(
-      generateOdt({
-        sections: [{ children: [{ paragraph: "Before" }] }],
-        textSections: sections,
-      }),
-    );
-    expect(parsed.sections![0]!.children).toEqual([
-      { paragraph: { text: "Before" } },
-      { paragraph: { text: "Inside" } },
-    ]);
-    expect(parsed.textSections).toEqual(sections);
-  });
-
   it("round-trips inline pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: DocumentOptions = {
@@ -703,51 +682,13 @@ describe("ODT mapping", () => {
 });
 
 describe("ODS mapping", () => {
-  it("round-trips typed chart subdocument structure", () => {
-    const chart: ChartChartOptions = {
-      class: "chart:bar",
-      width: 5760000,
-      height: 3240000,
-      href: "..",
-      styleName: "ch1",
-      title: { text: "Chart title", x: 0, y: 0, width: 5760000, height: 448056 },
-      legend: {
-        position: "end",
-        x: 5402208,
-        y: 1512360,
-        expansion: "high",
-        styleName: "ch2",
-      },
-      plotArea: {
-        x: 115200,
-        y: 64800,
-        width: 5172120,
-        height: 3110400,
-        styleName: "ch3",
-        cellRange: "Sheet1.A1:Sheet1.A2",
-        dataSourceHasLabels: "row",
-        axes: [
-          { dimension: "x", name: "primary-x", styleName: "ch4" },
-          {
-            dimension: "y",
-            name: "primary-y",
-            styleName: "ch5",
-            grids: [{ class: "major", styleName: "ch6" }],
-          },
-        ],
-        series: [
-          {
-            values: "Sheet1.A2:Sheet1.A2",
-            label: "Sheet1.A1:Sheet1.A1",
-            class: "chart:bar",
-            styleName: "ch7",
-            domains: ["Sheet1.A1:Sheet1.A1"],
-            dataPoints: [{ repeated: 1 }],
-          },
-        ],
-        wall: { styleName: "ch8" },
-        floor: { styleName: "ch9" },
-      },
+  it("round-trips chart subdocuments through the shared chart model", () => {
+    const chart: ChartSpaceOptions = {
+      type: "column",
+      title: "Chart title",
+      categories: ["First", "Second"],
+      series: [{ name: "Sales", values: [1, 2] }],
+      axes: [{ kind: "category" }, { kind: "value", majorGridlines: true }],
     };
     const parsed = parseChartDocument(generateChartDocument({ title: "Chart", chart })).chart!;
     expect(parsed).toMatchObject(chart);
@@ -821,7 +762,7 @@ describe("ODS mapping", () => {
   });
 
   it("round-trips cell fonts and fills through table-cell styles", () => {
-    const source: OdsOptions = {
+    const source: WorkbookOptions = {
       worksheets: [
         {
           rows: [
@@ -848,7 +789,7 @@ describe("ODS mapping", () => {
   });
 
   it("round-trips cell alignment through style properties", () => {
-    const source: OdsOptions = {
+    const source: WorkbookOptions = {
       worksheets: [
         {
           rows: [
@@ -873,7 +814,7 @@ describe("ODS mapping", () => {
   });
 
   it("round-trips cell borders through border shorthand styles", () => {
-    const source: OdsOptions = {
+    const source: WorkbookOptions = {
       worksheets: [
         {
           rows: [
@@ -906,7 +847,7 @@ describe("ODS mapping", () => {
   });
 
   it("round-trips diagonal cell borders through ODF diagonal styles", () => {
-    const source: OdsOptions = {
+    const source: WorkbookOptions = {
       worksheets: [
         {
           rows: [
@@ -989,7 +930,7 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips slide tables through table:table", () => {
-    const source: OdpOptions = {
+    const source: PresentationOptions = {
       slides: [
         {
           children: [
@@ -1043,7 +984,7 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips slide custom shapes through draw:custom-shape", () => {
-    const source: OdpOptions = {
+    const source: PresentationOptions = {
       slides: [
         {
           children: [
@@ -1079,7 +1020,7 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips embedded charts through draw:object subdocuments", () => {
-    const source = {
+    const source: DocumentOptions = {
       sections: [
         {
           children: [
@@ -1088,11 +1029,10 @@ describe("ODP mapping", () => {
                 children: [
                   {
                     chart: {
-                      class: "chart:bar",
-                      width: 3657600,
-                      height: 2743200,
-                      title: { text: "Chart title" },
-                      plotArea: {},
+                      type: "column",
+                      title: "Chart title",
+                      series: [{ name: "Sales", values: [1, 2] }],
+                      transformation: { width: 3657600, height: 2743200 },
                     },
                   },
                 ],
@@ -1102,7 +1042,7 @@ describe("ODP mapping", () => {
         },
       ],
     };
-    const parsed = parseOdt(generateOdt(source as DocumentOptions));
+    const parsed = parseOdt(generateOdt(source));
     const children = parsed.sections[0]!.children;
     const first = children[0]!;
     if (!("paragraph" in first)) throw new Error("Expected a chart paragraph");
@@ -1114,18 +1054,17 @@ describe("ODP mapping", () => {
       !("chart" in chart) ||
       typeof chart.chart !== "object" ||
       chart.chart === null ||
-      !("class" in chart.chart)
+      !("type" in chart.chart)
     )
       throw new Error("Expected an ODF chart run");
-    const chartOptions = chart.chart as unknown as ChartChartOptions;
-    expect(chartOptions.class).toBe("chart:bar");
-    expect(chartOptions.width).toBe(3657600);
-    expect(chartOptions.title).toMatchObject({ text: "Chart title" });
+    expect(chart.chart.type).toBe("column");
+    expect(chart.chart.transformation.width).toBe(3657600);
+    expect(chart.chart.title).toBe("Chart title");
   });
 
   it("round-trips slide pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
-    const source: OdpOptions = {
+    const source: PresentationOptions = {
       slides: [
         {
           children: [
@@ -1145,32 +1084,39 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips worksheet charts through draw:object subdocuments", () => {
-    const source: OdsOptions = {
-      worksheets: [{ name: "Data", rows: [{ cells: [{ value: 1 }] }] }],
-      embeddedCharts: [
+    const source: WorkbookOptions = {
+      worksheets: [
         {
-          name: "Object 1",
-          worksheet: "Data",
-          x: 914400,
-          y: 914400,
-          width: 3657600,
-          height: 2743200,
-          chart: { class: "chart:bar", plotArea: {} },
+          name: "Data",
+          rows: [{ cells: [{ value: 1 }] }],
+          charts: [
+            {
+              name: "Object 1",
+              col: 1,
+              row: 1,
+              anchorType: "absolute",
+              absoluteX: 914400,
+              absoluteY: 914400,
+              extentCx: 3657600,
+              extentCy: 2743200,
+              type: "column",
+              series: [{ name: "Sales", values: [1] }],
+            },
+          ],
         },
       ],
     };
     const parsed = parseOds(generateOds(source));
-    const chart = parsed.embeddedCharts?.at(0);
+    const chart = parsed.worksheets?.[0]?.charts?.at(0);
     if (!chart) throw new Error("Expected an embedded ODS chart");
     expect(chart.name).toBe("Object 1");
-    expect(chart.worksheet).toBe("Data");
-    expect(chart.x).toBe(914400);
-    expect(chart.width).toBe(3657600);
-    expect(chart.chart.class).toBe("chart:bar");
+    expect(chart.absoluteX).toBe(914400);
+    expect(chart.extentCx).toBe(3657600);
+    expect(chart.type).toBe("column");
   });
 
   it("round-trips lines through draw:line", () => {
-    const source: OdpOptions = {
+    const source: PresentationOptions = {
       slides: [{ children: [{ line: { x1: 914400, y1: 914400, x2: 3657600, y2: 3657600 } }] }],
     };
     const parsed = parseOdp(generateOdp(source));
@@ -1181,7 +1127,7 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips groups through draw:g", () => {
-    const source: OdpOptions = {
+    const source: PresentationOptions = {
       slides: [
         {
           children: [
@@ -1206,14 +1152,21 @@ describe("ODP mapping", () => {
     expect(nested.line.x2).toBe(1828800);
   });
 
-  it("preserves chart frames verbatim through rawXml", () => {
-    const source: OdpOptions = {
+  it("round-trips slide chart frames through chart subdocuments", () => {
+    const source: PresentationOptions = {
       slides: [
         {
           children: [
             {
-              rawXml:
-                '<draw:frame svg:x="1cm" svg:y="1cm"><draw:object xlink:href="./Object 1"/></draw:frame>',
+              chart: {
+                name: "Object 1",
+                type: "column",
+                x: 914400,
+                y: 914400,
+                width: 3657600,
+                height: 2743200,
+                series: [{ name: "Sales", values: [1] }],
+              },
             },
           ],
         },
@@ -1221,11 +1174,13 @@ describe("ODP mapping", () => {
     };
     const parsed = parseOdp(generateOdp(source));
     const child = parsed.slides![0]!.children![0]!;
-    if (!("rawXml" in child)) throw new Error("Expected rawXml preservation");
-    expect(child.rawXml).toContain("draw:object");
+    if (!("chart" in child)) throw new Error("Expected a chart frame");
+    expect(child.chart.name).toBe("Object 1");
+    expect(child.chart.x).toBe(914400);
+    expect(child.chart.type).toBe("column");
   });
 
-  it("flattens text sections in document order", () => {
+  it("preserves text sections and document order", () => {
     const data = generateOdt({
       sections: [{ children: [{ paragraph: "Before" }, { paragraph: "After" }] }],
     });
@@ -1237,16 +1192,15 @@ describe("ODP mapping", () => {
       ),
     );
     const parsed = parseOdt(zipSync(entries));
-    expect(parsed.odfExtensions).toHaveLength(0);
-    const texts = parsed.sections[0]!.children.map((child) =>
-      "paragraph" in child && typeof child.paragraph === "object"
-        ? child.paragraph.text
-        : "paragraph" in child
-          ? typeof child.paragraph === "string"
-            ? child.paragraph
-            : undefined
-          : undefined,
-    );
-    expect(texts).toEqual(["Before", "Inside", "After"]);
+    expect(parsed.sections[0]!.children).toEqual([
+      { paragraph: { text: "Before" } },
+      {
+        sdt: {
+          properties: { alias: "S1" },
+          children: [{ paragraph: { text: "Inside" } }],
+        },
+      },
+      { paragraph: { text: "After" } },
+    ]);
   });
 });

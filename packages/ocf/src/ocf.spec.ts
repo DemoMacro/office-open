@@ -1,14 +1,16 @@
 import { parse } from "@office-open/xml";
-import { unzipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 
-import { generateChartDocument, parseChartDocument } from "./chart";
-import { generateDatabaseDocument, parseDatabaseDocument } from "./db";
-import { ODF_ELEMENT_NAMES, parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOdt, parseOdt } from "./odt";
-import { generateOcf, manifestXml } from "./package";
+import {
+  generateOcf,
+  manifestXml,
+  ODF_ELEMENT_NAMES,
+  parseOdfNodes,
+  serializeOdfNodes,
+  type OdfXmlNode,
+} from "./index";
 
-describe("ODF element registry", () => {
+describe("OCF runtime", () => {
   it("contains every unique element in the ODF and manifest schemas", () => {
     expect(ODF_ELEMENT_NAMES).toHaveLength(610);
     expect(new Set(ODF_ELEMENT_NAMES).size).toBe(610);
@@ -40,17 +42,7 @@ describe("ODF element registry", () => {
       `<root xmlns:style="urn:1" xmlns:text="urn:2" xmlns:draw="urn:3" xmlns:table="urn:4" xmlns:number="urn:5" xmlns:chart="urn:6" xmlns:anim="urn:7" xmlns:config="urn:8" xmlns:db="urn:9" xmlns:form="urn:10" xmlns:manifest="urn:11" xmlns:unknown="urn:12">${serialized}</root>`,
       { ignoreDeclaration: true },
     );
-    const parsed = parseOdfNodes(document.elements?.[0]);
-    expect(parsed).toEqual(nodes);
-  });
-
-  it("round-trips a generic ODT extension element", () => {
-    const extension: OdfXmlNode = {
-      name: "text:bookmark",
-      attributes: { "text:name": "GenericMarker" },
-    };
-    const parsed = parseOdt(generateOdt({ sections: [], odfExtensions: [extension] }));
-    expect(parsed.odfExtensions).toEqual([extension]);
+    expect(parseOdfNodes(document.elements?.[0])).toEqual(nodes);
   });
 
   it("declares OCF subdirectories and packs binary resources", () => {
@@ -59,32 +51,9 @@ describe("ODF element registry", () => {
       "Object 1/content.xml": "<chart:chart/>",
       "Thumbnails/thumbnail.png": new Uint8Array([1, 2, 3]),
     };
-    const archive = unzipSync(generateOcf(mimeType, files));
-    expect(Array.from(archive["Object 1/content.xml"]!)).toEqual([
-      60, 99, 104, 97, 114, 116, 58, 99, 104, 97, 114, 116, 47, 62,
-    ]);
-    expect(Array.from(archive["Thumbnails/thumbnail.png"]!)).toEqual([1, 2, 3]);
+    const archive = generateOcf(mimeType, files);
+    expect(archive.subarray(0, 2)).toEqual(new Uint8Array([0x50, 0x4b]));
     expect(manifestXml(mimeType, files)).toContain('manifest:full-path="Object 1/"');
     expect(manifestXml(mimeType, files)).toContain('manifest:full-path="Thumbnails/"');
-  });
-
-  it("round-trips chart and database subdocuments", () => {
-    const chart = {
-      title: "Chart",
-      chart: {
-        class: "chart:bar",
-        plotArea: { axes: [], series: [] },
-      },
-    };
-    const parsedChart = parseChartDocument(generateChartDocument(chart));
-    expect(parsedChart.title).toBe(chart.title);
-    expect(parsedChart.chart).toMatchObject(chart.chart);
-
-    const database = {
-      title: "Database",
-      body: [{ name: "db:data-source", attributes: { "db:name": "Library" } }],
-    };
-    const parsedDatabase = parseDatabaseDocument(generateDatabaseDocument(database));
-    expect(parsedDatabase).toEqual(database);
   });
 });

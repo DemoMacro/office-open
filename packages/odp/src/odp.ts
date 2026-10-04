@@ -1,10 +1,42 @@
 import type {
+  ChartSpaceOptions,
   ParagraphDescriptorOptions,
   TextBodyOptions,
   TextRunOptions,
 } from "@office-open/core";
 import { toUint8Array, type EndpointConnectionOptions } from "@office-open/core";
+import {
+  attributeNumber,
+  attributeString,
+  childNamed,
+  childrenNamed,
+  emuToLength,
+  escapeText,
+  generateOcf,
+  lengthToEmu,
+  metaXml,
+  parseMeta,
+  readOcf,
+  readXml,
+  textOf,
+  xmlElement,
+  type OdfPackageFiles,
+} from "@office-open/ocf";
+import {
+  CHART_MIME,
+  chartBodyXml,
+  graphicFill,
+  graphicOutline,
+  OdfSchemaError,
+  parseEmbeddedCharts,
+  parseGraphicStyles,
+  PRESET_GEOMETRY_DOCX,
+  presetGeometryOdf,
+  pushShapeStyle,
+} from "@office-open/odf-schema";
+import type { GraphicStyle } from "@office-open/odf-schema";
 import type {
+  ChartOptions,
   ConnectorOptions,
   LineShapeOptions,
   PictureOptions,
@@ -16,27 +48,7 @@ import type {
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
-import {
-  graphicFill,
-  graphicOutline,
-  type GraphicStyle,
-  parseGraphicStyles,
-  pushShapeStyle,
-} from "./graphic-style";
-import { escapeText, metaXml, parseMeta } from "./meta";
-import { parseOdfNode, parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml, type OdfPackageFiles } from "./package";
-import { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./preset-geometry";
-import {
-  attributeString,
-  childNamed,
-  childrenNamed,
-  emuToLength,
-  lengthToEmu,
-  attributeNumber,
-  textOf,
-  xmlElement,
-} from "./xml";
+import { OdpParseError } from "./error";
 
 const MIME = "application/vnd.oasis.opendocument.presentation";
 const NAMESPACES = [
@@ -57,17 +69,22 @@ interface TextProperties {
   size?: number;
 }
 
-export type OdpOptions = PresentationOptions & { odfExtensions?: OdfXmlNode[] };
-
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 interface OdpImage {
   path: string;
   data: Uint8Array;
 }
 
-export function generateOdp(options: OdpOptions): Uint8Array {
+/** Embedded chart subdocument collected during generation. */
+interface OdpChart {
+  path: string;
+  chart: ChartOptions;
+}
+
+export function generateOdp(options: PresentationOptions): Uint8Array {
   const styles: string[] = [];
   const images: OdpImage[] = [];
+  const charts: OdpChart[] = [];
   const size = normalizeSize(options.size);
   const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
     xmlElement("style:page-layout-properties", {
@@ -76,22 +93,45 @@ export function generateOdp(options: OdpOptions): Uint8Array {
     }),
   ]);
   const pages = (options.slides ?? []).map((slide, index) =>
-    slideXml(slide, index + 1, styles, images),
+    slideXml(slide, index + 1, styles, images, charts),
   );
   const files: OdfPackageFiles = {
-    "content.xml": contentXml(
-      [...pages, ...serializeOdfNodes(options.odfExtensions)].join(""),
-      styles,
-    ),
+    "content.xml": contentXml(pages.join(""), styles),
     "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
-  return generateOcf(MIME, files);
+  for (const chart of charts) files[`${chart.path}/content.xml`] = chartBodyXml(chart.chart);
+  return generateOcf(
+    MIME,
+    files,
+    Object.fromEntries(charts.map((chart) => [`${chart.path}/`, CHART_MIME])),
+  );
 }
 
-export function parseOdp(data: Uint8Array): OdpOptions {
-  const { files, binaries } = readOcf(data, MIME);
+export function parseOdp(data: Uint8Array): PresentationOptions {
+  try {
+    return parseOdpPresentation(data);
+  } catch (cause) {
+    if (cause instanceof OdpParseError) throw cause;
+    if (cause instanceof OdfSchemaError) {
+      throw new OdpParseError(cause.message, cause.part, cause.path, cause.name, cause.reason, {
+        cause,
+      });
+    }
+    throw new OdpParseError(
+      cause instanceof Error ? cause.message : "Unable to parse ODP package",
+      "mimetype",
+      "/mimetype",
+      "mimetype",
+      "invalid ODP package",
+      { cause },
+    );
+  }
+}
+
+function parseOdpPresentation(data: Uint8Array): PresentationOptions {
+  const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
   const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
@@ -102,7 +142,7 @@ export function parseOdp(data: Uint8Array): OdpOptions {
   const width = lengthToEmu(attributeString(pageLayout, "fo:page-width"));
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
-  const rawNodes = parseOdfNodes(body);
+  const chartPool = parseEmbeddedCharts(manifest, files);
   return {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
@@ -113,9 +153,9 @@ export function parseOdp(data: Uint8Array): OdpOptions {
         parseColumnWidths(childNamed(content, "office:automatic-styles")),
         binaries,
         graphicStyles,
+        chartPool,
       ),
     ),
-    odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
   };
 }
 
@@ -145,8 +185,11 @@ function slideXml(
   index: number,
   styles: string[],
   images: OdpImage[],
+  charts: OdpChart[],
 ): string {
-  const frames = (slide.children ?? []).map((child) => slideChildXml(child, styles, images));
+  const frames = (slide.children ?? []).map((child) =>
+    slideChildXml(child, styles, images, charts),
+  );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
     ? xmlElement("presentation:notes", undefined, [
@@ -165,7 +208,12 @@ function slideXml(
 }
 
 /** Recursive SlideChild → ODF dispatcher shared by slides and draw:g groups. */
-function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]): string {
+function slideChildXml(
+  child: SlideChild,
+  styles: string[],
+  images: OdpImage[],
+  charts: OdpChart[],
+): string {
   if ("shape" in child) {
     if (child.shape.properties?.geometry !== undefined) return customShapeXml(child.shape, styles);
     return shapeXml(child.shape, styles);
@@ -174,13 +222,13 @@ function slideChildXml(child: SlideChild, styles: string[], images: OdpImage[]):
   if ("connector" in child) return connectorXml(child.connector);
   if ("line" in child) return lineXml(child.line);
   if ("picture" in child) return pictureFrameXml(child.picture, images);
+  if ("chart" in child) return chartFrameXml(child.chart, charts);
   if ("group" in child)
     return xmlElement(
       "draw:g",
       { "draw:name": child.group.name },
-      child.group.children.map((nested) => slideChildXml(nested, styles, images)),
+      child.group.children.map((nested) => slideChildXml(nested, styles, images, charts)),
     );
-  if ("rawXml" in child) return child.rawXml;
   return "";
 }
 
@@ -303,6 +351,30 @@ function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): string {
   );
 }
 
+/** Slide chart renders as a positioned draw:frame + embedded chart object. */
+function chartFrameXml(chart: ChartOptions, charts: OdpChart[]): string {
+  const path = `Object ${charts.length + 1}`;
+  charts.push({ path, chart });
+  return xmlElement(
+    "draw:frame",
+    {
+      "draw:name": chart.name,
+      "svg:x": toOdfLength(chart.x),
+      "svg:y": toOdfLength(chart.y),
+      "svg:width": toOdfLength(chart.width),
+      "svg:height": toOdfLength(chart.height),
+    },
+    [
+      xmlElement("draw:object", {
+        "xlink:href": `./${path}`,
+        "xlink:type": "simple",
+        "xlink:show": "embed",
+        "xlink:actuate": "onLoad",
+      }),
+    ],
+  );
+}
+
 function textProperties(run: TextRunOptions): TextProperties {
   return {
     bold: run.bold,
@@ -334,6 +406,7 @@ function parseSlide(
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
   graphicStyles: Map<string, GraphicStyle>,
+  chartPool: Map<string, ChartSpaceOptions>,
 ): SlideOptions {
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
@@ -344,18 +417,28 @@ function parseSlide(
     children:
       page.elements?.flatMap((child): SlideChild[] => {
         if (child.name === "draw:frame") {
+          const chart = parseChartFrame(child, chartPool);
+          if (chart) return [chart];
           const picture = parsePictureFrame(child, binaries);
           if (picture) return [picture];
           if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
-          return [parseUnknownSlideChild(child)];
+          throw unknownSlideChild(
+            child,
+            "/office:document-content/office:body/office:presentation/draw:page",
+          );
         }
         if (child.name === "draw:custom-shape")
           return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
         if (child.name === "draw:line") return [parseLine(child)];
-        if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
+        if (child.name === "draw:g")
+          return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-        if (child.name !== "presentation:notes") return [parseUnknownSlideChild(child)];
+        if (child.name !== "presentation:notes")
+          throw unknownSlideChild(
+            child,
+            "/office:document-content/office:body/office:presentation/draw:page",
+          );
         return [];
       }) ?? [],
     ...(notesText ? { notes: notesText } : {}),
@@ -533,19 +616,23 @@ function parseGroup(
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
+  chartPool: Map<string, ChartSpaceOptions>,
 ): SlideChild[] {
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
     if (child.name === "draw:frame") {
+      const chart = parseChartFrame(child, chartPool);
+      if (chart) return [chart];
       const picture = parsePictureFrame(child, binaries);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
-      return [parseUnknownSlideChild(child)];
+      throw unknownSlideChild(child, "/draw:g");
     }
     if (child.name === "draw:line") return [parseLine(child)];
     if (child.name === "draw:connector") return [parseConnector(child)];
-    if (child.name === "draw:g") return parseGroup(child, textStyles, columnWidths, binaries);
+    if (child.name === "draw:g")
+      return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
-    return [parseUnknownSlideChild(child)];
+    throw unknownSlideChild(child, "/draw:g");
   });
   return [
     {
@@ -557,11 +644,61 @@ function parseGroup(
   ];
 }
 
-/** Preserves unrecognized slide children verbatim instead of dropping them. */
-function parseUnknownSlideChild(element: Element): SlideChild {
-  const node = parseOdfNode(element);
-  if (!node) return { rawXml: "" };
-  return { rawXml: serializeOdfNodes([node]).join("") };
+/** Rejects unrecognized slide content instead of emitting generic XML. */
+function unknownSlideChild(element: Element, parentPath: string): OdpParseError {
+  const name = element.name ?? "(unknown)";
+  const path = `${parentPath}/${name}`;
+  const reason = "element has no canonical PresentationOptions mapping";
+  return new OdpParseError(
+    `content.xml: ${path}: ${name}: ${reason}`,
+    "content.xml",
+    path,
+    name,
+    reason,
+  );
+}
+
+/** Parses a draw:frame + embedded chart subdocument back to a slide chart. */
+function parseChartFrame(
+  frame: Element,
+  chartPool: Map<string, ChartSpaceOptions>,
+): { chart: ChartOptions } | undefined {
+  const object = childNamed(frame, "draw:object");
+  if (!object) return undefined;
+  const href = attributeString(object, "xlink:href")?.replace(/^\.\//, "").replace(/\/$/, "");
+  const name = attributeString(frame, "draw:name") ?? href;
+  const path = `/draw:frame[@draw:name="${name ?? ""}"]/draw:object`;
+  if (!href || !name) {
+    const reason = "chart frame has no object reference";
+    throw new OdpParseError(
+      `content.xml: ${path}: draw:object: ${reason}`,
+      "content.xml",
+      path,
+      "draw:object",
+      reason,
+    );
+  }
+  const chart = chartPool.get(href);
+  if (!chart) {
+    const reason = "referenced chart subdocument is missing";
+    throw new OdpParseError(
+      `content.xml: ${path}: ${href}: ${reason}`,
+      "content.xml",
+      path,
+      href,
+      reason,
+    );
+  }
+  return {
+    chart: {
+      ...chart,
+      name,
+      x: lengthToEmu(attributeString(frame, "svg:x")),
+      y: lengthToEmu(attributeString(frame, "svg:y")),
+      width: lengthToEmu(attributeString(frame, "svg:width")),
+      height: lengthToEmu(attributeString(frame, "svg:height")),
+    },
+  };
 }
 
 /** Reads a draw:{start,end}-shape/-glue-point pair as a glued endpoint. */
@@ -626,6 +763,8 @@ function parseParagraph(
         text: textOf(child),
         ...textStyles.get(attributeString(child, "text:style-name") ?? ""),
       });
+    } else if (child.name) {
+      throw unknownSlideChild(child, `/${paragraph.name ?? "text:p"}`);
     }
   }
   if (children.length === 1 && typeof children[0] === "string") return { text: children[0] };

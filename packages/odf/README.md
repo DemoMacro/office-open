@@ -9,14 +9,18 @@
 ## Features
 
 - 📄 **Text Documents** — Generate and parse `.odt` paragraphs, headings, rich text, and tables
-- 📊 **Spreadsheets** — Generate and parse `.ods` worksheets, cells, formulas, columns, rows, and visibility
-- 📽️ **Presentations** — Generate and parse `.odp` slides, shapes, rich text, and page geometry
+- 📊 **Spreadsheets** — Generate and parse `.ods` worksheets, cells, formulas, named ranges, and absolutely anchored charts
+- 📽️ **Presentations** — Generate and parse `.odp` slides, shapes, rich text, page geometry, and embedded charts
 - 🎨 **Basic Styles** — Preserve common text, paragraph, dimension, and visibility styles
 - 📝 **Metadata** — Round-trip titles, subjects, creators, keywords, dates, categories, and revisions
 - 🧩 **Generic ODF Nodes** — Address ODF elements outside the specialized typed surface as extension nodes
 - 📦 **Low-Level Package APIs** — Read OCF manifests, package files, XML nodes, charts, and database documents
 
 The specialized ODF surface is intentionally compact today. Generic node support keeps all ODF Relax NG elements addressable for parsing and serialization; specialized typed coverage continues to expand separately.
+
+### Target Architecture
+
+The ODF surface is split by dependency direction: `@office-open/ocf` owns OCF container I/O, `@office-open/odf-schema` owns shared ODF models and generic nodes plus low-level chart/database codecs, and `@office-open/odt`, `@office-open/ods`, and `@office-open/odp` own their format APIs. Document codecs type-import only their OOXML peer and runtime-import `ocf`/`odf-schema`; peer codecs never import one another. `@office-open/odf` remains the transitional aggregate during package extraction.
 
 ## Installation
 
@@ -62,15 +66,15 @@ const parsedPresentation = parseOdp(presentation);
 
 ## API
 
-- `generateOdt(options)` / `parseOdt(data)` — ODF Text (`OdtOptions`)
-- `generateOds(options)` / `parseOds(data)` — ODF Spreadsheet (`OdsOptions`)
-- `generateOdp(options)` / `parseOdp(data)` — ODF Presentation (`OdpOptions`)
+- `generateOdt(options)` / `parseOdt(data)` — ODF Text (`DocumentOptions`)
+- `generateOds(options)` / `parseOds(data)` — ODF Spreadsheet (`WorkbookOptions`)
+- `generateOdp(options)` / `parseOdp(data)` — ODF Presentation (`PresentationOptions`)
 - `generateChartDocument(options)` / `parseChartDocument(data)` — ODF Chart (`ChartDocumentOptions`)
 - `generateDatabaseDocument(options)` / `parseDatabaseDocument(data)` — ODF Database (`DatabaseDocumentOptions`)
 - `parseOdfNode`, `parseOdfNodes`, `serializeOdfNodes`, `ODF_ELEMENT_NAMES` — generic ODF node extensions
 - `generateOcf`, `manifestXml`, `readOcf`, `readXml` — ODF container and manifest helpers
 
-The high-level models follow the corresponding office-open `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions` shapes with ODF-specific extensions. ODF packages use an uncompressed leading `mimetype` and an ODF 1.3 manifest.
+The high-level models are the corresponding office-open `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions` shapes. ODF packages use an uncompressed leading `mimetype` and an ODF 1.3 manifest.
 
 ## Documentation
 

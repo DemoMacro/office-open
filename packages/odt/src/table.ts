@@ -1,7 +1,12 @@
 import type { SectionChild, TableOptions } from "@office-open/docx";
+import {
+  attributeNumber,
+  attributeString,
+  childrenNamed,
+  lengthToEmu,
+  xmlElement,
+} from "@office-open/ocf";
 import type { Element } from "@office-open/xml";
-
-import { attributeNumber, attributeString, childrenNamed, lengthToEmu, xmlElement } from "./xml";
 
 /** Serializes a docx table to table:table XML shared by ODT and ODP bodies. */
 export function tableXml(
