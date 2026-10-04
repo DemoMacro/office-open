@@ -26,6 +26,8 @@ import { parsePresentation as parseLegacyPresentation } from "../packages/ppt/di
 import { generatePresentation, parsePresentation } from "../packages/pptx/dist/index.mjs";
 import { parseRtf } from "../packages/rtf/dist/index.mjs";
 import { parseWorkbook as parseLegacyWorkbook } from "../packages/xls/dist/index.mjs";
+import { generateWorkbook as generateXlsxWorkbook } from "../packages/xlsx/dist/index.mjs";
+import { parseWorkbook as parseXlsxDocument } from "../packages/xlsx/dist/index.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
@@ -102,7 +104,8 @@ async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
   if (format === "doc") {
     for (const password of [undefined, ...CORPUS_PASSWORDS]) {
       try {
-        parseLegacyDocument(data, password ? { password } : undefined);
+        const options = parseLegacyDocument(data, password ? { password } : undefined);
+        parseDocument(await generateDocument(options));
         return;
       } catch (error) {
         if (
@@ -118,7 +121,11 @@ async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
   if (format === "xls") {
     for (const password of [undefined, ...CORPUS_PASSWORDS]) {
       try {
-        parseLegacyWorkbook(data, password ? { password } : undefined);
+        parseXlsxDocument(
+          await generateXlsxWorkbook(
+            parseLegacyWorkbook(data, password ? { password } : undefined),
+          ),
+        );
         return;
       } catch (error) {
         if (
