@@ -11,7 +11,9 @@ import path from "node:path";
 
 import { unzipSync } from "fflate";
 
-import { parseOdp, parseOds, parseOdt } from "../packages/odf/src";
+import { parseOdp } from "../packages/odp/src";
+import { parseOds } from "../packages/ods/src";
+import { parseOdt } from "../packages/odt/src";
 
 const decoder = new TextDecoder();
 
