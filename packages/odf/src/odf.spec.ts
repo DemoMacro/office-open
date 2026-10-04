@@ -498,6 +498,61 @@ describe("ODT mapping", () => {
     expect(footer.text).toBe("Footer text");
   });
 
+  it("round-trips heading outline numbering through text:outline-style", () => {
+    const source: DocumentOptions = {
+      numbering: {
+        abstractNumberings: [
+          {
+            reference: "Outline",
+            levels: [
+              { level: 0, format: "decimal", text: "%1.", start: 1, paragraphStyle: "Heading1" },
+              {
+                level: 1,
+                format: "lowerLetter",
+                text: "%2)",
+                start: 1,
+                paragraphStyle: "Heading2",
+              },
+            ],
+          },
+        ],
+      },
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                heading: "Heading1",
+                text: "Chapter",
+                numbering: { reference: "Outline", level: 0 },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdt(generateOdt(source));
+    const numbering = parsed.numbering?.abstractNumberings?.[0];
+    expect(numbering?.reference).toBe("Outline");
+    expect(numbering?.levels[0]).toMatchObject({
+      level: 0,
+      format: "decimal",
+      text: "%1.",
+      paragraphStyle: "Heading1",
+    });
+    expect(numbering?.levels[1]).toMatchObject({
+      level: 1,
+      format: "lowerLetter",
+      text: "%2)",
+      paragraphStyle: "Heading2",
+    });
+    const child = parsed.sections[0]!.children[0]!;
+    if (!("paragraph" in child)) throw new Error("Expected a paragraph");
+    const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+    expect(paragraph.heading).toBe("Heading1");
+    expect(paragraph.numbering).toEqual({ reference: "Outline", level: 0 });
+  });
+
   it("round-trips a line break inside a run", () => {
     const source: DocumentOptions = {
       sections: [

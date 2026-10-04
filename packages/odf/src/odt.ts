@@ -186,6 +186,7 @@ type StyleMap = Map<
 interface ParseContext {
   styles: StyleMap;
   listStyles: Map<string, boolean>;
+  outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
   textSections: OdtTextSectionOptions[];
   notes: { footnotes: NoteEntry[]; endnotes: NoteEntry[] };
@@ -205,6 +206,12 @@ type FontEntry = NonNullable<DocumentOptions["fonts"]>[number];
 type FootnoteProperties = NonNullable<
   NonNullable<DocumentOptions["settings"]>["footnoteProperties"]
 >;
+
+type AbstractNumbering = NonNullable<
+  NonNullable<DocumentOptions["numbering"]>["abstractNumberings"]
+>[number];
+
+type NumberingLevel = AbstractNumbering["levels"][number];
 
 type EndnoteProperties = NonNullable<NonNullable<DocumentOptions["settings"]>["endnoteProperties"]>;
 
@@ -254,7 +261,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   ].join("");
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
-    "styles.xml": documentStylesXml(options.sections[0], options.settings),
+    "styles.xml": documentStylesXml(options.sections[0], options.settings, options.numbering),
     "meta.xml": metaXml(options),
   };
   for (const image of images) files[image.path] = image.data;
@@ -319,6 +326,7 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
+    outline: parseOutlineStyle(files),
     binaries,
     textSections: [],
     notes: { footnotes: [], endnotes: [] },
@@ -339,6 +347,7 @@ export function parseOdt(data: Uint8Array): OdtOptions {
     parseFontFace,
   );
   if (fonts.length > 0) result.fonts = fonts;
+  if (context.outline) result.numbering = { abstractNumberings: [context.outline] };
   const notesConfiguration = parseNotesConfiguration(files);
   if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
     result.settings = { ...result.settings, ...notesConfiguration };
@@ -384,6 +393,7 @@ function parseFontFace(element: Element): FontEntry {
 function documentStylesXml(
   section: SectionOptions | undefined,
   settings: DocumentOptions["settings"],
+  numbering: DocumentOptions["numbering"],
 ): string {
   const properties = section?.properties;
   const pageSize = typeof properties?.pageSize === "object" ? properties.pageSize : undefined;
@@ -407,8 +417,70 @@ function documentStylesXml(
   const masterStyles = needsMaster
     ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
     : "";
-  const notes = notesConfigurationXml(settings);
+  const notes = notesConfigurationXml(settings) + outlineStyleXml(numbering);
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+/** Heading-linked abstract numbering renders as text:outline-style. */
+function outlineStyleXml(numbering: DocumentOptions["numbering"]): string {
+  const abstract = numbering?.abstractNumberings?.find((entry) =>
+    entry.levels.some((level) => level.paragraphStyle?.startsWith("Heading")),
+  );
+  if (!abstract) return "";
+  return xmlElement(
+    "text:outline-style",
+    { "style:name": abstract.reference },
+    abstract.levels.map(outlineLevelXml),
+  );
+}
+
+function outlineLevelXml(level: NumberingLevel): string {
+  const template = level.text ?? "";
+  const tokens = template.match(/%\d/g) ?? [];
+  const prefix = template.split(/%\d/)[0] ?? "";
+  const suffix = template.split(/%\d/).at(-1) ?? "";
+  return xmlElement("text:outline-level-style", {
+    "text:level": level.level + 1,
+    "text:style-name": level.paragraphStyle,
+    "style:num-format": level.format ? (NUM_FORMAT_ODF[level.format] ?? level.format) : undefined,
+    "style:num-prefix": prefix || undefined,
+    "style:num-suffix": suffix || undefined,
+    "text:display-levels": tokens.length > 0 ? tokens.length : undefined,
+    "text:start-value": level.start,
+  });
+}
+
+/** text:outline-style → a heading-linked abstract numbering definition. */
+function parseOutlineStyle(files: OdfFiles): AbstractNumbering | undefined {
+  const outline = childNamed(
+    childNamed(readXml(files, "styles.xml"), "office:styles"),
+    "text:outline-style",
+  );
+  const levels = childrenNamed(outline, "text:outline-level-style").map((level) => {
+    const oneBased = attributeNumber(level, "text:level") ?? 1;
+    const display = attributeNumber(level, "text:display-levels") ?? 1;
+    const prefix = attributeString(level, "style:num-prefix") ?? "";
+    const suffix = attributeString(level, "style:num-suffix") ?? "";
+    const tokens = Array.from(
+      { length: display },
+      (_, index) => `%${oneBased - display + 1 + index}`,
+    ).join(".");
+    const rawFormat = attributeString(level, "style:num-format");
+    const start = attributeNumber(level, "text:start-value");
+    return {
+      level: oneBased - 1,
+      ...(rawFormat
+        ? { format: (NUM_FORMAT_DOCX[rawFormat] ?? rawFormat) as NumberingLevel["format"] }
+        : {}),
+      text: `${prefix}${tokens}${suffix}`,
+      ...(start !== undefined ? { start } : {}),
+      ...(attributeString(level, "text:style-name")
+        ? { paragraphStyle: attributeString(level, "text:style-name") }
+        : {}),
+    } as NumberingLevel;
+  });
+  if (levels.length === 0) return undefined;
+  return { reference: attributeString(outline, "style:name") ?? "Outline", levels };
 }
 
 /** Footnote/endnote numbering config → ODF text:notes-configuration elements. */
@@ -550,6 +622,7 @@ function normalizeParagraph(input: string | ParagraphOptions): ParagraphOptions 
 function listParagraphLevel(child: SectionChild): { level: number; ordered: boolean } | undefined {
   if (!("paragraph" in child)) return undefined;
   const options = normalizeParagraph(child.paragraph);
+  if (options.heading) return undefined;
   if (options.bullet?.level !== undefined) return { level: options.bullet.level, ordered: false };
   const numbering = options.numbering;
   if (typeof numbering === "object" && "reference" in numbering)
@@ -970,6 +1043,11 @@ function parseParagraph(element: Element, context: ParseContext): ParagraphOptio
   if (style?.tabStops) result.tabStops = style.tabStops;
   if (headingLevel && headingLevel <= 6) {
     result.heading = `Heading${headingLevel}` as ParagraphOptions["heading"];
+  }
+  if (result.heading && context.outline) {
+    const outlineLevel = Number(/Heading([1-9])$/.exec(result.heading)?.[1]);
+    if (outlineLevel && context.outline.levels.some((level) => level.level === outlineLevel - 1))
+      result.numbering = { reference: context.outline.reference, level: outlineLevel - 1 };
   }
   if (runs.length === 1 && typeof runs[0] === "string") result.text = runs[0];
   else if (runs.length > 0) result.children = runs as ParagraphOptions["children"];
