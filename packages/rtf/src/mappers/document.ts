@@ -3,6 +3,7 @@ import type {
   FootnoteOptions,
   NumberingOptions,
   ParagraphOptions,
+  ParagraphChild,
   SectionChild,
   SectionOptions,
   StylesOptions,
@@ -25,12 +26,9 @@ import {
 } from "../destinations";
 import { RtfParseError } from "../errors";
 import { type RtfToken } from "../tokenizer";
+import { parseRtfShape } from "./shape";
 
-export interface RtfDocumentOptions extends DocumentOptions {
-  shapeInstructions?: string[];
-}
-
-export function parseRtfTokens(tokens: readonly RtfToken[], source: string): RtfDocumentOptions {
+export function parseRtfTokens(tokens: readonly RtfToken[], source: string): DocumentOptions {
   const fonts = new Map<number, string>();
   const colors: (string | null)[] = [];
   const tables: TableDraft[] = [];
@@ -46,7 +44,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Rtf
   const metadata = new Map<string, string>();
   const styleDefinitions: { name: string; type: "paragraph" | "character"; basedOn?: string }[] =
     [];
-  const shapeInstructions: string[] = [];
+  const shapes: ParagraphChild[] = [];
   const listOverrides: { id: string; format: "bullet" | "decimal"; level: number }[] = [];
   let objectType: string | undefined;
   let bookmarkId = 1;
@@ -831,15 +829,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Rtf
         }
         if (token.word === "shpinst") {
           const end = consumeGroup(tokenIndex);
-          const parts: string[] = [];
-          for (let hi = tokenIndex; hi < end; hi++) {
-            const ht = tokens[hi];
-            if (ht?.kind === "control" && ht.word)
-              parts.push(`\\${ht.word}${ht.param !== undefined ? ht.param : ""}`);
-            else if (ht?.kind === "text") parts.push(ht.value);
-            else if (ht?.kind === "hex") parts.push(`'${ht.value}`);
-          }
-          if (parts.length > 0) shapeInstructions.push(parts.join(""));
+          shapes.push({ wpsShape: parseRtfShape(tokens, tokenIndex, end, source) });
           groupFrames.pop();
           tokenIndex = end;
           continue;
@@ -911,6 +901,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Rtf
   const table = activeTable();
   if (table) closeRow(table);
   flushParagraph();
+  if (shapes.length > 0) activeSection.children.push({ paragraph: { children: shapes } });
 
   const first = sections[0];
   if (first) {
@@ -987,6 +978,5 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Rtf
         }
       : {}),
     ...(styles ? { styles } : {}),
-    ...(shapeInstructions.length > 0 ? { shapeInstructions: [...shapeInstructions] } : {}),
   };
 }

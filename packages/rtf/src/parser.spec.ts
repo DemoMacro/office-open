@@ -178,9 +178,9 @@ describe("parseRtf rich destinations", () => {
     });
   });
 
-  it("projects direct hyperlinks, comments, and shape instructions", () => {
+  it("projects direct hyperlinks, comments, and canonical shapes", () => {
     const document = parseRtf(
-      String.raw`{\rtf1{\hlink https://example.com}Link{\doccomm Summary}{\shpinst\shptop1000}}`,
+      String.raw`{\rtf1{\hlink https://example.com}Link{\doccomm Summary}{\shpinst\shpleft100\shptop100\shpwidth1000\shpheight500}}`,
     );
     expect(document.sections[0]?.children[0]).toEqual({
       paragraph: {
@@ -190,9 +190,40 @@ describe("parseRtf rich destinations", () => {
       },
     });
     expect(document.description).toBe("Summary");
-    expect((document as { shapeInstructions?: string[] }).shapeInstructions).toEqual([
-      "\\shptop1000",
-    ]);
+    expect(document.sections.at(-1)?.children.at(-1)).toEqual({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              children: [],
+              transformation: { width: 635000, height: 317500 },
+              floating: {
+                horizontalPosition: { relative: "column", offset: 63500 },
+                verticalPosition: { relative: "paragraph", offset: 63500 },
+              },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects shape instructions without a canonical extent", () => {
+    expect(() =>
+      parseRtf(String.raw`{\rtf1{\shpinst\shptop1000}}`),
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[RtfParseError: Invalid RTF at 1:1: shape width and height are required]`,
+    );
+    expect(() => parseRtf(String.raw`{\rtf1{\shpinst\shptop1000}}`)).toThrow(
+      expect.objectContaining({
+        context: {
+          part: "RTF shape destination",
+          path: "\\shpinst",
+          name: "shape",
+          reason: "shape width and height are required",
+        },
+      }),
+    );
   });
 
   it("projects HYPERLINK, PAGE, and DATE fields", () => {
