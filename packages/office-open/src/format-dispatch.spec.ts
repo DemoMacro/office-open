@@ -415,6 +415,21 @@ describe("format dispatch", () => {
     }
   });
 
+  it("rejects the unsupported reproducible option for ODF roots", async () => {
+    const expected = {
+      odp: "Reproducible generation is not supported for ODP",
+      ods: "Reproducible generation is not supported for ODS",
+      odt: "Reproducible generation is not supported for ODT",
+    };
+    for (const type of ["odt", "ods", "odp"] as const) {
+      await expect(
+        generateOfficeDocument(type, ODF_FIXTURES[type], "uint8array", {
+          reproducible: {},
+        } as never),
+      ).rejects.toThrow(expected[type]);
+    }
+  });
+
   it("reports unsupported, invalid, and encrypted inputs", async () => {
     await expect(
       generateOfficeDocument("encrypted-ooxml" as GenerateType, {} as never),
