@@ -27,7 +27,19 @@ import {
 const MIME = "application/vnd.oasis.opendocument.text";
 const NAMESPACES = ODF_NAMESPACES;
 
-export type OdtOptions = DocumentOptions & { odfExtensions?: OdfXmlNode[] };
+export type OdtOptions = DocumentOptions & {
+  odfExtensions?: OdfXmlNode[];
+  textSections?: OdtTextSectionOptions[];
+};
+
+/** A text:section wrapper; children remain body blocks in document order. */
+export interface OdtTextSectionOptions {
+  /** Section identifier emitted as text:name (for example, "Notes"). */
+  name: string;
+  styleName?: string;
+  protected?: boolean;
+  children?: SectionChild[];
+}
 
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 interface OdtImage {
@@ -59,6 +71,7 @@ type StyleMap = Map<
 interface ParseContext {
   styles: StyleMap;
   binaries: Record<string, Uint8Array>;
+  textSections: OdtTextSectionOptions[];
 }
 
 export function generateOdt(options: OdtOptions): Uint8Array {
@@ -66,6 +79,32 @@ export function generateOdt(options: OdtOptions): Uint8Array {
   const blocks = options.sections.flatMap((section) => section.children);
   const sectionProperties = options.sections[0]?.properties;
   const images: OdtImage[] = [];
+  const sections = (options.textSections ?? []).map((section) =>
+    xmlElement(
+      "text:section",
+      {
+        "text:name": section.name,
+        "text:style-name": section.styleName,
+        "text:protected": section.protected,
+      },
+      [blocksXml(section.children ?? [], styles, images)],
+    ),
+  );
+  const body = [
+    blocksXml(blocks, styles, images),
+    ...sections,
+    ...serializeOdfNodes(options.odfExtensions),
+  ].join("");
+  const files: OdfPackageFiles = {
+    "content.xml": contentXml(body, styles),
+    "styles.xml": documentStylesXml(sectionProperties),
+    "meta.xml": metaXml(options),
+  };
+  for (const image of images) files[image.path] = image.data;
+  return generateOcf(MIME, files);
+}
+
+function blocksXml(blocks: SectionChild[], styles: string[], images: OdtImage[]): string {
   const parts: string[] = [];
   let index = 0;
   // Consecutive bullet paragraphs of the same level group into one text:list —
@@ -84,14 +123,7 @@ export function generateOdt(options: OdtOptions): Uint8Array {
     }
     parts.push(listXml(group, bulletLevel, styles, images));
   }
-  const body = [parts.join(""), ...serializeOdfNodes(options.odfExtensions)].join("");
-  const files: OdfPackageFiles = {
-    "content.xml": contentXml(body, styles),
-    "styles.xml": documentStylesXml(sectionProperties),
-    "meta.xml": metaXml(options),
-  };
-  for (const image of images) files[image.path] = image.data;
-  return generateOcf(MIME, files);
+  return parts.join("");
 }
 
 export function parseOdt(data: Uint8Array): OdtOptions {
@@ -100,9 +132,9 @@ export function parseOdt(data: Uint8Array): OdtOptions {
   const body = childNamed(childNamed(content, "office:body"), "office:text");
   const styleMap = parseStyles(childNamed(content, "office:automatic-styles"));
   const rawNodes = parseOdfNodes(body);
-  const context: ParseContext = { styles: styleMap, binaries };
+  const context: ParseContext = { styles: styleMap, binaries, textSections: [] };
   const children = parseBlocks(body?.elements ?? [], context);
-  return {
+  const result: OdtOptions = {
     ...parseMeta(files),
     sections: [{ properties: parsePageLayout(files), children }],
     odfExtensions: rawNodes.filter(
@@ -110,6 +142,8 @@ export function parseOdt(data: Uint8Array): OdtOptions {
         !["text:p", "text:h", "table:table", "text:list", "text:section"].includes(node.name),
     ),
   };
+  if (context.textSections.length > 0) result.textSections = context.textSections;
+  return result;
 }
 
 function contentXml(body: string, styles: string[]): string {
@@ -394,9 +428,20 @@ function parseBlocks(elements: Element[], context: ParseContext, listDepth = 0):
   const result: SectionChild[] = [];
   for (const element of elements) {
     if (element.name === "text:section") {
-      // Typed sections flatten: their typed children merge in document order
-      // (the wrapper's name/protected attributes stay an authoring concern).
-      result.push(...parseBlocks(element.elements ?? [], context, listDepth));
+      const textSection: OdtTextSectionOptions = {
+        name: attributeString(element, "text:name") ?? "",
+        styleName: attributeString(element, "text:style-name"),
+        protected:
+          attributeString(element, "text:protected") === undefined
+            ? undefined
+            : attributeString(element, "text:protected") === "true",
+        children: [],
+      };
+      context.textSections.push(textSection);
+      textSection.children = parseBlocks(element.elements ?? [], context, listDepth);
+      // Typed sections flatten into document children; the wrapper is retained
+      // separately so name/style/protection metadata round-trip.
+      result.push(...textSection.children);
       continue;
     }
     if (element.name === "text:list") {

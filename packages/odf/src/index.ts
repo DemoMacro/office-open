@@ -1,4 +1,5 @@
 export { generateOdt, parseOdt } from "./odt";
+export type { OdtOptions, OdtTextSectionOptions } from "./odt";
 export { generateOds, parseOds } from "./ods";
 export { generateOdp, parseOdp } from "./odp";
 export { generateChartDocument, parseChartDocument } from "./chart";

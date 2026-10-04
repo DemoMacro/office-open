@@ -15,6 +15,7 @@ import {
 import type { ChartChartOptions } from "./index";
 import { type OdpOptions } from "./odp";
 import { type OdsOptions } from "./ods";
+import type { OdtTextSectionOptions } from "./odt";
 
 describe("ODF package contract", () => {
   it("stores an uncompressed leading mimetype and a complete manifest", () => {
@@ -68,6 +69,28 @@ describe("ODF package contract", () => {
 });
 
 describe("ODT mapping", () => {
+  it("round-trips typed text sections", () => {
+    const sections: OdtTextSectionOptions[] = [
+      {
+        name: "Notes",
+        styleName: "S1",
+        protected: true,
+        children: [{ paragraph: { text: "Inside" } }],
+      },
+    ];
+    const parsed = parseOdt(
+      generateOdt({
+        sections: [{ children: [{ paragraph: "Before" }] }],
+        textSections: sections,
+      }),
+    );
+    expect(parsed.sections![0]!.children).toEqual([
+      { paragraph: { text: "Before" } },
+      { paragraph: { text: "Inside" } },
+    ]);
+    expect(parsed.textSections).toEqual(sections);
+  });
+
   it("round-trips inline pictures through draw:image", () => {
     const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const source: DocumentOptions = {
