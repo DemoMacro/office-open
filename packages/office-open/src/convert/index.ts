@@ -1,14 +1,15 @@
 /**
- * Cross-format conversion entry — picture/shape/connector/group/table/smartart
- * /text converters between docx, pptx, and xlsx.
+ * Cross-format conversion entry for picture/shape/connector/group/table/smartart,
+ * text, and CSV/TSV conversions.
  *
  * @module
  */
-export * from "./picture";
-export * from "./shape";
-export * from "./connector";
-export * from "./csv";
-export * from "./group";
-export * from "./table";
-export * from "./smartart";
-export * from "./text";
+export type { CsvToWorkbookOptions, WorkbookToCsvOptions } from "./csv";
+export { csvToWorkbook, tsvToWorkbook, workbookToCsv, workbookToTsv } from "./csv";
+export { toDocxPicture, toPptxPicture, toXlsxPicture } from "./picture";
+export { toDocxShape, toPptxShape, toXlsxShape } from "./shape";
+export { toDocxConnector, toPptxConnector, toXlsxConnector } from "./connector";
+export { toDocxGroup, toPptxGroup, toXlsxGroup } from "./group";
+export { toDocxTable, toPptxTable, toXlsxTable } from "./table";
+export { toDocxSmartArt, toPptxSmartArt } from "./smartart";
+export { fromDrawingParagraph, toDrawingParagraph } from "./text";

@@ -46,21 +46,25 @@ export async function parseWorkbookFile(
   }
 }
 
-export async function generateWorkbookFile<T extends OutputType = "nodebuffer">(
-  format: WorkbookFileGenerateFormat,
+export async function generateWorkbookFile<
+  F extends WorkbookFileGenerateFormat,
+  T extends OutputType = "nodebuffer",
+>(
+  format: F,
   options: WorkbookOptions,
   output?: T,
-  reproducible?: ReproducibleGenerationOptions,
+  reproducible?: F extends "ods" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
   const outputType = (output ?? "nodebuffer") as T;
 
   if (format === "ods") {
+    if (reproducible) throw new Error("Reproducible generation is not supported for ODS");
     return convertOutput(generateOds(options), outputType, ODS_MIME_TYPE);
   }
 
   return generateWorkbook(options, {
     type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format].variant,
+    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
 }

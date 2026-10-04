@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 
 import type { OutputByType, OutputType, ReproducibleGenerationOptions } from "@office-open/core";
-export { type OutputType } from "@office-open/core";
+export type { OutputType } from "@office-open/core";
 
 import type { DocumentOptions } from "@office-open/docx";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -37,8 +37,15 @@ export interface GenerateOptionsMap {
   ods: WorkbookOptions;
 }
 
-interface OfficeGenerationOptions {
-  reproducible?: ReproducibleGenerationOptions;
+type OdfGenerateFormat = "odt" | "ods" | "odp";
+
+/** ODF writers are deterministic today but do not support OPC reproducibility controls. */
+type FormatReproducibleOptions<F extends GenerateType> = F extends OdfGenerateFormat
+  ? never
+  : ReproducibleGenerationOptions;
+
+interface OfficeGenerationOptions<F extends GenerateType> {
+  reproducible?: FormatReproducibleOptions<F>;
 }
 
 export async function generateOfficeDocument<
@@ -48,7 +55,7 @@ export async function generateOfficeDocument<
   format: F,
   options: GenerateOptionsMap[F],
   output?: T,
-  generationOptions?: OfficeGenerationOptions,
+  generationOptions?: OfficeGenerationOptions<F>,
 ): Promise<OutputByType[T]> {
   if (format === "odt") {
     return generateDocumentFile(
@@ -118,8 +125,8 @@ export interface GenerateOptions<T extends GenerateType = GenerateType> {
   type: T;
   options: GenerateOptionsMap[T];
   outputType?: OutputType;
-  /** Opt-in reproducible generation (see PackerOptions.reproducible). */
-  reproducible?: ReproducibleGenerationOptions;
+  /** Opt-in OPC reproducibility controls; ODF formats reject this option. */
+  reproducible?: FormatReproducibleOptions<T>;
 }
 
 export async function generate<T extends GenerateType>(
