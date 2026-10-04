@@ -3,6 +3,7 @@ import { strFromU8, unzipSync, zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateOdp, generateOds, generateOdt, parseOdp, parseOds, parseOdt } from "./index";
+import { type OdpOptions } from "./odp";
 
 describe("ODF package contract", () => {
   it("stores an uncompressed leading mimetype and a complete manifest", () => {
@@ -364,7 +365,7 @@ describe("ODP mapping", () => {
   });
 
   it("round-trips slide tables through table:table", () => {
-    const source = {
+    const source: OdpOptions = {
       slides: [
         {
           children: [
@@ -415,5 +416,26 @@ describe("ODP mapping", () => {
     expect(child.connector.y2).toBe(3657600);
     expect(child.connector.startConnection).toEqual({ id: 2, index: 3 });
     expect(child.connector.endConnection).toEqual({ id: 5, index: 1 });
+  });
+
+  it("round-trips slide pictures through draw:image", () => {
+    const data = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+    const source: OdpOptions = {
+      slides: [
+        {
+          children: [
+            {
+              picture: { type: "png", data, x: 914400, y: 914400, width: 1828800, height: 1828800 },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseOdp(generateOdp(source));
+    const child = parsed.slides![0]!.children![0]!;
+    if (!("picture" in child)) throw new Error("Expected an ODP picture");
+    expect(child.picture.type).toBe("png");
+    expect(child.picture.x).toBe(914400);
+    expect(child.picture.width).toBe(1828800);
   });
 });

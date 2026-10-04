@@ -3,9 +3,10 @@ import type {
   TextBodyOptions,
   TextRunOptions,
 } from "@office-open/core";
-import type { EndpointConnectionOptions } from "@office-open/core";
+import { toUint8Array, type EndpointConnectionOptions } from "@office-open/core";
 import type {
   ConnectorOptions,
+  PictureOptions,
   PresentationOptions,
   ShapeOptions,
   SlideChild,
@@ -16,7 +17,7 @@ import type { Element } from "@office-open/xml";
 
 import { escapeText, metaXml, parseMeta } from "./meta";
 import { parseOdfNodes, serializeOdfNodes, type OdfXmlNode } from "./odf-node";
-import { generateOcf, readOcf, readXml } from "./package";
+import { generateOcf, readOcf, readXml, type OdfPackageFiles } from "./package";
 import {
   attributeString,
   childNamed,
@@ -36,6 +37,7 @@ const NAMESPACES = [
   'xmlns:draw="urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"',
   'xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"',
   'xmlns:svg="urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0"',
+  'xmlns:xlink="http://www.w3.org/1999/xlink"',
   'xmlns:fo="urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0"',
 ].join(" ");
 
@@ -48,8 +50,15 @@ interface TextProperties {
 
 export type OdpOptions = PresentationOptions & { odfExtensions?: OdfXmlNode[] };
 
+/** Binary image collected during generation — emitted as a Pictures/ entry. */
+interface OdpImage {
+  path: string;
+  data: Uint8Array;
+}
+
 export function generateOdp(options: OdpOptions): Uint8Array {
   const styles: string[] = [];
+  const images: OdpImage[] = [];
   const size = normalizeSize(options.size);
   const pageLayout = xmlElement("style:page-layout", { "style:name": "PM1" }, [
     xmlElement("style:page-layout-properties", {
@@ -57,8 +66,10 @@ export function generateOdp(options: OdpOptions): Uint8Array {
       "fo:page-height": emuToLength(size.height),
     }),
   ]);
-  const pages = (options.slides ?? []).map((slide, index) => slideXml(slide, index + 1, styles));
-  const files = {
+  const pages = (options.slides ?? []).map((slide, index) =>
+    slideXml(slide, index + 1, styles, images),
+  );
+  const files: OdfPackageFiles = {
     "content.xml": contentXml(
       [...pages, ...serializeOdfNodes(options.odfExtensions)].join(""),
       styles,
@@ -66,11 +77,12 @@ export function generateOdp(options: OdpOptions): Uint8Array {
     "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
+  for (const image of images) files[image.path] = image.data;
   return generateOcf(MIME, files);
 }
 
 export function parseOdp(data: Uint8Array): OdpOptions {
-  const { files } = readOcf(data, MIME);
+  const { files, binaries } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
   const stylesDocument = files["styles.xml"] ? readXml(files, "styles.xml") : undefined;
@@ -89,6 +101,7 @@ export function parseOdp(data: Uint8Array): OdpOptions {
         page,
         parseTextStyles(childNamed(content, "office:automatic-styles")),
         parseColumnWidths(childNamed(content, "office:automatic-styles")),
+        binaries,
       ),
     ),
     odfExtensions: rawNodes.filter((node) => node.name !== "draw:page"),
@@ -116,7 +129,12 @@ function normalizeSize(size: PresentationOptions["size"]): { width: number; heig
   return { width: 12192000, height: 6858000 };
 }
 
-function slideXml(slide: SlideOptions, index: number, styles: string[]): string {
+function slideXml(
+  slide: SlideOptions,
+  index: number,
+  styles: string[],
+  images: OdpImage[],
+): string {
   const frames = (slide.children ?? []).map((child) =>
     "shape" in child
       ? shapeXml(child.shape, styles)
@@ -124,7 +142,9 @@ function slideXml(slide: SlideOptions, index: number, styles: string[]): string 
         ? slideTableXml(child.table, styles)
         : "connector" in child
           ? connectorXml(child.connector)
-          : "",
+          : "picture" in child
+            ? pictureFrameXml(child.picture, images)
+            : "",
   );
   const notes = typeof slide.notes === "string" ? slide.notes : slide.notes?.text;
   const notesXml = notes
@@ -202,6 +222,25 @@ function toOdfLength(value: number | string | undefined): string | undefined {
   return emuToLength(typeof value === "number" ? value : (lengthToEmu(value) ?? 0));
 }
 
+/** Slide picture renders as a positioned draw:frame + draw:image. */
+function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): string {
+  if (picture.data === undefined) return "";
+  const data = toUint8Array(picture.data);
+  const path = `Pictures/image${images.length + 1}.${picture.type}`;
+  images.push({ path, data });
+  return xmlElement(
+    "draw:frame",
+    {
+      "draw:name": picture.name,
+      "svg:x": toOdfLength(picture.x),
+      "svg:y": toOdfLength(picture.y),
+      "svg:width": toOdfLength(picture.width),
+      "svg:height": toOdfLength(picture.height),
+    },
+    [xmlElement("draw:image", { "xlink:href": path })],
+  );
+}
+
 function textProperties(run: TextRunOptions): TextProperties {
   return {
     bold: run.bold,
@@ -231,6 +270,7 @@ function parseSlide(
   page: Element,
   textStyles: Map<string, TextProperties>,
   columnWidths: Map<string, number>,
+  binaries: Record<string, Uint8Array>,
 ): SlideOptions {
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
@@ -240,7 +280,11 @@ function parseSlide(
   return {
     children:
       page.elements?.flatMap((child): SlideChild[] => {
-        if (child.name === "draw:frame") return [{ shape: parseShape(child, textStyles) }];
+        if (child.name === "draw:frame") {
+          const picture = parsePictureFrame(child, binaries);
+          if (picture) return [picture];
+          return [{ shape: parseShape(child, textStyles) }];
+        }
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
         return [];
@@ -372,6 +416,28 @@ function endpointConnection(
   const id = Number(attributeString(element, `draw:${end}-shape`));
   const index = attributeNumber(element, `draw:${end}-glue-point`);
   return Number.isInteger(id) && id > 0 && index !== undefined ? { id, index } : undefined;
+}
+
+/** Parses a draw:frame + draw:image back to a slide picture child. */
+function parsePictureFrame(
+  frame: Element,
+  binaries: Record<string, Uint8Array>,
+): { picture: PictureOptions } | undefined {
+  const image = childNamed(frame, "draw:image");
+  if (!image) return undefined;
+  const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
+  const data = path ? binaries[path] : undefined;
+  if (!data || !path) return undefined;
+  return {
+    picture: {
+      type: (path.split(".").pop() ?? "png") as PictureOptions["type"],
+      data,
+      x: lengthToEmu(attributeString(frame, "svg:x")),
+      y: lengthToEmu(attributeString(frame, "svg:y")),
+      width: lengthToEmu(attributeString(frame, "svg:width")),
+      height: lengthToEmu(attributeString(frame, "svg:height")),
+    },
+  };
 }
 
 function parseTextStyles(container: Element | undefined): Map<string, TextProperties> {
