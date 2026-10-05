@@ -588,7 +588,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
         const commentIds = ctx.withPart(docx.partRefs.commentsIds, () =>
           commentsIdsDesc.parse(commentsIdsEl, ctx),
         );
-        if (commentIds.length > 0) opts.commentsIds = commentIds;
+        opts.commentsIds = commentIds;
       }
     }
     if (docx.partRefs.commentsExtensible) {
@@ -597,7 +597,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
         const extensible = ctx.withPart(docx.partRefs.commentsExtensible, () =>
           commentsExtensibleDesc.parse(commentsExtensibleEl, ctx),
         );
-        if (extensible.length > 0) opts.commentsExtensible = extensible;
+        opts.commentsExtensible = extensible;
       }
     }
   }
@@ -747,8 +747,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   }
   if (opts.people) rebuilt.push(docx.partRefs.people!);
   if (opts.commentsExtended) rebuilt.push(docx.partRefs.commentsExtended!);
-  if (opts.commentsIds) rebuilt.push(docx.partRefs.commentsIds!);
-  if (opts.commentsExtensible) rebuilt.push(docx.partRefs.commentsExtensible!);
+  if (docx.partRefs.commentsIds) rebuilt.push(docx.partRefs.commentsIds);
+  if (docx.partRefs.commentsExtensible) rebuilt.push(docx.partRefs.commentsExtensible);
   if (opts.footnotes) {
     rebuilt.push(docx.partRefs.footnotes!, "word/_rels/footnotes.xml.rels");
   }

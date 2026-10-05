@@ -631,10 +631,10 @@ export class DocxWriteContext implements WriteContext {
     if (this._options.commentsExtended?.length) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.commentsExtendedMs, "commentsExtended.xml");
     }
-    if (this._options.commentsIds?.length) {
+    if (this._options.commentsIds != null) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.commentsIdsMs, "commentsIds.xml");
     }
-    if (this._options.commentsExtensible?.length) {
+    if (this._options.commentsExtensible != null) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.commentsExtensibleMs, "commentsExtensible.xml");
     }
     if (this._options.bibliography) {
