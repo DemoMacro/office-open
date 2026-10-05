@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 
 import { describe, expect, it } from "vite-plus/test";
 
-import { detectOfficeFormat } from "./formats";
+import { detectOffice } from "./formats";
 
 const run = promisify(execFile);
 const cli = join(import.meta.dirname, "../dist/cli.mjs");
@@ -62,13 +62,13 @@ describe("CLI", () => {
       expect(generated.code).toBe(0);
       expect(generated.stdout).toContain(`Generated: ${output}`);
       const bytes = new Uint8Array(await readFile(output));
-      expect(detectOfficeFormat(bytes).format).toBe("docx");
+      expect(detectOffice(bytes).format).toBe("docx");
 
       const parsed = await cliRun("parse", output, "-o", parsedOutput);
       expect(parsed.code).toBe(0);
       expect(JSON.parse(await readFile(parsedOutput, "utf8"))).toMatchObject({
         options: { sections: expect.any(Array) },
-        type: "docx",
+        format: "docx",
       });
 
       const detected = await cliRun("detect", output, "--json");

@@ -1,2 +1,2 @@
-export { RtfParseError, parseRtf } from "@office-open/rtf";
-export type { RtfParseOptions } from "@office-open/rtf";
+export { generateDocument, RtfGenerateError, RtfParseError, parseDocument } from "@office-open/rtf";
+export type { DocumentOptions, RtfGenerateContext, RtfParseOptions } from "@office-open/rtf";

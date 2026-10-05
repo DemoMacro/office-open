@@ -6,36 +6,57 @@ import {
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
-import { generateOds, parseOds } from "@office-open/ods";
-import { parseWorkbook as parseLegacyWorkbook } from "@office-open/xls";
-import type { WorkbookOptions } from "@office-open/xlsx";
-import { generateWorkbook, parseWorkbook as parseXlsxWorkbook } from "@office-open/xlsx";
+import {
+  generateWorkbook as generateOdsWorkbook,
+  parseWorkbook as parseOdsWorkbook,
+} from "@office-open/ods";
+import { parseWorkbook as parseXlsWorkbook } from "@office-open/xls";
+import {
+  generateWorkbook as generateXlsxWorkbook,
+  parseWorkbook as parseXlsxWorkbook,
+  patchWorkbook as patchXlsxWorkbook,
+  type PatchWorkbookOptions,
+  type WorkbookOptions,
+} from "@office-open/xlsx";
 
-import { detectOfficeFormat } from "./formats";
+import { detectOffice } from "./formats";
 
 /** Password accepted by the legacy XLS parser. */
-export interface WorkbookFileParseOptions {
+export interface WorkbookParseOptions {
   password?: string;
 }
 
-export type WorkbookFileParseFormat = "ods" | "xls" | "xlsx" | "xlsm" | "xltx" | "xltm";
+export type WorkbookParseFormat = "ods" | "xls" | "xlsx" | "xlsm" | "xltx" | "xltm";
 
-export type WorkbookFileGenerateFormat = "xlsx" | "xlsm" | "xltx" | "xltm" | "ods";
+export type WorkbookGenerateFormat = "xlsx" | "xlsm" | "xltx" | "xltm" | "ods";
+
+export type WorkbookPatchFormat = "xlsx" | "xlsm" | "xltx" | "xltm";
+
+const WORKBOOK_PATCH_FORMATS: readonly WorkbookPatchFormat[] = ["xlsx", "xlsm", "xltx", "xltm"];
+
+export type WorkbookPatchRequest<T extends OutputType = OutputType> = Omit<
+  PatchWorkbookOptions<T>,
+  "data" | "outputType"
+> & {
+  format: WorkbookPatchFormat;
+  data: PatchWorkbookOptions<T>["data"];
+  outputType?: T;
+};
 
 const ODS_MIME_TYPE = "application/vnd.oasis.opendocument.spreadsheet";
 
-export async function parseWorkbookFile(
+export async function parseWorkbook(
   input: Uint8Array | string,
-  options?: WorkbookFileParseOptions,
+  options?: WorkbookParseOptions,
 ): Promise<WorkbookOptions> {
-  const info = detectOfficeFormat(input);
+  const info = detectOffice(input);
   const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
 
   switch (info.format) {
     case "ods":
-      return parseOds(data);
+      return parseOdsWorkbook(data);
     case "xls":
-      return parseLegacyWorkbook(data, options);
+      return parseXlsWorkbook(data, options);
     case "xlsx":
     case "xlsm":
     case "xltx":
@@ -46,8 +67,8 @@ export async function parseWorkbookFile(
   }
 }
 
-export async function generateWorkbookFile<
-  F extends WorkbookFileGenerateFormat,
+export async function generateWorkbook<
+  F extends WorkbookGenerateFormat,
   T extends OutputType = "nodebuffer",
 >(
   format: F,
@@ -59,12 +80,26 @@ export async function generateWorkbookFile<
 
   if (format === "ods") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODS");
-    return convertOutput(generateOds(options), outputType, ODS_MIME_TYPE);
+    return convertOutput(generateOdsWorkbook(options), outputType, ODS_MIME_TYPE);
   }
 
-  return generateWorkbook(options, {
+  return generateXlsxWorkbook(options, {
     type: outputType,
     packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
+}
+
+export async function patchWorkbook<T extends OutputType = OutputType>(
+  request: WorkbookPatchRequest<T>,
+): Promise<OutputByType[T]> {
+  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  if (!WORKBOOK_PATCH_FORMATS.includes(format)) {
+    throw new Error(`${format} does not support workbook patching`);
+  }
+  return patchXlsxWorkbook({
+    ...(patch as PatchWorkbookOptions<T>),
+    data,
+    outputType,
+  } as PatchWorkbookOptions<T>);
 }

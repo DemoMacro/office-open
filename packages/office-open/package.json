@@ -1,7 +1,7 @@
 {
   "name": "office-open",
   "version": "0.14.6",
-  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, and OpenDocument from plain JSON, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
+  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, RTF, and OpenDocument where supported, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
   "keywords": [
     "ai",
     "ai-agent",
@@ -22,6 +22,7 @@
     "openxml",
     "powerpoint",
     "pptx",
+    "rtf",
     "typescript",
     "word",
     "xlsx"
@@ -97,18 +98,6 @@
       "types": "./dist/rtf.d.mts",
       "import": "./dist/rtf.mjs"
     },
-    "./formats": {
-      "types": "./dist/formats.d.mts",
-      "import": "./dist/formats.mjs"
-    },
-    "./detect": {
-      "types": "./dist/detect.d.mts",
-      "import": "./dist/detect.mjs"
-    },
-    "./parse": {
-      "types": "./dist/parse.d.mts",
-      "import": "./dist/parse.mjs"
-    },
     "./core": {
       "types": "./dist/core.d.mts",
       "import": "./dist/core.mjs"
@@ -120,10 +109,6 @@
     "./ai": {
       "types": "./dist/ai/index.d.mts",
       "import": "./dist/ai/index.mjs"
-    },
-    "./generate": {
-      "types": "./dist/generate.d.mts",
-      "import": "./dist/generate.mjs"
     },
     "./schemas": {
       "types": "./dist/schemas/index.d.mts",

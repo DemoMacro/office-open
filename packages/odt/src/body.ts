@@ -114,7 +114,7 @@ export interface ParseContext {
   trackRevisions?: boolean;
 }
 
-export function generateOdt(options: DocumentOptions): Uint8Array {
+export function generateDocument(options: DocumentOptions): Uint8Array {
   const styles: string[] = [];
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
@@ -250,9 +250,9 @@ export function blocksXml(
   return parts.join("");
 }
 
-export function parseOdt(data: Uint8Array): DocumentOptions {
+export function parseDocument(data: Uint8Array): DocumentOptions {
   try {
-    return parseOdtDocument(data);
+    return parseOdtBody(data);
   } catch (cause) {
     if (cause instanceof OdtParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
@@ -271,7 +271,7 @@ export function parseOdt(data: Uint8Array): DocumentOptions {
   }
 }
 
-export function parseOdtDocument(data: Uint8Array): DocumentOptions {
+function parseOdtBody(data: Uint8Array): DocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");

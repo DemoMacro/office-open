@@ -199,6 +199,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   const ensureParagraph = () => {
     if (paragraph) return paragraph;
     paragraph = { options: {}, runs: [], format: { ...format }, segments: [] };
+    if (pendingList) paragraph.options.numbering = { ...pendingList };
+    if (pendingShading) paragraph.options.shading = { ...pendingShading };
+    if (pendingBorder) paragraph.options.border = { ...pendingBorder };
     return paragraph;
   };
 

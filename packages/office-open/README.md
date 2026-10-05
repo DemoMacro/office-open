@@ -4,16 +4,21 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Everything for AI-native Office documents in one install — Word, Excel, PowerPoint, and OpenDocument generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
+> Generate, parse, and patch AI-native Office documents with three canonical option models — plus a CLI, AI SDK tools, JSON Schemas, CSV/TSV conversion, and support for OOXML, legacy, RTF, and OpenDocument formats.
 
 ## Features
 
-- **One Install** — Import from the canonical `office-open/document`, `office-open/workbook`, and `office-open/presentation` APIs, plus per-format packages; no Microsoft Office required
-- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate canonical `.odt`, `.ods`, and `.odp`; convert CSV/TSV
-- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, `generate-odt`, `generate-ods`, and `generate-odp`, with schema-validated retries
-- **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
-- **CLI** — Generate files from JSON via `npx office-open`
-- **Generate Function** — Type-agnostic `generate()` for dynamic document creation
+- 🧠 **Canonical Models** — `DocumentOptions`, `WorkbookOptions`, and `PresentationOptions`
+- 📄 **Word** — DOCX generation, parsing, and patching; DOC parsing
+- 📊 **Excel** — XLSX generation, parsing, and patching; XLS parsing
+- 📈 **PowerPoint** — PPTX generation, parsing, and patching; PPT parsing
+- 📝 **RTF** — Strict generation and parsing through `DocumentOptions`
+- 📦 **OpenDocument** — ODT, ODS, and ODP generation and parsing
+- 🔁 **Cross-Format** — Shared drawing, chart, picture, table, connector, and group concepts
+- 🤖 **AI Tools** — Vercel AI SDK tools with schema validation and structured errors
+- 🧩 **JSON Schemas** — Draft-07 schemas and dependency-closed schema slicing
+- 🛠️ **CLI** — Detect, parse, generate, and inspect schemas from the terminal
+- 🔄 **CSV/TSV** — Convert tabular data to and from `WorkbookOptions`
 
 ## Installation
 
@@ -33,48 +38,123 @@ bun add office-open
 
 ## Quick Start
 
-### Generate from JSON
+### Generate
 
 ```typescript
-import { generate, generateToFile } from "office-open/generate";
+import { generateOffice } from "office-open";
+import { writeFileSync } from "node:fs";
 
-const buffer = await generate({
-  type: "docx",
-  options: {
-    sections: [
-      {
-        children: [{ paragraph: "Hello World" }],
-      },
-    ],
-  },
-  outputType: "nodebuffer",
+const buffer = await generateOffice("docx", {
+  sections: [{ children: [{ paragraph: "Hello World" }] }],
 });
+
+writeFileSync("Hello.docx", buffer);
+```
+
+### Parse
+
+```typescript
+import { detectOffice, parseOffice } from "office-open";
+import { readFileSync } from "node:fs";
+
+const input = new Uint8Array(readFileSync("input.docx"));
+console.log(detectOffice(input).format);
+
+const parsed = await parseOffice(input);
+console.log(parsed.format, parsed.options);
+```
+
+### Patch
+
+```typescript
+import { patchDocument } from "office-open";
+
+const patched = await patchDocument({
+  format: "docx",
+  data: input,
+  findReplace: {
+    "Account Manager": "Jane Doe",
+  },
+});
+```
+
+### Family Entries
+
+```typescript
+import { generateDocument, parseDocument, patchDocument } from "office-open/document";
+import { generateWorkbook, parseWorkbook, patchWorkbook } from "office-open/workbook";
+import {
+  generatePresentation,
+  parsePresentation,
+  patchPresentation,
+} from "office-open/presentation";
+```
+
+### Per-Format Entries
+
+```typescript
+import { generateDocument, parseDocument, patchDocument } from "office-open/docx";
+import { generatePresentation, parsePresentation, patchPresentation } from "office-open/pptx";
+import { generateWorkbook, parseWorkbook, patchWorkbook } from "office-open/xlsx";
 ```
 
 ### CLI
 
 ```bash
-# Generate from a JSON file
 npx office-open docx document.json "output.docx"
-npx office-open pptx slides.json "output.pptx"
-npx office-open xlsx spreadsheet.json "output.xlsx"
-
-# Detect or parse supported input formats
+npx office-open rtf document.json "output.rtf"
 npx office-open detect input.doc
-npx office-open parse input.rtf --output model.json
-
-# Inspect the option schemas on demand
-npx office-open schema index docx                        # indexed lookup entries by domain
-npx office-open schema index docx --all                   # every definition name
-npx office-open schema slice docx ParagraphOptions RunOptions   # sub-schema for those types
+npx office-open parse input.xlsx --output workbook.json
+npx office-open schema slice docx ParagraphOptions RunOptions
 ```
 
-### AI SDK Tools
+## API
+
+- `detectOffice(input)` — identify format, family, and container from bytes or RTF text
+- `parseOffice(input, options?)` — parse any supported format into a discriminated canonical model
+- `generateOffice(format, options, output?)` — generate any writable format
+- `parseDocument` / `generateDocument` / `patchDocument` — document family dispatch
+- `parseWorkbook` / `generateWorkbook` / `patchWorkbook` — workbook family dispatch
+- `parsePresentation` / `generatePresentation` / `patchPresentation` — presentation family dispatch
+
+Additional entries include `office-open/convert`, `office-open/schemas`, `office-open/ai`, `office-open/core`, and `office-open/xml`.
+
+## Format Support
+
+| Family       | Formats                               | Parse |              Generate |       Patch |
+| ------------ | ------------------------------------- | ----: | --------------------: | ----------: |
+| Document     | DOC, DOCX, DOCM, DOTX, DOTM, RTF, ODT |    ✅ | DOCX family, RTF, ODT | DOCX family |
+| Workbook     | XLS, XLSX, XLSM, XLTX, XLTM, ODS      |    ✅ |      XLSX family, ODS | XLSX family |
+| Presentation | PPT, PPTX, PPTM, POTX, POTM, ODP      |    ✅ |      PPTX family, ODP | PPTX family |
+| Tabular      | CSV, TSV                              |    ✅ |                    ✅ |          ❌ |
+
+Encrypted OOXML inputs are detected precisely and returned as parse errors with actionable context rather than being parsed as unrelated formats.
+
+## Canonical Model
+
+There are three canonical models, not one model per file extension:
+
+```typescript
+type DocumentOptions = /* DOC, DOCX, RTF, and ODT projection */;
+type WorkbookOptions = /* XLS, XLSX, and ODS projection */;
+type PresentationOptions = /* PPT, PPTX, and ODP projection */;
+```
+
+Every parser returns the same family model. Therefore legacy and ODF content can flow into the same DOCX, XLSX, and PPTX generation and conversion paths without a fourth ODF document model.
+
+## Errors and Limitations
+
+- DOC, XLS, and PPT are parse-only; legacy binary writers are not provided.
+- RTF generation rejects options that cannot be represented in RTF instead of dropping them.
+- ODT, ODS, and ODP support parse and generate but do not provide a patch API.
+- Parse errors expose structured context such as part, path, element name, and reason.
+- Unsupported operations throw explicit errors; they do not silently change format.
+
+## AI SDK Tools
 
 ```typescript
 import { officeOpenTools } from "office-open/ai";
 
-// Use with Vercel AI SDK
 const result = await generateText({
   model,
   tools: officeOpenTools,
@@ -82,117 +162,21 @@ const result = await generateText({
 });
 ```
 
-The generate tools carry skeleton input schemas (top-level shape + wrapper keys, ~5K tokens instead of the ~170K-token full schema); the `office-open-schema-lookup` tool fetches precise option schemas on demand.
+The tools use skeleton schemas by default. Use `officeOpenTools({ fullSchemas: true })` when the model can afford the complete schemas.
 
-Two more agent entry points live on the documentation site:
-
-```bash
-# MCP server for Claude Code, Cursor, and other MCP clients
-claude mcp add --transport http office-open https://www.office-open.com/mcp
-
-# Installable Agent Skill with curated API references
-npx skills add https://www.office-open.com
-```
-
-### JSON Schemas
+## JSON Schemas
 
 ```typescript
-import { validateDocumentInput, sliceDocumentSchema } from "office-open/schemas";
+import { sliceDocumentSchema, validateDocumentInput } from "office-open/schemas";
 
-try {
-  const validated = validateDocumentInput("docx", userInput);
-} catch (e) {
-  // Aggregated validation errors with instance paths and messages
-}
-
-// Extract the dependency closure of specific option types
+const input = validateDocumentInput("docx", userInput);
 const slice = sliceDocumentSchema("docx", ["ParagraphOptions", "RunOptions"]);
-```
-
-### Import from Sub-Packages
-
-```typescript
-import { parseDocumentFile, generateDocumentFile } from "office-open/document";
-import { parseWorkbookFile, generateWorkbookFile } from "office-open/workbook";
-import { parsePresentationFile, generatePresentationFile } from "office-open/presentation";
-
-const odt = await generateDocumentFile("odt", { sections: [{ children: [{ paragraph: "ODT" }] }] });
-const model = await parseDocumentFile(odt);
-```
-
-```typescript
-import { generateDocument, parseDocument, patchDocument } from "office-open/docx";
-import { generatePresentation, parsePresentation, patchPresentation } from "office-open/pptx";
-import { generateWorkbook, parseWorkbook, patchWorkbook } from "office-open/xlsx";
-import { convertInchesToTwip } from "office-open/core";
-import { parse, stringify } from "office-open/xml";
-```
-
-## Sub-Exports
-
-| Export Path                | Description                              |
-| -------------------------- | ---------------------------------------- |
-| `office-open`              | Main entry (re-exports all sub-packages) |
-| `office-open/docx`         | @office-open/docx                        |
-| `office-open/pptx`         | @office-open/pptx                        |
-| `office-open/xlsx`         | @office-open/xlsx                        |
-| `office-open/document`     | Canonical document family dispatch       |
-| `office-open/workbook`     | Canonical workbook family dispatch       |
-| `office-open/presentation` | Canonical presentation family dispatch   |
-| `office-open/doc`          | @office-open/doc                         |
-| `office-open/xls`          | @office-open/xls                         |
-| `office-open/ppt`          | @office-open/ppt                         |
-| `office-open/rtf`          | @office-open/rtf                         |
-| `office-open/convert`      | Cross-format, CSV, and TSV conversion    |
-| `office-open/core`         | @office-open/core                        |
-| `office-open/xml`          | @office-open/xml                         |
-| `office-open/generate`     | `generate()` function                    |
-| `office-open/ai`           | Vercel AI SDK tools                      |
-| `office-open/schemas`      | JSON schemas, validation, and slicing    |
-
-## Format Support
-
-| Input family         | Parse | Generate | Notes                                             |
-| -------------------- | ----- | -------- | ------------------------------------------------- |
-| DOCX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
-| XLSX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
-| PPTX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
-| DOC, XLS, PPT        | ✅    | ❌       | Parse-only projection to existing option families |
-| RTF                  | ✅    | ❌       | Parse-only projection to `DocumentOptions`        |
-| ODT, ODS, ODP        | ✅    | ✅       | Canonical typed generation and parsing; no patch  |
-| CSV, TSV             | ✅    | ✅       | Conversion to and from `WorkbookOptions`          |
-
-## JSON Document Structures
-
-### DOCX
-
-```json
-{
-  "sections": [{ "children": [{ "paragraph": "Hello World" }] }]
-}
-```
-
-### PPTX
-
-```json
-{
-  "title": "My Deck",
-  "slides": [{ "children": [{ "shape": { "textBody": { "text": "Hello" } } }] }]
-}
-```
-
-### XLSX
-
-```json
-{
-  "worksheets": [{ "rows": [{ "cells": [{ "value": "Name" }, { "value": 95 }] }] }]
-}
 ```
 
 ## Documentation
 
 - [Documentation](https://www.office-open.com) — getting started, per-format guides, and AI integration
-- [AI Integration Guide](https://www.office-open.com/en/getting-started/ai-integration) — MCP server, Agent Skill, and schema slicing
+- [More Formats](https://www.office-open.com/en/getting-started/more-formats) — RTF and OpenDocument examples
 - [Report Issues](https://github.com/DemoMacro/office-open/issues) — bug reports and feature requests
 
 ## Related Packages

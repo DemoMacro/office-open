@@ -6,39 +6,62 @@ import {
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
-import { generateOdp, parseOdp } from "@office-open/odp";
-import { parsePresentation as parseLegacyPresentation } from "@office-open/ppt";
-import type { PresentationOptions } from "@office-open/pptx";
 import {
-  generatePresentation,
+  generatePresentation as generateOdpPresentation,
+  parsePresentation as parseOdpPresentation,
+} from "@office-open/odp";
+import { parsePresentation as parsePptPresentation } from "@office-open/ppt";
+import {
+  generatePresentation as generatePptxPresentation,
   parsePresentation as parsePptxPresentation,
+  patchPresentation as patchPptxPresentation,
+  type PatchPresentationOptions,
+  type PresentationOptions,
 } from "@office-open/pptx";
 
-import { detectOfficeFormat } from "./formats";
+import { detectOffice } from "./formats";
 
 /** Password accepted by the legacy PPT parser. */
-export interface PresentationFileParseOptions {
+export interface PresentationParseOptions {
   password?: string;
 }
 
-export type PresentationFileParseFormat = "odp" | "ppt" | "pptx" | "pptm" | "potx" | "potm";
+export type PresentationParseFormat = "odp" | "ppt" | "pptx" | "pptm" | "potx" | "potm";
 
-export type PresentationFileGenerateFormat = "pptx" | "pptm" | "potx" | "potm" | "odp";
+export type PresentationGenerateFormat = "pptx" | "pptm" | "potx" | "potm" | "odp";
+
+export type PresentationPatchFormat = "pptx" | "pptm" | "potx" | "potm";
+
+const PRESENTATION_PATCH_FORMATS: readonly PresentationPatchFormat[] = [
+  "pptx",
+  "pptm",
+  "potx",
+  "potm",
+];
+
+export type PresentationPatchRequest<T extends OutputType = OutputType> = Omit<
+  PatchPresentationOptions<T>,
+  "data" | "outputType"
+> & {
+  format: PresentationPatchFormat;
+  data: PatchPresentationOptions<T>["data"];
+  outputType?: T;
+};
 
 const ODP_MIME_TYPE = "application/vnd.oasis.opendocument.presentation";
 
-export async function parsePresentationFile(
+export async function parsePresentation(
   input: Uint8Array | string,
-  options?: PresentationFileParseOptions,
+  options?: PresentationParseOptions,
 ): Promise<PresentationOptions> {
-  const info = detectOfficeFormat(input);
+  const info = detectOffice(input);
   const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
 
   switch (info.format) {
     case "odp":
-      return parseOdp(data);
+      return parseOdpPresentation(data);
     case "ppt":
-      return parseLegacyPresentation(data, options);
+      return parsePptPresentation(data, options);
     case "pptx":
     case "pptm":
     case "potx":
@@ -49,8 +72,8 @@ export async function parsePresentationFile(
   }
 }
 
-export async function generatePresentationFile<
-  F extends PresentationFileGenerateFormat,
+export async function generatePresentation<
+  F extends PresentationGenerateFormat,
   T extends OutputType = "nodebuffer",
 >(
   format: F,
@@ -62,12 +85,26 @@ export async function generatePresentationFile<
 
   if (format === "odp") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODP");
-    return convertOutput(generateOdp(options), outputType, ODP_MIME_TYPE);
+    return convertOutput(generateOdpPresentation(options), outputType, ODP_MIME_TYPE);
   }
 
-  return generatePresentation(options, {
+  return generatePptxPresentation(options, {
     type: outputType,
     packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
+}
+
+export async function patchPresentation<T extends OutputType = OutputType>(
+  request: PresentationPatchRequest<T>,
+): Promise<OutputByType[T]> {
+  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  if (!PRESENTATION_PATCH_FORMATS.includes(format)) {
+    throw new Error(`${format} does not support presentation patching`);
+  }
+  return patchPptxPresentation({
+    ...(patch as PatchPresentationOptions<T>),
+    data,
+    outputType,
+  } as PatchPresentationOptions<T>);
 }

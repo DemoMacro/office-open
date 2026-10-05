@@ -1,7 +1,7 @@
 import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import { detectOfficeFormat } from "../formats";
+import { detectOffice } from "../formats";
 import { formatToolError } from "./error";
 import {
   docxTool,
@@ -10,6 +10,7 @@ import {
   officeOpenTools,
   odtTool,
   pptxTool,
+  rtfTool,
   schemaLookupTool,
   xlsxTool,
 } from "./index";
@@ -44,16 +45,17 @@ async function executeTool(
 }
 
 describe("officeOpenTools", () => {
-  it("should export seven tools with correct keys", () => {
+  it("should export eight tools with correct keys", () => {
     const keys = Object.keys(officeOpenTools);
     expect(keys).toContain("generate-docx");
     expect(keys).toContain("generate-pptx");
     expect(keys).toContain("generate-xlsx");
     expect(keys).toContain("generate-odt");
+    expect(keys).toContain("generate-rtf");
     expect(keys).toContain("generate-ods");
     expect(keys).toContain("generate-odp");
     expect(keys).toContain("office-open-schema-lookup");
-    expect(keys).toHaveLength(7);
+    expect(keys).toHaveLength(8);
   });
 
   it("each tool should have a function execute", () => {
@@ -82,6 +84,19 @@ describe("officeOpenTools", () => {
       if (name === "office-open-schema-lookup") continue;
       expect(tool.description).toContain("office-open-schema-lookup");
     }
+  });
+});
+
+describe("rtfTool", () => {
+  it("generates RTF through the aggregate writer", async () => {
+    const result = await executeTool(rtfTool, {
+      sections: [{ children: [{ paragraph: { children: ["AI RTF"] } }] }],
+    });
+    const source = new TextDecoder().decode(
+      Uint8Array.from(atob(result.base64), (character) => character.charCodeAt(0)),
+    );
+    expect(result.mimeType).toBe("application/rtf");
+    expect(source).toContain("AI RTF");
   });
 });
 
@@ -178,7 +193,7 @@ describe("generate tool dispatch", () => {
       const result = await executeTool(fixture.tool, fixture.input);
       const bytes = new Uint8Array(Buffer.from(result.base64, "base64"));
       expect(result.mimeType).toBe(fixture.mimeType);
-      expect(detectOfficeFormat(bytes).format).toBe(format);
+      expect(detectOffice(bytes).format).toBe(format);
       const files = unzipSync(bytes);
       expect(new TextDecoder().decode(files.mimetype).trim()).toBe(fixture.mimeType);
       const manifest = new TextDecoder().decode(files["META-INF/manifest.xml"]);

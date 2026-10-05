@@ -1,1 +1,1 @@
-export { generateOdt, parseOdt } from "./body";
+export { generateDocument, parseDocument } from "./body";

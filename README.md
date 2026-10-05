@@ -9,16 +9,18 @@ English | [简体中文](./README.zh-CN.md)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
 > AI-native Office documents for TypeScript and JavaScript.
-> Create Word, Excel, and PowerPoint files (.docx, .xlsx, .pptx) from plain JSON or fully typed APIs — generate, parse, and patch. Read legacy .doc/.xls/.ppt, RTF, and ODF; generate ODT/ODS/ODP and convert CSV/TSV. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required.
+> Create Word, Excel, PowerPoint, RTF, and OpenDocument files from plain JSON or fully typed APIs — generate, parse, and patch where the format supports it. Read legacy .doc/.xls/.ppt and ODF; generate .rtf and ODT/ODS/ODP and convert CSV/TSV. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required.
 
-[Documentation](https://www.office-open.com) · [AI Integration](https://www.office-open.com/en/getting-started/ai-integration) · [Benchmarks](#performance) · [npm](https://www.npmjs.com/package/office-open)
+[Documentation](https://www.office-open.com) · [Playground](https://docx.json-to-office.com/) · [AI Integration](https://www.office-open.com/en/getting-started/ai-integration) · [Benchmarks](#performance) · [npm](https://www.npmjs.com/package/office-open)
+
+Used in production by [json-to-office](https://json-to-office.com/) — its quality-first DOCX renderer is `@office-open/docx`.
 
 ⭐ **If office-open speeds up your work, a star helps other developers find it.**
 
 ## Features
 
 - 📄 **All-in-One** — Word (.docx), Excel (.xlsx), and PowerPoint (.pptx) in one cohesive API — no server required, works offline
-- 🗂 **Multi-Format Reading** — Parse legacy Word/Excel/PowerPoint (.doc/.xls/.ppt), RTF, ODF, and OOXML package variants through the same option models; generate ODT/ODS/ODP and convert CSV/TSV
+- 🗂 **Multi-Format I/O** — Parse legacy Word/Excel/PowerPoint (.doc/.xls/.ppt), RTF, ODF, and OOXML package variants through the same option models; generate RTF, ODT/ODS/ODP, and CSV/TSV
 - 🤖 **AI Tooling** — Draft-07 JSON Schemas frozen from the TypeScript API, on-demand schema slicing for LLM context budgets (CLI + SDK tool), Vercel AI SDK tool definitions, and an installable Agent Skill
 - 🧭 **Core OOXML Coverage** — All 2,191 elements and 1,923 attributes across the 17 core OOXML Transitional schemas (WordprocessingML, PresentationML, SpreadsheetML, DrawingML, shared math, and VML) are implemented for both generation and parsing; newer Word extension schemas are partially covered and tracked by automated XSD coverage tooling
 - 📐 **Spec-Compliant** — Output validates against the OOXML Transitional XSD schemas (ISO/IEC 29500) and is verified to open in Microsoft Office, WPS Office, LibreOffice, and Google Workspace
@@ -41,6 +43,16 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k rows × 20 cols (2M cells)  | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
 | [@office-open/xml](./packages/xml/README.md#benchmark)   | Parse complex OOXML             | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
 
+## Why office-open?
+
+Most Office libraries only generate files. office-open closes the loop with generate, parse, and patch — consistent option models, XSD-validated output, and AI-ready JSON Schemas across Word, Excel, and PowerPoint.
+
+| If you use today                                   | What office-open adds                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [docx](https://www.npmjs.com/package/docx)         | Parsing and template patching for round-trip workflows, ~14× faster generation  |
+| [ExcelJS](https://github.com/exceljs/exceljs)      | Word and PowerPoint behind the same declarative API, with shared drawing models |
+| [PptxGenJS](https://github.com/gitbrent/PptxGenJS) | Parsing and patching, cross-format conversion, XSD-validated output             |
+
 ## Packages
 
 | Package                                         | Version                                                | Description                                          |
@@ -52,7 +64,7 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | Legacy Word .doc parsing                             |
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | Legacy Excel .xls parsing                            |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | Legacy PowerPoint .ppt parsing                       |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format parsing                             |
+| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format generation and parsing              |
 | [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument text generation and parsing             |
 | [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument spreadsheet generation and parsing      |
 | [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument presentation generation and parsing     |
@@ -65,10 +77,10 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | ----------------------------- | ----- | -------- | ----- | ----------------------------------------- |
 | OOXML `.docx`/`.xlsx`/`.pptx` | ✅    | ✅       | ✅    | Bidirectional package codecs              |
 | Legacy `.doc`/`.xls`/`.ppt`   | ✅    | ❌       | ❌    | Projected to the OOXML option models      |
-| `.rtf`                        | ✅    | ❌       | ❌    | Read-only projection to `DocumentOptions` |
+| `.rtf`                        | ✅    | ✅       | ❌    | Strict `DocumentOptions` projection       |
 | ODF `.odt`/`.ods`/`.odp`      | ✅    | ✅       | ❌    | Canonical format-family read/write codecs |
 
-The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy and RTF have no writers, and ODF codecs do not expose patch operations.
+The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy formats have no writers, RTF rejects unsupported canonical fields rather than dropping them, and ODF codecs do not expose patch operations.
 
 The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 

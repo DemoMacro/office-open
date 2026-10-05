@@ -56,8 +56,8 @@
     "test": "vp test run",
     "check": "vp check --fix",
     "bench": "vp test bench",
-    "extract": "tsx scripts/extract-document.ts",
-    "demos": "tsx scripts/run-all-demos.ts"
+    "demos": "tsx scripts/run-all-demos.ts",
+    "extract": "tsx scripts/extract-document.ts"
   },
   "dependencies": {
     "@office-open/core": "workspace:*",

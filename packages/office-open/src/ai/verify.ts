@@ -5,7 +5,7 @@
  * Fresh output is fully under library control, so ANY issue (error or warn) is
  * a library regression, not an options error — fail fast with the diagnosis
  * instead of shipping a file Word/Excel report as corrupt. Mirrors what
- * scripts/validate.ts runs in CI; O7-style duplicate relationship ids are
+ * scripts/validation/ooxml.ts runs in CI; O7-style duplicate relationship ids are
  * exactly the class of breakage this catches before a user sees it.
  *
  * @module
@@ -18,15 +18,15 @@ import {
   validateOpcConsistency,
 } from "@office-open/core";
 
-import type { GenerateType } from "../generate";
+import type { OfficeGenerateFormat } from "../generate";
 
 // Binary parts (media, fonts) decode to replacement chars — the check only
 // reads part presence and paths, never their content.
 const decoder = new TextDecoder("utf-8", { fatal: false });
 
 /** OPC-check a fresh package and return it as base64 for the tool result. */
-export function generateVerifiedBase64(type: GenerateType, bytes: Uint8Array): string {
-  if (type === "odt" || type === "ods" || type === "odp") {
+export function generateVerifiedBase64(type: OfficeGenerateFormat, bytes: Uint8Array): string {
+  if (type === "odt" || type === "ods" || type === "odp" || type === "rtf") {
     return encodeBase64(bytes);
   }
   const schemaTypes = {

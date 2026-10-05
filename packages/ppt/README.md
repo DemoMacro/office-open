@@ -56,7 +56,11 @@ const options = parsePresentation(data, { password: "secret" });
 - `PptParseOptions` — parse-time options, including `password`
 - `PptParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
 
-The projected model follows the office-open `PresentationOptions` shape where the legacy binary format has a direct counterpart. Unsupported legacy records are skipped without aborting the presentation.
+## Errors and Limitations
+
+- Invalid, truncated, unsupported, and encrypted files throw `PptParseError`.
+- Unsupported binary records are skipped without aborting the presentation; their omissions are visible in canonical context.
+- PPT generation is intentionally unavailable.
 
 ## Documentation
 

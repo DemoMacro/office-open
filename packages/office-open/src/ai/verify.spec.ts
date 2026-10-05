@@ -1,18 +1,18 @@
 import { decodeBase64, zipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generate } from "../generate";
+import { generateOffice } from "../generate";
 import { generateVerifiedBase64 } from "./verify";
 
 const encode = (s: string) => new TextEncoder().encode(s);
 
 describe("generateVerifiedBase64", () => {
   it("returns base64 for a clean freshly generated docx", async () => {
-    const bytes = (await generate({
-      type: "docx",
-      options: { sections: [{ children: [{ paragraph: { children: ["Hello"] } }] }] },
-      outputType: "uint8array",
-    })) as Uint8Array;
+    const bytes = (await generateOffice(
+      "docx",
+      { sections: [{ children: [{ paragraph: { children: ["Hello"] } }] }] },
+      "uint8array",
+    )) as Uint8Array;
     const base64 = generateVerifiedBase64("docx", bytes);
     // Copy into a plain Uint8Array — decodeBase64 may return a Buffer subclass
     // that vitest refuses to deep-equal against a plain Uint8Array.

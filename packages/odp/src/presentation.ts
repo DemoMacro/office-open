@@ -45,7 +45,7 @@ export const NAMESPACES = [
   'xmlns:xforms="http://www.w3.org/2002/xforms"',
 ].join(" ");
 
-export function generateOdp(options: PresentationOptions): Uint8Array {
+export function generatePresentation(options: PresentationOptions): Uint8Array {
   const styles: string[] = [];
   const images: OdpImage[] = [];
   const charts: OdpChart[] = [];
@@ -73,9 +73,9 @@ export function generateOdp(options: PresentationOptions): Uint8Array {
   );
 }
 
-export function parseOdp(data: Uint8Array): PresentationOptions {
+export function parsePresentation(data: Uint8Array): PresentationOptions {
   try {
-    return parseOdpPresentation(data);
+    return parseOdpBody(data);
   } catch (cause) {
     if (cause instanceof OdpParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
@@ -94,7 +94,7 @@ export function parseOdp(data: Uint8Array): PresentationOptions {
   }
 }
 
-export function parseOdpPresentation(data: Uint8Array): PresentationOptions {
+function parseOdpBody(data: Uint8Array): PresentationOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");

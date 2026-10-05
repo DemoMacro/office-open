@@ -344,4 +344,13 @@ const result = await patchWorkbook({
   :::button-link{to="/zh/getting-started/installation"}
   快速开始 <Icon name="i-lucide-arrow-right" />
   :::
+  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline"}
+  GitHub Star <Icon name="i-lucide-star" />
+  :::
+  :::button-link{to="https://github.com/DemoMacro/office-open/discussions" target="_blank" variant="outline"}
+  参与讨论 <Icon name="i-lucide-messages-square" />
+  :::
+  :::button-link{to="https://github.com/sponsors/DemoMacro" target="_blank" variant="outline"}
+  赞助支持 <Icon name="i-lucide-heart" />
+  :::
 ::

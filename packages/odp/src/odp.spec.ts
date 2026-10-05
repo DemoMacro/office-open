@@ -1,16 +1,16 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdp, OdpParseError, parseOdp } from "./index";
+import { generatePresentation, OdpParseError, parsePresentation } from "./index";
 
 describe("ODP codec", () => {
   it("round-trips a presentation through canonical PresentationOptions", () => {
-    const parsed = parseOdp(generateOdp({ slides: [{ notes: "ODP" }] }));
+    const parsed = parsePresentation(generatePresentation({ slides: [{ notes: "ODP" }] }));
     expect(parsed.slides?.[0]?.notes).toBe("ODP");
   });
 
   it("wraps invalid packages in OdpParseError", () => {
-    expect(() => parseOdp(new Uint8Array([1, 2, 3]))).toThrow(OdpParseError);
+    expect(() => parsePresentation(new Uint8Array([1, 2, 3]))).toThrow(OdpParseError);
   });
 
   it("round-trips slide form containers and controls", () => {
@@ -41,7 +41,7 @@ describe("ODP codec", () => {
         ],
       },
     ];
-    const parsed = parseOdp(generateOdp({ slides: [{ forms }] }));
+    const parsed = parsePresentation(generatePresentation({ slides: [{ forms }] }));
     expect(parsed.slides?.[0]?.forms).toEqual(forms);
   });
 
@@ -49,7 +49,7 @@ describe("ODP codec", () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"><office:body><office:presentation><draw:page><office:forms><form:form><form:unknown/></form:form></office:forms></draw:page></office:presentation></office:body></office:document-content>`;
     let error: unknown;
     try {
-      parseOdp(
+      parsePresentation(
         generateOcf("application/vnd.oasis.opendocument.presentation", {
           "content.xml": content,
         }),
@@ -62,8 +62,8 @@ describe("ODP codec", () => {
   });
 
   it("round-trips slide charts with position, size, semantics, and order", () => {
-    const parsed = parseOdp(
-      generateOdp({
+    const parsed = parsePresentation(
+      generatePresentation({
         slides: [
           {
             children: [
@@ -117,7 +117,7 @@ describe("ODP codec", () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"><office:body><office:presentation><draw:page><draw:unknown/></draw:page></office:presentation></office:body></office:document-content>`;
     let error: unknown;
     try {
-      parseOdp(
+      parsePresentation(
         generateOcf("application/vnd.oasis.opendocument.presentation", {
           "content.xml": content,
         }),

@@ -3,9 +3,9 @@ import { readFile, writeFile } from "node:fs/promises";
 import { OOXML_PACKAGE_FORMATS } from "@office-open/core";
 import { defineCommand, runMain } from "citty";
 
-import { detectOfficeFile } from "./detect";
-import { generateToFile, parseInput } from "./generate";
-import { parseOfficeDocument } from "./parse";
+import { detectOffice, type OfficeFormatInfo } from "./formats";
+import { generateOffice, type OfficeGenerateFormat, type OfficeOptionsFor } from "./generate";
+import { parseOffice, type ParsedOffice } from "./parse";
 import {
   SCHEMA_ENTRIES,
   UnknownDefinitionError,
@@ -15,15 +15,18 @@ import {
 } from "./schemas";
 import { SCHEMAS, type DocumentType } from "./schemas/schemas";
 
-type GenerateFormat = keyof typeof OOXML_PACKAGE_FORMATS;
+type OoxmlGenerateFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
-type OfficeGenerateCommandFormat = GenerateFormat | "odt" | "ods" | "odp";
+type OfficeGenerateCommandFormat = OoxmlGenerateFormat | "odt" | "ods" | "odp" | "rtf";
+
+type GenerateFormat = OfficeGenerateCommandFormat;
 
 const FORMATS = [
   ...Object.keys(OOXML_PACKAGE_FORMATS),
   "odt",
   "ods",
   "odp",
+  "rtf",
 ] as OfficeGenerateCommandFormat[];
 
 const SCHEMA_TYPES = {
@@ -33,6 +36,7 @@ const SCHEMA_TYPES = {
   odt: "docx",
   ods: "xlsx",
   odp: "pptx",
+  rtf: "docx",
 } as const;
 
 function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {
@@ -41,7 +45,7 @@ function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {
 }
 
 /** Parse and validate a generate-format positional (citty positionals cannot be enums). */
-function parseGenerateFormat(raw: string | undefined): GenerateFormat {
+function parseGenerateFormat(raw: string | undefined): OfficeGenerateCommandFormat {
   if ((FORMATS as readonly string[]).includes(raw ?? "")) {
     return raw as OfficeGenerateCommandFormat as GenerateFormat;
   }
@@ -55,6 +59,31 @@ function parseSchemaFormat(raw: string | undefined): DocumentType {
   if (raw === "docx" || raw === "pptx" || raw === "xlsx") return raw;
   const format = parseGenerateFormat(raw);
   return schemaTypeOf(format);
+}
+
+async function readJsonInput(input: string): Promise<Record<string, unknown>> {
+  const trimmed = input.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    return JSON.parse(trimmed) as Record<string, unknown>;
+  }
+  return JSON.parse(await readFile(input, "utf-8")) as Record<string, unknown>;
+}
+
+async function detectOfficePath(path: string): Promise<OfficeFormatInfo> {
+  return detectOffice(new Uint8Array(await readFile(path)));
+}
+
+async function parseOfficePath(path: string): Promise<ParsedOffice> {
+  return parseOffice(new Uint8Array(await readFile(path)));
+}
+
+async function generateOfficePath<Format extends OfficeGenerateFormat>(
+  path: string,
+  format: Format,
+  options: OfficeOptionsFor[Format],
+): Promise<void> {
+  const contents = await generateOffice(format, options, "nodebuffer");
+  await writeFile(path, contents);
 }
 
 function createConvertCommand(type: string, defaultExt: string) {
@@ -92,12 +121,9 @@ function createConvertCommand(type: string, defaultExt: string) {
       const docType = schemaTypeOf(generateType);
 
       try {
-        const docOptions = await parseInput(jsonInput);
+        const docOptions = await readJsonInput(jsonInput);
         const validated = validateDocumentInput(docType, docOptions);
-        await generateToFile(outputPath, {
-          type: generateType,
-          options: validated,
-        });
+        await generateOfficePath(outputPath, generateType, validated);
         console.log(`Generated: ${outputPath}`);
       } catch (error) {
         // Expected user errors (bad JSON, schema violations) print as a single line;
@@ -234,7 +260,7 @@ const detectCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const info = await detectOfficeFile(args.input as string);
+      const info = await detectOfficePath(args.input as string);
       if (args.json) {
         console.log(JSON.stringify(info));
         return;
@@ -264,9 +290,7 @@ const parseCommand = defineCommand({
   },
   async run({ args }) {
     try {
-      const parsed = await parseOfficeDocument(
-        new Uint8Array(await readFile(args.input as string)),
-      );
+      const parsed = await parseOfficePath(args.input as string);
       const json = JSON.stringify(parsed, null, 2);
       if (args.output) {
         await writeFile(args.output as string, json);
