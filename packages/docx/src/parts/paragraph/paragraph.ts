@@ -146,6 +146,8 @@ export type ParagraphChild =
   | {
       hyperlink: {
         url?: string;
+        /** Source document relationship number; round-trip only. */
+        sourceRelationshipId?: number;
         anchor?: string;
         tooltip?: string;
         /** Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`) */
@@ -257,6 +259,8 @@ export type ParagraphChild =
 export type ParagraphOptions = {
   /** Simple text content for the paragraph. Creates a single TextRun. */
   text?: string;
+  /** Preserve leading/trailing spaces in text (xml:space="preserve"). */
+  preserveSpace?: boolean;
   /** Array of child elements. */
   children?: (ParagraphChild | string)[];
   /** Revision save ID for the paragraph mark (w:rsidR, CT_LongHexNumber hex string). */

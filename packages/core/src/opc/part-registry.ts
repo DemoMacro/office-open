@@ -493,7 +493,14 @@ export const XLSX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
-  opaquePrefixes: ["xl/embeddings/", "xl/printerSettings/"],
+  opaquePrefixes: [
+    "xl/embeddings/",
+    "xl/printerSettings/",
+    "xl/media/",
+    "xl/drawings/vmlDrawing",
+    "xl/activeX/activeX",
+    "docProps/thumbnail.",
+  ],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },
@@ -627,6 +634,12 @@ export const XLSX_PARTS = {
       path: "xl/volTypes.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.volTypes+xml",
       presence: { kind: "conditional", flag: "volTypes" },
+    },
+    {
+      path: "xl/volatileDependencies.xml",
+      contentType:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.volatileDependencies+xml",
+      presence: { kind: "conditional", flag: "legacy volatileDependencies alias" },
     },
     {
       opaque: true,

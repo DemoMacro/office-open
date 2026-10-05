@@ -98,6 +98,8 @@ interface RunOptionsBase {
   )[];
   break?: number | BreakOptions;
   text?: string;
+  /** Source `xml:space="preserve"` marker; round-trip only. */
+  preserveSpace?: boolean;
   /**
    * Footnote reference as a top-level field — the parse path flattens a pure
    * reference run (e.g. inside w:hyperlink) to `{ footnoteReference, …rPr }`

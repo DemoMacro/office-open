@@ -248,7 +248,7 @@ function stringifySectionPropertiesInner(
   const {
     width = sectionPageSizeDefaults.WIDTH,
     height = sectionPageSizeDefaults.HEIGHT,
-    orientation = sectionPageSizeDefaults.ORIENTATION,
+    orientation,
     code,
   } = typeof opts.pageSize === "object" ? opts.pageSize : {};
   const {
@@ -265,7 +265,7 @@ function stringifySectionPropertiesInner(
   const {
     linePitch = 312,
     charSpace,
-    type: gridType = "lines",
+    type: gridType,
   } = typeof opts.grid === "object" ? opts.grid : {};
 
   // Footnote/endnote properties

@@ -18,46 +18,56 @@ import type { TableOptions } from "@parts/table/table";
 import { parseParagraph } from "../body";
 import type { BodyContext } from "../context";
 import type { DocxReadContext } from "../context";
-import { documentNamespaceAttributes } from "./document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  documentNamespaceDialect,
+  type DocumentAttributeNamespace,
+} from "./document/document-attributes";
 import { buildBookmarkStartAttrs, buildMarkupRangeAttrs, stringifyParagraphInline } from "./inline";
 
 /** Root namespace header shared by the comment-infrastructure parts
  *  (comments.xml, people.xml, commentsExtended.xml). Word writes the same
  *  declaration set plus mc:Ignorable on all three roots. */
-export const COMMENTS_NS =
-  documentNamespaceAttributes([
-    "aink",
-    "am3d",
-    "cx",
-    "cx1",
-    "cx2",
-    "cx3",
-    "cx4",
-    "cx5",
-    "cx6",
-    "cx7",
-    "cx8",
-    "m",
-    "mc",
-    "o",
-    "r",
-    "v",
-    "w",
-    "w10",
-    "w14",
-    "w15",
-    "w16",
-    "w16cex",
-    "w16cid",
-    "w16sdtdh",
-    "w16se",
-    "wne",
-    "wp",
-    "wp14",
-    "wpg",
-    "wpi",
-    "wps",
-  ]) + ' mc:Ignorable="w14 w15 wp14"';
+const COMMENTS_NAMESPACE_KEYS: readonly DocumentAttributeNamespace[] = [
+  "aink",
+  "am3d",
+  "cx",
+  "cx1",
+  "cx2",
+  "cx3",
+  "cx4",
+  "cx5",
+  "cx6",
+  "cx7",
+  "cx8",
+  "m",
+  "mc",
+  "o",
+  "r",
+  "v",
+  "w",
+  "w10",
+  "w14",
+  "w15",
+  "w16",
+  "w16cex",
+  "w16cid",
+  "w16sdtdh",
+  "w16se",
+  "wne",
+  "wp",
+  "wp14",
+  "wpg",
+  "wpi",
+  "wps",
+];
+
+export function commentsNamespaceAttributes(ctx: BodyContext): string {
+  return (
+    documentNamespaceAttributesInDialect(COMMENTS_NAMESPACE_KEYS, documentNamespaceDialect(ctx)) +
+    ' mc:Ignorable="w14 w15 wp14"'
+  );
+}
 
 // ── Comment stringification ──
 
@@ -96,7 +106,7 @@ export const commentsDesc: CustomDescriptor<CommentOptions[], BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const parts: string[] = [`<w:comments ${COMMENTS_NS}>`];
+    const parts: string[] = [`<w:comments ${commentsNamespaceAttributes(ctx)}>`];
 
     for (const child of opts) {
       parts.push(stringifyComment(child, ctx));

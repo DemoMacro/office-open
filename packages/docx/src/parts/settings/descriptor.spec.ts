@@ -86,7 +86,7 @@ describe("settingsDesc round-trip", () => {
 
     const out = settingsDesc.stringify(parsed, writeCtx)!;
     expect(out).toContain(
-      '<w:compat><w:useFELayout w:val="1"/><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="14"/></w:compat>',
+      '<w:compat><w:useFELayout/><w:compatSetting w:name="compatibilityMode" w:uri="http://schemas.microsoft.com/office/word" w:val="14"/></w:compat>',
     );
   });
 
@@ -260,7 +260,7 @@ describe("settingsDesc round-trip", () => {
 describe("settings compat/style-pane fidelity", () => {
   it("emits only the given compat fields — no injected compatibilityMode", () => {
     const xml = settingsDesc.stringify({ compatibility: { useFELayout: true } }, writeCtx)!;
-    expect(xml).toContain('<w:useFELayout w:val="1"/>');
+    expect(xml).toContain("<w:useFELayout/>");
     expect(xml).not.toContain("compatibilityMode");
   });
 

@@ -85,12 +85,38 @@ function writeFootnotes(options: DocumentOptions): string {
 }
 
 function writeMetadata(options: DocumentOptions): string {
+  if (options.appProperties) {
+    assertAllowed(
+      options.appProperties,
+      ["totalTime", "pages", "words", "characters", "charactersWithSpaces"],
+      "app-properties",
+      "appProperties",
+    );
+  }
   const metadata = supportedMetadata(options);
   const entries = Object.entries(metadata).map(([name, value]) => {
     const word = name === "creator" ? "author" : name === "description" ? "doccomm" : name;
     return `{\\${word} ${rtfText(value)}}`;
   });
-  return entries.length > 0 ? `{\\info${entries.join("")}}` : "";
+  const appProperties = options.appProperties ?? {};
+  const appCounts: [keyof typeof appProperties, string][] = [
+    ["totalTime", "edmins"],
+    ["pages", "nofpages"],
+    ["words", "nofwords"],
+    ["characters", "nofchars"],
+    ["charactersWithSpaces", "nofcharsws"],
+  ];
+  const appEntries = appCounts
+    .map(([field, word]) => {
+      const value = appProperties[field];
+      if (value === undefined) return "";
+      if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+        reject("app-properties", `appProperties.${field}`, String(value), "RTF requires a count");
+      }
+      return `{\\${word}${value}}`;
+    })
+    .join("");
+  return entries.length > 0 || appEntries ? `{\\info${entries.join("")}${appEntries}}` : "";
 }
 
 function writeSectionProperties(section: SectionOptions, path: string): string {
@@ -215,6 +241,7 @@ export function writeRtf(options: DocumentOptions): string {
       "keywords",
       "description",
       "category",
+      "appProperties",
       "styles",
       "numbering",
       "footnotes",

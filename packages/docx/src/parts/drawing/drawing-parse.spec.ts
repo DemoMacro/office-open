@@ -33,6 +33,7 @@ function drawingXml(docPrAttrs?: string): string {
   const docPr = docPrAttrs === undefined ? "" : `<wp:docPr ${docPrAttrs}/>`;
   return (
     `<w:drawing ${NS}><wp:inline><wp:extent cx="5486400" cy="3200400"/>` +
+    '<wp:effectExtent l="19050" t="0" r="19050" b="0"/>' +
     docPr +
     `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart">` +
     `<c:chart r:id="rId1"/></a:graphicData></a:graphic></wp:inline></w:drawing>`
@@ -57,5 +58,18 @@ describe("parseChartDrawing alt text", () => {
     const result = parseDrawing();
     const chart = (result as { chart?: { altText?: unknown } } | undefined)?.chart;
     expect(chart?.altText).toBeUndefined();
+  });
+
+  it("carries wp:effectExtent onto the chart transformation", () => {
+    const result = parseDrawing();
+    expect(result).toMatchObject({
+      chart: {
+        transformation: {
+          width: 5486400,
+          height: 3200400,
+          effectExtent: { l: 19050, t: 0, r: 19050, b: 0 },
+        },
+      },
+    });
   });
 });

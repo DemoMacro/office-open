@@ -2,6 +2,7 @@ import { convertToEmu } from "@office-open/core";
 import type { ColorMappingOptions, UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import {
+  createShapeLocking,
   pickNonVisualDrawingProperties,
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
@@ -31,9 +32,13 @@ export interface MasterPlaceholderPosition {
 
 export type MasterPlaceholderOptions = PlaceholderMapOptions;
 
+export type StandardPlaceholderKey = "title" | "body" | "date" | "footer" | "slideNumber";
+
+export type MasterChild = SlideChild | { placeholder: StandardPlaceholderKey };
+
 export interface SlideMasterOptions {
   background?: BackgroundOptions;
-  children?: SlideChild[];
+  children?: MasterChild[];
   placeholders?: MasterPlaceholderOptions;
   /** Color mapping overrides (p:clrMap); defaults to the standard mapping. */
   colorMapping?: Partial<ColorMappingOptions>;
@@ -134,6 +139,9 @@ function resolveDef(
 }
 
 function copyFacets(src: PlaceholderDefinition, dst: Partial<PlaceholderDefinition>): void {
+  if (src.id !== undefined) dst.id = src.id;
+  if (src.blackWhiteMode !== undefined) dst.blackWhiteMode = src.blackWhiteMode;
+  if (src.locking !== undefined) dst.locking = src.locking;
   if (src.geometry !== undefined) dst.geometry = src.geometry;
   if (src.customGeometry !== undefined) dst.customGeometry = src.customGeometry;
   if (src.fill !== undefined) dst.fill = src.fill;
@@ -154,6 +162,7 @@ function phSp(
   defaultBody: string,
   ctx: WriteContext,
 ): string {
+  const sourceId = def.id ?? id;
   // p:spPr — xfrm + geometry (defaults to rect, the placeholder standard) +
   // any inherited fill/outline/effects/3D facets.
   const spPrContent = shapePropertiesDesc.stringify(
@@ -172,7 +181,8 @@ function phSp(
     } as ShapePropertiesOptions,
     ctx,
   );
-  const spPr = spPrContent ? `<p:spPr>${spPrContent}</p:spPr>` : "<p:spPr/>";
+  const bwMode = def.blackWhiteMode ? ` bwMode="${def.blackWhiteMode}"` : "";
+  const spPr = spPrContent ? `<p:spPr${bwMode}>${spPrContent}</p:spPr>` : `<p:spPr${bwMode}/>`;
 
   const styleXml = def.style ? stringifyShapeStyle(def.style, ctx) : "";
   const bodyContent = def.textBody ? textBodyDesc.stringify(def.textBody, ctx) : defaultBody;
@@ -180,9 +190,10 @@ function phSp(
   // cNvPr via the shared serializer — carries description/title/hidden and the
   // a16:creationId extension when the definition (round-trip) has them; fresh
   // definitions emit the same plain `<p:cNvPr id name/>` as before.
-  const cNvPr = stringifyNonVisualDrawingProperties("p:cNvPr", id, def, name);
+  const cNvPr = stringifyNonVisualDrawingProperties("p:cNvPr", sourceId, def, name);
 
-  return `<p:sp><p:nvSpPr>${cNvPr}<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
+  const locking = def.locking ? createShapeLocking(def.locking) : '<a:spLocks noGrp="1"/>';
+  return `<p:sp><p:nvSpPr>${cNvPr}<p:cNvSpPr>${locking}</p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
 }
 
 export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
@@ -198,6 +209,8 @@ export function footerBody(algn: string, fldType: string, fldId: string, fldText
 export interface PlaceholderEmitResult {
   /** Concatenated placeholder <p:sp> XML (empty when all hidden). */
   xml: string;
+  /** Placeholder XML by logical slot, for masters that preserve source order. */
+  xmlByPlaceholder: Partial<Record<StandardPlaceholderKey, string>>;
   /** Next free cNvPr id after the emitted placeholders (children start here). */
   nextId: number;
 }
@@ -212,64 +225,70 @@ export function buildPlaceholderShapes(
 ): PlaceholderEmitResult {
   const ph = placeholders ?? {};
   const slideWidth = ctx.slideWidth;
-  const shapes: string[] = [];
+  const shapes: Partial<Record<StandardPlaceholderKey, string>> = {};
   let nextId = 2;
 
   const titleDef = resolveDef(ph.title, REF_TITLE, slideWidth);
   if (titleDef) {
-    shapes.push(phSp(nextId++, "Title Placeholder 1", 'type="title"', titleDef, BODY_DEFAULT, ctx));
+    shapes.title = phSp(
+      nextId++,
+      "Title Placeholder 1",
+      'type="title"',
+      titleDef,
+      BODY_DEFAULT,
+      ctx,
+    );
   }
 
   const bodyDef = resolveDef(ph.body, REF_BODY, slideWidth);
   if (bodyDef) {
-    shapes.push(
-      phSp(nextId++, "Text Placeholder 2", 'type="body" idx="1"', bodyDef, BODY_DEFAULT, ctx),
+    shapes.body = phSp(
+      nextId++,
+      "Text Placeholder 2",
+      'type="body" idx="1"',
+      bodyDef,
+      BODY_DEFAULT,
+      ctx,
     );
   }
 
   const dateDef = resolveDef(ph.date, REF_DATE, slideWidth);
   if (dateDef) {
-    shapes.push(
-      phSp(
-        nextId++,
-        "Date Placeholder 3",
-        'type="dt" sz="half" idx="2"',
-        dateDef,
-        footerBody("l", "datetimeFigureOut", "{5BCAD085-E8A6-8845-BD4E-CB4CCA059FC4}", "1/27/13"),
-        ctx,
-      ),
+    shapes.date = phSp(
+      nextId++,
+      "Date Placeholder 3",
+      'type="dt" sz="half" idx="2"',
+      dateDef,
+      footerBody("l", "datetimeFigureOut", "{5BCAD085-E8A6-8845-BD4E-CB4CCA059FC4}", "1/27/13"),
+      ctx,
     );
   }
 
   const footerDef = resolveDef(ph.footer, REF_FOOTER, slideWidth);
   if (footerDef) {
-    shapes.push(
-      phSp(
-        nextId++,
-        "Footer Placeholder 4",
-        'type="ftr" sz="quarter" idx="3"',
-        footerDef,
-        footerBody("ctr", "", "", ""),
-        ctx,
-      ),
+    shapes.footer = phSp(
+      nextId++,
+      "Footer Placeholder 4",
+      'type="ftr" sz="quarter" idx="3"',
+      footerDef,
+      footerBody("ctr", "", "", ""),
+      ctx,
     );
   }
 
   const sldNumDef = resolveDef(ph.slideNumber, REF_SLDNUM, slideWidth);
   if (sldNumDef) {
-    shapes.push(
-      phSp(
-        nextId++,
-        "Slide Number Placeholder 5",
-        'type="sldNum" sz="quarter" idx="4"',
-        sldNumDef,
-        footerBody("r", "slidenum", "{C1FF6DA9-008F-8B48-92A6-B652298478BF}", "‹#›"),
-        ctx,
-      ),
+    shapes.slideNumber = phSp(
+      nextId++,
+      "Slide Number Placeholder 5",
+      'type="sldNum" sz="quarter" idx="4"',
+      sldNumDef,
+      footerBody("r", "slidenum", "{C1FF6DA9-008F-8B48-92A6-B652298478BF}", "‹#›"),
+      ctx,
     );
   }
 
-  return { xml: shapes.join(""), nextId };
+  return { xml: Object.values(shapes).join(""), xmlByPlaceholder: shapes, nextId };
 }
 
 // ── Background ──

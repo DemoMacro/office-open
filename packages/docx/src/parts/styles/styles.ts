@@ -11,7 +11,10 @@ import type { LongHexNumber } from "@office-open/core";
  */
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { documentNamespaceRecord } from "@parts/document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  type DocumentNamespaceDialect,
+} from "@parts/document/document-attributes";
 import type {
   ParagraphPropertiesOptions,
   ParagraphStylePropertiesOptions,
@@ -87,6 +90,8 @@ export interface StylesOptions {
    * builtin rebuild). Fresh generation never sets this.
    */
   roundTripped?: boolean;
+  /** Source order of styleId values; round-trip only. */
+  styleOrder?: string[];
 }
 
 /**
@@ -109,11 +114,14 @@ export function extractStyleId(raw: string): string | undefined {
 export class Styles {
   private attributes: Record<string, string> = {};
   private parts: string[] = [];
+  private styleStart = 0;
+  private readonly styleOrder: string[] | undefined;
 
   public constructor(options: StylesOptions) {
     if (options.initialAttributes) {
       this.attributes = options.initialAttributes;
     }
+    this.styleOrder = options.styleOrder;
 
     // styleIds explicitly redefined via paragraphStyles/characterStyles take
     // precedence over importedStyles (user definitions override builtins) —
@@ -133,6 +141,7 @@ export class Styles {
         this.parts.push(style);
       }
     }
+    this.styleStart = this.parts.length;
 
     if (options.paragraphStyles) {
       for (const style of options.paragraphStyles) {
@@ -162,12 +171,19 @@ export class Styles {
   /**
    * Serialize to word/styles.xml content (with XML declaration).
    */
-  public serialize(): string {
+  public serialize(dialect: DocumentNamespaceDialect = "transitional"): string {
     // A user-provided StylesOptions carries no initialAttributes (those only
     // exist on parse round-trips) — bind the root namespaces like the default
     // template path does, else w:styles emits with an unbound prefix
     const merged: Record<string, string> = {
-      ...documentNamespaceRecord(["mc", "r", "w", "w14", "w15"]),
+      ...Object.fromEntries(
+        documentNamespaceAttributesInDialect(["mc", "r", "w", "w14", "w15"], dialect)
+          .split(" ")
+          .map((attribute) => {
+            const [name, value] = attribute.split("=");
+            return [name!, value!.slice(1, -1)];
+          }),
+      ),
       "mc:Ignorable": "w14 w15",
       ...this.attributes,
     };
@@ -178,7 +194,13 @@ export class Styles {
     }
 
     const attrs = attrParts.join("");
-    const body = this.parts.join("");
+    const styleParts = this.parts.slice(this.styleStart);
+    const orderedStyleParts = this.styleOrder
+      ? this.styleOrder
+          .map((id) => styleParts.find((style) => extractStyleId(style) === id))
+          .filter((style): style is string => style !== undefined)
+      : styleParts;
+    const body = [...this.parts.slice(0, this.styleStart), ...orderedStyleParts].join("");
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles${attrs}>${body}</w:styles>`;
   }
 }
@@ -291,6 +313,7 @@ export function parseStyleDefinitions(
   const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
   const tableStyles: TableStyleOptions[] = [];
   const numberingStyles: NumberingStyleOptions[] = [];
+  const styleOrder: string[] = [];
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
@@ -307,6 +330,7 @@ export function parseStyleDefinitions(
       const styleOpts = parseStyleElement(child, parseParagraphProperties, ctx);
       // Skip styles without a type or styleId — both are required to be useful.
       if (!styleOpts?._type || !styleOpts.id) continue;
+      styleOrder.push(styleOpts.id);
       // All styles (builtin + custom) round-trip structured so HTML renderers
       // can consume style attributes directly. Builtin verbatim _raw is gone —
       // a customized builtin (e.g. recolored Heading1) round-trips losslessly
@@ -333,6 +357,7 @@ export function parseStyleDefinitions(
   // Mark round-trip origin so context.ts consumes parsed structured styles
   // directly instead of rebuilding builtins via the factory.
   opts.roundTripped = true;
+  if (styleOrder.length > 0) opts.styleOrder = styleOrder;
 
   return Object.keys(opts).length > 0 ? opts : undefined;
 }

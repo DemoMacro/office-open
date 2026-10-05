@@ -13,7 +13,8 @@ import type { LongHexNumber } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml } from "@office-open/xml";
 
-import { COMMENTS_NS } from "./comments";
+import type { BodyContext } from "../context";
+import { commentsNamespaceAttributes } from "./comments";
 
 /** Options for one durable comment identifier (w16cid:commentId). */
 export interface CommentIdOptions {
@@ -23,17 +24,17 @@ export interface CommentIdOptions {
   durableId: LongHexNumber;
 }
 
-export const commentsIdsDesc: CustomDescriptor<CommentIdOptions[]> = {
+export const commentsIdsDesc: CustomDescriptor<CommentIdOptions[], BodyContext> = {
   kind: "custom",
 
-  stringify(opts) {
+  stringify(opts, ctx) {
     const entries = opts
       .map(
         (entry) =>
           `<w16cid:commentId w16cid:paraId="${escapeXml(entry.paraId)}" w16cid:durableId="${escapeXml(entry.durableId)}"/>`,
       )
       .join("");
-    return `<w16cid:commentsIds ${COMMENTS_NS}>${entries}</w16cid:commentsIds>`;
+    return `<w16cid:commentsIds ${commentsNamespaceAttributes(ctx)}>${entries}</w16cid:commentsIds>`;
   },
 
   parse(el) {

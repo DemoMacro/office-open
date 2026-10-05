@@ -61,6 +61,7 @@ import type { NonVisualPropertiesOptions } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../../context";
+import type { DocumentNamespaceDialect } from "../document/document-attributes";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
 // Import parse function from drawing-parse.ts (parse path)
 import { parseDrawingRun } from "./drawing-parse";
@@ -149,6 +150,15 @@ export interface DrawingDescriptorOptions {
   tile?: TileOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Word 2010 wrapper ids; round-trip only. */
+  extensionIds?: DrawingExtensionIds;
+  /** OOXML namespace dialect; round-trip only. */
+  dialect?: DocumentNamespaceDialect;
+}
+
+export interface DrawingExtensionIds {
+  anchorId?: string;
+  editId?: string;
 }
 
 // ── ID generation ──
@@ -162,19 +172,34 @@ export const resetDrawingIdGen = (): void => {
 
 // ── Constants ──
 
-const GRAPHIC_NS = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
-const PIC_URI = "http://schemas.openxmlformats.org/drawingml/2006/picture";
-const CHART_URI = "http://schemas.openxmlformats.org/drawingml/2006/chart";
-const DGM_URI = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
 const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
 const WPG_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup";
 const HYPERLINK_REL = RELATIONSHIP_TYPES.hyperlink;
 const IMAGE_REL = RELATIONSHIP_TYPES.image;
 const TEXT_BOX_REL = RELATIONSHIP_TYPES.txbxMs;
+
+function drawingExtensionAttrs(ids: DrawingExtensionIds | undefined): string[] {
+  const attrs: string[] = [];
+  if (ids?.anchorId) attrs.push(`wp14:anchorId="${ids.anchorId}"`);
+  if (ids?.editId) attrs.push(`wp14:editId="${ids.editId}"`);
+  return attrs;
+}
 // Blip extension URIs (a:extLst under a:blip).
 const SVG_BLIP_EXT_URI = "{96DAC541-7B7A-43D3-8B79-37D633B846F1}";
 const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
 const A14_NS = "http://schemas.microsoft.com/office/drawing/2010/main";
+
+function drawingmlUri(dialect: DocumentNamespaceDialect | undefined, path: string): string {
+  return dialect === "strict"
+    ? `http://purl.oclc.org/ooxml/drawingml/${path}`
+    : `http://schemas.openxmlformats.org/drawingml/2006/${path}`;
+}
+
+function relationshipNs(dialect: DocumentNamespaceDialect | undefined): string {
+  return dialect === "strict"
+    ? "http://purl.oclc.org/ooxml/officeDocument/relationships"
+    : "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+}
 
 /**
  * Build the `a14:useLocalDpi` blip extension. Returns "" when the hint is
@@ -210,9 +235,9 @@ function registerHyperlinks(
   return result;
 }
 
-function buildHyperlinkChildren(ids: HyperlinkIds): string {
+function buildHyperlinkChildren(ids: HyperlinkIds, dialect?: DocumentNamespaceDialect): string {
   const parts: string[] = [];
-  const aNs = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
+  const aNs = `xmlns:a="${drawingmlUri(dialect, "main")}"`;
   if (ids.clickId) parts.push(`<a:hlinkClick r:id="${ids.clickId}" ${aNs}/>`);
   if (ids.hoverId) parts.push(`<a:hlinkHover r:id="${ids.hoverId}" ${aNs}/>`);
   return parts.join("");
@@ -224,6 +249,7 @@ function stringifyDocPr(
   opts: DocPropertiesOptions | undefined,
   hlIds: HyperlinkIds,
   reproducible?: ReproducibleScope,
+  dialect?: DocumentNamespaceDialect,
 ): string {
   const id = opts?.id ?? reproducible?.nextDrawingId() ?? _docPropsIdGen();
   return stringifyNonVisualDrawingProperties(
@@ -231,7 +257,7 @@ function stringifyDocPr(
     id,
     opts,
     "",
-    buildHyperlinkChildren(hlIds),
+    buildHyperlinkChildren(hlIds, dialect),
   );
 }
 
@@ -566,6 +592,7 @@ function stringifyWpgGroup(
     fill?: FillOptions;
     effects?: EffectListOptions;
     groupShapeLocks?: GroupShapeLocksOptions | null;
+    dialect?: DocumentNamespaceDialect;
   },
   ctx: BodyContext,
 ): string {
@@ -591,11 +618,13 @@ function stringifyWpgGroup(
     ) ?? "";
 
   // Children — wps shapes, nested wpg groups, or pic elements
-  const childXml = opts.children.map((child) => stringifyGroupChild(child, ctx)).join("");
+  const childXml = opts.children
+    .map((child) => stringifyGroupChild(child, ctx, opts.dialect))
+    .join("");
 
   return (
     "<wpg:wgp>" +
-    stringifyCnvGrpSpPr(opts.groupShapeLocks) +
+    stringifyCnvGrpSpPr(opts.groupShapeLocks, opts.dialect) +
     `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
     childXml +
     "</wpg:wgp>"
@@ -606,7 +635,11 @@ function stringifyWpgGroup(
  * Stringify one group child: a wps shape, a nested wpg group, or a picture.
  * Shared by the top-level wpg:wgp and nested wpg:grpSp.
  */
-function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): string {
+function stringifyGroupChild(
+  child: GroupChildMediaData,
+  ctx: BodyContext,
+  dialect?: DocumentNamespaceDialect,
+): string {
   if (child.type === "wps") {
     const wpsData = child as ShapeMediaData & { outline?: OutlineOptions; fill?: FillOptions };
     return stringifyWpsShape(
@@ -620,10 +653,10 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
     );
   }
   if (child.type === "wpg") {
-    return stringifyNestedGroup(child as GroupMediaData, ctx);
+    return stringifyNestedGroup(child as GroupMediaData, ctx, dialect);
   }
   if (child.type === "chart") {
-    return stringifyGroupGraphicFrame(child as ChartMediaData);
+    return stringifyGroupGraphicFrame(child as ChartMediaData, dialect);
   }
   if (child.type === "contentPart") {
     return stringifyContentPart("wpg", child as ContentPartMediaData);
@@ -659,7 +692,7 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
   groupBlipParts.push("<a:stretch><a:fillRect/></a:stretch>");
   picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
   picParts.push(stringifyShapeProps(picData.transformation, picData.outline, picData.fill));
-  return `<pic:pic xmlns:pic="${PIC_URI}">${picParts.join("")}</pic:pic>`;
+  return `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">${picParts.join("")}</pic:pic>`;
 }
 
 /**
@@ -667,19 +700,22 @@ function stringifyGroupChild(child: GroupChildMediaData, ctx: BodyContext): stri
  * cNvFrPr + a:xfrm + a:graphic. Charts are the graphic payload Word produces
  * inside groups; the chart part is registered by the group dispatch.
  */
-function stringifyGroupGraphicFrame(md: ChartMediaData): string {
+function stringifyGroupGraphicFrame(
+  md: ChartMediaData,
+  dialect?: DocumentNamespaceDialect,
+): string {
   const nvp = md.nonVisualProperties;
   const cNvPrXml = stringifyNonVisualDrawingProperties("wpg:cNvPr", nvp?.id ?? 0, nvp, "Chart");
-  const cNvFrPrXml = stringifyCnvFrPr(md.graphicFrameLocks);
+  const cNvFrPrXml = stringifyCnvFrPr(md.graphicFrameLocks, dialect);
   const xfrmXml = stringifyChildXfrm("wpg", md.transformation);
   return (
     "<wpg:graphicFrame>" +
     cNvPrXml +
     cNvFrPrXml +
     xfrmXml +
-    `<a:graphic ${GRAPHIC_NS}>` +
-    `<a:graphicData uri="${CHART_URI}">` +
-    `<c:chart xmlns:c="${CHART_URI}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="{chart:${md.chartKey}}"/>` +
+    `<a:graphic xmlns:a="${drawingmlUri(dialect, "main")}">` +
+    `<a:graphicData uri="${drawingmlUri(dialect, "chart")}">` +
+    `<c:chart xmlns:c="${drawingmlUri(dialect, "chart")}" xmlns:r="${relationshipNs(dialect)}" r:id="{chart:${md.chartKey}}"/>` +
     `</a:graphicData>` +
     `</a:graphic>` +
     "</wpg:graphicFrame>"
@@ -687,7 +723,10 @@ function stringifyGroupGraphicFrame(md: ChartMediaData): string {
 }
 
 /** Render wpg:cNvFrPr (CT_NonVisualGraphicFrameProperties — a:graphicFrameLocks). */
-function stringifyCnvFrPr(locks?: GraphicFrameLocksOptions | null): string {
+function stringifyCnvFrPr(
+  locks?: GraphicFrameLocksOptions | null,
+  dialect?: DocumentNamespaceDialect,
+): string {
   if (!locks) return "<wpg:cNvFrPr/>";
   const attrParts: string[] = [];
   if (locks.noGrp) attrParts.push('noGrp="1"');
@@ -698,7 +737,7 @@ function stringifyCnvFrPr(locks?: GraphicFrameLocksOptions | null): string {
   if (locks.noResize) attrParts.push('noResize="1"');
   if (attrParts.length === 0) return "<wpg:cNvFrPr/>";
   const attrStr = " " + attrParts.join(" ");
-  return `<wpg:cNvFrPr><a:graphicFrameLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wpg:cNvFrPr>`;
+  return `<wpg:cNvFrPr><a:graphicFrameLocks${attrStr} xmlns:a="${drawingmlUri(dialect, "main")}"/></wpg:cNvFrPr>`;
 }
 
 /**
@@ -740,7 +779,11 @@ function stringifyContentPart(prefix: "wpg", md: ContentPartMediaData): string {
  * Stringify a nested wpg:grpSp (CT_WordprocessingGroup) group child. Same
  * structure as the top-level group, wrapped in wpg:grpSp with a cNvPr id/name.
  */
-function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
+function stringifyNestedGroup(
+  grp: GroupMediaData,
+  ctx: BodyContext,
+  dialect?: DocumentNamespaceDialect,
+): string {
   const grpSpPrContent =
     groupShapePropertiesDesc.stringify(
       {
@@ -763,9 +806,9 @@ function stringifyNestedGroup(grp: GroupMediaData, ctx: BodyContext): string {
   return (
     "<wpg:grpSp>" +
     '<wpg:cNvPr id="0" name=""/>' +
-    stringifyCnvGrpSpPr(grp.groupShapeLocks) +
+    stringifyCnvGrpSpPr(grp.groupShapeLocks, dialect) +
     `<wpg:grpSpPr>${grpSpPrContent}</wpg:grpSpPr>` +
-    grp.children.map((c) => stringifyGroupChild(c, ctx)).join("") +
+    grp.children.map((c) => stringifyGroupChild(c, ctx, dialect)).join("") +
     "</wpg:grpSp>"
   );
 }
@@ -779,13 +822,14 @@ function stringifyGraphicDataContent(
   ctx: BodyContext,
 ): string {
   const { outline, fill, effects, scene3d, shape3d, blipEffects, tile } = opts;
+  const dialect = opts.dialect;
   const transform = mediaData.transformation;
 
   if (mediaData.type === "chart") {
     const md = mediaData as ChartMediaData;
     return (
-      `<a:graphicData uri="${CHART_URI}">` +
-      `<c:chart xmlns:c="${CHART_URI}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="{chart:${md.chartKey}}"/>` +
+      `<a:graphicData uri="${drawingmlUri(dialect, "chart")}">` +
+      `<c:chart xmlns:c="${drawingmlUri(dialect, "chart")}" xmlns:r="${relationshipNs(dialect)}" r:id="{chart:${md.chartKey}}"/>` +
       `</a:graphicData>`
     );
   }
@@ -793,8 +837,8 @@ function stringifyGraphicDataContent(
   if (mediaData.type === "smartart") {
     const md = mediaData as SmartArtMediaData;
     return (
-      `<a:graphicData uri="${DGM_URI}">` +
-      `<dgm:relIds xmlns:dgm="${DGM_URI}" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:dm="{smartart:${md.smartArtKey}}" r:lo="{smartart-lo:${md.smartArtKey}}" r:qs="{smartart-qs:${md.smartArtKey}}" r:cs="{smartart-cs:${md.smartArtKey}}"/>` +
+      `<a:graphicData uri="${drawingmlUri(dialect, "diagram")}">` +
+      `<dgm:relIds xmlns:dgm="${drawingmlUri(dialect, "diagram")}" xmlns:r="${relationshipNs(dialect)}" r:dm="{smartart:${md.smartArtKey}}" r:lo="{smartart-lo:${md.smartArtKey}}" r:qs="{smartart-qs:${md.smartArtKey}}" r:cs="{smartart-cs:${md.smartArtKey}}"/>` +
       `</a:graphicData>`
     );
   }
@@ -826,6 +870,7 @@ function stringifyGraphicDataContent(
         fill: md.fill,
         effects: md.effects,
         groupShapeLocks: md.groupShapeLocks,
+        dialect,
       },
       ctx,
     );
@@ -835,8 +880,8 @@ function stringifyGraphicDataContent(
   // Default: image (pic:pic)
   const md = mediaData as MediaData | LinkedPictureMediaData;
   return (
-    `<a:graphicData uri="${PIC_URI}">` +
-    `<pic:pic xmlns:pic="${PIC_URI}">` +
+    `<a:graphicData uri="${drawingmlUri(dialect, "picture")}">` +
+    `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">` +
     stringifyNvPicPr(hlIds, md.nonVisualProperties) +
     stringifyBlipFill(md, blipEffects, tile, ctx) +
     stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d) +
@@ -979,11 +1024,14 @@ function wrapTopAndBottomStr(margins?: Margins): string {
  *  undefined → authoring default (noChangeAspect=1); `{}` → source had the
  *  frame without a locks child; `emptyLocks` → bare `<a:graphicFrameLocks/>`;
  *  otherwise the given lock flags. */
-function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): string {
+function stringifyCnvGraphicFramePr(
+  locks?: GraphicFrameLocksOptions | null,
+  dialect?: DocumentNamespaceDialect,
+): string {
   if (locks === null) return "";
   const resolved = locks ?? { noChangeAspect: true };
   if (resolved.emptyLocks) {
-    return '<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>';
+    return `<wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="${drawingmlUri(dialect, "main")}"/></wp:cNvGraphicFramePr>`;
   }
   const attrParts: string[] = [];
   if (resolved.noGrp) attrParts.push('noGrp="1"');
@@ -994,7 +1042,7 @@ function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): st
   if (resolved.noResize) attrParts.push('noResize="1"');
   if (attrParts.length === 0) return "<wp:cNvGraphicFramePr/>";
   const attrStr = " " + attrParts.join(" ");
-  return `<wp:cNvGraphicFramePr><a:graphicFrameLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wp:cNvGraphicFramePr>`;
+  return `<wp:cNvGraphicFramePr><a:graphicFrameLocks${attrStr} xmlns:a="${drawingmlUri(dialect, "main")}"/></wp:cNvGraphicFramePr>`;
 }
 
 /**
@@ -1003,7 +1051,10 @@ function stringifyCnvGraphicFramePr(locks?: GraphicFrameLocksOptions | null): st
  * Word default for groups) the element stays empty — groups do NOT inject a
  * default lock, unlike wp:cNvGraphicFramePr.
  */
-function stringifyCnvGrpSpPr(locks?: GroupShapeLocksOptions | null): string {
+function stringifyCnvGrpSpPr(
+  locks?: GroupShapeLocksOptions | null,
+  dialect?: DocumentNamespaceDialect,
+): string {
   if (!locks) return "<wpg:cNvGrpSpPr/>";
   const attrParts: string[] = [];
   if (locks.noGrp) attrParts.push('noGrp="1"');
@@ -1015,7 +1066,7 @@ function stringifyCnvGrpSpPr(locks?: GroupShapeLocksOptions | null): string {
   if (locks.noResize) attrParts.push('noResize="1"');
   if (attrParts.length === 0) return "<wpg:cNvGrpSpPr/>";
   const attrStr = " " + attrParts.join(" ");
-  return `<wpg:cNvGrpSpPr><a:grpSpLocks${attrStr} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"/></wpg:cNvGrpSpPr>`;
+  return `<wpg:cNvGrpSpPr><a:grpSpLocks${attrStr} xmlns:a="${drawingmlUri(dialect, "main")}"/></wpg:cNvGrpSpPr>`;
 }
 
 function stringifyInline(
@@ -1032,14 +1083,23 @@ function stringifyInline(
   const effectExtent = mediaData.transformation.effectExtent ?? calculateEffectExtent(effects);
   // CT_Inline's choice is a:graphic — a content part only nests inside a wpg
   // group or canvas, never directly under wp:inline.
-  const choiceXml = `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
+    opts.dialect,
+    "main",
+  )}">${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   return (
-    `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0">` +
+    `<w:drawing><wp:inline ${[
+      'distT="0"',
+      'distB="0"',
+      'distL="0"',
+      'distR="0"',
+      ...drawingExtensionAttrs(opts.extensionIds),
+    ].join(" ")}>` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
-    stringifyDocPr(docProperties, hlIds, ctx.reproducible) +
-    stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
+    stringifyDocPr(docProperties, hlIds, ctx.reproducible, opts.dialect) +
+    stringifyCnvGraphicFramePr(opts.graphicFrameLocks, opts.dialect) +
     choiceXml +
     `</wp:inline></w:drawing>`
   );
@@ -1080,6 +1140,7 @@ function stringifyAnchor(
     `locked="${floating.lockAnchor ? 1 : 0}"`,
     `layoutInCell="${floating.layoutInCell ? 1 : 0}"`,
     `relativeHeight="${floating.zIndex}"`,
+    ...drawingExtensionAttrs(opts.extensionIds),
   ];
 
   // Wrap
@@ -1099,7 +1160,10 @@ function stringifyAnchor(
 
   // CT_Anchor's choice is a:graphic — a content part only nests inside a wpg
   // group or canvas, never directly under wp:anchor.
-  const choiceXml = `<a:graphic ${GRAPHIC_NS}>${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
+    opts.dialect,
+    "main",
+  )}">${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
 
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;
@@ -1129,8 +1193,8 @@ function stringifyAnchor(
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     effectExtentXml +
     wrapXml +
-    stringifyDocPr(docProperties, hlIds, ctx.reproducible) +
-    stringifyCnvGraphicFramePr(opts.graphicFrameLocks) +
+    stringifyDocPr(docProperties, hlIds, ctx.reproducible, opts.dialect) +
+    stringifyCnvGraphicFramePr(opts.graphicFrameLocks, opts.dialect) +
     choiceXml +
     sizeRelXml +
     `</wp:anchor></w:drawing>`

@@ -10,7 +10,7 @@ import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
 
 import type { Floating } from "../../drawing";
-import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
+import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 export * from "@parts/drawing/inline/graphic/graphic-data/wps/body-properties";
 export type {
@@ -39,6 +39,8 @@ interface ShapeRunOptions {
   lastRenderedPageBreak?: boolean;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Word 2010 wrapper ids; round-trip only. */
+  extensionIds?: DrawingExtensionIds;
 }
 
 /**

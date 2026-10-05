@@ -52,6 +52,7 @@ const LAST_VIEW_XSD: Record<string, string> = {
   handoutView: "handoutView",
   outlineView: "outlineView",
   slideSorterView: "sldSorterView",
+  slideThumbnailView: "sldThumbnailView",
 };
 
 /** Editing-view settings (p:viewPr — last active view, grid, guides, window panes). */
@@ -63,7 +64,8 @@ export interface ViewPropertiesOptions {
     | "notesView"
     | "handoutView"
     | "outlineView"
-    | "slideSorterView";
+    | "slideSorterView"
+    | "slideThumbnailView";
   showComments?: boolean;
   gridSpacing?: { cx: number; cy: number };
   normalView?: NormalViewOptions;

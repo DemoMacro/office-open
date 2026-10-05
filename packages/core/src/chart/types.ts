@@ -79,20 +79,23 @@ export interface ChartSeriesCommon {
 
 // ── ScatterSeriesData ──
 
+/** Numeric chart value; a string preserves the source c:v lexical form. */
+export type ChartValue = number | string;
+
 /**
  * XY numeric series (c:xVal/c:yVal) — a scatter series without bubble sizes.
  * `valueFormula`/`formatCode` describe the y reference, matching the
  * ChartSeriesData value-slot semantics.
  */
 export interface ScatterSeriesData extends ChartSeriesCommon {
-  xValues: readonly number[];
-  yValues: readonly number[];
+  xValues: readonly ChartValue[];
+  yValues: readonly ChartValue[];
 }
 
 // ── BubbleSeriesData ──
 
 export interface BubbleSeriesData extends ScatterSeriesData {
-  bubbleSize: readonly number[];
+  bubbleSize: readonly ChartValue[];
 }
 
 // ── Trendline ──
@@ -235,7 +238,7 @@ export interface DataLabelsOptions {
 // ── Chart series ──
 
 export interface ChartSeriesData extends ChartSeriesCommon {
-  values: readonly number[];
+  values: readonly ChartValue[];
 }
 
 // ── Chart types ──

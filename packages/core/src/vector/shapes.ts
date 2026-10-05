@@ -143,6 +143,32 @@ export function nextVmlShapeId(reproducible?: ReproducibleScope): string {
  * (AG_AllCoreAttributes / AG_AllShapeAttributes) and the EG_ShapeElements
  * child set.
  */
+export type VmlShapeElementField =
+  | "pathElement"
+  | "formulas"
+  | "handles"
+  | "fill"
+  | "stroke"
+  | "shadow"
+  | "textbox"
+  | "textpath"
+  | "imagedata"
+  | "skew"
+  | "extrusion"
+  | "callout"
+  | "lock"
+  | "clippath"
+  | "signatureline"
+  | "wrap"
+  | "anchorlock"
+  | "bordertop"
+  | "borderbottom"
+  | "borderleft"
+  | "borderright"
+  | "clientData"
+  | "textdata"
+  | "rawChildrenXml";
+
 export interface VmlBaseShapeFields
   extends VmlCoreAttributes, VmlOfficeCoreAttributes, VmlShapeAttributes, VmlOfficeShapeAttributes {
   /** AG_Path attribute — path data overriding the referenced shapetype's geometry. */
@@ -178,7 +204,62 @@ export interface VmlBaseShapeFields
    * `wvml:bordertop` border elements), re-emitted after the modeled children.
    */
   rawChildrenXml?: string;
+  /** Source order of modeled EG_ShapeElements children when it differs from the canonical order. */
+  childOrder?: VmlShapeElementField[];
 }
+
+const DEFAULT_SHAPE_ELEMENT_ORDER: readonly VmlShapeElementField[] = [
+  "pathElement",
+  "formulas",
+  "handles",
+  "fill",
+  "stroke",
+  "shadow",
+  "textbox",
+  "textpath",
+  "imagedata",
+  "skew",
+  "extrusion",
+  "callout",
+  "lock",
+  "clippath",
+  "signatureline",
+  "wrap",
+  "anchorlock",
+  "bordertop",
+  "borderbottom",
+  "borderleft",
+  "borderright",
+  "clientData",
+  "textdata",
+  "rawChildrenXml",
+];
+
+const SHAPE_ELEMENT_FIELD_BY_NAME = new Map<string, VmlShapeElementField>([
+  ["v:path", "pathElement"],
+  ["v:formulas", "formulas"],
+  ["v:handles", "handles"],
+  ["v:fill", "fill"],
+  ["v:stroke", "stroke"],
+  ["v:shadow", "shadow"],
+  ["v:textbox", "textbox"],
+  ["v:textpath", "textpath"],
+  ["v:imagedata", "imagedata"],
+  ["o:skew", "skew"],
+  ["o:extrusion", "extrusion"],
+  ["o:callout", "callout"],
+  ["o:lock", "lock"],
+  ["o:clippath", "clippath"],
+  ["o:signatureline", "signatureline"],
+  ["w10:wrap", "wrap"],
+  ["w10:anchorlock", "anchorlock"],
+  ["w10:bordertop", "bordertop"],
+  ["w10:borderbottom", "borderbottom"],
+  ["w10:borderleft", "borderleft"],
+  ["w10:borderright", "borderright"],
+  ["x:ClientData", "clientData"],
+  ["pvml:textdata", "textdata"],
+]);
 
 /** ST_EditAs. */
 export type VmlEditAs =
@@ -385,40 +466,37 @@ function stringifyShapeAttrs(
 
 /** Serialize the EG_ShapeElements children present on `opts`, in declaration order. */
 function stringifyShapeElements(opts: VmlBaseShapeFields): string {
-  const parts: string[] = [];
-  if (opts.pathElement !== undefined) parts.push(stringifyVmlPath(opts.pathElement));
-  if (opts.formulas !== undefined) parts.push(stringifyVmlFormulas(opts.formulas));
-  if (opts.handles !== undefined) parts.push(stringifyVmlHandles(opts.handles));
-  if (opts.fill !== undefined) parts.push(stringifyVmlFill(opts.fill));
-  if (opts.stroke !== undefined) parts.push(stringifyVmlStroke(opts.stroke));
-  if (opts.shadow !== undefined) parts.push(stringifyVmlShadow(opts.shadow));
-  if (opts.textbox !== undefined) parts.push(stringifyVmlTextbox(opts.textbox));
-  if (opts.textpath !== undefined) parts.push(stringifyVmlTextPath(opts.textpath));
-  if (opts.imagedata !== undefined) parts.push(stringifyVmlImageData(opts.imagedata));
-  if (opts.skew !== undefined) parts.push(stringifyVmlSkew(opts.skew));
-  if (opts.extrusion !== undefined) parts.push(stringifyVmlExtrusion(opts.extrusion));
-  if (opts.callout !== undefined) parts.push(stringifyVmlCallout(opts.callout));
-  if (opts.lock !== undefined) parts.push(stringifyVmlLock(opts.lock));
-  if (opts.clippath !== undefined) parts.push(stringifyVmlClipPath(opts.clippath));
-  if (opts.signatureline !== undefined) {
-    parts.push(stringifyVmlSignatureLine(opts.signatureline));
-  }
-  if (opts.wrap !== undefined) parts.push(stringifyVmlWrap(opts.wrap));
-  if (opts.anchorlock !== undefined) parts.push(stringifyVmlAnchorLock(opts.anchorlock));
-  if (opts.bordertop !== undefined) parts.push(stringifyVmlBorder("w10:bordertop", opts.bordertop));
-  if (opts.borderbottom !== undefined) {
-    parts.push(stringifyVmlBorder("w10:borderbottom", opts.borderbottom));
-  }
-  if (opts.borderleft !== undefined) {
-    parts.push(stringifyVmlBorder("w10:borderleft", opts.borderleft));
-  }
-  if (opts.borderright !== undefined) {
-    parts.push(stringifyVmlBorder("w10:borderright", opts.borderright));
-  }
-  if (opts.clientData !== undefined) parts.push(stringifyVmlClientData(opts.clientData));
-  if (opts.textdata !== undefined) parts.push(stringifyVmlTextData(opts.textdata));
-  if (opts.rawChildrenXml) parts.push(opts.rawChildrenXml);
-  return parts.join("");
+  const serializers: Record<VmlShapeElementField, (value: never) => string> = {
+    pathElement: (value) => stringifyVmlPath(value),
+    formulas: (value) => stringifyVmlFormulas(value),
+    handles: (value) => stringifyVmlHandles(value),
+    fill: (value) => stringifyVmlFill(value),
+    stroke: (value) => stringifyVmlStroke(value),
+    shadow: (value) => stringifyVmlShadow(value),
+    textbox: (value) => stringifyVmlTextbox(value),
+    textpath: (value) => stringifyVmlTextPath(value),
+    imagedata: (value) => stringifyVmlImageData(value),
+    skew: (value) => stringifyVmlSkew(value),
+    extrusion: (value) => stringifyVmlExtrusion(value),
+    callout: (value) => stringifyVmlCallout(value),
+    lock: (value) => stringifyVmlLock(value),
+    clippath: (value) => stringifyVmlClipPath(value),
+    signatureline: (value) => stringifyVmlSignatureLine(value),
+    wrap: (value) => stringifyVmlWrap(value),
+    anchorlock: (value) => stringifyVmlAnchorLock(value),
+    bordertop: (value) => stringifyVmlBorder("w10:bordertop", value),
+    borderbottom: (value) => stringifyVmlBorder("w10:borderbottom", value),
+    borderleft: (value) => stringifyVmlBorder("w10:borderleft", value),
+    borderright: (value) => stringifyVmlBorder("w10:borderright", value),
+    clientData: (value) => stringifyVmlClientData(value),
+    textdata: (value) => stringifyVmlTextData(value),
+    rawChildrenXml: (value) => value,
+  };
+  const order = new Set([...(opts.childOrder ?? []), ...DEFAULT_SHAPE_ELEMENT_ORDER]);
+  return [...order]
+    .filter((field) => opts[field] !== undefined)
+    .map((field) => serializers[field](opts[field] as never))
+    .join("");
 }
 
 /** Parse the shared attribute vocabulary plus extras onto `out`. */
@@ -452,8 +530,11 @@ const NESTED_SHAPE_NAMES = new Set([
 
 /** Parse the EG_ShapeElements children from `el` onto `out`. */
 function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void {
+  const childOrder: VmlShapeElementField[] = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
+    const field = child.name ? SHAPE_ELEMENT_FIELD_BY_NAME.get(child.name) : undefined;
+    if (field) childOrder.push(field);
     switch (child.name) {
       case "v:path":
         out.pathElement = parseVmlPath(child);
@@ -545,8 +626,16 @@ function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void 
         }
         const previous = typeof out.rawChildrenXml === "string" ? out.rawChildrenXml : "";
         out.rawChildrenXml = previous + stringifyElement(child);
+        childOrder.push("rawChildrenXml");
         break;
     }
+  }
+  const canonicalOrder = DEFAULT_SHAPE_ELEMENT_ORDER.filter((field) => out[field] !== undefined);
+  if (
+    childOrder.length !== canonicalOrder.length ||
+    childOrder.some((field, index) => field !== canonicalOrder[index])
+  ) {
+    out.childOrder = childOrder;
   }
 }
 

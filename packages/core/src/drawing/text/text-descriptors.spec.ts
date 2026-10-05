@@ -363,6 +363,26 @@ describe("paragraphDesc round-trip", () => {
     expect(b.fontFollowsText).toBe(true);
   });
 
+  it("round-trips bullet font metrics without synthesizing defaults", () => {
+    const bareXml = paragraphDesc.stringify(
+      { text: "x", properties: { bullet: { type: "char", char: "•", font: "Arial" } } },
+      writeCtx,
+    )!;
+    expect(bareXml).toContain('<a:buFont typeface="Arial"/>');
+    const bare = roundTrip({
+      text: "x",
+      properties: { bullet: { type: "char", char: "•", font: "Arial" } },
+    });
+    expect(bare.properties?.bullet?.font).toBe("Arial");
+
+    const font = { typeface: "Arial", panose: "020B0604020202020204", pitchFamily: 34, charset: 0 };
+    const full = roundTrip({
+      text: "x",
+      properties: { bullet: { type: "char", char: "•", font } },
+    });
+    expect(full.properties?.bullet?.font).toEqual(font);
+  });
+
   it("round-trips a picture bullet (a:buBlip)", () => {
     const r = roundTrip({
       text: "y",

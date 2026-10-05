@@ -140,13 +140,12 @@ export function compileSheetPivots(
       };
 
       // Register in workbook
-      const wbPivotRid = ctx.workbookRels.nextRelationshipId;
-      ctx.workbookRels.addRelationship(
-        wbPivotRid,
-        RELATIONSHIP_TYPES.pivotCacheDefinition,
-        `pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
-      );
-      ctx.pivotCacheRefs.push({ cacheId, rId: `rId${wbPivotRid}` });
+      const target = `pivotCache/pivotCacheDefinition${cacheIdx}.xml`;
+      const existingRid = ctx.workbookRels.idOf(RELATIONSHIP_TYPES.pivotCacheDefinition, target);
+      const wbPivotRid =
+        existingRid ??
+        `rId${ctx.workbookRels.add(RELATIONSHIP_TYPES.pivotCacheDefinition, target)}`;
+      ctx.pivotCacheRefs.push({ cacheId, rId: wbPivotRid });
       state.pivotCachePathById.set(cacheId, `xl/pivotCache/pivotCacheDefinition${cacheIdx}.xml`);
     }
 
@@ -242,13 +241,11 @@ export function compileDefinitionPivotCaches(
         path: relsPath,
       };
     }
-    const wbRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(
-      wbRid,
-      RELATIONSHIP_TYPES.pivotCacheDefinition,
-      relativePartTarget("xl/workbook.xml", cache.definitionPath),
-    );
-    ctx.pivotCacheRefs.push({ cacheId: cache.cacheId, rId: `rId${wbRid}` });
+    const target = relativePartTarget("xl/workbook.xml", cache.definitionPath);
+    const existingRid = ctx.workbookRels.idOf(RELATIONSHIP_TYPES.pivotCacheDefinition, target);
+    const wbRid =
+      existingRid ?? `rId${ctx.workbookRels.add(RELATIONSHIP_TYPES.pivotCacheDefinition, target)}`;
+    ctx.pivotCacheRefs.push({ cacheId: cache.cacheId, rId: wbRid });
     state.pivotCachePathById.set(cache.cacheId, cache.definitionPath);
   }
 }

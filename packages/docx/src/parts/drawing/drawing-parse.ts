@@ -66,7 +66,11 @@ import type { ContentPartOptions, NonVisualPropertiesOptions } from "@shared/med
 
 import { parseParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
-import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "./descriptor";
+import type {
+  DrawingExtensionIds,
+  GraphicFrameLocksOptions,
+  GroupShapeLocksOptions,
+} from "./descriptor";
 import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
 import type {
   Floating,
@@ -143,6 +147,7 @@ interface AnchorInfo {
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** wp:effectExtent in raw EMUs — round-tripped verbatim. */
   effectExtent?: { l: number; t: number; r: number; b: number };
+  extensionIds?: DrawingExtensionIds;
 }
 
 /** Read wp:cNvGraphicFramePr locking flags. An empty element (no graphicFrameLocks
@@ -203,6 +208,11 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
   if (!parent) return null;
 
   const info: AnchorInfo = {};
+  const anchorId = attr(parent, "wp14:anchorId");
+  const editId = attr(parent, "wp14:editId");
+  if (anchorId !== undefined || editId !== undefined) {
+    info.extensionIds = { anchorId, editId };
+  }
 
   // Extent (EMU)
   const extent = findChild(parent, "wp:extent");
@@ -409,6 +419,7 @@ export function parsePictureRun(
   if (info.altText) imageOpts.altText = info.altText;
   if (info.floating) imageOpts.floating = info.floating;
   if (info.graphicFrameLocks !== undefined) imageOpts.graphicFrameLocks = info.graphicFrameLocks;
+  if (info.extensionIds) imageOpts.extensionIds = info.extensionIds;
 
   // Blip compression state (a:blip @cstate)
   const cstate = attr(blip, "cstate");
@@ -945,6 +956,7 @@ function parseWpsShapeDrawing(
   if (info.floating) shape.floating = info.floating;
   if (info.altText) shape.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) shape.graphicFrameLocks = info.graphicFrameLocks;
+  if (info.extensionIds) shape.extensionIds = info.extensionIds;
 
   return { wpsShape: shape as ShapeOptions };
 }
@@ -979,6 +991,7 @@ function parseWpgGroupDrawing(
   if (info.floating) group.floating = info.floating;
   if (info.altText) group.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) group.graphicFrameLocks = info.graphicFrameLocks;
+  if (info.extensionIds) group.extensionIds = info.extensionIds;
   const grpSpLocks = readGrpSpLocks(findChild(wgp, "wpg:cNvGrpSpPr"));
   if (grpSpLocks) group.groupShapeLocks = grpSpLocks;
   // Group shape props (grpSpPr): fill + effects round-trip via shared descriptors.
@@ -1360,13 +1373,18 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
     ...chartSpace,
     // wp:extent always carries both cx and cy in valid documents; fall back
     // to zeros so the required transformation field stays well-formed.
-    transformation: { width: ext.width ?? 0, height: ext.height ?? 0 },
+    transformation: {
+      width: ext.width ?? 0,
+      height: ext.height ?? 0,
+      ...(info?.effectExtent ? { effectExtent: info.effectExtent } : {}),
+    },
   };
   if (info?.graphicFrameLocks !== undefined) {
     opts.graphicFrameLocks = info.graphicFrameLocks;
   }
   if (info?.altText) opts.altText = info.altText;
   if (info?.floating) opts.floating = info.floating;
+  if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
   return { chart: opts };
 }
@@ -1434,11 +1452,13 @@ function parseSmartArtDrawing(
   // survive so stringify does not inject the authoring default.
   const info = parseAnchorOrInline(el, ctx);
   if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
+  if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
   const ext = getDrawingExtent(el);
   if (ext.width !== undefined || ext.height !== undefined) {
     (opts as Record<string, unknown>).transformation = {
       ...ext,
+      ...(info?.effectExtent ? { effectExtent: info.effectExtent } : {}),
     };
   }
 

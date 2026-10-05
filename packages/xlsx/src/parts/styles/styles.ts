@@ -18,12 +18,13 @@ import type {
   CellStyleXfOptions,
   ColorsOptions,
   CustomCellStyleOptions,
-  CustomTableStyleOptions,
+  CellGradientStopOptions,
   DxfOptions,
   CellFillOptions,
   FontOptions,
   IndexedXfEntry,
   NumFmtEntry,
+  TableStylesInfo,
   StyleExtensionOptions,
   StyleOptions,
   StylesState,
@@ -36,7 +37,9 @@ function fontKey(f: FontOptions): string {
 }
 
 function fillKey(f: CellFillOptions): string {
-  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}fa${f.fgAutoColor ? 1 : 0}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}bga${f.bgAutoColor ? 1 : 0}g${f.stops?.map((s) => `${s.position}_${s.color}`).join("|") ?? ""}`;
+  const stopKey = (s: CellGradientStopOptions) =>
+    `${s.position}_${s.color ?? ""}_${s.themeColor ?? ""}_${s.tint ?? ""}`;
+  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}fa${f.fgAutoColor ? 1 : 0}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}bga${f.bgAutoColor ? 1 : 0}gt${f.gradientType ?? ""}gd${f.gradientDegree ?? ""}gl${f.gradientLeft ?? ""}gr${f.gradientRight ?? ""}gtp${f.gradientTop ?? ""}gb${f.gradientBottom ?? ""}s${f.stops?.map(stopKey).join("|") ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
@@ -45,6 +48,12 @@ function borderKey(b: BorderSideOptions): string {
   const sk = (o?: BorderOptions) =>
     `${o ? 1 : 0}_${o?.style ?? ""}_${o?.color ?? ""}_${o?.themeColor ?? ""}_${o?.tint ?? ""}_${o?.colorIndexed ?? ""}_${o?.autoColor ? 1 : 0}`;
   return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
+}
+
+function decimalAttr(value: number): string {
+  const shortest = String(value);
+  if (shortest.length < 17) return shortest;
+  return value.toPrecision(17).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 // ── Built-in number format IDs ──
@@ -168,7 +177,7 @@ export class Styles {
   private dxfs: DxfOptions[] = [];
 
   private colors?: ColorsOptions;
-  private tableStyles?: CustomTableStyleOptions[];
+  private tableStyles?: TableStylesInfo;
   /** Custom cell styles (CT_CellStyles) */
   private customCellStyles?: CustomCellStyleOptions[];
   /** Style sheet extensions (CT_ExtensionList) */
@@ -252,7 +261,7 @@ export class Styles {
     this.colors = opts;
   }
 
-  public setTableStyles(styles: CustomTableStyleOptions[]): void {
+  public setTableStyles(styles: TableStylesInfo): void {
     this.tableStyles = styles;
   }
 
@@ -273,9 +282,11 @@ export class Styles {
    */
   public setCellStyleXfs(entries: CellStyleXfOptions[]): void {
     this.cellStyleXfs = entries.map((entry) => ({
-      fontId: this.registerFont(entry.font),
-      fillId: this.registerFill(entry.fill),
-      borderId: this.registerBorder(entry.border),
+      fontId: this.adoptedDefinitionIndex(entry.font, this.fonts) ?? this.registerFont(entry.font),
+      fillId: this.adoptedDefinitionIndex(entry.fill, this.fills) ?? this.registerFill(entry.fill),
+      borderId:
+        this.adoptedDefinitionIndex(entry.border, this.borders) ??
+        this.registerBorder(entry.border),
       numFmtId: this.registerNumFmt(entry.numFmt),
       alignment: entry.alignment,
       protection: entry.protection,
@@ -288,6 +299,12 @@ export class Styles {
       applyAlignment: entry.applyAlignment,
       applyProtection: entry.applyProtection,
     }));
+  }
+
+  private adoptedDefinitionIndex<T>(value: T | undefined, table: T[]): number | undefined {
+    if (value === undefined) return undefined;
+    const index = table.indexOf(value);
+    return index >= 0 ? index : undefined;
   }
 
   /**
@@ -303,7 +320,7 @@ export class Styles {
       cellXfs: [...this.cellXfs],
       dxfs: [...this.dxfs],
       colors: this.colors,
-      tableStyles: this.tableStyles,
+      tableStyles: this.tableStyles?.tableStyles,
       customCellStyles: this.customCellStyles,
       styleExtensions: this.styleExtensions,
     };
@@ -397,14 +414,26 @@ export class Styles {
   }): void {
     this.roundTrip = true;
     this.fonts = table.fonts ? [...table.fonts] : [this.fonts[0]!];
-    this.fontKeys = new Map(this.fonts.map((f, i) => [fontKey(f), i]));
+    this.fontKeys = new Map();
+    this.fonts.forEach((f, i) => {
+      const key = fontKey(f);
+      if (!this.fontKeys.has(key)) this.fontKeys.set(key, i);
+    });
     this.fontsContainer = table.fontsContainer;
     this.fills = table.fills
       ? [...table.fills]
       : [{ patternType: "none" }, { patternType: "gray125" }];
-    this.fillKeys = new Map(this.fills.map((f, i) => [fillKey(f), i]));
+    this.fillKeys = new Map();
+    this.fills.forEach((f, i) => {
+      const key = fillKey(f);
+      if (!this.fillKeys.has(key)) this.fillKeys.set(key, i);
+    });
     this.borders = table.borders ? [...table.borders] : [{}];
-    this.borderKeys = new Map(this.borders.map((b, i) => [borderKey(b), i]));
+    this.borderKeys = new Map();
+    this.borders.forEach((b, i) => {
+      const key = borderKey(b);
+      if (!this.borderKeys.has(key)) this.borderKeys.set(key, i);
+    });
     this.cellXfs = (table.cellXfs ?? [{ fontId: 0, fillId: 0, borderId: 0, numFmtId: 0 }]).map(
       (e) => ({
         fontId: e.fontId ?? 0,
@@ -424,7 +453,11 @@ export class Styles {
         applyAlignment: e.applyAlignment,
       }),
     );
-    this.cellXfKeys = new Map(this.cellXfs.map((xf, i) => [this.cellXfKey(xf), i]));
+    this.cellXfKeys = new Map();
+    this.cellXfs.forEach((xf, i) => {
+      const key = this.cellXfKey(xf);
+      if (!this.cellXfKeys.has(key)) this.cellXfKeys.set(key, i);
+    });
     if (table.numFmts) {
       this.numFmtsDeclared = true;
       this.customNumFmts = new Map(table.numFmts.map((e) => [e.formatCode, e.numFmtId]));
@@ -443,13 +476,8 @@ export class Styles {
   /** Serialize to xl/styles.xml content (without XML declaration). */
   public serialize(): string {
     const knownFonts = this.fontsContainer?.knownFonts;
-    const rootAttrs =
-      knownFonts === undefined
-        ? ""
-        : ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
-          ` x14ac:knownFonts="${knownFonts ? 1 : 0}"`;
     const p: string[] = [
-      `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"${rootAttrs}>`,
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
     ];
 
     // numFmts
@@ -463,10 +491,15 @@ export class Styles {
       p.push('<numFmts count="0"/>');
     }
 
-    // fonts (empty = adopted empty table; XSD-required sections are only
-    // omitted when the source's styles.xml carried nothing at all)
+    // Empty fonts adopt a required default; a source empty container is not
+    // currently distinguishable in the compact Styles runtime.
     if (this.fonts.length > 0) {
-      p.push(`<fonts count="${this.fonts.length}">`);
+      const fontAttrs =
+        knownFonts === undefined
+          ? ""
+          : ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
+            ` x14ac:knownFonts="${knownFonts ? 1 : 0}"`;
+      p.push(`<fonts count="${this.fonts.length}"${fontAttrs}>`);
       for (const f of this.fonts) {
         p.push(`<font>${this.fontXmlStr(f)}</font>`);
       }
@@ -486,7 +519,16 @@ export class Styles {
           if (f.gradientTop !== undefined) gfAttrs.top = f.gradientTop;
           if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
           const stopParts = f.stops
-            .map((s) => `<stop position="${s.position}"><color rgb="FF${s.color}"/></stop>`)
+            .map((s) => {
+              const channel =
+                s.themeColor !== undefined
+                  ? `theme="${s.themeColor}"`
+                  : s.color
+                    ? `rgb="FF${s.color}"`
+                    : "";
+              const tint = s.tint !== undefined ? ` tint="${decimalAttr(s.tint)}"` : "";
+              return `<stop position="${s.position}"><color ${channel}${tint}/></stop>`;
+            })
             .join("");
           p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
         } else {
@@ -501,7 +543,7 @@ export class Styles {
                   : f.fgAutoColor
                     ? 'auto="1"'
                     : "";
-          const fgTint = f.tint !== undefined ? ` tint="${f.tint}"` : "";
+          const fgTint = f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : "";
           const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
             f.bgThemeColor !== undefined
@@ -513,7 +555,7 @@ export class Styles {
                   : f.bgAutoColor
                     ? 'auto="1"'
                     : "";
-          const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
+          const bgTint = f.bgTint !== undefined ? ` tint="${decimalAttr(f.bgTint)}"` : "";
           const bgColor = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           const colorContent = fgColor + bgColor;
           p.push(
@@ -531,8 +573,8 @@ export class Styles {
       p.push(`<borders count="${this.borders.length}">`);
       for (const b of this.borders) {
         const bAttrs: string[] = [];
-        if (b.diagonalUp) bAttrs.push('diagonalUp="1"');
-        if (b.diagonalDown) bAttrs.push('diagonalDown="1"');
+        if (b.diagonalUp !== undefined) bAttrs.push(`diagonalUp="${b.diagonalUp ? 1 : 0}"`);
+        if (b.diagonalDown !== undefined) bAttrs.push(`diagonalDown="${b.diagonalDown ? 1 : 0}"`);
         const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
         p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
       }
@@ -579,11 +621,13 @@ export class Styles {
         };
         // Adopted xfs carry their source apply* flags verbatim; freshly
         // registered ones derive them from non-zero component ids.
-        const applyFont = xf.applyFont ?? (xf.fontId > 0 || undefined);
-        const applyFill = xf.applyFill ?? (xf.fillId > 0 || undefined);
-        const applyBorder = xf.applyBorder ?? (xf.borderId > 0 || undefined);
-        const applyNumberFormat = xf.applyNumberFormat ?? (xf.numFmtId > 0 || undefined);
-        const applyAlignment = xf.applyAlignment ?? (xf.alignment ? true : undefined);
+        const derive = !this.roundTrip;
+        const applyFont = xf.applyFont ?? (derive && xf.fontId > 0 ? true : undefined);
+        const applyFill = xf.applyFill ?? (derive && xf.fillId > 0 ? true : undefined);
+        const applyBorder = xf.applyBorder ?? (derive && xf.borderId > 0 ? true : undefined);
+        const applyNumberFormat =
+          xf.applyNumberFormat ?? (derive && xf.numFmtId > 0 ? true : undefined);
+        const applyAlignment = xf.applyAlignment ?? (derive && xf.alignment ? true : undefined);
         if (applyFont !== undefined) xAttrs.applyFont = applyFont ? 1 : 0;
         if (applyFill !== undefined) xAttrs.applyFill = applyFill ? 1 : 0;
         if (applyBorder !== undefined) xAttrs.applyBorder = applyBorder ? 1 : 0;
@@ -673,7 +717,7 @@ export class Styles {
                   : f.fgAutoColor
                     ? 'auto="1"'
                     : "";
-          const fgTint = f.tint !== undefined ? ` tint="${f.tint}"` : "";
+          const fgTint = f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : "";
           const fgContent = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
             f.bgThemeColor !== undefined
@@ -687,7 +731,7 @@ export class Styles {
                     : f.color && !hasBg
                       ? `rgb="FF${f.color}"`
                       : "";
-          const bgTint = f.bgTint !== undefined ? ` tint="${f.bgTint}"` : "";
+          const bgTint = f.bgTint !== undefined ? ` tint="${decimalAttr(f.bgTint)}"` : "";
           const bgContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           const fillContent = fgContent + bgContent;
           dParts.push(
@@ -698,8 +742,31 @@ export class Styles {
         }
         if (dxf.alignment) dParts.push(this.alignmentXmlStr(dxf.alignment));
         // dxf borders carry only the sides the source wrote — no padding
-        if (dxf.border) dParts.push(`<border>${this.borderXmlStr(dxf.border, false)}</border>`);
+        if (dxf.border) {
+          const borderAttrs = [
+            ...(dxf.border.diagonalUp !== undefined
+              ? [`diagonalUp="${dxf.border.diagonalUp ? 1 : 0}"`]
+              : []),
+            ...(dxf.border.diagonalDown !== undefined
+              ? [`diagonalDown="${dxf.border.diagonalDown ? 1 : 0}"`]
+              : []),
+          ].join(" ");
+          dParts.push(
+            `<border${borderAttrs ? ` ${borderAttrs}` : ""}>${this.borderXmlStr(dxf.border, false)}</border>`,
+          );
+        }
         if (dxf.protection) dParts.push(this.protectionXmlStr(dxf.protection));
+        if (dxf.extensions && dxf.extensions.length > 0) {
+          const extParts = dxf.extensions.map((ext) => {
+            const ns = Object.entries(ext.namespaces ?? {})
+              .map(([name, value]) => ` ${name}="${escapeXml(value)}"`)
+              .join("");
+            return ext.content
+              ? `<ext uri="${escapeXml(ext.uri)}"${ns}>${ext.content}</ext>`
+              : `<ext uri="${escapeXml(ext.uri)}"${ns}/>`;
+          });
+          dParts.push(`<extLst>${extParts.join("")}</extLst>`);
+        }
         if (dParts.length > 0) {
           p.push(`<dxf>${dParts.join("")}</dxf>`);
         } else {
@@ -714,16 +781,19 @@ export class Styles {
       p.push('<dxfs count="0"/>');
     }
     // tableStyles (CT_TableStyles)
-    if (this.tableStyles && this.tableStyles.length > 0) {
+    if (this.tableStyles) {
+      const count = this.tableStyles.count ?? this.tableStyles.tableStyles?.length ?? 0;
+      const defaultTableStyle = this.tableStyles.defaultTableStyle;
+      const defaultPivotStyle = this.tableStyles.defaultPivotStyle;
       const tsParts: string[] = [
-        `<tableStyles count="${this.tableStyles.length}" defaultTableStyle="TableStyleMedium2" defaultPivotStyle="PivotStyleLight16">`,
+        `<tableStyles count="${count}"${defaultTableStyle !== undefined ? ` defaultTableStyle="${escapeXml(defaultTableStyle)}"` : ""}${defaultPivotStyle !== undefined ? ` defaultPivotStyle="${escapeXml(defaultPivotStyle)}"` : ""}>`,
       ];
-      for (const ts of this.tableStyles) {
+      for (const ts of this.tableStyles.tableStyles ?? []) {
         const tsAttrs: string[] = [`name="${escapeXml(ts.name)}"`];
-        if (ts.pivot) tsAttrs.push('pivot="1"');
-        if (ts.table === false) tsAttrs.push('table="0"');
+        if (ts.pivot !== undefined) tsAttrs.push(`pivot="${ts.pivot ? 1 : 0}"`);
+        if (ts.table !== undefined) tsAttrs.push(`table="${ts.table ? 1 : 0}"`);
         if (ts.elements && ts.elements.length > 0) {
-          tsParts.push(`<tableStyle ${tsAttrs.join(" ")}>`);
+          tsParts.push(`<tableStyle ${tsAttrs.join(" ")} count="${ts.elements.length}">`);
           for (const el of ts.elements) {
             const elAttrs: string[] = [`type="${el.type}"`];
             if (el.dxfId !== undefined) elAttrs.push(`dxfId="${el.dxfId}"`);
@@ -812,7 +882,7 @@ export class Styles {
     if (f.autoColor) parts.push('<color auto="1"/>');
     else if (f.themeColor !== undefined)
       parts.push(
-        `<color theme="${f.themeColor}"${f.tint !== undefined ? ` tint="${f.tint}"` : ""}/>`,
+        `<color theme="${f.themeColor}"${f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : ""}/>`,
       );
     else if (f.colorIndexed !== undefined) parts.push(`<color indexed="${f.colorIndexed}"/>`);
     else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
@@ -832,7 +902,7 @@ export class Styles {
     const sideColorXmlStr = (side: BorderOptions): string => {
       if (side.autoColor) return '<color auto="1"/>';
       if (side.themeColor !== undefined)
-        return `<color theme="${side.themeColor}"${side.tint !== undefined ? ` tint="${side.tint}"` : ""}/>`;
+        return `<color theme="${side.themeColor}"${side.tint !== undefined ? ` tint="${decimalAttr(side.tint)}"` : ""}/>`;
       if (side.colorIndexed !== undefined) return `<color indexed="${side.colorIndexed}"/>`;
       if (side.color) return `<color rgb="FF${side.color}"/>`;
       return "";
@@ -861,12 +931,12 @@ export class Styles {
     const aAttrs: Record<string, string | number | boolean | undefined> = {};
     if (a.horizontal) aAttrs.horizontal = a.horizontal;
     if (a.vertical) aAttrs.vertical = a.vertical;
-    if (a.wrapText) aAttrs.wrapText = 1;
+    if (a.wrapText !== undefined) aAttrs.wrapText = a.wrapText ? 1 : 0;
     if (a.textRotation !== undefined) aAttrs.textRotation = a.textRotation;
     if (a.indent !== undefined) aAttrs.indent = a.indent;
     if (a.relativeIndent !== undefined) aAttrs.relativeIndent = a.relativeIndent;
-    if (a.justifyLastLine) aAttrs.justifyLastLine = 1;
-    if (a.shrinkToFit) aAttrs.shrinkToFit = 1;
+    if (a.justifyLastLine !== undefined) aAttrs.justifyLastLine = a.justifyLastLine ? 1 : 0;
+    if (a.shrinkToFit !== undefined) aAttrs.shrinkToFit = a.shrinkToFit ? 1 : 0;
     if (a.readingOrder !== undefined) aAttrs.readingOrder = a.readingOrder;
     return `<alignment${attrs(aAttrs)}/>`;
   }

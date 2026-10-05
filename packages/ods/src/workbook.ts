@@ -1,4 +1,9 @@
-import type { FormContainerOptions, FormControlOptions } from "@office-open/core";
+import {
+  toUint8Array,
+  type ChartSpaceOptions,
+  type FormContainerOptions,
+  type FormControlOptions,
+} from "@office-open/core";
 import {
   attributeNumber,
   attributeString,
@@ -17,6 +22,7 @@ import {
   readXml,
   textOf,
   xmlElement,
+  type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
 import type { WorkbookOptions } from "@office-open/xlsx";
@@ -26,6 +32,7 @@ import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDocumentOptions } from "./semantics";
+import type { OdsPackageMemberOptions } from "./semantics";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./shared-data";
 import { parseDimensionStyles, parseStyleOverlays, styleOverlaysXml } from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
@@ -47,8 +54,8 @@ export const NAMESPACES = [
   'xmlns:dc="http://purl.org/dc/elements/1.1/"',
 ].join(" ");
 
-export function generateWorkbook(options: WorkbookOptions): Uint8Array {
-  const { packageManifest, styleOverlays } = options as OdsDocumentOptions;
+export function generateWorkbook(options: OdsDocumentOptions): Uint8Array {
+  const { packageManifest, packageMembers, styleOverlays } = options;
   const styles: string[] = styleOverlaysXml(styleOverlays);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
@@ -71,6 +78,7 @@ export function generateWorkbook(options: WorkbookOptions): Uint8Array {
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
+  for (const member of packageMembers ?? []) addPackageFile(files, member);
   for (const entry of chartFrames) files[`${entry.name}/content.xml`] = chartBodyXml(entry.chart);
   for (const worksheet of options.worksheets ?? []) {
     for (const row of worksheet.rows ?? []) {
@@ -117,6 +125,21 @@ export function generateWorkbook(options: WorkbookOptions): Uint8Array {
   );
 }
 
+function addPackageFile(files: OdfPackageFiles, member: OdsPackageMemberOptions): void {
+  if (
+    !member.path ||
+    member.path.startsWith("/") ||
+    member.path.endsWith("/") ||
+    member.path.split("/").includes("..")
+  )
+    throw new Error(`Invalid ODS package member path: ${member.path}`);
+  if (member.path === "META-INF/manifest.xml")
+    throw new Error("ODS package members cannot replace META-INF/manifest.xml");
+  if (files[member.path] !== undefined)
+    throw new Error(`ODS package member conflicts with modeled content: ${member.path}`);
+  files[member.path] = typeof member.data === "string" ? member.data : toUint8Array(member.data);
+}
+
 export function unsupportedOdsValue(name: string, reason: string): OdsParseError {
   return new OdsParseError(
     `content.xml: ${name} ${reason}`,
@@ -131,7 +154,7 @@ function isExternalUrl(value: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
 }
 
-export function parseWorkbook(data: Uint8Array): WorkbookOptions {
+export function parseWorkbook(data: Uint8Array): OdsDocumentOptions {
   try {
     return parseOdsBody(data);
   } catch (cause) {
@@ -160,6 +183,7 @@ function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
   const dimensions = parseDimensionStyles(automaticStyles);
   const cellStyles = parseNumberStyles(automaticStyles);
   const chartPool = parseEmbeddedCharts(manifest, files);
+  const usedBinaryPaths = new Set<string>();
   const calcProperties = parseOdsSemantics(body);
   const forms = parseForms(body);
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
@@ -185,6 +209,7 @@ function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
               continue;
             }
             const binary = binaries[graphic.href];
+            if (binary) usedBinaryPaths.add(graphic.href);
             graphic.data = binary ? bytesToBase64(binary) : "";
             if (!graphic.data)
               throw new OdsParseError(
@@ -203,6 +228,7 @@ function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
     }
   }
   rejectUnknownSpreadsheetChildren(body);
+  validateEmbeddedObjectBodies(body, files, binaries, chartPool);
   const result: WorkbookOptions = {
     ...parseMeta(files),
     ...(definedNames.length > 0 ? { definedNames } : {}),
@@ -211,11 +237,69 @@ function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
     worksheets,
   };
   const styleOverlays = parseStyleOverlays(automaticStyles);
+  const packageMembers = sourcePackageMembers(
+    manifest,
+    files,
+    binaries,
+    chartPool,
+    usedBinaryPaths,
+  );
   return {
     ...result,
     ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
   };
+}
+
+function validateEmbeddedObjectBodies(
+  body: Element | undefined,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+  chartPool: Map<string, ChartSpaceOptions>,
+): void {
+  const references = descendantElements(body).flatMap((element) =>
+    element.name === "draw:object-ole"
+      ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+      : [],
+  );
+  for (const href of references) {
+    if (href && (binaries[href] || files[`${href}/content.xml`] || chartPool.has(href))) continue;
+    throw new OdsParseError(
+      `content.xml: ${href ?? ""}: embedded object subdocument is missing`,
+      "content.xml",
+      "/draw:frame/draw:object-ole/@xlink:href",
+      "draw:object-ole",
+      "embedded-object-subdocument-missing",
+    );
+  }
+}
+
+function sourcePackageMembers(
+  manifest: OcfManifestOptions,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+  chartPool: Map<string, ChartSpaceOptions>,
+  usedBinaryPaths: Set<string>,
+): OdsPackageMemberOptions[] {
+  const mediaTypes = new Map(
+    manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
+  );
+  const modeledPaths = new Set([
+    "content.xml",
+    "styles.xml",
+    "meta.xml",
+    "META-INF/manifest.xml",
+    ...[...chartPool.keys()].map((path) => `${path}/content.xml`),
+    ...usedBinaryPaths,
+  ]);
+  return [
+    ...Object.entries(files).map(([path, data]) => ({ path, data })),
+    ...Object.entries(binaries).map(([path, data]) => ({ path, data })),
+  ]
+    .filter(({ path }) => !modeledPaths.has(path))
+    .sort((left, right) => left.path.localeCompare(right.path))
+    .map(({ path, data }) => ({ path, mediaType: mediaTypes.get(path), data }));
 }
 
 export function contentXml(

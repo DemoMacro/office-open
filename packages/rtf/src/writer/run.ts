@@ -5,7 +5,16 @@ import { control, rtfText } from "./escape";
 import { writeFieldChild } from "./field";
 import { writeDrawingChild } from "./shape-picture";
 
-const RUN_PROPERTIES = ["bold", "italic", "underline", "color", "size", "font"] as const;
+const RUN_PROPERTIES = [
+  "bold",
+  "italic",
+  "underline",
+  "color",
+  "size",
+  "font",
+  "strike",
+  "verticalAlign",
+] as const;
 
 export function writeRunProperties(run: RunOptions, context: RtfGenerateContext): string {
   assertAllowed(run, [...RUN_PROPERTIES, "text", "children"], "run", "run");
@@ -14,6 +23,8 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
     run.bold === false ? control("b", 0) : "",
     run.italic === true ? control("i") : "",
     run.italic === false ? control("i", 0) : "",
+    run.strike === true ? control("strike") : "",
+    run.strike === false ? control("strike", 0) : "",
     run.underline
       ? (assertAllowed(run.underline, ["type"], "run", "run.underline"), control("ul"))
       : "",
@@ -24,6 +35,13 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
         : reject("run", "run.size", String(run.size), "RTF writer supports numeric point sizes"),
     run.font === undefined ? "" : control("f", fontIndex(context, run, "run")),
     run.color === undefined ? "" : control("cf", colorIndex(context, run, "run")),
+    run.verticalAlign === "superscript"
+      ? control("super")
+      : run.verticalAlign === "subscript"
+        ? control("sub")
+        : run.verticalAlign === "baseline"
+          ? control("nosupersub")
+          : "",
   ].join("");
 }
 

@@ -450,6 +450,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   // Document conformance class (w:document/@w:conformance)
   const conformance = attr(docx.documentRoot, "w:conformance");
   if (conformance === "strict" || conformance === "transitional") opts.conformance = conformance;
+  if (
+    docx.documentRoot.attributes?.["xmlns:w"] === "http://purl.oclc.org/ooxml/wordprocessingml/main"
+  ) {
+    opts.dialect = "strict";
+  }
 
   // Background (w:background in document.xml)
   if (docx.background) {
@@ -765,10 +770,10 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (opts.commentsExtended) rebuilt.push(docx.partRefs.commentsExtended!);
   if (docx.partRefs.commentsIds) rebuilt.push(docx.partRefs.commentsIds);
   if (docx.partRefs.commentsExtensible) rebuilt.push(docx.partRefs.commentsExtensible);
-  if (opts.footnotes) {
+  if (opts.footnotes || opts.footnoteSeparators) {
     rebuilt.push(docx.partRefs.footnotes!, "word/_rels/footnotes.xml.rels");
   }
-  if (opts.endnotes) {
+  if (opts.endnotes || opts.endnoteSeparators) {
     rebuilt.push(docx.partRefs.endnotes!, "word/_rels/endnotes.xml.rels");
   }
   if (opts.bibliography) rebuilt.push(docx.partRefs.bibliography!);

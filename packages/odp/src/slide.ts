@@ -99,6 +99,7 @@ export function parseSlide(
   binaries: Record<string, Uint8Array>,
   graphicStyles: Map<string, GraphicStyle>,
   chartPool: Map<string, ChartSpaceOptions>,
+  usedBinaryPaths: Set<string>,
 ): SlideOptions {
   const forms = parseForms(page);
   const notes = childNamed(
@@ -113,7 +114,8 @@ export function parseSlide(
         if (child.name === "draw:frame") {
           const chart = parseChartFrame(child, chartPool);
           if (chart) return [chart];
-          const picture = parsePictureFrame(child, binaries);
+          if (childNamed(child, "draw:object-ole")) return [];
+          const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
           if (picture) return [picture];
           if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
           throw unknownSlideChild(
@@ -125,7 +127,7 @@ export function parseSlide(
           return [{ shape: parseCustomSlideShape(child, textStyles, graphicStyles) }];
         if (child.name === "draw:line") return [parseLine(child)];
         if (child.name === "draw:g")
-          return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
+          return parseGroup(child, textStyles, columnWidths, binaries, chartPool, usedBinaryPaths);
         if (child.name === "draw:connector") return [parseConnector(child)];
         if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
         if (child.name !== "presentation:notes" && child.name !== "office:forms")

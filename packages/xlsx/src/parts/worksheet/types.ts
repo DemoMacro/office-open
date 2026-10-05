@@ -16,6 +16,7 @@ import type {
 import type { ArgbHexColor, Base64, HexColor } from "@office-open/core";
 import type {
   BlackWhiteMode,
+  BlipCompression,
   BlipEffectsOptions,
   GraphicFrameLockingOptions,
   PictureLockingOptions,
@@ -61,6 +62,8 @@ export interface RowOptions {
   dyDescent?: number;
   cells?: CellOptions[];
   height?: number | UniversalMeasure;
+  /** Custom height (CT_Row `@customHeight`); false preserves an omitted source flag. */
+  customHeight?: boolean;
   hidden?: boolean;
   rowNumber?: number;
   /** Spans for the row, e.g. "1:15" (CT_Row `@spans`) */
@@ -363,6 +366,8 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
   preferRelativeResize?: boolean;
   /** Image adjustment effects carried inside a:blip (a:lum, a:duotone, …). */
   blipEffects?: BlipEffectsOptions;
+  /** Compression state (a:blip/@cstate); absent = attribute omitted. */
+  compression?: BlipCompression;
   /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
   useLocalDpi?: boolean;
   /**
@@ -1294,6 +1299,16 @@ export interface CustomSheetViewOptions {
   filterUnique?: boolean;
   /** View type (CT_CustomSheetView `@view`) */
   view?: "normal" | "pageBreakPreview" | "pageLayout";
+  /** Ruler visibility (CT_CustomSheetView `@showRuler`, default true) */
+  showRuler?: boolean;
+  /** Scroll position (CT_CustomSheetView `@topLeftCell`) */
+  topLeftCell?: string;
+  /** Color id (CT_CustomSheetView `@colorId`, default 64) */
+  colorId?: number;
+  /** Pane state (CT_CustomSheetView/pane) */
+  pane?: FreezePaneOptions;
+  /** Selections (CT_CustomSheetView/selection) */
+  selection?: SelectionOptions[];
 }
 
 /** Cell watch entry (CT_CellWatch) */

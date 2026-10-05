@@ -163,6 +163,11 @@ function readCNvPr(
   return result;
 }
 
+function readPublishedFlag(el: XmlElement): boolean | undefined {
+  const value = el.attributes?.["fPublished"];
+  return value === undefined ? undefined : (parseOnOff(String(value)) ?? false);
+}
+
 export function parseImageAnchor(
   anchor: XmlElement,
   pic: XmlElement,
@@ -177,6 +182,7 @@ export function parseImageAnchor(
     ...(refs.link ? { linkRId: refs.link } : {}),
   };
   Object.assign(result, readCNvPr(pic, "nvPicPr", ctx));
+  result.fPublished = readPublishedFlag(pic);
 
   // preferRelativeResize (defaults true) and the a:blip adjustment effects.
   const blipFill = findXdr(pic, "blipFill");
@@ -194,6 +200,7 @@ export function parseImageAnchor(
   if (blip) {
     const parsed = blipDesc.parse(blip, {} as never);
     if (parsed.blipEffects) result.blipEffects = parsed.blipEffects;
+    if (parsed.compression !== undefined) result.compression = parsed.compression;
     if (parsed.useLocalDpi !== undefined) result.useLocalDpi = parsed.useLocalDpi;
     if (parsed.ext !== undefined) result.blipExt = parsed.ext;
   }
@@ -268,6 +275,7 @@ export function parseChartAnchor(
   }
   if (graphicFrame.attributes?.["macro"] !== undefined)
     result.macro = String(graphicFrame.attributes["macro"]);
+  result.fPublished = readPublishedFlag(graphicFrame);
 
   readAnchorFields(anchor, name, result);
   return result;
@@ -310,6 +318,7 @@ export function parseSmartArtAnchor(
   }
   if (graphicFrame.attributes?.["macro"] !== undefined)
     result.macro = String(graphicFrame.attributes["macro"]);
+  result.fPublished = readPublishedFlag(graphicFrame);
 
   readAnchorFields(anchor, name, result);
   return result;
@@ -347,6 +356,7 @@ export function parseShapeAnchor(
   if (sp.attributes?.["macro"] !== undefined) result.macro = String(sp.attributes["macro"]);
   if (sp.attributes?.["textlink"] !== undefined)
     result.textlink = String(sp.attributes["textlink"]);
+  result.fPublished = readPublishedFlag(sp);
   return result;
 }
 
@@ -396,6 +406,7 @@ export function parseConnectorAnchor(
   if (spPr) result.properties = shapePropertiesDesc.parse(spPr, ctx);
 
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
+  result.fPublished = readPublishedFlag(cxnSp);
 
   readConnectorNonVisual(result, cxnSp, ctx);
   const topConnStyle = findXdr(cxnSp, "style");

@@ -9,7 +9,7 @@ import type {
 
 export type RunFormat = Pick<
   RunOptions,
-  "bold" | "italic" | "underline" | "color" | "size" | "font"
+  "bold" | "italic" | "underline" | "color" | "size" | "font" | "strike" | "verticalAlign"
 >;
 
 export type ParagraphDraft = {

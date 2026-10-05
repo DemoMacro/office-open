@@ -109,13 +109,15 @@ function paragraphProperties(paragraph: object, context: RtfGenerateContext, pat
 function runProperties(run: object, context: RtfGenerateContext, path: string): string {
   assertAllowed(
     run,
-    ["bold", "italic", "underline", "size", "color", "font"],
+    ["bold", "italic", "strike", "verticalAlign", "underline", "size", "color", "font"],
     "styles",
     `${path}.run`,
   );
   const options = run as {
     bold?: boolean;
     italic?: boolean;
+    strike?: boolean;
+    verticalAlign?: "baseline" | "subscript" | "superscript";
     underline?: object;
     size?: number | string;
     color?: string | object;

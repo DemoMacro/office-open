@@ -64,6 +64,22 @@ export const DocumentAttributeNamespaces = {
  */
 export type DocumentAttributeNamespace = keyof typeof DocumentAttributeNamespaces;
 
+export type DocumentNamespaceDialect = "transitional" | "strict";
+
+const STRICT_NAMESPACE_URIS: Readonly<Partial<Record<DocumentAttributeNamespace, string>>> = {
+  m: "http://purl.oclc.org/ooxml/officeDocument/math",
+  r: "http://purl.oclc.org/ooxml/officeDocument/relationships",
+  w: "http://purl.oclc.org/ooxml/wordprocessingml/main",
+  wp: "http://purl.oclc.org/ooxml/drawingml/wordprocessingDrawing",
+};
+
+export function documentNamespaceDialect(ctx: {
+  _options?: { dialect?: DocumentNamespaceDialect };
+  fileData?: { _options?: { dialect?: DocumentNamespaceDialect } };
+}): DocumentNamespaceDialect {
+  return ctx._options?.dialect ?? ctx.fileData?._options?.dialect ?? "transitional";
+}
+
 /**
  * Namespace-declaration attribute string for a WordprocessingML root element,
  * derived from the canonical {@link DocumentAttributeNamespaces} table. Key
@@ -72,6 +88,19 @@ export type DocumentAttributeNamespace = keyof typeof DocumentAttributeNamespace
  */
 export const documentNamespaceAttributes = (keys: readonly DocumentAttributeNamespace[]): string =>
   keys.map((key) => `xmlns:${key}="${DocumentAttributeNamespaces[key]}"`).join(" ");
+
+export function documentNamespaceAttributesInDialect(
+  keys: readonly DocumentAttributeNamespace[],
+  dialect: DocumentNamespaceDialect,
+): string {
+  if (dialect === "transitional") return documentNamespaceAttributes(keys);
+  return keys
+    .map((key) => {
+      const uri = STRICT_NAMESPACE_URIS[key] ?? DocumentAttributeNamespaces[key];
+      return `xmlns:${key}="${uri}"`;
+    })
+    .join(" ");
+}
 
 /**
  * Object form of {@link documentNamespaceAttributes} for element-builder

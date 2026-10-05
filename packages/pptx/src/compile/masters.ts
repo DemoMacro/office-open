@@ -50,9 +50,12 @@ export interface LayoutInfo {
   def: LayoutDefinition;
   /** Serialized themeOverride part XML, when the layout deviates from its master's theme. */
   themeOverride?: string;
+  /** Whether the source package carried the layout's own rels part. */
+  sourceOwnRels?: boolean;
 }
 
 export interface MasterInfo {
+  masterId?: number;
   name: string;
   index: number;
   master: string;
@@ -107,6 +110,7 @@ export function buildMasterMap(
   slideWidth: number,
   ctx: PptxWriteContext,
   passthroughRelationships: PresentationOptions["passthroughRelationships"],
+  rawParts: PresentationOptions["rawParts"],
 ): MasterInfo[] {
   // Master placeholder positions scale to the slide width — record it on the
   // shared context so slideMasterDesc.stringify can read it.
@@ -130,6 +134,9 @@ export function buildMasterMap(
   // masters at the same theme) — dedupe by serialized content, like media.
   const themeIndexByXml = new Map<string, number>();
   let themeCount = 0;
+  const sourceRawPaths = rawParts
+    ? new Set(rawParts.map((part) => part.path.toLowerCase()))
+    : undefined;
 
   for (const [mi, def] of defs.entries()) {
     const name = def.name ?? `master${mi + 1}`;
@@ -181,21 +188,26 @@ export function buildMasterMap(
       const themeOverride = layoutDef?.themeOverride
         ? (themeOverrideDesc.stringify(layoutDef.themeOverride, ctx) ?? undefined)
         : undefined;
+      const sourceOwnRels =
+        sourceRawPaths === undefined ||
+        sourceRawPaths.has(`ppt/slidelayouts/_rels/slidelayout${globalLayoutIndex + 1}.xml.rels`);
       layouts.push({
         key,
         index: globalLayoutIndex,
         masterIndex: mi,
         def: resolveLayoutDef(layoutDef, slideLayoutType, slideWidth),
         themeOverride,
+        sourceOwnRels,
       });
-      const layoutRelEntries: RelEntry[] = [
-        {
+      const layoutRelEntries: RelEntry[] = [];
+      if (sourceOwnRels) {
+        layoutRelEntries.push({
           id: 1,
           type: RELATIONSHIP_TYPES.slideMaster,
           target: `../slideMasters/slideMaster${mi + 1}.xml`,
-        },
-      ];
-      if (themeOverride) {
+        });
+      }
+      if (sourceOwnRels && themeOverride) {
         layoutRelEntries.push({
           id: 2,
           type: RELATIONSHIP_TYPES.themeOverride,
@@ -289,6 +301,7 @@ export function buildMasterMap(
     }
 
     masters.push({
+      masterId: def.masterId,
       name,
       index: mi,
       master: masterXml,
@@ -506,13 +519,15 @@ export function mapMasterAndLayoutParts(
       if (layoutRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
       layoutRels.claimSourceRel(rel);
     }
+    if (layoutInfo.sourceOwnRels || layoutRels.relationshipCount > 0) {
+      mapping[`SlideLayoutRels${li}`] = {
+        data: XML_DECL + layoutRels.serialize(),
+        path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
+      };
+    }
     mapping[`SlideLayout${li}`] = {
       data: XML_DECL + replacedLayoutXml,
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
-    };
-    mapping[`SlideLayoutRels${li}`] = {
-      data: XML_DECL + layoutRels.serialize(),
-      path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
     };
     if (layoutInfo.themeOverride) {
       mapping[`SlideLayoutThemeOverride${li}`] = {

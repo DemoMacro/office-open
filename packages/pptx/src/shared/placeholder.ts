@@ -9,7 +9,7 @@
  * @module
  */
 
-import type { UniversalMeasure } from "@office-open/core";
+import type { BlackWhiteMode, ShapeLockingOptions, UniversalMeasure } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import type {
@@ -18,7 +18,7 @@ import type {
   TextBodyOptions,
 } from "@office-open/core/drawing";
 import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
-import { attr, findChild } from "@office-open/xml";
+import { attr, attrBool, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { LayoutDefinition, MasterDefinition } from "./file";
@@ -102,6 +102,12 @@ export interface PlaceholderPosition {
  * slide placeholder inherits whichever facets it omits.
  */
 export interface PlaceholderFacets {
+  /** Source cNvPr id — reused on round-trip instead of the standard 2–6 slots. */
+  id?: number;
+  /** `@bwMode` on the placeholder's p:spPr. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Shape locks from p:cNvSpPr/a:spLocks. */
+  locking?: ShapeLockingOptions;
   geometry?: ShapePropertiesOptions["geometry"];
   customGeometry?: ShapePropertiesOptions["customGeometry"];
   fill?: ShapePropertiesOptions["fill"];
@@ -252,10 +258,35 @@ export function extractPlaceholderDefinition(
   // re-emitted placeholder keeps its identity.
   const cNvPr = nvSpPr ? findChild(nvSpPr, "p:cNvPr") : undefined;
   Object.assign(def, parseNonVisualDrawingProperties(cNvPr));
+  const cNvPrId = cNvPr ? attr(cNvPr, "id") : undefined;
+  if (cNvPrId !== undefined) def.id = Number(cNvPrId);
+  const lockingEl = nvSpPr ? findChild(nvSpPr, "a:spLocks") : undefined;
+  if (lockingEl) {
+    const locking: Partial<ShapeLockingOptions> = {};
+    for (const key of [
+      "noGrp",
+      "noSelect",
+      "noRot",
+      "noChangeAspect",
+      "noMove",
+      "noResize",
+      "noEditPoints",
+      "noAdjustHandles",
+      "noChangeArrowheads",
+      "noChangeShapeType",
+      "noTextEdit",
+    ] as const) {
+      const value = attrBool(lockingEl, key);
+      if (value !== undefined) locking[key] = value;
+    }
+    if (Object.keys(locking).length > 0) def.locking = locking as ShapeLockingOptions;
+  }
 
   // Position + spPr facets from shapePropertiesDesc.parse.
   const spPr = findChild(spEl, "p:spPr");
   if (spPr) {
+    const blackWhiteMode = attr(spPr, "bwMode");
+    if (blackWhiteMode !== undefined) def.blackWhiteMode = blackWhiteMode as BlackWhiteMode;
     const spPrOpts = shapePropertiesDesc.parse(spPr, ctx);
     if (spPrOpts) {
       if (spPrOpts.x !== undefined) def.x = spPrOpts.x;

@@ -19,7 +19,10 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import { documentNamespaceAttributes } from "../document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  documentNamespaceDialect,
+} from "../document/document-attributes";
 import type {
   SettingsOptions,
   DocumentProtectionOptions,
@@ -50,7 +53,8 @@ function valAttr(tag: string): string {
 }
 
 function onOff(tag: string, val: boolean | undefined): string {
-  return val !== undefined ? `<${tag} ${valAttr(tag)}="${val ? 1 : 0}"/>` : "";
+  if (val === undefined) return "";
+  return val ? `<${tag}/>` : `<${tag} ${valAttr(tag)}="0"/>`;
 }
 
 function numVal(tag: string, val: number | undefined): string {
@@ -806,32 +810,31 @@ function stringifyCompatibility(opts: CompatibilityOptions): string {
 
 // ── Namespace attributes ──
 
-const SETTINGS_NS =
-  documentNamespaceAttributes([
-    "m",
-    "mc",
-    "o",
-    "r",
-    "v",
-    "w",
-    "w10",
-    "w14",
-    "w15",
-    "wne",
-    "wp",
-    "wp14",
-    "wpc",
-    "wpg",
-    "wpi",
-    "wps",
-  ]) + ' mc:Ignorable="w14 w15 wp14"';
+const SETTINGS_NAMESPACE_KEYS = [
+  "m",
+  "mc",
+  "o",
+  "r",
+  "v",
+  "w",
+  "w10",
+  "w14",
+  "w15",
+  "wne",
+  "wp",
+  "wp14",
+  "wpc",
+  "wpg",
+  "wpi",
+  "wps",
+] as const;
 
 // ── Descriptor ──
 
 export const settingsDesc: CustomDescriptor<SettingsOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
+  stringify(opts, ctx) {
     const p: string[] = [];
 
     // XSD CT_Settings sequence order
@@ -1097,7 +1100,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(strVal("w15:docId", opts.w15DocId));
 
     const body = p.join("");
-    return `<w:settings ${SETTINGS_NS}>${body}</w:settings>`;
+    return `<w:settings ${documentNamespaceAttributesInDialect(
+      SETTINGS_NAMESPACE_KEYS,
+      documentNamespaceDialect(ctx as never),
+    )}>${body}</w:settings>`;
   },
 
   parse(el, _ctx) {

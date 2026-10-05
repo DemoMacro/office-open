@@ -246,6 +246,26 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (alignmentEl) d.alignment = parseAlignment(alignmentEl);
         const protectionEl = findChild(dxf, "protection");
         if (protectionEl) d.protection = parseProtection(protectionEl);
+        const extLstEl = findChild(dxf, "extLst");
+        if (extLstEl) {
+          const extensions: StyleExtensionOptions[] = [];
+          for (const ext of extLstEl.elements ?? []) {
+            if (ext.name !== "ext") continue;
+            const uri = attr(ext, "uri");
+            if (!uri) continue;
+            const namespaces: Record<string, string> = {};
+            for (const [name, value] of Object.entries(ext.attributes ?? {})) {
+              if (name.startsWith("xmlns:") && typeof value === "string") namespaces[name] = value;
+            }
+            const content = (ext.elements ?? []).map((child) => stringifyElement(child)).join("");
+            extensions.push({
+              uri,
+              ...(Object.keys(namespaces).length > 0 ? { namespaces } : {}),
+              ...(content ? { content } : {}),
+            });
+          }
+          if (extensions.length > 0) d.extensions = extensions;
+        }
         dxfs.push(d);
       }
       result.dxfs = dxfs;
@@ -266,7 +286,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (tse.name !== "tableStyle") continue;
         const style: Partial<CustomTableStyleOptions> = {};
         if (attr(tse, "name")) style.name = attr(tse, "name");
-        if (parseOnOff(attr(tse, "pivot"))) style.pivot = true;
+        const pivot = parseExplicitOnOff(attr(tse, "pivot"));
+        if (pivot !== undefined) style.pivot = pivot;
+        const table = parseExplicitOnOff(attr(tse, "table"));
+        if (table !== undefined) style.table = table;
         const elements: TableStyleElementOptions[] = [];
         for (const tsee of tse.elements ?? []) {
           if (tsee.name !== "tableStyleElement") continue;

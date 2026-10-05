@@ -409,8 +409,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       opts.cellStyles = parsedStyles.customCellStyles;
     if (parsedStyles.cellStyleXfs !== undefined) opts.cellStyleXfs = parsedStyles.cellStyleXfs;
     if (parsedStyles.styleExtensions) opts.styleExtensions = parsedStyles.styleExtensions;
-    if (parsedStyles.tableStylesInfo)
-      opts.tableStyles = parsedStyles.tableStylesInfo.tableStyles ?? [];
+    if (parsedStyles.tableStylesInfo) opts.tableStyles = parsedStyles.tableStylesInfo;
   }
 
   // Theme — structured round-trip so a custom source theme survives instead of
@@ -428,15 +427,18 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   }
 
   // Parse workbook via descriptor for richer data
-  let sheetNames: string[] = [];
-  let sheetIds: number[] = [];
-  let sheetStates: Array<"visible" | "hidden" | "veryHidden" | undefined> = [];
+  const sheetInfoByPath = new Map<
+    string,
+    { name: string; sheetId: number; state?: "visible" | "hidden" | "veryHidden" }
+  >();
   if (xlsx.workbook) {
     const wbData = workbookDesc.parse(xlsx.workbook, readContext);
     if (wbData.sheets) {
-      sheetNames = wbData.sheets.map((s) => s.name);
-      sheetIds = wbData.sheets.map((s) => s.sheetId);
-      sheetStates = wbData.sheets.map((s) => s.state);
+      for (const sheet of wbData.sheets) {
+        const target = readContext.resolveWorksheetRel("xl/workbook.xml", sheet.rId);
+        if (target) sheetInfoByPath.set(target, sheet);
+      }
+      opts.sheetDefinitions = wbData.sheets;
     }
 
     // Workbook-level properties
@@ -462,14 +464,17 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // sheetData — the row scanner walks the captured inner XML, skipping the
   // per-cell Element tree (the dominant allocation cost on large sheets).
   const worksheets: WorksheetOptions[] = [];
-  for (const [i, wsPath] of xlsx.worksheets.entries()) {
+  for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
 
     const wsOpts = worksheetDesc.parse(wsEl, readContext);
-    if (sheetNames[i]) wsOpts.name = sheetNames[i];
-    if (sheetIds[i] !== undefined) wsOpts.sheetId = sheetIds[i];
-    if (sheetStates[i]) wsOpts.state = sheetStates[i];
+    const sheetInfo = sheetInfoByPath.get(wsPath);
+    if (sheetInfo) {
+      wsOpts.name = sheetInfo.name;
+      wsOpts.sheetId = sheetInfo.sheetId;
+      if (sheetInfo.state) wsOpts.state = sheetInfo.state;
+    }
 
     // ── Resolve sub-parts via worksheet relationships ──
 
@@ -569,6 +574,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
                 hidden: image.hidden,
                 ...(image.properties ? { properties: image.properties } : {}),
                 ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
+                ...(image.compression !== undefined ? { compression: image.compression } : {}),
                 ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
                 ...(image.preferRelativeResize !== undefined
                   ? { preferRelativeResize: image.preferRelativeResize }
@@ -599,6 +605,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             hidden: image.hidden,
             ...(image.properties ? { properties: image.properties } : {}),
             ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
+            ...(image.compression !== undefined ? { compression: image.compression } : {}),
             ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
             ...(image.preferRelativeResize !== undefined
               ? { preferRelativeResize: image.preferRelativeResize }
@@ -618,9 +625,12 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         const charts: WorksheetChartOptions[] = [];
         for (const anchor of drawingData.charts) {
           const chartPath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
-          const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
+          if (!chartPath) continue;
+          const chartEl = xlsx.doc.get(chartPath);
           if (!chartEl) continue;
-          const chartSpace = chartSpaceDesc.parse(chartEl, readContext);
+          const chartSpace = readContext.withPart(chartPath, () =>
+            chartSpaceDesc.parse(chartEl, readContext),
+          );
           readChartUserShapes(chartPath, chartSpace, readContext, xlsx.doc);
           // cNvPr @title stays unbridged (same rule as the compiler leg):
           // WorksheetChartOptions.title is the chart title, not the frame's.
@@ -777,14 +787,16 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   );
   if (chartsheetPaths.length > 0) {
     const chartsheets: ChartsheetOptions[] = [];
-    for (const [i, csPath] of chartsheetPaths.entries()) {
+    for (const csPath of chartsheetPaths) {
       const csEl = xlsx.doc.get(csPath);
       if (!csEl) continue;
       const csData = chartsheetDesc.parse(csEl, readContext);
-      if (sheetNames[worksheets.length + i]) csData.name = sheetNames[worksheets.length + i];
-      if (sheetIds[worksheets.length + i] !== undefined)
-        csData.sheetId = sheetIds[worksheets.length + i]!;
-      if (sheetStates[worksheets.length + i]) csData.state = sheetStates[worksheets.length + i];
+      const sheetInfo = sheetInfoByPath.get(csPath);
+      if (sheetInfo) {
+        csData.name = sheetInfo.name;
+        csData.sheetId = sheetInfo.sheetId;
+        if (sheetInfo.state) csData.state = sheetInfo.state;
+      }
       // The chart itself lives in a drawing part — bridge it back through the
       // core chartSpace descriptor into the simplified chartsheet chart shape.
       const csDrawingRels = readContext.getWorksheetRelsByType(csPath, "/drawing");
@@ -867,10 +879,19 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   }
 
   // Volatile function types (xl/volTypes.xml)
-  const volTypesEl = xlsx.doc.get("xl/volTypes.xml");
+  const volTypesPath = xlsx.doc.has("xl/volTypes.xml")
+    ? "volTypes.xml"
+    : xlsx.doc.has("xl/volatileDependencies.xml")
+      ? "volatileDependencies.xml"
+      : undefined;
+  const volTypesEl = volTypesPath ? xlsx.doc.get(`xl/${volTypesPath}`) : undefined;
   if (volTypesEl) {
     const volTypes = parseVolTypesEl(volTypesEl);
-    if (volTypes.length > 0) opts.volTypes = volTypes;
+    if (volTypes.length > 0) {
+      opts.volTypes = volTypes;
+      opts.volTypesPath = volTypesPath;
+      opts.volTypesCount = attrNum(volTypesEl, "count");
+    }
   }
 
   // External links
@@ -965,12 +986,25 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...(xlsx.appProps ? [xlsx.appProps] : []),
     ...(xlsx.customProps ? [xlsx.customProps] : []),
     ...xlsx.worksheets,
+    ...xlsx.worksheets.map((path) => partPathToRelsPath(path)),
     ...chartsheetPaths,
     ...dialogsheetPaths,
     ...(xlsx.styles ? ["xl/styles.xml", "xl/_rels/styles.xml.rels"] : []),
     ...(xlsx.theme ? [xlsx.theme, partPathToRelsPath(xlsx.theme)] : []),
     ...(sstEntries.length > 0 ? ["xl/sharedStrings.xml"] : []),
     ...(calcChainEl ? ["xl/calcChain.xml"] : []),
+    ...(connectionsEl ? ["xl/connections.xml"] : []),
+    ...(volTypesPath === "volatileDependencies.xml" ? ["xl/volatileDependencies.xml"] : []),
+    ...xlsx.partRefs.charts,
+    ...xlsx.partRefs.charts.map((path) => partPathToRelsPath(path)),
+    ...sortByNumber(
+      xlsx.doc.keys("xl/comments").filter((path) => /^xl\/comments\d+\.xml$/i.test(path)),
+    ).flatMap((path) => [path, partPathToRelsPath(path)]),
+    ...(metadataEl ? ["xl/metadata.xml"] : []),
+    ...chartsheetPaths.map((path) => partPathToRelsPath(path)),
+    ...xlsx.doc
+      .keys("xl/tables/")
+      .filter((path) => path.endsWith(".xml") && xlsx.doc.get(path)?.name === "table"),
     ...xlsx.partRefs.drawings.flatMap((path) => [path, partPathToRelsPath(path)]),
     ...pivotCaches.flatMap((cache) => [
       cache.definitionPath,

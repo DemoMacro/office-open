@@ -236,7 +236,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       };
       if (col.width !== undefined) {
         colAttrs.width = col.width;
-        colAttrs.customWidth = 1;
+        if (col.customWidth === undefined) colAttrs.customWidth = 1;
       }
       // A column can carry customWidth="1" without a width (parse fills it);
       // preserve the explicit flag so round-trip does not drop the attribute.
@@ -396,7 +396,19 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (csv.state && csv.state !== "visible") csvAttrs.state = csv.state;
       if (csv.filterUnique) csvAttrs.filterUnique = 1;
       if (csv.view && csv.view !== "normal") csvAttrs.view = csv.view;
-      p.push(`<customSheetView${attrs(csvAttrs)}/>`);
+      if (csv.showRuler === false) csvAttrs.showRuler = 0;
+      if (csv.topLeftCell !== undefined) csvAttrs.topLeftCell = csv.topLeftCell;
+      if (csv.colorId !== undefined) csvAttrs.colorId = csv.colorId;
+      const paneXml = csv.pane
+        ? `<pane ySplit="${csv.pane.row ?? 0}" xSplit="${csv.pane.col ?? 0}" topLeftCell="${escapeXml(csv.pane.topLeftCell ?? "")}" activePane="${csv.pane.activePane ?? "topLeft"}" state="${csv.pane.split ? "split" : "frozen"}"/>`
+        : "";
+      const selectionXml = (csv.selection ?? []).map(buildSelectionXml).join("");
+      const csvInner = paneXml + selectionXml;
+      p.push(
+        csvInner
+          ? `<customSheetView${attrs(csvAttrs)}>${csvInner}</customSheetView>`
+          : `<customSheetView${attrs(csvAttrs)}/>`,
+      );
     }
     p.push("</customSheetViews>");
   }
@@ -1008,7 +1020,10 @@ export function appendSheetDataRows(
       rowAttr += ` x14ac:dyDescent="${rowOpts.dyDescent}"`;
     }
     if (rowOpts.height !== undefined) {
-      rowAttr += ` ht="${convertToPt(rowOpts.height)}" customHeight="1"`;
+      rowAttr += ` ht="${convertToPt(rowOpts.height)}"`;
+      if (rowOpts.customHeight === undefined || rowOpts.customHeight) {
+        rowAttr += ' customHeight="1"';
+      }
     }
     if (rowOpts.hidden) rowAttr += ' hidden="1"';
     if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
@@ -1023,7 +1038,8 @@ export function appendSheetDataRows(
     }
     // A row style only takes effect when customFormat flags it (Excel always
     // pairs @s with customFormat="1").
-    if (rowOpts.customFormat || hasStyle) rowAttr += ' customFormat="1"';
+    if (rowOpts.customFormat === undefined && hasStyle) rowAttr += ' customFormat="1"';
+    else if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
     if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
     if (rowOpts.phonetic) rowAttr += ' ph="1"';
@@ -1237,12 +1253,17 @@ export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | unde
   if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
   if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
   const inner: string[] = [];
-  if (hf.oddHeader) inner.push(`<oddHeader>${escapeXml(hf.oddHeader)}</oddHeader>`);
-  if (hf.oddFooter) inner.push(`<oddFooter>${escapeXml(hf.oddFooter)}</oddFooter>`);
-  if (hf.evenHeader) inner.push(`<evenHeader>${escapeXml(hf.evenHeader)}</evenHeader>`);
-  if (hf.evenFooter) inner.push(`<evenFooter>${escapeXml(hf.evenFooter)}</evenFooter>`);
-  if (hf.firstHeader) inner.push(`<firstHeader>${escapeXml(hf.firstHeader)}</firstHeader>`);
-  if (hf.firstFooter) inner.push(`<firstFooter>${escapeXml(hf.firstFooter)}</firstFooter>`);
+  const headerFooterPart = (name: string, value: string | undefined): void => {
+    if (!value) return;
+    const preserve = /^\s|\s$/.test(value) ? ' xml:space="preserve"' : "";
+    inner.push(`<${name}${preserve}>${escapeXml(value)}</${name}>`);
+  };
+  headerFooterPart("oddHeader", hf.oddHeader);
+  headerFooterPart("oddFooter", hf.oddFooter);
+  headerFooterPart("evenHeader", hf.evenHeader);
+  headerFooterPart("evenFooter", hf.evenFooter);
+  headerFooterPart("firstHeader", hf.firstHeader);
+  headerFooterPart("firstFooter", hf.firstFooter);
   if (inner.length > 0) {
     return `<headerFooter${attrs(hfAttrs)}>${inner.join("")}</headerFooter>`;
   }

@@ -192,12 +192,14 @@ export function parseGroup(
   columnWidths: Map<string, number>,
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
+  usedBinaryPaths: Set<string>,
 ): SlideChild[] {
   const children = (element.elements ?? []).flatMap((child): SlideChild[] => {
     if (child.name === "draw:frame") {
       const chart = parseChartFrame(child, chartPool);
       if (chart) return [chart];
-      const picture = parsePictureFrame(child, binaries);
+      if (childNamed(child, "draw:object-ole")) return [];
+      const picture = parsePictureFrame(child, binaries, usedBinaryPaths);
       if (picture) return [picture];
       if (childNamed(child, "draw:text-box")) return [{ shape: parseShape(child, textStyles) }];
       throw unknownSlideChild(child, "/draw:g");
@@ -205,7 +207,7 @@ export function parseGroup(
     if (child.name === "draw:line") return [parseLine(child)];
     if (child.name === "draw:connector") return [parseConnector(child)];
     if (child.name === "draw:g")
-      return parseGroup(child, textStyles, columnWidths, binaries, chartPool);
+      return parseGroup(child, textStyles, columnWidths, binaries, chartPool, usedBinaryPaths);
     if (child.name === "table:table") return [parseSlideTable(child, textStyles, columnWidths)];
     throw unknownSlideChild(child, "/draw:g");
   });

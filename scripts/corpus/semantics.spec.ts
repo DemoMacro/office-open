@@ -2,6 +2,7 @@ import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
 import {
+  archiveSemanticDiffDetails,
   archiveTagDiffs,
   canonicalXmlNodes,
   classifyPackageFailure,
@@ -35,6 +36,20 @@ describe("corpus semantic comparison", () => {
     );
   });
 
+  it("normalizes strict relationship URIs to transitional equivalents", () => {
+    const source = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://purl.oclc.org/ooxml/officeDocument/relationships/extendedProperties" Target="docProps/app.xml"/>' +
+        "</Relationships>",
+    );
+    const output = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>' +
+        "</Relationships>",
+    );
+    expect(explainSemanticPartDiff("_rels/.rels", source, output)).toEqual([]);
+  });
+
   it("reports source-only elements without comparing raw declarations", () => {
     const source = new TextEncoder().encode("<root><lost/></root>");
     const output = new TextEncoder().encode("<root/>");
@@ -47,6 +62,42 @@ describe("corpus semantic comparison", () => {
         detail: "source-only child",
       },
     ]);
+  });
+
+  it("normalizes equivalent numeric cell values", () => {
+    const source = new TextEncoder().encode(
+      "<worksheet><sheetData><row><c><v>1.2300000000000000</v></c></row></sheetData></worksheet>",
+    );
+    const output = new TextEncoder().encode(
+      "<worksheet><sheetData><row><c><v>1.23</v></c></row></sheetData></worksheet>",
+    );
+    expect(explainSemanticPartDiff("xl/worksheets/example.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes equivalent OOXML boolean attribute tokens", () => {
+    const source = new TextEncoder().encode(
+      '<root><flag w:val="off"/><math m:val="false"/></root>',
+    );
+    const output = new TextEncoder().encode('<root><flag w:val="0"/><math m:val="0"/></root>');
+    expect(explainSemanticPartDiff("word/example.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes relationship references by their part targets", () => {
+    const files = {
+      "ppt/slides/slide1.xml":
+        '<p:root xmlns:p="urn:p" xmlns:r="urn:r"><p:ref r:id="rId2"/></p:root>',
+      "ppt/slides/_rels/slide1.xml.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart1.xml"/></Relationships>',
+    };
+    const output = {
+      ...files,
+      "ppt/slides/slide1.xml": files["ppt/slides/slide1.xml"].replace('r:id="rId2"', 'r:id="rId9"'),
+      "ppt/slides/_rels/slide1.xml.rels": files["ppt/slides/_rels/slide1.xml.rels"].replace(
+        "rId2",
+        "rId9",
+      ),
+    };
+    expect(archiveSemanticDiffDetails(zip(files), zip(output))).toEqual([]);
   });
 
   it("reports duplicate children even when their semantic payloads match", () => {

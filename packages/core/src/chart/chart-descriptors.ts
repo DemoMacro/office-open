@@ -531,8 +531,10 @@ function stringifyNumRef(
 
 // CT_NumData literal form (c:val > c:numLit) — Excel writes this for
 // hand-entered series with no worksheet reference.
-function stringifyNumLitList(values: readonly number[], formatCode?: string): string {
-  const pts = values.map((v, i) => `<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join("");
+function stringifyNumLitList(values: readonly (string | number)[], formatCode?: string): string {
+  const pts = values
+    .map((v, i) => `<c:pt idx="${i}"><c:v>${typeof v === "number" ? v : escapeXml(v)}</c:v></c:pt>`)
+    .join("");
   return `<c:numLit><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numLit>`;
 }
 
@@ -1380,13 +1382,16 @@ function readMultiLvlStrCache(el: XmlElement): string[][] | undefined {
   return levels;
 }
 
-function readNumLitPoints(numLit: XmlElement): number[] {
-  const result: number[] = [];
+function readNumLitPoints(numLit: XmlElement): (string | number)[] {
+  const result: (string | number)[] = [];
   for (const pt of numLit.elements ?? []) {
     if (pt.name === "c:pt") {
       const v = findChild(pt, "c:v");
       const text = v ? textOf(v) : "";
-      if (text !== "") result.push(Number(text));
+      if (text !== "") {
+        const numeric = Number(text);
+        result.push(String(numeric) === text ? numeric : text);
+      }
     }
   }
   return result;
@@ -1403,7 +1408,7 @@ function hasNumericXRef(serEl: XmlElement): boolean {
   );
 }
 
-function readNumCache(el: XmlElement): number[] {
+function readNumCache(el: XmlElement): (string | number)[] {
   // c:numLit literal points (CT_NumDataSource choice: numRef | numLit)
   const numLit = findChild(el, "c:numLit");
   if (numLit) return readNumLitPoints(numLit);
@@ -1411,12 +1416,15 @@ function readNumCache(el: XmlElement): number[] {
   if (!numRef) return [];
   const numCache = findChild(numRef, "c:numCache");
   if (!numCache?.elements) return [];
-  const result: number[] = [];
+  const result: (string | number)[] = [];
   for (const pt of numCache.elements) {
     if (pt.name === "c:pt") {
       const v = findChild(pt, "c:v");
       const text = v ? textOf(v) : "";
-      if (text !== "") result.push(Number(text));
+      if (text !== "") {
+        const numeric = Number(text);
+        result.push(String(numeric) === text ? numeric : text);
+      }
     }
   }
   return result;

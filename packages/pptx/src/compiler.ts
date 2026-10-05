@@ -20,6 +20,7 @@ import {
   dropDanglingPassthroughRels,
   finalizeContentTypes,
   getReferencedMedia,
+  resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
   replaceImagePlaceholders,
 } from "@office-open/core";
@@ -141,6 +142,16 @@ function buildPresAttrOpts(
   };
 }
 
+function sourceTagsRel(options: PresentationOptions) {
+  const rId = options.customerData?.tags?.rId;
+  return options.passthroughRelationships?.find(
+    (rel) =>
+      rel.source === "ppt/presentation.xml" &&
+      rel.relationshipType.split("/").pop() === "tags" &&
+      (rId === undefined || rel.rId === rId),
+  );
+}
+
 // ── Main compiler entry ──
 
 export function compilePresentation(
@@ -165,6 +176,7 @@ export function compilePresentation(
     sz.width,
     descCtx,
     options.passthroughRelationships,
+    options.rawParts,
   );
   // Unique master themes in theme-index order (deduped in buildMasterMap) —
   // notesMaster/handoutMaster themes append after these.
@@ -224,14 +236,18 @@ export function compilePresentation(
   const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
     slideHeight: sz.height,
-    slideIds: slides.map((_, i) => 256 + i),
+    slideSizeType: options.slideSizeType,
+    slideIds: slides.map((slide, index) => slide.slideId ?? 256 + index),
+    masterIds: masters.map((master, index) => master.masterId ?? 2147483648 + index * 12),
     masterCount: masters.length,
     sections,
     ...buildPresAttrOpts(options),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
   if (options.tags?.length) {
-    const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, "tags/tags1.xml");
+    const sourceTags = sourceTagsRel(options);
+    const tagsTarget = sourceTags?.target ?? "tags/tags1.xml";
+    const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, tagsTarget);
     presOptions.customerData = {
       ...presOptions.customerData,
       tags: { rId: `rId${tagsRId}` },
@@ -376,9 +392,12 @@ export function compilePresentation(
     path: "ppt/presentation.xml",
   };
   if (options.tags?.length) {
+    const sourceTags = sourceTagsRel(options);
     mapping["Tags"] = {
       data: XML_DECL + (tagListDesc.stringify(options.tags, descCtx) ?? ""),
-      path: "ppt/tags/tags1.xml",
+      path: sourceTags
+        ? resolveRelationshipTarget(sourceTags.source, sourceTags.target)
+        : "ppt/tags/tags1.xml",
     };
   }
   mapping["PresentationRelationships"] = {

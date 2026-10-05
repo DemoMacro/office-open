@@ -211,7 +211,9 @@ describe("Styles", () => {
 
         const styles = new Styles();
         styles.adopt({ fonts: parsed.fonts!, fontsContainer: parsed.fontsContainer });
-        expect(styles.serialize()).toContain(`x14ac:knownFonts="${sourceValue}"`);
+        expect(styles.serialize()).toMatch(
+          new RegExp(`<fonts count="1" [^>]*x14ac:knownFonts="${sourceValue}"`),
+        );
       }
     });
 

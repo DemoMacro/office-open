@@ -1217,7 +1217,7 @@
         },
         "bubbleSize": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
@@ -1295,13 +1295,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -1335,8 +1335,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1389,8 +1389,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1428,8 +1428,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1485,8 +1485,8 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1627,16 +1627,24 @@
           "description": "Child chain — calculations farmed out to another thread",
           "type": "boolean"
         },
+        "newLevel": {
+          "description": "Calculation level increased relative to the previous entry",
+          "type": "boolean"
+        },
+        "newThread": {
+          "description": "Calculation moved to a new dependency thread",
+          "type": "boolean"
+        },
         "reference": {
           "description": "Cell reference, e.g. \"A1\"",
           "type": "string"
         },
         "sheetIndex": {
-          "description": "Sheet index (1-based)",
+          "description": "Sheet index (1-based); omitted cells inherit the previous entry's index",
           "type": "number"
         }
       },
-      "required": ["reference", "sheetIndex"],
+      "required": ["reference"],
       "type": "object"
     },
     "CalculatedItemOptions": {
@@ -1994,14 +2002,22 @@
       "properties": {
         "color": {
           "$ref": "#/definitions/HexColor",
-          "description": "RGB color hex without alpha, e.g. \"FF0000\""
+          "description": "RGB color hex without alpha, e.g. \"FF0000\"; omitted for theme colors"
         },
         "position": {
           "description": "Position (0.0–1.0)",
           "type": "number"
+        },
+        "themeColor": {
+          "description": "Theme palette index",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Tint applied to the theme color",
+          "type": "number"
         }
       },
-      "required": ["position", "color"],
+      "required": ["position"],
       "type": "object"
     },
     "CellGraphicOptions": {
@@ -2707,7 +2723,7 @@
         },
         "values": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -3237,6 +3253,10 @@
       "required": ["anchors"],
       "type": "object"
     },
+    "ChartValue": {
+      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
+      "type": ["number", "string"]
+    },
     "ChartsheetOptions": {
       "additionalProperties": false,
       "description": "A chart sheet (xl/chartsheets/sheetN.xml) — a full-sheet chart with its own view state.",
@@ -3297,6 +3317,10 @@
         "sheetId": {
           "description": "Workbook sheet id — unique but not necessarily sequential.",
           "type": "number"
+        },
+        "sheetPrPresent": {
+          "description": "Round-trip marker for an empty <sheetPr/> element.",
+          "type": "boolean"
         },
         "sheetProtection": {
           "$ref": "#/definitions/ChartsheetProtectionOptions"
@@ -4206,6 +4230,10 @@
         "extentCy": {
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
+        "fPublished": {
+          "description": "Published-object flag (cxnSp/@fPublished); explicit true/false round-trips.",
+          "type": "boolean"
+        },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
@@ -4662,6 +4690,10 @@
       "additionalProperties": false,
       "description": "Custom sheet view",
       "properties": {
+        "colorId": {
+          "description": "Color id",
+          "type": "number"
+        },
         "filter": {
           "description": "Filter applied",
           "type": "boolean"
@@ -4690,6 +4722,10 @@
           "description": "Show outline symbols",
           "type": "boolean"
         },
+        "pane": {
+          "$ref": "#/definitions/FreezePaneOptions",
+          "description": "Pane state"
+        },
         "printArea": {
           "description": "Print area",
           "type": "boolean"
@@ -4697,6 +4733,13 @@
         "scale": {
           "description": "Zoom scale",
           "type": "number"
+        },
+        "selection": {
+          "description": "Selections",
+          "items": {
+            "$ref": "#/definitions/SelectionOptions"
+          },
+          "type": "array"
         },
         "showAutoFilter": {
           "description": "Show auto filter",
@@ -4718,9 +4761,17 @@
           "description": "Show row/column headers",
           "type": "boolean"
         },
+        "showRuler": {
+          "description": "Ruler visibility",
+          "type": "boolean"
+        },
         "state": {
           "description": "Sheet state",
           "enum": ["visible", "hidden", "veryHidden"],
+          "type": "string"
+        },
+        "topLeftCell": {
+          "description": "Scroll position",
           "type": "string"
         },
         "view": {
@@ -5943,6 +5994,13 @@
         },
         "border": {
           "$ref": "#/definitions/BorderSideOptions"
+        },
+        "extensions": {
+          "description": "Trailing dxf extensions — round-trip only.",
+          "items": {
+            "$ref": "#/definitions/StyleExtensionOptions"
+          },
+          "type": "array"
         },
         "fill": {
           "$ref": "#/definitions/CellFillOptions"
@@ -10402,6 +10460,10 @@
           ],
           "description": "Column offset in EMU (default 0)"
         },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state (a:blip/@cstate); absent = attribute omitted."
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -14194,6 +14256,10 @@
           "description": "Custom format applied",
           "type": "boolean"
         },
+        "customHeight": {
+          "description": "Custom height; false preserves an omitted source flag.",
+          "type": "boolean"
+        },
         "dyDescent": {
           "description": "Fraction of row height used by font descent, e.g. 0.25 = 25%.",
           "type": "number"
@@ -14380,13 +14446,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -14888,6 +14954,10 @@
         },
         "extentCy": {
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
+        },
+        "fPublished": {
+          "description": "Published-object flag (sp/@fPublished); explicit true/false round-trips.",
+          "type": "boolean"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -15396,6 +15466,26 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "SheetDefinition": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "rId": {
+          "type": "string"
+        },
+        "sheetId": {
+          "type": "number"
+        },
+        "state": {
+          "enum": ["visible", "hidden", "veryHidden"],
+          "type": "string"
+        }
+      },
+      "required": ["name", "sheetId", "rId"],
       "type": "object"
     },
     "SheetFormatPropertiesOptions": {
@@ -16401,12 +16491,20 @@
           "description": "Data differential format index",
           "type": "number"
         },
+        "ext": {
+          "description": "Trailing column extension — round-trip only.",
+          "type": "string"
+        },
         "headerRowCellStyle": {
           "description": "Header row cell style name",
           "type": "string"
         },
         "headerRowDxfId": {
           "description": "Header row differential format index",
+          "type": "number"
+        },
+        "id": {
+          "description": "Stable column id; fresh columns derive from position.",
           "type": "number"
         },
         "mapping": {
@@ -16649,6 +16747,32 @@
         },
         "showRowStripes": {
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "TableStylesInfo": {
+      "additionalProperties": false,
+      "description": "Table styles block, including its container attributes.",
+      "properties": {
+        "count": {
+          "description": "Declared number of custom styles",
+          "type": "number"
+        },
+        "defaultPivotStyle": {
+          "description": "Default style applied to new PivotTables",
+          "type": "string"
+        },
+        "defaultTableStyle": {
+          "description": "Default style applied to new tables",
+          "type": "string"
+        },
+        "tableStyles": {
+          "description": "Custom table and PivotTable styles in document order",
+          "items": {
+            "$ref": "#/definitions/CustomTableStyleOptions"
+          },
+          "type": "array"
         }
       },
       "type": "object"
@@ -17486,6 +17610,23 @@
       ],
       "type": "string"
     },
+    "ThemeFamilyOptions": {
+      "additionalProperties": false,
+      "description": "Theme family identity in the Microsoft thm15 extension.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vid": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "id", "vid"],
+      "type": "object"
+    },
     "ThemeOptions": {
       "additionalProperties": false,
       "description": "Theme customization options (a:theme).",
@@ -17516,6 +17657,10 @@
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "themeFamily": {
+          "$ref": "#/definitions/ThemeFamilyOptions",
+          "description": "Theme family identity (`a:extLst/thm15:themeFamily`)."
         }
       },
       "type": "object"
@@ -18825,6 +18970,13 @@
           "description": "Source <sst/@count>: total string-cell references; undefined on fresh authoring.",
           "type": "number"
         },
+        "sheetDefinitions": {
+          "description": "Workbook <sheets> order; round-trip only.",
+          "items": {
+            "$ref": "#/definitions/SheetDefinition"
+          },
+          "type": "array"
+        },
         "styleExtensions": {
           "description": "Style sheet extensions",
           "items": {
@@ -18836,11 +18988,8 @@
           "type": "string"
         },
         "tableStyles": {
-          "description": "Custom table/pivot table styles",
-          "items": {
-            "$ref": "#/definitions/CustomTableStyleOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/TableStylesInfo",
+          "description": "Table styles section of xl/styles.xml, including container attributes"
         },
         "theme": {
           "$ref": "#/definitions/ThemeOptions",
@@ -18859,6 +19008,14 @@
             "$ref": "#/definitions/VolTypeOptions"
           },
           "type": "array"
+        },
+        "volTypesCount": {
+          "description": "Declared volatile-entry count; round-trip only.",
+          "type": "number"
+        },
+        "volTypesPath": {
+          "description": "Source path of the volatile part; older packages use volatileDependencies.xml.",
+          "type": "string"
         },
         "webPublishObjects": {
           "description": "Web publish objects",

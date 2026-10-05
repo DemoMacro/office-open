@@ -9,6 +9,8 @@
 import {
   RELATIONSHIP_TYPES,
   Relationships,
+  type PassthroughRelationship,
+  resolveRelationshipTarget,
   type RelationshipType,
   pickNonVisualDrawingProperties,
   toUint8Array,
@@ -29,6 +31,38 @@ import { XlsxWriteContext } from "../context";
 const XML_DECL = OOXML_XML_DECLARATION;
 
 const IMAGE_REL = RELATIONSHIP_TYPES.image;
+
+function decimalAttr(value: string): string {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return value;
+  const shortest = String(number);
+  if (shortest.length < 17) return shortest;
+  return number.toPrecision(17).replace(/0+$/, "").replace(/\.$/, "");
+}
+
+function layoutDecimal(value: string): string {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return value;
+  if (number !== 0 && Math.abs(number) < 0.1) {
+    return number.toExponential(16).toUpperCase();
+  }
+  return decimalAttr(value);
+}
+
+export function preserveChartDecimalAttributes(xml: string): string {
+  return xml
+    .replace(/<c:pageMargins([^>]*)\/>/g, (_, attributes: string) => {
+      const normalized = attributes.replace(
+        /\b(l|r|t|b|header|footer)="([^"]+)"/g,
+        (_match, name: string, value: string) => `${name}="${decimalAttr(value)}"`,
+      );
+      return `<c:pageMargins${normalized}/>`;
+    })
+    .replace(
+      /<c:(x|y|w|h) val="([^"]+)"\/>/g,
+      (_match, name: string, value: string) => `<c:${name} val="${layoutDecimal(value)}"/>`,
+    );
+}
 
 /**
  * Replace `{fileName}` media placeholders in compiled part XML with
@@ -77,6 +111,8 @@ export function compileSheetDrawing(
   mapping: Record<string, { data: string; path: string }>,
   state: WorksheetCompileState,
   wsRels: Relationships,
+  passthroughRelationships: readonly PassthroughRelationship[] | undefined,
+  wsPath: string,
 ): string {
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
@@ -90,6 +126,35 @@ export function compileSheetDrawing(
   const drawingSmartArts: DrawingSmartArtOptions[] = [];
   const drawingRels = new Relationships();
   let rid = 1;
+  const sourceWorksheetRels = (passthroughRelationships ?? []).filter(
+    (rel) => rel.source === wsPath,
+  );
+  const drawingRel = sourceWorksheetRels.find((rel) => rel.relationshipType.endsWith("/drawing"));
+  const drawingPath = drawingRel
+    ? resolveRelationshipTarget(wsPath, drawingRel.target)
+    : `xl/drawings/drawing${i + 1}.xml`;
+  const sourceDrawingRels = (passthroughRelationships ?? []).filter(
+    (rel) => rel.source === drawingPath,
+  );
+  const addPreservedDrawingRel = (
+    sourceRel: { rId: string } | undefined,
+    type: RelationshipType,
+    target: string,
+    targetMode?: "External",
+  ): string => {
+    const existing = drawingRels.idOf(type, target);
+    if (existing !== undefined) return existing;
+    const preferred = /^rId\d+$/.exec(sourceRel?.rId ?? "")?.[0];
+    if (preferred && !drawingRels.hasId(preferred)) {
+      drawingRels.addRelationship(preferred, type, target, targetMode);
+      rid = drawingRels.nextRelationshipId;
+      return preferred;
+    }
+    drawingRels.addRelationship(rid, type, target, targetMode);
+    const assigned = `rId${rid}`;
+    rid = drawingRels.nextRelationshipId;
+    return assigned;
+  };
 
   // Process images
   for (const img of imgOpts) {
@@ -100,23 +165,29 @@ export function compileSheetDrawing(
       // Media-store extension (jpg → jpeg); vector formats pass through.
       const ext = img.type === "jpg" ? "jpeg" : img.type;
       const rawBytes = toUint8Array(img.data, { encoding: "base64" });
-      const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
-        fileName,
-        type: ext,
-        data: rawBytes,
-        width: 0,
-        height: 0,
-      }));
+      const sourceImageRel = sourceDrawingRels.filter((rel) =>
+        rel.relationshipType.endsWith("/image"),
+      )[drawingImages.length];
+      const sourceImagePath = sourceImageRel
+        ? resolveRelationshipTarget(drawingPath, sourceImageRel.target)
+        : undefined;
+      const entry = ctx.media.addMedia(
+        rawBytes,
+        ext,
+        (fileName) => ({
+          fileName,
+          type: ext,
+          data: rawBytes,
+          width: 0,
+          height: 0,
+        }),
+        sourceImagePath?.split("/").pop(),
+      );
 
       // Anchors sharing one picture share the relationship too — the source
       // writes a single image rel that every a:blip references.
-      const target = `../media/${entry.fileName}`;
-      embedRid = drawingRels.idOf(IMAGE_REL, target);
-      if (embedRid === undefined) {
-        drawingRels.addRelationship(rid, IMAGE_REL, target);
-        embedRid = `rId${rid}`;
-        rid++;
-      }
+      const target = sourceImageRel?.target ?? `../media/${entry.fileName}`;
+      embedRid = addPreservedDrawingRel(sourceImageRel, IMAGE_REL, target);
       state.globalMediaIdx++;
     }
 
@@ -135,6 +206,7 @@ export function compileSheetDrawing(
       ...pickNonVisualDrawingProperties(img),
       ...(img.properties ? { properties: img.properties } : {}),
       ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
+      ...(img.compression !== undefined ? { compression: img.compression } : {}),
       ...(img.sourceRectangle ? { sourceRectangle: img.sourceRectangle } : {}),
       ...(img.preferRelativeResize !== undefined
         ? { preferRelativeResize: img.preferRelativeResize }
@@ -152,18 +224,22 @@ export function compileSheetDrawing(
   // Process charts
   for (const chart of chartOpts) {
     const chartKey = `chart_${state.globalChartIdx}`;
+    const sourceChartRel = sourceDrawingRels.filter((rel) =>
+      rel.relationshipType.endsWith("/chart"),
+    )[drawingCharts.length];
+    const chartPath = sourceChartRel
+      ? resolveRelationshipTarget(drawingPath, sourceChartRel.target)
+      : `xl/charts/chart${state.globalChartIdx + 1}.xml`;
+    state.chartPaths.set(chartKey, chartPath);
     const userShapes = chart.userShapes ? buildUserShapesData(chart.userShapes) : undefined;
     ctx.charts.addChart(chartKey, {
       key: chartKey,
-      chartSpaceXml: chartSpaceDesc.stringify(chart, ctx) ?? "",
+      chartSpaceXml: preserveChartDecimalAttributes(chartSpaceDesc.stringify(chart, ctx) ?? ""),
       ...(userShapes ? { userShapes } : {}),
     });
 
-    drawingRels.addRelationship(
-      rid,
-      RELATIONSHIP_TYPES.chart,
-      `../charts/chart${state.globalChartIdx + 1}.xml`,
-    );
+    const chartTarget = sourceChartRel?.target ?? `../charts/chart${state.globalChartIdx + 1}.xml`;
+    const chartRid = addPreservedDrawingRel(sourceChartRel, RELATIONSHIP_TYPES.chart, chartTarget);
 
     // cNvPr @title/@ext stay unbridged: WorksheetChartOptions.title is the
     // chart title (c:title) and its ext is the chart-space c:extLst —
@@ -176,14 +252,13 @@ export function compileSheetDrawing(
     drawingCharts.push({
       ...pickAnchorOptions(chart),
       ...chartCnvPr,
-      rId: `rId${rid}`,
+      rId: chartRid,
       ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
       ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
       ...(chart.hyperlink ? { hyperlink: chart.hyperlink } : {}),
       ...(chart.zOrder !== undefined ? { zOrder: chart.zOrder } : {}),
       ...(chart.shapeId !== undefined ? { shapeId: chart.shapeId } : {}),
     });
-    rid++;
     state.globalChartIdx++;
   }
 
@@ -199,8 +274,7 @@ export function compileSheetDrawing(
       const target = relTarget(path);
       const existing = drawingRels.idOf(relType, target);
       if (existing !== undefined) return existing;
-      drawingRels.addRelationship(rid, relType, target);
-      return `rId${rid++}`;
+      return addPreservedDrawingRel(undefined, relType, target);
     };
     const relBase = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     drawingSmartArts.push({
@@ -240,10 +314,18 @@ export function compileSheetDrawing(
   for (const h of ctx.hyperlinks.slice(hyperlinkBase)) {
     let hlinkRid = hlinkRidByUrl.get(h.url);
     if (hlinkRid === undefined) {
-      drawingRels.addRelationship(rid, RELATIONSHIP_TYPES.hyperlink, h.url, "External");
-      hlinkRid = rid;
+      const sourceHlinkRel = sourceDrawingRels.find(
+        (rel) => rel.relationshipType.endsWith("/hyperlink") && rel.target === h.url,
+      );
+      hlinkRid = Number(
+        addPreservedDrawingRel(
+          sourceHlinkRel,
+          RELATIONSHIP_TYPES.hyperlink,
+          h.url,
+          "External",
+        ).replace(/^rId/, ""),
+      );
       hlinkRidByUrl.set(h.url, hlinkRid);
-      rid++;
     }
     resolvedDrawingXml = resolvedDrawingXml
       .split(`r:id="{hlink:${h.key}}"`)
@@ -255,16 +337,19 @@ export function compileSheetDrawing(
   const drawingIdx = i + 1;
   mapping[`Drawing${i}`] = {
     data: XML_DECL + resolvedDrawingXml,
-    path: `xl/drawings/drawing${drawingIdx}.xml`,
+    path: drawingPath,
   };
 
   // Drawing relationships
   mapping[`DrawingRels${i}`] = {
     data: XML_DECL + drawingRels.serialize(),
-    path: `xl/drawings/_rels/drawing${drawingIdx}.xml.rels`,
+    path: drawingPath.replace(/([^/]+)$/, "_rels/$1.rels"),
   };
 
   // Insert drawing reference at its CT_Worksheet sequence position.
-  const drawingRid = wsRels.add(RELATIONSHIP_TYPES.drawing, `../drawings/drawing${drawingIdx}.xml`);
-  return editSheetTailMarker(sheetXml, "<!--DRAWING-->", `<drawing r:id="rId${drawingRid}"/>`);
+  const drawingTarget = drawingRel?.target ?? `../drawings/drawing${drawingIdx}.xml`;
+  const existingDrawingRid = wsRels.idOf(RELATIONSHIP_TYPES.drawing, drawingTarget);
+  const drawingRid =
+    existingDrawingRid ?? `rId${wsRels.add(RELATIONSHIP_TYPES.drawing, drawingTarget)}`;
+  return editSheetTailMarker(sheetXml, "<!--DRAWING-->", `<drawing r:id="${drawingRid}"/>`);
 }

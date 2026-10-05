@@ -50,16 +50,45 @@ describe("calcChainDesc round-trip", () => {
     expect(result.cells![0]?.array).toBe(true);
   });
 
-  it("inherits sheet index and preserves explicit zero flags", () => {
+  it("preserves omitted sheet indexes and explicit zero flags", () => {
     const result = roundTrip({
       cells: [
-        { reference: "A1", sheetIndex: 2, array: false, childChain: false },
+        {
+          reference: "A1",
+          sheetIndex: 2,
+          array: false,
+          childChain: false,
+          newLevel: false,
+          newThread: false,
+        },
         { reference: "B2", sheetIndex: 2 },
       ],
     });
     expect(result.cells).toEqual([
-      { reference: "A1", sheetIndex: 2, array: false, childChain: false },
+      {
+        reference: "A1",
+        sheetIndex: 2,
+        array: false,
+        childChain: false,
+        newLevel: false,
+        newThread: false,
+      },
       { reference: "B2", sheetIndex: 2 },
+    ]);
+  });
+
+  it("round-trips inherited sheet index omission and dependency flags", () => {
+    const result = roundTrip({
+      cells: [
+        { reference: "A1", sheetIndex: 2 },
+        { reference: "B2" },
+        { reference: "C3", childChain: true, newLevel: true, newThread: true },
+      ],
+    });
+    expect(result.cells).toEqual([
+      { reference: "A1", sheetIndex: 2 },
+      { reference: "B2" },
+      { reference: "C3", childChain: true, newLevel: true, newThread: true },
     ]);
   });
 

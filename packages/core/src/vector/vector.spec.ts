@@ -563,6 +563,16 @@ describe("office attributes on shapes", () => {
     expect(result.master).toBe("#_x0000_t1");
     expect(result.complex).toEqual({ ext: "view" });
   });
+
+  it("preserves non-canonical v:shapetype child order", () => {
+    const xml =
+      '<v:shapetype id="_x0000_t75"><v:stroke joinstyle="miter"/><v:path o:connecttype="rect"/></v:shapetype>';
+    const el = parseXml(`<v:carrier>${xml}</v:carrier>`).elements?.[0]?.elements?.[0];
+    if (!el) throw new Error("carrier has no shapetype");
+    const parsed = parseVmlShapetype(el);
+    expect(parsed.childOrder).toEqual(["stroke", "pathElement"]);
+    expect(stringifyVmlShapetype(parsed)).toBe(xml);
+  });
 });
 
 describe("word elements (w10:)", () => {

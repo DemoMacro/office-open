@@ -12,7 +12,8 @@
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml } from "@office-open/xml";
 
-import { COMMENTS_NS } from "./comments";
+import type { BodyContext } from "../context";
+import { commentsNamespaceAttributes } from "./comments";
 
 /** Options for one person entry (w15:person) — a comment participant,
  *  distinct from the bibliography's literature-author PersonOptions. */
@@ -30,11 +31,11 @@ export interface CommentPersonOptions {
   };
 }
 
-export const peopleDesc: CustomDescriptor<CommentPersonOptions[]> = {
+export const peopleDesc: CustomDescriptor<CommentPersonOptions[], BodyContext> = {
   kind: "custom",
 
-  stringify(opts) {
-    const parts: string[] = [`<w15:people ${COMMENTS_NS}>`];
+  stringify(opts, ctx) {
+    const parts: string[] = [`<w15:people ${commentsNamespaceAttributes(ctx)}>`];
     for (const person of opts) {
       const attrs = [`w15:author="${escapeXml(person.author)}"`];
       if (person.contact !== undefined) attrs.push(`w15:contact="${escapeXml(person.contact)}"`);

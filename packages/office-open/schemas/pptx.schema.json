@@ -2304,7 +2304,7 @@
         },
         "bubbleSize": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
@@ -2382,13 +2382,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -2422,8 +2422,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2476,8 +2476,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2515,8 +2515,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2572,8 +2572,8 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -3509,7 +3509,7 @@
         },
         "values": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -3615,6 +3615,10 @@
       },
       "required": ["anchors"],
       "type": "object"
+    },
+    "ChartValue": {
+      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
+      "type": ["number", "string"]
     },
     "CheckBoxControlOptions": {
       "additionalProperties": false,
@@ -7615,6 +7619,24 @@
       ],
       "type": "string"
     },
+    "MasterChild": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SlideChild"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "placeholder": {
+              "$ref": "#/definitions/StandardPlaceholderKey"
+            }
+          },
+          "required": ["placeholder"],
+          "title": "placeholder",
+          "type": "object"
+        }
+      ]
+    },
     "MasterDefinition": {
       "additionalProperties": false,
       "description": "A slide master plus its theme and layout family (p:sldMaster + p:sldLayout children).",
@@ -7632,7 +7654,7 @@
         },
         "children": {
           "items": {
-            "$ref": "#/definitions/SlideChild"
+            "$ref": "#/definitions/MasterChild"
           },
           "type": "array"
         },
@@ -7713,6 +7735,10 @@
             "$ref": "#/definitions/LayoutDefinition"
           },
           "type": "array"
+        },
+        "masterId": {
+          "description": "Source p:sldMasterIdLst identity (`p:sldMasterId/@id`).",
+          "type": "number"
         },
         "name": {
           "type": "string"
@@ -9067,6 +9093,10 @@
       "additionalProperties": false,
       "description": "Complete placeholder template on a master/layout: position, inheritable facets, and cNvPr fields (a16:creationId) so a re-emitted placeholder keeps its identity. Accepts the old flat x/y/width/height shape.",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` on the placeholder's p:spPr."
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -9116,6 +9146,14 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "id": {
+          "description": "Source cNvPr id — reused on round-trip instead of the standard 2–6 slots.",
+          "type": "number"
+        },
+        "locking": {
+          "$ref": "#/definitions/ShapeLockingOptions",
+          "description": "Shape locks from p:cNvSpPr/a:spLocks."
         },
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
@@ -9791,6 +9829,10 @@
         },
         "size": {
           "$ref": "#/definitions/SlideSize"
+        },
+        "slideSizeType": {
+          "$ref": "#/definitions/SlideSizeType",
+          "description": "Slide size class (`p:sldSz/@type`); cx/cy decide actual size."
         },
         "slides": {
           "items": {
@@ -10586,13 +10628,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -11818,6 +11860,10 @@
         "showMasterShapes": {
           "type": "boolean"
         },
+        "slideId": {
+          "description": "Source p:sldIdLst identity (`p:sldId/@id`); defaults to 256 + slide index.",
+          "type": "number"
+        },
         "slideSync": {
           "$ref": "#/definitions/SlideSyncOptions"
         },
@@ -11874,6 +11920,27 @@
         }
       ],
       "description": "Slide size — named classes or explicit dimensions in EMU or UniversalMeasure."
+    },
+    "SlideSizeType": {
+      "enum": [
+        "screen4x3",
+        "letter",
+        "A4",
+        "35mm",
+        "overhead",
+        "banner",
+        "custom",
+        "ledger",
+        "A3",
+        "B4ISO",
+        "B5ISO",
+        "B4JIS",
+        "B5JIS",
+        "hagakiCard",
+        "screen16x9",
+        "screen16x10"
+      ],
+      "type": "string"
     },
     "SlideSyncOptions": {
       "additionalProperties": false,
@@ -12182,6 +12249,10 @@
     "SplitType": {
       "description": "ofPie split rule: \"auto\" lets Excel decide, \"custom\" takes the indices in customSplitPoints, \"percent\" the smallest values under splitPosition %, \"position\" the last splitPosition points, \"value\" points below splitPosition.",
       "enum": ["auto", "custom", "percent", "position", "value"],
+      "type": "string"
+    },
+    "StandardPlaceholderKey": {
+      "enum": ["title", "body", "date", "footer", "slideNumber"],
       "type": "string"
     },
     "StrikeStyle": {
@@ -13731,6 +13802,23 @@
       ],
       "type": "string"
     },
+    "ThemeFamilyOptions": {
+      "additionalProperties": false,
+      "description": "Theme family identity in the Microsoft thm15 extension.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vid": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "id", "vid"],
+      "type": "object"
+    },
     "ThemeOptions": {
       "additionalProperties": false,
       "description": "Theme customization options (a:theme).",
@@ -13761,6 +13849,10 @@
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "themeFamily": {
+          "$ref": "#/definitions/ThemeFamilyOptions",
+          "description": "Theme family identity (`a:extLst/thm15:themeFamily`)."
         }
       },
       "type": "object"
@@ -14659,7 +14751,8 @@
             "notesView",
             "handoutView",
             "outlineView",
-            "slideSorterView"
+            "slideSorterView",
+            "slideThumbnailView"
           ],
           "type": "string"
         },

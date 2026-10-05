@@ -26,7 +26,7 @@ import { createTransformation } from "@shared/media";
 import type { MediaData, NonVisualPropertiesOptions } from "@shared/media/data";
 
 import type { Floating } from "../../drawing";
-import type { GraphicFrameLocksOptions } from "../../drawing/descriptor";
+import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "../../drawing/descriptor";
 
 /**
  * Core options for picture configuration.
@@ -53,6 +53,8 @@ interface CorePictureOptions {
   lastRenderedPageBreak?: boolean;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Word 2010 wrapper ids; round-trip only. */
+  extensionIds?: DrawingExtensionIds;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
   useLocalDpi?: boolean;
   /**

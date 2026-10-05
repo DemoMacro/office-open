@@ -113,8 +113,8 @@ describe("sectionPropertiesDesc round-trip", () => {
     });
     expect(pageSize(result).width).toBe(11905);
     expect(pageSize(result).height).toBe(16837);
-    // orientation defaults to portrait when omitted.
-    expect(pageSize(result).orientation).toBe("portrait");
+    // Omitted orientation stays omitted; stringify must not invent the default.
+    expect(pageSize(result).orientation).toBeUndefined();
   });
 
   it("round-trips page size code (printer paper code)", () => {

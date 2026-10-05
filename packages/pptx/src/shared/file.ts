@@ -23,6 +23,7 @@ import type {
   PhotoAlbumOptions,
   ModifyVerifierOptions,
   EmbeddedFontOptions,
+  SlideSizeType,
   CustomShowOptions,
   KinsokuOptions,
   CustomerDataOptions,
@@ -100,6 +101,8 @@ export interface LayoutDefinition {
 
 /** A slide master plus its theme and layout family (p:sldMaster + p:sldLayout children). */
 export interface MasterDefinition extends SlideMasterOptions {
+  /** Source p:sldMasterIdLst identity (`p:sldMasterId/@id`). */
+  masterId?: number;
   name?: string;
   theme?: ThemeOptions;
   layouts?: LayoutDefinition[];
@@ -123,6 +126,8 @@ export type { AnimationsOptions } from "@shared/animation/timing";
 
 /** One slide (p:sld) — children, notes, transition, and slide-level settings. */
 export interface SlideOptions {
+  /** Source p:sldIdLst identity (`p:sldId/@id`); defaults to 256 + slide index. */
+  slideId?: number;
   children?: SlideChild[];
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
@@ -183,6 +188,8 @@ export interface ShowOptions {
 /** Root options for a .pptx package — maps to presentation.xml plus its satellite parts. */
 export interface PresentationOptions extends CorePropertiesOptions {
   size?: SlideSize;
+  /** Slide size class (`p:sldSz/@type`); cx/cy decide actual size. */
+  slideSizeType?: SlideSizeType;
   /**
    * Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only:
    * original bytes carried verbatim and re-emitted unchanged; every other

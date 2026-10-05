@@ -92,6 +92,8 @@ export interface ChartsheetOptions {
   sheetProtection?: ChartsheetProtectionOptions;
   /** Published to server (CT_ChartsheetPr `@published`, XSD default true — only false is emitted) */
   published?: boolean;
+  /** Round-trip marker for an empty <sheetPr/> element. */
+  sheetPrPresent?: boolean;
   /** VBA code name (CT_ChartsheetPr `@codeName`) */
   codeName?: string;
   /** Zoom to fit (CT_ChartsheetView `@zoomToFit`) */
@@ -140,7 +142,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     ];
 
     // sheetPr (optional)
-    if (opts.tabColor || opts.published !== undefined || opts.codeName) {
+    if (opts.tabColor || opts.published !== undefined || opts.codeName || opts.sheetPrPresent) {
       const prAttrs: string[] = [];
       if (opts.tabColor) prAttrs.push(`<tabColor${attrs({ rgb: opts.tabColor })}/>`);
       const spAttrs: string[] = [];
@@ -242,6 +244,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // sheetPr
     const sheetPr = findChild(el, "sheetPr");
     if (sheetPr) {
+      result.sheetPrPresent = true;
       // XSD default true — only the explicit "0" carries information back.
       if (String(attr(sheetPr, "published")) === "0") result.published = false;
       if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");

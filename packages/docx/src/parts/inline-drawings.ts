@@ -15,6 +15,7 @@ import { encodeBase64, imageTypeFromPath, toUint8Array } from "@office-open/core
 import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import { createDataModel, definitionId } from "@office-open/core/smartart";
 import type { SmartArtRawParts } from "@office-open/core/smartart";
+import { documentNamespaceDialect } from "@parts/document/document-attributes";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { ParagraphChild } from "@parts/paragraph/paragraph";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
@@ -37,6 +38,7 @@ import { drawingDesc } from "./drawing";
 import { stringifyRunProperties } from "./paragraph/stringify";
 
 let nextChartId = 1;
+const drawingDialect = (ctx: BodyContext) => documentNamespaceDialect(ctx.fileData);
 
 /**
  * Wrap a `<w:drawing>` run, rebuilding an mc:AlternateContent wrapper when a
@@ -211,6 +213,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
           blipEffects: opts.blipEffects,
           tile: opts.tile,
           graphicFrameLocks: opts.graphicFrameLocks,
+          extensionIds: opts.extensionIds,
+          dialect: drawingDialect(ctx),
         },
         ctx,
       );
@@ -305,6 +309,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         blipEffects: opts.blipEffects,
         tile: opts.tile,
         graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
       },
       ctx,
     );
@@ -356,6 +362,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         docProperties: opts.altText,
         floating: opts.floating,
         graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
       },
       ctx,
     );
@@ -431,6 +439,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         docProperties: opts.altText,
         floating: opts.floating,
         graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
       },
       ctx,
     );
@@ -457,6 +467,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         outline: opts.outline,
         fill: opts.fill,
         graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
       },
       ctx,
     );
@@ -571,6 +583,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         docProperties: opts.altText,
         floating: opts.floating,
         graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
       },
       ctx,
     );

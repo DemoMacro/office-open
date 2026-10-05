@@ -12,7 +12,8 @@ import type { LongHexNumber } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml, stringify as stringifyXml } from "@office-open/xml";
 
-import { COMMENTS_NS } from "./comments";
+import type { BodyContext } from "../context";
+import { commentsNamespaceAttributes } from "./comments";
 
 /** Options for one extensible-comment entry (w16cex:commentExtensible). */
 export interface CommentExtensibleOptions {
@@ -26,10 +27,10 @@ export interface CommentExtensibleOptions {
   ext?: string;
 }
 
-export const commentsExtensibleDesc: CustomDescriptor<CommentExtensibleOptions[]> = {
+export const commentsExtensibleDesc: CustomDescriptor<CommentExtensibleOptions[], BodyContext> = {
   kind: "custom",
 
-  stringify(opts) {
+  stringify(opts, ctx) {
     const entries = opts
       .map((entry) => {
         const attrs = [`w16cex:durableId="${escapeXml(entry.durableId)}"`];
@@ -40,7 +41,7 @@ export const commentsExtensibleDesc: CustomDescriptor<CommentExtensibleOptions[]
         return `<w16cex:commentExtensible ${attrs.join(" ")}>${ext}</w16cex:commentExtensible>`;
       })
       .join("");
-    return `<w16cex:commentsExtensible ${COMMENTS_NS}>${entries}</w16cex:commentsExtensible>`;
+    return `<w16cex:commentsExtensible ${commentsNamespaceAttributes(ctx)}>${entries}</w16cex:commentsExtensible>`;
   },
 
   parse(el) {

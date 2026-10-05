@@ -114,7 +114,7 @@ function stringifyDeletedRun(c: RunOptions | string): string {
   if (opts.children) {
     for (const cc of opts.children) {
       if (typeof cc === "string") {
-        parts.push(`<w:delText xml:space="preserve">${escapeXml(cc)}</w:delText>`);
+        parts.push(textElementXml("w:delText", cc));
       } else if (typeof cc === "object" && cc !== null && "commentReference" in cc) {
         parts.push(`<w:commentReference w:id="${Number(cc.commentReference)}"/>`);
       } else if (typeof cc === "object" && cc !== null && "break" in cc) {
@@ -122,9 +122,14 @@ function stringifyDeletedRun(c: RunOptions | string): string {
       }
     }
   } else if (opts.text) {
-    parts.push(`<w:delText xml:space="preserve">${escapeXml(String(opts.text))}</w:delText>`);
+    parts.push(textElementXml("w:delText", String(opts.text), opts.preserveSpace));
   }
   return `${openTag}${parts.join("")}</w:r>`;
+}
+
+function textElementXml(tag: string, text: string, preserve?: boolean): string {
+  const attr = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text) ? ' xml:space="preserve"' : "";
+  return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
 
 function stringifyRubyContent(opts: RubyOptions["text"], ctx: BodyContext): string {
@@ -196,7 +201,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
-        body += `<w:t xml:space="preserve">${escapeXml(child)}</w:t>`;
+        body += textElementXml("w:t", child);
       } else if (typeof child === "object" && child !== null) {
         // Bare run-inner elements — emit directly inside this <w:r>. Must run
         // before stringifyChildDispatch, which wraps paragraph-level children
@@ -292,7 +297,7 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
       }
     }
   } else if (opts.text !== undefined) {
-    body += `<w:t xml:space="preserve">${escapeXml(String(opts.text))}</w:t>`;
+    body += textElementXml("w:t", String(opts.text), opts.preserveSpace);
   }
 
   let attr = "";
@@ -771,7 +776,26 @@ export function stringifyChildDispatch(
       // per reference even when the URL repeats (sharing would collapse the
       // source's per-reference entries on round-trip).
       const relType = RELATIONSHIP_TYPES.hyperlink;
-      const linkId = `rId${ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL)}`;
+      let relationshipId: number;
+      if (
+        hl.sourceRelationshipId !== undefined &&
+        !ctx.viewWrapper.relationships.hasId(`rId${hl.sourceRelationshipId}`)
+      ) {
+        ctx.viewWrapper.relationships.addRelationship(
+          hl.sourceRelationshipId,
+          relType,
+          hl.url,
+          TargetModeType.EXTERNAL,
+        );
+        relationshipId = hl.sourceRelationshipId;
+      } else {
+        relationshipId = ctx.viewWrapper.relationships.add(
+          relType,
+          hl.url,
+          TargetModeType.EXTERNAL,
+        );
+      }
+      const linkId = `rId${relationshipId}`;
       const attrs = [`r:id="${linkId}"`];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;

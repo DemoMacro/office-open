@@ -12,6 +12,7 @@ import type {
   BlackWhiteMode,
   BlipEffectsOptions,
   GraphicFrameLockingOptions,
+  BlipCompression,
   GroupTransform2DOptions,
   NonVisualDrawingPropertiesOptions,
   PictureLockingOptions,
@@ -152,6 +153,8 @@ export interface DrawingPictureOptions
   sourceRectangle?: SourceRectangleOptions;
   /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
   blackWhiteMode?: BlackWhiteMode;
+  /** Published-object flag (pic/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
   /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
   locking?: PictureLockingOptions;
   /**
@@ -161,6 +164,8 @@ export interface DrawingPictureOptions
   preferRelativeResize?: boolean;
   /** Image adjustment effects carried inside a:blip (a:lum, a:duotone, …). */
   blipEffects?: BlipEffectsOptions;
+  /** Compression state (a:blip/@cstate); absent = attribute omitted. */
+  compression?: BlipCompression;
   /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
   useLocalDpi?: boolean;
   /**
@@ -185,6 +190,8 @@ export interface DrawingChartOptions
   frameLocks?: GraphicFrameLockingOptions;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
 }
 
 /**
@@ -206,6 +213,8 @@ export interface DrawingSmartArtOptions
   frameLocks?: GraphicFrameLockingOptions;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
 }
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
@@ -227,6 +236,8 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   macro?: string;
   /** textlink attribute (CT_Shape). */
   textlink?: string;
+  /** Published-object flag (sp/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
   /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
   textBox?: boolean;
 }
@@ -244,6 +255,8 @@ export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOpt
   style?: DefaultShapeStyleOptions;
   /** macro attribute (CT_Connector). */
   macro?: string;
+  /** Published-object flag (cxnSp/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
 }
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */

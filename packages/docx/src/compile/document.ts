@@ -42,9 +42,10 @@ function sourceRidFor(
 ): number | undefined {
   if (!passthroughRelationships) return undefined;
   for (const rel of passthroughRelationships) {
+    const kind = relationshipType.split("/").pop();
     if (
       rel.source === ownerSource &&
-      rel.relationshipType === relationshipType &&
+      rel.relationshipType.split("/").pop() === kind &&
       rel.target === target
     ) {
       const m = /^rId(\d+)$/.exec(rel.rId);

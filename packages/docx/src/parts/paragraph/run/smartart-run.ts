@@ -14,7 +14,7 @@ import type {
   StyleDefinitionOptions,
 } from "@office-open/core/smartart";
 import type { Floating } from "@parts/drawing";
-import type { GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
+import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { MediaTransformation } from "@shared/media";
 
@@ -44,6 +44,8 @@ export interface SmartArtOptions {
   altText?: DocPropertiesOptions;
   /** wp:cNvGraphicFramePr locks (null = source had none; omit for default). */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Word 2010 wrapper ids; round-trip only. */
+  extensionIds?: DrawingExtensionIds;
   /** Built-in layout ID ("default", "process1") or a custom layout definition. */
   layout?: string | LayoutDefinitionOptions;
   /** Built-in quick style ID ("simple1") or a custom style definition. */

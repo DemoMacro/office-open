@@ -6,6 +6,7 @@ export type Destination = "root" | "font-table" | "color-table" | "generated-sha
 
 export type GroupFrame = {
   destination: Destination;
+  startIndex: number;
   starred: boolean;
   decided: boolean;
   skip: boolean;

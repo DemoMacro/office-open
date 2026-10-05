@@ -8,6 +8,8 @@ import type { DataType } from "../util/data-type";
 export interface ChartData {
   key: string;
   chartSpaceXml: string;
+  /** Chart-part relationships for media, user shapes and external data. */
+  relsXml?: string;
   /**
    * Embedded workbook for c:externalData (round-trip). The compiler emits the
    * chart part's own rels plus the word/embeddings part so the rId resolves.

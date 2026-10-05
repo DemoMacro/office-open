@@ -85,11 +85,16 @@ describe("webSettingsDesc round-trip", () => {
           marginRight: 720,
           marginTop: 360,
           marginBottom: 360,
-          border: { top: { style: "single", color: "FF0000", size: 4 } },
+          border: { top: { style: "single", color: "FF0000", size: 4, space: 1 } },
         },
       ],
     });
-    expect(result.divs![0]?.border?.top).toEqual({ style: "single", color: "FF0000", size: 4 });
+    expect(result.divs![0]?.border?.top).toEqual({
+      style: "single",
+      color: "FF0000",
+      size: 4,
+      space: 1,
+    });
   });
 
   it("parses an unknown ST_Border token through verbatim", () => {

@@ -21,6 +21,8 @@ import {
   type PassthroughRelationship,
   type RelationshipType,
   type ReproducibleScope,
+  partPathToRelsPath,
+  resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
   resolverFromRegistry,
   XLSX_PARTS,
@@ -63,7 +65,11 @@ import type { WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import { columnToLetter } from "@util/index";
 
-import { bindMediaPlaceholders, compileSheetDrawing } from "./compile/sheet-drawing";
+import {
+  bindMediaPlaceholders,
+  compileSheetDrawing,
+  preserveChartDecimalAttributes,
+} from "./compile/sheet-drawing";
 import {
   compileDefinitionPivotCaches,
   compileSheetPivots,
@@ -81,8 +87,8 @@ const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
 
 /** Chart part → user-shapes part relationship (c:userShapes bridge). */
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;
-const PKG_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships";
-
+const VOLATILE_DEPENDENCIES_REL =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volatileDependencies" as RelationshipType;
 /** Extension → MIME for image and VML Default entries. Declared only for
  * extensions actually present in the package. VML backs legacy comment
  * anchors (xl/drawings/vmlDrawing${i}.vml). */
@@ -107,6 +113,20 @@ export function compileWorkbook(
   const ctx = new XlsxWriteContext();
   ctx.reproducible = reproducible;
   const mapping: Record<string, { data: string; path: string }> = {};
+  for (const rel of options.passthroughRelationships ?? []) {
+    if (rel.source === "xl/workbook.xml") ctx.workbookRels.claimSourceRel(rel);
+  }
+  const addWorkbookRelationship = (
+    type: RelationshipType,
+    target: string,
+    targetMode?: "External",
+  ): string => {
+    const existing = ctx.workbookRels.idOf(type, target);
+    if (existing !== undefined) return existing;
+    const rid = ctx.workbookRels.nextRelationshipId;
+    ctx.workbookRels.addRelationship(rid, type, target, targetMode);
+    return `rId${rid}`;
+  };
 
   // Seed the shared string table from parsed entries so round-tripped cells
   // keep their si indices and rich-text structure (identity dedup in
@@ -182,7 +202,7 @@ export function compileWorkbook(
   if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
 
   // Build workbook relationships
-  buildWorkbookRelationships(
+  const sheetRelationshipIds = buildWorkbookRelationships(
     ctx.workbookRels,
     worksheetConfigs.length,
     chartsheetConfigs.length,
@@ -192,20 +212,20 @@ export function compileWorkbook(
   // Build sheet definitions for workbook XML. An explicit sheetId wins; the
   // fallback counter skips past every id handed out so ids stay unique even
   // when options mix explicit and generated values.
-  const sheets: SheetDefinition[] = [];
+  let sheets: SheetDefinition[] = [];
   let sheetId = 1;
   const nextSheetId = (explicit: number | undefined): number => {
     const id = explicit ?? sheetId;
     if (id >= sheetId) sheetId = id + 1;
     return id;
   };
-  let rId = 1;
+  let sheetRelationshipIndex = 0;
   for (const ws of worksheetConfigs) {
     sheets.push({
       name: ws.name ?? `Sheet${sheetId}`,
       sheetId: nextSheetId(ws.sheetId),
       state: ws.state,
-      rId: `rId${rId++}`,
+      rId: sheetRelationshipIds[sheetRelationshipIndex++] ?? `rId${sheetRelationshipIndex}`,
     });
   }
   for (const cs of chartsheetConfigs) {
@@ -213,7 +233,7 @@ export function compileWorkbook(
       name: cs.name ?? `Chart${sheetId}`,
       sheetId: nextSheetId(cs.sheetId),
       state: cs.state,
-      rId: `rId${rId++}`,
+      rId: sheetRelationshipIds[sheetRelationshipIndex++] ?? `rId${sheetRelationshipIndex}`,
     });
   }
   for (const ds of dialogsheetConfigs) {
@@ -221,8 +241,15 @@ export function compileWorkbook(
       name: ds.name ?? `Dialog${sheetId}`,
       sheetId: nextSheetId(ds.sheetId),
       state: ds.state,
-      rId: `rId${rId++}`,
+      rId: sheetRelationshipIds[sheetRelationshipIndex++] ?? `rId${sheetRelationshipIndex}`,
     });
+  }
+  if (options.sheetDefinitions?.length === sheets.length) {
+    const sheetsById = new Map(sheets.map((sheet) => [sheet.sheetId, sheet]));
+    const sourceOrder = options.sheetDefinitions
+      .map((sheet) => sheetsById.get(sheet.sheetId))
+      .filter((sheet): sheet is SheetDefinition => sheet !== undefined);
+    if (sourceOrder.length === sheets.length) sheets = sourceOrder;
   }
 
   const wsContext: WorksheetContext = { sharedStrings: ctx.sharedStrings, styles: ctx.styles };
@@ -239,6 +266,7 @@ export function compileWorkbook(
     definedPivotCacheCount: 0,
     calcCells: [],
     allTableParts: [],
+    chartPaths: new Map(),
   };
   compileDefinitionPivotCaches(options, ctx, mapping, state);
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
@@ -284,8 +312,7 @@ export function compileWorkbook(
 
   // Connections — xl/connections.xml (single part, workbook-level relationship)
   if (options.connections && options.connections.length > 0) {
-    const cRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(cRid, RELATIONSHIP_TYPES.connections, "connections.xml");
+    addWorkbookRelationship(RELATIONSHIP_TYPES.connections, "connections.xml");
     mapping["Connections"] = {
       data: XML_DECL + connectionsDesc.stringify({ connections: options.connections }, ctx),
       path: "xl/connections.xml",
@@ -294,8 +321,7 @@ export function compileWorkbook(
 
   // Metadata — xl/metadata.xml (single part, workbook-level relationship)
   if (options.metadata && hasMetadataContent(options.metadata)) {
-    const mRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(mRid, RELATIONSHIP_TYPES.sheetMetadata, "metadata.xml");
+    addWorkbookRelationship(RELATIONSHIP_TYPES.sheetMetadata, "metadata.xml");
     mapping["Metadata"] = {
       data: XML_DECL + metadataDesc.stringify(options.metadata, ctx),
       path: "xl/metadata.xml",
@@ -304,8 +330,7 @@ export function compileWorkbook(
 
   // XML mappings — xl/xmlMaps.xml (single part, workbook-level relationship)
   if (options.xmlMaps) {
-    const xRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(xRid, RELATIONSHIP_TYPES.xmlMaps, "xmlMaps.xml");
+    addWorkbookRelationship(RELATIONSHIP_TYPES.xmlMaps, "xmlMaps.xml");
     mapping["XmlMaps"] = {
       data: XML_DECL + mapInfoDesc.stringify(options.xmlMaps, ctx),
       path: "xl/xmlMaps.xml",
@@ -315,11 +340,16 @@ export function compileWorkbook(
   // Volatile function types — xl/volTypes.xml (single part, workbook-level
   // relationship; sml.xsd declares volTypes as a part root, never a workbook child)
   if (options.volTypes && options.volTypes.length > 0) {
-    const vRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(vRid, RELATIONSHIP_TYPES.volTypes, "volTypes.xml");
+    const volTypesPath = options.volTypesPath ?? "volTypes.xml";
+    addWorkbookRelationship(
+      volTypesPath === "volatileDependencies.xml"
+        ? VOLATILE_DEPENDENCIES_REL
+        : RELATIONSHIP_TYPES.volTypes,
+      volTypesPath,
+    );
     mapping["VolTypes"] = {
-      data: XML_DECL + buildVolTypesXml(options.volTypes),
-      path: "xl/volTypes.xml",
+      data: XML_DECL + buildVolTypesXml(options.volTypes, options.volTypesCount),
+      path: `xl/${volTypesPath}`,
     };
   }
 
@@ -329,9 +359,7 @@ export function compileWorkbook(
     const extRefs: { rId: string }[] = [];
     for (let ei = 0; ei < extLinks.length; ei++) {
       const elIdx = ei + 1;
-      const elRid = ctx.workbookRels.nextRelationshipId;
-      ctx.workbookRels.addRelationship(
-        elRid,
+      const externalLinkRid = addWorkbookRelationship(
         RELATIONSHIP_TYPES.externalLink,
         `externalLinks/externalLink${elIdx}.xml`,
       );
@@ -361,7 +389,7 @@ export function compileWorkbook(
         path: `xl/externalLinks/externalLink${elIdx}.xml`,
       };
 
-      extRefs.push({ rId: `rId${elRid}` });
+      extRefs.push({ rId: externalLinkRid });
     }
 
     // Inject externalReferences into workbook XML
@@ -378,11 +406,7 @@ export function compileWorkbook(
 
   // Shared Strings — AFTER worksheets so all strings are collected
   if (ctx.sharedStrings.count > 0) {
-    ctx.workbookRels.addRelationship(
-      ctx.workbookRels.nextRelationshipId,
-      RELATIONSHIP_TYPES.sharedStrings,
-      "sharedStrings.xml",
-    );
+    addWorkbookRelationship(RELATIONSHIP_TYPES.sharedStrings, "sharedStrings.xml");
     const ssXml = sharedStringsDesc.stringify(ctx.sharedStrings.toDescriptorOptions(), ctx);
     mapping["SharedStrings"] = {
       data: XML_DECL + ssXml,
@@ -417,9 +441,12 @@ export function compileWorkbook(
 
   // Charts — AFTER worksheets so charts are registered
   for (const [i, chartData] of ctx.charts.array.entries()) {
+    const chartPath = state.chartPaths.get(chartData.key) ?? `xl/charts/chart${i + 1}.xml`;
+    const chartRels = new Relationships();
+    const chartXml = bindMediaPlaceholders(chartData.chartSpaceXml, ctx.media, chartRels);
     mapping[`Chart${i}`] = {
-      data: XML_DECL + chartData.chartSpaceXml,
-      path: `xl/charts/chart${i + 1}.xml`,
+      data: XML_DECL + chartXml,
+      path: chartPath,
     };
     // User-shapes part behind c:userShapes: the chart part's own rels entry
     // plus the body part (chartUserShapes relationship, same directory).
@@ -429,11 +456,15 @@ export function compileWorkbook(
         data: XML_DECL + chartData.userShapes.xml,
         path: `xl/charts/userShapes${i + 1}.xml`,
       };
-      mapping[`ChartRels${i}`] = {
-        data:
-          XML_DECL +
-          `<Relationships xmlns="${PKG_REL_NS}"><Relationship Id="${escapeXml(rid)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/></Relationships>`,
-        path: `xl/charts/_rels/chart${i + 1}.xml.rels`,
+      chartRels.addRelationship(rid, CHART_USER_SHAPES_REL, `userShapes${i + 1}.xml`);
+    }
+    if (chartRels.relationshipCount > 0) {
+      chartData.relsXml = chartRels.serialize();
+    }
+    if (chartData.relsXml) {
+      mapping[`ChartMediaRels${i}`] = {
+        data: XML_DECL + chartData.relsXml,
+        path: partPathToRelsPath(chartPath),
       };
     }
   }
@@ -452,8 +483,7 @@ export function compileWorkbook(
       data: calcChainDesc.stringify({ cells: calcChainCells }, ctx) ?? "",
       path: "xl/calcChain.xml",
     };
-    const calcChainRid = ctx.workbookRels.nextRelationshipId;
-    ctx.workbookRels.addRelationship(calcChainRid, RELATIONSHIP_TYPES.calcChain, "calcChain.xml");
+    addWorkbookRelationship(RELATIONSHIP_TYPES.calcChain, "calcChain.xml");
   }
 
   if (options.revisionLog) {
@@ -528,6 +558,7 @@ export interface WorksheetCompileState {
   definedPivotCacheCount: number;
   calcCells: CalcCell[];
   allTableParts: TablePartReference[];
+  chartPaths: Map<string, string>;
 }
 
 /**
@@ -598,6 +629,9 @@ function compileWorksheetPart(
 
   // Worksheet-level relationships
   const wsPath = `xl/worksheets/sheet${i + 1}.xml`;
+  const sourceWorksheetRels = (passthroughRelationships ?? []).filter(
+    (rel) => rel.source === wsPath,
+  );
   let wsRels: Relationships | undefined;
 
   if (
@@ -608,15 +642,24 @@ function compileWorksheetPart(
     hasTables ||
     hasQueryTables ||
     singleXmlCellOpts.length > 0 ||
-    bgImg
+    bgImg ||
+    sourceWorksheetRels.length > 0
   ) {
     wsRels = new Relationships();
-    // Source ids first: every allocation below goes through add(), whose
-    // watermark the reserve lifts, so a rebuilt rels table can't hand a
-    // source id to a different part type — resolvePassthroughRid keeps its
-    // source ids, and the printed-page/pivotSelection references stay valid.
-    wsRels.reserveSourceRids(wsPath, passthroughRelationships ?? []);
+    for (const rel of sourceWorksheetRels) wsRels.claimSourceRel(rel);
   }
+
+  const addWorksheetRelationship = (
+    type: RelationshipType,
+    target: string,
+    targetMode?: "External",
+  ): string => {
+    const existing = wsRels!.idOf(type, target);
+    if (existing !== undefined) return existing;
+    return `rId${wsRels!.add(type, target, targetMode)}`;
+  };
+  const sourceRelationshipPath = (rel: { target: string } | undefined, fallback: string): string =>
+    rel ? resolveRelationshipTarget(wsPath, rel.target) : fallback;
 
   // Round-trip drawing/legacyDrawing references. The referenced part passes
   // through verbatim when its anchors do not map onto options (e.g. OLE
@@ -709,45 +752,64 @@ function compileWorksheetPart(
   if (hasExternalHyperlinks) {
     for (const hl of hlOpts) {
       if (hl.url === undefined) continue;
-      wsRels!.add(RELATIONSHIP_TYPES.hyperlink, hl.url, "External");
+      addWorksheetRelationship(RELATIONSHIP_TYPES.hyperlink, hl.url, TargetModeType.EXTERNAL);
     }
   }
 
   if (hasMedia) {
-    sheetXml = compileSheetDrawing(wsOpts, i, sheetXml, ctx, mapping, state, wsRels!);
+    sheetXml = compileSheetDrawing(
+      wsOpts,
+      i,
+      sheetXml,
+      ctx,
+      mapping,
+      state,
+      wsRels!,
+      passthroughRelationships,
+      wsPath,
+    );
   }
 
   // Comments
   if (hasComments) {
     const commentsIdx = i + 1;
+    const commentsRel = sourceWorksheetRels.find((rel) =>
+      rel.relationshipType.endsWith("/comments"),
+    );
+    const vmlRel = sourceWorksheetRels.find((rel) => rel.relationshipType.endsWith("/vmlDrawing"));
+    const commentsPath = sourceRelationshipPath(commentsRel, `xl/comments${commentsIdx}.xml`);
+    const vmlPath = sourceRelationshipPath(vmlRel, `xl/drawings/vmlDrawing${commentsIdx}.vml`);
 
     // Comments XML (via descriptor)
     const commentsXml = commentsDesc.stringify({ comments: commentOpts }, ctx);
     mapping[`Comments${i}`] = {
       data: XML_DECL + commentsXml,
-      path: `xl/comments${commentsIdx}.xml`,
+      path: commentsPath,
     };
 
     // VML drawing (via descriptor)
     const vmlXml = vmlNotesDesc.stringify({ comments: commentOpts }, ctx);
     mapping[`VmlDrawing${i}`] = {
       data: XML_DECL + vmlXml,
-      path: `xl/drawings/vmlDrawing${commentsIdx}.vml`,
+      path: vmlPath,
     };
 
     // Worksheet rels: comments → comments XML, legacyDrawing → VML file
-    wsRels!.add(RELATIONSHIP_TYPES.comments, `../comments${commentsIdx}.xml`);
+    addWorksheetRelationship(
+      RELATIONSHIP_TYPES.comments,
+      commentsRel?.target ?? `../comments${commentsIdx}.xml`,
+    );
 
-    const vmlRid = wsRels!.add(
+    const vmlRid = addWorksheetRelationship(
       RELATIONSHIP_TYPES.vmlDrawing,
-      `../drawings/vmlDrawing${commentsIdx}.vml`,
+      vmlRel?.target ?? `../drawings/vmlDrawing${commentsIdx}.vml`,
     );
 
     // Insert legacyDrawing reference at its CT_Worksheet sequence position.
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--LEGACY_DRAWING-->",
-      `<legacyDrawing r:id="rId${vmlRid}"/>`,
+      `<legacyDrawing r:id="${vmlRid}"/>`,
     );
   }
 
@@ -755,19 +817,31 @@ function compileWorksheetPart(
   if (bgImg) {
     const ext = bgImg.type === "jpg" ? "jpeg" : bgImg.type;
     const rawBytes = toUint8Array(bgImg.data, { encoding: "base64" });
-    const entry = ctx.media.addMedia(rawBytes, ext, (fileName) => ({
-      fileName,
-      type: ext,
-      data: rawBytes,
-      width: 0,
-      height: 0,
-    }));
+    const backgroundRel = sourceWorksheetRels.find((rel) =>
+      rel.relationshipType.endsWith("/image"),
+    );
+    const backgroundPath = sourceRelationshipPath(backgroundRel, "");
+    const entry = ctx.media.addMedia(
+      rawBytes,
+      ext,
+      (fileName) => ({
+        fileName,
+        type: ext,
+        data: rawBytes,
+        width: 0,
+        height: 0,
+      }),
+      backgroundPath ? backgroundPath.split("/").pop() : undefined,
+    );
     state.globalMediaIdx++;
-    const bgRid = wsRels!.add(IMAGE_REL, `../media/${entry.fileName}`);
+    const bgRid = addWorksheetRelationship(
+      IMAGE_REL,
+      backgroundRel?.target ?? `../media/${entry.fileName}`,
+    );
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--BACKGROUND_PICTURE-->",
-      `<picture r:id="rId${bgRid}"/>`,
+      `<picture r:id="${bgRid}"/>`,
     );
   }
 
@@ -802,40 +876,55 @@ function compileWorksheetPart(
   // Tables (list objects)
   const wsTableParts: TablePartReference[] = [];
   if (hasTables) {
-    for (const tbl of tableOpts) {
+    const sourceTableRels = sourceWorksheetRels.filter((rel) =>
+      rel.relationshipType.endsWith("/table"),
+    );
+    for (const [tableIndex, tbl] of tableOpts.entries()) {
       state.globalTableIdx++;
       const tableIdx = state.globalTableIdx;
 
       // A table without columns cannot form valid tableColumns XML — skip
       // instead of emitting a broken part (defensive; parse filters these).
       if (!tbl.columns?.length) continue;
+      const tableRel = sourceTableRels[tableIndex];
+      const tablePath = sourceRelationshipPath(tableRel, `xl/tables/table${tableIdx}.xml`);
 
       // Generate table XML
       const tableXmlStr = XML_DECL + tableDesc.stringify({ ...tbl, id: tbl.id ?? tableIdx }, ctx);
       mapping[`Table${tableIdx}`] = {
         data: tableXmlStr,
-        path: `xl/tables/table${tableIdx}.xml`,
+        path: tablePath,
       };
 
       // Worksheet rels → table
-      const tblRid = wsRels!.add(RELATIONSHIP_TYPES.table, `../tables/table${tableIdx}.xml`);
+      const tblRid = addWorksheetRelationship(
+        RELATIONSHIP_TYPES.table,
+        tableRel?.target ?? `../tables/table${tableIdx}.xml`,
+      );
 
-      wsTableParts.push({ rId: `rId${tblRid}` });
-      state.allTableParts.push({ rId: `rId${tblRid}` });
+      wsTableParts.push({ rId: tblRid });
+      state.allTableParts.push({ rId: tblRid });
     }
   }
 
   // Query tables
   if (hasQueryTables) {
-    for (const qt of queryTableOpts) {
+    const sourceQueryTableRels = sourceWorksheetRels.filter((rel) =>
+      rel.relationshipType.endsWith("/queryTable"),
+    );
+    for (const [queryTableIndex, qt] of queryTableOpts.entries()) {
       state.globalQueryTableIdx++;
       mapping[`QueryTable${state.globalQueryTableIdx}`] = {
         data: XML_DECL + queryTableDesc.stringify(qt, ctx),
-        path: `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`,
+        path: sourceRelationshipPath(
+          sourceQueryTableRels[queryTableIndex],
+          `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`,
+        ),
       };
-      wsRels!.add(
+      addWorksheetRelationship(
         RELATIONSHIP_TYPES.queryTable,
-        `../queryTables/queryTable${state.globalQueryTableIdx}.xml`,
+        sourceQueryTableRels[queryTableIndex]?.target ??
+          `../queryTables/queryTable${state.globalQueryTableIdx}.xml`,
       );
     }
   }
@@ -876,6 +965,11 @@ function compileWorksheetPart(
 
   // Insert tableParts at their CT_Worksheet sequence position
   if (wsTableParts.length > 0) {
+    wsTableParts.sort(
+      (left, right) =>
+        (Number(/^rId(\d+)$/.exec(left.rId)?.[1] ?? 0) || 0) -
+        (Number(/^rId(\d+)$/.exec(right.rId)?.[1] ?? 0) || 0),
+    );
     sheetXml = editSheetTailMarker(
       sheetXml,
       "<!--TABLE_PARTS-->",
@@ -935,11 +1029,18 @@ function compileChartsheets(
     if (!chartDef) continue;
     const csChartGlobalIdx = ctx.charts.array.length;
     const csChartKey = `cs_chart_${csChartGlobalIdx}`;
+    const csChartRels = new Relationships();
+    const csChartXml = bindMediaPlaceholders(
+      preserveChartDecimalAttributes(chartSpaceDesc.stringify(chartDef, ctx) ?? ""),
+      ctx.media,
+      csChartRels,
+    );
     const csUserShapes = chartDef.userShapes ? buildUserShapesData(chartDef.userShapes) : undefined;
     ctx.charts.addChart(csChartKey, {
       key: csChartKey,
-      chartSpaceXml: chartSpaceDesc.stringify(chartDef, ctx) ?? "",
+      chartSpaceXml: csChartXml,
       ...(csUserShapes ? { userShapes: csUserShapes } : {}),
+      ...(csChartRels.relationshipCount > 0 ? { relsXml: csChartRels.serialize() } : {}),
     });
 
     // Chartsheet relationships: drawing (required)
@@ -1107,19 +1208,27 @@ function buildWorkbookRelationships(
   wsCount: number,
   csCount: number,
   dsCount: number = 0,
-): void {
-  let rid = 1;
+): string[] {
+  const add = (type: RelationshipType, target: string): string => {
+    const existing = rels.idOf(type, target);
+    if (existing !== undefined) return existing;
+    const rid = rels.nextRelationshipId;
+    rels.addRelationship(rid, type, target);
+    return `rId${rid}`;
+  };
+  const ids: string[] = [];
   for (let i = 0; i < wsCount; i++) {
-    rels.addRelationship(rid++, RELATIONSHIP_TYPES.worksheet, `worksheets/sheet${i + 1}.xml`);
+    ids.push(add(RELATIONSHIP_TYPES.worksheet, `worksheets/sheet${i + 1}.xml`));
   }
   for (let i = 0; i < csCount; i++) {
-    rels.addRelationship(rid++, RELATIONSHIP_TYPES.chartsheet, `chartsheets/sheet${i + 1}.xml`);
+    ids.push(add(RELATIONSHIP_TYPES.chartsheet, `chartsheets/sheet${i + 1}.xml`));
   }
   for (let i = 0; i < dsCount; i++) {
-    rels.addRelationship(rid++, RELATIONSHIP_TYPES.dialogsheet, `dialogSheets/sheet${i + 1}.xml`);
+    ids.push(add(RELATIONSHIP_TYPES.dialogsheet, `dialogSheets/sheet${i + 1}.xml`));
   }
-  rels.addRelationship(rid++, RELATIONSHIP_TYPES.styles, "styles.xml");
-  rels.addRelationship(rid++, RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
+  add(RELATIONSHIP_TYPES.styles, "styles.xml");
+  add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
+  return ids;
 }
 
 function hasMetadataContent(metadata: MetadataOptions): boolean {

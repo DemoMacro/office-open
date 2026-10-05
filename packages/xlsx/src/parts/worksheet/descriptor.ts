@@ -334,7 +334,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const w = attrNum(colEl, "width");
         if (w !== undefined) col.width = w;
         if (parseOnOff(attr(colEl, "hidden"))) col.hidden = true;
-        if (parseOnOff(attr(colEl, "customWidth"))) col.customWidth = true;
+        const customWidth = parseOnOff(attr(colEl, "customWidth"));
+        if (customWidth !== undefined) col.customWidth = customWidth;
+        if (w !== undefined && customWidth === undefined) col.customWidth = false;
         const ol = attrNum(colEl, "outlineLevel");
         if (ol !== undefined) col.outlineLevel = ol;
         const style = attrNum(colEl, "style");
@@ -814,6 +816,40 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (parseOnOff(attr(vEl, "filterUnique"))) view.filterUnique = true;
         const viewType = attr(vEl, "view");
         if (viewType !== undefined) view.view = viewType as CustomSheetViewOptions["view"];
+        if (parseOnOff(attr(vEl, "showRuler")) === false) view.showRuler = false;
+        const topLeftCell = attr(vEl, "topLeftCell");
+        if (topLeftCell !== undefined) view.topLeftCell = topLeftCell;
+        const colorId = attrNum(vEl, "colorId");
+        if (colorId !== undefined) view.colorId = colorId;
+        const paneEl = findChild(vEl, "pane");
+        if (paneEl) {
+          const pane: FreezePaneOptions = {};
+          const ySplit = attrNum(paneEl, "ySplit");
+          const xSplit = attrNum(paneEl, "xSplit");
+          if (ySplit) pane.row = ySplit;
+          if (xSplit) pane.col = xSplit;
+          if (attr(paneEl, "state") === "split") pane.split = true;
+          const paneTopLeft = attr(paneEl, "topLeftCell");
+          if (paneTopLeft) pane.topLeftCell = paneTopLeft;
+          const activePane = attr(paneEl, "activePane");
+          if (activePane) pane.activePane = activePane as FreezePaneOptions["activePane"];
+          if (Object.keys(pane).length > 0) view.pane = pane;
+        }
+        const selections: SelectionOptions[] = [];
+        for (const selectionEl of vEl.elements ?? []) {
+          if (selectionEl.name !== "selection") continue;
+          const selection: SelectionOptions = {};
+          const selectionPane = attr(selectionEl, "pane");
+          if (selectionPane) selection.pane = selectionPane as SelectionOptions["pane"];
+          const activeCell = attr(selectionEl, "activeCell");
+          if (activeCell) selection.activeCell = activeCell;
+          const activeCellId = attrNum(selectionEl, "activeCellId");
+          if (activeCellId !== undefined) selection.activeCellId = activeCellId;
+          const selectedRange = attr(selectionEl, "sqref");
+          if (selectedRange) selection.sqref = selectedRange;
+          selections.push(selection);
+        }
+        if (selections.length > 0) view.selection = selections;
         views.push(view);
       }
       if (views.length > 0) result.customSheetViews = views;

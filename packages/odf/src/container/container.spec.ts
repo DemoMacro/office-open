@@ -75,6 +75,33 @@ describe("OCF runtime", () => {
     expect(() => readOcf(archive, "application/vnd.oasis.opendocument.text")).not.toThrow();
   });
 
+  it("round-trips explicit empty ZIP directories", () => {
+    const mimeType = "application/vnd.oasis.opendocument.text";
+    const packageManifest = {
+      version: "1.3",
+      entries: [
+        { fullPath: "/", version: "1.3", mediaType: mimeType },
+        { fullPath: "content.xml", mediaType: "text/xml" },
+        { fullPath: "Configurations2/", mediaType: "application/binary" },
+      ],
+    };
+    const source = generateOcf(
+      mimeType,
+      {
+        "content.xml":
+          '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+      },
+      {},
+      packageManifest,
+    );
+    expect(Object.keys(unzipSync(source))).toContain("Configurations2/");
+    const parsed = readOcf(source, mimeType);
+    expect(parsed.manifest.entries.map((entry) => entry.fullPath)).toContain("Configurations2/");
+    expect(
+      Object.keys(unzipSync(generateOcf(mimeType, parsed.files, {}, parsed.manifest))),
+    ).toContain("Configurations2/");
+  });
+
   it("ignores stale manifest declarations for absent package paths", () => {
     const archive = zipSync({
       mimetype: strToU8("application/vnd.oasis.opendocument.text"),
@@ -89,6 +116,36 @@ describe("OCF runtime", () => {
     expect(parsed.manifest.entries.map((entry) => entry.fullPath)).not.toContain(
       "Thumbnails/thumbnail.png",
     );
+  });
+
+  it("retains undeclared auxiliary package members", () => {
+    const archive = zipSync({
+      mimetype: strToU8("application/vnd.oasis.opendocument.text"),
+      "content.xml": strToU8(
+        '<office:document-content xmlns:office="urn:oasis-names:tc:opendocument:xmlns:office:1.0"/>',
+      ),
+      "ObjectReplacements/Object 1": new Uint8Array([1, 2, 3]),
+      "META-INF/manifest.xml": strToU8(
+        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis-names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/></manifest:manifest>',
+      ),
+    });
+    const parsed = readOcf(archive, "application/vnd.oasis.opendocument.text");
+    expect(parsed.manifest.entries).toContainEqual({
+      fullPath: "ObjectReplacements/Object 1",
+      mediaType: "application/binary",
+    });
+    expect(
+      Object.keys(
+        unzipSync(
+          generateOcf(
+            "application/vnd.oasis.opendocument.text",
+            { ...parsed.files, ...parsed.binaries },
+            {},
+            parsed.manifest,
+          ),
+        ),
+      ),
+    ).toContain("ObjectReplacements/Object 1");
   });
 
   it("reads a typed manifest and preserves encryption metadata", () => {
@@ -181,7 +238,7 @@ describe("OCF runtime", () => {
     expect(error).toHaveProperty("fullPath", "Extra/data.bin");
   });
 
-  it("keeps manifest media types over derived types and rejects missing declared paths", () => {
+  it("keeps manifest media types and omits missing declared paths", () => {
     const files = { "Extra/data.bin": new Uint8Array([1]) };
     const packageManifest = {
       version: "1.3",
@@ -201,25 +258,19 @@ describe("OCF runtime", () => {
       'manifest:full-path="Extra/data.bin" manifest:media-type="custom/source-type"',
     );
 
-    let error: unknown;
-    try {
-      manifestXml(
-        "application/vnd.oasis.opendocument.chart",
-        files,
-        {},
-        {
-          ...packageManifest,
-          entries: [
-            ...packageManifest.entries,
-            { fullPath: "Missing/data.bin", mediaType: "application/binary" },
-          ],
-        },
-      );
-    } catch (cause) {
-      error = cause;
-    }
-    expect(error).toBeInstanceOf(OcfManifestError);
-    expect(error).toHaveProperty("fullPath", "Missing/data.bin");
+    const staleManifest = manifestXml(
+      "application/vnd.oasis.opendocument.chart",
+      files,
+      {},
+      {
+        ...packageManifest,
+        entries: [
+          ...packageManifest.entries,
+          { fullPath: "Missing/data.bin", mediaType: "application/binary" },
+        ],
+      },
+    );
+    expect(staleManifest).not.toContain('manifest:full-path="Missing/data.bin"');
   });
 
   it("rejects a manifest root media type that differs from the package mimetype", () => {

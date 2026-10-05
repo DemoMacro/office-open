@@ -206,8 +206,8 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   const presentation = doc.get("ppt/presentation.xml");
 
   const relsXml = doc.get("ppt/_rels/presentation.xml.rels");
-  const slides: string[] = [];
-  const slideMasters: string[] = [];
+  let slides: string[] = [];
+  let slideMasters: string[] = [];
   const themes: string[] = [];
   const notesMasters: string[] = [];
   const handoutMasters: string[] = [];
@@ -216,6 +216,8 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   let tableStyles: string | undefined;
   let commentAuthors: string | undefined;
   const tags: string[] = [];
+  const slidePathsByRId = new Map<string, string>();
+  const slideMasterPathsByRId = new Map<string, string>();
 
   if (relsXml) {
     for (const child of relsXml.elements ?? []) {
@@ -223,35 +225,66 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
       if (!target) continue;
+      const relationshipKind = type.split("/").pop() ?? "";
 
       const path = resolveRelationshipTarget("ppt/presentation.xml", target);
 
-      if (type.includes("/slideMaster")) {
+      if (relationshipKind === "slideMaster") {
         slideMasters.push(path);
-      } else if (
-        type.includes("/slide") &&
-        !type.includes("slideLayout") &&
-        !type.includes("slideMaster")
-      ) {
+        const rId = attr(child, "Id");
+        if (rId) slideMasterPathsByRId.set(rId, path);
+      } else if (relationshipKind === "slide" || relationshipKind === "notesSlide") {
         slides.push(path);
-      } else if (type.includes("/theme")) {
+        const rId = attr(child, "Id");
+        if (rId) slidePathsByRId.set(rId, path);
+      } else if (relationshipKind === "theme") {
         themes.push(path);
-      } else if (type.includes("/notesMaster")) {
+      } else if (relationshipKind === "notesMaster") {
         notesMasters.push(path);
-      } else if (type.includes("/handoutMaster")) {
+      } else if (relationshipKind === "handoutMaster") {
         handoutMasters.push(path);
-      } else if (type.includes("/presProps")) {
+      } else if (relationshipKind === "presProps") {
         presProps = path;
-      } else if (type.includes("/viewProps")) {
+      } else if (relationshipKind === "viewProps") {
         viewProps = path;
-      } else if (type.includes("/tableStyles")) {
+      } else if (relationshipKind === "tableStyles") {
         tableStyles = path;
-      } else if (type.includes("/commentAuthors")) {
+      } else if (relationshipKind === "commentAuthors") {
         commentAuthors = path;
-      } else if (type.split("/").pop() === "tags") {
+      } else if (relationshipKind === "tags") {
         tags.push(path);
       }
     }
+  }
+
+  const presentationSlidePaths: string[] = [];
+  const seenSlidePaths = new Set<string>();
+  for (const sldId of findChild(presentation, "p:sldIdLst")?.elements ?? []) {
+    if (sldId.name !== "p:sldId") continue;
+    const rId = attr(sldId, "r:id");
+    const path = rId ? slidePathsByRId.get(rId) : undefined;
+    if (!path || seenSlidePaths.has(path)) continue;
+    seenSlidePaths.add(path);
+    presentationSlidePaths.push(path);
+  }
+  if (presentationSlidePaths.length > 0) {
+    slides = [...presentationSlidePaths, ...slides.filter((path) => !seenSlidePaths.has(path))];
+  }
+  const presentationSlideMasterPaths: string[] = [];
+  const seenSlideMasterPaths = new Set<string>();
+  for (const masterId of findChild(presentation, "p:sldMasterIdLst")?.elements ?? []) {
+    if (masterId.name !== "p:sldMasterId") continue;
+    const rId = attr(masterId, "r:id");
+    const path = rId ? slideMasterPathsByRId.get(rId) : undefined;
+    if (!path || seenSlideMasterPaths.has(path)) continue;
+    seenSlideMasterPaths.add(path);
+    presentationSlideMasterPaths.push(path);
+  }
+  if (presentationSlideMasterPaths.length > 0) {
+    slideMasters = [
+      ...presentationSlideMasterPaths,
+      ...slideMasters.filter((path) => !seenSlideMasterPaths.has(path)),
+    ];
   }
 
   sortByNumber(slides);
@@ -492,6 +525,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   // Package-level fallback context — parts parsed with it carry no rel wiring
   // (their relationship layer is resolved separately around the descriptor).
   const bareReadCtx = new PptxReadContext(new ParseContext(pptx, new Map()));
+  const readContextForPart = (partPath: string) =>
+    new PptxReadContext(new ParseContext(pptx, parseSlideRelMap(pptx.doc, partPath)));
 
   // 1. Parse slide size from p:sldSz
   if (pptx.presentation) {
@@ -529,8 +564,40 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
   // 1b. Presentation-level data fields — via the descriptor's own parse (the
   // same contract stringify uses); id/count/rId wiring stays compiler-owned.
+  let sourceSlideIds: number[] | undefined;
+  let sourceMasterIds: number[] | undefined;
   if (pptx.presentation) {
     const presPart = presentationDesc.parse(pptx.presentation, bareReadCtx);
+    sourceSlideIds = presPart.slideIds;
+    sourceMasterIds = presPart.masterIds;
+    if (presPart.serverZoom !== undefined) opts.serverZoom = presPart.serverZoom;
+    if (presPart.firstSlideNum !== undefined) opts.firstSlideNum = presPart.firstSlideNum;
+    if (presPart.showSpecialPlsOnTitleSld !== undefined)
+      opts.showSpecialPlsOnTitleSld = presPart.showSpecialPlsOnTitleSld;
+    if (presPart.rtl !== undefined) opts.rtl = presPart.rtl;
+    if (presPart.removePersonalInfoOnSave !== undefined)
+      opts.removePersonalInfoOnSave = presPart.removePersonalInfoOnSave;
+    if (presPart.compatMode !== undefined) opts.compatMode = presPart.compatMode;
+    if (presPart.strictFirstAndLastChars !== undefined)
+      opts.strictFirstAndLastChars = presPart.strictFirstAndLastChars;
+    if (presPart.embedTrueTypeFonts !== undefined)
+      opts.embedTrueTypeFonts = presPart.embedTrueTypeFonts;
+    if (presPart.saveSubsetFonts !== undefined) opts.saveSubsetFonts = presPart.saveSubsetFonts;
+    if (presPart.autoCompressPictures !== undefined)
+      opts.autoCompressPictures = presPart.autoCompressPictures;
+    if (presPart.bookmarkIdSeed !== undefined) opts.bookmarkIdSeed = presPart.bookmarkIdSeed;
+    if (presPart.conformance) opts.conformance = presPart.conformance;
+    if (
+      (presPart.slideWidth !== undefined || presPart.slideHeight !== undefined) &&
+      typeof opts.size === "object"
+    ) {
+      opts.size = {
+        ...opts.size,
+        ...(presPart.slideWidth !== undefined ? { width: presPart.slideWidth } : {}),
+        ...(presPart.slideHeight !== undefined ? { height: presPart.slideHeight } : {}),
+      };
+    }
+    if (presPart.slideSizeType) opts.slideSizeType = presPart.slideSizeType;
     opts.photoAlbum = presPart.photoAlbum;
     opts.defaultTextStyle = presPart.defaultTextStyle;
     if (presPart.kinsoku) opts.kinsoku = presPart.kinsoku;
@@ -640,7 +707,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // Theme (resolved separately — the descriptor does not handle theme).
     const themePath = masterThemePaths.get(masterPath);
     const themeEl = themePath ? pptx.doc.get(themePath) : undefined;
-    const themeOptions = themeEl ? themeDesc.parse(themeEl, bareReadCtx) : undefined;
+    const themeOptions =
+      themeEl && themePath ? themeDesc.parse(themeEl, readContextForPart(themePath)) : undefined;
 
     // Structured master (cSld/clrMap/sldLayoutIdLst/transition/timing/hf/txStyles).
     // Placeholders are derived from spTree, so their positions survive round-trip.
@@ -650,6 +718,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       new ParseContext(pptx, parseSlideRelMap(pptx.doc, masterPath)),
     );
     const masterOpts = slideMasterDesc.parse(masterEl, masterReadCtx);
+    const sourceMasterId = sourceMasterIds?.[mi];
 
     // Layouts belonging to this master (resolved separately — relationship layer).
     // A layout with no .rels (sources ship such packages) still belongs when
@@ -715,6 +784,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       cSldExt: masterOpts.cSldExt,
       ext: masterOpts.ext,
     };
+    if (sourceMasterId !== undefined) masterDef.masterId = sourceMasterId;
     if (themeOptions) masterDef.theme = themeOptions;
     if (masterLayouts.length > 0) masterDef.layouts = masterLayouts;
     masterDefs.push(masterDef as MasterDefinition);
@@ -738,7 +808,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       const nmOpts = notesMasterDesc.parse(nmEl, bareReadCtx);
       const nmThemePath = notesMasterThemePaths.get(nmPath);
       const nmThemeEl = nmThemePath ? pptx.doc.get(nmThemePath) : undefined;
-      if (nmThemeEl) nmOpts.theme = themeDesc.parse(nmThemeEl, bareReadCtx);
+      if (nmThemeEl && nmThemePath)
+        nmOpts.theme = themeDesc.parse(nmThemeEl, readContextForPart(nmThemePath));
       if (Object.keys(nmOpts).length > 0) {
         opts.includeNotesMaster = true;
         opts.notesMasterOptions = nmOpts;
@@ -759,7 +830,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (hmParsed.options) {
       const hmThemePath = handoutMasterThemePaths.get(hmPath);
       const hmThemeEl = hmThemePath ? pptx.doc.get(hmThemePath) : undefined;
-      if (hmThemeEl) hmParsed.options.theme = themeDesc.parse(hmThemeEl, bareReadCtx);
+      if (hmThemeEl && hmThemePath)
+        hmParsed.options.theme = themeDesc.parse(hmThemeEl, readContextForPart(hmThemePath));
       opts.handoutMasterOptions = hmParsed.options;
     }
   }
@@ -778,7 +850,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
   // 7. Parse slides with layout and master references
   const result: SlideOptions[] = [];
-  for (const slidePath of pptx.slides) {
+  for (const [slideIndex, slidePath] of pptx.slides.entries()) {
     const slideEl = pptx.doc.get(slidePath);
     if (!slideEl) continue;
 
@@ -789,6 +861,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // background/transition/animations/…). The public-API-only fields (layout,
     // master, comments, notes, section) are enriched below before the push.
     const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
+    const slideId = sourceSlideIds?.[slideIndex];
+    if (slideId !== undefined) slideOpts.slideId = slideId;
 
     // Resolve layout → master
     const layoutPath = slideLayoutPaths.get(slidePath);

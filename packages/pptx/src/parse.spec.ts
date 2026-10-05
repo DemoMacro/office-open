@@ -72,6 +72,60 @@ describe("parsePresentation", () => {
     expect(result.size).to.equal("16:9");
   });
 
+  it("round-trips the advisory slide size type", async () => {
+    const options: PresentationOptions = {
+      size: { width: 10826750, height: 8120063 },
+      slideSizeType: "B4ISO",
+      slides: [
+        { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+
+    expect(decodeEntry(buffer, "ppt/presentation.xml")).toContain('type="B4ISO"');
+    expect(parsePresentationSync(buffer).slideSizeType).to.equal("B4ISO");
+  });
+
+  it("preserves source slide identities and sldIdLst order", async () => {
+    const buffer = await generatePresentation({
+      slides: [
+        { slideId: 256, children: [] },
+        { slideId: 260, children: [] },
+      ],
+    });
+    const source = decodeEntry(buffer, "ppt/presentation.xml");
+    const original =
+      '<p:sldIdLst><p:sldId id="256" r:id="rId2"/><p:sldId id="260" r:id="rId3"/></p:sldIdLst>';
+    const reordered =
+      '<p:sldIdLst><p:sldId id="260" r:id="rId3"/><p:sldId id="256" r:id="rId2"/></p:sldIdLst>';
+    if (!source.includes(original)) throw new Error("expected source slide id list");
+    const archive = unzipSync(buffer);
+    archive["ppt/presentation.xml"] = new TextEncoder().encode(source.replace(original, reordered));
+    const parsed = parsePresentationSync(zipSync(archive));
+
+    expect(parsed.slides?.map((slide) => slide.slideId)).toEqual([260, 256]);
+    const regenerated = await generatePresentation(parsed);
+    const regeneratedIds = [
+      ...decodeEntry(regenerated, "ppt/presentation.xml").matchAll(/<p:sldId id="(\d+)"/g),
+    ].map((match) => Number(match[1]));
+    expect(regeneratedIds).toEqual([260, 256]);
+  });
+
+  it("preserves source master identities", async () => {
+    const buffer = await generatePresentation({
+      masters: [{ masterId: 2147483660 }, { masterId: 2147483661 }],
+      slides: [],
+    });
+    const parsed = parsePresentationSync(buffer);
+
+    expect(parsed.masters?.map((master) => master.masterId)).toEqual([2147483660, 2147483661]);
+    const regenerated = await generatePresentation(parsed);
+    const masterIds = [
+      ...decodeEntry(regenerated, "ppt/presentation.xml").matchAll(/<p:sldMasterId id="(\d+)"/g),
+    ].map((match) => Number(match[1]));
+    expect(masterIds).toEqual([2147483660, 2147483661]);
+  });
+
   it("parses multi-master file", async () => {
     const masters: MasterDefinition[] = [
       {
@@ -300,6 +354,47 @@ describe("raw fidelity fallbacks", () => {
       { children: [{ shape: { x: 0, y: 0, width: 200, height: 100, textBody: { text: "A" } } }] },
     ],
   };
+
+  it("reuses the source presentation tags part path", async () => {
+    const source = await generatePresentation({
+      ...minimalOptions,
+      tags: [{ name: "category", val: "demo" }],
+    });
+    const mutatedArchive = unzipSync(source);
+    mutatedArchive["ppt/tags/tag1.xml"] = mutatedArchive["ppt/tags/tags1.xml"]!;
+    delete mutatedArchive["ppt/tags/tags1.xml"];
+    const replace = (path: string, from: string, to: string) => {
+      mutatedArchive[path] = new TextEncoder().encode(
+        new TextDecoder().decode(mutatedArchive[path]!).replace(from, to),
+      );
+    };
+    replace("ppt/_rels/presentation.xml.rels", "tags/tags1.xml", "tags/tag1.xml");
+    replace("[Content_Types].xml", "/ppt/tags/tags1.xml", "/ppt/tags/tag1.xml");
+    const parsed = parsePresentationSync(zipSync(mutatedArchive));
+
+    const regenerated = await generatePresentation(parsed);
+    const archive = unzipSync(regenerated);
+    expect(archive["ppt/tags/tag1.xml"]).toBeDefined();
+    expect(archive["ppt/tags/tags1.xml"]).toBeUndefined();
+    expect(decodeEntry(regenerated, "ppt/_rels/presentation.xml.rels")).toContain(
+      'Target="tags/tag1.xml"',
+    );
+  });
+
+  it("does not synthesize a rels part omitted by the source layout", async () => {
+    const source = await generatePresentation(minimalOptions);
+    const mutatedArchive = unzipSync(source);
+    delete mutatedArchive["ppt/slideLayouts/_rels/slideLayout1.xml.rels"];
+    const parsed = parsePresentationSync(zipSync(mutatedArchive));
+
+    const regenerated = await generatePresentation(parsed);
+    const archive = unzipSync(regenerated);
+    expect(archive["ppt/slideLayouts/slideLayout1.xml"]).toBeDefined();
+    expect(archive["ppt/slideLayouts/_rels/slideLayout1.xml.rels"]).toBeUndefined();
+    expect(decodeEntry(regenerated, "ppt/slideMasters/_rels/slideMaster1.xml.rels")).toContain(
+      "slideLayout1.xml",
+    );
+  });
 
   it("preserves unrecognized spTree children verbatim", async () => {
     const buffer = await generatePresentation(minimalOptions);

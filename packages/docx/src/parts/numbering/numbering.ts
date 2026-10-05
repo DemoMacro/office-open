@@ -13,7 +13,10 @@ import { decimalNumber } from "@office-open/core";
  */
 import { attr, attrBool, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
-import { documentNamespaceAttributes } from "@parts/document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  documentNamespaceDialect,
+} from "@parts/document/document-attributes";
 import { AlignmentType } from "@parts/paragraph";
 import type { ParagraphPropertiesOptions } from "@parts/paragraph/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
@@ -32,6 +35,8 @@ import type { LevelsOptions } from "./level";
 export interface NumberingOptions {
   /** Abstract numbering definitions (w:abstractNum), each addressed by its reference name. */
   abstractNumberings: {
+    /** Source w:abstractNumId; round-trip only. */
+    abstractId?: number;
     levels: LevelsOptions[];
     reference: string;
     properties?: AbstractNumberingPropertiesOptions;
@@ -60,6 +65,10 @@ export interface NumberingOptions {
      */
     sharedDefinitionOf?: string;
   }[];
+  /** Source w:abstractNum order; round-trip only. */
+  abstractOrder?: number[];
+  /** Source w:num order; round-trip only. */
+  numOrder?: number[];
   /** Numbering cleanup ID (w:numIdMacAtCleanup) */
   numIdMacAtCleanup?: number;
   /** Picture bullet definitions for numbering (w:numPicBullet) */
@@ -72,28 +81,27 @@ export interface NumberingOptions {
   }[];
 }
 
-/** Namespace attributes for w:numbering (pre-computed constant). */
-const NUMBERING_ATTRS =
-  documentNamespaceAttributes([
-    "wpc",
-    "mc",
-    "o",
-    "pvml",
-    "r",
-    "m",
-    "v",
-    "wp14",
-    "wp",
-    "w10",
-    "w",
-    "w14",
-    "w15",
-    "wpg",
-    "wpi",
-    "wne",
-    "wps",
-    "x",
-  ]) + ' mc:Ignorable="w14 w15 wp14"';
+/** Namespace keys for w:numbering. */
+const NUMBERING_NAMESPACE_KEYS = [
+  "wpc",
+  "mc",
+  "o",
+  "pvml",
+  "r",
+  "m",
+  "v",
+  "wp14",
+  "wp",
+  "w10",
+  "w",
+  "w14",
+  "w15",
+  "wpg",
+  "wpi",
+  "wne",
+  "wps",
+  "x",
+] as const;
 
 /** Default bullet levels (9 levels: 0-8). */
 const DEFAULT_BULLET_LEVELS: LevelsOptions[] = [
@@ -186,6 +194,9 @@ export class Numbering {
   private referenceConfigMap = new Map<string, LevelsOptions[]>();
   private abstractNumUniqueNumericId = uniqueNumericIdCreator();
   private concreteNumUniqueNumericId = uniqueNumericIdCreator(1);
+  private readonly sourceAbstractOrder: number[] | undefined;
+  private readonly sourceNumOrder: number[] | undefined;
+  private readonly usedNumIds = new Set<number>();
   private _numIdMacAtCleanup?: number;
   private _numPicBullets?: {
     numPicBulletId: number;
@@ -194,6 +205,16 @@ export class Numbering {
   }[];
 
   public constructor(options: NumberingOptions, injectDefaultList = true) {
+    this.sourceAbstractOrder = options.abstractOrder;
+    this.sourceNumOrder = options.numOrder;
+    for (const con of options.abstractNumberings) {
+      const primaryNumId = /^list_(\d+)$/.exec(con.reference)?.[1];
+      if (primaryNumId !== undefined) this.usedNumIds.add(Number(primaryNumId));
+      for (const alias of con.aliases ?? []) {
+        const aliasNumId = /^list_(\d+)$/.exec(alias)?.[1];
+        if (aliasNumId !== undefined) this.usedNumIds.add(Number(aliasNumId));
+      }
+    }
     this._numIdMacAtCleanup = options.numIdMacAtCleanup;
     this._numPicBullets = options.numPicBullets;
 
@@ -229,7 +250,7 @@ export class Numbering {
         ? this.abstractNumberingData.get(con.sharedDefinitionOf)
         : undefined;
       const abstractData = shared ?? {
-        id: this.abstractNumUniqueNumericId(),
+        id: con.abstractId ?? this.abstractNumUniqueNumericId(),
         levels: con.levels,
         properties: con.properties,
       };
@@ -258,7 +279,12 @@ export class Numbering {
   /** Serialize to word/numbering.xml content (with XML declaration). */
   public serialize(ctx: DocxWriteContext): string {
     const parts: string[] = [];
-    parts.push(`<w:numbering ${NUMBERING_ATTRS}>`);
+    parts.push(
+      `<w:numbering ${documentNamespaceAttributesInDialect(
+        NUMBERING_NAMESPACE_KEYS,
+        documentNamespaceDialect(ctx),
+      )} mc:Ignorable="w14 w15 wp14">`,
+    );
 
     // numPicBullet elements come first (XSD order)
     if (this._numPicBullets) {
@@ -280,12 +306,32 @@ export class Numbering {
     // Alias references share the abstract data object — emit each definition
     // once (object identity dedup).
     const emittedAbstracts = new Set<unknown>();
-    for (const an of this.abstractNumberingData.values()) {
+    const abstractEntries = [...this.abstractNumberingData.values()];
+    const abstractOrder = this.sourceAbstractOrder?.map((id) =>
+      abstractEntries.find((entry) => entry.id === id),
+    );
+    const orderedAbstractEntries =
+      abstractOrder === undefined
+        ? abstractEntries
+        : abstractOrder.filter(
+            (entry): entry is (typeof abstractEntries)[number] => entry !== undefined,
+          );
+    for (const an of orderedAbstractEntries) {
       if (emittedAbstracts.has(an)) continue;
       emittedAbstracts.add(an);
       parts.push(stringifyAbstractNumbering(an.id, an.levels, an.properties));
     }
-    for (const cn of this.concreteNumberingData.values()) {
+    const concreteEntries = [...this.concreteNumberingData.values()];
+    const concreteOrder = this.sourceNumOrder?.map((numId) =>
+      concreteEntries.find((entry) => entry.numId === numId),
+    );
+    const orderedConcreteEntries =
+      concreteOrder === undefined
+        ? concreteEntries
+        : concreteOrder.filter(
+            (entry): entry is (typeof concreteEntries)[number] => entry !== undefined,
+          );
+    for (const cn of orderedConcreteEntries) {
       parts.push(stringifyConcreteNumbering(cn));
     }
     if (this._numIdMacAtCleanup !== undefined) {
@@ -329,10 +375,23 @@ export class Numbering {
     this.concreteNumberingData.set(fullReference, {
       abstractNumId: abstractNumbering.id,
       instance,
-      numId: this.concreteNumUniqueNumericId(),
+      numId: this.nextConcreteNumId(reference),
       overrideLevels,
       reference,
     });
+  }
+
+  private nextConcreteNumId(reference: string): number {
+    const sourceNumId = /^list_(\d+)$/.exec(reference)?.[1];
+    if (sourceNumId !== undefined) {
+      const numId = Number(sourceNumId);
+      this.usedNumIds.add(numId);
+      return numId;
+    }
+    let numId = this.concreteNumUniqueNumericId();
+    while (this.usedNumIds.has(numId)) numId = this.concreteNumUniqueNumericId();
+    this.usedNumIds.add(numId);
+    return numId;
   }
 
   /** Gets all concrete numbering instances. */
@@ -662,6 +721,7 @@ export function parseNumberingDefinitions(
       primaryPerAbstract.set(String(abstractId), group.primary);
       configs.push({
         reference: group.primary,
+        abstractId,
         ...parsed,
         instanceCount: 1,
         ...(group.overrides.length > 0 ? { overrideLevels: group.overrides } : {}),
@@ -670,6 +730,7 @@ export function parseNumberingDefinitions(
     } else {
       configs.push({
         reference: group.primary,
+        abstractId,
         ...parsed,
         instanceCount: 1,
         sharedDefinitionOf: primary,
@@ -687,13 +748,21 @@ export function parseNumberingDefinitions(
   for (const [abstractId, abstractEl] of abstractNums) {
     if (referencedAbstractIds.has(abstractId)) continue;
     const parsed = parseAbstractDefinition(abstractEl);
-    if (parsed) configs.push({ reference: `abstract_${abstractId}`, ...parsed, instanceCount: 0 });
+    if (parsed)
+      configs.push({
+        reference: `abstract_${abstractId}`,
+        abstractId: Number(abstractId),
+        ...parsed,
+        instanceCount: 0,
+      });
   }
 
   if (configs.length === 0 && numPicBullets.length === 0 && numIdMacAtCleanup === undefined) {
     return undefined;
   }
   const result: NumberingOptions = { abstractNumberings: configs };
+  result.abstractOrder = [...abstractNums.keys()].map(Number);
+  result.numOrder = numEntries.map((entry) => Number(entry.numId));
   if (numPicBullets.length > 0) result.numPicBullets = numPicBullets;
   if (numIdMacAtCleanup !== undefined) result.numIdMacAtCleanup = numIdMacAtCleanup;
   return result;

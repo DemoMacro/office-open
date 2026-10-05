@@ -15,6 +15,32 @@ describe("ODS codec", () => {
     expect(() => parseWorkbook(new Uint8Array([1, 2, 3]))).toThrow(OdsParseError);
   });
 
+  it("requires an embedded object body but tolerates a missing replacement", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell><draw:frame svg:width="1cm" svg:height="1cm"><draw:object-ole xlink:href="./Object 1" xlink:type="simple"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const source = generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+      "content.xml": content,
+      "Object 1": new Uint8Array([1]),
+    });
+    const parsed = parseWorkbook(source) as OdsDocumentOptions;
+    expect(parsed.packageMembers).toEqual([
+      { path: "Object 1", mediaType: "application/binary", data: new Uint8Array([1]) },
+    ]);
+    expect(parseWorkbook(generateWorkbook(parsed)).packageMembers).toEqual(parsed.packageMembers);
+
+    let error: unknown;
+    try {
+      parseWorkbook(
+        generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
+          "content.xml": content,
+        }),
+      );
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdsParseError);
+    expect(error).toMatchObject({ reason: "embedded-object-subdocument-missing" });
+  });
+
   it("round-trips real chart anchors, semantics, worksheet links, and order", () => {
     const parsed = parseWorkbook(
       generateWorkbook({

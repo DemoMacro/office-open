@@ -11,6 +11,7 @@
  * @module
  */
 
+import { parseOnOff } from "@office-open/core";
 import { unescapeXml } from "@office-open/xml";
 
 import type { CellOptions, FormulaOptions, RichTextOptions, RowOptions } from "./types";
@@ -178,6 +179,8 @@ export function parseSheetDataRows(
     const row: RowOptions = {};
     let rowClose = tagEnd;
     let rowStyleIdx: number | undefined;
+    let customFormatDeclared = false;
+    let customHeightDeclared = false;
     scanAttrs(raw, rowOpen + 4, attrEnd, (name, value) => {
       switch (name) {
         case "r": {
@@ -197,8 +200,18 @@ export function parseSheetDataRows(
           row.spans = value;
           break;
         case "customFormat":
-          if (isOn(value)) row.customFormat = true;
+          customFormatDeclared = true;
+          if (value !== undefined) {
+            const customFormat = parseOnOff(value);
+            if (customFormat !== undefined) row.customFormat = customFormat;
+          }
           break;
+        case "customHeight": {
+          customHeightDeclared = true;
+          const customHeight = parseOnOff(value);
+          if (customHeight !== undefined) row.customHeight = customHeight;
+          break;
+        }
         case "thickTop":
           if (isOn(value)) row.thickTop = true;
           break;
@@ -231,6 +244,8 @@ export function parseSheetDataRows(
     if (rowStyleIdx !== undefined) {
       row.style = rowStyleIdx;
     }
+    if (rowStyleIdx !== undefined && !customFormatDeclared) row.customFormat = false;
+    if (row.height !== undefined && !customHeightDeclared) row.customHeight = false;
 
     const cells: CellOptions[] = [];
     if (!selfClosing) {

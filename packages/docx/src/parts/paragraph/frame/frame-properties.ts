@@ -119,6 +119,23 @@ export type AlignmentFrameOptions = {
 } & BaseFrameOptions;
 
 /**
+ * Options for frames that combine a coordinate on one axis with an alignment
+ * on the other. CT_FramePr allows `w:x`/`w:y` and `w:xAlign`/`w:yAlign` to
+ * appear independently.
+ */
+export type MixedFrameOptions = {
+  type: "mixed";
+  position?: {
+    x?: number | UniversalMeasure;
+    y?: number | UniversalMeasure;
+  };
+  alignment?: {
+    x?: (typeof HorizontalPositionAlign)[keyof typeof HorizontalPositionAlign];
+    y?: (typeof VerticalPositionAlign)[keyof typeof VerticalPositionAlign];
+  };
+} & BaseFrameOptions;
+
+/**
  * Union type for all frame positioning options.
  */
-export type FrameOptions = XYFrameOptions | AlignmentFrameOptions;
+export type FrameOptions = XYFrameOptions | AlignmentFrameOptions | MixedFrameOptions;

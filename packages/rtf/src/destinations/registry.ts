@@ -1,4 +1,8 @@
-export type DestinationDisposition = "canonical" | "generated-shadow" | "unsupported";
+export type DestinationDisposition =
+  | "canonical"
+  | "generated-shadow"
+  | "structural-noop"
+  | "unsupported";
 export const DESTINATION_DISPOSITIONS = {
   bkmkend: "canonical",
   bkmkstart: "canonical",
@@ -33,6 +37,8 @@ export const DESTINATION_DISPOSITIONS = {
   keywords: "canonical",
   doccomm: "canonical",
   category: "canonical",
+  creatim: "structural-noop",
+  comment: "structural-noop",
   levelnumbers: "canonical",
   leveltext: "canonical",
   listname: "canonical",
@@ -44,11 +50,16 @@ export const DESTINATION_DISPOSITIONS = {
   shppict: "generated-shadow",
   dbmajor: "generated-shadow",
   dbminor: "generated-shadow",
+  fbimajor: "generated-shadow",
+  fbiminor: "generated-shadow",
   expandedcolortbl: "generated-shadow",
   flomajor: "generated-shadow",
   flominor: "generated-shadow",
   fdbmajor: "generated-shadow",
   fdbminor: "generated-shadow",
+  fhimajor: "generated-shadow",
+  fhiminor: "generated-shadow",
+  mmathPr: "generated-shadow",
   listlevel: "generated-shadow",
   nonesttables: "generated-shadow",
   upr: "generated-shadow",
@@ -56,14 +67,27 @@ export const DESTINATION_DISPOSITIONS = {
   himinor: "generated-shadow",
   levelmarker: "generated-shadow",
   listtext: "generated-shadow",
+  listoverride: "generated-shadow",
   pu: "generated-shadow",
+  abinodiroverride: "structural-noop",
+  dbch: "structural-noop",
+  hich: "structural-noop",
+  highlight: "structural-noop",
+  htmlrtf: "structural-noop",
+  ltrch: "structural-noop",
+  loch: "structural-noop",
+  rtlch: "structural-noop",
+  version: "structural-noop",
   company: "unsupported",
   datafield: "unsupported",
   datastore: "unsupported",
   falttext: "unsupported",
   filetbl: "unsupported",
   manager: "unsupported",
-  operator: "unsupported",
+  operator: "structural-noop",
+  printim: "structural-noop",
+  revtim: "structural-noop",
+  vern: "structural-noop",
   proto: "unsupported",
   revtbl: "unsupported",
   rsidgrp: "unsupported",
@@ -71,6 +95,15 @@ export const DESTINATION_DISPOSITIONS = {
   themedata: "unsupported",
   xmlnstb: "unsupported",
 } as const satisfies Record<string, DestinationDisposition>;
+
+export const INLINE_NOOP_CONTROLS = new Set(["htmlrtf", "ltrch", "rtlch"]);
+export const APP_METADATA_CONTROLS = new Set([
+  "edmins",
+  "nofchars",
+  "nofcharsws",
+  "nofpages",
+  "nofwords",
+]);
 export function destinationDisposition(name: string): DestinationDisposition {
   return DESTINATION_DISPOSITIONS[name as keyof typeof DESTINATION_DISPOSITIONS] ?? "unsupported";
 }

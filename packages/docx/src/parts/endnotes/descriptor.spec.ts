@@ -83,7 +83,7 @@ describe("endnotesDesc round-trip", () => {
 
     const xml = endnotesDesc.stringify(parsed, writeCtx as any)!;
     expect(xml).toContain("<w:tbl>");
-    expect(xml).toContain('<w:t xml:space="preserve">cell</w:t>');
+    expect(xml).toContain("<w:t>cell</w:t>");
     expect(xml).not.toContain("<w:endnoteRef/>");
   });
 

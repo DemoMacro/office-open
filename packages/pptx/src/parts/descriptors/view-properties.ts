@@ -93,6 +93,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
         handoutView: "handoutView",
         outlineView: "outlineView",
         sldSorterView: "slideSorterView",
+        sldThumbnailView: "slideThumbnailView",
       };
       const mapped = reverseMap[a["lastView"]];
       if (mapped) result.lastView = mapped as ViewPropertiesOptions["lastView"];

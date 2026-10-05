@@ -15,7 +15,8 @@ import type { LongHexNumber } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, escapeXml } from "@office-open/xml";
 
-import { COMMENTS_NS } from "./comments";
+import type { BodyContext } from "../context";
+import { commentsNamespaceAttributes } from "./comments";
 
 /** Options for one extended-comment entry (w15:commentEx). */
 export interface CommentExtendedOptions {
@@ -32,11 +33,11 @@ export interface CommentExtendedOptions {
   nextGen?: true;
 }
 
-export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[]> = {
+export const commentsExtendedDesc: CustomDescriptor<CommentExtendedOptions[], BodyContext> = {
   kind: "custom",
 
-  stringify(opts) {
-    const parts: string[] = [`<w15:commentsEx ${COMMENTS_NS}>`];
+  stringify(opts, ctx) {
+    const parts: string[] = [`<w15:commentsEx ${commentsNamespaceAttributes(ctx)}>`];
     for (const ex of opts) {
       const attrs = [`w15:paraId="${escapeXml(ex.paraId)}"`];
       if (ex.paraIdParent !== undefined)

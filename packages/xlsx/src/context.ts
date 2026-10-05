@@ -119,6 +119,7 @@ export class XlsxReadContext implements ReadContext {
    */
   public currentPart = "xl/workbook.xml";
   private readonly partRels = new Map<string, Map<string, string>>();
+  private readonly externalPartRels = new Map<string, Map<string, string>>();
 
   constructor(
     private xlsx: XlsxDocument,
@@ -137,13 +138,17 @@ export class XlsxReadContext implements ReadContext {
       const relsEl = this.xlsx.doc.get(relsPath);
       if (!relsEl?.elements) continue;
       const byId = new Map<string, string>();
+      const externalById = new Map<string, string>();
       for (const child of relsEl.elements) {
         if (child.name !== "Relationship") continue;
         const id = child.attributes?.["Id"] as string | undefined;
         const target = child.attributes?.["Target"] as string | undefined;
-        if (id && target) byId.set(id, resolveRelationshipTarget(partPath, target));
+        if (!id || !target) continue;
+        if (child.attributes?.["TargetMode"] === "External") externalById.set(id, target);
+        else byId.set(id, resolveRelationshipTarget(partPath, target));
       }
       this.partRels.set(partPath, byId);
+      this.externalPartRels.set(partPath, externalById);
     }
   }
 
@@ -183,7 +188,7 @@ export class XlsxReadContext implements ReadContext {
    * Worksheet rels paths: `xl/worksheets/sheet1.xml` → `xl/worksheets/_rels/sheet1.xml.rels`
    */
   public resolveWorksheetRel(wsPath: string, rId: string): string | undefined {
-    return this.partRels.get(wsPath)?.get(rId);
+    return this.partRels.get(wsPath)?.get(rId) ?? this.externalPartRels.get(wsPath)?.get(rId);
   }
 
   /**

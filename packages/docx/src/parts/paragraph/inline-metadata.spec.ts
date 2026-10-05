@@ -194,11 +194,10 @@ describe("ruby annotation parse", () => {
     expect(xml).toContain("<w:r><w:ruby><w:rubyPr>");
     expect(xml).toContain('<w:dirty w:val="off"/>');
     expect(xml).toContain(
-      '<w:rt><w:r><w:rPr><w:b/></w:rPr><w:t xml:space="preserve">fu</w:t></w:r>' +
-        '<w:r><w:t xml:space="preserve">ri</w:t></w:r></w:rt>',
+      "<w:rt><w:r><w:rPr><w:b/></w:rPr><w:t>fu</w:t></w:r>" + "<w:r><w:t>ri</w:t></w:r></w:rt>",
     );
     expect(xml).toContain(
-      '<w:rubyBase><w:r><w:rPr><w:i/></w:rPr><w:t xml:space="preserve">base</w:t></w:r></w:rubyBase>',
+      "<w:rubyBase><w:r><w:rPr><w:i/></w:rPr><w:t>base</w:t></w:r></w:rubyBase>",
     );
     expect(xml).not.toContain("<w:r><w:ruby><w:r><w:ruby>");
   });

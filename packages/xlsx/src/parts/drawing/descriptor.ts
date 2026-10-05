@@ -64,6 +64,25 @@ function readAnchorShapeId(anchor: XmlElement): number | undefined {
   return Number.isNaN(id) ? undefined : id;
 }
 
+function readAnchorElements(el: XmlElement): XmlElement[] {
+  const anchors: XmlElement[] = [];
+  for (const child of el.elements ?? []) {
+    const rawName = child.name ?? "";
+    const name = rawName.startsWith("xdr:") ? rawName.slice(4) : rawName;
+    if (name === "mc:AlternateContent") {
+      for (const choice of child.elements ?? []) {
+        if ((choice.name ?? "") !== "mc:Choice") continue;
+        anchors.push(...readAnchorElements(choice));
+      }
+      continue;
+    }
+    if (name === "twoCellAnchor" || name === "oneCellAnchor" || name === "absoluteAnchor") {
+      anchors.push(child);
+    }
+  }
+  return anchors;
+}
+
 export const drawingDesc: CustomDescriptor<DrawingOptions> = {
   kind: "custom",
 
@@ -184,7 +203,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       return obj;
     };
 
-    for (const anchor of el.elements ?? []) {
+    for (const anchor of readAnchorElements(el)) {
       // Office writes spreadsheetDrawing anchors in the default namespace or
       // with the xdr: prefix — normalize before dispatching.
       const rawName = anchor.name ?? "";

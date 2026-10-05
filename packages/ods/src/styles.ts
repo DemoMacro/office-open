@@ -249,9 +249,14 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
 }
 
 const ODS_STYLE_PROPERTIES: Record<string, string[]> = {
-  paragraph: ["style:paragraph-properties", "style:text-properties"],
+  paragraph: ["style:paragraph-properties", "loext:graphic-properties", "style:text-properties"],
   text: ["style:text-properties"],
-  graphic: ["style:graphic-properties", "style:paragraph-properties", "style:text-properties"],
+  graphic: [
+    "style:graphic-properties",
+    "loext:graphic-properties",
+    "style:paragraph-properties",
+    "style:text-properties",
+  ],
   table: ["style:table-properties"],
   "table-column": ["style:table-column-properties"],
   "table-row": ["style:table-row-properties"],

@@ -227,9 +227,14 @@ function isPercentAttribute(name: string): boolean {
 }
 
 const FAMILY_PROPERTIES: Record<OdfStyleFamily, string[]> = {
-  paragraph: ["style:paragraph-properties", "style:text-properties"],
+  paragraph: ["style:paragraph-properties", "loext:graphic-properties", "style:text-properties"],
   text: ["style:text-properties"],
-  graphic: ["style:graphic-properties", "style:paragraph-properties", "style:text-properties"],
+  graphic: [
+    "style:graphic-properties",
+    "loext:graphic-properties",
+    "style:paragraph-properties",
+    "style:text-properties",
+  ],
   table: ["style:table-properties"],
   "table-column": ["style:table-column-properties"],
   "table-row": ["style:table-row-properties"],
@@ -244,7 +249,7 @@ const FAMILY_PROPERTIES: Record<OdfStyleFamily, string[]> = {
 };
 
 const ATTRIBUTE_PREFIXES: Record<OdfStyleFamily, RegExp> = Object.fromEntries([
-  ["paragraph", /^(fo|style|text|svg|officeooo|loext):/],
+  ["paragraph", /^(fo|style|text|svg|draw|officeooo|loext):/],
   ["text", /^(fo|style|text|officeooo|loext):/],
   ["graphic", /^(fo|style|draw|svg|dr3d|smil|officeooo|loext):/],
   ["table", /^(fo|style|table|officeooo|loext):/],

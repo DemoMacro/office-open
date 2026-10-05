@@ -77,6 +77,25 @@ const counts: Record<LegacyFormat, FormatCounts> = {
   ods: { total: 0, ...emptyCounts() },
   odp: { total: 0, ...emptyCounts() },
 };
+const failureReasons: Record<LegacyFormat, Map<string, number>> = {
+  doc: new Map(),
+  xls: new Map(),
+  ppt: new Map(),
+  rtf: new Map(),
+  odt: new Map(),
+  ods: new Map(),
+  odp: new Map(),
+};
+
+function failureCategory(error: unknown): string {
+  return String((error as Error)?.message ?? error)
+    .replace(/\s+/g, " ")
+    .replace(/(["']).*?\1/g, "$1…$1")
+    .replace(/\b[0-9a-f]{8,}\b/gi, "…")
+    .replace(/\b\d+(?:\.\d+)?\b/g, "N")
+    .trim()
+    .slice(0, 160);
+}
 function walk(dir: string, out: string[] = []): string[] {
   let entries: fs.Dirent[];
   try {
@@ -177,18 +196,42 @@ async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
 }
 
 const files = CORPUS_DIRS.flatMap((dir) => walk(dir)).sort();
-for (const file of files) {
-  const format = path.extname(file).slice(1).toLowerCase();
-  if (!(format in counts)) continue;
-  const result = counts[format as LegacyFormat];
-  result.total++;
+async function verifyAllFiles(): Promise<void> {
+  const originalConsole = {
+    log: console.log,
+    info: console.info,
+    warn: console.warn,
+    error: console.error,
+  };
+  console.log = () => {};
+  console.info = () => {};
+  console.warn = () => {};
+  console.error = () => {};
   try {
-    await verify(format as LegacyFormat, new Uint8Array(fs.readFileSync(file)));
-    result.pass++;
-  } catch (error) {
-    result[classify(error)]++;
+    for (const file of files) {
+      const format = path.extname(file).slice(1).toLowerCase();
+      if (!(format in counts)) continue;
+      const result = counts[format as LegacyFormat];
+      result.total++;
+      try {
+        await verify(format as LegacyFormat, new Uint8Array(fs.readFileSync(file)));
+        result.pass++;
+      } catch (error) {
+        const outcome = classify(error);
+        result[outcome]++;
+        const reason = failureCategory(error);
+        failureReasons[format as LegacyFormat].set(
+          reason,
+          (failureReasons[format as LegacyFormat].get(reason) ?? 0) + 1,
+        );
+      }
+    }
+  } finally {
+    Object.assign(console, originalConsole);
   }
 }
+
+await verifyAllFiles();
 
 if (!CORPUS_DIRS.every((dir) => fs.existsSync(dir))) {
   console.error("legacy corpus gate: corpus is incomplete — run pnpm corpus:setup first");
@@ -202,6 +245,11 @@ for (const [format, result] of Object.entries(counts) as [LegacyFormat, FormatCo
     `${format.padEnd(6)} ${String(result.total).padStart(5)} ${String(result.pass).padStart(4)} ${String(result.encrypted).padStart(9)} ${String(result.invalid).padStart(7)} ${String(result.unexpected).padStart(10)}`,
   );
   if (result.unexpected > 0) failed = true;
+  for (const [reason, count] of [...failureReasons[format]]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 8)) {
+    console.log(`  ${format} ${outcomeForReason(reason)} x${count}: ${reason}`);
+  }
   if (result.total === 0) {
     failed = true;
     console.log(`${format.padEnd(6)} empty corpus`);
@@ -213,3 +261,14 @@ if (failed) {
   process.exit(1);
 }
 console.log("legacy corpus gate: OK");
+
+function outcomeForReason(reason: string): string {
+  if (/encrypted|password/i.test(reason)) return "encrypted";
+  if (
+    /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing)/i.test(
+      reason,
+    )
+  )
+    return "invalid";
+  return "unexpected";
+}

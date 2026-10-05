@@ -140,11 +140,13 @@ export function endpointConnection(
 export function parsePictureFrame(
   frame: Element,
   binaries: Record<string, Uint8Array>,
+  usedBinaryPaths: Set<string>,
 ): { picture: PictureOptions } | undefined {
   const image = childNamed(frame, "draw:image");
   if (!image) return undefined;
   const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
   const data = path ? binaries[path] : undefined;
+  if (data && path) usedBinaryPaths.add(path);
   if (!data || !path) {
     const href = attributeString(image, "xlink:href");
     if (!href) return undefined;

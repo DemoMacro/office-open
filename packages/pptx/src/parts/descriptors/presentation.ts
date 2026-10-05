@@ -102,7 +102,9 @@ function stringifyPresentation(
   // sldMasterIdLst
   parts.push("<p:sldMasterIdLst>");
   for (let mi = 0; mi < opts.masterCount; mi++) {
-    parts.push(`<p:sldMasterId id="${2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`);
+    parts.push(
+      `<p:sldMasterId id="${opts.masterIds?.[mi] ?? 2147483648 + mi * 12}" r:id="rId${mi + 1}"/>`,
+    );
   }
   parts.push("</p:sldMasterIdLst>");
 
@@ -374,10 +376,15 @@ function parsePresentation(el: XmlElement): PresentationPartOptions {
   const sldMasterIdLst = findChild(el, "p:sldMasterIdLst");
   if (sldMasterIdLst) {
     let masterCount = 0;
+    const masterIds: number[] = [];
     for (const child of sldMasterIdLst.elements ?? []) {
-      if (child.name === "p:sldMasterId") masterCount++;
+      if (child.name !== "p:sldMasterId") continue;
+      masterCount++;
+      const id = attrNum(child, "id");
+      if (id !== undefined) masterIds.push(id);
     }
     result.masterCount = masterCount;
+    if (masterIds.length > 0) result.masterIds = masterIds;
   }
 
   // notesMasterIdLst

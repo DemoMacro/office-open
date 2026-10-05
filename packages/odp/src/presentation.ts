@@ -1,4 +1,9 @@
-import type { FormContainerOptions, FormControlOptions } from "@office-open/core";
+import {
+  toUint8Array,
+  type ChartSpaceOptions,
+  type FormContainerOptions,
+  type FormControlOptions,
+} from "@office-open/core";
 import {
   attributeNumber,
   attributeString,
@@ -20,6 +25,7 @@ import {
   readXml,
   textOf,
   xmlElement,
+  type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
 import type { PresentationOptions } from "@office-open/pptx";
@@ -28,6 +34,7 @@ import type { Element } from "@office-open/xml";
 import type { OdpChart, OdpImage } from "./drawing";
 import { OdpParseError } from "./error";
 import type { OdpDocumentOptions } from "./semantics";
+import type { OdpPackageMemberOptions } from "./semantics";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
 import { parseStyleOverlays, parseTextStyles, styleOverlaysXml } from "./styles";
 
@@ -47,8 +54,8 @@ export const NAMESPACES = [
   'xmlns:xforms="http://www.w3.org/2002/xforms"',
 ].join(" ");
 
-export function generatePresentation(options: PresentationOptions): Uint8Array {
-  const { packageManifest, styleOverlays } = options as OdpDocumentOptions;
+export function generatePresentation(options: OdpDocumentOptions): Uint8Array {
+  const { packageManifest, packageMembers, styleOverlays } = options;
   const styles: string[] = styleOverlaysXml(styleOverlays);
   const images: OdpImage[] = [];
   const charts: OdpChart[] = [];
@@ -67,6 +74,7 @@ export function generatePresentation(options: PresentationOptions): Uint8Array {
     "styles.xml": stylesXml(pageLayout),
     "meta.xml": metaXml(options),
   };
+  for (const member of packageMembers ?? []) addPackageFile(files, member);
   for (const image of images) files[image.path] = image.data;
   for (const chart of charts) files[`${chart.path}/content.xml`] = chartBodyXml(chart.chart);
   return generateOcf(
@@ -77,7 +85,22 @@ export function generatePresentation(options: PresentationOptions): Uint8Array {
   );
 }
 
-export function parsePresentation(data: Uint8Array): PresentationOptions {
+function addPackageFile(files: OdfPackageFiles, member: OdpPackageMemberOptions): void {
+  if (
+    !member.path ||
+    member.path.startsWith("/") ||
+    member.path.endsWith("/") ||
+    member.path.split("/").includes("..")
+  )
+    throw new Error(`Invalid ODP package member path: ${member.path}`);
+  if (member.path === "META-INF/manifest.xml")
+    throw new Error("ODP package members cannot replace META-INF/manifest.xml");
+  if (files[member.path] !== undefined)
+    throw new Error(`ODP package member conflicts with modeled content: ${member.path}`);
+  files[member.path] = typeof member.data === "string" ? member.data : toUint8Array(member.data);
+}
+
+export function parsePresentation(data: Uint8Array): OdpDocumentOptions {
   try {
     return parseOdpBody(data);
   } catch (cause) {
@@ -111,6 +134,8 @@ function parseOdpBody(data: Uint8Array): OdpDocumentOptions {
   const height = lengthToEmu(attributeString(pageLayout, "fo:page-height"));
   const graphicStyles = parseGraphicStyles(childNamed(content, "office:automatic-styles"));
   const chartPool = parseEmbeddedCharts(manifest, files);
+  const usedBinaryPaths = new Set<string>();
+  validateEmbeddedObjectBodies(body, files, binaries, chartPool);
   const result = {
     ...parseMeta(files),
     ...(width && height ? { size: { width, height } } : {}),
@@ -122,15 +147,74 @@ function parseOdpBody(data: Uint8Array): OdpDocumentOptions {
         binaries,
         graphicStyles,
         chartPool,
+        usedBinaryPaths,
       ),
     ),
   };
   const styleOverlays = parseStyleOverlays(childNamed(content, "office:automatic-styles"));
+  const packageMembers = sourcePackageMembers(
+    manifest,
+    files,
+    binaries,
+    chartPool,
+    usedBinaryPaths,
+  );
   return {
     ...result,
     ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
   };
+}
+
+function validateEmbeddedObjectBodies(
+  body: Element | undefined,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+  chartPool: Map<string, ChartSpaceOptions>,
+): void {
+  const references = (body ? descendantElements(body) : []).flatMap((element) =>
+    element.name === "draw:object-ole"
+      ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+      : [],
+  );
+  for (const href of references) {
+    if (href && (binaries[href] || files[`${href}/content.xml`] || chartPool.has(href))) continue;
+    throw new OdpParseError(
+      `content.xml: ${href ?? ""}: embedded object subdocument is missing`,
+      "content.xml",
+      "/draw:page/draw:frame/draw:object-ole/@xlink:href",
+      "draw:object-ole",
+      "embedded-object-subdocument-missing",
+    );
+  }
+}
+
+function sourcePackageMembers(
+  manifest: OcfManifestOptions,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+  chartPool: Map<string, ChartSpaceOptions>,
+  usedBinaryPaths: Set<string>,
+): OdpPackageMemberOptions[] {
+  const mediaTypes = new Map(
+    manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
+  );
+  const modeledPaths = new Set([
+    "content.xml",
+    "styles.xml",
+    "meta.xml",
+    "META-INF/manifest.xml",
+    ...[...chartPool.keys()].map((path) => `${path}/content.xml`),
+    ...usedBinaryPaths,
+  ]);
+  return [
+    ...Object.entries(files).map(([path, data]) => ({ path, data })),
+    ...Object.entries(binaries).map(([path, data]) => ({ path, data })),
+  ]
+    .filter(({ path }) => !modeledPaths.has(path))
+    .sort((left, right) => left.path.localeCompare(right.path))
+    .map(({ path, data }) => ({ path, mediaType: mediaTypes.get(path), data }));
 }
 
 export function contentXml(pages: string, styles: string[]): string {

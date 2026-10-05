@@ -1,3 +1,5 @@
+import { escapeXml } from "@office-open/xml";
+
 /**
  * Build theme XML string — structured driver over the CT_BaseStyles parts.
  *
@@ -67,10 +69,17 @@ export function buildThemeXml(options?: ThemeOptions, ctx?: WriteContext): strin
   const custClrLst = opts.customColors
     ? stringifyCustomColors(opts.customColors, requireCtx(ctx, "customColors"))
     : "";
+  const themeFamilyExt = opts.themeFamily
+    ? '<a:extLst><a:ext uri="{05A4C25C-085E-4340-85A3-A5531E510DB2}">' +
+      `<thm15:themeFamily xmlns:thm15="http://schemas.microsoft.com/office/thememl/2012/main" name="${escapeXml(
+        opts.themeFamily.name,
+      )}" id="${escapeXml(opts.themeFamily.id)}" vid="${escapeXml(opts.themeFamily.vid)}"/>` +
+      "</a:ext></a:extLst>"
+    : "";
 
   return (
     `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${name}">` +
     `<a:themeElements>${clrScheme}${fontScheme}${fmtScheme}</a:themeElements>` +
-    `${objectDefaults}${extraClrSchemeLst}${custClrLst}</a:theme>`
+    `${objectDefaults}${extraClrSchemeLst}${custClrLst}${themeFamilyExt}</a:theme>`
   );
 }

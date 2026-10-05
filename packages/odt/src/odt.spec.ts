@@ -87,6 +87,17 @@ describe("ODT canonical projection", () => {
     });
   });
 
+  it("round-trips LibreOffice graphic-properties overlays", () => {
+    const source = odtStyledPackage(
+      '<style:style style:name="P1" style:family="paragraph"><loext:graphic-properties draw:fill="none"/><style:paragraph-properties fo:text-align="center"/></style:style>',
+      '<text:p text:style-name="P1">Styled</text:p>',
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.styleOverlays?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
+    const reread = parseDocument(generateDocument(parsed)) as OdtDocumentOptions;
+    expect(reread.styleOverlays).toEqual(parsed.styleOverlays);
+  });
+
   it("round-trips mixed canonical and overlay run styles", () => {
     const source = odtStyledPackage(
       '<style:style style:name="C1" style:family="text"><style:text-properties fo:font-weight="bold" fo:background-color="#00ff00"/></style:style>',
@@ -250,7 +261,7 @@ describe("ODT canonical projection", () => {
     );
   });
 
-  it("preserves source-only package members and rejects stale overlays", () => {
+  it("preserves source-only package members and omits stale overlays", () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
@@ -300,7 +311,12 @@ describe("ODT canonical projection", () => {
         ],
       },
     };
-    expect(() => generateDocument(stale)).toThrow("Manifest declares missing package path");
+    const regenerated = generateDocument(stale);
+    const regeneratedEntries = unzipSync(regenerated);
+    expect(Object.keys(regeneratedEntries)).not.toContain("manifest.rdf");
+    expect(new TextDecoder().decode(regeneratedEntries["META-INF/manifest.xml"])).not.toContain(
+      'manifest:full-path="manifest.rdf"',
+    );
   });
 
   it("rejects a standalone object without content.xml", () => {

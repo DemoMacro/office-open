@@ -137,7 +137,7 @@ function picXml(
   const prAttr =
     img.preferRelativeResize === undefined
       ? ""
-      : ` preferRelativeResize="${img.preferRelativeResize ? 1 : 0}"`;
+      : ` preferRelativeResize="${img.preferRelativeResize ? "true" : "false"}"`;
   const locks = img.locking ? (pictureLockingDesc.stringify(img.locking, ctx) ?? "") : "";
   const cNvPicPr = locks
     ? `<xdr:cNvPicPr${prAttr}>${locks}</xdr:cNvPicPr>`
@@ -153,6 +153,7 @@ function picXml(
   // linked-only picture has no rId, a purely embedded one no linkRId.
   const blipAttrs: string[] = [];
   if (img.rId) blipAttrs.push(`r:embed="${img.rId}"`);
+  if (img.compression !== undefined) blipAttrs.push(`cstate="${img.compression}"`);
   if (img.linkRId) blipAttrs.push(`r:link="${img.linkRId}"`);
   const attrs = blipAttrs.join(" ");
   const open = blipAttrs.length ? `<a:blip ${attrs}` : "<a:blip";
@@ -160,8 +161,9 @@ function picXml(
   const blip = blipContent ? `${open}>${blipContent}</a:blip>` : `${open}/>`;
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
   const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
+  const publishedAttr = publishedObjectAttrs(img);
   return (
-    `<xdr:pic><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
+    `<xdr:pic${publishedAttr}><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
     `<xdr:blipFill>${blip}${srcRect}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
     `<xdr:spPr${bwModeAttr}>${spPr}</xdr:spPr></xdr:pic>`
   );
@@ -200,6 +202,7 @@ export function graphicFrameXml(
     frameLocks?: GraphicFrameLockingOptions;
     macro?: string;
     hyperlink?: TextHyperlinkOptions;
+    fPublished?: boolean;
   } = {},
 ): string {
   // Locks are optional in CT_NonVisualGraphicFrameProperties — emit them only
@@ -213,9 +216,9 @@ export function graphicFrameXml(
   const cNvGraphicFramePr = locks
     ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
     : "<xdr:cNvGraphicFramePr/>";
-  const macroAttr = extras.macro === undefined ? "" : ` macro="${escapeXml(extras.macro)}"`;
+  const objectAttrs = `${macroAttr(extras.macro)}${publishedObjectAttrs(extras)}`;
   return (
-    `<xdr:graphicFrame${macroAttr}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name, hlinkClickXml(extras.hyperlink, ctx))}` +
+    `<xdr:graphicFrame${objectAttrs}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name, hlinkClickXml(extras.hyperlink, ctx))}` +
     `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
     `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
     `<a:graphic><a:graphicData uri="${C_URI}">` +
@@ -230,13 +233,15 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
   // because the position comes from the cell markers.
   const anchor = { toCol: chart.col + 9, toRow: chart.row + 16, ...chart };
   const clientData = clientDataXml(chart);
-  const isTwoCell = (anchor.anchorType ?? ANCHOR_TYPES.twoCell) === ANCHOR_TYPES.twoCell;
-  const cx = isTwoCell ? 0 : convertToEmu(anchor.extentCx ?? DEFAULT_EXTENT_CX);
-  const cy = isTwoCell ? 0 : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
+  const anchorType = anchor.anchorType ?? ANCHOR_TYPES.twoCell;
+  const cellAnchored = anchorType === ANCHOR_TYPES.twoCell || anchorType === ANCHOR_TYPES.oneCell;
+  const cx = cellAnchored ? 0 : convertToEmu(anchor.extentCx ?? DEFAULT_EXTENT_CX);
+  const cy = cellAnchored ? 0 : convertToEmu(anchor.extentCy ?? DEFAULT_EXTENT_CY);
   const frame = graphicFrameXml(id, chart, `Chart ${id}`, chart.rId, cx, cy, ctx, {
     frameLocks: chart.frameLocks,
     macro: chart.macro,
     hyperlink: chart.hyperlink,
+    fPublished: chart.fPublished,
   });
   return wrapAnchor(anchor, `${frame}${clientData}`);
 }
@@ -261,9 +266,9 @@ export function stringifySmartArt(
   const cNvGraphicFramePr = locks
     ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
     : "<xdr:cNvGraphicFramePr/>";
-  const macroAttr = smartArt.macro === undefined ? "" : ` macro="${escapeXml(smartArt.macro)}"`;
+  const objectAttrs = `${macroAttr(smartArt.macro)}${publishedObjectAttrs(smartArt)}`;
   const frame =
-    `<xdr:graphicFrame${macroAttr}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, smartArt, `SmartArt ${id}`)}` +
+    `<xdr:graphicFrame${objectAttrs}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, smartArt, `SmartArt ${id}`)}` +
     `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
     `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
     `<a:graphic><a:graphicData uri="${DGM_URI}">` +
@@ -278,6 +283,7 @@ function buildShapeContent(
     textBox?: boolean;
     hyperlink?: TextHyperlinkOptions;
     locking?: ShapeLockingOptions;
+    fPublished?: boolean;
   },
   id: number,
   fallbackName: string,
@@ -294,11 +300,12 @@ function buildShapeContent(
     ? `<xdr:txBody>${textBodyDesc.stringify(textBody, ctx)}</xdr:txBody>`
     : "";
   const txBoxAttr = shape.textBox === undefined ? "" : ` txBox="${shape.textBox ? 1 : 0}"`;
+  const publishedAttr = publishedObjectAttrs(shape);
   const locksXml = shape.locking ? (shapeLockingDesc.stringify(shape.locking, ctx) ?? "") : "";
   const cNvSpPr = locksXml
     ? `<xdr:cNvSpPr${txBoxAttr}>${locksXml}</xdr:cNvSpPr>`
     : `<xdr:cNvSpPr${txBoxAttr}/>`;
-  return `<xdr:sp${attrs}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(shape.hyperlink, ctx))}${cNvSpPr}</xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
+  return `<xdr:sp${attrs}${publishedAttr}><xdr:nvSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(shape.hyperlink, ctx))}${cNvSpPr}</xdr:nvSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}${txBodyXml}</xdr:sp>`;
 }
 
 /** Build the inner xdr:cxnSp content (nvCxnSpPr + spPr). */
@@ -314,6 +321,7 @@ function buildConnectorContent(
     startConnection?: EndpointConnectionOptions;
     endConnection?: EndpointConnectionOptions;
     style?: DefaultShapeStyleOptions;
+    fPublished?: boolean;
   },
 ): string {
   const spPrXml = shapePropertiesDesc.stringify(spPr, ctx) ?? "";
@@ -332,7 +340,8 @@ function buildConnectorContent(
   const cNvCxnSpPr = cNvCxnSpPrInner.length
     ? `<xdr:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</xdr:cNvCxnSpPr>`
     : "<xdr:cNvCxnSpPr/>";
-  return `<xdr:cxnSp${attrs}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(cNvPr?.hyperlink, ctx))}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}</xdr:cxnSp>`;
+  const publishedAttr = publishedObjectAttrs({ fPublished: connector?.fPublished });
+  return `<xdr:cxnSp${attrs}${publishedAttr}><xdr:nvCxnSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, fallbackName, hlinkClickXml(cNvPr?.hyperlink, ctx))}${cNvCxnSpPr}</xdr:nvCxnSpPr><xdr:spPr>${spPrXml}</xdr:spPr>${styleXml}</xdr:cxnSp>`;
 }
 
 export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContext): string {
@@ -416,4 +425,12 @@ function macroTextlinkAttrs(shape: { macro?: string; textlink?: string }): strin
   if (shape.macro !== undefined) a.push(`macro="${escapeXml(shape.macro)}"`);
   if (shape.textlink !== undefined) a.push(`textlink="${escapeXml(shape.textlink)}"`);
   return a.length ? " " + a.join(" ") : "";
+}
+
+function macroAttr(macro: string | undefined): string {
+  return macro === undefined ? "" : ` macro="${escapeXml(macro)}"`;
+}
+
+function publishedObjectAttrs(source: { fPublished?: boolean }): string {
+  return source.fPublished === undefined ? "" : ` fPublished="${source.fPublished ? 1 : 0}"`;
 }

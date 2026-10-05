@@ -26,7 +26,10 @@ import {
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
-import { documentNamespaceAttributes } from "@parts/document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  documentNamespaceDialect,
+} from "@parts/document/document-attributes";
 import type {
   BackgroundRawMediaOptions,
   DocumentBackgroundOptions,
@@ -151,14 +154,14 @@ export function stringifyParagraph(
   // Text shorthand — the run is `{ text }` by construction (no rPr/break/children/rsid),
   // so build the bare <w:r> directly instead of walking stringifyRun's full dispatch.
   if (resolved.text !== undefined) {
-    body += `<w:r><w:t xml:space="preserve">${escapeXml(String(resolved.text))}</w:t></w:r>`;
+    body += `<w:r>${textElementXml("w:t", String(resolved.text), resolved.preserveSpace)}</w:r>`;
   }
 
   // Children
   if (resolved.children) {
     for (const child of resolved.children) {
       if (typeof child === "string") {
-        body += `<w:r><w:t xml:space="preserve">${escapeXml(child)}</w:t></w:r>`;
+        body += `<w:r>${textElementXml("w:t", child)}</w:r>`;
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, pageBreak, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
@@ -372,8 +375,8 @@ function stringifyTextbox(
 
 // ── Document body ──
 
-/** Document-level namespace string (cached, MS Word declaration order). */
-const DOC_NS = documentNamespaceAttributes([
+/** Document-level namespace keys (MS Word declaration order). */
+const DOC_NAMESPACE_KEYS = [
   "wpc",
   "mc",
   "o",
@@ -406,7 +409,7 @@ const DOC_NS = documentNamespaceAttributes([
   "w16",
   "w16sdtdh",
   "w16se",
-]);
+] as const;
 
 /**
  * Stringify the complete document.xml from context data.
@@ -428,7 +431,11 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
   const conformanceAttr = ctx._options.conformance
     ? ` w:conformance="${ctx._options.conformance}"`
     : "";
-  parts.push(`<w:document ${DOC_NS} mc:Ignorable="w14 w15 wp14"${conformanceAttr}>`);
+  const docNs = documentNamespaceAttributesInDialect(
+    DOC_NAMESPACE_KEYS,
+    documentNamespaceDialect(ctx),
+  );
+  parts.push(`<w:document ${docNs} mc:Ignorable="w14 w15 wp14"${conformanceAttr}>`);
 
   // Background (if any)
   if (ctx._options.background) {
@@ -478,6 +485,11 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
   parts.push("</w:body></w:document>");
 
   return dedupeRevisionIds(parts.join(""));
+}
+
+function textElementXml(tag: string, text: string, preserve?: boolean): string {
+  const attr = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text) ? ' xml:space="preserve"' : "";
+  return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
 
 // Revision markers carry document-unique @w:id values (the SDK enforces
@@ -876,7 +888,7 @@ export function parseParagraphProperties(
   if (framePr) {
     // Mutable superset of the FrameOptions union members — cast once at the end.
     const frame: {
-      type?: "absolute" | "alignment";
+      type?: "absolute" | "alignment" | "mixed";
       position?: { x?: number | UniversalMeasure; y?: number | UniversalMeasure };
       alignment?: { x?: string; y?: string };
       anchor?: { horizontal?: string; vertical?: string };
@@ -903,10 +915,26 @@ export function parseParagraphProperties(
     const y = attrMeasure(framePr, "w:y") as number | UniversalMeasure;
     const xAlign = attr(framePr, "w:xAlign");
     const yAlign = attr(framePr, "w:yAlign");
-    if (x !== undefined || y !== undefined) {
+    const hasPosition = x !== undefined || y !== undefined;
+    const hasAlignment = xAlign !== undefined || yAlign !== undefined;
+    if (hasPosition && hasAlignment) {
+      frame.type = "mixed";
+      if (hasPosition) {
+        frame.position = {
+          ...(x !== undefined ? { x } : {}),
+          ...(y !== undefined ? { y } : {}),
+        };
+      }
+      if (hasAlignment) {
+        frame.alignment = {
+          ...(xAlign !== undefined ? { x: xAlign } : {}),
+          ...(yAlign !== undefined ? { y: yAlign } : {}),
+        };
+      }
+    } else if (hasPosition) {
       frame.type = "absolute";
       frame.position = { ...(x !== undefined ? { x } : {}), ...(y !== undefined ? { y } : {}) };
-    } else if (xAlign || yAlign) {
+    } else if (hasAlignment) {
       frame.type = "alignment";
       frame.alignment = {
         ...(xAlign ? { x: xAlign } : {}),
@@ -1554,6 +1582,9 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
       ctx.docx.partRefs.partHyperlinks.get(ctx.currentPart)?.get(rId) ??
       ctx.docx.partRefs.hyperlinks.get(rId);
     if (target) hl.url = target;
+    const sourceRelationshipId = /^rId(\d+)$/.exec(rId)?.[1];
+    if (target && sourceRelationshipId !== undefined)
+      hl.sourceRelationshipId = Number(sourceRelationshipId);
   }
   const anchor = attr(child, "w:anchor");
   if (anchor) hl.anchor = anchor;

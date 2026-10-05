@@ -20,9 +20,11 @@ export type { VolTypeOptions } from "./workbook/types";
 const SML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
 /** Emit the complete `<volTypes>` root element for xl/volTypes.xml. */
-export function buildVolTypesXml(volTypes: readonly VolTypeOptions[]): string {
+export function buildVolTypesXml(volTypes: readonly VolTypeOptions[], count?: number): string {
   if (volTypes.length === 0) return "";
-  const parts: string[] = [`<volTypes xmlns="${SML_NS}" count="${volTypes.length}">`];
+  const parts: string[] = [
+    `<volTypes xmlns="${SML_NS}"${count !== undefined ? ` count="${count}"` : ""}>`,
+  ];
   for (const vt of volTypes) {
     const vtType = vt.type ?? "realTimeData";
     const mains = vt.mains ?? [];

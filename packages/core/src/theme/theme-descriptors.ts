@@ -8,7 +8,7 @@
  * @module
  */
 
-import { findChild } from "@office-open/xml";
+import { attr, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../descriptor";
@@ -52,6 +52,23 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
 
     const customColors = parseCustomColors(findChild(el, "a:custClrLst"), ctx);
     if (customColors) result.customColors = customColors;
+
+    const themeFamily = findChild(el, "a:extLst")
+      ?.elements?.find(
+        (child) =>
+          child.type === "element" &&
+          child.name === "a:ext" &&
+          attr(child, "uri") === "{05A4C25C-085E-4340-85A3-A5531E510DB2}",
+      )
+      ?.elements?.find((child) => child.type === "element" && child.name === "thm15:themeFamily");
+    if (themeFamily) {
+      const name = attr(themeFamily, "name");
+      const id = attr(themeFamily, "id");
+      const vid = attr(themeFamily, "vid");
+      if (name !== undefined && id !== undefined && vid !== undefined) {
+        result.themeFamily = { name, id, vid };
+      }
+    }
 
     return result as ThemeOptions;
   },

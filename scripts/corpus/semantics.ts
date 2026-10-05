@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import * as path from "node:path";
 
 import { unzipSync } from "fflate";
 
@@ -43,18 +44,46 @@ const IGNORED_ATTRIBUTES = new Set(["mc:Ignorable"]);
 const STRICT_URI_PREFIX = "http://purl.oclc.org/ooxml/";
 const TRANSITIONAL_URI_PREFIX = "http://schemas.openxmlformats.org/";
 
+const TRANSITIONAL_URI_ALIASES = new Map([
+  [
+    "officeDocument/2006/relationships/extendedProperties",
+    "officeDocument/2006/relationships/extended-properties",
+  ],
+]);
+
 function canonicalAttributeValue(name: string, value: string): string {
+  if (value === "on" || value === "true") return "1";
+  if (value === "off" || value === "false") return "0";
   if (name === "Type" || name === "uri" || name === "Namespace") {
-    return value.startsWith(STRICT_URI_PREFIX)
-      ? `${TRANSITIONAL_URI_PREFIX}${value.slice(STRICT_URI_PREFIX.length)}`
-      : value;
+    if (value.startsWith(STRICT_URI_PREFIX)) {
+      const path = value.slice(STRICT_URI_PREFIX.length);
+      const transitionalPath = path.replace(
+        "officeDocument/relationships/",
+        "officeDocument/2006/relationships/",
+      );
+      const alias = TRANSITIONAL_URI_ALIASES.get(transitionalPath);
+      return `${TRANSITIONAL_URI_PREFIX}${alias ?? transitionalPath}`;
+    }
+    return value;
   }
   return value;
 }
 
-function canonicalNode(element: Element, path = ""): CanonicalNode {
+function canonicalNode(
+  element: Element,
+  path = "",
+  references?: Map<string, string>,
+): CanonicalNode {
   const name = element.name ?? "";
   const childPath = `${path}/${name}`;
+  if (name === "mc:AlternateContent") {
+    const choice = (element.elements ?? []).find((child) => child.name === "mc:Choice");
+    if (choice) return canonicalNode(choice, `${childPath}/mc:Choice`, references);
+  }
+  if (name === "mc:Choice") {
+    const content = (element.elements ?? []).find((child) => child.type === "element");
+    if (content) return canonicalNode(content, childPath);
+  }
   const isRelationship = name === "Relationship" && path.includes("_rels/");
   const attributes = Object.fromEntries(
     Object.entries(element.attributes ?? {})
@@ -63,27 +92,40 @@ function canonicalNode(element: Element, path = ""): CanonicalNode {
       .filter(([attributeName]) => !IGNORED_ATTRIBUTES.has(attributeName))
       .map(([attributeName, value]) => [
         attributeName,
-        canonicalAttributeValue(attributeName, String(value ?? "")),
+        references && attributeName.startsWith("r:")
+          ? (references.get(String(value ?? "")) ??
+            canonicalAttributeValue(attributeName, String(value ?? "")))
+          : canonicalAttributeValue(attributeName, String(value ?? "")),
       ])
       .sort(([left], [right]) => left.localeCompare(right)),
   );
-  const text = (element.elements ?? [])
+  const rawText = (element.elements ?? [])
     .filter((child) => child.type === "text" || child.type === "cdata")
     .map((child) => String(child.text ?? child.cdata ?? ""))
     .join("");
+  const text =
+    element.name === "v" && rawText !== "" && Number.isFinite(Number(rawText))
+      ? String(Number(rawText))
+      : rawText;
   return {
     name,
     attributes,
     text: element.attributes?.["xml:space"] === "preserve" ? text : text.trim(),
     children: (element.elements ?? [])
       .filter((child): child is Element => child.type === "element")
-      .map((child) => canonicalNode(child, childPath)),
+      .map((child) => canonicalNode(child, childPath, references)),
   };
 }
 
-function sortUnorderedChildren(node: CanonicalNode, path: string): CanonicalNode {
+function sortUnorderedChildren(
+  node: CanonicalNode,
+  path: string,
+  references?: Map<string, string>,
+): CanonicalNode {
   const childPath = `${path}/${node.name}`;
-  const children = node.children.map((child) => sortUnorderedChildren(child, childPath));
+  const children = node.children.map((child) =>
+    sortUnorderedChildren(child, childPath, references),
+  );
   const unorderedRoot =
     UNORDERED_PART_PATHS.has(path) || path === "[Content_Types].xml" || path.endsWith(".rels");
   return {
@@ -112,10 +154,14 @@ function canonicalAttributes(element: Element): string {
 }
 
 function canonicalText(element: Element): string {
-  const text = (element.elements ?? [])
+  const rawText = (element.elements ?? [])
     .filter((child) => child.type === "text" || child.type === "cdata")
     .map((child) => String(child.text ?? child.cdata ?? ""))
     .join("");
+  const text =
+    element.name === "v" && rawText !== "" && Number.isFinite(Number(rawText))
+      ? String(Number(rawText))
+      : rawText;
   return element.attributes?.["xml:space"] === "preserve" ? text : text.trim();
 }
 
@@ -155,9 +201,13 @@ export function canonicalXmlDigest(element: Element | undefined): string {
 export function canonicalXmlNodes(
   element: Element | undefined,
   partPath = "",
+  references?: Map<string, string>,
 ): CanonicalNode | undefined {
-  const root = element && element.type === "element" ? canonicalNode(element, partPath) : undefined;
-  return root && sortUnorderedChildren(root, partPath);
+  const root =
+    element && element.type === "element"
+      ? canonicalNode(element, partPath, references)
+      : undefined;
+  return root && sortUnorderedChildren(root, partPath, references);
 }
 
 function attributeKey(node: CanonicalNode): string {
@@ -264,6 +314,10 @@ export function explainSemanticPartDiff(
   partPath: string,
   source: Uint8Array,
   output: Uint8Array | undefined,
+  references?: {
+    source?: Map<string, string> | undefined;
+    output?: Map<string, string> | undefined;
+  },
 ): SemanticPartDiff[] {
   const kind = semanticPartKind(partPath);
   if (!output)
@@ -277,10 +331,49 @@ export function explainSemanticPartDiff(
   }
   const sourceXml = parseCanonicalXml(decodeXmlBytes(source));
   const outputXml = parseCanonicalXml(decodeXmlBytes(output));
-  const sourceNode = canonicalXmlNodes(sourceXml, partPath);
-  const outputNode = canonicalXmlNodes(outputXml, partPath);
+  const sourceNode = canonicalXmlNodes(sourceXml, partPath, references?.source);
+  const outputNode = canonicalXmlNodes(outputXml, partPath, references?.output);
   const details = compareNodes(partPath, sourceNode, outputNode);
   return details.map((detail) => ({ path: partPath, kind, ...detail }));
+}
+
+function relationshipPath(partPath: string): string {
+  const separator = partPath.lastIndexOf("/");
+  const directory = separator === -1 ? "" : partPath.slice(0, separator);
+  const fileName = separator === -1 ? partPath : partPath.slice(separator + 1);
+  return `${directory ? `${directory}/` : ""}_rels/${fileName}.rels`;
+}
+
+function resolveRelationshipTarget(ownerPath: string, target: string): string {
+  if (/^[a-z]+:\/\//i.test(target) || target.startsWith("/")) return target;
+  const separator = ownerPath.lastIndexOf("/");
+  const directory = separator === -1 ? "." : ownerPath.slice(0, separator);
+  return path.posix.normalize(path.posix.join(directory, target));
+}
+
+function relationshipReferences(
+  archive: Record<string, Uint8Array>,
+  partPath: string,
+): Map<string, string> | undefined {
+  const rels = archive[relationshipPath(partPath)];
+  if (!rels) return undefined;
+  const root = parseCanonicalXml(decodeXmlBytes(rels));
+  const references = new Map<string, string>();
+  for (const relationship of root?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const id = relationship.attributes?.["Id"];
+    const type = relationship.attributes?.["Type"];
+    const target = relationship.attributes?.["Target"];
+    if (id === undefined || type === undefined || target === undefined) continue;
+    const mode = relationship.attributes?.["TargetMode"] ?? "Internal";
+    const normalizedTarget =
+      mode === "External" ? target : resolveRelationshipTarget(partPath, target);
+    references.set(
+      String(id),
+      `${canonicalAttributeValue("Type", String(type))}|${mode}|${normalizedTarget}`,
+    );
+  }
+  return references.size > 0 ? references : undefined;
 }
 
 function sortedElementXml(
@@ -359,11 +452,19 @@ export function archiveSemanticDiffDetails(
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
     if (path.endsWith("/")) continue;
+    const references =
+      /\.xml$/i.test(path) && !path.endsWith(".rels")
+        ? {
+            source: relationshipReferences(sourceArchive, path),
+            output: relationshipReferences(outputArchive, path),
+          }
+        : undefined;
     diffs.push(
       ...explainSemanticPartDiff(
         path,
         sourceArchive[path] ?? new Uint8Array(),
         outputArchive[path],
+        references,
       ),
     );
   }

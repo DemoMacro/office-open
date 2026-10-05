@@ -126,6 +126,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   fonts?: EmbeddedFontOptions[];
   /** Document conformance class (w:document/`@w:conformance`). */
   conformance?: "strict" | "transitional";
+  /** OOXML namespace dialect detected from the source; round-trip only. */
+  dialect?: "transitional" | "strict";
   /** Glossary document — building blocks (Quick Parts) */
   glossary?: GlossaryDocumentOptions;
   /** Document settings (word/settings.xml). */

@@ -86,6 +86,8 @@ export interface TableStyleInfoOptions {
 }
 
 export interface TableColumnOptions {
+  /** Stable column id (CT_TableColumn `@id`); fresh columns derive from position. */
+  id?: number;
   /** Column name (used in header row) */
   name: string;
   totalsRowFunction?: TotalsRowFunction;
@@ -116,6 +118,8 @@ export interface TableColumnOptions {
   totalsRowCellStyle?: string;
   /** XML mapping (CT_XmlColumnPr) — binds the column to an XML map */
   mapping?: XmlColumnPropertiesOptions;
+  /** Trailing column extension (CT_TableColumn/extLst) — round-trip only. */
+  ext?: string;
 }
 
 export interface TableOptions {
@@ -259,7 +263,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     p.push(`<tableColumns count="${columns.length}">`);
     for (const [i, col] of columns.entries()) {
       const colAttrs: Record<string, string | number | boolean | undefined> = {
-        id: i + 1,
+        id: col.id ?? i + 1,
         name: col.name,
       };
 
@@ -305,6 +309,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         xpAttrs.push(`xmlDataType="${escapeXml(xp.xmlDataType)}"`);
         inner.push(`<xmlColumnPr ${xpAttrs.join(" ")}/>`);
       }
+      if (col.ext) inner.push(`<extLst>${col.ext}</extLst>`);
 
       if (inner.length > 0) {
         p.push(`<tableColumn${attrs(colAttrs)}>${inner.join("")}</tableColumn>`);
@@ -385,6 +390,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         if (colEl.name !== "tableColumn") continue;
         // Column id is derived from position at stringify (i+1); not stored.
         const col: Partial<TableColumnOptions> = {};
+        const id = attrNum(colEl, "id");
+        if (id !== undefined) col.id = id;
         col.name = attr(colEl, "name") ?? "";
         if (attr(colEl, "totalsRowFunction"))
           col.totalsRowFunction = xsdTotalsRowFunction.from(
@@ -423,6 +430,11 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
             xmlDataType: attr(xcpEl, "xmlDataType") ?? "",
           };
           if (parseOnOff(attr(xcpEl, "denormalized"))) col.mapping.denormalized = true;
+        }
+        const extLstEl = findChild(colEl, "extLst");
+        if (extLstEl) {
+          const ext = (extLstEl.elements ?? []).map((child) => stringifyElement(child)).join("");
+          if (ext) col.ext = ext;
         }
         columns.push(col as TableColumnOptions);
       }

@@ -8,6 +8,12 @@ import type {
 import { describe, expect, it } from "vite-plus/test";
 
 import { parseDocument } from ".";
+import { generateDocument } from "./generate";
+
+function roundTrip(source: string): ReturnType<typeof parseDocument> {
+  const options = parseDocument(source);
+  return parseDocument(new TextDecoder().decode(generateDocument(options)));
+}
 
 function firstParagraph(source: string): ParagraphOptions {
   const children = parseDocument(source).sections[0]?.children ?? [];
@@ -83,6 +89,35 @@ describe("parseDocument RTF text and formatting", () => {
     expect(typeof paragraph === "string" ? paragraph : paragraph?.children?.[0]).toEqual({
       text: "Keep",
     });
+  });
+});
+
+describe("parseDocument RTF canonical projections", () => {
+  it("preserves metadata and run details through RTF round trip", () => {
+    const source = String.raw`{\rtf1{\info{\edmins12}{\nofpages2}{\nofwords30}{\nofchars150}{\nofcharsws180}}{\super Up}{\nosupersub normal}{\sub Down}{\strike struck}}`;
+    const parsed = parseDocument(source);
+    expect(parsed.appProperties).toEqual({
+      totalTime: 12,
+      pages: 2,
+      words: 30,
+      characters: 150,
+      charactersWithSpaces: 180,
+    });
+    const paragraph = firstParagraph(source);
+    expect(runs(paragraph)).toEqual([
+      { verticalAlign: "superscript", text: "Up" },
+      { verticalAlign: "baseline", text: "normal" },
+      { verticalAlign: "subscript", text: "Down" },
+      { strike: true, text: "struck" },
+    ]);
+    expect(roundTrip(source)).toEqual(parsed);
+  });
+
+  it("preserves paragraph style references through RTF round trip", () => {
+    const source = String.raw`{\rtf1{\stylesheet{\s7 Base;}}\s7 Body\par}`;
+    const parsed = parseDocument(source);
+    expect(firstParagraph(source).style).toBe("rtf-style-7");
+    expect(roundTrip(source)).toEqual(parsed);
   });
 });
 

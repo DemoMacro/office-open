@@ -41,9 +41,6 @@ export function buildRPrXml(
 ): string {
   if (!pr) return "";
   const parts: string[] = [];
-  if (pr.font) parts.push(`<rFont val="${escapeXml(pr.font)}"/>`);
-  if (pr.charset !== undefined) parts.push(`<charset val="${pr.charset}"/>`);
-  if (pr.family !== undefined) parts.push(`<family val="${pr.family}"/>`);
   if (pr.bold) parts.push("<b/>");
   if (pr.italic) parts.push("<i/>");
   if (pr.strike) parts.push("<strike/>");
@@ -51,6 +48,11 @@ export function buildRPrXml(
   if (pr.shadow) parts.push("<shadow/>");
   if (pr.condense) parts.push("<condense/>");
   if (pr.extend) parts.push("<extend/>");
+  // val="none" is explicit: a bare <u/> means underline single, so omitting
+  // the attribute would flip none → single on parse.
+  if (pr.underline === "single") parts.push("<u/>");
+  else if (pr.underline) parts.push(`<u val="${pr.underline}"/>`);
+  if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
   if (pr.color) {
     // parseRPr encodes the non-rgb channels in the same string: a short bare
     // number (≤3 digits) is the legacy palette index, "theme:N" a theme slot.
@@ -68,10 +70,9 @@ export function buildRPrXml(
       parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
     }
   }
-  if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
-  // val="none" is explicit: a bare <u/> means underline single, so omitting
-  // the attribute would flip none → single on parse.
-  if (pr.underline) parts.push(`<u val="${pr.underline}"/>`);
+  if (pr.font) parts.push(`<rFont val="${escapeXml(pr.font)}"/>`);
+  if (pr.charset !== undefined) parts.push(`<charset val="${pr.charset}"/>`);
+  if (pr.family !== undefined) parts.push(`<family val="${pr.family}"/>`);
   if (pr.vertAlign) parts.push(`<vertAlign val="${pr.vertAlign}"/>`);
   if (pr.scheme) parts.push(`<scheme val="${pr.scheme}"/>`);
   return parts.length > 0 ? `<rPr>${parts.join("")}</rPr>` : "";

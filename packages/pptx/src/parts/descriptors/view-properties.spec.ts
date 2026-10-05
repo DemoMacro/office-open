@@ -65,4 +65,12 @@ describe("viewPropsDesc round-trip", () => {
     const result = roundTrip(opts);
     expect(result.lastView).toBe("notesView");
   });
+
+  it("round-trips lastView slideThumbnailView", () => {
+    const opts: ViewPropertiesOptions = {
+      lastView: "slideThumbnailView",
+    };
+    const result = roundTrip(opts);
+    expect(result.lastView).toBe("slideThumbnailView");
+  });
 });

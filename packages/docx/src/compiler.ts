@@ -38,6 +38,10 @@ import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/cor
 import type { OoxmlPackageVariant } from "@office-open/core";
 import { buildThemeXml } from "@office-open/core/theme";
 import type { DocumentOptions } from "@parts/core-properties";
+import {
+  documentNamespaceDialect,
+  type DocumentNamespaceDialect,
+} from "@parts/document/document-attributes";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import type { MailMergeOptions } from "@parts/settings/settings";
 
@@ -94,6 +98,27 @@ const DOCX_MEDIA_CONTENT_TYPES: Record<string, string> = {
   xls: "application/vnd.ms-excel",
   xlsb: "application/vnd.ms-excel.sheet.binary.macroEnabled.12",
 };
+
+function useStrictRelationshipTypes(files: Zippable, dialect: DocumentNamespaceDialect): void {
+  if (dialect !== "strict") return;
+  for (const [path, data] of Object.entries(files)) {
+    if (!path.endsWith(".rels")) continue;
+    const bytes =
+      data instanceof Uint8Array
+        ? data
+        : Array.isArray(data) && data[0] instanceof Uint8Array
+          ? data[0]
+          : undefined;
+    if (!bytes) continue;
+    const xml = new TextDecoder()
+      .decode(bytes)
+      .replaceAll(
+        /Type="http:\/\/schemas\.openxmlformats\.org\/officeDocument\/2006\/relationships\//g,
+        'Type="http://purl.oclc.org/ooxml/officeDocument/relationships/',
+      );
+    files[path] = Array.isArray(data) ? [encoder.encode(xml), data[1]] : encoder.encode(xml);
+  }
+}
 
 /** Extended context for header/footer part stringification. */
 type DocxContext = BodyContext;
@@ -195,6 +220,7 @@ export function compileDocument(
   // Guard: drop passthrough rels whose target part never made it into the
   // package (hand-authored input) — Office refuses to open dangling rels.
   dropDanglingPassthroughRels(files, ctx._options.passthroughRelationships);
+  useStrictRelationshipTypes(files, documentNamespaceDialect(ctx));
 
   return files;
 }
@@ -305,7 +331,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ...(ctx._options.people?.length
       ? {
           People: {
-            data: XML_DECL + (peopleDesc.stringify(ctx._options.people, ctx) ?? ""),
+            data: XML_DECL + (peopleDesc.stringify(ctx._options.people, docCtx) ?? ""),
             path: "word/people.xml",
           },
         }
@@ -314,7 +340,8 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       ? {
           CommentsExtended: {
             data:
-              XML_DECL + (commentsExtendedDesc.stringify(ctx._options.commentsExtended, ctx) ?? ""),
+              XML_DECL +
+              (commentsExtendedDesc.stringify(ctx._options.commentsExtended, docCtx) ?? ""),
             path: "word/commentsExtended.xml",
           },
         }
@@ -322,7 +349,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ...(ctx._options.commentsIds != null
       ? {
           CommentsIds: {
-            data: XML_DECL + (commentsIdsDesc.stringify(ctx._options.commentsIds, ctx) ?? ""),
+            data: XML_DECL + (commentsIdsDesc.stringify(ctx._options.commentsIds, docCtx) ?? ""),
             path: "word/commentsIds.xml",
           },
         }
@@ -332,7 +359,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           CommentsExtensible: {
             data:
               XML_DECL +
-              (commentsExtensibleDesc.stringify(ctx._options.commentsExtensible, ctx) ?? ""),
+              (commentsExtensibleDesc.stringify(ctx._options.commentsExtensible, docCtx) ?? ""),
             path: "word/commentsExtensible.xml",
           },
         }
@@ -441,7 +468,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       : {}),
     Styles: {
       data: (() => {
-        const xmlStyles = ctx.styles.serialize();
+        const xmlStyles = ctx.styles.serialize(documentNamespaceDialect(ctx));
         return replaceNumberingPlaceholders(xmlStyles, ctx.numbering.concreteNumbering);
       })(),
       path: "word/styles.xml",

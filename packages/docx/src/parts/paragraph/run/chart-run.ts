@@ -8,7 +8,7 @@ import type { ChartSpaceOptions } from "@office-open/core/chart";
  * @module
  */
 import type { Floating } from "@parts/drawing";
-import type { GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
+import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "@parts/drawing/descriptor";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { MediaTransformation } from "@shared/media";
@@ -30,6 +30,8 @@ export interface ChartOptions extends ChartSpaceOptions {
   altText?: DocPropertiesOptions;
   /** Graphic frame locks (wp:cNvGraphicFramePr). `{}` → empty element; omit → authoring default. */
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
+  /** Word 2010 wrapper ids; round-trip only. */
+  extensionIds?: DrawingExtensionIds;
   /** Run properties of the wrapping w:r (w:rPr before w:drawing). */
   runProperties?: RunPropertiesOptions;
   /** A w:lastRenderedPageBreak shared the drawing's run (round-trip). */

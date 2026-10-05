@@ -20,6 +20,8 @@ import {
   buildBackgroundXml,
   buildPlaceholderShapes,
   type MasterPlaceholderOptions,
+  type MasterChild,
+  type StandardPlaceholderKey,
   type SlideMasterOptions,
 } from "@parts/slide-master";
 import {
@@ -33,6 +35,7 @@ import { SP_TREE_HEADER } from "@shared/constants";
 import {
   extractPlaceholderDefinition,
   PLACEHOLDER_TYPE_TO_KEY,
+  type PlaceholderKey,
   STANDARD_EMIT_KEYS,
 } from "@shared/placeholder";
 
@@ -70,6 +73,14 @@ const NS =
   'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
   'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
 
+function isPlaceholderChild(child: MasterChild): child is { placeholder: StandardPlaceholderKey } {
+  return "placeholder" in child;
+}
+
+function isStandardPlaceholderKey(key: PlaceholderKey): key is StandardPlaceholderKey {
+  return STANDARD_EMIT_KEYS.has(key);
+}
+
 // ── Descriptor ──
 
 export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, PptxWriteContext> = {
@@ -92,12 +103,21 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
     // p:spTree — standard placeholders (scaled to slide width) + custom children.
     parts.push("<p:spTree>");
     parts.push(SP_TREE_HEADER);
-    const { xml: placeholderXml, nextId } = buildPlaceholderShapes(opts.placeholders, ctx);
-    if (placeholderXml) parts.push(placeholderXml);
+    const {
+      xml: placeholderXml,
+      xmlByPlaceholder,
+      nextId,
+    } = buildPlaceholderShapes(opts.placeholders, ctx);
+    const children = opts.children ?? [];
+    if (!children.some(isPlaceholderChild) && placeholderXml) parts.push(placeholderXml);
     // Children carry explicit cNvPr ids (starting after the placeholders) so they
     // never collide with the module-level shape id counter or the placeholders.
     let childId = nextId;
-    for (const child of opts.children ?? []) {
+    for (const child of children) {
+      if (isPlaceholderChild(child)) {
+        parts.push(xmlByPlaceholder[child.placeholder] ?? "");
+        continue;
+      }
       const xml = stringifyChild(withChildId(child, childId++), ctx);
       if (xml) parts.push(xml);
     }
@@ -171,7 +191,7 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
       // spTree — structured children + derived placeholder positions.
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
-        const children: SlideChild[] = [];
+        const children: MasterChild[] = [];
         const placeholders: MasterPlaceholderOptions = {};
         for (const child of spTree.elements ?? []) {
           if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;
@@ -182,7 +202,10 @@ export const slideMasterDesc: CustomDescriptor<SlideMasterDescriptorOptions, Ppt
               // Standard five re-emit from the map (fresh reference
               // positions); any other placeholder type stays in the spTree
               // children verbatim — the emit helper has no branch for it.
-              if (STANDARD_EMIT_KEYS.has(ph.key)) continue;
+              if (isStandardPlaceholderKey(ph.key)) {
+                children.push({ placeholder: ph.key });
+                continue;
+              }
             }
           }
           const parsed = parseChild(child, ctx);

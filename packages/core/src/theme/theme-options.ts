@@ -178,6 +178,13 @@ export interface CustomColorOptions {
   color: SolidFillOptions;
 }
 
+/** Theme family identity in the Microsoft thm15 extension. */
+export interface ThemeFamilyOptions {
+  name: string;
+  id: string;
+  vid: string;
+}
+
 /** Theme customization options (a:theme). */
 export interface ThemeOptions {
   name?: string;
@@ -187,6 +194,8 @@ export interface ThemeOptions {
   objectDefaults?: ObjectDefaultsOptions;
   extraColorSchemes?: ExtraColorSchemeOptions[];
   customColors?: CustomColorOptions[];
+  /** Theme family identity (`a:extLst/thm15:themeFamily`). */
+  themeFamily?: ThemeFamilyOptions;
 }
 
 /** Theme override (a:themeOverride / CT_BaseStylesOverride) — a per-part subset of the theme. */

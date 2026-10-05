@@ -179,9 +179,12 @@ function stringifyBullet(options: BulletOptions): string[] {
   if (options.fontFollowsText) {
     parts.push("<a:buFontTx/>");
   } else if (options.font !== undefined) {
-    parts.push(
-      `<a:buFont typeface="${options.font}" panose="020B0604020202020204" pitchFamily="34" charset="0"/>`,
-    );
+    const font = typeof options.font === "string" ? { typeface: options.font } : options.font;
+    const fontAttributes = [`typeface="${escapeXml(font.typeface)}"`];
+    if (font.panose !== undefined) fontAttributes.push(`panose="${escapeXml(font.panose)}"`);
+    if (font.pitchFamily !== undefined) fontAttributes.push(`pitchFamily="${font.pitchFamily}"`);
+    if (font.charset !== undefined) fontAttributes.push(`charset="${font.charset}"`);
+    parts.push(`<a:buFont ${fontAttributes.join(" ")}/>`);
   }
 
   // Bullet type: buNone | buChar | buAutoNum | buBlip
@@ -323,7 +326,21 @@ export function readParagraphProperties(
         style.fontFollowsText = true;
       } else {
         const buFont = findChild(el, "a:buFont");
-        if (buFont?.attributes?.["typeface"]) style.font = String(buFont.attributes["typeface"]);
+        if (buFont?.attributes?.["typeface"]) {
+          const typeface = String(buFont.attributes["typeface"]);
+          const panose = buFont.attributes["panose"];
+          const pitchFamily = buFont.attributes["pitchFamily"];
+          const charset = buFont.attributes["charset"];
+          style.font =
+            panose === undefined && pitchFamily === undefined && charset === undefined
+              ? typeface
+              : {
+                  typeface,
+                  ...(panose === undefined ? {} : { panose: String(panose) }),
+                  ...(pitchFamily === undefined ? {} : { pitchFamily: Number(pitchFamily) }),
+                  ...(charset === undefined ? {} : { charset: Number(charset) }),
+                };
+        }
       }
 
       if (buNone) {

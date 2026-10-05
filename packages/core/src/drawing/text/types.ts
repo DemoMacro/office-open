@@ -171,8 +171,8 @@ export type BulletStyleOptions = {
   sizeFollowsText?: boolean;
   /** a:buSzPts `@val` — bullet size in points. */
   sizePoints?: number;
-  /** a:buFont `@typeface` — explicit bullet font. */
-  font?: string;
+  /** a:buFont — explicit bullet font; a string is the typeface only. */
+  font?: TextFont;
   /** a:buFontTx — bullet font follows the text run font. */
   fontFollowsText?: boolean;
 };

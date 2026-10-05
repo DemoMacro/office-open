@@ -42,7 +42,10 @@ function canonicalManifestEntries(
   mediaTypes: Record<string, string>,
   packageManifest?: OcfManifestOptions,
 ): OcfManifestFileEntryOptions[] {
-  const declared = packageManifestEntries(packageManifest);
+  const filePaths = new Set(Object.keys(files));
+  const declared = packageManifestEntries(packageManifest).filter((entry) =>
+    isGeneratedManifestPath(entry.fullPath, filePaths),
+  );
   const declaredRoot = declared.find((entry) => entry.fullPath === "/");
   if (declaredRoot?.mediaType !== undefined && declaredRoot.mediaType !== mimeType)
     throw new OcfManifestError(
@@ -74,7 +77,6 @@ function canonicalManifestEntries(
     .filter((path) => !declaredPaths.has(path) && byPath.has(path))
     .map((path) => byPath.get(path)!);
   const entries = [...declared, ...appended];
-  validatePackageManifestPaths(declared, Object.keys(files));
   return entries;
 }
 
@@ -105,20 +107,8 @@ function mediaType(path: string): string {
   return imageTypes[path.split(".").pop() ?? ""] ?? "application/binary";
 }
 
-function validatePackageManifestPaths(
-  entries: readonly OcfManifestFileEntryOptions[],
-  filePaths: string[],
-): void {
-  const paths = new Set(filePaths);
-  for (const entry of entries) {
-    if (entry.fullPath === "/" || entry.fullPath === "mimetype" || paths.has(entry.fullPath))
-      continue;
-    const directoryPath = entry.fullPath.endsWith("/") ? entry.fullPath : `${entry.fullPath}/`;
-    if (filePaths.some((path) => path.startsWith(directoryPath))) continue;
-    throw new OcfManifestError("Manifest declares missing package path: " + entry.fullPath, {
-      fullPath: entry.fullPath,
-    });
-  }
+function isGeneratedManifestPath(path: string, filePaths: Set<string>): boolean {
+  return path === "/" || path === "mimetype" || path.endsWith("/") || filePaths.has(path);
 }
 
 function directoryPaths(paths: string[]): string[] {
@@ -140,9 +130,17 @@ export function generateOcf(
   mediaTypes: Record<string, string> = {},
   packageManifest?: OcfManifestOptions,
 ): Uint8Array {
+  const declaredDirectories = new Set(
+    (packageManifest?.entries ?? [])
+      .map((entry) => entry.fullPath)
+      .filter((path) => path.endsWith("/") && path !== "/"),
+  );
   return zipSync(
     {
       mimetype: [strToU8(mimeType), { level: 0 }],
+      ...Object.fromEntries(
+        [...declaredDirectories].map((path) => [path, [new Uint8Array(), { level: 0 }]]),
+      ),
       ...Object.fromEntries(
         Object.entries(files).map(([path, content]) => [
           path,
@@ -164,6 +162,7 @@ export function readOcf(
   const binaries: Record<string, Uint8Array> = {};
   for (const [path, bytes] of Object.entries(entries)) {
     if (path === "mimetype") continue;
+    if (path.endsWith("/")) continue;
     if (path.endsWith(".xml")) {
       files[path] = strFromU8(bytes);
     } else {
@@ -187,6 +186,9 @@ export function readOcf(
     throw new OcfMimeTypeError(expectedMimeType, mimeType);
   validateManifestPaths(
     manifest,
+    Object.keys(entries).filter(
+      (path) => !path.endsWith("/") && path !== "mimetype" && path !== "META-INF/manifest.xml",
+    ),
     Object.keys(entries).filter((path) => path !== "mimetype" && path !== "META-INF/manifest.xml"),
   );
   return { files, binaries, manifest };
@@ -200,25 +202,31 @@ export function hasOcfManifestOverlay(manifest: OcfManifestOptions): boolean {
         entry.preferredViewMode !== undefined ||
         entry.size !== undefined ||
         entry.encryptionData !== undefined ||
-        (entry.version !== undefined && entry.fullPath !== "/"),
+        (entry.version !== undefined && entry.fullPath !== "/") ||
+        (entry.fullPath.endsWith("/") && entry.fullPath !== "/"),
     )
   );
 }
 
-function validateManifestPaths(manifest: OcfManifestOptions, actualPaths: string[]): void {
+function validateManifestPaths(
+  manifest: OcfManifestOptions,
+  actualPaths: string[],
+  retainedPaths: string[] = actualPaths,
+): void {
   const declared = new Set(manifest.entries.map((entry) => entry.fullPath));
   for (const path of actualPaths) {
     if (!declared.has(path)) {
-      throw new OcfManifestError(`Manifest does not declare ${path}`);
+      manifest.entries.push({ fullPath: path, mediaType: mediaType(path) });
     }
   }
   const actualSet = new Set(actualPaths);
   manifest.entries = manifest.entries.filter((entry) => {
     if (entry.fullPath === "/" || entry.fullPath === "mimetype") return true;
     const directoryPath = entry.fullPath.endsWith("/") ? entry.fullPath : `${entry.fullPath}/`;
-    return (
-      actualSet.has(entry.fullPath) || actualPaths.some((path) => path.startsWith(directoryPath))
-    );
+    return entry.fullPath.endsWith("/")
+      ? actualSet.has(entry.fullPath) ||
+          retainedPaths.some((path) => path.startsWith(directoryPath))
+      : actualSet.has(entry.fullPath);
   });
 }
 

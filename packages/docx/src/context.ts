@@ -358,6 +358,7 @@ export class DocxWriteContext implements WriteContext {
           characterStyles: s.characterStyles,
           tableStyles: s.tableStyles,
           numberingStyles: s.numberingStyles,
+          styleOrder: s.styleOrder,
         });
       } else {
         // Fresh generation: factory default builtins (structured) + user
@@ -670,8 +671,12 @@ export class DocxWriteContext implements WriteContext {
    */
   private registerDocumentRel(type: RelationshipType, target: string): void {
     if (this.document.relationships.hasRelationship(type, target)) return;
+    const kind = type.split("/").pop();
     const preclaimed = (this._options.passthroughRelationships ?? []).find(
-      (r) => r.source === "word/document.xml" && r.relationshipType === type && r.target === target,
+      (r) =>
+        r.source === "word/document.xml" &&
+        r.relationshipType.split("/").pop() === kind &&
+        r.target === target,
     );
     const m = preclaimed ? /^rId(\d+)$/.exec(preclaimed.rId) : undefined;
     const id =

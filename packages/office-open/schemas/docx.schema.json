@@ -1618,7 +1618,7 @@
         },
         "bubbleSize": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
@@ -1696,13 +1696,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -1736,8 +1736,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1790,8 +1790,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1829,8 +1829,8 @@
           "type": "boolean"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1886,8 +1886,8 @@
           "type": "string"
         },
         "font": {
-          "description": "a:buFont `@typeface` — explicit bullet font.",
-          "type": "string"
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2377,6 +2377,10 @@
         "ext": {
           "description": "Raw inner XML of the chart-space trailing c:extLst (after userShapes — c14:pivotOptions' home). Round-trip only, same contract as series ext.",
           "type": "string"
+        },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds",
+          "description": "Word 2010 wrapper ids; round-trip only."
         },
         "externalData": {
           "$ref": "#/definitions/ExternalDataOptions",
@@ -2881,7 +2885,7 @@
         },
         "values": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -3257,6 +3261,10 @@
       },
       "required": ["anchors"],
       "type": "object"
+    },
+    "ChartValue": {
+      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
+      "type": ["number", "string"]
     },
     "CheckBoxControlOptions": {
       "additionalProperties": false,
@@ -5482,6 +5490,10 @@
           "description": "Size of the border in 1/8 pt",
           "type": "number"
         },
+        "space": {
+          "description": "Border shadow spacing in points (`w:space`).",
+          "type": "number"
+        },
         "style": {
           "description": "Border pattern, same vocabulary as other WordprocessingML borders",
           "enum": [
@@ -6058,6 +6070,11 @@
         "description": {
           "type": "string"
         },
+        "dialect": {
+          "description": "OOXML namespace dialect detected from the source; round-trip only.",
+          "enum": ["transitional", "strict"],
+          "type": "string"
+        },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
           "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author."
@@ -6375,6 +6392,18 @@
         "spinCount": {
           "description": "Password spin count",
           "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "DrawingExtensionIds": {
+      "additionalProperties": false,
+      "properties": {
+        "anchorId": {
+          "type": "string"
+        },
+        "editId": {
+          "type": "string"
         }
       },
       "type": "object"
@@ -7753,6 +7782,9 @@
         },
         {
           "$ref": "#/definitions/AlignmentFrameOptions"
+        },
+        {
+          "$ref": "#/definitions/MixedFrameOptions"
         }
       ],
       "description": "Union type for all frame positioning options."
@@ -8360,6 +8392,10 @@
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Group effects"
+        },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds",
+          "description": "Word 2010 wrapper ids; round-trip only."
         },
         "fill": {
           "$ref": "#/definitions/FillOptions",
@@ -11240,6 +11276,89 @@
       "required": ["width", "height"],
       "type": "object"
     },
+    "MixedFrameOptions": {
+      "additionalProperties": false,
+      "description": "Options for frames that combine a coordinate on one axis with an alignment on the other. allows `w:x`/`w:y` and `w:xAlign`/`w:yAlign` to appear independently.",
+      "properties": {
+        "alignment": {
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "enum": ["center", "inside", "left", "outside", "right"],
+              "type": "string"
+            },
+            "y": {
+              "enum": ["bottom", "center", "inside", "outside", "top"],
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "anchor": {
+          "$ref": "#/definitions/XYFrameOptions/properties/anchor"
+        },
+        "anchorLock": {
+          "description": "Lock the anchor position to prevent it from moving",
+          "type": "boolean"
+        },
+        "dropCap": {
+          "description": "Drop cap effect type",
+          "enum": ["none", "drop", "margin"],
+          "type": "string"
+        },
+        "height": {
+          "$ref": "#/definitions/XYFrameOptions/properties/height"
+        },
+        "lines": {
+          "description": "Number of lines for drop cap effect",
+          "type": "number"
+        },
+        "position": {
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ]
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "rule": {
+          "$ref": "#/definitions/XYFrameOptions/properties/rule"
+        },
+        "space": {
+          "$ref": "#/definitions/XYFrameOptions/properties/space"
+        },
+        "type": {
+          "const": "mixed",
+          "type": "string"
+        },
+        "width": {
+          "$ref": "#/definitions/XYFrameOptions/properties/width"
+        },
+        "wrap": {
+          "$ref": "#/definitions/XYFrameOptions/properties/wrap"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "ModelConnectionOptions": {
       "additionalProperties": false,
       "description": "dgm:cxn — one data-model connection.",
@@ -11590,6 +11709,10 @@
           "items": {
             "additionalProperties": false,
             "properties": {
+              "abstractId": {
+                "description": "Source w:abstractNumId; round-trip only.",
+                "type": "number"
+              },
               "aliases": {
                 "description": "Additional source w:num ids pointing at the same abstract definition with identical overrides, so each does not emit its own copy of the definition.",
                 "items": {
@@ -11630,9 +11753,23 @@
           },
           "type": "array"
         },
+        "abstractOrder": {
+          "description": "Source w:abstractNum order; round-trip only.",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
         "numIdMacAtCleanup": {
           "description": "Numbering cleanup ID (w:numIdMacAtCleanup)",
           "type": "number"
+        },
+        "numOrder": {
+          "description": "Source w:num order; round-trip only.",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
         },
         "numPicBullets": {
           "description": "Picture bullet definitions for numbering (w:numPicBullet)",
@@ -12726,6 +12863,10 @@
                   "description": "Add the target to the navigation history",
                   "type": "boolean"
                 },
+                "sourceRelationshipId": {
+                  "description": "Source document relationship number; round-trip only.",
+                  "type": "number"
+                },
                 "targetFrame": {
                   "description": "Target frame for the hyperlink",
                   "type": "string"
@@ -13546,6 +13687,9 @@
           "$ref": "#/definitions/LongHexNumber",
           "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string)."
         },
+        "preserveSpace": {
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/preserveSpace"
+        },
         "propertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID for the paragraph properties (w:rsidP)."
@@ -14275,6 +14419,10 @@
           ],
           "description": "Raised/lowered text position in points (w:position, half-points in XML)."
         },
+        "preserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
+          "type": "boolean"
+        },
         "props3d": {
           "$ref": "#/definitions/W14Props3dOptions"
         },
@@ -14999,6 +15147,10 @@
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
             },
+            "extensionIds": {
+              "$ref": "#/definitions/DrawingExtensionIds",
+              "description": "Word 2010 wrapper ids; round-trip only."
+            },
             "fileName": {
               "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
               "type": "string"
@@ -15086,6 +15238,10 @@
             },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
+            },
+            "extensionIds": {
+              "$ref": "#/definitions/DrawingExtensionIds",
+              "description": "Word 2010 wrapper ids; round-trip only."
             },
             "fallback": {
               "additionalProperties": false,
@@ -16296,6 +16452,10 @@
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
         },
+        "preserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
+          "type": "boolean"
+        },
         "props3d": {
           "$ref": "#/definitions/W14Props3dOptions"
         },
@@ -17072,13 +17232,13 @@
         },
         "xValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         },
         "yValues": {
           "items": {
-            "type": "number"
+            "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
         }
@@ -18287,6 +18447,10 @@
                 "paraId": {
                   "$ref": "#/definitions/LongHexNumber",
                   "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string)."
+                },
+                "preserveSpace": {
+                  "description": "Preserve leading/trailing spaces in text (xml:space=\"preserve\").",
+                  "type": "boolean"
                 },
                 "propertiesRsid": {
                   "$ref": "#/definitions/LongHexNumber",
@@ -19732,6 +19896,10 @@
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
         },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds",
+          "description": "Word 2010 wrapper ids; round-trip only."
+        },
         "extensions": {
           "description": "Shape-property extensions (wps:spPr/a:extLst/a:ext).",
           "items": {
@@ -20279,6 +20447,10 @@
             }
           ],
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
+        },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds",
+          "description": "Word 2010 wrapper ids; round-trip only."
         },
         "floating": {
           "$ref": "#/definitions/Floating",
@@ -21013,6 +21185,13 @@
         "roundTripped": {
           "type": "boolean"
         },
+        "styleOrder": {
+          "description": "Source order of styleId values; round-trip only.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "tableStyles": {
           "description": "Array of custom table style definitions.",
           "items": {
@@ -21211,6 +21390,10 @@
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
+        },
+        "preserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker; round-trip only.",
+          "type": "boolean"
         },
         "props3d": {
           "$ref": "#/definitions/W14Props3dOptions"
@@ -23567,6 +23750,23 @@
       ],
       "type": "string"
     },
+    "ThemeFamilyOptions": {
+      "additionalProperties": false,
+      "description": "Theme family identity in the Microsoft thm15 extension.",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "vid": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "id", "vid"],
+      "type": "object"
+    },
     "ThemeFont": {
       "description": "Theme font values used for referencing document theme fonts. Reference: in OOXML specification",
       "enum": [
@@ -23611,6 +23811,10 @@
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "themeFamily": {
+          "$ref": "#/definitions/ThemeFamilyOptions",
+          "description": "Theme family identity (`a:extLst/thm15:themeFamily`)."
         }
       },
       "type": "object"
@@ -24491,6 +24695,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
         },
@@ -25188,6 +25395,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
         },
@@ -25783,6 +25993,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "children": {
           "items": {
             "$ref": "#/definitions/VmlShapeChild"
@@ -26225,6 +26438,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
         },
@@ -26529,6 +26745,9 @@
         },
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
         },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
@@ -26860,6 +27079,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
         },
@@ -27170,6 +27392,9 @@
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
         },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
+        },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
         },
@@ -27429,6 +27654,9 @@
         },
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
         },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
@@ -27714,6 +27942,9 @@
         },
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
         },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
@@ -28226,6 +28457,36 @@
       },
       "type": "object"
     },
+    "VmlShapeElementField": {
+      "description": "Fields shared by every shape-ish element: the v: + o: attribute vocabulary (AG_AllCoreAttributes / AG_AllShapeAttributes) and the EG_ShapeElements child set.",
+      "enum": [
+        "pathElement",
+        "formulas",
+        "handles",
+        "fill",
+        "stroke",
+        "shadow",
+        "textbox",
+        "textpath",
+        "imagedata",
+        "skew",
+        "extrusion",
+        "callout",
+        "lock",
+        "clippath",
+        "signatureline",
+        "wrap",
+        "anchorlock",
+        "bordertop",
+        "borderbottom",
+        "borderleft",
+        "borderright",
+        "clientData",
+        "textdata",
+        "rawChildrenXml"
+      ],
+      "type": "string"
+    },
     "VmlShapeLayoutOptions": {
       "additionalProperties": false,
       "description": "o:shapelayout options.",
@@ -28308,6 +28569,9 @@
         },
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/childOrder"
         },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"
@@ -28712,6 +28976,13 @@
         },
         "callout": {
           "$ref": "#/definitions/VmlCalloutOptions"
+        },
+        "childOrder": {
+          "description": "Source order of modeled EG_ShapeElements children when it differs from the canonical order.",
+          "items": {
+            "$ref": "#/definitions/VmlShapeElementField"
+          },
+          "type": "array"
         },
         "chromakey": {
           "$ref": "#/definitions/VmlColor"

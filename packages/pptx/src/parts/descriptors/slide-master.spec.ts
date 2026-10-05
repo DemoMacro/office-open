@@ -162,7 +162,16 @@ describe("slideMasterDesc round-trip", () => {
         { shape: { x: 100, y: 100, width: 200, height: 200, properties: { fill: "FF0000" } } },
       ],
     });
-    expect(result.children?.length).toBe(1);
+    expect(result.children?.filter((child) => !("placeholder" in child))).toHaveLength(1);
+  });
+
+  it("preserves source order of placeholder markers and custom children", () => {
+    const xml = freshXml({
+      placeholders: { title: { x: 100, y: 200, width: 300, height: 400 } },
+      children: [{ shape: { x: 1, y: 2, width: 3, height: 4 } }, { placeholder: "title" }],
+    });
+    expect(xml.indexOf("<p:sp>")).toBeGreaterThan(-1);
+    expect(xml.indexOf('type="title"')).toBeGreaterThan(xml.indexOf("<p:sp>"));
   });
 });
 

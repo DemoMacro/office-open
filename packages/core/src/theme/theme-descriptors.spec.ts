@@ -22,6 +22,19 @@ describe("themeDesc", () => {
     expect(result.name).toBe("Office Theme");
   });
 
+  it("round-trips the theme family extension", () => {
+    const opts: ThemeOptions = {
+      themeFamily: {
+        name: "Office Theme",
+        id: "{62F939B6-93AF-4DB8-9C6B-D6C7DFDC589F}",
+        vid: "{4A3C46E8-61CC-4603-A589-7422A47A8E4A}",
+      },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<thm15:themeFamily");
+    expect(roundTrip(opts).themeFamily).toEqual(opts.themeFamily);
+  });
+
   it("round-trips color scheme", () => {
     const opts: ThemeOptions = {
       colorScheme: {

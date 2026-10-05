@@ -14,6 +14,7 @@ export const ODF_NAMESPACES = [
   'xmlns:dc="http://purl.org/dc/elements/1.1/"',
   'xmlns:xlink="http://www.w3.org/1999/xlink"',
   'xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"',
+  'xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"',
 ].join(" ");
 
 export function metaXml(options: CorePropertiesOptions): string {

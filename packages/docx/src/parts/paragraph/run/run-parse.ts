@@ -474,6 +474,7 @@ export function parseRun(
   additionRsid?: LongHexNumber;
   runPropertiesRsid?: LongHexNumber;
   deletionRsid?: LongHexNumber;
+  preserveSpace?: boolean;
 } {
   const rPr = findChild(el, "w:rPr");
   const properties = rPr ? parseRunProperties(rPr) : undefined;
@@ -481,6 +482,7 @@ export function parseRun(
   const rsid = attr(el, "w:rsidR");
   const runPropertiesRsid = attr(el, "w:rsidRPr");
   const deletionRsid = attr(el, "w:rsidDel");
+  let preserveSpace = false;
 
   for (const child of el.elements ?? []) {
     switch (child.name) {
@@ -488,12 +490,8 @@ export function parseRun(
         // already handled above
         break;
       case "w:t": {
-        const preserveSpace = attrBool(child, "xml:space");
         let text = textOf(child);
-        if (preserveSpace && text) {
-          // keep leading/trailing whitespace
-          // textOf already returns the raw text
-        }
+        preserveSpace ||= attr(child, "xml:space") === "preserve";
         children.push(text);
         break;
       }
@@ -501,6 +499,7 @@ export function parseRun(
         // Deleted text in track changes (same format as w:t)
         const text = textOf(child);
         if (text) children.push(text);
+        preserveSpace ||= attr(child, "xml:space") === "preserve";
         break;
       }
       case "w:br": {
@@ -693,7 +692,14 @@ export function parseRun(
     }
   }
 
-  return { properties, children, additionRsid: rsid, runPropertiesRsid, deletionRsid };
+  return {
+    properties,
+    children,
+    additionRsid: rsid,
+    runPropertiesRsid,
+    deletionRsid,
+    preserveSpace: preserveSpace || undefined,
+  };
 }
 
 /**
@@ -745,15 +751,15 @@ export function parsedRunToOptions(
     parsed.deletionRsid === undefined
   ) {
     const text = contentChildren[0];
-    return parsed.properties === undefined
-      ? ({ text } as RunOptions)
-      : ({ ...parsed.properties, text } as RunOptions);
+    const base = parsed.properties === undefined ? { text } : { ...parsed.properties, text };
+    return (parsed.preserveSpace ? { ...base, preserveSpace: true } : base) as RunOptions;
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
   if (parsed.additionRsid) opts.additionRsid = parsed.additionRsid;
   if (parsed.runPropertiesRsid) opts.runPropertiesRsid = parsed.runPropertiesRsid;
   if (parsed.deletionRsid) opts.deletionRsid = parsed.deletionRsid;
+  if (parsed.preserveSpace) opts.preserveSpace = true;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
   const isRefChild = (c: unknown): c is Record<string, number> =>

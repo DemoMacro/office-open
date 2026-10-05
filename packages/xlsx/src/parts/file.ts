@@ -19,7 +19,7 @@ import type {
   CellStyleXfOptions,
   ColorsOptions,
   CustomCellStyleOptions,
-  CustomTableStyleOptions,
+  TableStylesInfo,
   DxfOptions,
   FontOptions,
   FontsContainerOptions,
@@ -41,6 +41,7 @@ import type {
   VolTypeOptions,
   WebPublishObjectOptions,
   DefinedNameOptions,
+  SheetDefinition,
 } from "@parts/workbook";
 
 import type { CalcCell } from "./calc-chain";
@@ -59,6 +60,8 @@ import type { MapInfoOptions } from "./xml-mapping";
 /** Root options for a .xlsx package — maps to workbook.xml plus its satellite parts. */
 export interface WorkbookOptions extends CorePropertiesOptions {
   worksheets?: WorksheetOptions[];
+  /** Workbook <sheets> order; round-trip only. */
+  sheetDefinitions?: SheetDefinition[];
   /** Workbook-level form containers. */
   forms?: FormContainerOptions[];
   /**
@@ -100,8 +103,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   numFmts?: NumFmtEntry[];
   /** Custom color palette (CT_Colors) */
   colors?: ColorsOptions;
-  /** Custom table/pivot table styles (CT_TableStyles) */
-  tableStyles?: CustomTableStyleOptions[];
+  /** Table styles section of xl/styles.xml (CT_TableStyles), including container attributes */
+  tableStyles?: TableStylesInfo;
   /** Theme (xl/theme/theme1.xml) — structured round-trip; fresh default when omitted */
   theme?: ThemeOptions;
   /** Custom named cell styles (CT_CellStyles) */
@@ -135,6 +138,10 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   fileSharing?: FileSharingOptions;
   /** Volatile function types (xl/volTypes.xml part, CT_VolTypes root) */
   volTypes?: VolTypeOptions[];
+  /** Declared volatile-entry count (CT_VolTypes `@count`); round-trip only. */
+  volTypesCount?: number;
+  /** Source path of the volatile part; older packages use volatileDependencies.xml. */
+  volTypesPath?: string;
   /** Web publish objects (CT_WebPublishItems) */
   webPublishObjects?: WebPublishObjectOptions[];
   /** Defined names — named ranges, constants, formulas (CT_DefinedNames) */

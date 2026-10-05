@@ -16,12 +16,16 @@ import { attrs } from "@office-open/xml";
 export interface CalcCell {
   /** Cell reference, e.g. "A1" */
   reference: string;
-  /** Sheet index (1-based) */
-  sheetIndex: number;
+  /** Sheet index (1-based); omitted cells inherit the previous entry's index */
+  sheetIndex?: number;
   /** Array formula */
   array?: boolean;
-  /** Child chain — calculations farmed out to another thread (CT_CalcCell `@l`) */
+  /** Child chain — calculations farmed out to another thread (CT_CalcCell `@s`) */
   childChain?: boolean;
+  /** Calculation level increased relative to the previous entry (CT_CalcCell `@l`) */
+  newLevel?: boolean;
+  /** Calculation moved to a new dependency thread (CT_CalcCell `@t`) */
+  newThread?: boolean;
 }
 
 export interface CalcChainOptions {
@@ -40,10 +44,12 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
     for (const cell of opts.cells) {
       const cellAttrs: Record<string, string | number | boolean> = {
         r: cell.reference,
-        i: cell.sheetIndex,
       };
+      if (cell.sheetIndex !== undefined) cellAttrs.i = cell.sheetIndex;
       if (cell.array !== undefined) cellAttrs.a = cell.array;
-      if (cell.childChain !== undefined) cellAttrs.l = cell.childChain;
+      if (cell.childChain !== undefined) cellAttrs.s = cell.childChain;
+      if (cell.newLevel !== undefined) cellAttrs.l = cell.newLevel;
+      if (cell.newThread !== undefined) cellAttrs.t = cell.newThread;
       parts.push(`<c${attrs(cellAttrs)}/>`);
     }
     parts.push("</calcChain>");
@@ -53,22 +59,24 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
   parse(el, _ctx) {
     const result: Partial<CalcChainOptions> = {};
     const cells: CalcCell[] = [];
-    let sheetIndex: number | undefined;
     for (const child of el.elements ?? []) {
       if (child.name !== "c") continue;
       const r = child.attributes?.["r"];
-      const i = child.attributes?.["i"];
-      if (r && (i !== undefined || sheetIndex !== undefined)) {
+      if (r) {
         const cell: CalcCell = {
           reference: String(r),
-          sheetIndex: Number(i ?? sheetIndex),
         };
+        const i = child.attributes?.["i"];
+        if (i !== undefined) cell.sheetIndex = Number(i);
         if (child.attributes?.["a"] !== undefined)
           cell.array = parseOnOff(child.attributes["a"]) ?? true;
+        if (child.attributes?.["s"] !== undefined)
+          cell.childChain = parseOnOff(child.attributes["s"]) ?? true;
         if (child.attributes?.["l"] !== undefined)
-          cell.childChain = parseOnOff(child.attributes["l"]) ?? true;
+          cell.newLevel = parseOnOff(child.attributes["l"]) ?? true;
+        if (child.attributes?.["t"] !== undefined)
+          cell.newThread = parseOnOff(child.attributes["t"]) ?? true;
         cells.push(cell);
-        sheetIndex = cell.sheetIndex;
       }
     }
     result.cells = cells;

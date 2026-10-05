@@ -22,6 +22,8 @@ export interface DivBorderSideOptions {
   color?: string;
   /** Size of the border in 1/8 pt */
   size?: number;
+  /** Border shadow spacing in points (`w:space`). */
+  space?: number;
 }
 
 /**
@@ -120,12 +122,15 @@ import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@off
 import type { Element } from "@office-open/xml";
 import type { WebFrameOptions, FramesetSplitbarOptions } from "@parts/frameset";
 
-import { documentNamespaceAttributes } from "./document/document-attributes";
+import {
+  documentNamespaceAttributesInDialect,
+  documentNamespaceDialect,
+} from "./document/document-attributes";
 
-const WS_NS = documentNamespaceAttributes(["mc", "r", "w", "w15"]);
+const WEB_SETTINGS_NAMESPACE_KEYS = ["mc", "r", "w", "w15"] as const;
 
 function wsOnOff(tag: string, val: boolean): string {
-  return `<${tag} w:val="${val ? "true" : "false"}"/>`;
+  return val ? `<${tag}/>` : `<${tag} w:val="false"/>`;
 }
 
 function wsStringVal(tag: string, val: string): string {
@@ -333,6 +338,8 @@ function parseDivBorderEl(el: Element): DivBorderOptions {
       if (color) b.color = color;
       const sz = attrNum(sideEl, "w:sz");
       if (sz !== undefined) b.size = sz;
+      const space = attrNum(sideEl, "w:space");
+      if (space !== undefined) b.space = space;
       opts[side] = b as DivBorderSideOptions;
     }
   }
@@ -358,6 +365,7 @@ function wsDivBorderXml(b: NonNullable<DivOptions["border"]>): string {
     const attrParts: string[] = [`w:val="${escapeXml(side.style)}"`];
     if (side.color) attrParts.push(`w:color="${escapeXml(side.color)}"`);
     if (side.size !== undefined) attrParts.push(`w:sz="${side.size}"`);
+    if (side.space !== undefined) attrParts.push(`w:space="${side.space}"`);
     parts.push(`<${tag} ${attrParts.join(" ")}/>`);
   }
   parts.push("</w:divBdr>");
@@ -440,8 +448,13 @@ export function frameXml(f: WebFrameOptions): string {
 export const webSettingsDesc: CustomDescriptor<WebSettingsOptions> = {
   kind: "custom",
 
-  stringify(opts, _ctx) {
-    const p: string[] = [`<w:webSettings ${WS_NS}>`];
+  stringify(opts, ctx) {
+    const p: string[] = [
+      `<w:webSettings ${documentNamespaceAttributesInDialect(
+        WEB_SETTINGS_NAMESPACE_KEYS,
+        documentNamespaceDialect(ctx as never),
+      )}>`,
+    ];
 
     if (opts.frameset !== undefined) p.push(framesetXml(opts.frameset));
     if (opts.divs?.length) {

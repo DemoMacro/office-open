@@ -908,6 +908,7 @@ export function parseRuns(
       }
       if (child.name === "text:tab") return [{ text: "", children: [{ tab: true }] }];
       if (child.name === "draw:frame") {
+        if (childNamed(child, "draw:object-ole")) return [];
         return childNamed(child, "draw:object")
           ? parseChartFrame(child, context)
           : parsePictureFrame(child, context);

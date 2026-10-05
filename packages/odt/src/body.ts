@@ -359,6 +359,7 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
       members: objectMembers(path, files, binaries),
     });
   }
+  validateEmbeddedObjectBodies(body, binaries, embeddedObjects, chartBodies);
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
@@ -443,6 +444,35 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
     if (masterHeaderFooter.footers) section.footers = masterHeaderFooter.footers;
   }
   return result;
+}
+
+function validateEmbeddedObjectBodies(
+  body: Element | undefined,
+  binaries: Record<string, Uint8Array>,
+  embeddedObjects: Map<string, OdtEmbeddedObjectOptions>,
+  chartBodies: Map<string, ChartSpaceOptions>,
+): void {
+  const references = descendantElements(body).flatMap((element) =>
+    element.name === "draw:object-ole"
+      ? [attributeString(element, "xlink:href")?.replace(/^\.\//, "").replace(/^\//, "")]
+      : [],
+  );
+  for (const href of references) {
+    if (href && (binaries[href] || embeddedObjects.has(href) || chartBodies.has(href))) continue;
+    throw new OdtParseError(
+      `content.xml: ${href ?? ""}: embedded object subdocument is missing`,
+      "content.xml",
+      "/draw:frame/draw:object-ole/@xlink:href",
+      "draw:object-ole",
+      "embedded-object-subdocument-missing",
+    );
+  }
+}
+
+function descendantElements(element: Element | undefined): Element[] {
+  return (element?.elements ?? []).flatMap((child) =>
+    child.type === "element" ? [child, ...descendantElements(child)] : [],
+  );
 }
 
 function objectMembers(

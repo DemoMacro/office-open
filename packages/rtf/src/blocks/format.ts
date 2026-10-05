@@ -13,6 +13,7 @@ export const CONTENT_GROUP_CONTROLS = new Set([
   "line",
   "nestcell",
   "nestrow",
+  "nosupersub",
   "page",
   "par",
   "pard",
@@ -21,6 +22,10 @@ export const CONTENT_GROUP_CONTROLS = new Set([
   "qj",
   "ql",
   "qr",
+  "s",
+  "strike",
+  "sub",
+  "super",
   "row",
   "sect",
   "tab",
@@ -33,9 +38,9 @@ export const CONTENT_GROUP_CONTROLS = new Set([
 ]);
 
 export function isFormatChanged(left: RunFormat, right: RunFormat): boolean {
-  return (["bold", "italic", "underline", "color", "size", "font"] as const).some(
-    (key) => left[key] !== right[key],
-  );
+  return (
+    ["bold", "italic", "underline", "color", "size", "font", "strike", "verticalAlign"] as const
+  ).some((key) => left[key] !== right[key]);
 }
 
 export function runOptions(format: RunFormat): RunOptions {

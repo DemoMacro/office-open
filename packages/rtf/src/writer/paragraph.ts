@@ -5,7 +5,14 @@ import { control, rtfText } from "./escape";
 import { writeParagraphNumbering, type NumberingReferences } from "./numbering";
 import { writeInlineChild, writeRun } from "./run";
 
-const PARAGRAPH_PROPERTIES = ["children", "alignment", "shading", "border", "numbering"] as const;
+const PARAGRAPH_PROPERTIES = [
+  "children",
+  "style",
+  "alignment",
+  "shading",
+  "border",
+  "numbering",
+] as const;
 
 function alignmentControl(alignment: NonNullable<ParagraphOptions["alignment"]>): string {
   if (alignment === "left") return control("ql");
@@ -28,6 +35,13 @@ export function writeParagraph(
 ): string {
   assertAllowed(paragraph, PARAGRAPH_PROPERTIES, "paragraph", path);
   let properties = "";
+  if (paragraph.style !== undefined) {
+    const match = /^rtf-style-(\d+)$/u.exec(paragraph.style);
+    if (!match) {
+      reject("paragraph", "style", paragraph.style, "RTF requires a canonical rtf paragraph style");
+    }
+    properties += control("s", Number(match![1]));
+  }
   if (paragraph.alignment) properties += alignmentControl(paragraph.alignment);
   if (paragraph.numbering) {
     properties += writeParagraphNumbering(paragraph.numbering, references, path);
@@ -89,6 +103,8 @@ export function writeParagraph(
         "bold" in child ||
         "italic" in child ||
         "underline" in child ||
+        "strike" in child ||
+        "verticalAlign" in child ||
         "color" in child ||
         "size" in child ||
         "font" in child ||

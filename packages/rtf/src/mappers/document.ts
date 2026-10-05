@@ -18,8 +18,10 @@ import {
   type TableDraft,
 } from "../blocks";
 import {
+  APP_METADATA_CONTROLS,
   CAPTURED_METADATA,
   destinationDisposition,
+  INLINE_NOOP_CONTROLS,
   type Destination,
   type GroupFrame,
 } from "../destinations";
@@ -63,6 +65,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let unicodeSkip = 0;
   let fontId: number | undefined;
   let fontName: string | undefined;
+  let appProperties: NonNullable<DocumentOptions["appProperties"]> = {};
   let color: { red?: number; green?: number; blue?: number } = {};
   let tokenIndex = 0;
   let pendingHyperlink: string | undefined;
@@ -470,6 +473,39 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       case "plain":
         format = {};
         return;
+      case "strike":
+        format.strike = token.param !== 0;
+        return;
+      case "edmins":
+        if (token.param === undefined || !Number.isInteger(token.param) || token.param < 0)
+          throw new RtfParseError("\\edmins requires a minute count", token.position, source);
+        appProperties.totalTime = token.param;
+        return;
+      case "nofpages":
+      case "nofwords":
+      case "nofchars":
+      case "nofcharsws":
+        if (token.param === undefined || !Number.isInteger(token.param) || token.param < 0)
+          throw new RtfParseError(`\\${word} requires a count`, token.position, source);
+        if (word === "nofpages") appProperties.pages = token.param;
+        else if (word === "nofwords") appProperties.words = token.param;
+        else if (word === "nofchars") appProperties.characters = token.param;
+        else appProperties.charactersWithSpaces = token.param;
+        return;
+      case "super":
+        format.verticalAlign = token.param === 0 ? "baseline" : "superscript";
+        return;
+      case "sub":
+        format.verticalAlign = token.param === 0 ? "baseline" : "subscript";
+        return;
+      case "nosupersub":
+        format.verticalAlign = "baseline";
+        return;
+      case "s":
+        if (token.param === undefined)
+          throw new RtfParseError("\\s requires a style number", token.position, source);
+        ensureParagraph().options.style = `rtf-style-${token.param}`;
+        return;
       case "pard":
         setAlignment(undefined);
         pendingList = undefined;
@@ -633,12 +669,14 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (paragraph) paragraph.options.alignment = value;
   };
 
-  const handleGroupStart = (position: number) => {
+  const handleGroupStart = (position: number, index: number) => {
+    const parent = groupFrames.at(-1);
     groupFrames.push({
-      destination: groupFrames.at(-1)?.destination ?? "root",
+      destination: parent?.destination ?? "root",
+      startIndex: index,
       starred: false,
-      decided: false,
-      skip: false,
+      decided: parent?.skip === true,
+      skip: parent?.skip === true,
       format: { ...format },
       alignment,
       paragraphAlignment: paragraph?.options.alignment,
@@ -674,7 +712,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     const destination = currentFrame?.destination ?? "root";
 
     if (token.kind === "group-start") {
-      handleGroupStart(token.position);
+      handleGroupStart(token.position, tokenIndex - 1);
       continue;
     }
     if (token.kind === "group-end") {
@@ -717,6 +755,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       }
       if (token.word === "rtf" && groupFrames.length === 1 && !currentFrame.decided) {
         currentFrame.decided = true;
+        continue;
+      }
+      if (token.word !== undefined && APP_METADATA_CONTROLS.has(token.word)) {
+        currentFrame.decided = true;
+        applyControl(token, destination);
         continue;
       }
       if (!currentFrame.decided) {
@@ -778,8 +821,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           token.word === "pn" ||
           token.word === "object"
         ) {
+          const frameStart = currentFrame.startIndex;
           try {
-            const end = consumeGroup(tokenIndex);
+            const end = consumeGroup(frameStart + 1);
             if (token.word === "pict") {
               const picture = readPicture(tokenIndex, end);
               appendInline({
@@ -860,15 +904,17 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           continue;
         }
         if (token.word === "stylesheet") {
-          const end = consumeGroup(tokenIndex);
-          styleDefinitions.push(...parseStylesheet(tokens, tokenIndex, end, colors, fonts));
+          const end = consumeGroup(currentFrame.startIndex + 1);
+          styleDefinitions.push(
+            ...parseStylesheet(tokens, currentFrame.startIndex + 1, end - 1, colors, fonts),
+          );
           groupFrames.pop();
           tokenIndex = end;
           continue;
         }
         if (token.word === "listtable") {
-          const end = consumeGroup(tokenIndex);
-          const parsed = parseListTable(tokens, tokenIndex, end);
+          const end = consumeGroup(currentFrame.startIndex + 1);
+          const parsed = parseListTable(tokens, currentFrame.startIndex + 1, end - 1);
           listDefinitions.push(...parsed.definitions);
           for (const [key, value] of parsed.listIds) listIds.set(key, value);
           groupFrames.pop();
@@ -876,8 +922,8 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           continue;
         }
         if (token.word === "listoverridetable") {
-          const end = consumeGroup(tokenIndex);
-          const parsed = parseListOverrides(tokens, tokenIndex, end, listIds);
+          const end = consumeGroup(currentFrame.startIndex + 1);
+          const parsed = parseListOverrides(tokens, currentFrame.startIndex + 1, end - 1, listIds);
           listDefinitions.push(...parsed.definitions);
           for (const [key, value] of parsed.listInstances) listInstances.set(key, value);
           groupFrames.pop();
@@ -891,6 +937,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           tokenIndex = end;
           continue;
         }
+        if (token.word === "info") continue;
+        if (token.word !== undefined && APP_METADATA_CONTROLS.has(token.word)) {
+          applyControl(token, destination);
+          continue;
+        }
         if (token.word === "hlink") {
           const end = consumeGroup(tokenIndex);
           const url = decodeDestinationText(tokenIndex, end)[0] ?? "";
@@ -902,6 +953,13 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         }
         const disposition =
           token.word === undefined ? "canonical" : destinationDisposition(token.word);
+        if (disposition === "structural-noop") {
+          if (token.word !== undefined && INLINE_NOOP_CONTROLS.has(token.word)) continue;
+          const end = consumeGroup(currentFrame.startIndex + 1);
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
         if (disposition === "generated-shadow") {
           currentFrame.skip = true;
           continue;
@@ -1010,5 +1068,6 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         }
       : {}),
     ...(styles ? { styles } : {}),
+    ...(Object.keys(appProperties).length === 0 ? {} : { appProperties }),
   };
 }

@@ -36,6 +36,7 @@ import {
   type CompressionOptions,
   type ReproducibleScope,
   type OoxmlPackageVariant,
+  type RelationshipType,
 } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
@@ -139,7 +140,7 @@ export function streamWorkbook(
     ...sheetPaths,
   ];
   if (hasCustomProperties) partPaths.push("docProps/custom.xml");
-  if (hasVolTypes) partPaths.push("xl/volTypes.xml");
+  if (hasVolTypes) partPaths.push(`xl/${options.volTypesPath ?? "volTypes.xml"}`);
 
   const writeString = (path: string, xml: string): void => {
     const sink = writer.addPart(path, xmlLevel);
@@ -214,8 +215,8 @@ export function streamWorkbook(
   // Volatile function types live in their own part (never a workbook child)
   if (hasVolTypes) {
     writeString(
-      "xl/volTypes.xml",
-      OOXML_XML_DECLARATION + buildVolTypesXml(options.volTypes ?? []),
+      `xl/${options.volTypesPath ?? "volTypes.xml"}`,
+      OOXML_XML_DECLARATION + buildVolTypesXml(options.volTypes ?? [], options.volTypesCount),
     );
   }
   const wbRels = new Relationships();
@@ -226,7 +227,14 @@ export function streamWorkbook(
   wbRels.addRelationship(rid++, RELATIONSHIP_TYPES.styles, "styles.xml");
   wbRels.addRelationship(rid++, RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
   if (hasVolTypes) {
-    wbRels.addRelationship(rid++, RELATIONSHIP_TYPES.volTypes, "volTypes.xml");
+    const volTypesPath = options.volTypesPath ?? "volTypes.xml";
+    wbRels.addRelationship(
+      rid++,
+      volTypesPath === "volatileDependencies.xml"
+        ? ("http://schemas.openxmlformats.org/officeDocument/2006/relationships/volatileDependencies" as RelationshipType)
+        : RELATIONSHIP_TYPES.volTypes,
+      volTypesPath,
+    );
   }
   writeString("xl/_rels/workbook.xml.rels", OOXML_XML_DECLARATION + wbRels.serialize());
 

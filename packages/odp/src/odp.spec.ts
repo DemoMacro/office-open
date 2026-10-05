@@ -14,6 +14,34 @@ describe("ODP codec", () => {
     expect(parsed.slides?.[0]?.notes).toBe("ODP");
   });
 
+  it("requires an embedded object body but tolerates a missing replacement", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:object-ole xlink:href="./Object 1" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
+      "content.xml": content,
+      "Object 1": new Uint8Array([1]),
+    });
+    const parsed = parsePresentation(source) as OdpDocumentOptions;
+    expect(parsed.packageMembers).toEqual([
+      { path: "Object 1", mediaType: "application/binary", data: new Uint8Array([1]) },
+    ]);
+    expect(parsePresentation(generatePresentation(parsed)).packageMembers).toEqual(
+      parsed.packageMembers,
+    );
+
+    let error: unknown;
+    try {
+      parsePresentation(
+        generateOcf("application/vnd.oasis.opendocument.presentation", {
+          "content.xml": content,
+        }),
+      );
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdpParseError);
+    expect(error).toMatchObject({ reason: "embedded-object-subdocument-missing" });
+  });
+
   it("round-trips a linked picture with a parent-relative URL", () => {
     const options: OdpDocumentOptions = {
       slides: [

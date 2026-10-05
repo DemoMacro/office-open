@@ -57,4 +57,20 @@ describe("framePr parse round-trip", () => {
     });
     expect(result.anchorLock).toBe(true);
   });
+
+  it("round-trips a coordinate on one axis and an alignment on the other", () => {
+    const result = roundTripFrame({
+      type: "mixed",
+      position: { y: 8285 },
+      alignment: { x: "right" },
+      anchor: { horizontal: "margin", vertical: "page" },
+      space: { horizontal: 180 },
+      wrap: "around",
+    });
+    expect(result).toMatchObject({
+      type: "mixed",
+      position: { y: 8285 },
+      alignment: { x: "right" },
+    });
+  });
 });

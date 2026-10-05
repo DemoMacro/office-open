@@ -51,8 +51,12 @@ export interface FontOptions {
 export interface CellGradientStopOptions {
   /** Position (0.0–1.0) */
   position: number;
-  /** RGB color hex without alpha, e.g. "FF0000" */
-  color: HexColor;
+  /** RGB color hex without alpha, e.g. "FF0000"; omitted for theme colors */
+  color?: HexColor;
+  /** Theme palette index (CT_Color `@theme`) */
+  themeColor?: number;
+  /** Tint applied to the theme color (CT_Color `@tint`) */
+  tint?: number;
 }
 
 /**
@@ -255,6 +259,8 @@ export interface DxfOptions {
   numFmt?: string | DxfNumFmtOptions;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
+  /** Trailing dxf extensions (CT_Dxf/extLst) — round-trip only. */
+  extensions?: StyleExtensionOptions[];
 }
 
 // ── Table / cell-style types ──
@@ -424,11 +430,15 @@ export interface IndexedXfEntry {
   applyProtection?: boolean;
 }
 
-/** Table styles block (CT_TableStyles) produced by {@link stylesDesc}.parse. */
+/** Table styles block (CT_TableStyles), including its container attributes. */
 export interface TableStylesInfo {
+  /** Declared number of custom styles (CT_TableStyles `@count`) */
   count?: number;
+  /** Default style applied to new tables (CT_TableStyles `@defaultTableStyle`) */
   defaultTableStyle?: string;
+  /** Default style applied to new PivotTables (CT_TableStyles `@defaultPivotStyle`) */
   defaultPivotStyle?: string;
+  /** Custom table and PivotTable styles in document order */
   tableStyles?: CustomTableStyleOptions[];
 }
 
