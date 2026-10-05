@@ -234,5 +234,5 @@ export function writeRtf(options: DocumentOptions): string {
     writeSections(options, references, context),
   ].join("");
   const tables = `${writeFontTable(context)}${writeColorTable(context)}`;
-  return `{\\rtf1\\ansi${tables}${body}}`;
+  return `{\\rtf1${tables}${body}}`;
 }
