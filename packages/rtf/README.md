@@ -38,21 +38,26 @@ bun add @office-open/rtf
 ## Quick Start
 
 ```typescript
-import { generateRtf, parseRtf } from "@office-open/rtf";
+import { generateDocument, parseDocument } from "@office-open/rtf";
 import { readFileSync } from "node:fs";
 
-const options = parseRtf(readFileSync("input.rtf", "utf8"));
-const rtf = new TextDecoder().decode(generateRtf(options));
+const options = parseDocument(readFileSync("input.rtf", "utf8"));
+const rtf = new TextDecoder().decode(generateDocument(options));
 ```
 
 ## API
 
-- `parseRtf(source)` — read RTF source into `RtfDocumentOptions`
-- `generateRtf(options)` — write canonical `DocumentOptions` to RTF bytes
-- `RtfDocumentOptions` — the projected Word document model
+- `parseDocument(source, options?)` — read RTF source into `DocumentOptions`
+- `generateDocument(options, context?)` — write canonical `DocumentOptions` to RTF bytes
 - `RtfParseError` — thrown for malformed RTF
+- `RtfGenerateError` — thrown for canonical fields that have no RTF representation
 
-The projected model follows the office-open `DocumentOptions` shape. Unrecognized destinations are skipped without aborting the document. Generation rejects fields that cannot be represented in RTF with `RtfGenerateError` instead of dropping them silently.
+## Errors and Limitations
+
+- Malformed RTF throws `RtfParseError`.
+- Generation rejects fields that cannot be represented in RTF with `RtfGenerateError`; it does not drop them silently.
+- RTF has no patch API; parse, mutate the canonical model, and generate instead.
+- Unrecognized destinations are skipped without aborting the document.
 
 ## Documentation
 

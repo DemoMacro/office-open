@@ -79,6 +79,12 @@ writeFileSync("My Document.docx", buffer);
 
 Every input is a plain JSON object (`DocumentOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/docx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice docx DocumentOptions`.
 
+## Errors and Limitations
+
+- Parse and generation failures preserve OPC part and XML context where available.
+- Patching cannot invent new header/footer parts; generate a document for those changes.
+- DOC generation is intentionally unavailable.
+
 ## Parsing
 
 Read existing `.docx` files and re-create them as `DocumentOptions`:

@@ -57,7 +57,11 @@ const options = parseDocument(data, { password: "secret" });
 - `DocParseOptions` — parse-time options, including `password`
 - `DocParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
 
-The projected model follows the office-open `DocumentOptions` shape where the legacy format has a direct counterpart. Unsupported legacy records are skipped without aborting the document.
+## Errors and Limitations
+
+- Invalid, truncated, unsupported, and encrypted files throw `DocParseError`.
+- Unsupported legacy records are skipped without aborting the document; their omissions are visible in canonical context.
+- DOC generation is intentionally unavailable.
 
 ## Documentation
 

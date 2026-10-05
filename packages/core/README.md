@@ -76,7 +76,7 @@ gen(); // → 1, 2, 3, ...
 | `hexColorValue`    | `ST_HexColor` (auto + 3-byte hexBinary)        |
 | `decimalNumber`    | `ST_DecimalNumber`                             |
 
-## Exports
+## API
 
 | Path                           | Contents                                                                  |
 | ------------------------------ | ------------------------------------------------------------------------- |

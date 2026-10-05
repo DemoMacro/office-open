@@ -56,7 +56,11 @@ const options = parseWorkbook(data, { password: "secret" });
 - `XlsParseOptions` — parse-time options, including `password`
 - `XlsParseError` — thrown for invalid, truncated, unsupported, or encrypted input, with canonical `context` fields
 
-The projected model follows the office-open `WorkbookOptions` shape where BIFF8 has a direct counterpart. Unsupported legacy records are skipped without aborting the workbook.
+## Errors and Limitations
+
+- Invalid, truncated, unsupported, and encrypted files throw `XlsParseError`.
+- Unsupported BIFF records are skipped without aborting the workbook; their omissions are visible in canonical context.
+- XLS generation is intentionally unavailable.
 
 ## Documentation
 

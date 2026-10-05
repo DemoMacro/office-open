@@ -344,4 +344,13 @@ Add document generation to your project.
   :::button-link{to="/en/getting-started/installation"}
   Get Started <Icon name="i-lucide-arrow-right" />
   :::
+  :::button-link{to="https://github.com/DemoMacro/office-open" target="_blank" variant="outline"}
+  Star on GitHub <Icon name="i-lucide-star" />
+  :::
+  :::button-link{to="https://github.com/DemoMacro/office-open/discussions" target="_blank" variant="outline"}
+  Ask in Discussions <Icon name="i-lucide-messages-square" />
+  :::
+  :::button-link{to="https://github.com/sponsors/DemoMacro" target="_blank" variant="outline"}
+  Sponsor <Icon name="i-lucide-heart" />
+  :::
 ::

@@ -11,7 +11,9 @@ English | [简体中文](./README.zh-CN.md)
 > AI-native Office documents for TypeScript and JavaScript.
 > Create Word, Excel, PowerPoint, RTF, and OpenDocument files from plain JSON or fully typed APIs — generate, parse, and patch where the format supports it. Read legacy .doc/.xls/.ppt and ODF; generate .rtf and ODT/ODS/ODP and convert CSV/TSV. Built for AI agents, LLM tool-calling, and hand-written code alike; no Microsoft Office required.
 
-[Documentation](https://www.office-open.com) · [AI Integration](https://www.office-open.com/en/getting-started/ai-integration) · [Benchmarks](#performance) · [npm](https://www.npmjs.com/package/office-open)
+[Documentation](https://www.office-open.com) · [Playground](https://docx.json-to-office.com/) · [AI Integration](https://www.office-open.com/en/getting-started/ai-integration) · [Benchmarks](#performance) · [npm](https://www.npmjs.com/package/office-open)
+
+Used in production by [json-to-office](https://json-to-office.com/) — its quality-first DOCX renderer is `@office-open/docx`.
 
 ⭐ **If office-open speeds up your work, a star helps other developers find it.**
 
@@ -40,6 +42,16 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 | [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 fully-styled slides          | 73.8 ops/s   | PptxGenJS — 0.91 ops/s | **81×**  |
 | [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k rows × 20 cols (2M cells)  | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
 | [@office-open/xml](./packages/xml/README.md#benchmark)   | Parse complex OOXML             | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
+
+## Why office-open?
+
+Most Office libraries only generate files. office-open closes the loop with generate, parse, and patch — consistent option models, XSD-validated output, and AI-ready JSON Schemas across Word, Excel, and PowerPoint.
+
+| If you use today                                   | What office-open adds                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [docx](https://www.npmjs.com/package/docx)         | Parsing and template patching for round-trip workflows, ~14× faster generation  |
+| [ExcelJS](https://github.com/exceljs/exceljs)      | Word and PowerPoint behind the same declarative API, with shared drawing models |
+| [PptxGenJS](https://github.com/gitbrent/PptxGenJS) | Parsing and patching, cross-format conversion, XSD-validated output             |
 
 ## Packages
 

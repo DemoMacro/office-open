@@ -71,6 +71,12 @@ writeFileSync("workbook.xlsx", buffer);
 
 Every input is a plain JSON object (`WorkbookOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/xlsx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice xlsx WorkbookOptions`.
 
+## Errors and Limitations
+
+- Parse and generation failures preserve OPC part and XML context where available.
+- Patching cannot apply cell styles to newly appended rows when those styles do not already exist.
+- XLS generation is intentionally unavailable.
+
 ## Parsing
 
 Read existing `.xlsx` files and re-create them as `WorkbookOptions`:

@@ -79,6 +79,12 @@ writeFileSync("presentation.pptx", buffer);
 
 Every input is a plain JSON object (`PresentationOptions` and its option types). The full typed API reference lives in the [documentation](https://www.office-open.com/en/pptx/); the same types are also frozen as JSON Schemas — `npx office-open schema slice pptx PresentationOptions`.
 
+## Errors and Limitations
+
+- Parse and generation failures preserve OPC part and XML context where available.
+- Patching edits existing presentation content and appends typed slides/comments; it does not become a general package editor.
+- PPT generation is intentionally unavailable.
+
 ## Parsing
 
 Read existing `.pptx` files and re-create them as `PresentationOptions`:

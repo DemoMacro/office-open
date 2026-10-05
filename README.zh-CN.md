@@ -11,7 +11,9 @@
 > AI 原生的 Office 文档库，面向 TypeScript 和 JavaScript。
 > 用纯 JSON 或全类型 API 创建 Word、Excel、PowerPoint、RTF 和 OpenDocument 文件——在格式能力范围内提供生成、解析和补丁。读取旧版 .doc/.xls/.ppt 与 ODF；生成 .rtf、ODT/ODS/ODP 并转换 CSV/TSV。为 AI 智能体、LLM 工具调用与手写代码而生；无需 Microsoft Office。
 
-[文档](https://www.office-open.com) · [AI 集成](https://www.office-open.com/en/getting-started/ai-integration) · [性能基准](#性能基准) · [npm](https://www.npmjs.com/package/office-open)
+[文档](https://www.office-open.com) · [Playground](https://docx.json-to-office.com/) · [AI 集成](https://www.office-open.com/zh/getting-started/ai-integration) · [性能基准](#性能基准) · [npm](https://www.npmjs.com/package/office-open)
+
+[json-to-office](https://json-to-office.com/) 在生产环境使用 office-open——其质量优先的 DOCX 渲染引擎正是 `@office-open/docx`。
 
 ⭐ **如果 office-open 为你节省了时间，一个 star 能帮更多开发者发现它。**
 
@@ -40,6 +42,16 @@
 | [@office-open/pptx](./packages/pptx/README.md#benchmark) | 50 页全样式幻灯片               | 73.8 ops/s   | PptxGenJS — 0.91 ops/s | **81×**  |
 | [@office-open/xlsx](./packages/xlsx/README.md#benchmark) | 100k 行 × 20 列（200 万单元格） | 0.89 ops/s   | hucre — 0.46 ops/s     | **1.9×** |
 | [@office-open/xml](./packages/xml/README.md#benchmark)   | 解析复杂 OOXML                  | 424k ops/s   | txml — 389k ops/s      | **1.1×** |
+
+## 为什么选择 office-open？
+
+大多数 Office 库只能生成文件。office-open 形成完整闭环：生成、解析、补丁——以一致的选项模型、通过 XSD 校验的输出和面向 AI 的 JSON Schema，统一覆盖 Word、Excel 和 PowerPoint。
+
+| 如果你正在使用                                     | office-open 额外提供                                   |
+| -------------------------------------------------- | ------------------------------------------------------ |
+| [docx](https://www.npmjs.com/package/docx)         | 解析与模板补丁支持回写工作流，生成速度约快 14 倍       |
+| [ExcelJS](https://github.com/exceljs/exceljs)      | 同一套声明式 API 覆盖 Word 和 PowerPoint，共享绘图模型 |
+| [PptxGenJS](https://github.com/gitbrent/PptxGenJS) | 解析与补丁、跨格式转换、XSD 校验输出                   |
 
 ## 包
 
@@ -170,7 +182,7 @@ npx office-open schema index docx
 npx office-open schema slice docx ParagraphOptions
 ```
 
-详见 [AI 集成指南](https://www.office-open.com/en/getting-started/ai-integration)。
+详见 [AI 集成指南](https://www.office-open.com/zh/getting-started/ai-integration)。
 
 ## 版本策略
 
