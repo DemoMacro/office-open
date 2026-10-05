@@ -9,6 +9,27 @@ export interface RtfParseContext {
   reason: string;
 }
 
+export interface RtfGenerateContext {
+  /** RTF writer block that rejected the canonical options. */
+  part: string;
+  /** Canonical options path, such as `sections[0].children[1].table`. */
+  path: string;
+  /** Canonical field or child-variant name that cannot be represented. */
+  name: string;
+  /** Why the field cannot be written without loss. */
+  reason: string;
+}
+
+export class RtfGenerateError extends Error {
+  readonly context: RtfGenerateContext;
+
+  constructor(message: string, context: RtfGenerateContext) {
+    super(message);
+    this.name = "RtfGenerateError";
+    this.context = context;
+  }
+}
+
 export class RtfParseError extends Error {
   readonly context?: RtfParseContext;
 

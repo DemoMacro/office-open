@@ -4,7 +4,7 @@
 ![npm downloads](https://img.shields.io/npm/dw/@office-open/rtf)
 ![npm license](https://img.shields.io/npm/l/@office-open/rtf)
 
-> Parse Rich Text Format (RTF) documents into plain `DocumentOptions` JSON — no Microsoft Office required.
+> Generate and parse Rich Text Format (RTF) documents with plain `DocumentOptions` JSON — no Microsoft Office required.
 
 ## Features
 
@@ -17,8 +17,7 @@
 - 🔗 **Hyperlinks** — Read field-based and direct hyperlinks
 - 📝 **Fields & Metadata** — Read fields, titles, subjects, authors, keywords, dates, and categories
 - 📃 **Sections** — Read page geometry, headers, and footers
-
-This package is parse-only. It does not generate RTF documents.
+- ✍️ **Rich Text Writer** — Generate RTF text, formatting, tables, fields, pictures, and shapes
 
 ## Installation
 
@@ -39,19 +38,21 @@ bun add @office-open/rtf
 ## Quick Start
 
 ```typescript
-import { parseRtf } from "@office-open/rtf";
+import { generateRtf, parseRtf } from "@office-open/rtf";
 import { readFileSync } from "node:fs";
 
 const options = parseRtf(readFileSync("input.rtf", "utf8"));
+const rtf = new TextDecoder().decode(generateRtf(options));
 ```
 
 ## API
 
 - `parseRtf(source)` — read RTF source into `RtfDocumentOptions`
+- `generateRtf(options)` — write canonical `DocumentOptions` to RTF bytes
 - `RtfDocumentOptions` — the projected Word document model
 - `RtfParseError` — thrown for malformed RTF
 
-The projected model follows the office-open `DocumentOptions` shape. Unrecognized destinations are skipped without aborting the document.
+The projected model follows the office-open `DocumentOptions` shape. Unrecognized destinations are skipped without aborting the document. Generation rejects fields that cannot be represented in RTF with `RtfGenerateError` instead of dropping them silently.
 
 ## Documentation
 

@@ -1,9 +1,11 @@
 {
   "name": "@office-open/rtf",
   "version": "0.14.6",
-  "description": "Parse Rich Text Format documents into office-open DocumentOptions — no Microsoft Office required",
+  "description": "Generate and parse Rich Text Format documents with office-open DocumentOptions — no Microsoft Office required",
   "keywords": [
     "document",
+    "generate",
+    "generator",
     "legacy",
     "microsoft-word",
     "office",
