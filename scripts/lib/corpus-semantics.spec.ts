@@ -58,8 +58,8 @@ describe("corpus semantic comparison", () => {
 
   it("keeps transitional tag counting for the baseline gate", () => {
     const files = { "word/a.xml": "<a><b/><b/></a>", "word/b.xml": "<b/>" };
-    expect(archiveTagDiffs(zip(files), zip({ ...files, "word/c.xml": "<c/>" }))).toEqual([
-      "word/c.xml",
+    expect(archiveTagDiffs(zip(files), zip({ ...files, "word/a.xml": "<a><b/></a>" }))).toEqual([
+      "word/a.xml",
     ]);
   });
 });

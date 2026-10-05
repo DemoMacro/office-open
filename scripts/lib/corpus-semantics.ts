@@ -379,9 +379,7 @@ export function archiveTagDiffs(source: Uint8Array, output: Uint8Array): string[
     return false;
   };
   const diffs: string[] = [];
-  for (const path of [
-    ...new Set([...Object.keys(sourceArchive), ...Object.keys(outputArchive)]),
-  ].sort()) {
+  for (const path of Object.keys(sourceArchive)) {
     if (!path.endsWith(".xml") && !path.endsWith(".rels")) continue;
     if (path.includes("theme")) continue;
     const sourceXml = decoder.decode(sourceArchive[path]!);

@@ -42,6 +42,7 @@ import {
   archiveTagDiffs,
   classifyPackageFailure,
   type CorpusFailureKind,
+  type SemanticPartDiff,
 } from "./lib/corpus-semantics";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -134,7 +135,8 @@ export interface FileDiagnostic {
   format: Format;
   outcome: CorpusFailureKind;
   package?: string;
-  parts?: Array<{ path: string; kind: string }>;
+  diffCategories?: Record<string, number>;
+  sampleParts?: SemanticPartDiff[];
   error?: string;
 }
 
@@ -202,10 +204,12 @@ async function runLibrary(lib: Library): Promise<
     let semanticDiffs: ReturnType<typeof archiveSemanticDiffDetails> = [];
     try {
       const source = new Uint8Array(fs.readFileSync(f));
-      semanticDiffs = archiveSemanticDiffDetails(source, out);
-      parts = STRICT_SEMANTIC_GATE
-        ? semanticDiffs.map((diff) => diff.path)
-        : archiveTagDiffs(source, out);
+      if (STRICT_SEMANTIC_GATE) {
+        semanticDiffs = archiveSemanticDiffDetails(source, out);
+        parts = semanticDiffs.map((diff) => diff.path);
+      } else {
+        parts = archiveTagDiffs(source, out);
+      }
     } catch (e) {
       a.parseFail++;
       diagnostics.push({
@@ -229,7 +233,12 @@ async function runLibrary(lib: Library): Promise<
         format,
         outcome: "valid",
         package: lib.id,
-        parts: semanticDiffs,
+        diffCategories: semanticDiffs.reduce<Record<string, number>>((counts, diff) => {
+          const category = diff.category ?? "unknown";
+          counts[category] = (counts[category] ?? 0) + 1;
+          return counts;
+        }, {}),
+        sampleParts: semanticDiffs.slice(0, 20),
       });
     }
   }
