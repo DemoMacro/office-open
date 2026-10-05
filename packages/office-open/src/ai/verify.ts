@@ -5,7 +5,7 @@
  * Fresh output is fully under library control, so ANY issue (error or warn) is
  * a library regression, not an options error — fail fast with the diagnosis
  * instead of shipping a file Word/Excel report as corrupt. Mirrors what
- * scripts/validate.ts runs in CI; O7-style duplicate relationship ids are
+ * scripts/validation/ooxml.ts runs in CI; O7-style duplicate relationship ids are
  * exactly the class of breakage this catches before a user sees it.
  *
  * @module

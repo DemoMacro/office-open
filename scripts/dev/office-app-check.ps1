@@ -1,17 +1,17 @@
 # Open every generated demo file with its real Office application (Word / Excel /
 # PowerPoint) via COM and report files the app refuses to open.
 #
-# XSD validation (scripts/validate.ts) proves schema conformance; this script
+# XSD validation (scripts/validation/ooxml.ts) proves schema conformance; this script
 # catches the gap XSDs cannot see: elements that are schema-valid but rejected by
 # Office's own reader (e.g. w:objectEmbed — CT_Object declares it, Word only
 # accepts o:OLEObject).
 #
 # Prerequisites: the demo outputs must already exist under packages/<pkg>/.temp/
-# (run `pnpm tsx scripts/validate.ts` first — it regenerates them), and Office
+# (run `pnpm tsx scripts/validation/ooxml.ts` first — it regenerates them), and Office
 # must be installed. Run from the repo root:
 #
-#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/office-app-check.ps1            # all formats
-#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/office-app-check.ps1 -Format docx
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/office-app-check.ps1            # all formats
+#   powershell -NoProfile -ExecutionPolicy Bypass -File scripts/dev/office-app-check.ps1 -Format docx
 #
 # Exit code 1 when any file fails to open.
 
@@ -52,7 +52,7 @@ $total = 0
 $fail = 0
 
 foreach ($fmt in $formats) {
-  if (-not (Test-Path $fmt.Dir)) { Write-Output ("SKIP  " + $fmt.Ext + " :: no .temp dir (run scripts/validate.ts first)"); continue }
+  if (-not (Test-Path $fmt.Dir)) { Write-Output ("SKIP  " + $fmt.Ext + " :: no .temp dir (run scripts/validation/ooxml.ts first)"); continue }
   $files = @(Get-ChildItem -Path $fmt.Dir -Filter $fmt.Ext | Sort-Object Name)
   if ($files.Count -eq 0) { Write-Output ("SKIP  " + $fmt.Ext + " :: no generated files"); continue }
 

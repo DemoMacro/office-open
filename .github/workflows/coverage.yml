@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
       - run: pnpm run xsd:coverage
-      - run: npx tsx scripts/validate.ts
+      - run: npx tsx scripts/validation/ooxml.ts
       - run: pnpm run containers:check
 
   odf:

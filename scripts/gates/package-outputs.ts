@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PACKAGES = path.join(ROOT, "packages");
 const CHECKED_PACKAGES = new Set(["odf", "odt", "ods", "odp"]);
 const OOXML_PEERS: Record<string, string> = {

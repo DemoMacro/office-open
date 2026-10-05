@@ -25,10 +25,10 @@ Full layout and conventions in [CONTRIBUTING.md](./CONTRIBUTING.md).
 - **Build**: `pnpm build` (all) or `cd packages/<pkg> && pnpm build` (one)
 - **Test**: `cd packages/<pkg> && pnpm exec vp test run` (`vp` is not on PATH)
 - **Lint**: `pnpm check` (resolves via `dist/` — build first)
-- **Validate (XSD)**: `pnpm tsx scripts/validate.ts` — runs every package demo (parallel pool, outputs to `packages/<pkg>/.temp/<demo-stem>.<ext>`) and validates the generated XML against the XSD schemas. Single format: append `docx` / `pptx` / `xlsx`; single file: subcommands like `slide <path>`.
+- **Validate (XSD)**: `pnpm validate:ooxml` — runs every package demo (parallel pool, outputs to `packages/<pkg>/.temp/<demo-stem>.<ext>`) and validates the generated XML against the XSD schemas. Single format: append `docx` / `pptx` / `xlsx`; single file: subcommands like `slide <path>`.
 - **JSON Schema (AI-facing)**: the TS `*Options` types are frozen into draft-07 schemas at `packages/office-open/schemas/{docx,pptx,xlsx}.schema.json` (committed artifacts).
   - Regenerate after touching public option types: `pnpm schema:generate` (root script; `schema:check` diffs against the committed files and exits non-zero on drift — CI-enforced, so a stale schema fails the build until regenerated)
-  - Validate the corpus against them: `pnpm schema:validate` — office-open demo JSONs directly plus every package demo round-tripped through parse (`scripts/schema-roundtrip-worker.ts`, run inside each package dir so tsconfig aliases resolve to source). Zero errors is the bar; a failure is either a schema gap (fix generation post-processing or the source type) or genuine options/type drift.
+  - Validate the corpus against them: `pnpm schema:validate` — office-open demo JSONs directly plus every package demo round-tripped through parse (`scripts/schema/roundtrip-worker.ts`, run inside each package dir so tsconfig aliases resolve to source). Zero errors is the bar; a failure is either a schema gap (fix generation post-processing or the source type) or genuine options/type drift.
 
 ## Measurement Units
 

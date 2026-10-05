@@ -11,12 +11,12 @@ import path from "node:path";
 
 import { unzipSync } from "fflate";
 
-import { parseOdp } from "../packages/odp/src";
-import { OdpParseError } from "../packages/odp/src/error";
-import { parseOds } from "../packages/ods/src";
-import { OdsParseError } from "../packages/ods/src/error";
-import { parseOdt } from "../packages/odt/src";
-import { OdtParseError } from "../packages/odt/src/error";
+import { parseOdp } from "../../packages/odp/src";
+import { OdpParseError } from "../../packages/odp/src/error";
+import { parseOds } from "../../packages/ods/src";
+import { OdsParseError } from "../../packages/ods/src/error";
+import { parseOdt } from "../../packages/odt/src";
+import { OdtParseError } from "../../packages/odt/src/error";
 
 const decoder = new TextDecoder();
 
@@ -203,7 +203,7 @@ async function run(directory: string): Promise<void> {
 
 const directory = process.argv[2];
 if (!directory || process.argv.length !== 3) {
-  console.error("usage: tsx scripts/odf-corpus.ts <directory>");
+  console.error("usage: tsx scripts/corpus/odf.ts <directory>");
   process.exitCode = 1;
 } else {
   await run(path.resolve(directory)).catch(() => {

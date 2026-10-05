@@ -73,7 +73,7 @@ Key files: `wml.xsd` (DOCX), `pml.xsd` (PPTX), `sml.xsd` (XLSX), `dml-main.xsd` 
 Validate generated ODF output (including parse → generate round trips) against them:
 
 ```bash
-pnpm tsx scripts/validate-odf.ts
+pnpm validate:odf
 ```
 
 ## Naming Conventions
@@ -403,10 +403,10 @@ cd packages/xlsx && pnpm tsx demo/<demo-file>.ts
 ## Validation
 
 ```bash
-pnpm tsx scripts/validate.ts                # All demos
-pnpm tsx scripts/validate.ts pptx           # One package
-pnpm tsx scripts/validate.ts docx "path.docx"  # Specific file
-pnpm tsx scripts/validate-odf.ts            # ODF samples against Relax NG
+pnpm validate:ooxml                         # All demos
+pnpm validate:ooxml pptx                    # One package
+pnpm validate:ooxml docx "path.docx"        # Specific file
+pnpm validate:odf                           # ODF samples against Relax NG
 ```
 
 ## Pull Request Process

@@ -15,8 +15,8 @@
  * or the source types) or genuine options/type drift — both must end at zero.
  *
  * Usage:
- *   npx tsx scripts/schema-validate.ts            # full corpus
- *   npx tsx scripts/schema-validate.ts docx       # one format only
+ *   npx tsx scripts/schema/validate.ts            # full corpus
+ *   npx tsx scripts/schema/validate.ts docx       # one format only
  */
 import { execFile } from "node:child_process";
 import * as fs from "node:fs";
@@ -31,9 +31,9 @@ import addFormats from "ajv-formats";
 const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const SCHEMA_DIR = path.join(ROOT_DIR, "packages/office-open/schemas");
-const WORKER = path.join(__dirname, "schema-roundtrip-worker.ts");
+const WORKER = path.join(__dirname, "roundtrip-worker.ts");
 
 interface FormatConfig {
   format: "docx" | "pptx" | "xlsx";

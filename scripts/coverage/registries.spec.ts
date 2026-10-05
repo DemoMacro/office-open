@@ -5,8 +5,8 @@ import { inflateRawSync } from "node:zlib";
 
 import { expect, describe, it } from "vite-plus/test";
 
-import { LEGACY_CAPABILITY_REGISTRY } from "./legacy-capability-registry";
-import { ODF_CODEC_REGISTRY } from "./odf-codec-registry";
+import { LEGACY_CAPABILITY_REGISTRY } from "./legacy-registry";
+import { ODF_CODEC_REGISTRY } from "./odf-registry";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -55,8 +55,8 @@ describe("coverage registry gates", () => {
   });
 
   it("fails empty or missing corpora instead of skipping them", () => {
-    const corpus = readFileSync(path.resolve(__dirname, "../corpus-check.ts"), "utf8");
-    const legacyCorpus = readFileSync(path.resolve(__dirname, "../legacy-corpus-check.ts"), "utf8");
+    const corpus = readFileSync(path.resolve(__dirname, "../corpus/check.ts"), "utf8");
+    const legacyCorpus = readFileSync(path.resolve(__dirname, "../corpus/legacy.ts"), "utf8");
     expect(corpus).toContain("corpus is incomplete");
     expect(corpus).not.toContain("(skipped)");
     expect(legacyCorpus).toContain("corpus is incomplete");

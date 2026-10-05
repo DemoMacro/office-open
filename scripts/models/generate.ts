@@ -2,7 +2,7 @@
  * XSD content-model extractor
  *
  * Parses the OOXML transitional XSDs, flattens xsd:group reference chains, and
- * emits per-element ordered child-slot tables to scripts/container-models.json.
+ * emits per-element ordered child-slot tables to scripts/models/container-models.json.
  * That table is the golden source for container gates: the full-sample
  * generator narrows emitted combinations against it, and descriptor lint
  * checks emit order/parse coverage against it.
@@ -16,15 +16,15 @@
  * - xsd:any wildcard slots keep their namespace list for pass-through domains
  *
  * Usage:
- *   pnpm tsx scripts/xsd-content-model.ts            # write container-models.json
- *   pnpm tsx scripts/xsd-content-model.ts --check    # diff against the committed file
+ *   pnpm tsx scripts/models/generate.ts            # write container-models.json
+ *   pnpm tsx scripts/models/generate.ts --check    # diff against the committed file
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SCHEMA_DIR = path.resolve(__dirname, "../ooxml-schemas/transitional");
+const SCHEMA_DIR = path.resolve(__dirname, "../../ooxml-schemas/transitional");
 const OUT_FILE = path.resolve(__dirname, "container-models.json");
 
 // Root schemas; transitive imports inside transitional/ are loaded recursively.
@@ -577,7 +577,7 @@ function main() {
       return;
     }
     console.error("container-models.json is stale — regenerate with:");
-    console.error("  pnpm tsx scripts/xsd-content-model.ts");
+    console.error("  pnpm tsx scripts/models/generate.ts");
     process.exitCode = 1;
     return;
   }

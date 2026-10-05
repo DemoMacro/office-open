@@ -5,7 +5,7 @@ import {
   MATH_SCHEMA_ELEMENTS,
   MANIFEST_SCHEMA_ELEMENTS,
 } from "../../packages/odf/src/index";
-import { rngElementDescriptors } from "./odf-rng-capabilities";
+import { rngElementDescriptors } from "./odf-rng";
 
 const ODF_SCHEMA = ["odf-schemas/OpenDocument-v1.3-schema.rng"] as const;
 

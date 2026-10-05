@@ -3,9 +3,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { LEGACY_CAPABILITY_REGISTRY } from "./lib/legacy-capability-registry";
+import { LEGACY_CAPABILITY_REGISTRY } from "./legacy-registry";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 interface TestRun {
   success: boolean;

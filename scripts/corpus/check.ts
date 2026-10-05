@@ -1,22 +1,22 @@
 /**
  * Third-party corpus round-trip gate.
  *
- * Real-world Office files are pinned by commit in corpus-sources.json, cloned
+ * Real-world Office files are pinned by commit in corpus/sources.json, cloned
  * under gitignored .temp, round-tripped through parse → generate, and compared
  * with a namespace-aware canonical semantic digest. XML nodes, attributes,
  * text, relationships, content types, and binary payload identity are checked.
  *
- * Baseline gate (scripts/corpus-baseline.json): per library and format,
+ * Baseline gate (scripts/corpus/baseline.json): per library and format,
  * `clean` must not drop and `parseFail`/`genFail` must not rise — absolute
  * counts, so newly added upstream files never mask a regression in files
  * that were already clean. Improvements are reported with a hint to refresh
  * the baseline. A library missing from the baseline is informational only.
  *
  * Usage:
- *   npx tsx scripts/corpus-check.ts --setup        # clone missing libraries (shallow)
- *   npx tsx scripts/corpus-check.ts                # run all libraries
- *   npx tsx scripts/corpus-check.ts --only sdk     # one library
- *   npx tsx scripts/corpus-check.ts --update-baseline   # rewrite baseline from this run
+ *   npx tsx scripts/corpus/check.ts --setup        # clone missing libraries (shallow)
+ *   npx tsx scripts/corpus/check.ts                # run all libraries
+ *   npx tsx scripts/corpus/check.ts --only sdk     # one library
+ *   npx tsx scripts/corpus/check.ts --update-baseline   # rewrite baseline from this run
  *
  * Requires a prior `pnpm build` — the runner imports package dist bundles.
  */
@@ -32,23 +32,23 @@ import { fileURLToPath } from "node:url";
 // fix that, at the cost of three workers; importing the dist bundles instead
 // also means the gate tests the exact artifacts consumers receive.
 // Requires a prior `pnpm build`.
-import { OOXML_PACKAGE_FORMATS } from "../packages/core/dist/index.mjs";
-import { parseDocument, generateDocument } from "../packages/docx/dist/index.mjs";
-import { parsePresentation, generatePresentation } from "../packages/pptx/dist/index.mjs";
-import { parseWorkbook, generateWorkbook } from "../packages/xlsx/dist/index.mjs";
-import corpusSources from "./corpus-sources.json";
+import { OOXML_PACKAGE_FORMATS } from "../../packages/core/dist/index.mjs";
+import { parseDocument, generateDocument } from "../../packages/docx/dist/index.mjs";
+import { parsePresentation, generatePresentation } from "../../packages/pptx/dist/index.mjs";
+import { parseWorkbook, generateWorkbook } from "../../packages/xlsx/dist/index.mjs";
 import {
   archiveSemanticDiffDetails,
   archiveTagDiffs,
   classifyPackageFailure,
   type CorpusFailureKind,
   type SemanticPartDiff,
-} from "./lib/corpus-semantics";
+} from "./semantics";
+import corpusSources from "./sources.json";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const BASELINE_PATH = path.join(__dirname, "corpus-baseline.json");
-const DEFAULT_REPORT_PATH = path.resolve(__dirname, "../.temp/corpus-report.json");
+const ROOT_DIR = path.resolve(__dirname, "../..");
+const BASELINE_PATH = path.join(__dirname, "baseline.json");
+const DEFAULT_REPORT_PATH = path.resolve(__dirname, "../../.temp/corpus-report.json");
 const STRICT_SEMANTIC_GATE = process.env.CORPUS_STRICT_SEMANTIC === "1";
 
 interface CorpusSource {

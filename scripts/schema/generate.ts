@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import { createGenerator } from "ts-json-schema-generator";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const OUT_DIR = path.resolve(ROOT_DIR, "packages/office-open/schemas");
 
 interface FormatConfig {

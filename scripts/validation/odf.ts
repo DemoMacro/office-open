@@ -5,7 +5,7 @@
  *   - META-INF/manifest.xml            → manifest schema
  *   - content.xml, styles.xml, meta.xml → main schema
  *
- * Usage: npx tsx scripts/validate-odf.ts
+ * Usage: npx tsx scripts/validation/odf.ts
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -14,18 +14,18 @@ import { fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
 import { RelaxNGValidator, XmlDocument } from "libxml2-wasm";
 
-import type { DocumentOptions } from "../packages/docx/src";
-import { generateOdp, parseOdp } from "../packages/odp/src";
-import { generateOds, parseOds } from "../packages/ods/src";
-import { generateOdt, parseOdt } from "../packages/odt/src";
-import type { PresentationOptions } from "../packages/pptx/src";
-import type { WorkbookOptions } from "../packages/xlsx/src";
+import type { DocumentOptions } from "../../packages/docx/src";
+import { generateOdp, parseOdp } from "../../packages/odp/src";
+import { generateOds, parseOds } from "../../packages/ods/src";
+import { generateOdt, parseOdt } from "../../packages/odt/src";
+import type { PresentationOptions } from "../../packages/pptx/src";
+import type { WorkbookOptions } from "../../packages/xlsx/src";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MAIN_SCHEMA = path.resolve(__dirname, "../odf-schemas/OpenDocument-v1.3-schema.rng");
+const MAIN_SCHEMA = path.resolve(__dirname, "../../odf-schemas/OpenDocument-v1.3-schema.rng");
 const MANIFEST_SCHEMA = path.resolve(
   __dirname,
-  "../odf-schemas/OpenDocument-v1.3-manifest-schema.rng",
+  "../../odf-schemas/OpenDocument-v1.3-manifest-schema.rng",
 );
 
 const ODT_DOCUMENT: DocumentOptions = {

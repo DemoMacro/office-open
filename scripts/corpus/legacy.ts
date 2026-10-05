@@ -12,20 +12,20 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseDocument as parseLegacyDocument } from "../packages/doc/dist/index.mjs";
-import { generateDocument, parseDocument } from "../packages/docx/dist/index.mjs";
-import { generateOdp, parseOdp } from "../packages/odp/dist/index.mjs";
-import { generateOds, parseOds } from "../packages/ods/dist/index.mjs";
-import { generateOdt, parseOdt } from "../packages/odt/dist/index.mjs";
-import { parsePresentation as parseLegacyPresentation } from "../packages/ppt/dist/index.mjs";
-import { generatePresentation, parsePresentation } from "../packages/pptx/dist/index.mjs";
-import { parseRtf } from "../packages/rtf/dist/index.mjs";
-import { parseWorkbook as parseLegacyWorkbook } from "../packages/xls/dist/index.mjs";
-import { generateWorkbook as generateXlsxWorkbook } from "../packages/xlsx/dist/index.mjs";
-import { parseWorkbook as parseXlsxDocument } from "../packages/xlsx/dist/index.mjs";
+import { parseDocument as parseLegacyDocument } from "../../packages/doc/dist/index.mjs";
+import { generateDocument, parseDocument } from "../../packages/docx/dist/index.mjs";
+import { generateOdp, parseOdp } from "../../packages/odp/dist/index.mjs";
+import { generateOds, parseOds } from "../../packages/ods/dist/index.mjs";
+import { generateOdt, parseOdt } from "../../packages/odt/dist/index.mjs";
+import { parsePresentation as parseLegacyPresentation } from "../../packages/ppt/dist/index.mjs";
+import { generatePresentation, parsePresentation } from "../../packages/pptx/dist/index.mjs";
+import { parseRtf } from "../../packages/rtf/dist/index.mjs";
+import { parseWorkbook as parseLegacyWorkbook } from "../../packages/xls/dist/index.mjs";
+import { generateWorkbook as generateXlsxWorkbook } from "../../packages/xlsx/dist/index.mjs";
+import { parseWorkbook as parseXlsxDocument } from "../../packages/xlsx/dist/index.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
+const ROOT_DIR = path.resolve(__dirname, "../..");
 const CORPUS_DIRS = [
   "Open-XML-SDK",
   "calamine",

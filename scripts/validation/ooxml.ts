@@ -14,13 +14,13 @@ import { execFile, execSync } from "node:child_process";
  *   - (others)                     → skipped or auto-detected
  *
  * Usage:
- *   npx tsx scripts/validate.ts              # validate all (pptx + docx + xlsx)
- *   npx tsx scripts/validate.ts pptx         # validate pptx demos only
- *   npx tsx scripts/validate.ts docx         # validate docx demos only
- *   npx tsx scripts/validate.ts xlsx         # validate xlsx demos only
- *   npx tsx scripts/validate.ts slide <file> [n]  # validate specific pptx slide
- *   npx tsx scripts/validate.ts docx <file>       # validate specific docx file
- *   npx tsx scripts/validate.ts xlsx <file> [n]   # validate specific xlsx file
+ *   npx tsx scripts/validation/ooxml.ts              # validate all (pptx + docx + xlsx)
+ *   npx tsx scripts/validation/ooxml.ts pptx         # validate pptx demos only
+ *   npx tsx scripts/validation/ooxml.ts docx         # validate docx demos only
+ *   npx tsx scripts/validation/ooxml.ts xlsx         # validate xlsx demos only
+ *   npx tsx scripts/validation/ooxml.ts slide <file> [n]  # validate specific pptx slide
+ *   npx tsx scripts/validation/ooxml.ts docx <file>       # validate specific docx file
+ *   npx tsx scripts/validation/ooxml.ts xlsx <file> [n]   # validate specific xlsx file
  */
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -34,13 +34,13 @@ import { xmlRegisterFsInputProviders } from "libxml2-wasm/lib/nodejs.mjs";
 
 // Relative source import so tsx always sees the latest OPC validator without
 // depending on a prior @office-open/core dist build.
-import { validateOpcConsistency, PART_REGISTRIES } from "../packages/core/src/opc";
+import { validateOpcConsistency, PART_REGISTRIES } from "../../packages/core/src/opc";
 
 const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const XSD_DIR = path.resolve(__dirname, "../ooxml-schemas/transitional");
+const ROOT_DIR = path.resolve(__dirname, "../..");
+const XSD_DIR = path.resolve(__dirname, "../../ooxml-schemas/transitional");
 
 function getDemoFiles(dir: string): string[] {
   return fs

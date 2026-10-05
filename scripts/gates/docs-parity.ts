@@ -16,13 +16,13 @@
  *      target section must exist.
  *
  * Usage:
- *   npx tsx scripts/docs-parity-check.ts
+ *   npx tsx scripts/gates/docs-parity.ts
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const CONTENT = path.join(ROOT, "docs", "content");
 const EN = path.join(CONTENT, "en");
 const ZH = path.join(CONTENT, "zh");

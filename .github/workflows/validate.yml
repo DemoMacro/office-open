@@ -15,6 +15,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
       - name: Validate Demos
-        run: npx tsx scripts/validate.ts
+        run: npx tsx scripts/validation/ooxml.ts
       - name: Check Container Models
         run: pnpm run containers:check

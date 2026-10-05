@@ -4,10 +4,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { parse, type Element } from "@office-open/xml";
 
-import { ODF_CODEC_REGISTRY } from "./lib/odf-codec-registry";
-import { runOdfCoverageFixture, runOdfNegativeFixture } from "./lib/odf-coverage-fixtures";
+import { runOdfCoverageFixture, runOdfNegativeFixture } from "./odf-fixtures";
+import { ODF_CODEC_REGISTRY } from "./odf-registry";
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const SCHEMA_FILES = [
   "odf-schemas/OpenDocument-v1.3-schema.rng",
   "odf-schemas/OpenDocument-v1.3-manifest-schema.rng",

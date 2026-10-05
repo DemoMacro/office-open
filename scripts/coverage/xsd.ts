@@ -9,23 +9,23 @@
  * No broad heuristics — only matches names in provable implementation patterns.
  *
  * Usage:
- *   pnpm tsx scripts/xsd-coverage.ts              # full report
- *   pnpm tsx scripts/xsd-coverage.ts wml           # docx only
- *   pnpm tsx scripts/xsd-coverage.ts pml           # pptx only
- *   pnpm tsx scripts/xsd-coverage.ts sml           # xlsx only
- *   pnpm tsx scripts/xsd-coverage.ts dml-main      # DrawingML main
- *   pnpm tsx scripts/xsd-coverage.ts w14           # Word 2010 extensions
- *   pnpm tsx scripts/xsd-coverage.ts --missing     # show missing items (default)
- *   pnpm tsx scripts/xsd-coverage.ts --summary     # only show summary stats
- *   pnpm tsx scripts/xsd-coverage.ts --json        # JSON output
+ *   pnpm tsx scripts/coverage/xsd.ts              # full report
+ *   pnpm tsx scripts/coverage/xsd.ts wml           # docx only
+ *   pnpm tsx scripts/coverage/xsd.ts pml           # pptx only
+ *   pnpm tsx scripts/coverage/xsd.ts sml           # xlsx only
+ *   pnpm tsx scripts/coverage/xsd.ts dml-main      # DrawingML main
+ *   pnpm tsx scripts/coverage/xsd.ts w14           # Word 2010 extensions
+ *   pnpm tsx scripts/coverage/xsd.ts --missing     # show missing items (default)
+ *   pnpm tsx scripts/coverage/xsd.ts --summary     # only show summary stats
+ *   pnpm tsx scripts/coverage/xsd.ts --json        # JSON output
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const SCHEMA_ROOT = path.resolve(__dirname, "../ooxml-schemas");
+const ROOT_DIR = path.resolve(__dirname, "../..");
+const SCHEMA_ROOT = path.resolve(__dirname, "../../ooxml-schemas");
 
 // ── XSD → Code mapping configuration ──
 

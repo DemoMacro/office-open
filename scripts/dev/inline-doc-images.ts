@@ -7,7 +7,7 @@
  * (the basic/primary example). Any previously inlined data URL is reverted to
  * the placeholder first, so re-running with a different image swaps it cleanly.
  *
- * Usage: pnpm -C <root> exec tsx scripts/image-to-base64.ts
+ * Usage: pnpm -C <root> exec tsx scripts/dev/inline-doc-images.ts
  */
 import { readFileSync, writeFileSync } from "node:fs";
 

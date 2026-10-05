@@ -7,7 +7,7 @@ import {
   classifyPackageFailure,
   explainSemanticPartDiff,
   parseCanonicalXml,
-} from "./corpus-semantics";
+} from "./semantics";
 
 function zip(files: Record<string, string | Uint8Array>): Uint8Array {
   return zipSync(

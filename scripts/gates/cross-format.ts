@@ -3,15 +3,15 @@ import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inflateRawSync } from "node:zlib";
 
-import { parseDocument as parseLegacyDocument } from "../packages/doc/dist/index.mjs";
-import { generateDocument, parseDocument as parseDocx } from "../packages/docx/dist/index.mjs";
-import { parsePresentation as parseLegacyPresentation } from "../packages/ppt/dist/index.mjs";
+import { parseDocument as parseLegacyDocument } from "../../packages/doc/dist/index.mjs";
+import { generateDocument, parseDocument as parseDocx } from "../../packages/docx/dist/index.mjs";
+import { parsePresentation as parseLegacyPresentation } from "../../packages/ppt/dist/index.mjs";
 import {
   generatePresentation,
   parsePresentation as parsePptx,
-} from "../packages/pptx/dist/index.mjs";
-import { parseWorkbook as parseLegacyWorkbook } from "../packages/xls/dist/index.mjs";
-import { generateWorkbook, parseWorkbook as parseXlsx } from "../packages/xlsx/dist/index.mjs";
+} from "../../packages/pptx/dist/index.mjs";
+import { parseWorkbook as parseLegacyWorkbook } from "../../packages/xls/dist/index.mjs";
+import { generateWorkbook, parseWorkbook as parseXlsx } from "../../packages/xlsx/dist/index.mjs";
 
 type JsonRecord = Record<string, unknown>;
 type Projection = string[];
@@ -27,7 +27,7 @@ interface MatrixEntry {
   expectedLosses: readonly string[];
 }
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
 function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -105,7 +105,7 @@ function workbookProjection(options: JsonRecord): Projection {
 }
 
 function fixture(fixtureName: string): Uint8Array {
-  const compressed = fs.readFileSync(path.join(ROOT, "scripts", "fixtures", fixtureName));
+  const compressed = fs.readFileSync(path.join(ROOT, "scripts/fixtures", fixtureName));
   return new Uint8Array(inflateRawSync(Buffer.from(compressed.toString("utf8").trim(), "base64")));
 }
 

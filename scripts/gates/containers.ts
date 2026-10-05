@@ -1,13 +1,13 @@
 /**
  * Container-model gate: validate the XML inside generated OOXML packages
- * against scripts/container-models.json — child legality, slot order, and
+ * against scripts/models/container-models.json — child legality, slot order, and
  * single-round pick exclusivity. A fast local gate over the demo artifacts
  * (no .NET, no libxml2); the extracted XSD content-model table is the golden
  * source (`pnpm models:generate`).
  *
  * Usage:
- *   npx tsx scripts/check-containers.ts            # all demo artifacts (packages/<pkg>/.temp)
- *   npx tsx scripts/check-containers.ts <file>...   # specific package files
+ *   npx tsx scripts/gates/containers.ts            # all demo artifacts (packages/<pkg>/.temp)
+ *   npx tsx scripts/gates/containers.ts <file>...   # specific package files
  *
  * Exits non-zero when any violation is found. mc:AlternateContent subtrees
  * are skipped (MCE version-negotiated content); non-ISO prefixes (wp14/x14…)
@@ -20,8 +20,8 @@ import { fileURLToPath } from "node:url";
 import { unzipSync } from "fflate";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = path.resolve(__dirname, "..");
-const MODELS_PATH = path.join(ROOT_DIR, "scripts", "container-models.json");
+const ROOT_DIR = path.resolve(__dirname, "../..");
+const MODELS_PATH = path.join(__dirname, "../models/container-models.json");
 
 interface Slot {
   elements?: string[];
