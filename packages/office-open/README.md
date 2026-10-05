@@ -4,13 +4,13 @@
 ![npm downloads](https://img.shields.io/npm/dw/office-open)
 ![npm license](https://img.shields.io/npm/l/office-open)
 
-> Everything for AI-native Office documents in one install — Word, Excel, PowerPoint, and OpenDocument generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
+> Everything for AI-native Office documents in one install — Word, Excel, PowerPoint, RTF, and OpenDocument generation from JSON, legacy and ODF readers, plus a CLI, Vercel AI SDK tools, and frozen JSON Schemas for LLM tool-calling.
 
 ## Features
 
 - **One Install** — Import from the canonical `office-open/document`, `office-open/workbook`, and `office-open/presentation` APIs, plus per-format packages; no Microsoft Office required
-- **More Formats** — Parse legacy `.doc`, `.xls`, `.ppt`, and `.rtf`; parse and generate canonical `.odt`, `.ods`, and `.odp`; convert CSV/TSV
-- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, `generate-odt`, `generate-ods`, and `generate-odp`, with schema-validated retries
+- **More Formats** — Parse legacy `.doc`, `.xls`, and `.ppt`; generate and parse `.rtf`; parse and generate canonical `.odt`, `.ods`, and `.odp`; convert CSV/TSV
+- **AI SDK Tools** — Vercel AI SDK compatible tools for `generate-docx`, `generate-pptx`, `generate-xlsx`, `generate-odt`, `generate-rtf`, `generate-ods`, and `generate-odp`, with schema-validated retries
 - **JSON Schemas** — Draft-07 input validation for all document types, with on-demand schema slicing for LLM context budgets
 - **CLI** — Generate files from JSON via `npx office-open`
 - **Generate Function** — Type-agnostic `generate()` for dynamic document creation
@@ -58,6 +58,7 @@ const buffer = await generate({
 npx office-open docx document.json "output.docx"
 npx office-open pptx slides.json "output.pptx"
 npx office-open xlsx spreadsheet.json "output.xlsx"
+npx office-open rtf document.json "output.rtf"
 
 # Detect or parse supported input formats
 npx office-open detect input.doc
@@ -158,7 +159,7 @@ import { parse, stringify } from "office-open/xml";
 | XLSX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
 | PPTX family variants | ✅    | ✅       | Full OOXML round-trip and patch support           |
 | DOC, XLS, PPT        | ✅    | ❌       | Parse-only projection to existing option families |
-| RTF                  | ✅    | ❌       | Parse-only projection to `DocumentOptions`        |
+| RTF                  | ✅    | ✅       | Strict `DocumentOptions` generation and parsing   |
 | ODT, ODS, ODP        | ✅    | ✅       | Canonical typed generation and parsing; no patch  |
 | CSV, TSV             | ✅    | ✅       | Conversion to and from `WorkbookOptions`          |
 

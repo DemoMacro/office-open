@@ -9,7 +9,7 @@
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](https://www.contributor-covenant.org/version/2/1/code_of_conduct/)
 
 > AI 原生的 Office 文档库，面向 TypeScript 和 JavaScript。
-> 用纯 JSON 或全类型 API 创建 Word、Excel、PowerPoint 文件（.docx、.xlsx、.pptx）——生成、解析、补丁三合一。读取旧版 .doc/.xls/.ppt、RTF 与 ODF；生成 ODT/ODS/ODP 并转换 CSV/TSV。为 AI 智能体、LLM 工具调用与手写代码而生；无需 Microsoft Office。
+> 用纯 JSON 或全类型 API 创建 Word、Excel、PowerPoint、RTF 和 OpenDocument 文件——在格式能力范围内提供生成、解析和补丁。读取旧版 .doc/.xls/.ppt 与 ODF；生成 .rtf、ODT/ODS/ODP 并转换 CSV/TSV。为 AI 智能体、LLM 工具调用与手写代码而生；无需 Microsoft Office。
 
 [文档](https://www.office-open.com) · [AI 集成](https://www.office-open.com/en/getting-started/ai-integration) · [性能基准](#性能基准) · [npm](https://www.npmjs.com/package/office-open)
 
@@ -18,7 +18,7 @@
 ## 特性
 
 - 📄 **三格式一体** — Word (.docx)、Excel (.xlsx)、PowerPoint (.pptx) 共用一套连贯 API——无需服务器，离线可用
-- 🗂 **多格式读取** — 通过同一套 options 模型解析旧版 Word/Excel/PowerPoint（.doc/.xls/.ppt）、RTF、ODF 与 OOXML 包变体；支持生成 ODT/ODS/ODP 与转换 CSV/TSV
+- 🗂 **多格式读写** — 通过同一套 options 模型解析旧版 Word/Excel/PowerPoint（.doc/.xls/.ppt）、RTF、ODF 与 OOXML 包变体；支持生成 RTF、ODT/ODS/ODP 与转换 CSV/TSV
 - 🤖 **AI 工具链** — 由 TypeScript API 冻结的 Draft-07 JSON Schema、按需切片适配 LLM 上下文预算（CLI + SDK 工具）、Vercel AI SDK 工具定义、可安装的 Agent Skill
 - 🧭 **核心 OOXML 覆盖** — 17 个核心 OOXML Transitional schema（WordprocessingML、PresentationML、SpreadsheetML、DrawingML、共享 math 与 VML）的全部 2,191 个元素与 1,923 个属性均已实现生成与解析；较新的 Word 扩展 schema 为部分覆盖，并由自动化 XSD 覆盖率工具持续追踪
 - 📐 **符合规范** — 输出通过 OOXML Transitional XSD schema（ISO/IEC 29500）校验，并经实测可在 Microsoft Office、WPS Office、LibreOffice、Google Workspace 中打开
@@ -52,7 +52,7 @@
 | [@office-open/doc](./packages/doc/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/doc)  | 旧版 Word .doc 解析                 |
 | [@office-open/xls](./packages/xls/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/xls)  | 旧版 Excel .xls 解析                |
 | [@office-open/ppt](./packages/ppt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ppt)  | 旧版 PowerPoint .ppt 解析           |
-| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 解析               |
+| [@office-open/rtf](./packages/rtf/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/rtf)  | Rich Text Format 生成与解析         |
 | [@office-open/odt](./packages/odt/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odt)  | OpenDocument 文本生成与解析         |
 | [@office-open/ods](./packages/ods/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/ods)  | OpenDocument 表格生成与解析         |
 | [@office-open/odp](./packages/odp/README.md)    | ![npm](https://img.shields.io/npm/v/@office-open/odp)  | OpenDocument 演示生成与解析         |
@@ -61,14 +61,14 @@
 
 ## 格式能力
 
-| 格式族                        | 解析 | 生成 | 补丁 | 说明                         |
-| ----------------------------- | ---- | ---- | ---- | ---------------------------- |
-| OOXML `.docx`/`.xlsx`/`.pptx` | ✅   | ✅   | ✅   | 双向包编解码器               |
-| 旧版 `.doc`/`.xls`/`.ppt`     | ✅   | ❌   | ❌   | 投影为 OOXML options 模型    |
-| `.rtf`                        | ✅   | ❌   | ❌   | 只读投影到 `DocumentOptions` |
-| ODF `.odt`/`.ods`/`.odp`      | ✅   | ✅   | ❌   | 规范格式族读写编解码器       |
+| 格式族                        | 解析 | 生成 | 补丁 | 说明                          |
+| ----------------------------- | ---- | ---- | ---- | ----------------------------- |
+| OOXML `.docx`/`.xlsx`/`.pptx` | ✅   | ✅   | ✅   | 双向包编解码器                |
+| 旧版 `.doc`/`.xls`/`.ppt`     | ✅   | ❌   | ❌   | 投影为 OOXML options 模型     |
+| `.rtf`                        | ✅   | ✅   | ❌   | 严格的 `DocumentOptions` 投影 |
+| ODF `.odt`/`.ods`/`.odp`      | ✅   | ✅   | ❌   | 规范格式族读写编解码器        |
 
-能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式和 RTF 没有写入器，ODF 编解码器也不提供补丁操作。
+能力矩阵是契约，不代表可以虚构不支持的编辑能力：旧版格式没有写入器，RTF 会结构化拒绝无法表示的字段而不是静默丢弃，ODF 编解码器也不提供补丁操作。
 
 包依赖图遵循格式归属：`odf` 负责 OCF 容器、XML 运行时、元数据以及共享图表/数据库编解码器；每个 ODF 文档编解码器可以类型引用对应 OOXML 包，运行时只依赖 `odf`；同级 ODF 编解码器互不依赖；`core` 永不导入格式编解码器；只有 `office-open` 聚合全部公开文档编解码器。
 

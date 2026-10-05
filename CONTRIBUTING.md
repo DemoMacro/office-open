@@ -24,7 +24,7 @@ packages/
   doc/    — @office-open/doc (legacy DOC reader)
   xls/    — @office-open/xls (legacy XLS reader)
   ppt/    — @office-open/ppt (legacy PPT reader)
-  rtf/    — @office-open/rtf (RTF reader)
+  rtf/    — @office-open/rtf (RTF reader/writer)
   odf/    — @office-open/odf (OCF container, ODF runtime, shared ODF codecs)
   odt/    — @office-open/odt (ODT generate/parse)
   ods/    — @office-open/ods (ODS generate/parse)
