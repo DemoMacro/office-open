@@ -2,15 +2,15 @@
   "sdk": {
     "docx": {
       "total": 505,
-      "clean": 480,
-      "diff": 23,
+      "clean": 479,
+      "diff": 24,
       "parseFail": 2,
       "genFail": 0
     },
     "xlsx": {
       "total": 155,
-      "clean": 21,
-      "diff": 134,
+      "clean": 90,
+      "diff": 65,
       "parseFail": 0,
       "genFail": 0
     },
@@ -31,9 +31,9 @@
       "genFail": 0
     },
     "xlsx": {
-      "total": 69,
-      "clean": 26,
-      "diff": 42,
+      "total": 70,
+      "clean": 35,
+      "diff": 34,
       "parseFail": 1,
       "genFail": 0
     },
@@ -54,9 +54,9 @@
       "genFail": 0
     },
     "xlsx": {
-      "total": 384,
-      "clean": 66,
-      "diff": 316,
+      "total": 385,
+      "clean": 120,
+      "diff": 263,
       "parseFail": 2,
       "genFail": 0
     },
@@ -78,8 +78,8 @@
     },
     "xlsx": {
       "total": 15,
-      "clean": 2,
-      "diff": 8,
+      "clean": 8,
+      "diff": 2,
       "parseFail": 5,
       "genFail": 0
     },
@@ -101,8 +101,8 @@
     },
     "xlsx": {
       "total": 1,
-      "clean": 0,
-      "diff": 1,
+      "clean": 1,
+      "diff": 0,
       "parseFail": 0,
       "genFail": 0
     },
@@ -147,8 +147,8 @@
     },
     "xlsx": {
       "total": 38,
-      "clean": 14,
-      "diff": 20,
+      "clean": 23,
+      "diff": 11,
       "parseFail": 4,
       "genFail": 0
     },
