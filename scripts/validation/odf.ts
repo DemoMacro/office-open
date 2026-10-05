@@ -15,9 +15,9 @@ import { unzipSync } from "fflate";
 import { RelaxNGValidator, XmlDocument } from "libxml2-wasm";
 
 import type { DocumentOptions } from "../../packages/docx/src";
-import { generateOdp, parseOdp } from "../../packages/odp/src";
-import { generateOds, parseOds } from "../../packages/ods/src";
-import { generateOdt, parseOdt } from "../../packages/odt/src";
+import { generatePresentation, parsePresentation } from "../../packages/odp/src";
+import { generateWorkbook, parseWorkbook } from "../../packages/ods/src";
+import { generateDocument, parseDocument } from "../../packages/odt/src";
 import type { PresentationOptions } from "../../packages/pptx/src";
 import type { WorkbookOptions } from "../../packages/xlsx/src";
 
@@ -100,18 +100,18 @@ const ODP_PRESENTATION: PresentationOptions = {
 };
 
 const SAMPLES: Array<[string, Uint8Array]> = [
-  ["odt", generateOdt(ODT_DOCUMENT)],
-  ["odt-empty", generateOdt({ sections: [] })],
-  ["ods", generateOds(ODS_WORKBOOK)],
-  ["ods-empty", generateOds({})],
-  ["odp", generateOdp(ODP_PRESENTATION)],
-  ["odp-empty", generateOdp({})],
+  ["odt", generateDocument(ODT_DOCUMENT)],
+  ["odt-empty", generateDocument({ sections: [] })],
+  ["ods", generateWorkbook(ODS_WORKBOOK)],
+  ["ods-empty", generateWorkbook({})],
+  ["odp", generatePresentation(ODP_PRESENTATION)],
+  ["odp-empty", generatePresentation({})],
 ];
 
 const roundTrips: Array<[string, Uint8Array]> = [
-  ["odt", generateOdt(parseOdt(SAMPLES[0]![1]))],
-  ["ods", generateOds(parseOds(SAMPLES[2]![1]))],
-  ["odp", generateOdp(parseOdp(SAMPLES[4]![1]))],
+  ["odt", generateDocument(parseDocument(SAMPLES[0]![1]))],
+  ["ods", generateWorkbook(parseWorkbook(SAMPLES[2]![1]))],
+  ["odp", generatePresentation(parsePresentation(SAMPLES[4]![1]))],
 ];
 
 const mainValidator = RelaxNGValidator.fromDoc(

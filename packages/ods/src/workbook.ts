@@ -45,7 +45,7 @@ export const NAMESPACES = [
   'xmlns:dc="http://purl.org/dc/elements/1.1/"',
 ].join(" ");
 
-export function generateOds(options: WorkbookOptions): Uint8Array {
+export function generateWorkbook(options: WorkbookOptions): Uint8Array {
   const styles: string[] = [];
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
@@ -110,9 +110,9 @@ export function unsupportedOdsValue(name: string, reason: string): OdsParseError
   );
 }
 
-export function parseOds(data: Uint8Array): WorkbookOptions {
+export function parseWorkbook(data: Uint8Array): WorkbookOptions {
   try {
-    return parseOdsWorkbook(data);
+    return parseOdsBody(data);
   } catch (cause) {
     if (cause instanceof OdsParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
@@ -131,7 +131,7 @@ export function parseOds(data: Uint8Array): WorkbookOptions {
   }
 }
 
-export function parseOdsWorkbook(data: Uint8Array): WorkbookOptions {
+function parseOdsBody(data: Uint8Array): WorkbookOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");

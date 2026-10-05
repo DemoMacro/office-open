@@ -6,7 +6,7 @@ import { tokenizeRtf } from "./tokenizer";
 
 export type RtfParseOptions = Record<string, never>;
 
-export function parseRtf(source: string, _options?: RtfParseOptions): DocumentOptions {
+export function parseDocument(source: string, _options?: RtfParseOptions): DocumentOptions {
   const tokens = tokenizeRtf(source);
   if (
     tokens[0]?.kind !== "group-start" ||

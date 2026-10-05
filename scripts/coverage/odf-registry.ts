@@ -63,7 +63,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "odt",
     classification: "canonical",
-    owner: { package: "odt", module: "src/index.ts", export: "generateOdt" },
+    owner: { package: "odt", module: "src/index.ts", export: "generateDocument" },
     schemaPrefixes: ["config", "dc", "meta", "office", "style", "table", "text"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, [
       "config",
@@ -74,7 +74,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "table",
       "text",
     ]),
-    roundTrip: ["generateOdt", "parseOdt"],
+    roundTrip: ["generateDocument", "parseDocument"],
     testId: "ODT document semantic round trip",
     fixtureKey: "odt-paragraph",
     negativeCapabilities: [
@@ -84,7 +84,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "ods",
     classification: "canonical",
-    owner: { package: "ods", module: "src/index.ts", export: "generateOds" },
+    owner: { package: "ods", module: "src/index.ts", export: "generateWorkbook" },
     schemaPrefixes: ["number", "office", "style", "table", "text"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, [
       "number",
@@ -93,7 +93,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "table",
       "text",
     ]),
-    roundTrip: ["generateOds", "parseOds"],
+    roundTrip: ["generateWorkbook", "parseWorkbook"],
     testId: "ODS workbook semantic round trip",
     fixtureKey: "ods-cell",
     negativeCapabilities: [
@@ -103,7 +103,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
   {
     id: "odp",
     classification: "canonical",
-    owner: { package: "odp", module: "src/index.ts", export: "generateOdp" },
+    owner: { package: "odp", module: "src/index.ts", export: "generatePresentation" },
     schemaPrefixes: ["anim", "draw", "office", "presentation", "style", "text"],
     schemaElements: rngElementDescriptors(ODF_SCHEMA, [
       "anim",
@@ -113,7 +113,7 @@ export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
       "style",
       "text",
     ]),
-    roundTrip: ["generateOdp", "parseOdp"],
+    roundTrip: ["generatePresentation", "parsePresentation"],
     testId: "ODP presentation semantic round trip",
     fixtureKey: "odp-notes",
     negativeCapabilities: [

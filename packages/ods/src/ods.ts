@@ -1,1 +1,1 @@
-export { generateOds, parseOds } from "./workbook";
+export { generateWorkbook, parseWorkbook } from "./workbook";

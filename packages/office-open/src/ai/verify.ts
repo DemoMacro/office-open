@@ -18,14 +18,14 @@ import {
   validateOpcConsistency,
 } from "@office-open/core";
 
-import type { GenerateType } from "../generate";
+import type { OfficeGenerateFormat } from "../generate";
 
 // Binary parts (media, fonts) decode to replacement chars — the check only
 // reads part presence and paths, never their content.
 const decoder = new TextDecoder("utf-8", { fatal: false });
 
 /** OPC-check a fresh package and return it as base64 for the tool result. */
-export function generateVerifiedBase64(type: GenerateType, bytes: Uint8Array): string {
+export function generateVerifiedBase64(type: OfficeGenerateFormat, bytes: Uint8Array): string {
   if (type === "odt" || type === "ods" || type === "odp" || type === "rtf") {
     return encodeBase64(bytes);
   }

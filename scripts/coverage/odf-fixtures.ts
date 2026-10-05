@@ -12,9 +12,9 @@ import {
   parseOfficeForms,
   parseManifestOptions,
 } from "@office-open/odf";
-import { generateOdp, parseOdp } from "@office-open/odp";
-import { generateOds, parseOds } from "@office-open/ods";
-import { generateOdt, parseOdt } from "@office-open/odt";
+import { generatePresentation, parsePresentation } from "@office-open/odp";
+import { generateWorkbook, parseWorkbook } from "@office-open/ods";
+import { generateDocument, parseDocument } from "@office-open/odt";
 import { parse, type Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 
@@ -83,15 +83,19 @@ export const ODF_COVERAGE_FIXTURES = {
     assert(drawingVocabularyXml(parsed).includes("Drawing"), "drawing vocabulary XML");
   },
   "odt-paragraph"() {
-    const parsed = parseOdt(generateOdt({ sections: [{ children: [{ paragraph: "ODT" }] }] }));
+    const parsed = parseDocument(
+      generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
+    );
     assertEqual(collectText(parsed.sections), ["ODT"], "ODT paragraph");
   },
   "ods-cell"() {
-    const parsed = parseOds(generateOds({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }));
+    const parsed = parseWorkbook(
+      generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }),
+    );
     assertEqual(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value, 1.5, "ODS cell value");
   },
   "odp-notes"() {
-    const parsed = parseOdp(generateOdp({ slides: [{ notes: "ODP" }] }));
+    const parsed = parsePresentation(generatePresentation({ slides: [{ notes: "ODP" }] }));
     assertEqual(parsed.slides?.[0]?.notes, "ODP", "ODP notes");
   },
   "chart-column-series"() {
@@ -184,9 +188,9 @@ export const ODF_NEGATIVE_FIXTURES = {
   "ODT rejects foreign body element"() {
     assertThrows(
       () =>
-        parseOdt(
+        parseDocument(
           replaceOdfXml(
-            generateOdt({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
+            generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
             "</office:text>",
             "<office:unknown/></office:text>",
           ),
@@ -197,9 +201,9 @@ export const ODF_NEGATIVE_FIXTURES = {
   "ODS rejects foreign body element"() {
     assertThrows(
       () =>
-        parseOds(
+        parseWorkbook(
           replaceOdfXml(
-            generateOds({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }),
+            generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: 1.5 }] }] }] }),
             "</office:spreadsheet>",
             "<office:unknown/></office:spreadsheet>",
           ),
@@ -210,9 +214,9 @@ export const ODF_NEGATIVE_FIXTURES = {
   "ODP rejects foreign slide element"() {
     assertThrows(
       () =>
-        parseOdp(
+        parsePresentation(
           replaceOdfXml(
-            generateOdp({ slides: [{ notes: "ODP" }] }),
+            generatePresentation({ slides: [{ notes: "ODP" }] }),
             "</draw:page>",
             "<draw:unknown/></draw:page>",
           ),

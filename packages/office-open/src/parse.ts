@@ -2,57 +2,45 @@ import type { DocumentOptions } from "@office-open/docx";
 import type { PresentationOptions } from "@office-open/pptx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
+import { parseDocument, type DocumentParseFormat, type DocumentParseOptions } from "./document";
+import { detectOffice } from "./formats";
 import {
-  parseDocumentFile,
-  type DocumentFileParseFormat,
-  type DocumentFileParseOptions,
-} from "./document";
-import { detectOfficeFormat } from "./formats";
-import {
-  parsePresentationFile,
-  type PresentationFileParseFormat,
-  type PresentationFileParseOptions,
+  parsePresentation,
+  type PresentationParseFormat,
+  type PresentationParseOptions,
 } from "./presentation";
-import {
-  parseWorkbookFile,
-  type WorkbookFileParseFormat,
-  type WorkbookFileParseOptions,
-} from "./workbook";
+import { parseWorkbook, type WorkbookParseFormat, type WorkbookParseOptions } from "./workbook";
 
-type DocumentOfficeFormat = DocumentFileParseFormat;
-type WorkbookOfficeFormat = WorkbookFileParseFormat;
-type PresentationOfficeFormat = PresentationFileParseFormat;
+export type OfficeParseOptions = DocumentParseOptions &
+  WorkbookParseOptions &
+  PresentationParseOptions;
 
-export type OfficeDocumentParseOptions = DocumentFileParseOptions;
-export type OfficeWorkbookParseOptions = WorkbookFileParseOptions;
-export type OfficePresentationParseOptions = PresentationFileParseOptions;
+export type ParsedOffice =
+  | { format: DocumentParseFormat; options: DocumentOptions }
+  | { format: WorkbookParseFormat; options: WorkbookOptions }
+  | { format: PresentationParseFormat; options: PresentationOptions };
 
-export type ParsedOfficeDocument =
-  | { type: DocumentOfficeFormat; options: DocumentOptions }
-  | { type: WorkbookOfficeFormat; options: WorkbookOptions }
-  | { type: PresentationOfficeFormat; options: PresentationOptions };
-
-export async function parseOfficeDocument(
+export async function parseOffice(
   input: Uint8Array | string,
-  options?: DocumentFileParseOptions & WorkbookFileParseOptions & PresentationFileParseOptions,
-): Promise<ParsedOfficeDocument> {
-  const info = detectOfficeFormat(input);
+  options?: OfficeParseOptions,
+): Promise<ParsedOffice> {
+  const info = detectOffice(input);
   if (info.family === "document") {
     return {
-      type: info.format as DocumentOfficeFormat,
-      options: await parseDocumentFile(input, options),
+      format: info.format as DocumentParseFormat,
+      options: await parseDocument(input, options),
     };
   }
   if (info.family === "workbook") {
     return {
-      type: info.format as WorkbookOfficeFormat,
-      options: await parseWorkbookFile(input, options),
+      format: info.format as WorkbookParseFormat,
+      options: await parseWorkbook(input, options),
     };
   }
   if (info.family === "presentation") {
     return {
-      type: info.format as PresentationOfficeFormat,
-      options: await parsePresentationFile(input, options),
+      format: info.format as PresentationParseFormat,
+      options: await parsePresentation(input, options),
     };
   }
   throw new Error("Encrypted OOXML documents are not supported by the unified parser");

@@ -14,12 +14,24 @@ import { fileURLToPath } from "node:url";
 
 import { parseDocument as parseLegacyDocument } from "../../packages/doc/dist/index.mjs";
 import { generateDocument, parseDocument } from "../../packages/docx/dist/index.mjs";
-import { generateOdp, parseOdp } from "../../packages/odp/dist/index.mjs";
-import { generateOds, parseOds } from "../../packages/ods/dist/index.mjs";
-import { generateOdt, parseOdt } from "../../packages/odt/dist/index.mjs";
+import {
+  generatePresentation as generateOdpPresentation,
+  parsePresentation as parseOdpPresentation,
+} from "../../packages/odp/dist/index.mjs";
+import {
+  generateWorkbook as generateOdsWorkbook,
+  parseWorkbook as parseOdsWorkbook,
+} from "../../packages/ods/dist/index.mjs";
+import {
+  generateDocument as generateOdtDocument,
+  parseDocument as parseOdtDocument,
+} from "../../packages/odt/dist/index.mjs";
 import { parsePresentation as parseLegacyPresentation } from "../../packages/ppt/dist/index.mjs";
-import { generatePresentation, parsePresentation } from "../../packages/pptx/dist/index.mjs";
-import { parseRtf } from "../../packages/rtf/dist/index.mjs";
+import {
+  generatePresentation as generatePptxPresentation,
+  parsePresentation,
+} from "../../packages/pptx/dist/index.mjs";
+import { parseDocument as parseRtfDocument } from "../../packages/rtf/dist/index.mjs";
 import { parseWorkbook as parseLegacyWorkbook } from "../../packages/xls/dist/index.mjs";
 import { generateWorkbook as generateXlsxWorkbook } from "../../packages/xlsx/dist/index.mjs";
 import { parseWorkbook as parseXlsxDocument } from "../../packages/xlsx/dist/index.mjs";
@@ -135,7 +147,7 @@ async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
     for (const password of [undefined, ...CORPUS_PASSWORDS]) {
       try {
         const options = parseLegacyPresentation(data, password ? { password } : undefined);
-        parsePresentation(await generatePresentation(options));
+        parsePresentation(await generatePptxPresentation(options));
         return;
       } catch (error) {
         if (
@@ -149,19 +161,19 @@ async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
     throw new Error("Encrypted legacy PPT input could not be decrypted");
   }
   if (format === "rtf") {
-    const options = parseRtf(Buffer.from(data).toString("latin1"));
+    const options = parseRtfDocument(Buffer.from(data).toString("latin1"));
     parseDocument(await generateDocument(options));
     return;
   }
   if (format === "odt") {
-    parseOdt(generateOdt(parseOdt(data)));
+    parseOdtDocument(generateOdtDocument(parseOdtDocument(data)));
     return;
   }
   if (format === "ods") {
-    parseOds(generateOds(parseOds(data)));
+    parseOdsWorkbook(generateOdsWorkbook(parseOdsWorkbook(data)));
     return;
   }
-  parseOdp(generateOdp(parseOdp(data)));
+  parseOdpPresentation(generateOdpPresentation(parseOdpPresentation(data)));
 }
 
 const files = CORPUS_DIRS.flatMap((dir) => walk(dir)).sort();

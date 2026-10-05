@@ -1,7 +1,7 @@
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
-import { detectOfficeFormat } from "./formats";
+import { detectOffice } from "./formats";
 
 const encoder = new TextEncoder();
 const END_OF_CHAIN = 0xfffffffen;
@@ -73,25 +73,25 @@ function ooxmlZip(mainContentType: string): Uint8Array {
   });
 }
 
-describe("detectOfficeFormat", () => {
+describe("detectOffice", () => {
   it("detects RTF text and bytes", () => {
     const expected = { format: "rtf", family: "document", container: "text" } as const;
-    expect(detectOfficeFormat("{\\rtf1\\ansi}")).toEqual(expected);
-    expect(detectOfficeFormat(encoder.encode("{\\rtf1\\ansi}"))).toEqual(expected);
+    expect(detectOffice("{\\rtf1\\ansi}")).toEqual(expected);
+    expect(detectOffice(encoder.encode("{\\rtf1\\ansi}"))).toEqual(expected);
   });
 
   it("detects all ODF siblings", () => {
-    expect(detectOfficeFormat(odfZip("application/vnd.oasis.opendocument.text"))).toEqual({
+    expect(detectOffice(odfZip("application/vnd.oasis.opendocument.text"))).toEqual({
       format: "odt",
       family: "document",
       container: "zip",
     });
-    expect(detectOfficeFormat(odfZip("application/vnd.oasis.opendocument.spreadsheet"))).toEqual({
+    expect(detectOffice(odfZip("application/vnd.oasis.opendocument.spreadsheet"))).toEqual({
       format: "ods",
       family: "workbook",
       container: "zip",
     });
-    expect(detectOfficeFormat(odfZip("application/vnd.oasis.opendocument.presentation"))).toEqual({
+    expect(detectOffice(odfZip("application/vnd.oasis.opendocument.presentation"))).toEqual({
       format: "odp",
       family: "presentation",
       container: "zip",
@@ -100,7 +100,7 @@ describe("detectOfficeFormat", () => {
 
   it("detects OOXML package variants", () => {
     expect(
-      detectOfficeFormat(
+      detectOffice(
         ooxmlZip(
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
         ),
@@ -111,17 +111,13 @@ describe("detectOfficeFormat", () => {
       container: "zip",
     });
     expect(
-      detectOfficeFormat(
-        ooxmlZip("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml"),
-      ),
+      detectOffice(ooxmlZip("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml")),
     ).toEqual({
       format: "pptm",
       family: "presentation",
       container: "zip",
     });
-    expect(
-      detectOfficeFormat(ooxmlZip("application/vnd.ms-excel.sheet.macroEnabled.main+xml")),
-    ).toEqual({
+    expect(detectOffice(ooxmlZip("application/vnd.ms-excel.sheet.macroEnabled.main+xml"))).toEqual({
       format: "xlsm",
       family: "workbook",
       container: "zip",
@@ -129,17 +125,17 @@ describe("detectOfficeFormat", () => {
   });
 
   it("detects legacy CFB formats by their semantic streams", () => {
-    expect(detectOfficeFormat(buildCfb("WordDocument"))).toEqual({
+    expect(detectOffice(buildCfb("WordDocument"))).toEqual({
       format: "doc",
       family: "document",
       container: "cfb",
     });
-    expect(detectOfficeFormat(buildCfb("Workbook"))).toEqual({
+    expect(detectOffice(buildCfb("Workbook"))).toEqual({
       format: "xls",
       family: "workbook",
       container: "cfb",
     });
-    expect(detectOfficeFormat(buildCfb("PowerPoint Document"))).toEqual({
+    expect(detectOffice(buildCfb("PowerPoint Document"))).toEqual({
       format: "ppt",
       family: "presentation",
       container: "cfb",
@@ -147,8 +143,8 @@ describe("detectOfficeFormat", () => {
   });
 
   it("rejects unknown containers", () => {
-    expect(() => detectOfficeFormat(new Uint8Array([1, 2, 3]))).toThrow("Unable to detect");
-    expect(() => detectOfficeFormat(zipSync({ "hello.txt": new Uint8Array() }))).toThrow(
+    expect(() => detectOffice(new Uint8Array([1, 2, 3]))).toThrow("Unable to detect");
+    expect(() => detectOffice(zipSync({ "hello.txt": new Uint8Array() }))).toThrow(
       "missing [Content_Types].xml",
     );
   });

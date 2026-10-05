@@ -1,1 +1,1 @@
-export { generateOdp, parseOdp } from "./presentation";
+export { generatePresentation, parsePresentation } from "./presentation";

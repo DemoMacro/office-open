@@ -1,7 +1,7 @@
 import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import { detectOfficeFormat } from "../formats";
+import { detectOffice } from "../formats";
 import { formatToolError } from "./error";
 import {
   docxTool,
@@ -193,7 +193,7 @@ describe("generate tool dispatch", () => {
       const result = await executeTool(fixture.tool, fixture.input);
       const bytes = new Uint8Array(Buffer.from(result.base64, "base64"));
       expect(result.mimeType).toBe(fixture.mimeType);
-      expect(detectOfficeFormat(bytes).format).toBe(format);
+      expect(detectOffice(bytes).format).toBe(format);
       const files = unzipSync(bytes);
       expect(new TextDecoder().decode(files.mimetype).trim()).toBe(fixture.mimeType);
       const manifest = new TextDecoder().decode(files["META-INF/manifest.xml"]);

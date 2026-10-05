@@ -11,19 +11,19 @@ import path from "node:path";
 
 import { unzipSync } from "fflate";
 
-import { parseOdp } from "../../packages/odp/src";
+import { parsePresentation } from "../../packages/odp/src";
 import { OdpParseError } from "../../packages/odp/src/error";
-import { parseOds } from "../../packages/ods/src";
+import { parseWorkbook } from "../../packages/ods/src";
 import { OdsParseError } from "../../packages/ods/src/error";
-import { parseOdt } from "../../packages/odt/src";
+import { parseDocument } from "../../packages/odt/src";
 import { OdtParseError } from "../../packages/odt/src/error";
 
 const decoder = new TextDecoder();
 
 const FORMATS = {
-  odp: { parse: parseOdp },
-  ods: { parse: parseOds },
-  odt: { parse: parseOdt },
+  odp: { parse: parsePresentation },
+  ods: { parse: parseWorkbook },
+  odt: { parse: parseDocument },
 } as const;
 
 type Format = keyof typeof FORMATS;

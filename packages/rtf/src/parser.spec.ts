@@ -7,10 +7,10 @@ import type {
 } from "@office-open/docx";
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseRtf } from ".";
+import { parseDocument } from ".";
 
 function firstParagraph(source: string): ParagraphOptions {
-  const children = parseRtf(source).sections[0]?.children ?? [];
+  const children = parseDocument(source).sections[0]?.children ?? [];
   const child = children[0];
   if (!child || !("paragraph" in child) || typeof child.paragraph === "string") {
     throw new Error("expected the first child to be a paragraph");
@@ -19,7 +19,7 @@ function firstParagraph(source: string): ParagraphOptions {
 }
 
 function firstTable(source: string): TableOptions {
-  const children = parseRtf(source).sections[0]?.children ?? [];
+  const children = parseDocument(source).sections[0]?.children ?? [];
   const child = children[0];
   if (!child || !("table" in child)) throw new Error("expected the first child to be a table");
   return child.table;
@@ -35,9 +35,9 @@ function firstInlineChild(paragraph: ParagraphOptions): unknown {
   return children ? children[0] : undefined;
 }
 
-describe("parseRtf text and formatting", () => {
+describe("parseDocument RTF text and formatting", () => {
   it("parses standard text into a document paragraph", () => {
-    expect(parseRtf("{\\rtf1 Hello, RTF!}")).toEqual({
+    expect(parseDocument("{\\rtf1 Hello, RTF!}")).toEqual({
       sections: [{ children: [{ paragraph: { children: [{ text: "Hello, RTF!" }] } }] }],
     });
   });
@@ -48,7 +48,8 @@ describe("parseRtf text and formatting", () => {
   });
 
   it("parses tabs, hexadecimal, Unicode, and common character controls", () => {
-    const children = parseRtf(String.raw`{\rtf1\tab A\'42\u9786?}`).sections[0]?.children ?? [];
+    const children =
+      parseDocument(String.raw`{\rtf1\tab A\'42\u9786?}`).sections[0]?.children ?? [];
     const paragraph = children[0] && "paragraph" in children[0] ? children[0].paragraph : undefined;
     if (typeof paragraph === "string" || !paragraph?.children)
       throw new Error("expected run children");
@@ -70,14 +71,14 @@ describe("parseRtf text and formatting", () => {
 
   it("ignores starred unknown destinations and known metadata destinations", () => {
     const source = String.raw`{\rtf1Visible{\*\generator Hidden}{\info{\title Also Hidden}}After}`;
-    expect(parseRtf(source).sections[0]?.children[0]).toEqual({
+    expect(parseDocument(source).sections[0]?.children[0]).toEqual({
       paragraph: { children: [{ text: "VisibleAfter" }] },
     });
   });
 
   it("skips an unlisted destination-like control group", () => {
     const children =
-      parseRtf(String.raw`{\rtf1Keep{\nonshppict Hidden}}`).sections[0]?.children ?? [];
+      parseDocument(String.raw`{\rtf1Keep{\nonshppict Hidden}}`).sections[0]?.children ?? [];
     const paragraph = children[0] && "paragraph" in children[0] ? children[0].paragraph : undefined;
     expect(typeof paragraph === "string" ? paragraph : paragraph?.children?.[0]).toEqual({
       text: "Keep",
@@ -85,7 +86,7 @@ describe("parseRtf text and formatting", () => {
   });
 });
 
-describe("parseRtf tables", () => {
+describe("parseDocument RTF tables", () => {
   it("projects cell boundaries and twip column widths", () => {
     const table = firstTable(String.raw`{\rtf1\trowd\cellx1000\cellx2000 A\cell B\cell\row}`);
     expect(table.columnWidths).toEqual([1000, 2000]);
@@ -134,19 +135,19 @@ describe("parseRtf tables", () => {
 
   it("recovers missing and extra document group braces", () => {
     const source = String.raw`{\rtf1{\b Text}\par}}`;
-    expect(parseRtf(source).sections[0]?.children[0]).toEqual({
+    expect(parseDocument(source).sections[0]?.children[0]).toEqual({
       paragraph: { children: [{ bold: true, text: "Text" }] },
     });
   });
 });
 
-describe("parseRtf recovery", () => {
+describe("parseDocument recovery", () => {
   it("rejects input without an RTF root", () => {
-    expect(() => parseRtf("plain text")).toThrow('RTF must begin with "{\\rtf"');
+    expect(() => parseDocument("plain text")).toThrow('RTF must begin with "{\\rtf"');
   });
 
   it("closes an unterminated group and table at end of input", () => {
-    const document = parseRtf(String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`);
+    const document = parseDocument(String.raw`{\rtf1 Unclosed\trowd\cellx100 Text\cell`);
     expect(document.sections[0]?.children[0]).toEqual({
       paragraph: { children: [{ text: "Unclosed" }] },
     });
@@ -154,7 +155,7 @@ describe("parseRtf recovery", () => {
 
   it("keeps parsing content after a premature root closing brace", () => {
     const source = String.raw`{\rtf1 First}\par Second`;
-    const children = parseRtf(source).sections[0]?.children ?? [];
+    const children = parseDocument(source).sections[0]?.children ?? [];
     expect(children).toEqual([
       { paragraph: { children: [{ text: "First" }] } },
       { paragraph: { children: [{ text: "Second" }] } },
@@ -162,9 +163,9 @@ describe("parseRtf recovery", () => {
   });
 });
 
-describe("parseRtf rich destinations", () => {
+describe("parseDocument RTF rich destinations", () => {
   it("projects headers, footers, and footnotes", () => {
-    const document = parseRtf(
+    const document = parseDocument(
       String.raw`{\rtf1{\header Header}{\footer Footer}{\footnote Note}Body}`,
     );
     expect(document.sections[0]?.headers?.default?.[0]).toEqual({
@@ -179,7 +180,7 @@ describe("parseRtf rich destinations", () => {
   });
 
   it("projects direct hyperlinks, comments, and canonical shapes", () => {
-    const document = parseRtf(
+    const document = parseDocument(
       String.raw`{\rtf1{\hlink https://example.com}Link{\doccomm Summary}{\shpinst\shpleft100\shptop100\shpwidth1000\shpheight500}}`,
     );
     expect(document.sections[0]?.children[0]).toEqual({
@@ -210,11 +211,11 @@ describe("parseRtf rich destinations", () => {
 
   it("rejects shape instructions without a canonical extent", () => {
     expect(() =>
-      parseRtf(String.raw`{\rtf1{\shpinst\shptop1000}}`),
+      parseDocument(String.raw`{\rtf1{\shpinst\shptop1000}}`),
     ).toThrowErrorMatchingInlineSnapshot(
       `[RtfParseError: Invalid RTF at 1:1: shape width and height are required]`,
     );
-    expect(() => parseRtf(String.raw`{\rtf1{\shpinst\shptop1000}}`)).toThrow(
+    expect(() => parseDocument(String.raw`{\rtf1{\shpinst\shptop1000}}`)).toThrow(
       expect.objectContaining({
         context: {
           part: "RTF shape destination",
@@ -256,14 +257,15 @@ describe("parseRtf rich destinations", () => {
   });
 
   it("skips a malformed picture without failing the document", () => {
-    expect(parseRtf(String.raw`{\rtf1{\pict\pngblip\picw0\pich0 zz}Text}`)).toEqual({
+    expect(parseDocument(String.raw`{\rtf1{\pict\pngblip\picw0\pich0 zz}Text}`)).toEqual({
       sections: [{ children: [{ paragraph: { children: [{ text: "Text" }] } }] }],
     });
   });
 
   it("pairs bookmark starts and ends", () => {
     const children =
-      parseRtf(String.raw`{\rtf1{\bkmkstart Mark}A{\bkmkend Mark}}`).sections[0]?.children ?? [];
+      parseDocument(String.raw`{\rtf1{\bkmkstart Mark}A{\bkmkend Mark}}`).sections[0]?.children ??
+      [];
     expect(children).toHaveLength(1);
     const first = children[0];
     const inline =
@@ -280,7 +282,7 @@ describe("parseRtf rich destinations", () => {
   });
 
   it("projects list references and levels", () => {
-    const document = parseRtf(String.raw`{\rtf1\ls3\ilvl1\par Item}`);
+    const document = parseDocument(String.raw`{\rtf1\ls3\ilvl1\par Item}`);
     expect(firstParagraph(String.raw`{\rtf1\ls3\ilvl1\par Item}`)).toMatchObject({
       numbering: { reference: "rtf-list-3", level: 1 },
     });
@@ -291,14 +293,14 @@ describe("parseRtf rich destinations", () => {
   });
 
   it("projects section page size", () => {
-    const document = parseRtf(String.raw`{\rtf1\sectd\pgwsxn10000\pghsxn12000\par Page}`);
+    const document = parseDocument(String.raw`{\rtf1\sectd\pgwsxn10000\pghsxn12000\par Page}`);
     expect(document.sections[0]?.properties).toEqual({
       pageSize: { width: 10000, height: 12000 },
     });
   });
 
   it("binds section properties to the section after its break", () => {
-    const document = parseRtf(
+    const document = parseDocument(
       String.raw`{\rtf1\par First\sect\sectd\pgwsxn10000\pghsxn12000\par Second}`,
     );
     expect(document.sections[0]?.properties).toBeUndefined();
@@ -308,7 +310,7 @@ describe("parseRtf rich destinations", () => {
   });
 
   it("resets inherited section properties on sectd", () => {
-    const document = parseRtf(String.raw`{\rtf1\pghsxn12000\sectd\par Page}`);
+    const document = parseDocument(String.raw`{\rtf1\pghsxn12000\sectd\par Page}`);
     expect(document.sections[0]?.properties).toBeUndefined();
   });
 

@@ -437,7 +437,7 @@ export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
     mode: "read-only",
     testModule: "src/parser.spec.ts",
     capabilities: capabilities(
-      { package: "rtf", module: "src/index.ts", export: "parseRtf" },
+      { package: "rtf", module: "src/index.ts", export: "parseDocument" },
       {
         layer: "mapper",
         module: "src/mappers/document.ts",

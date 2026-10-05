@@ -6,52 +6,76 @@ import {
   type PackerOptions,
   type ReproducibleGenerationOptions,
 } from "@office-open/core";
-import { parseDocument as parseLegacyDocument } from "@office-open/doc";
-import type { DocumentOptions } from "@office-open/docx";
-import { generateDocument, parseDocument as parseDocxDocument } from "@office-open/docx";
-import { generateOdt, parseOdt } from "@office-open/odt";
-import { generateRtf, parseRtf } from "@office-open/rtf";
+import { parseDocument as parseDocDocument } from "@office-open/doc";
+import {
+  generateDocument as generateDocxDocument,
+  parseDocument as parseDocxDocument,
+  patchDocument as patchDocxDocument,
+  type DocumentOptions,
+  type PatchDocumentOptions,
+} from "@office-open/docx";
+import {
+  generateDocument as generateOdtDocument,
+  parseDocument as parseOdtDocument,
+} from "@office-open/odt";
+import {
+  generateDocument as generateRtfDocument,
+  parseDocument as parseRtfDocument,
+} from "@office-open/rtf";
 
-import { detectOfficeFormat } from "./formats";
+import { detectOffice } from "./formats";
 
 /** Password accepted by the legacy DOC parser. */
-export interface DocumentFileParseOptions {
+export interface DocumentParseOptions {
   password?: string;
 }
 
-export type DocumentFileParseFormat = "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt";
+export type DocumentParseFormat = "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt";
 
-export type DocumentFileGenerateFormat = "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf";
+export type DocumentGenerateFormat = "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf";
+
+export type DocumentPatchFormat = "docx" | "docm" | "dotx" | "dotm";
+
+const DOCUMENT_PATCH_FORMATS: readonly DocumentPatchFormat[] = ["docx", "docm", "dotx", "dotm"];
+
+export type DocumentPatchRequest<T extends OutputType = OutputType> = Omit<
+  PatchDocumentOptions<T>,
+  "data" | "outputType"
+> & {
+  format: DocumentPatchFormat;
+  data: PatchDocumentOptions<T>["data"];
+  outputType?: T;
+};
 
 const ODT_MIME_TYPE = "application/vnd.oasis.opendocument.text";
 const RTF_MIME_TYPE = "application/rtf";
 
-export async function parseDocumentFile(
+export async function parseDocument(
   input: Uint8Array | string,
-  options?: DocumentFileParseOptions,
+  options?: DocumentParseOptions,
 ): Promise<DocumentOptions> {
-  const info = detectOfficeFormat(input);
+  const info = detectOffice(input);
   const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
 
   switch (info.format) {
     case "doc":
-      return parseLegacyDocument(data, options);
+      return parseDocDocument(data, options);
     case "docx":
     case "docm":
     case "dotx":
     case "dotm":
       return parseDocxDocument(data);
     case "rtf":
-      return parseRtf(typeof input === "string" ? input : new TextDecoder().decode(input));
+      return parseRtfDocument(typeof input === "string" ? input : new TextDecoder().decode(input));
     case "odt":
-      return parseOdt(data);
+      return parseOdtDocument(data);
     default:
       throw new Error(`${info.format} is not a document format`);
   }
 }
 
-export async function generateDocumentFile<
-  F extends DocumentFileGenerateFormat,
+export async function generateDocument<
+  F extends DocumentGenerateFormat,
   T extends OutputType = "nodebuffer",
 >(
   format: F,
@@ -63,16 +87,30 @@ export async function generateDocumentFile<
 
   if (format === "odt") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
-    return convertOutput(generateOdt(options), outputType, ODT_MIME_TYPE);
+    return convertOutput(generateOdtDocument(options), outputType, ODT_MIME_TYPE);
   }
 
   if (format === "rtf") {
-    return convertOutput(generateRtf(options), outputType, RTF_MIME_TYPE);
+    return convertOutput(generateRtfDocument(options), outputType, RTF_MIME_TYPE);
   }
 
-  return generateDocument(options, {
+  return generateDocxDocument(options, {
     type: outputType,
     packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
     reproducible,
   } as PackerOptions<T>);
+}
+
+export async function patchDocument<T extends OutputType = OutputType>(
+  request: DocumentPatchRequest<T>,
+): Promise<OutputByType[T]> {
+  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  if (!DOCUMENT_PATCH_FORMATS.includes(format)) {
+    throw new Error(`${format} does not support document patching`);
+  }
+  return patchDocxDocument({
+    ...(patch as PatchDocumentOptions<T>),
+    data,
+    outputType,
+  } as PatchDocumentOptions<T>);
 }

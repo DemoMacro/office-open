@@ -39,7 +39,7 @@ const ODF_MIME_TYPES: Record<string, OfficeFormat> = {
   "application/vnd.oasis.opendocument.presentation": "odp",
 };
 
-export function detectOfficeFormat(input: Uint8Array | string): OfficeFormatInfo {
+export function detectOffice(input: Uint8Array | string): OfficeFormatInfo {
   if (typeof input === "string") {
     if (
       input

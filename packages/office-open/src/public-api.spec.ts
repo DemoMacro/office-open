@@ -19,19 +19,18 @@ const FORBIDDEN_NAMES = [
 
 const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
   ".": [
-    "detectOfficeFile",
-    "detectOfficeFormat",
-    "generate",
-    "generateDocumentFile",
-    "generateOfficeDocument",
-    "generatePresentationFile",
-    "generateToFile",
-    "generateWorkbookFile",
-    "parseDocumentFile",
-    "parseInput",
-    "parseOfficeDocument",
-    "parsePresentationFile",
-    "parseWorkbookFile",
+    "detectOffice",
+    "generateDocument",
+    "generateOffice",
+    "generatePresentation",
+    "generateWorkbook",
+    "parseDocument",
+    "parseOffice",
+    "parsePresentation",
+    "parseWorkbook",
+    "patchDocument",
+    "patchPresentation",
+    "patchWorkbook",
   ],
   "./ai": [
     "docxTool",
@@ -92,7 +91,6 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "convertUniversalMeasureToPt",
     "convertUniversalMeasureToTwip",
   ],
-  "./detect": ["detectOfficeFile"],
   "./doc": ["DocParseError", "parseDocument"],
   "./docx": [
     "generateDocument",
@@ -102,9 +100,7 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "parseDocumentSync",
     "patchDocument",
   ],
-  "./formats": ["detectOfficeFormat"],
-  "./generate": ["generate", "generateOfficeDocument", "generateToFile", "parseInput"],
-  "./parse": ["parseOfficeDocument"],
+  "./document": ["generateDocument", "parseDocument", "patchDocument"],
   "./ppt": ["PptParseError", "parsePresentation"],
   "./pptx": [
     "generatePresentation",
@@ -114,8 +110,8 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "parsePresentationSync",
     "patchPresentation",
   ],
-  "./presentation": ["generatePresentationFile", "parsePresentationFile"],
-  "./rtf": ["generateRtf", "parseRtf", "RtfGenerateError", "RtfParseError"],
+  "./presentation": ["generatePresentation", "parsePresentation", "patchPresentation"],
+  "./rtf": ["generateDocument", "parseDocument", "RtfGenerateError", "RtfParseError"],
   "./schemas": [
     "assertKnownDefinitions",
     "docxSchema",
@@ -132,7 +128,7 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "validateDocumentInput",
     "xlsxSchema",
   ],
-  "./workbook": ["generateWorkbookFile", "parseWorkbookFile"],
+  "./workbook": ["generateWorkbook", "parseWorkbook", "patchWorkbook"],
   "./xls": ["parseWorkbook", "XlsParseError"],
   "./xml": [
     "allChildren",
@@ -187,13 +183,9 @@ const SOURCE_PATHS: Record<string, string> = {
   "./xls": "src/xls.ts",
   "./ppt": "src/ppt.ts",
   "./rtf": "src/rtf.ts",
-  "./formats": "src/formats.ts",
-  "./detect": "src/detect.ts",
-  "./parse": "src/parse.ts",
   "./core": "src/core.ts",
   "./xml": "src/xml.ts",
   "./ai": "src/ai/index.ts",
-  "./generate": "src/generate.ts",
   "./schemas": "src/schemas/index.ts",
   "./convert": "src/convert/index.ts",
 };
@@ -203,12 +195,8 @@ const DIST_PATHS: Record<string, string> = {
   "./ai": "dist/ai/index.d.mts",
   "./convert": "dist/convert/index.d.mts",
   "./core": "dist/core.d.mts",
-  "./detect": "dist/detect.d.mts",
   "./doc": "dist/doc.d.mts",
   "./docx": "dist/docx.d.mts",
-  "./formats": "dist/formats.d.mts",
-  "./generate": "dist/generate.d.mts",
-  "./parse": "dist/parse.d.mts",
   "./ppt": "dist/ppt.d.mts",
   "./pptx": "dist/pptx.d.mts",
   "./presentation": "dist/presentation.d.mts",
@@ -226,6 +214,17 @@ function sourceTypeNames(path: string): Set<string> {
   for (const match of source.matchAll(/export type \{([\s\S]*?)\}/g)) {
     for (const token of match[1]!.split(",")) {
       const name = token.trim();
+      if (name) names.add(name);
+    }
+  }
+  for (const match of source.matchAll(/export \{([\s\S]*?)\}/g)) {
+    for (const token of match[1]!.split(",")) {
+      const trimmed = token.trim();
+      if (!trimmed.startsWith("type ")) continue;
+      const name = trimmed
+        .replace(/^type /, "")
+        .split(/\s+as\s+/)[0]!
+        .trim();
       if (name) names.add(name);
     }
   }

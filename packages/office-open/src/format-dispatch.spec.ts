@@ -2,13 +2,8 @@ import { OOXML_PACKAGE_FORMATS, type OoxmlPackageFormat } from "@office-open/cor
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import {
-  generate,
-  generateOfficeDocument,
-  type GenerateOptionsMap,
-  type GenerateType,
-} from "./generate";
-import { parseOfficeDocument } from "./parse";
+import { generateOffice, type OfficeGenerateFormat } from "./generate";
+import { parseOffice } from "./parse";
 
 const SECTOR_SIZE = 512;
 const CFB_SIGNATURE = Uint8Array.from([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
@@ -344,27 +339,21 @@ function legacyPresentation(): Uint8Array {
 describe("format dispatch", () => {
   it("round-trips every writable OOXML package format", async () => {
     for (const type of Object.keys(OOXML_PACKAGE_FORMATS) as OoxmlPackageFormat[]) {
-      const bytes = (await generate({
+      const bytes = (await generateOffice(
         type,
-        options: OOXML_FIXTURES[
-          OOXML_PACKAGE_FORMATS[type].family
-        ] as GenerateOptionsMap[GenerateType],
-        outputType: "uint8array",
-      })) as Uint8Array;
-      const parsed = await parseOfficeDocument(bytes);
-      expect(parsed.type).toBe(type);
+        OOXML_FIXTURES[OOXML_PACKAGE_FORMATS[type].family],
+        "uint8array",
+      )) as Uint8Array;
+      const parsed = await parseOffice(bytes);
+      expect(parsed.format).toBe(type);
     }
   });
 
   it("round-trips all ODF root formats", async () => {
     for (const type of ["odt", "ods", "odp"] as const) {
-      const bytes = (await generateOfficeDocument(
-        type,
-        ODF_FIXTURES[type],
-        "uint8array",
-      )) as Uint8Array;
-      const parsed = await parseOfficeDocument(bytes);
-      expect(parsed.type).toBe(type);
+      const bytes = (await generateOffice(type, ODF_FIXTURES[type], "uint8array")) as Uint8Array;
+      const parsed = await parseOffice(bytes);
+      expect(parsed.format).toBe(type);
       expect(
         "sections" in parsed.options ||
           "worksheets" in parsed.options ||
@@ -374,14 +363,10 @@ describe("format dispatch", () => {
   });
 
   it("generates and parses the RTF root format", async () => {
-    const bytes = (await generateOfficeDocument(
-      "rtf",
-      ODF_FIXTURES.odt,
-      "uint8array",
-    )) as Uint8Array;
+    const bytes = (await generateOffice("rtf", ODF_FIXTURES.odt, "uint8array")) as Uint8Array;
     expect(new TextDecoder().decode(bytes)).toContain("Dispatch");
-    const parsed = await parseOfficeDocument(bytes);
-    expect(parsed.type).toBe("rtf");
+    const parsed = await parseOffice(bytes);
+    expect(parsed.format).toBe("rtf");
     const options = parsed.options as { sections?: { children: unknown[] }[] };
     expect(options.sections?.[0]?.children[0]).toEqual({
       paragraph: { children: [{ text: "Dispatch" }] },
@@ -389,11 +374,11 @@ describe("format dispatch", () => {
   });
 
   it("dispatches legacy parse-only roots to family parsers", async () => {
-    const document = await parseOfficeDocument(legacyDocument());
-    const workbook = await parseOfficeDocument(legacyWorkbook());
-    const presentation = await parseOfficeDocument(legacyPresentation());
-    expect([document.type, workbook.type, presentation.type]).toEqual(["doc", "xls", "ppt"]);
-    if (document.type !== "doc" || workbook.type !== "xls" || presentation.type !== "ppt") {
+    const document = await parseOffice(legacyDocument());
+    const workbook = await parseOffice(legacyWorkbook());
+    const presentation = await parseOffice(legacyPresentation());
+    expect([document.format, workbook.format, presentation.format]).toEqual(["doc", "xls", "ppt"]);
+    if (document.format !== "doc" || workbook.format !== "xls" || presentation.format !== "ppt") {
       throw new Error("Unexpected legacy dispatch types");
     }
     expect(document.options.sections).toHaveLength(1);
@@ -402,8 +387,8 @@ describe("format dispatch", () => {
   });
 
   it.each(OUTPUT_TYPES)("returns the declared %s output type", async (outputType) => {
-    const ooxml = await generate({ type: "docx", options: ODF_FIXTURES.odt, outputType });
-    const odf = await generateOfficeDocument("odt", ODF_FIXTURES.odt, outputType);
+    const ooxml = await generateOffice("docx", ODF_FIXTURES.odt, outputType);
+    const odf = await generateOffice("odt", ODF_FIXTURES.odt, outputType);
     if (outputType === "base64") {
       expect(typeof ooxml).toBe("string");
       expect(typeof odf).toBe("string");
@@ -438,7 +423,7 @@ describe("format dispatch", () => {
     };
     for (const type of ["odt", "ods", "odp"] as const) {
       await expect(
-        generateOfficeDocument(type, ODF_FIXTURES[type], "uint8array", {
+        generateOffice(type, ODF_FIXTURES[type], "uint8array", {
           reproducible: {},
         } as never),
       ).rejects.toThrow(expected[type]);
@@ -447,27 +432,27 @@ describe("format dispatch", () => {
 
   it("reports unsupported, invalid, and encrypted inputs", async () => {
     await expect(
-      generateOfficeDocument("encrypted-ooxml" as GenerateType, {} as never),
+      generateOffice("encrypted-ooxml" as OfficeGenerateFormat, {} as never),
     ).rejects.toThrow();
-    await expect(parseOfficeDocument(new TextEncoder().encode("not office"))).rejects.toThrow(
+    await expect(parseOffice(new TextEncoder().encode("not office"))).rejects.toThrow(
       "Unable to detect",
     );
     await expect(
-      parseOfficeDocument(zipSync({ "not-content": new TextEncoder().encode("<xml/>") })),
+      parseOffice(zipSync({ "not-content": new TextEncoder().encode("<xml/>") })),
     ).rejects.toThrow("missing [Content_Types].xml");
     await expect(
-      parseOfficeDocument(zipSync({ mimetype: new TextEncoder().encode("application/x-invalid") })),
+      parseOffice(zipSync({ mimetype: new TextEncoder().encode("application/x-invalid") })),
     ).rejects.toThrow("Unsupported ODF mimetype");
     await expect(
-      parseOfficeDocument(
+      parseOffice(
         buildCfb([
           { name: "EncryptedPackage", data: new Uint8Array(SECTOR_SIZE) },
           { name: "EncryptionInfo", data: new Uint8Array(SECTOR_SIZE) },
         ]),
       ),
     ).rejects.toThrow("Encrypted OOXML");
-    await expect(parseOfficeDocument(legacyDocument())).resolves.toHaveProperty("type", "doc");
-    await expect(parseOfficeDocument(legacyWorkbook())).resolves.toHaveProperty("type", "xls");
-    await expect(parseOfficeDocument(legacyPresentation())).resolves.toHaveProperty("type", "ppt");
+    await expect(parseOffice(legacyDocument())).resolves.toHaveProperty("format", "doc");
+    await expect(parseOffice(legacyWorkbook())).resolves.toHaveProperty("format", "xls");
+    await expect(parseOffice(legacyPresentation())).resolves.toHaveProperty("format", "ppt");
   });
 });

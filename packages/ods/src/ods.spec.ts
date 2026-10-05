@@ -1,23 +1,23 @@
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOds, OdsParseError, parseOds } from "./index";
+import { generateWorkbook, OdsParseError, parseWorkbook } from "./index";
 
 describe("ODS codec", () => {
   it("round-trips a workbook through canonical WorkbookOptions", () => {
-    const parsed = parseOds(
-      generateOds({ worksheets: [{ rows: [{ cells: [{ value: "ODS" }] }] }] }),
+    const parsed = parseWorkbook(
+      generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: "ODS" }] }] }] }),
     );
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
   });
 
   it("wraps invalid packages in OdsParseError", () => {
-    expect(() => parseOds(new Uint8Array([1, 2, 3]))).toThrow(OdsParseError);
+    expect(() => parseWorkbook(new Uint8Array([1, 2, 3]))).toThrow(OdsParseError);
   });
 
   it("round-trips real chart anchors, semantics, worksheet links, and order", () => {
-    const parsed = parseOds(
-      generateOds({
+    const parsed = parseWorkbook(
+      generateWorkbook({
         worksheets: [
           {
             name: "Revenue",
@@ -74,8 +74,8 @@ describe("ODS codec", () => {
   });
 
   it("round-trips defined names and rejects unknown worksheet children", () => {
-    const parsed = parseOds(
-      generateOds({
+    const parsed = parseWorkbook(
+      generateWorkbook({
         definedNames: [
           { name: "Total", value: "Revenue!$A$1:$A$2" },
           { name: "Double", value: "SUM(Revenue!$A$1:$A$2)*2" },
@@ -91,7 +91,7 @@ describe("ODS codec", () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:unknown/></table:table></office:spreadsheet></office:body></office:document-content>`;
     let error: unknown;
     try {
-      parseOds(
+      parseWorkbook(
         generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
           "content.xml": content,
         }),
@@ -119,15 +119,15 @@ describe("ODS codec", () => {
       width: 2160000,
       height: 1440000,
     };
-    const parsed = parseOds(
-      generateOds({ worksheets: [{ rows: [{ cells: [{ value: 1, graphics: [object] }] }] }] }),
+    const parsed = parseWorkbook(
+      generateWorkbook({ worksheets: [{ rows: [{ cells: [{ value: 1, graphics: [object] }] }] }] }),
     );
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.graphics).toEqual([object]);
 
     const oleContent = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value="1"><draw:frame draw:name="Legacy object" svg:x="1cm" svg:y="2cm" svg:width="6cm" svg:height="4cm"><draw:object-ole xlink:href="./embedded-object" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/><svg:desc>Embedded legacy object</svg:desc><draw:unknown/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     let error: unknown;
     try {
-      parseOds(
+      parseWorkbook(
         generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
           "content.xml": oleContent,
         }),
@@ -168,8 +168,8 @@ describe("ODS codec", () => {
         ],
       },
     ];
-    const parsed = parseOds(
-      generateOds({
+    const parsed = parseWorkbook(
+      generateWorkbook({
         calculation,
         forms,
         worksheets: [
@@ -191,7 +191,7 @@ describe("ODS codec", () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:calculation-settings><table:unknown/></table:calculation-settings></office:spreadsheet></office:body></office:document-content>`;
     let error: unknown;
     try {
-      parseOds(
+      parseWorkbook(
         generateOcf("application/vnd.oasis.opendocument.spreadsheet", {
           "content.xml": content,
         }),

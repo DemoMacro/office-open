@@ -2,7 +2,7 @@ import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateOdt, OdtParseError, parseOdt, type DocumentOptions } from "./index";
+import { generateDocument, OdtParseError, parseDocument, type DocumentOptions } from "./index";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
 
@@ -19,7 +19,7 @@ function odtPackage(body: string): Uint8Array {
 
 function parseBodyError(body: string, name: string, reason?: string): OdtParseError {
   try {
-    parseOdt(odtPackage(body));
+    parseDocument(odtPackage(body));
   } catch (cause) {
     expect(cause).toBeInstanceOf(OdtParseError);
     const error = cause as OdtParseError;
@@ -33,13 +33,15 @@ function parseBodyError(body: string, name: string, reason?: string): OdtParseEr
 
 describe("ODT canonical projection", () => {
   it("projects a minimal document without hidden root fields", () => {
-    const parsed = parseOdt(generateOdt({ sections: [{ children: [{ paragraph: "ODT" }] }] }));
+    const parsed = parseDocument(
+      generateDocument({ sections: [{ children: [{ paragraph: "ODT" }] }] }),
+    );
     expect(Object.keys(parsed).sort()).toEqual(["sections"]);
     expect(projection(parsed.sections[0]?.children)).toEqual([{ paragraph: { text: "ODT" } }]);
   });
 
   it("rejects invalid packages with a structured error", () => {
-    expect(() => parseOdt(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
+    expect(() => parseDocument(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
   });
 
   it("round-trips revisions through canonical insertion and deletion children", () => {
@@ -73,7 +75,7 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseOdt(generateOdt(options));
+    const parsed = parseDocument(generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["sections", "settings"]);
     expect(parsed.settings).toEqual({ trackRevisions: true });
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
@@ -86,7 +88,7 @@ describe("ODT canonical projection", () => {
     const options: DocumentOptions = {
       sections: [{ children: [{ paragraph: { children: [field] } }] }],
     };
-    const parsed = parseOdt(generateOdt(options));
+    const parsed = parseDocument(generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["forms", "sections"]);
     expect(parsed.forms).toEqual([
       { controls: [{ control: "text", name: "Name", value: "Value" }] },
@@ -131,7 +133,7 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseOdt(generateOdt(options));
+    const parsed = parseDocument(generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual([
       "sections",
       "sequenceDeclarations",
@@ -141,7 +143,7 @@ describe("ODT canonical projection", () => {
   });
 
   it("round-trips paired inline bookmark and reference markers", () => {
-    const parsed = parseOdt(
+    const parsed = parseDocument(
       odtPackage(
         "<text:p>" +
           "<text:bookmark-start xml:id='bookmark-7' text:name='inline target'/>" +
@@ -164,7 +166,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     });
-    expect(projection(parseOdt(generateOdt(parsed)).sections[0]?.children)).toEqual(
+    expect(projection(parseDocument(generateDocument(parsed)).sections[0]?.children)).toEqual(
       projection(parsed.sections[0]?.children),
     );
   });
@@ -217,7 +219,7 @@ describe("ODT canonical projection", () => {
         },
       ],
     };
-    const parsed = parseOdt(generateOdt(options));
+    const parsed = parseDocument(generateDocument(options));
     expect(Object.keys(parsed).sort()).toEqual(["sections"]);
     expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
   });
@@ -282,7 +284,7 @@ describe("ODT canonical projection", () => {
       sections: [{ children: [{ paragraph: { children } }] }],
     });
     try {
-      generateOdt(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
+      generateDocument(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
     } catch (cause) {
       expect(cause).toBeInstanceOf(OdtParseError);
       const error = cause as OdtParseError;
@@ -291,7 +293,7 @@ describe("ODT canonical projection", () => {
       expect(error.reason).toBe("unsupported field instruction");
     }
     try {
-      generateOdt(section([{ bookmarkEnd: { id: 7 } }]));
+      generateDocument(section([{ bookmarkEnd: { id: 7 } }]));
     } catch (cause) {
       expect(cause).toBeInstanceOf(OdtParseError);
       const error = cause as OdtParseError;
