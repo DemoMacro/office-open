@@ -373,6 +373,21 @@ describe("format dispatch", () => {
     }
   });
 
+  it("generates and parses the RTF root format", async () => {
+    const bytes = (await generateOfficeDocument(
+      "rtf",
+      ODF_FIXTURES.odt,
+      "uint8array",
+    )) as Uint8Array;
+    expect(new TextDecoder().decode(bytes)).toContain("Dispatch");
+    const parsed = await parseOfficeDocument(bytes);
+    expect(parsed.type).toBe("rtf");
+    const options = parsed.options as { sections?: { children: unknown[] }[] };
+    expect(options.sections?.[0]?.children[0]).toEqual({
+      paragraph: { children: [{ text: "Dispatch" }] },
+    });
+  });
+
   it("dispatches legacy parse-only roots to family parsers", async () => {
     const document = await parseOfficeDocument(legacyDocument());
     const workbook = await parseOfficeDocument(legacyWorkbook());

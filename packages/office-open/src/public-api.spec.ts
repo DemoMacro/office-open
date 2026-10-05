@@ -41,6 +41,7 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "odtTool",
     "officeOpenTools",
     "pptxTool",
+    "rtfTool",
     "schemaLookupTool",
     "xlsxTool",
   ],
@@ -114,7 +115,7 @@ const RUNTIME_EXPORTS: Record<string, readonly string[]> = {
     "patchPresentation",
   ],
   "./presentation": ["generatePresentationFile", "parsePresentationFile"],
-  "./rtf": ["parseRtf", "RtfParseError"],
+  "./rtf": ["generateRtf", "parseRtf", "RtfGenerateError", "RtfParseError"],
   "./schemas": [
     "assertKnownDefinitions",
     "docxSchema",

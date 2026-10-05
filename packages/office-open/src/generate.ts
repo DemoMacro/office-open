@@ -30,6 +30,7 @@ export interface GenerateOptionsMap {
   potx: PresentationOptions;
   potm: PresentationOptions;
   odp: PresentationOptions;
+  rtf: DocumentOptions;
   xlsx: WorkbookOptions;
   xlsm: WorkbookOptions;
   xltx: WorkbookOptions;
@@ -64,6 +65,10 @@ export async function generateOfficeDocument<
       output,
       generationOptions?.reproducible,
     );
+  }
+
+  if (format === "rtf") {
+    return generateDocumentFile(format, options as DocumentOptions, output);
   }
   if (format === "ods") {
     return generateWorkbookFile(

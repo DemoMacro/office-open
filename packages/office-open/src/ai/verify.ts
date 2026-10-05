@@ -26,7 +26,7 @@ const decoder = new TextDecoder("utf-8", { fatal: false });
 
 /** OPC-check a fresh package and return it as base64 for the tool result. */
 export function generateVerifiedBase64(type: GenerateType, bytes: Uint8Array): string {
-  if (type === "odt" || type === "ods" || type === "odp") {
+  if (type === "odt" || type === "ods" || type === "odp" || type === "rtf") {
     return encodeBase64(bytes);
   }
   const schemaTypes = {

@@ -88,3 +88,14 @@ describe("generate OOXML package variants", () => {
     expect(findOverride(contentTypes, format.mainPartPath)).toEqual(format.mainContentType);
   });
 });
+
+describe("generate RTF", () => {
+  it("writes RTF through the aggregate API", async () => {
+    const bytes = (await generate({
+      type: "rtf",
+      options: { sections: [{ children: [{ paragraph: { children: ["Aggregate"] } }] }] },
+      outputType: "uint8array",
+    })) as Uint8Array;
+    expect(new TextDecoder().decode(bytes)).toContain("Aggregate");
+  });
+});

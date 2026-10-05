@@ -1,7 +1,7 @@
 {
   "name": "office-open",
   "version": "0.14.6",
-  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, and OpenDocument from plain JSON, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
+  "description": "AI-native Office documents in one install — generate, parse, and patch Word, Excel, PowerPoint, RTF, and OpenDocument where supported, with a CLI, AI SDK tools, and JSON schemas for LLM tool-calling",
   "keywords": [
     "ai",
     "ai-agent",
@@ -22,6 +22,7 @@
     "openxml",
     "powerpoint",
     "pptx",
+    "rtf",
     "typescript",
     "word",
     "xlsx"

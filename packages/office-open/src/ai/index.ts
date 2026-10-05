@@ -201,6 +201,33 @@ export const odtTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
   toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
 });
 
+export const rtfTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
+  description:
+    "Generate an .rtf Rich Text Format document. " +
+    "The input uses the canonical DocumentOptions schema and must include a 'sections' array. " +
+    "Conventions: section children are wrapper-key objects ({ paragraph: {...} }, { table: {...} }, …); " +
+    "RTF supports a strict projection only, and unsupported OOXML fields are rejected rather than dropped. " +
+    SKELETON_GUIDANCE,
+  inputSchema: jsonSchema<DocumentOptions>(getSkeletonSchema("docx")),
+  execute: async (options) => {
+    try {
+      const validated = validateDocumentInput("docx", options);
+      const bytes = (await generateOfficeDocument(
+        "rtf",
+        canonicalDocumentOptions(validated),
+        "uint8array",
+      )) as Uint8Array;
+      return {
+        base64: generateVerifiedBase64("rtf", bytes),
+        mimeType: "application/rtf",
+      };
+    } catch (error) {
+      throw new Error(formatToolError("rtf", error));
+    }
+  },
+  toModelOutput: ({ output }) => ({ type: "text", value: documentGeneratedSummary(output) }),
+});
+
 export const odsTool: Tool<WorkbookOptions, GeneratedDocumentOutput> = tool({
   description:
     "Generate an .ods OpenDocument spreadsheet. " +
@@ -328,6 +355,7 @@ export const officeOpenTools: ToolSet = {
   "generate-pptx": pptxTool,
   "generate-xlsx": xlsxTool,
   "generate-odt": odtTool,
+  "generate-rtf": rtfTool,
   "generate-ods": odsTool,
   "generate-odp": odpTool,
   "office-open-schema-lookup": schemaLookupTool,

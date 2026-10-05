@@ -17,13 +17,14 @@ import { SCHEMAS, type DocumentType } from "./schemas/schemas";
 
 type GenerateFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
-type OfficeGenerateCommandFormat = GenerateFormat | "odt" | "ods" | "odp";
+type OfficeGenerateCommandFormat = GenerateFormat | "odt" | "ods" | "odp" | "rtf";
 
 const FORMATS = [
   ...Object.keys(OOXML_PACKAGE_FORMATS),
   "odt",
   "ods",
   "odp",
+  "rtf",
 ] as OfficeGenerateCommandFormat[];
 
 const SCHEMA_TYPES = {
@@ -33,6 +34,7 @@ const SCHEMA_TYPES = {
   odt: "docx",
   ods: "xlsx",
   odp: "pptx",
+  rtf: "docx",
 } as const;
 
 function schemaTypeOf(format: OfficeGenerateCommandFormat): DocumentType {

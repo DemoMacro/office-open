@@ -10,7 +10,7 @@ import { parseDocument as parseLegacyDocument } from "@office-open/doc";
 import type { DocumentOptions } from "@office-open/docx";
 import { generateDocument, parseDocument as parseDocxDocument } from "@office-open/docx";
 import { generateOdt, parseOdt } from "@office-open/odt";
-import { parseRtf } from "@office-open/rtf";
+import { generateRtf, parseRtf } from "@office-open/rtf";
 
 import { detectOfficeFormat } from "./formats";
 
@@ -21,9 +21,10 @@ export interface DocumentFileParseOptions {
 
 export type DocumentFileParseFormat = "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt";
 
-export type DocumentFileGenerateFormat = "docx" | "docm" | "dotx" | "dotm" | "odt";
+export type DocumentFileGenerateFormat = "docx" | "docm" | "dotx" | "dotm" | "odt" | "rtf";
 
 const ODT_MIME_TYPE = "application/vnd.oasis.opendocument.text";
+const RTF_MIME_TYPE = "application/rtf";
 
 export async function parseDocumentFile(
   input: Uint8Array | string,
@@ -63,6 +64,10 @@ export async function generateDocumentFile<
   if (format === "odt") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
     return convertOutput(generateOdt(options), outputType, ODT_MIME_TYPE);
+  }
+
+  if (format === "rtf") {
+    return convertOutput(generateRtf(options), outputType, RTF_MIME_TYPE);
   }
 
   return generateDocument(options, {
