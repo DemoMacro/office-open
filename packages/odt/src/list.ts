@@ -13,6 +13,7 @@ import type { Element } from "@office-open/xml";
 import { blockXml } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
 import { lengthToTwips, twipsToLength } from "./master-pages";
+import type { OdtEmbeddedObjectOptions } from "./package";
 import { normalizeParagraph } from "./paragraph";
 import { NUM_FORMAT_DOCX, NUM_FORMAT_ODF, type NotesContext } from "./section";
 
@@ -173,6 +174,7 @@ export function listXml(
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   const styleName = addListStyle(styles, info, numbering);
   // ODF nesting is 1-based: list level 0 renders as a single text:list,
@@ -180,7 +182,7 @@ export function listXml(
   const items = group
     .map((child) =>
       xmlElement("text:list-item", undefined, [
-        blockXml(child, styles, images, notes, numbering, charts),
+        blockXml(child, styles, images, notes, numbering, charts, embeddedObjects),
       ]),
     )
     .join("");

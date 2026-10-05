@@ -22,6 +22,7 @@ import type {
   CustomTableStyleOptions,
   DxfOptions,
   FontOptions,
+  FontsContainerOptions,
   BorderSideOptions,
   IndexedXfEntry,
   NumFmtEntry,
@@ -36,6 +37,7 @@ import type {
   WebPublishingOptions,
   FileSharingOptions,
   CustomWorkbookViewOptions,
+  FileVersionOptions,
   VolTypeOptions,
   WebPublishObjectOptions,
   DefinedNameOptions,
@@ -86,6 +88,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * (cells keep raw style indices, matching the source's numbering).
    */
   fonts?: FontOptions[];
+  /** Fonts container metadata (CT_Fonts `@x14ac:knownFonts`) — round-trip only. */
+  fontsContainer?: FontsContainerOptions;
   /** Fills section of xl/styles.xml, in source order — round-trip only. */
   fills?: CellFillOptions[];
   /** Borders section of xl/styles.xml, in source order — round-trip only. */
@@ -136,7 +140,9 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Defined names — named ranges, constants, formulas (CT_DefinedNames) */
   definedNames?: DefinedNameOptions[];
   /** Workbook view (CT_BookView) */
-  bookView?: WorkbookViewOptions;
+  bookView?: WorkbookViewOptions | false;
+  /** Excel version stamp (CT_FileVersion); false preserves source absence */
+  fileVersion?: FileVersionOptions | false;
   /** Calculation properties (CT_CalcPr) */
   calculation?: CalculationPropertiesOptions;
   /** OLE embedded range (CT_OleSize) — workbook-level, after calcPr */
@@ -146,7 +152,7 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   properties?: WorkbookPropertiesOptions;
   /** Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler
    * round-trips them verbatim and rebuilds from formula cells only when absent */
-  calcChain?: CalcCell[];
+  calcChain?: CalcCell[] | false;
   /** Pivot caches, either generated from source data or fully defined. */
   pivotCaches?: PivotCacheOptions[];
   /**
@@ -155,6 +161,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * documents omit it and strings register from cell values on stringify.
    */
   sharedStrings?: (string | RichTextOptions)[];
+  /** Source <sst/@count>: total string-cell references; undefined on fresh authoring. */
+  sharedStringsCount?: number;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */

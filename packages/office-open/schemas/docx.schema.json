@@ -3586,6 +3586,53 @@
       ],
       "type": "string"
     },
+    "ColorSchemeOptions": {
+      "additionalProperties": false,
+      "description": "Color scheme — 12 theme colors.",
+      "properties": {
+        "accent1": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "accent2": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "accent3": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "accent4": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "accent5": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "accent6": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "dark1": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "dark2": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "followedHyperlink": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "light1": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "light2": {
+          "$ref": "#/definitions/SchemeColorValue"
+        },
+        "name": {
+          "description": "clrScheme/`@name` (defaults to the theme name).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "ColorStyleLabelOptions": {
       "additionalProperties": false,
       "properties": {
@@ -4635,6 +4682,22 @@
       "required": ["corporate"],
       "type": "object"
     },
+    "CustomColorOptions": {
+      "additionalProperties": false,
+      "description": "Custom color entry — a named color in the theme's palette.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/SolidFillOptions",
+          "description": "Color value (EG_ColorChoice)"
+        },
+        "name": {
+          "description": "Palette display name",
+          "type": "string"
+        }
+      },
+      "required": ["color"],
+      "type": "object"
+    },
     "CustomGeometryOptions": {
       "additionalProperties": false,
       "description": "Options for a custom 2D geometry. Only `pathList` is required. All other sub-elements are optional.",
@@ -5143,6 +5206,25 @@
       "examples": ["2024-06-01T09:30:00Z"],
       "pattern": "^-?\\d{4,}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?$",
       "type": "string"
+    },
+    "DefaultShapeDefinitionOptions": {
+      "additionalProperties": false,
+      "description": "Default shape/line/text definition.",
+      "properties": {
+        "bodyProperties": {
+          "$ref": "#/definitions/BodyPropertiesOptions"
+        },
+        "listStyle": {
+          "$ref": "#/definitions/TextListStyleOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "shapeStyle": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions"
+        }
+      },
+      "type": "object"
     },
     "DefaultShapeStyleOptions": {
       "additionalProperties": false,
@@ -6186,6 +6268,10 @@
         "subject": {
           "type": "string"
         },
+        "theme": {
+          "$ref": "#/definitions/ThemeOptions",
+          "description": "Document theme (word/theme/theme1.xml); fresh output emits the default"
+        },
         "title": {
           "type": "string"
         },
@@ -6643,6 +6729,22 @@
       "required": ["ref"],
       "type": "object"
     },
+    "EffectStyleOptions": {
+      "additionalProperties": false,
+      "description": "Effect style entry — a:effectStyle.",
+      "properties": {
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "scene3d": {
+          "$ref": "#/definitions/Scene3DOptions"
+        },
+        "shape3d": {
+          "$ref": "#/definitions/Shape3DOptions"
+        }
+      },
+      "type": "object"
+    },
     "EmbeddedFontOptions": {
       "additionalProperties": false,
       "description": "An embedded font (fontTable.xml w:font with w:embedRegular parts). Author with name/data only; the round-trip fields (rawOdttf/odttfPath/fontKey/ subsetted) carry source-file obfuscation state — do not hand-author.",
@@ -6852,6 +6954,59 @@
         }
       },
       "required": ["relationshipId"],
+      "type": "object"
+    },
+    "ExtraColorSchemeOptions": {
+      "additionalProperties": false,
+      "description": "Extra color scheme.",
+      "properties": {
+        "colorMapping": {
+          "additionalProperties": false,
+          "properties": {
+            "accent1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent3": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent4": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent5": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent6": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "followedHyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "hyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            }
+          },
+          "type": "object"
+        },
+        "colorScheme": {
+          "$ref": "#/definitions/ColorSchemeOptions"
+        }
+      },
+      "required": ["colorScheme"],
       "type": "object"
     },
     "FillEffectOptions": {
@@ -7143,6 +7298,30 @@
       "required": ["horizontalPosition", "verticalPosition"],
       "type": "object"
     },
+    "FontCollectionOptions": {
+      "additionalProperties": false,
+      "description": "Major or minor font collection.",
+      "properties": {
+        "complexScript": {
+          "$ref": "#/definitions/TextFontOptions",
+          "description": "Complex-script font (a:cs)."
+        },
+        "eastAsian": {
+          "$ref": "#/definitions/TextFontOptions",
+          "description": "East-asian font (a:ea)."
+        },
+        "latin": {
+          "$ref": "#/definitions/TextFontOptions"
+        },
+        "supplementalFonts": {
+          "items": {
+            "$ref": "#/definitions/SupplementalFontOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "FontProperties": {
       "additionalProperties": false,
       "description": "Options for font attributes across different character sets.",
@@ -7201,6 +7380,22 @@
         }
       },
       "required": ["collection"],
+      "type": "object"
+    },
+    "FontSchemeOptions": {
+      "additionalProperties": false,
+      "description": "Font scheme.",
+      "properties": {
+        "majorFont": {
+          "$ref": "#/definitions/FontCollectionOptions"
+        },
+        "minorFont": {
+          "$ref": "#/definitions/FontCollectionOptions"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
       "type": "object"
     },
     "FontSignature": {
@@ -7510,6 +7705,45 @@
         }
       },
       "required": ["type", "value"],
+      "type": "object"
+    },
+    "FormatSchemeOptions": {
+      "additionalProperties": false,
+      "description": "Format scheme / style matrix — a:fmtScheme.",
+      "properties": {
+        "backgroundFillStyles": {
+          "description": "Background fill style list (bgFillStyleLst, ≥3 entries).",
+          "items": {
+            "$ref": "#/definitions/FillOptions"
+          },
+          "type": "array"
+        },
+        "effectStyles": {
+          "description": "Effect style list (effectStyleLst, ≥3 entries).",
+          "items": {
+            "$ref": "#/definitions/EffectStyleOptions"
+          },
+          "type": "array"
+        },
+        "fillStyles": {
+          "description": "Fill style list (fillStyleLst, ≥3 entries).",
+          "items": {
+            "$ref": "#/definitions/FillOptions"
+          },
+          "type": "array"
+        },
+        "lineStyles": {
+          "description": "Line style list (lnStyleLst, ≥3 entries).",
+          "items": {
+            "$ref": "#/definitions/OutlineOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["fillStyles", "lineStyles", "effectStyles", "backgroundFillStyles"],
       "type": "object"
     },
     "FrameOptions": {
@@ -11520,6 +11754,25 @@
         }
       },
       "required": ["rId"],
+      "type": "object"
+    },
+    "ObjectDefaultsOptions": {
+      "additionalProperties": false,
+      "description": "Object defaults — a:objectDefaults.",
+      "properties": {
+        "lineDefault": {
+          "$ref": "#/definitions/DefaultShapeDefinitionOptions",
+          "description": "Line/connector default (lnDef)."
+        },
+        "shapeDefault": {
+          "$ref": "#/definitions/DefaultShapeDefinitionOptions",
+          "description": "Shape default (spDef)."
+        },
+        "textDefault": {
+          "$ref": "#/definitions/DefaultShapeDefinitionOptions",
+          "description": "Text default (txDef)."
+        }
+      },
       "type": "object"
     },
     "ObjectElementOptions": {
@@ -16888,6 +17141,17 @@
       "required": ["value"],
       "type": "object"
     },
+    "SchemeColorValue": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/SystemColorOptions"
+        }
+      ],
+      "description": "A theme color slot — hex string (emits a:srgbClr) or a structured system color (emits a:sysClr verbatim)."
+    },
     "SdtCellOptions": {
       "additionalProperties": false,
       "description": "Options for a cell-level structured document tag.",
@@ -20771,6 +21035,20 @@
       "required": ["data"],
       "type": "object"
     },
+    "SupplementalFontOptions": {
+      "additionalProperties": false,
+      "description": "Supplemental font for a script range.",
+      "properties": {
+        "script": {
+          "type": "string"
+        },
+        "typeface": {
+          "type": "string"
+        }
+      },
+      "required": ["script", "typeface"],
+      "type": "object"
+    },
     "SurfaceOptions": {
       "additionalProperties": false,
       "description": "3D wall/floor surface.",
@@ -22843,6 +23121,26 @@
       ],
       "description": "A script typeface. A bare string is the typeface only; the full object carries panose/pitchFamily/charset for embedded font metrics."
     },
+    "TextFontOptions": {
+      "additionalProperties": false,
+      "description": "Single font slot — a:latin / a:ea / a:cs / a:sym.",
+      "properties": {
+        "charset": {
+          "type": "number"
+        },
+        "panose": {
+          "$ref": "#/definitions/Panose"
+        },
+        "pitchFamily": {
+          "type": "number"
+        },
+        "typeface": {
+          "type": "string"
+        }
+      },
+      "required": ["typeface"],
+      "type": "object"
+    },
     "TextHorzOverflow": {
       "description": "Text horizontal overflow type.",
       "enum": ["overflow", "clip"],
@@ -23282,6 +23580,40 @@
         "minorHAnsi"
       ],
       "type": "string"
+    },
+    "ThemeOptions": {
+      "additionalProperties": false,
+      "description": "Theme customization options (a:theme).",
+      "properties": {
+        "colorScheme": {
+          "$ref": "#/definitions/ColorSchemeOptions"
+        },
+        "customColors": {
+          "items": {
+            "$ref": "#/definitions/CustomColorOptions"
+          },
+          "type": "array"
+        },
+        "extraColorSchemes": {
+          "items": {
+            "$ref": "#/definitions/ExtraColorSchemeOptions"
+          },
+          "type": "array"
+        },
+        "fontScheme": {
+          "$ref": "#/definitions/FontSchemeOptions"
+        },
+        "formatScheme": {
+          "$ref": "#/definitions/FormatSchemeOptions"
+        },
+        "name": {
+          "type": "string"
+        },
+        "objectDefaults": {
+          "$ref": "#/definitions/ObjectDefaultsOptions"
+        }
+      },
+      "type": "object"
     },
     "TileAlignment": {
       "description": "Tile alignment within the shape.\n\nSpecifies the anchor position of the first tile relative to the shape.",

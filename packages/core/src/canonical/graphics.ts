@@ -6,8 +6,10 @@ export interface CellImageGraphicOptions {
   type: "image";
   /** Image package URI, without the leading slash. */
   href: string;
-  /** Image bytes encoded with base64. */
-  data: string;
+  /** Embedded image bytes encoded with base64, or omit with sourceUrl for a linked-only image. */
+  data?: string;
+  /** External image URL used when data is omitted. */
+  sourceUrl?: string;
   /** Accessible image name. */
   name?: string;
   /** Accessible image description. */

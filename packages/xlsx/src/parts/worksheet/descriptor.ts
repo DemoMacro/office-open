@@ -152,7 +152,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           psup.autoPageBreaks = parseOnOff(attr(pageSetUpPr, "autoPageBreaks")) ?? true;
         if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
       }
-      if (Object.keys(sp).length > 0) result.properties = sp;
+      result.properties = sp;
 
       // Tab color
       const tabColorEl = findChild(sheetPrEl, "tabColor");
@@ -288,7 +288,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (olr !== undefined) sfp.outlineLevelRow = olr;
       const olc = attrNum(sfpEl, "outlineLevelCol");
       if (olc !== undefined) sfp.outlineLevelCol = olc;
+      const dyDescent = attrNum(sfpEl, "x14ac:dyDescent");
+      if (dyDescent !== undefined) sfp.dyDescent = dyDescent;
       result.sheetFormat = sfp;
+    } else {
+      result.sheetFormat = false;
     }
 
     // Dimension
@@ -333,6 +337,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (parseOnOff(attr(colEl, "customWidth"))) col.customWidth = true;
         const ol = attrNum(colEl, "outlineLevel");
         if (ol !== undefined) col.outlineLevel = ol;
+        const style = attrNum(colEl, "style");
+        if (style !== undefined) col.style = style;
         if (parseOnOff(attr(colEl, "collapsed"))) col.collapsed = true;
         if (parseOnOff(attr(colEl, "bestFit"))) col.bestFit = true;
         if (parseOnOff(attr(colEl, "phonetic"))) col.phonetic = true;

@@ -112,6 +112,8 @@ export function compileWorkbook(
   // keep their si indices and rich-text structure (identity dedup in
   // registerRich resolves the same entry object back to its source index).
   if (options.sharedStrings) ctx.sharedStrings.loadEntries(options.sharedStrings);
+  if (options.sharedStringsCount !== undefined)
+    ctx.sharedStrings.setSourceCount(options.sharedStringsCount);
 
   const worksheetConfigs = options.worksheets ?? [];
   const chartsheetConfigs = options.chartsheets ?? [];
@@ -163,6 +165,7 @@ export function compileWorkbook(
   if (options.fonts !== undefined) {
     ctx.styles.adopt({
       fonts: options.fonts,
+      fontsContainer: options.fontsContainer,
       fills: options.fills ?? [],
       borders: options.borders ?? [],
       cellXfs: options.cellXfs ?? [],
@@ -267,6 +270,7 @@ export function compileWorkbook(
         fileSharing: options.fileSharing,
         webPublishObjects: options.webPublishObjects,
         definedNames: options.definedNames,
+        fileVersion: options.fileVersion,
         properties: options.properties,
         calculation: options.calculation,
         oleSize: options.oleSize,
@@ -439,7 +443,7 @@ export function compileWorkbook(
   // fresh authoring rebuilds one from formula cells. A source whose workbook
   // rels reference calcChain but ship no part (repair-style files) keeps the
   // part absent — Excel tolerates the dangling reference exactly as received.
-  const calcChainCells = options.calcChain ?? state.calcCells;
+  const calcChainCells = options.calcChain === false ? [] : (options.calcChain ?? state.calcCells);
   const srcReferencesCalcChain = (options.passthroughRelationships ?? []).some(
     (r) => r.source === "xl/workbook.xml" && r.relationshipType.endsWith("/calcChain"),
   );
@@ -782,7 +786,17 @@ function compileWorksheetPart(
 
   // Pivot tables
   if (hasPivots) {
-    compileSheetPivots(wsOpts, worksheetConfigs, ctx, mapping, state, wsRels!, wsPath, sheetName);
+    compileSheetPivots(
+      wsOpts,
+      worksheetConfigs,
+      ctx,
+      mapping,
+      state,
+      wsRels!,
+      passthroughRelationships,
+      wsPath,
+      sheetName,
+    );
   }
 
   // Tables (list objects)

@@ -2007,93 +2007,97 @@
     "CellGraphicOptions": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "data": {
-              "description": "Embedded image bytes as base64, or omit with sourceUrl for a linked-only image.",
-              "type": "string"
-            },
-            "description": {
-              "description": "Accessible image description.",
-              "type": "string"
-            },
-            "endCellAddress": {
-              "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
-              "type": "string"
-            },
-            "endX": {
-              "description": "Horizontal offset of the end anchor in EMU.",
-              "type": "number"
-            },
-            "endY": {
-              "description": "Vertical offset of the end anchor in EMU.",
-              "type": "number"
-            },
-            "height": {
-              "description": "Graphic height in EMU.",
-              "type": "number"
-            },
-            "href": {
-              "description": "Image package URI, without the leading slash.",
-              "type": "string"
-            },
-            "id": {
-              "description": "Drawing identifier.",
-              "type": "string"
-            },
-            "name": {
-              "description": "Accessible image name.",
-              "type": "string"
-            },
-            "relativeHeight": {
-              "description": "Relative frame height from the package style system.",
-              "type": "string"
-            },
-            "relativeWidth": {
-              "description": "Relative frame width from the package style system.",
-              "type": "string"
-            },
-            "sourceUrl": {
-              "description": "External image URL used when data is omitted.",
-              "type": "string"
-            },
-            "styleName": {
-              "description": "Package-local graphic style reference.",
-              "type": "string"
-            },
-            "textStyleName": {
-              "description": "Text style reference for labels attached to the frame.",
-              "type": "string"
-            },
-            "type": {
-              "const": "image",
-              "description": "Image graphic discriminant.",
-              "type": "string"
-            },
-            "width": {
-              "description": "Graphic width in EMU.",
-              "type": "number"
-            },
-            "x": {
-              "description": "Horizontal offset from the cell in EMU.",
-              "type": "number"
-            },
-            "y": {
-              "description": "Vertical offset from the cell in EMU.",
-              "type": "number"
-            },
-            "zIndex": {
-              "description": "Painting order; higher numbers render above lower numbers.",
-              "type": "number"
-            }
-          },
-          "required": ["href", "type"],
-          "type": "object"
+          "$ref": "#/definitions/CellImageGraphicOptions"
         },
         {
           "$ref": "#/definitions/CellObjectGraphicOptions"
         }
       ]
+    },
+    "CellImageGraphicOptions": {
+      "additionalProperties": false,
+      "description": "Image graphic anchored to a spreadsheet cell.",
+      "properties": {
+        "data": {
+          "description": "Embedded image bytes encoded with base64, or omit with sourceUrl for a linked-only image.",
+          "type": "string"
+        },
+        "description": {
+          "description": "Accessible image description.",
+          "type": "string"
+        },
+        "endCellAddress": {
+          "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
+          "type": "string"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "height": {
+          "description": "Graphic height in EMU.",
+          "type": "number"
+        },
+        "href": {
+          "description": "Image package URI, without the leading slash.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Drawing identifier.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible image name.",
+          "type": "string"
+        },
+        "relativeHeight": {
+          "description": "Relative frame height from the package style system.",
+          "type": "string"
+        },
+        "relativeWidth": {
+          "description": "Relative frame width from the package style system.",
+          "type": "string"
+        },
+        "sourceUrl": {
+          "description": "External image URL used when data is omitted.",
+          "type": "string"
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Text style reference for labels attached to the frame.",
+          "type": "string"
+        },
+        "type": {
+          "const": "image",
+          "description": "Image graphic discriminant.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Graphic width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Horizontal offset from the cell in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Vertical offset from the cell in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["type", "href"],
+      "type": "object"
     },
     "CellObjectGraphicOptions": {
       "additionalProperties": false,
@@ -2108,7 +2112,7 @@
           "type": "string"
         },
         "endCellAddress": {
-          "$ref": "#/definitions/CellGraphicOptions/anyOf/0/properties/endCellAddress"
+          "$ref": "#/definitions/CellImageGraphicOptions/properties/endCellAddress"
         },
         "endX": {
           "description": "Horizontal offset of the end anchor in EMU.",
@@ -3751,6 +3755,10 @@
         "phonetic": {
           "description": "Phonetic text for CJK",
           "type": "boolean"
+        },
+        "style": {
+          "description": "Source cellStyleXfs index — round-trip only.",
+          "type": "number"
         },
         "width": {
           "type": "number"
@@ -6653,6 +6661,24 @@
       },
       "type": "object"
     },
+    "FileVersionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "appName": {
+          "type": "string"
+        },
+        "lastEdited": {
+          "type": "number"
+        },
+        "lowestEdited": {
+          "type": "number"
+        },
+        "rupBuild": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "FillEffectOptions": {
       "additionalProperties": false,
       "description": "Fill effect — applies a fill as an effect.",
@@ -7118,6 +7144,17 @@
         },
         "name": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "FontsContainerOptions": {
+      "additionalProperties": false,
+      "description": "Fonts container metadata.",
+      "properties": {
+        "knownFonts": {
+          "description": "Whether Excel marked the font table as known.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -10685,12 +10722,18 @@
           "description": "Serialized cacheSource child."
         },
         "calculatedItems": {
-          "$ref": "#/definitions/PivotXmlElementOptions",
-          "description": "Serialized calculatedItems child."
+          "description": "Calculated items.",
+          "items": {
+            "$ref": "#/definitions/CalculatedItemOptions"
+          },
+          "type": "array"
         },
         "calculatedMembers": {
-          "$ref": "#/definitions/PivotXmlElementOptions",
-          "description": "Serialized calculatedMembers child."
+          "description": "Calculated members.",
+          "items": {
+            "$ref": "#/definitions/CalculatedMemberOptions"
+          },
+          "type": "array"
         },
         "consolidation": {
           "$ref": "#/definitions/ConsolidationOptions",
@@ -14151,6 +14194,10 @@
           "description": "Custom format applied",
           "type": "boolean"
         },
+        "dyDescent": {
+          "description": "Fraction of row height used by font descent, e.g. 0.25 = 25%.",
+          "type": "number"
+        },
         "height": {
           "anyOf": [
             {
@@ -15364,6 +15411,10 @@
           "type": "number"
         },
         "defaultRowHeight": {
+          "type": "number"
+        },
+        "dyDescent": {
+          "description": "Fraction of default row height used by font descent, e.g. 0.25 = 25%.",
           "type": "number"
         },
         "outlineLevelCol": {
@@ -18439,7 +18490,15 @@
           "description": "Extended properties (docProps/app.xml)"
         },
         "bookView": {
-          "$ref": "#/definitions/WorkbookViewOptions",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/WorkbookViewOptions"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
           "description": "Workbook view"
         },
         "borders": {
@@ -18450,11 +18509,19 @@
           "type": "array"
         },
         "calcChain": {
-          "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent",
-          "items": {
-            "$ref": "#/definitions/CalcCell"
-          },
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/CalcCell"
+              },
+              "type": "array"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler round-trips them verbatim and rebuilds from formula cells only when absent"
         },
         "calculation": {
           "$ref": "#/definitions/CalculationPropertiesOptions",
@@ -18591,6 +18658,18 @@
           "$ref": "#/definitions/FileSharingOptions",
           "description": "File sharing / read-only recommendation"
         },
+        "fileVersion": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FileVersionOptions"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Excel version stamp; false preserves source absence"
+        },
         "fills": {
           "description": "Fills section of xl/styles.xml, in source order — round-trip only.",
           "items": {
@@ -18604,6 +18683,10 @@
             "$ref": "#/definitions/FontOptions"
           },
           "type": "array"
+        },
+        "fontsContainer": {
+          "$ref": "#/definitions/FontsContainerOptions",
+          "description": "Fonts container metadata — round-trip only."
         },
         "forms": {
           "description": "Workbook-level form containers.",
@@ -18737,6 +18820,10 @@
             ]
           },
           "type": "array"
+        },
+        "sharedStringsCount": {
+          "description": "Source <sst/@count>: total string-cell references; undefined on fresh authoring.",
+          "type": "number"
         },
         "styleExtensions": {
           "description": "Style sheet extensions",
@@ -19617,7 +19704,15 @@
           "type": "array"
         },
         "sheetFormat": {
-          "$ref": "#/definitions/SheetFormatPropertiesOptions",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SheetFormatPropertiesOptions"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
           "description": "Sheet format properties"
         },
         "sheetId": {

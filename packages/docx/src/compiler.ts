@@ -36,6 +36,7 @@ import {
 } from "@office-open/core";
 import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
 import type { OoxmlPackageVariant } from "@office-open/core";
+import { buildThemeXml } from "@office-open/core/theme";
 import type { DocumentOptions } from "@parts/core-properties";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import type { MailMergeOptions } from "@parts/settings/settings";
@@ -68,6 +69,20 @@ const encoder = new TextEncoder();
 
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
+
+function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships): string {
+  const names = new Set(ctx.media.array.map((media) => media.fileName));
+  if (![...names].some((name) => xml.includes(`{${name}}`))) return xml;
+  const ids = new Map<string, string>();
+  return xml.replace(/\{([^{}]+)\}/g, (placeholder, fileName: string) => {
+    const existing = ids.get(fileName);
+    if (existing) return existing;
+    if (!names.has(fileName)) return placeholder;
+    const id = `rId${rels.add(RELATIONSHIP_TYPES.image, `../media/${fileName}`)}`;
+    ids.set(fileName, id);
+    return id;
+  });
+}
 
 /** Extension → MIME for media/font/embedding Default entries. Declared only
  * for extensions actually present in the package. */
@@ -323,17 +338,25 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         }
       : {}),
     ...documentEntries,
-    // Theme — fresh-compile emits a language-neutral default theme
-    // (createThemeXml). Round-trip carries the source theme in rawParts,
-    // already copied verbatim above, so skip emitting here to avoid a duplicate.
-    ...(ctx._options.rawParts?.some((part) => part.path.startsWith("word/theme/"))
-      ? {}
-      : {
-          Theme: {
-            data: XML_DECL + createThemeXml(),
-            path: "word/theme/theme1.xml",
-          },
-        }),
+    // Theme — a parsed source theme round-trips structurally; fresh output
+    // emits the Office default. Theme fill media resolve against part rels.
+    ...(() => {
+      const rels = new Relationships();
+      const themeXml = ctx._options.theme
+        ? bindThemeMedia(buildThemeXml(ctx._options.theme, ctx), ctx, rels)
+        : createThemeXml();
+      return {
+        Theme: { data: XML_DECL + themeXml, path: "word/theme/theme1.xml" },
+        ...(rels.relationshipCount > 0
+          ? {
+              ThemeRelationships: {
+                data: XML_DECL + rels.serialize(),
+                path: "word/theme/_rels/theme1.xml.rels",
+              },
+            }
+          : {}),
+      };
+    })(),
     FileRelationships: {
       data: XML_DECL + ctx.fileRelationships.serialize(),
       path: "_rels/.rels",

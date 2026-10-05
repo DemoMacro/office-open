@@ -4,7 +4,6 @@ import type {
   ChartOptions,
   ParagraphChild,
   PictureOptions,
-  RunOptions,
   SectionChild,
   ShapeOptions,
 } from "@office-open/docx";
@@ -26,6 +25,11 @@ import type { Element } from "@office-open/xml";
 
 import { unknownOdtElement, type ParseContext } from "./body";
 import { OdtParseError } from "./error";
+import type {
+  OdtEmbeddedObjectFrameOptions,
+  OdtEmbeddedObjectOptions,
+  OdtFrameAnchorType,
+} from "./package";
 
 export type PictureType = NonNullable<PictureOptions["type"]>;
 
@@ -65,9 +69,28 @@ export function chartFrameXml(chart: ChartOptions, charts: OdtChart[]): string {
 }
 
 /** Inline shape renders as a positioned draw:custom-shape with preset geometry. */
-export function wpsShapeFrameXml(shape: ShapeOptions, styles: string[]): string {
+export function wpsShapeFrameXml(
+  shape: ShapeOptions,
+  styles: string[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
+): string {
   const geometry = typeof shape.geometry === "string" ? { preset: shape.geometry } : shape.geometry;
   const offset = shape.transformation.offset;
+  const shapeId = shape.nonVisualProperties?.id;
+  const object =
+    shapeId === undefined
+      ? undefined
+      : embeddedObjects.find((candidate) =>
+          candidate.frames?.some((frame) => frame.shapeId === shapeId),
+        );
+  if (object) {
+    return embeddedObjectFrameXml(
+      shape,
+      object,
+      object.frames!.find((frame) => frame.shapeId === shapeId)!,
+      styles,
+    );
+  }
   return xmlElement(
     "draw:custom-shape",
     {
@@ -103,6 +126,35 @@ export function wpsShapeFrameXml(shape: ShapeOptions, styles: string[]): string 
       ),
     ],
   );
+}
+
+/** Canonical wpsShape plus an object overlay restores draw:frame + draw:object. */
+function embeddedObjectFrameXml(
+  shape: ShapeOptions,
+  object: OdtEmbeddedObjectOptions,
+  frame: OdtEmbeddedObjectFrameOptions,
+  styles: string[],
+): string {
+  const offset = shape.transformation.offset;
+  const name = shape.nonVisualProperties?.name ?? shape.altText?.name;
+  return xmlElement(
+    "draw:frame",
+    {
+      "text:anchor-type": frame.anchorType,
+      "draw:style-name": frame.styleName ?? addShapeStyle(shape, styles),
+      "svg:x": lengthAttributeXml(offset?.left),
+      "svg:y": lengthAttributeXml(offset?.top),
+      "svg:width": lengthAttributeXml(shape.transformation.width),
+      "svg:height": lengthAttributeXml(shape.transformation.height),
+      "draw:name": name,
+    },
+    [xmlElement("draw:object", { "xlink:href": `./${object.path}`, "xlink:type": "simple" })],
+  );
+}
+
+function lengthAttributeXml(value: number | string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  return typeof value === "number" ? emuToLength(value) : value;
 }
 
 /** Shape fill and outline land in a reusable graphic style. */
@@ -180,6 +232,7 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   const href = attributeString(childNamed(frame, "draw:image"), "xlink:href");
   const path = href?.replace(/^\//, "");
   const data = path ? context.binaries[path] : undefined;
+  if (data && path) context.usedBinaryPaths.add(path);
   if (!data || !path) {
     if (href && isExternalUrl(href))
       return [
@@ -233,40 +286,87 @@ function pictureTypeFromUrl(value: string): RasterPictureType {
   return isRasterPictureType(extension ?? "") ? (extension as RasterPictureType) : "png";
 }
 
-/** draw:frame + draw:object resolves an embedded chart subdocument. */
-export function parseChartFrame(frame: Element, context: ParseContext): RunOptions[] {
+/** draw:frame + draw:object resolves a typed embedded-object subdocument. */
+export function parseChartFrame(frame: Element, context: ParseContext): ParagraphChild[] {
   const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
     ?.replace(/^\.\//, "")
     .replace(/^\//, "");
   const chart = href ? context.chartBodies.get(href) : undefined;
   if (!chart) {
     const mediaType = href ? context.objectMediaTypes.get(href) : undefined;
-    const reason = !href
-      ? "chart frame has no object reference"
-      : mediaType === undefined
-        ? "embedded object media type is not declared"
-        : mediaType === CHART_MIME
-          ? "referenced chart subdocument is missing"
-          : "embedded object has no canonical ODT mapping";
-    throw new OdtParseError(
-      `content.xml: ${href ?? "draw:object"}: ${reason}`,
-      "content.xml",
-      "/draw:frame/draw:object/@xlink:href",
-      "draw:object",
-      reason,
-    );
+    if (!href) throw malformedEmbeddedObject("chart frame has no object reference", undefined);
+    if (mediaType === undefined)
+      throw malformedEmbeddedObject("embedded object media type is not declared", href);
+    if (mediaType === CHART_MIME)
+      throw malformedEmbeddedObject("referenced chart subdocument is missing", href);
+    if (!context.embeddedObjects.has(href))
+      throw malformedEmbeddedObject("embedded object subdocument is missing", href);
   }
-  return [
-    {
-      chart: {
-        ...chart,
-        transformation: {
-          width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
-          height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+  if (chart) {
+    return [
+      {
+        chart: {
+          ...chart,
+          transformation: {
+            width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
+            height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+          },
         },
       },
-    } as RunOptions,
+    ];
+  }
+  const object = context.embeddedObjects.get(href!)!;
+  const shapeId = context.nextEmbeddedShapeId++;
+  const anchorType = frameAnchorType(attributeString(frame, "text:anchor-type"));
+  const styleName = attributeString(frame, "draw:style-name");
+  object.frames = [
+    ...(object.frames ?? []),
+    {
+      shapeId,
+      ...(anchorType ? { anchorType } : {}),
+      ...(styleName ? { styleName } : {}),
+    },
   ];
+  return [{ wpsShape: embeddedObjectShape(frame, context, shapeId) }];
+}
+
+function frameAnchorType(value: string | undefined): OdtFrameAnchorType | undefined {
+  const anchorTypes: OdtFrameAnchorType[] = ["as-char", "char", "page", "paragraph", "frame"];
+  if (value === undefined) return undefined;
+  if (anchorTypes.includes(value as OdtFrameAnchorType)) return value as OdtFrameAnchorType;
+  throw malformedEmbeddedObject(`unsupported frame anchor type: ${value}`);
+}
+
+function embeddedObjectShape(frame: Element, context: ParseContext, shapeId: number): ShapeOptions {
+  const styleName = attributeString(frame, "draw:style-name");
+  const graphic = styleName ? context.graphicStyles.get(styleName) : undefined;
+  const fill = graphicFill(graphic);
+  const outline = graphicOutline(graphic);
+  const name = attributeString(frame, "draw:name");
+  const x = lengthToEmu(attributeString(frame, "svg:x"));
+  const y = lengthToEmu(attributeString(frame, "svg:y"));
+  return {
+    children: [],
+    geometry: "rect",
+    transformation: {
+      ...(x || y ? { offset: { ...(x ? { left: x } : {}), ...(y ? { top: y } : {}) } } : {}),
+      width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
+      height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+    },
+    nonVisualProperties: { id: shapeId, ...(name ? { name } : {}) },
+    ...(fill ? { fill } : {}),
+    ...(outline ? { outline } : {}),
+  };
+}
+
+function malformedEmbeddedObject(reason: string, href?: string): OdtParseError {
+  return new OdtParseError(
+    `content.xml: ${href ?? "draw:object"}: ${reason}`,
+    "content.xml",
+    "/draw:frame/draw:object/@xlink:href",
+    "draw:object",
+    reason,
+  );
 }
 
 /** draw:custom-shape maps back to the shared docx shape model. */

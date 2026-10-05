@@ -108,7 +108,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     !!opts.pageSetup?.fitToHeight ||
     opts.pageSetup?.fitToPage !== undefined ||
     opts.pageSetup?.autoPageBreaks !== undefined;
-  if (hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
+  if (sp !== undefined || hasTabColor || hasOutline || hasSheetPrAttrs || hasPageSetUpPr) {
     const prParts: string[] = [];
     const prAttrs: Record<string, string | number | boolean | undefined> = {};
     if (sp?.codeName) prAttrs.codeName = sp.codeName;
@@ -155,7 +155,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       prParts.push(`<pageSetUpPr${attrs(psupAttrs)}/>`);
     }
     const prAttrStr = Object.keys(prAttrs).length > 0 ? attrs(prAttrs) : "";
-    p.push(`<sheetPr${prAttrStr}>${prParts.join("")}</sheetPr>`);
+    p.push(
+      prParts.length > 0
+        ? `<sheetPr${prAttrStr}>${prParts.join("")}</sheetPr>`
+        : selfCloseElement("sheetPr", prAttrStr),
+    );
   }
 
   // Dimension — defines the used range of the sheet
@@ -205,7 +209,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   // Sheet format — default row height
-  if (opts.sheetFormat) {
+  if (opts.sheetFormat === undefined) {
+    p.push('<sheetFormatPr baseColWidth="10" defaultRowHeight="15"/>');
+  } else if (opts.sheetFormat) {
     const sfp = opts.sheetFormat;
     const sfpAttrs: Record<string, string | number | boolean | undefined> = {};
     if (sfp.baseColWidth !== undefined) sfpAttrs.baseColWidth = sfp.baseColWidth;
@@ -216,9 +222,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (sfp.thickBottom) sfpAttrs.thickBottom = 1;
     if (sfp.outlineLevelRow !== undefined) sfpAttrs.outlineLevelRow = sfp.outlineLevelRow;
     if (sfp.outlineLevelCol !== undefined) sfpAttrs.outlineLevelCol = sfp.outlineLevelCol;
+    if (sfp.dyDescent !== undefined) sfpAttrs["x14ac:dyDescent"] = sfp.dyDescent;
     p.push(`<sheetFormatPr${attrs(sfpAttrs)}/>`);
-  } else {
-    p.push('<sheetFormatPr baseColWidth="10" defaultRowHeight="15"/>');
   }
 
   // Column definitions
@@ -250,6 +255,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       }
       if (col.phonetic) {
         colAttrs.phonetic = 1;
+      }
+      if (col.style !== undefined) {
+        colAttrs.style = col.style;
       }
       p.push(selfCloseElement("col", attrs(colAttrs)));
     }
@@ -591,7 +599,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   // Header/footer
   if (opts.headerFooter) {
     const hfXml = stringifyHeaderFooterXml(opts.headerFooter);
-    if (hfXml) p.push(hfXml);
+    p.push(hfXml ?? "<headerFooter/>");
   }
 
   // Row breaks (after headerFooter per XSD sequence), then column breaks
@@ -996,6 +1004,9 @@ export function appendSheetDataRows(
     // Flat attribute assembly (no per-row Record + for-in) keeps young-gen
     // pressure near zero at 100k+ rows.
     let rowAttr = ` r="${rowNumber}"`;
+    if (rowOpts.dyDescent !== undefined) {
+      rowAttr += ` x14ac:dyDescent="${rowOpts.dyDescent}"`;
+    }
     if (rowOpts.height !== undefined) {
       rowAttr += ` ht="${convertToPt(rowOpts.height)}" customHeight="1"`;
     }

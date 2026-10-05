@@ -26,6 +26,14 @@ describe("SharedStrings", () => {
     expect(ss.count).toBe(2);
   });
 
+  it("round-trips the source reference count separately from unique entries", () => {
+    const ss = new SharedStrings();
+    ss.register("A");
+    ss.register("B");
+    ss.setSourceCount(7);
+    expect(ss.toDescriptorOptions()).toEqual({ entries: ["A", "B"], count: 7 });
+  });
+
   // ── toXml path ──
 
   describe("serialize", () => {
@@ -38,6 +46,14 @@ describe("SharedStrings", () => {
       expect(xml).toContain("<si><t>Hello</t></si>");
       expect(xml).toContain('count="1"');
       expect(xml).toContain('uniqueCount="1"');
+    });
+
+    it("uses the source reference count for sst/@count", () => {
+      const ss = new SharedStrings();
+      ss.register("A");
+      ss.setSourceCount(4);
+      expect(ss.serialize()).toContain('count="4"');
+      expect(ss.serialize()).toContain('uniqueCount="1"');
     });
 
     it("escapes XML special characters", () => {

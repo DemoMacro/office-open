@@ -6,7 +6,7 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, Relationships } from "@office-open/core";
+import { RELATIONSHIP_TYPES, Relationships, type PassthroughRelationship } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import type { PivotSourceData, SourcePivotTableOptions } from "@parts/pivot";
@@ -33,10 +33,24 @@ export function compileSheetPivots(
   mapping: Record<string, { data: string; path: string }>,
   state: WorksheetCompileState,
   wsRels: Relationships,
+  passthroughRelationships: readonly PassthroughRelationship[] | undefined,
   wsPath: string,
   sheetName: string,
 ): void {
   const pivotOpts = wsOpts.pivotTables ?? [];
+  const addWorksheetPivotRelationship = (target: string): void => {
+    const sourceRel = (passthroughRelationships ?? []).find(
+      (rel) =>
+        rel.source === wsPath &&
+        rel.relationshipType.endsWith("/pivotTable") &&
+        rel.target === target,
+    );
+    if (sourceRel) {
+      wsRels.claimSourceRel(sourceRel);
+      return;
+    }
+    wsRels.add(RELATIONSHIP_TYPES.pivotTable, target);
+  };
   for (const pt of pivotOpts) {
     state.globalPivotIdx++;
     const pivotIdx = state.globalPivotIdx;
@@ -62,7 +76,7 @@ export function compileSheetPivots(
         data: XML_DECL + ptRels.serialize(),
         path: ptRelsPath,
       };
-      wsRels.add(RELATIONSHIP_TYPES.pivotTable, relativePartTarget(wsPath, pivotTablePath));
+      addWorksheetPivotRelationship(relativePartTarget(wsPath, pivotTablePath));
       continue;
     }
 
@@ -157,7 +171,7 @@ export function compileSheetPivots(
     };
 
     // Worksheet rels → pivotTable
-    wsRels.add(RELATIONSHIP_TYPES.pivotTable, `../pivotTables/pivotTable${pivotIdx}.xml`);
+    addWorksheetPivotRelationship(`../pivotTables/pivotTable${pivotIdx}.xml`);
   }
 }
 

@@ -50,6 +50,19 @@ describe("calcChainDesc round-trip", () => {
     expect(result.cells![0]?.array).toBe(true);
   });
 
+  it("inherits sheet index and preserves explicit zero flags", () => {
+    const result = roundTrip({
+      cells: [
+        { reference: "A1", sheetIndex: 2, array: false, childChain: false },
+        { reference: "B2", sheetIndex: 2 },
+      ],
+    });
+    expect(result.cells).toEqual([
+      { reference: "A1", sheetIndex: 2, array: false, childChain: false },
+      { reference: "B2", sheetIndex: 2 },
+    ]);
+  });
+
   it("round-trips multiple cells across sheets", () => {
     const opts: CalcChainOptions = {
       cells: [

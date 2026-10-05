@@ -165,7 +165,7 @@ async function run(directory: string): Promise<void> {
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       const isPackageFailure =
-        /^(unexpected odf mime type|odf package|invalid odf manifest|manifest does not declare|invalid zip|unknown compression)/i.test(
+        /(?:unexpected odf mime type|odf package|invalid odf manifest|manifest does not declare|invalid zip|unknown compression|embedded object subdocument is missing)/i.test(
           message,
         ) ||
         ((error instanceof OdtParseError ||

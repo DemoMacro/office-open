@@ -29,15 +29,15 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   // File version (CT_Workbook first child). Fresh compiles emit Excel 2007
   // defaults; a round-tripped source carries its own version stamp through.
   const fv = opts.fileVersion;
-  if (fv) {
+  if (fv === undefined) {
+    parts.push('<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>');
+  } else if (fv) {
     const fvAttrs: string[] = [];
     if (fv.appName) fvAttrs.push(`appName="${fv.appName}"`);
     if (fv.lastEdited !== undefined) fvAttrs.push(`lastEdited="${fv.lastEdited}"`);
     if (fv.lowestEdited !== undefined) fvAttrs.push(`lowestEdited="${fv.lowestEdited}"`);
     if (fv.rupBuild !== undefined) fvAttrs.push(`rupBuild="${fv.rupBuild}"`);
     parts.push(`<fileVersion ${fvAttrs.join(" ")}/>`);
-  } else {
-    parts.push('<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>');
   }
 
   // File sharing (after fileVersion, before workbookPr per XSD sequence)
@@ -175,7 +175,11 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   }
 
   // Book views
-  if (opts.bookView) {
+  if (opts.bookView === undefined) {
+    parts.push(
+      '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
+    );
+  } else if (opts.bookView) {
     const bv = opts.bookView;
     const bvAttrs: string[] = [];
     if (bv.xWindow !== undefined) bvAttrs.push(`xWindow="${bv.xWindow}"`);
@@ -195,10 +199,6 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
     if (bv.visibility && bv.visibility !== "visible") bvAttrs.push(`visibility="${bv.visibility}"`);
     parts.push(`<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`);
-  } else {
-    parts.push(
-      '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
-    );
   }
 
   parts.push("<sheets>");

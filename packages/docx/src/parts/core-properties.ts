@@ -16,6 +16,7 @@ import type {
   SequenceDeclarationOptions,
   VariableDeclarationOptions,
 } from "@office-open/core";
+import type { ThemeOptions } from "@office-open/core/theme";
 import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
 import type { CommentExtensibleOptions } from "@parts/comments-extensible";
@@ -133,6 +134,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   mailMergeRecipients?: MailMergeRecipientsOptions[];
   /** Web settings for browser rendering (word/webSettings.xml) */
   webSettings?: WebSettingsOptions;
+  /** Document theme (word/theme/theme1.xml); fresh output emits the default */
+  theme?: ThemeOptions;
   /** Content types from [Content_Types].xml (parse path only) */
   contentTypes?: ContentTypesInput;
   /**

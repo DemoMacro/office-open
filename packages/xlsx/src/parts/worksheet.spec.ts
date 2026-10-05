@@ -38,6 +38,68 @@ describe("Worksheet", () => {
     });
   });
 
+  describe("sheetFormatPr presence", () => {
+    it("preserves source absence", () => {
+      const xml = buildWorksheetXml({ sheetFormat: false, rows: [] }, {});
+      expect(xml).not.toContain("<sheetFormatPr");
+    });
+
+    it("emits fresh-authoring defaults only when unconfigured", () => {
+      const xml = buildWorksheetXml({ rows: [] }, {});
+      expect(xml).toContain('<sheetFormatPr baseColWidth="10" defaultRowHeight="15"/>');
+    });
+  });
+
+  describe("worksheet source fidelity", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+      sharedStrings: [],
+    } as unknown as ReadContext;
+
+    function parseSource(xml: string): WorksheetOptions {
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
+    }
+
+    it("round-trips sheetFormatPr and row dyDescent", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+          `xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">` +
+          `<sheetFormatPr x14ac:dyDescent="0.25"/>` +
+          `<sheetData><row r="1" x14ac:dyDescent="0.25"><c r="A1" t="inlineStr">` +
+          `<is><t>A</t></is></c></row></sheetData></worksheet>`,
+      );
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('x14ac:dyDescent="0.25"');
+      expect(xml).toContain('<row r="1" x14ac:dyDescent="0.25"');
+    });
+
+    it("keeps empty sheetPr and headerFooter elements", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetPr/><sheetData/><headerFooter/></worksheet>`,
+      );
+      expect(result.properties).toEqual({});
+      expect(result.headerFooter).toEqual({});
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain("<sheetPr/>");
+      expect(xml).toContain("<headerFooter/>");
+    });
+
+    it("keeps a column source style index", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<cols><col min="1" max="1" width="12" style="7"/></cols><sheetData/>` +
+          `</worksheet>`,
+      );
+      expect(result.columns?.[0]?.style).toBe(7);
+      expect(buildWorksheetXml(result, {})).toContain('style="7"');
+    });
+  });
+
   describe("conditional formatting formulas", () => {
     it("emits formulas before specialized rule content", () => {
       const formula = 'MAX(IF(A1="", 0, A1))';

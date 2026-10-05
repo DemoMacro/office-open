@@ -60,6 +60,19 @@ describe("workbookDesc round-trip", () => {
     });
   });
 
+  it("preserves the absence of fileVersion and bookViews", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      fileVersion: false,
+      bookView: false,
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).not.toContain("<fileVersion");
+    expect(xml).not.toContain("<bookViews");
+    expect(roundTrip(opts).fileVersion).toBe(false);
+    expect(roundTrip(opts).bookView).toBe(false);
+  });
+
   it("maps customViews showComments to ST_Comments tokens", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
@@ -151,13 +164,23 @@ describe("workbookDesc round-trip", () => {
       },
     };
     const result = roundTrip(opts);
+    const bookView = typeof result.bookView === "object" ? result.bookView : undefined;
 
-    expect(result.bookView?.activeTab).toBe(1);
-    expect(result.bookView?.xWindow).toBe(100);
-    expect(result.bookView?.yWindow).toBe(200);
-    expect(result.bookView?.autoFilterDateGrouping).toBe(false);
-    expect(result.bookView?.firstSheet).toBe(3);
-    expect(result.bookView?.tabRatio).toBe(400);
+    expect(bookView?.activeTab).toBe(1);
+    expect(bookView?.xWindow).toBe(100);
+    expect(bookView?.yWindow).toBe(200);
+    expect(bookView?.autoFilterDateGrouping).toBe(false);
+    expect(bookView?.firstSheet).toBe(3);
+    expect(bookView?.tabRatio).toBe(400);
+  });
+
+  it("emits fresh-authoring workbook defaults only when state is undefined", () => {
+    const xml = workbookDesc.stringify(
+      { sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('lastEdited="7"');
+    expect(xml).toContain('windowWidth="28800"');
   });
 
   it("round-trips calc properties", () => {

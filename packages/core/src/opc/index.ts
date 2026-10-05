@@ -104,6 +104,7 @@ export {
   PPTX_PARTS,
   XLSX_PARTS,
   PART_REGISTRIES,
+  opaquePassthroughPolicy,
   type PartDefinition,
   type PartPresence,
   type PackagePartRegistry,

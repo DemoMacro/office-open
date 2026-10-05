@@ -4,12 +4,14 @@ import {
   collectPassthroughParts,
   decodeUriPath,
   isEncryptedContainer,
+  opaquePassthroughPolicy,
   resolveRelationshipTarget,
   toUint8Array,
   toUint8ArrayAsync,
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import { contentTypesDesc } from "@office-open/core";
+import { themeDesc } from "@office-open/core/theme";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { appPropertiesDesc } from "@parts/app-properties";
@@ -73,6 +75,8 @@ export interface DocxPartRefs {
   commentsExtensible?: string;
   /** Hyperlink targets keyed by rId (external URLs) */
   hyperlinks: Map<string, string>;
+  /** word/theme/themeN.xml */
+  theme?: string;
   /** word/charts/chartN.xml keyed by rId */
   charts: Map<string, string>;
   /** word/diagrams/dataN.xml keyed by rId */
@@ -266,6 +270,8 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
       refs.subDocs.set(id, path);
     } else if (type.includes("/bibliography")) {
       refs.bibliography = path;
+    } else if (type.endsWith("/theme")) {
+      refs.theme = path;
     } else if (type.includes("/glossaryDocument")) {
       refs.glossary = path;
     } else if (type.includes("/hyperlink")) {
@@ -700,6 +706,12 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     }
   }
 
+  if (docx.partRefs.theme) {
+    const themeEl = docx.doc.get(docx.partRefs.theme);
+    if (themeEl)
+      opts.theme = ctx.withPart(docx.partRefs.theme, () => themeDesc.parse(themeEl, ctx));
+  }
+
   // Content types
   if (docx.contentTypes) {
     const ctResult = contentTypesDesc.parse(docx.contentTypes, ctx);
@@ -724,6 +736,10 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.numbering) rebuilt.push("word/numbering.xml");
   if (docx.fontTable) rebuilt.push("word/fontTable.xml");
   if (docx.webSettings) rebuilt.push("word/webSettings.xml");
+  if (docx.partRefs.theme) {
+    rebuilt.push(docx.partRefs.theme);
+    rebuilt.push(`word/_rels/${docx.partRefs.theme.slice("word/".length)}.rels`);
+  }
   if (opts.mailMergeRecipients?.length) {
     rebuilt.push("word/_rels/settings.xml.rels");
     for (let i = 0; i < opts.mailMergeRecipients.length; i++) {
@@ -763,17 +779,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     docx.doc,
     rebuilt,
-    // Stage-0 rawParts policy: XML parts not listed here are flagged by the
-    // audit as modeled-XML absorption gaps (strict policy rejects them).
-    {
-      opaquePatterns: [
-        /^word\/vbaProject\.bin$/i,
-        /^word\/vbaData\.xml$/i,
-        /^word\/embeddings\//i,
-        /^word\/printerSettings\//i,
-        /^word\/fonts\//i,
-      ],
-    },
+    opaquePassthroughPolicy("docx"),
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;

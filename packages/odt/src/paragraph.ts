@@ -43,6 +43,7 @@ import {
 } from "./drawing";
 import { OdtParseError } from "./error";
 import { lengthToTwips, twipsToLength } from "./master-pages";
+import type { OdtEmbeddedObjectOptions } from "./package";
 import {
   annotationXml,
   bibliographyMarkXml,
@@ -132,8 +133,9 @@ export function paragraphXml(
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
-  const children = runXml(options, styles, images, notes, numbering, charts);
+  const children = runXml(options, styles, images, notes, numbering, charts, embeddedObjects);
   if (
     options.children?.length &&
     options.children.every((child) => typeof child === "object" && "formField" in child)
@@ -164,6 +166,7 @@ export function runXml(
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string[] {
   if (options.text !== undefined && options.children === undefined) {
     return [spacesXml(options.text)];
@@ -211,7 +214,15 @@ export function runXml(
     }
     if ("formField" in child) return formFieldXml(child.formField, notes);
     if ("insertion" in child) {
-      return insertionXml(child.insertion, notes, styles, images, numbering, charts);
+      return insertionXml(
+        child.insertion,
+        notes,
+        styles,
+        images,
+        numbering,
+        charts,
+        embeddedObjects,
+      );
     }
     if ("deletion" in child) {
       const id = child.deletion.id ?? notes.revisions.size + 1;
@@ -232,6 +243,7 @@ export function runXml(
         images,
         numbering,
         charts,
+        embeddedObjects,
       );
     }
     if ("endnoteReference" in child) {
@@ -243,6 +255,7 @@ export function runXml(
         images,
         numbering,
         charts,
+        embeddedObjects,
       );
     }
     if ("hyperlink" in child) {
@@ -288,7 +301,11 @@ export function runXml(
     if ("picture" in child)
       return pictureFrameXml((child as { picture: PictureOptions }).picture, images);
     if ("wpsShape" in child)
-      return wpsShapeFrameXml((child as { wpsShape: ShapeOptions }).wpsShape, styles);
+      return wpsShapeFrameXml(
+        (child as { wpsShape: ShapeOptions }).wpsShape,
+        styles,
+        embeddedObjects,
+      );
     if ("chart" in child) {
       return chartFrameXml((child as { chart: ChartOptions }).chart, charts);
     }
@@ -462,10 +479,19 @@ export function insertionXml(
   images: OdtImage[],
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   const id = value.id ?? notes.revisions.size + 1;
   notes.revisions.set(id, { id, author: value.author, date: value.date });
-  const children = runXml({ children: value.children }, styles, images, notes, numbering, charts);
+  const children = runXml(
+    { children: value.children },
+    styles,
+    images,
+    notes,
+    numbering,
+    charts,
+    embeddedObjects,
+  );
   return (
     xmlElement("text:change-start", { "text:change-id": `rev${id}` }) +
     children.join("") +

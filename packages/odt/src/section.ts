@@ -19,6 +19,7 @@ import {
   type ParseContext,
 } from "./body";
 import type { CanonicalFormControl, OdtChart, OdtImage } from "./drawing";
+import type { OdtEmbeddedObjectOptions } from "./package";
 import type { CanonicalRevision } from "./paragraph";
 
 /** Footnote/endnote entry, indexed from the shared docx document model. */
@@ -110,6 +111,7 @@ export function noteXml(
   images: OdtImage[],
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   const id = typeof reference === "number" ? reference : reference.id;
   const children = (noteClass === "endnote" ? notes.endnotes : notes.footnotes).get(id) ?? [];
@@ -127,6 +129,7 @@ export function noteXml(
         notes,
         numbering,
         charts,
+        embeddedObjects,
       ),
     ]),
   ]);

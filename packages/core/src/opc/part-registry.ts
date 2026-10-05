@@ -47,6 +47,11 @@ export interface PartDefinition {
    */
   contentType?: string;
   presence: PartPresence;
+  /**
+   * Binary member with no canonical OOXML model. Registry-declared only;
+   * modeled XML may not use this channel.
+   */
+  opaque?: boolean;
 }
 
 export interface PackagePartRegistry {
@@ -58,6 +63,8 @@ export interface PackagePartRegistry {
    * suppress O1 false positives from round-tripped / pass-through content.
    */
   orphanWhitelist: readonly string[];
+  /** Directory prefixes whose binary members may travel verbatim. */
+  opaquePrefixes: readonly string[];
 }
 
 // ── DOCX ────────────────────────────────────────────────────────────────────
@@ -78,6 +85,7 @@ export const DOCX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
+  opaquePrefixes: ["word/embeddings/", "word/printerSettings/", "word/fonts/"],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },
@@ -275,6 +283,7 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "freshCompile" },
     },
     {
+      opaque: true,
       path: "word/vbaProject.bin",
       contentType: "application/vnd.ms-office.vbaProject",
       presence: { kind: "conditional", flag: "macro-enabled package" },
@@ -308,6 +317,7 @@ export const PPTX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
+  opaquePrefixes: ["ppt/embeddings/"],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },
@@ -454,6 +464,7 @@ export const PPTX_PARTS = {
       presence: { kind: "repeated", countFrom: "slides with slideSync" },
     },
     {
+      opaque: true,
       path: "ppt/vbaProject.bin",
       contentType: "application/vnd.ms-office.vbaProject",
       presence: { kind: "conditional", flag: "macro-enabled package" },
@@ -482,6 +493,7 @@ export const XLSX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
+  opaquePrefixes: ["xl/embeddings/", "xl/printerSettings/"],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },
@@ -617,6 +629,7 @@ export const XLSX_PARTS = {
       presence: { kind: "conditional", flag: "volTypes" },
     },
     {
+      opaque: true,
       path: "xl/vbaProject.bin",
       contentType: "application/vnd.ms-office.vbaProject",
       presence: { kind: "conditional", flag: "macro-enabled package" },
@@ -661,3 +674,24 @@ export const PART_REGISTRIES: Record<PackagePartRegistry["format"], PackagePartR
   pptx: PPTX_PARTS,
   xlsx: XLSX_PARTS,
 };
+
+function opaquePattern(path: string): string {
+  return `^${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\$\{i\}/g, "[0-9]+")}$`;
+}
+
+/** Derive the format's raw-parts policy from the shared OPC part registry. */
+export function opaquePassthroughPolicy(format: PackagePartRegistry["format"]): {
+  opaquePatterns: RegExp[];
+} {
+  const registry = PART_REGISTRIES[format];
+  return {
+    opaquePatterns: [
+      ...registry.parts
+        .filter((part) => part.opaque === true)
+        .map((part) => new RegExp(opaquePattern(part.path), "i")),
+      ...registry.opaquePrefixes.map(
+        (prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"),
+      ),
+    ],
+  };
+}

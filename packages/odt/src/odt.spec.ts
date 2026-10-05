@@ -1,5 +1,6 @@
 import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
 import {
@@ -141,13 +142,14 @@ describe("ODT canonical projection", () => {
     });
   });
 
-  it("rejects a non-chart embedded object with a structured error", () => {
+  it("preserves a standalone embedded object through a typed overlay", () => {
     const source = generateOcf(
       "application/vnd.oasis.opendocument.text",
       {
-        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame><draw:frame svg:width="2cm" svg:height="2cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
         "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
-        "Object 1/": "",
+        "Object 1/content.xml":
+          '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
       },
       {},
       {
@@ -157,6 +159,167 @@ describe("ODT canonical projection", () => {
           { fullPath: "content.xml", mediaType: "text/xml" },
           { fullPath: "styles.xml", mediaType: "text/xml" },
           { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.presentation" },
+        ],
+      },
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.embeddedObjects).toEqual([
+      {
+        path: "Object 1",
+        mediaType: "application/vnd.oasis.opendocument.presentation",
+        members: [
+          {
+            path: "Object 1/content.xml",
+            mediaType: undefined,
+            data: expect.stringContaining("<office:document-content"),
+          },
+        ],
+        frames: [{ shapeId: 1 }, { shapeId: 2 }],
+      },
+    ]);
+
+    const reread = parseDocument(generateDocument(parsed)) as OdtDocumentOptions;
+    expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
+    const manifest = new TextDecoder().decode(
+      unzipSync(generateDocument(parsed))["META-INF/manifest.xml"],
+    );
+    const content = new TextDecoder().decode(unzipSync(generateDocument(parsed))["content.xml"]);
+    expect(content.match(/xlink:href="\.\/Object 1"/g)).toHaveLength(2);
+    expect(manifest).toContain('manifest:full-path="Object 1/"');
+    expect(manifest).toContain("application/vnd.oasis.opendocument.presentation");
+  });
+
+  it("round-trips a body-anchored non-chart object frame", () => {
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="gr1" style:family="graphic"><style:graphic-properties draw:fill="none" draw:stroke="none"/></style:style></office:automatic-styles><office:body><office:text><text:p><draw:frame draw:style-name="gr1" draw:name="Formula object" text:anchor-type="char" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/content.xml":
+          '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.formula" },
+        ],
+      },
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.embeddedObjects).toEqual([
+      expect.objectContaining({
+        path: "Object 1",
+        mediaType: "application/vnd.oasis.opendocument.formula",
+        frames: [{ shapeId: 1, anchorType: "char", styleName: "gr1" }],
+      }),
+    ]);
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            wpsShape: {
+              geometry: "rect",
+              transformation: {
+                offset: { left: 360000, top: 720000 },
+                width: 1440000,
+                height: 1080000,
+              },
+              nonVisualProperties: { id: 1, name: "Formula object" },
+              fill: { type: "none" },
+              outline: { type: "noFill" },
+            },
+          },
+        ],
+      },
+    });
+
+    const generated = generateDocument(parsed);
+    const content = new TextDecoder().decode(unzipSync(generated)["content.xml"]);
+    expect(content).toContain(
+      '<draw:frame text:anchor-type="char" draw:style-name="gr1" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" draw:name="Formula object"><draw:object xlink:href="./Object 1" xlink:type="simple"/></draw:frame>',
+    );
+
+    const reread = parseDocument(generated) as OdtDocumentOptions;
+    expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
+    expect(projection(reread.sections[0]?.children?.[0])).toEqual(
+      projection(parsed.sections[0]?.children?.[0]),
+    );
+  });
+
+  it("preserves source-only package members and rejects stale overlays", () => {
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p>Document</text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "manifest.rdf": '<rdf:RDF xmlns:rdf="https://example.test/rdf#"/>',
+        "audit.bin": new Uint8Array([7, 9]),
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "manifest.rdf", mediaType: "application/rdf+xml" },
+          { fullPath: "audit.bin", mediaType: "application/octet-stream" },
+        ],
+      },
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.packageMembers).toEqual([
+      { path: "audit.bin", mediaType: "application/octet-stream", data: new Uint8Array([7, 9]) },
+      {
+        path: "manifest.rdf",
+        mediaType: "application/rdf+xml",
+        data: new TextEncoder().encode('<rdf:RDF xmlns:rdf="https://example.test/rdf#"/>'),
+      },
+    ]);
+
+    const generated = generateDocument(parsed);
+    const entries = unzipSync(generated);
+    expect(new TextDecoder().decode(entries["manifest.rdf"])).toContain("<rdf:RDF");
+    expect(entries["audit.bin"]).toEqual(new Uint8Array([7, 9]));
+    expect(parseDocument(generated) as OdtDocumentOptions).toMatchObject({
+      packageMembers: parsed.packageMembers,
+    });
+
+    const stale = {
+      ...parsed,
+      packageMembers: parsed.packageMembers?.filter((member) => member.path !== "manifest.rdf"),
+      packageManifest: {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "manifest.rdf", mediaType: "application/rdf+xml" },
+        ],
+      },
+    };
+    expect(() => generateDocument(stale)).toThrow("Manifest declares missing package path");
+  });
+
+  it("rejects a standalone object without content.xml", () => {
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/media.bin": new Uint8Array([1]),
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.presentation" },
+          { fullPath: "Object 1/media.bin", mediaType: "application/octet-stream" },
         ],
       },
     );
@@ -170,7 +333,7 @@ describe("ODT canonical projection", () => {
     expect(error).toMatchObject({
       part: "content.xml",
       name: "draw:object",
-      reason: "embedded object has no canonical ODT mapping",
+      reason: "embedded object subdocument is missing",
     });
   });
 

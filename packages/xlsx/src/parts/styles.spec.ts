@@ -163,6 +163,58 @@ describe("Styles", () => {
       ) as unknown as StylesParseResult;
     }
 
+    it("distinguishes explicit apply*=false from an omitted flag", () => {
+      const xml = `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" applyFont="0"/><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellXfs>
+</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.cellStyleXfs?.[0]?.applyFont).toBe(false);
+      expect(parsed.cellStyleXfs?.[1]?.applyFont).toBeUndefined();
+      expect(parsed.cellXfs?.[0]?.applyFont).toBe(false);
+      expect(parsed.cellXfs?.[1]?.applyFont).toBeUndefined();
+
+      const styles = new Styles();
+      styles.adopt({ fonts: [], fills: [], borders: [], cellXfs: parsed.cellXfs! });
+      styles.setCellStyleXfs(parsed.cellStyleXfs!);
+      const out = styles.serialize();
+      expect(out.match(/applyFont="0"/g)).toHaveLength(2);
+
+      const el2 = parseXml(out, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el2) throw new Error("re-serialized document has no root element");
+      const reparsed = stylesDesc.parse(el2, undefined as unknown as ReadContext);
+      expect(reparsed.cellStyleXfs?.[0]?.applyFont).toBe(false);
+      expect(reparsed.cellStyleXfs?.[1]?.applyFont).toBeUndefined();
+      expect(reparsed.cellXfs?.[0]?.applyFont).toBe(false);
+      expect(reparsed.cellXfs?.[1]?.applyFont).toBeUndefined();
+    });
+
+    it("round-trips the fonts container knownFonts flag", () => {
+      for (const [sourceValue, expected] of [
+        ["1", true],
+        ["0", false],
+      ] as const) {
+        const xml =
+          `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+          `xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">` +
+          `<fonts count="1" x14ac:knownFonts="${sourceValue}">` +
+          `<font><sz val="11"/><name val="Calibri"/></font></fonts></styleSheet>`;
+        const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+        if (!el) throw new Error("parsed document has no root element");
+        const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+        expect(parsed.fontsContainer?.knownFonts).toBe(expected);
+
+        const styles = new Styles();
+        styles.adopt({ fonts: parsed.fonts!, fontsContainer: parsed.fontsContainer });
+        expect(styles.serialize()).toContain(`x14ac:knownFonts="${sourceValue}"`);
+      }
+    });
+
     it("round-trips alignment with relativeIndent/shrinkToFit/readingOrder/justifyLastLine", () => {
       const styles = new Styles();
       styles.register({

@@ -12,6 +12,12 @@ cd packages/<pkg> && vp test run  # Run tests for one package
 pnpm check            # Lint all packages
 ```
 
+## Corpus Gates
+
+`pnpm corpus:check` always runs the deterministic synthetic corpus first. The cases in `scripts/corpus/synthetic/` are generated in-process, use fixed package bytes or canonical option projections, and must not copy third-party corpus names or document content. Every case identifies its owning package and source part, then asserts either parse-only canonical behavior or a parse → generate projection.
+
+The same command runs the pinned third-party corpus when it has been installed with `pnpm corpus:setup`. If the external corpus is absent, the synthetic gate still runs so a clean worktree remains verifiable. Synthetic options are strict: an XML part entering `rawParts` or any nested `rawXml` field fails the gate; opaque independent binaries must be explicitly allowed. External raw-part findings remain visible as absorption blockers because their repair is package-by-package rather than a corpus-script rewrite.
+
 ## Project Structure
 
 ```

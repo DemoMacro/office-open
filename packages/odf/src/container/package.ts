@@ -213,15 +213,13 @@ function validateManifestPaths(manifest: OcfManifestOptions, actualPaths: string
     }
   }
   const actualSet = new Set(actualPaths);
-  for (const entry of manifest.entries) {
-    if (entry.fullPath === "/" || entry.fullPath === "mimetype") continue;
+  manifest.entries = manifest.entries.filter((entry) => {
+    if (entry.fullPath === "/" || entry.fullPath === "mimetype") return true;
     const directoryPath = entry.fullPath.endsWith("/") ? entry.fullPath : `${entry.fullPath}/`;
-    if (actualSet.has(entry.fullPath) || actualPaths.some((path) => path.startsWith(directoryPath)))
-      continue;
-    throw new OcfManifestError("Manifest declares missing package path: " + entry.fullPath, {
-      fullPath: entry.fullPath,
-    });
-  }
+    return (
+      actualSet.has(entry.fullPath) || actualPaths.some((path) => path.startsWith(directoryPath))
+    );
+  });
 }
 
 export function readXml(files: OdfFiles, path: string): Element {

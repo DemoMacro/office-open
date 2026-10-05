@@ -57,6 +57,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const rupBuild = attrNum(fileVersionEl, "rupBuild");
       if (rupBuild !== undefined) fv.rupBuild = rupBuild;
       result.fileVersion = fv;
+    } else {
+      result.fileVersion = false;
     }
 
     // Sheets
@@ -150,6 +152,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (vis !== undefined) bv.visibility = vis as WorkbookViewOptions["visibility"];
         result.bookView = bv;
       }
+    } else {
+      result.bookView = false;
     }
 
     // Calc properties

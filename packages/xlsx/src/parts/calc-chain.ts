@@ -42,8 +42,8 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
         r: cell.reference,
         i: cell.sheetIndex,
       };
-      if (cell.array) cellAttrs.a = true;
-      if (cell.childChain) cellAttrs.l = true;
+      if (cell.array !== undefined) cellAttrs.a = cell.array;
+      if (cell.childChain !== undefined) cellAttrs.l = cell.childChain;
       parts.push(`<c${attrs(cellAttrs)}/>`);
     }
     parts.push("</calcChain>");
@@ -53,18 +53,22 @@ export const calcChainDesc: CustomDescriptor<CalcChainOptions> = {
   parse(el, _ctx) {
     const result: Partial<CalcChainOptions> = {};
     const cells: CalcCell[] = [];
+    let sheetIndex: number | undefined;
     for (const child of el.elements ?? []) {
       if (child.name !== "c") continue;
       const r = child.attributes?.["r"];
       const i = child.attributes?.["i"];
-      if (r && i) {
+      if (r && (i !== undefined || sheetIndex !== undefined)) {
         const cell: CalcCell = {
           reference: String(r),
-          sheetIndex: Number(i),
+          sheetIndex: Number(i ?? sheetIndex),
         };
-        if (child.attributes?.["a"]) cell.array = true;
-        if (parseOnOff(child.attributes?.["l"])) cell.childChain = true;
+        if (child.attributes?.["a"] !== undefined)
+          cell.array = parseOnOff(child.attributes["a"]) ?? true;
+        if (child.attributes?.["l"] !== undefined)
+          cell.childChain = parseOnOff(child.attributes["l"]) ?? true;
         cells.push(cell);
+        sheetIndex = cell.sheetIndex;
       }
     }
     result.cells = cells;

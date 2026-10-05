@@ -221,6 +221,11 @@ export function parseSheetDataRows(
           if (!isNaN(n)) rowStyleIdx = n;
           break;
         }
+        case "x14ac:dyDescent": {
+          const n = Number(value);
+          if (!isNaN(n)) row.dyDescent = n;
+          break;
+        }
       }
     });
     if (rowStyleIdx !== undefined) {

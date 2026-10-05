@@ -96,7 +96,7 @@ function classify(error: unknown): Exclude<Outcome, "pass"> {
   const message = String((error as Error)?.message ?? error);
   if (/encrypted/i.test(message)) return "encrypted";
   if (
-    /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|unsupported RTF destination|objdata requires binary|Manifest does not declare)/i.test(
+    /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing)/i.test(
       message,
     )
   ) {

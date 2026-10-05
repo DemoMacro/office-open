@@ -434,7 +434,7 @@ export interface SmartTagTypeOptions {
 
 export interface WorkbookDescriptorOptions {
   /** CT_FileVersion — Excel version stamp; fresh compiles emit Excel 2007 defaults. */
-  fileVersion?: FileVersionOptions;
+  fileVersion?: FileVersionOptions | false;
   /**
    * Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after
    * workbookPr) — round-trip only.
@@ -462,7 +462,7 @@ export interface WorkbookDescriptorOptions {
   forms?: FormContainerOptions[];
   /** OLE embedded range (CT_OleSize, after calcPr per XSD sequence) */
   oleSize?: string;
-  bookView?: WorkbookViewOptions;
+  bookView?: WorkbookViewOptions | false;
   webPublishObjects?: WebPublishObjectOptions[];
   /** Defined names (CT_DefinedNames) — named ranges, constants, formulas */
   definedNames?: DefinedNameOptions[];

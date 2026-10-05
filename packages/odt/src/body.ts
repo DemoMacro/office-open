@@ -1,3 +1,4 @@
+import { toUint8Array, type DataType } from "@office-open/core";
 import type {
   ChartSpaceOptions,
   FormContainerOptions,
@@ -28,6 +29,7 @@ import {
   readXml,
   xmlElement,
   type GraphicStyle,
+  type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
@@ -63,6 +65,7 @@ import {
 } from "./list";
 import { parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
+import type { OdtEmbeddedObjectOptions, OdtPackageMemberOptions } from "./package";
 import {
   bookmarkEndXml,
   declarationsXml,
@@ -102,10 +105,12 @@ export interface ParseContext {
   listStyles: Map<string, boolean>;
   graphicStyles: Map<string, GraphicStyle>;
   chartBodies: Map<string, ChartSpaceOptions>;
+  embeddedObjects: Map<string, OdtEmbeddedObjectOptions>;
   objectMediaTypes: Map<string, string | undefined>;
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
+  usedBinaryPaths: Set<string>;
   notes: {
     footnotes: NoteEntry[];
     endnotes: NoteEntry[];
@@ -120,11 +125,13 @@ export interface ParseContext {
   declaredVariables: VariableDeclarationOptions[];
   pendingSequences: Set<string>;
   pendingVariables: Map<string, "float" | "string">;
+  nextEmbeddedShapeId: number;
   trackRevisions?: boolean;
 }
 
 export function generateDocument(options: DocumentOptions): Uint8Array {
-  const { packageManifest, styleOverlays } = options as OdtDocumentOptions;
+  const { packageManifest, embeddedObjects, packageMembers, styleOverlays } =
+    options as OdtDocumentOptions;
   const styles: string[] = automaticStyleOverlaysXml(styleOverlays);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
@@ -140,7 +147,15 @@ export function generateDocument(options: DocumentOptions): Uint8Array {
       ),
       notes.bookmarkNames,
     );
-  const bodyBlocks = blocksXml(blocks, styles, images, notes, options.numbering, charts);
+  const bodyBlocks = blocksXml(
+    blocks,
+    styles,
+    images,
+    notes,
+    options.numbering,
+    charts,
+    embeddedObjects ?? [],
+  );
   const body = declarationsXml(options, notes) + bodyBlocks;
   const files: OdfPackageFiles = {
     "content.xml": contentXml(body, styles, fontFaceDecls(options.fonts)),
@@ -154,12 +169,47 @@ export function generateDocument(options: DocumentOptions): Uint8Array {
   };
   for (const image of images) files[image.path] = image.data;
   for (const entry of charts) files[`${entry.path}/content.xml`] = chartBodyXml(entry.chart);
-  return generateOcf(
-    MIME,
-    files,
-    Object.fromEntries(charts.map((entry) => [`${entry.path}/`, CHART_MIME])),
-    packageManifest,
+  const mediaTypes: Record<string, string> = Object.fromEntries(
+    charts.map((entry) => [`${entry.path}/`, CHART_MIME]),
   );
+  for (const object of embeddedObjects ?? []) {
+    validateObjectPath(object.path);
+    mediaTypes[`${object.path}/`] = object.mediaType;
+  }
+  for (const member of packageMembers ?? []) {
+    addPackageFile(files, member.path, member.data);
+    if (member.mediaType !== undefined) mediaTypes[member.path] = member.mediaType;
+  }
+  for (const object of embeddedObjects ?? []) {
+    for (const member of object.members) {
+      if (!member.path.startsWith(`${object.path}/`))
+        throw new Error(`Embedded object member is outside ${object.path}: ${member.path}`);
+      addPackageFile(files, member.path, member.data);
+      if (member.mediaType !== undefined) mediaTypes[member.path] = member.mediaType;
+    }
+  }
+  return generateOcf(MIME, files, mediaTypes, packageManifest);
+}
+
+function addPackageFile(files: OdfPackageFiles, path: string, data: DataType): void {
+  validateMemberPath(path);
+  if (path.endsWith("/"))
+    throw new Error(`ODT package member path must not be a directory: ${path}`);
+  if (path === "META-INF/manifest.xml")
+    throw new Error("ODT package members cannot replace META-INF/manifest.xml");
+  if (files[path] !== undefined)
+    throw new Error(`ODT package member conflicts with modeled content: ${path}`);
+  files[path] = typeof data === "string" ? data : toUint8Array(data);
+}
+
+function validateMemberPath(path: string): void {
+  if (!path || path.startsWith("/") || path.endsWith("/") || path.split("/").includes(".."))
+    throw new Error(`Invalid ODT package member path: ${path}`);
+}
+
+function validateObjectPath(path: string): void {
+  if (!path || path.includes("/") || path.startsWith(".") || path.endsWith("/"))
+    throw new Error(`Invalid ODT embedded object path: ${path}`);
 }
 
 /** Note ids auto-assign 1, 2, … per class, matching the docx model. */
@@ -232,6 +282,7 @@ export function blocksXml(
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   const parts: string[] = [];
   let index = 0;
@@ -240,7 +291,9 @@ export function blocksXml(
   while (index < blocks.length) {
     const listInfo = listParagraphLevel(blocks[index]!);
     if (listInfo === undefined) {
-      parts.push(blockXml(blocks[index]!, styles, images, notes, numbering, charts));
+      parts.push(
+        blockXml(blocks[index]!, styles, images, notes, numbering, charts, embeddedObjects),
+      );
       index += 1;
       continue;
     }
@@ -256,7 +309,7 @@ export function blocksXml(
       group.push(blocks[index]!);
       index += 1;
     }
-    parts.push(listXml(group, listInfo, styles, images, notes, numbering, charts));
+    parts.push(listXml(group, listInfo, styles, images, notes, numbering, charts, embeddedObjects));
   }
   return parts.join("");
 }
@@ -295,15 +348,28 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
       .filter((entry) => entry.fullPath.endsWith("/"))
       .map((entry) => [entry.fullPath.replace(/\/$/, ""), entry.mediaType]),
   );
+  objectMediaTypes.delete("");
+  const embeddedObjects = new Map<string, OdtEmbeddedObjectOptions>();
+  for (const [path, mediaType] of objectMediaTypes) {
+    if (mediaType === undefined || (mediaType === CHART_MIME && chartBodies.has(path))) continue;
+    if (files[`${path}/content.xml`] === undefined) continue;
+    embeddedObjects.set(path, {
+      path,
+      mediaType,
+      members: objectMembers(path, files, binaries),
+    });
+  }
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
     graphicStyles,
     chartBodies,
+    embeddedObjects,
     objectMediaTypes,
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
+    usedBinaryPaths: new Set(),
     notes: { footnotes: [], endnotes: [], forms: [] },
     bookmarkIds: new Map(),
     changes: new Map(),
@@ -311,6 +377,7 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
     declaredVariables: [],
     pendingSequences: new Set(),
     pendingVariables: new Map(),
+    nextEmbeddedShapeId: 1,
   };
   const children = parseBlocks(body?.elements ?? [], context);
   const meta = Object.fromEntries(
@@ -320,6 +387,16 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  const packageMembers = sourcePackageMembers(
+    manifest,
+    files,
+    binaries,
+    chartBodies,
+    embeddedObjects,
+    context.usedBinaryPaths,
+  );
+  if (embeddedObjects.size > 0) result.embeddedObjects = [...embeddedObjects.values()];
+  if (packageMembers.length > 0) result.packageMembers = packageMembers;
   const styleOverlays: OdtAutomaticStyleOverlay[] = [...styleMap]
     .filter(([, style]) =>
       (style.properties ?? []).some((property) => Object.keys(property.attributes).length > 0),
@@ -368,6 +445,52 @@ function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
   return result;
 }
 
+function objectMembers(
+  path: string,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+): OdtPackageMemberOptions[] {
+  return [
+    ...Object.entries(files)
+      .filter(([memberPath]) => memberPath.startsWith(`${path}/`))
+      .map(([memberPath, data]) => ({ path: memberPath, data })),
+    ...Object.entries(binaries)
+      .filter(([memberPath]) => memberPath.startsWith(`${path}/`))
+      .map(([memberPath, data]) => ({ path: memberPath, data })),
+  ].sort((left, right) => left.path.localeCompare(right.path));
+}
+
+function sourcePackageMembers(
+  manifest: OcfManifestOptions,
+  files: Record<string, string>,
+  binaries: Record<string, Uint8Array>,
+  chartBodies: Map<string, ChartSpaceOptions>,
+  embeddedObjects: Map<string, OdtEmbeddedObjectOptions>,
+  usedBinaryPaths: Set<string>,
+): OdtPackageMemberOptions[] {
+  const objectMemberPaths = new Set(
+    [...embeddedObjects.values()].flatMap((object) => object.members.map((member) => member.path)),
+  );
+  const mediaTypes = new Map(
+    manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
+  );
+  const modeledPaths = new Set([
+    "content.xml",
+    "styles.xml",
+    "meta.xml",
+    "META-INF/manifest.xml",
+    ...[...chartBodies.keys()].map((path) => `${path}/content.xml`),
+    ...usedBinaryPaths,
+  ]);
+  return [
+    ...Object.entries(files).map(([path, data]) => ({ path, data })),
+    ...Object.entries(binaries).map(([path, data]) => ({ path, data })),
+  ]
+    .filter(({ path }) => !modeledPaths.has(path) && !objectMemberPaths.has(path))
+    .sort((left, right) => left.path.localeCompare(right.path))
+    .map(({ path, data }) => ({ path, mediaType: mediaTypes.get(path), data }));
+}
+
 export function contentXml(body: string, styles: string[], fontFaces: string): string {
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3">${fontFaces}<office:automatic-styles>${styles.join(
     "",
@@ -381,6 +504,7 @@ export function blockXml(
   notes: NotesContext,
   numbering: DocumentOptions["numbering"],
   charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   if ("toc" in child) return indexXml(child.toc);
   if ("sdt" in child && child.sdt.properties.bibliography) return bibliographyIndexXml(child.sdt);
@@ -392,6 +516,7 @@ export function blockXml(
       notes,
       numbering,
       charts,
+      embeddedObjects,
     );
   if ("bookmarkStart" in child)
     return xmlElement("text:bookmark-start", {
@@ -401,7 +526,7 @@ export function blockXml(
   if ("bookmarkEnd" in child) return bookmarkEndXml(child.bookmarkEnd.id, notes);
   if ("table" in child)
     return tableXml(child.table, styles, (block) =>
-      blockXml(block, styles, images, notes, numbering, charts),
+      blockXml(block, styles, images, notes, numbering, charts, embeddedObjects),
     );
   if ("sdt" in child && !child.sdt.properties.bibliography) {
     const styleName = /^odf:text-section(?:;style=([\s\S]*))?$/.exec(
@@ -414,7 +539,17 @@ export function blockXml(
         "text:style-name": styleName ? decodeStyleName(styleName) : undefined,
         "text:protected": child.sdt.properties.lock === "sdtLocked" ? true : undefined,
       },
-      [blocksXml(child.sdt.children ?? [], styles, images, notes, numbering, charts)],
+      [
+        blocksXml(
+          child.sdt.children ?? [],
+          styles,
+          images,
+          notes,
+          numbering,
+          charts,
+          embeddedObjects,
+        ),
+      ],
     );
   }
   return "";

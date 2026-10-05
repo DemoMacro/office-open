@@ -112,11 +112,16 @@ interface CellStyleXfEntry {
   applyProtection?: boolean;
 }
 
+interface FontsContainerState {
+  knownFonts?: boolean;
+}
+
 export class Styles {
   private fonts: FontOptions[] = [
     { size: 11, font: "Calibri" }, // default font (index 0)
   ];
   private fontKeys = new Map<string, number>();
+  private fontsContainer?: FontsContainerState;
 
   private fills: CellFillOptions[] = [
     { patternType: "none" }, // default fill (index 0)
@@ -384,6 +389,7 @@ export class Styles {
    */
   public adopt(table: {
     fonts?: FontOptions[];
+    fontsContainer?: FontsContainerState;
     fills?: CellFillOptions[];
     borders?: BorderSideOptions[];
     cellXfs?: IndexedXfEntry[];
@@ -392,6 +398,7 @@ export class Styles {
     this.roundTrip = true;
     this.fonts = table.fonts ? [...table.fonts] : [this.fonts[0]!];
     this.fontKeys = new Map(this.fonts.map((f, i) => [fontKey(f), i]));
+    this.fontsContainer = table.fontsContainer;
     this.fills = table.fills
       ? [...table.fills]
       : [{ patternType: "none" }, { patternType: "gray125" }];
@@ -435,8 +442,14 @@ export class Styles {
    */
   /** Serialize to xl/styles.xml content (without XML declaration). */
   public serialize(): string {
+    const knownFonts = this.fontsContainer?.knownFonts;
+    const rootAttrs =
+      knownFonts === undefined
+        ? ""
+        : ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
+          ` x14ac:knownFonts="${knownFonts ? 1 : 0}"`;
     const p: string[] = [
-      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">',
+      `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"${rootAttrs}>`,
     ];
 
     // numFmts
@@ -536,12 +549,13 @@ export class Styles {
           fillId: xf.fillId,
           borderId: xf.borderId,
         };
-        if (xf.applyNumberFormat) xAttrs.applyNumberFormat = 1;
-        if (xf.applyFont) xAttrs.applyFont = 1;
-        if (xf.applyFill) xAttrs.applyFill = 1;
-        if (xf.applyBorder) xAttrs.applyBorder = 1;
-        if (xf.applyAlignment) xAttrs.applyAlignment = 1;
-        if (xf.applyProtection) xAttrs.applyProtection = 1;
+        if (xf.applyNumberFormat !== undefined)
+          xAttrs.applyNumberFormat = xf.applyNumberFormat ? 1 : 0;
+        if (xf.applyFont !== undefined) xAttrs.applyFont = xf.applyFont ? 1 : 0;
+        if (xf.applyFill !== undefined) xAttrs.applyFill = xf.applyFill ? 1 : 0;
+        if (xf.applyBorder !== undefined) xAttrs.applyBorder = xf.applyBorder ? 1 : 0;
+        if (xf.applyAlignment !== undefined) xAttrs.applyAlignment = xf.applyAlignment ? 1 : 0;
+        if (xf.applyProtection !== undefined) xAttrs.applyProtection = xf.applyProtection ? 1 : 0;
         if (xf.quotePrefix) xAttrs.quotePrefix = 1;
         if (xf.pivotButton) xAttrs.pivotButton = 1;
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
@@ -570,14 +584,14 @@ export class Styles {
         const applyBorder = xf.applyBorder ?? (xf.borderId > 0 || undefined);
         const applyNumberFormat = xf.applyNumberFormat ?? (xf.numFmtId > 0 || undefined);
         const applyAlignment = xf.applyAlignment ?? (xf.alignment ? true : undefined);
-        if (applyFont) xAttrs.applyFont = 1;
-        if (applyFill) xAttrs.applyFill = 1;
-        if (applyBorder) xAttrs.applyBorder = 1;
-        if (applyNumberFormat) xAttrs.applyNumberFormat = 1;
-        if (applyAlignment) xAttrs.applyAlignment = 1;
+        if (applyFont !== undefined) xAttrs.applyFont = applyFont ? 1 : 0;
+        if (applyFill !== undefined) xAttrs.applyFill = applyFill ? 1 : 0;
+        if (applyBorder !== undefined) xAttrs.applyBorder = applyBorder ? 1 : 0;
+        if (applyNumberFormat !== undefined) xAttrs.applyNumberFormat = applyNumberFormat ? 1 : 0;
+        if (applyAlignment !== undefined) xAttrs.applyAlignment = applyAlignment ? 1 : 0;
         if (xf.quotePrefix) xAttrs.quotePrefix = 1;
         if (xf.pivotButton) xAttrs.pivotButton = 1;
-        if (xf.applyProtection) xAttrs.applyProtection = 1;
+        if (xf.applyProtection !== undefined) xAttrs.applyProtection = xf.applyProtection ? 1 : 0;
         if (xf.protection) xAttrs.applyProtection = xAttrs.applyProtection ?? 1;
 
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";

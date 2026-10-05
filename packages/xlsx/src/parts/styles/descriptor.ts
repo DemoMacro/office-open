@@ -36,6 +36,10 @@ import type {
   TableStylesInfo,
 } from "./types";
 
+function parseExplicitOnOff(raw: string | number | boolean | undefined): boolean | undefined {
+  return raw === undefined ? undefined : parseOnOff(raw);
+}
+
 // ── Descriptor ──
 
 export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, StylesParseResult> = {
@@ -79,6 +83,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         fonts.push(parseFont(f));
       }
       result.fonts = fonts;
+      const knownFonts = parseExplicitOnOff(attr(fontsEl, "x14ac:knownFonts"));
+      if (knownFonts !== undefined) result.fontsContainer = { knownFonts };
     }
 
     // fills
@@ -125,12 +131,18 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (alignmentEl) entry.alignment = parseAlignment(alignmentEl);
         const protectionEl = findChild(xf, "protection");
         if (protectionEl) entry.protection = parseProtection(protectionEl);
-        if (parseOnOff(attr(xf, "applyNumberFormat"))) entry.applyNumberFormat = true;
-        if (parseOnOff(attr(xf, "applyFont"))) entry.applyFont = true;
-        if (parseOnOff(attr(xf, "applyFill"))) entry.applyFill = true;
-        if (parseOnOff(attr(xf, "applyBorder"))) entry.applyBorder = true;
-        if (parseOnOff(attr(xf, "applyAlignment"))) entry.applyAlignment = true;
-        if (parseOnOff(attr(xf, "applyProtection"))) entry.applyProtection = true;
+        const applyNumberFormat = parseExplicitOnOff(attr(xf, "applyNumberFormat"));
+        const applyFont = parseExplicitOnOff(attr(xf, "applyFont"));
+        const applyFill = parseExplicitOnOff(attr(xf, "applyFill"));
+        const applyBorder = parseExplicitOnOff(attr(xf, "applyBorder"));
+        const applyAlignment = parseExplicitOnOff(attr(xf, "applyAlignment"));
+        const applyProtection = parseExplicitOnOff(attr(xf, "applyProtection"));
+        if (applyNumberFormat !== undefined) entry.applyNumberFormat = applyNumberFormat;
+        if (applyFont !== undefined) entry.applyFont = applyFont;
+        if (applyFill !== undefined) entry.applyFill = applyFill;
+        if (applyBorder !== undefined) entry.applyBorder = applyBorder;
+        if (applyAlignment !== undefined) entry.applyAlignment = applyAlignment;
+        if (applyProtection !== undefined) entry.applyProtection = applyProtection;
         if (parseOnOff(attr(xf, "quotePrefix"))) entry.quotePrefix = true;
         if (parseOnOff(attr(xf, "pivotButton"))) entry.pivotButton = true;
         xfs.push(entry);
@@ -169,12 +181,18 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (parseOnOff(attr(xf, "pivotButton"))) style.pivotButton = true;
         // apply* flags preserved verbatim — presence distinguishes a source
         // that wrote them from one that omitted them
-        if (parseOnOff(attr(xf, "applyFont"))) style.applyFont = true;
-        if (parseOnOff(attr(xf, "applyFill"))) style.applyFill = true;
-        if (parseOnOff(attr(xf, "applyBorder"))) style.applyBorder = true;
-        if (parseOnOff(attr(xf, "applyNumberFormat"))) style.applyNumberFormat = true;
-        if (parseOnOff(attr(xf, "applyAlignment"))) style.applyAlignment = true;
-        if (parseOnOff(attr(xf, "applyProtection"))) style.applyProtection = true;
+        const applyFont = parseExplicitOnOff(attr(xf, "applyFont"));
+        const applyFill = parseExplicitOnOff(attr(xf, "applyFill"));
+        const applyBorder = parseExplicitOnOff(attr(xf, "applyBorder"));
+        const applyNumberFormat = parseExplicitOnOff(attr(xf, "applyNumberFormat"));
+        const applyAlignment = parseExplicitOnOff(attr(xf, "applyAlignment"));
+        const applyProtection = parseExplicitOnOff(attr(xf, "applyProtection"));
+        if (applyFont !== undefined) style.applyFont = applyFont;
+        if (applyFill !== undefined) style.applyFill = applyFill;
+        if (applyBorder !== undefined) style.applyBorder = applyBorder;
+        if (applyNumberFormat !== undefined) style.applyNumberFormat = applyNumberFormat;
+        if (applyAlignment !== undefined) style.applyAlignment = applyAlignment;
+        if (applyProtection !== undefined) style.applyProtection = applyProtection;
 
         xfs.push(style);
       }

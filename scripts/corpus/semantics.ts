@@ -119,6 +119,25 @@ function canonicalText(element: Element): string {
   return element.attributes?.["xml:space"] === "preserve" ? text : text.trim();
 }
 
+function decodeXmlBytes(bytes: Uint8Array): string {
+  if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf)
+    return new TextDecoder("utf-8").decode(bytes.subarray(3));
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe)
+    return new TextDecoder("utf-16le").decode(bytes.subarray(2));
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff)
+    return new TextDecoder("utf-16be").decode(bytes.subarray(2));
+  const ascii = Buffer.from(bytes.subarray(0, 120)).toString("latin1");
+  const declaration = /^<\?xml\s+[^>]*encoding=["']([^"']+)["']/i.exec(ascii);
+  if (declaration) {
+    const encoding = declaration[1]!.toLowerCase();
+    if (encoding === "utf-16" || encoding === "utf16") {
+      if (bytes[0] === 0 && bytes[1] !== 0) return new TextDecoder("utf-16be").decode(bytes);
+      return new TextDecoder("utf-16le").decode(bytes);
+    }
+  }
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
 export function canonicalXmlDigest(element: Element | undefined): string {
   if (!element || element.type !== "element")
     return createHash("sha256").update("empty").digest("hex");
@@ -195,19 +214,27 @@ function compareNodes(
   }
   const sourceChildren = source.children.map((child) => ({ key: childKey(child), child }));
   const outputChildren = output.children.map((child) => ({ key: childKey(child), child }));
-  const sourceKeys = new Set(sourceChildren.map(({ key }) => key));
-  const outputKeys = new Set(outputChildren.map(({ key }) => key));
-  const sourceOnly = sourceChildren.filter(({ key }) => !outputKeys.has(key));
-  const outputOnly = outputChildren.filter(({ key }) => !sourceKeys.has(key));
-  if (sourceOnly.length || outputOnly.length) {
-    for (const { child } of sourceOnly) {
+  const sourceCounts = new Map(sourceChildren.map(({ key }) => [key, 0]));
+  for (const { key } of sourceChildren) sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
+  const outputCounts = new Map(outputChildren.map(({ key }) => [key, 0]));
+  for (const { key } of outputChildren) outputCounts.set(key, (outputCounts.get(key) ?? 0) + 1);
+  const sourceOnlyKeys = [...sourceCounts.entries()].filter(
+    ([key, count]) => count > (outputCounts.get(key) ?? 0),
+  );
+  const outputOnlyKeys = [...outputCounts.entries()].filter(
+    ([key, count]) => count > (sourceCounts.get(key) ?? 0),
+  );
+  if (sourceOnlyKeys.length || outputOnlyKeys.length) {
+    for (const [key] of sourceOnlyKeys) {
+      const child = sourceChildren.find(({ key: childKey }) => childKey === key)!.child;
       diffs.push({
         category: "child",
         xpath: `${location}/${child.name}`,
         detail: "source-only child",
       });
     }
-    for (const { child } of outputOnly) {
+    for (const [key] of outputOnlyKeys) {
+      const child = outputChildren.find(({ key: childKey }) => childKey === key)!.child;
       diffs.push({
         category: "child",
         xpath: `${location}/${child.name}`,
@@ -239,7 +266,6 @@ export function explainSemanticPartDiff(
   output: Uint8Array | undefined,
 ): SemanticPartDiff[] {
   const kind = semanticPartKind(partPath);
-  const decoder = new TextDecoder();
   if (!output)
     return [{ path: partPath, kind, category: "missing-part", detail: "output missing" }];
   if (kind === "binary") {
@@ -249,8 +275,8 @@ export function explainSemanticPartDiff(
       ? []
       : [{ path: partPath, kind, category: "binary", detail: "bytes differ" }];
   }
-  const sourceXml = parseCanonicalXml(decoder.decode(source));
-  const outputXml = parseCanonicalXml(decoder.decode(output));
+  const sourceXml = parseCanonicalXml(decodeXmlBytes(source));
+  const outputXml = parseCanonicalXml(decodeXmlBytes(output));
   const sourceNode = canonicalXmlNodes(sourceXml, partPath);
   const outputNode = canonicalXmlNodes(outputXml, partPath);
   const details = compareNodes(partPath, sourceNode, outputNode);
@@ -332,6 +358,7 @@ export function archiveSemanticDiffDetails(
   const paths = new Set([...Object.keys(sourceArchive), ...Object.keys(outputArchive)]);
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
+    if (path.endsWith("/")) continue;
     diffs.push(
       ...explainSemanticPartDiff(
         path,
@@ -349,6 +376,7 @@ export function archiveSemanticDiffs(source: Uint8Array, output: Uint8Array): Se
   const paths = new Set([...Object.keys(sourceArchive), ...Object.keys(outputArchive)]);
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
+    if (path.endsWith("/")) continue;
     const diff = semanticPartDiff(
       path,
       sourceArchive[path] ?? new Uint8Array(),

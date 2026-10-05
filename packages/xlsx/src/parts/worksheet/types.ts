@@ -6,7 +6,7 @@
 import type {
   BasePictureOptions,
   ChartSpaceOptions,
-  CellGraphicOptions as CoreCellGraphicOptions,
+  CellGraphicOptions,
   CoveredCellOptions,
   DataType,
   NonVisualDrawingPropertiesOptions,
@@ -43,6 +43,8 @@ import type { SingleXmlCellOptions } from "../xml-mapping";
 export interface ColumnOptions {
   min: number;
   max: number;
+  /** Source cellStyleXfs index (CT_Col `@style`) — round-trip only. */
+  style?: number;
   width?: number;
   hidden?: boolean;
   customWidth?: boolean;
@@ -55,6 +57,8 @@ export interface ColumnOptions {
 }
 
 export interface RowOptions {
+  /** Fraction of row height used by font descent, e.g. 0.25 = 25%. */
+  dyDescent?: number;
   cells?: CellOptions[];
   height?: number | UniversalMeasure;
   hidden?: boolean;
@@ -179,16 +183,7 @@ export interface CellOptions {
   graphics?: CellGraphicOptions[];
 }
 
-type CellImageGraphicOptions = Omit<Extract<CoreCellGraphicOptions, { type: "image" }>, "data"> & {
-  /** Embedded image bytes as base64, or omit with sourceUrl for a linked-only image. */
-  data?: string;
-  /** External image URL used when data is omitted. */
-  sourceUrl?: string;
-};
-
-export type CellGraphicOptions =
-  | CellImageGraphicOptions
-  | Extract<CoreCellGraphicOptions, { type: "object" }>;
+export type { CellGraphicOptions };
 
 /** Cell formula type (maps to ST_CellFormulaType). */
 export const FormulaType = {
@@ -1099,6 +1094,11 @@ export interface SheetFormatPropertiesOptions {
   outlineLevelRow?: number;
   /** Outline level column (CT_SheetFormatPr `@outlineLevelCol`) */
   outlineLevelCol?: number;
+  /**
+   * Fraction of default row height used by font descent, e.g. 0.25 = 25%
+   * (CT_SheetFormatPr `@x14ac:dyDescent`).
+   */
+  dyDescent?: number;
 }
 
 /** Sheet properties extended options (CT_SheetPr attributes) */
@@ -1432,7 +1432,7 @@ export interface WorksheetOptions {
   /** Print options (CT_PrintOptions) */
   printOptions?: PrintOptions;
   /** Sheet format properties (CT_SheetFormatPr) */
-  sheetFormat?: SheetFormatPropertiesOptions;
+  sheetFormat?: SheetFormatPropertiesOptions | false;
   /** Sheet extended properties (CT_SheetPr attributes) */
   properties?: SheetPropertiesOptions;
   /** Row page breaks (CT_PageBreaks) */

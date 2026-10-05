@@ -113,6 +113,50 @@ describe("parseWorkbook round-trip", () => {
     expect(reparsed.worksheets).toHaveLength(2);
   });
 
+  it("reuses the pivot relationship for pivotSelection", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        {
+          name: "Data",
+          rows: [
+            { cells: [{ value: "City" }, { value: "Revenue" }] },
+            { cells: [{ value: "Beijing" }, { value: 320 }] },
+          ],
+        },
+        {
+          name: "Pivot",
+          rows: [],
+          pivotSelection: {
+            activeRow: 1,
+            activeCol: 0,
+            click: 1,
+            rId: "rId1",
+            pivotArea: { type: "normal" },
+          },
+          pivotTables: [
+            {
+              mode: "source",
+              source: "A1:B2",
+              sourceSheet: "Data",
+              rows: ["City"],
+              data: [{ field: "Revenue", summarize: "sum" }],
+            },
+          ],
+        },
+      ],
+    };
+
+    const first = (await generateWorkbook(opts, { type: "uint8array" })) as Uint8Array;
+    const parsed = parseWorkbookSync(first);
+    const second = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const relsXml = new TextDecoder().decode(
+      unzipSync(second)["xl/worksheets/_rels/sheet2.xml.rels"],
+    );
+    expect([...relsXml.matchAll(/<Relationship\b/g)]).toHaveLength(1);
+    expect(relsXml).toContain('Id="rId1"');
+    expect(relsXml).toContain('Target="../pivotTables/pivotTable1.xml"');
+  });
+
   it("adopts the style table so cells keep raw indices and their formatting", async () => {
     // Two cells with distinct styles. Parse exposes the style table sections
     // (fonts/fills/borders/cellXfs) alongside the cells; cells carry raw

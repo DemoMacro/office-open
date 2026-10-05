@@ -49,6 +49,32 @@ describe("corpus semantic comparison", () => {
     ]);
   });
 
+  it("reports duplicate children even when their semantic payloads match", () => {
+    const source = new TextEncoder().encode("<root><item/></root>");
+    const output = new TextEncoder().encode("<root><item/><item/></root>");
+    expect(explainSemanticPartDiff("xl/example.rels", source, output)).toEqual([
+      {
+        path: "xl/example.rels",
+        kind: "relationship",
+        category: "child",
+        xpath: "xl/example.rels/item",
+        detail: "output-only child",
+      },
+    ]);
+  });
+
+  it("decodes UTF-16 XML parts by BOM", () => {
+    const source = new TextEncoder().encode("<root><item/></root>");
+    const utf16 = new TextDecoder().decode(source);
+    const bytes = new Uint8Array(utf16.length * 2 + 2);
+    bytes[0] = 0xff;
+    bytes[1] = 0xfe;
+    for (let index = 0; index < utf16.length; index++)
+      bytes.set([utf16.charCodeAt(index) & 0xff, utf16.charCodeAt(index) >> 8], index * 2 + 2);
+    const output = new TextEncoder().encode("<root><item/></root>");
+    expect(explainSemanticPartDiff("ppt/slideLayouts/example.xml", bytes, output)).toEqual([]);
+  });
+
   it("classifies malformed packages precisely", () => {
     expect(classifyPackageFailure(new Error("Invalid zip data"))).toBe("invalid-zip");
     expect(classifyPackageFailure(new Error("compound file is truncated"))).toBe("invalid-cfb");

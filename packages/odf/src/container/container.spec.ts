@@ -75,6 +75,22 @@ describe("OCF runtime", () => {
     expect(() => readOcf(archive, "application/vnd.oasis.opendocument.text")).not.toThrow();
   });
 
+  it("ignores stale manifest declarations for absent package paths", () => {
+    const archive = zipSync({
+      mimetype: strToU8("application/vnd.oasis.opendocument.text"),
+      "content.xml": strToU8(
+        '<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"/>',
+      ),
+      "META-INF/manifest.xml": strToU8(
+        '<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.text"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="META-INF/manifest.xml" manifest:media-type="text/xml"/><manifest:file-entry manifest:full-path="Thumbnails/thumbnail.png" manifest:media-type="image/png"/></manifest:manifest>',
+      ),
+    });
+    const parsed = readOcf(archive, "application/vnd.oasis.opendocument.text");
+    expect(parsed.manifest.entries.map((entry) => entry.fullPath)).not.toContain(
+      "Thumbnails/thumbnail.png",
+    );
+  });
+
   it("reads a typed manifest and preserves encryption metadata", () => {
     const xml = `<?xml version="1.0"?><manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0" manifest:version="1.3"><manifest:file-entry manifest:full-path="/" manifest:media-type="application/vnd.oasis.opendocument.chart"/><manifest:file-entry manifest:full-path="content.xml" manifest:media-type="text/xml"><manifest:encryption-data manifest:checksum-type="SHA1/1K" manifest:checksum="aa=="><manifest:algorithm manifest:algorithm-name="Blowfish CFB" manifest:initialisation-vector="bb=="/><manifest:key-derivation manifest:key-derivation-name="PBKDF2" manifest:salt="cc==" manifest:iteration-count="1024" manifest:key-size="16"/></manifest:encryption-data></manifest:file-entry></manifest:manifest>`;
     const parsed = parseManifestOptions(xml);

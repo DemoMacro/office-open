@@ -44,12 +44,24 @@ import {
   type SemanticPartDiff,
 } from "./semantics";
 import corpusSources from "./sources.json";
+import { runSyntheticCorpus } from "./synthetic";
+import { auditCanonicalOptions } from "./synthetic/raw-audit";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "../..");
 const BASELINE_PATH = path.join(__dirname, "baseline.json");
 const DEFAULT_REPORT_PATH = path.resolve(__dirname, "../../.temp/corpus-report.json");
-const STRICT_SEMANTIC_GATE = process.env.CORPUS_STRICT_SEMANTIC === "1";
+const STRICT_SEMANTIC_GATE = process.env.CORPUS_STRICT_SEMANTIC !== "0";
+const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
+  docx: [
+    /^word\/vbaProject\.bin$/i,
+    /^word\/embeddings\//i,
+    /^word\/printerSettings\//i,
+    /^word\/fonts\//i,
+  ],
+  xlsx: [/^xl\/vbaProject\.bin$/i, /^xl\/embeddings\//i, /^xl\/printerSettings\//i],
+  pptx: [/^ppt\/vbaProject\.bin$/i, /^ppt\/embeddings\//i],
+};
 
 interface CorpusSource {
   id: string;
@@ -145,6 +157,7 @@ async function runLibrary(lib: Library): Promise<
     blockers: Record<Format, Map<string, number>>;
     diagnostics: FileDiagnostic[];
     rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }>;
+    rawBlockers: Record<Format, Map<string, number>>;
   }
 > {
   const counts = {
@@ -165,6 +178,11 @@ async function runLibrary(lib: Library): Promise<
     docx: { files: 0, xmlParts: 0, binaryParts: 0 },
     xlsx: { files: 0, xmlParts: 0, binaryParts: 0 },
     pptx: { files: 0, xmlParts: 0, binaryParts: 0 },
+  };
+  const rawBlockers: Record<Format, Map<string, number>> = {
+    docx: new Map(),
+    xlsx: new Map(),
+    pptx: new Map(),
   };
 
   for (const { path: f, format, type } of walk(path.resolve(ROOT_DIR, lib.dest))) {
@@ -217,6 +235,10 @@ async function runLibrary(lib: Library): Promise<
         else rawAudit[format].binaryParts++;
       }
     }
+    for (const blocker of auditCanonicalOptions(opts, EXTERNAL_OPAQUE_PARTS[format])) {
+      const key = `${blocker.reason}:${blocker.part.replace(/(?:word|xl|ppt|powerpoint)[\\/]/, "")}`;
+      rawBlockers[format].set(key, (rawBlockers[format].get(key) ?? 0) + 1);
+    }
     let parts: string[];
     let semanticDiffs: ReturnType<typeof archiveSemanticDiffDetails> = [];
     try {
@@ -259,7 +281,7 @@ async function runLibrary(lib: Library): Promise<
       });
     }
   }
-  return { ...counts, blockers, diagnostics, rawAudit };
+  return { ...counts, blockers, diagnostics, rawAudit, rawBlockers };
 }
 
 // ── setup & baseline ──
@@ -294,6 +316,14 @@ function loadBaseline(): Baseline {
   }
 }
 
+function splitRawBlocker(
+  key: string,
+  count: number,
+): { reason: string; part: string; count: number } {
+  const separator = key.indexOf(":");
+  return { reason: key.slice(0, separator), part: key.slice(separator + 1), count };
+}
+
 // ── main ──
 
 const args = process.argv.slice(2);
@@ -301,7 +331,7 @@ const reportFlagIndex = args.indexOf("--report-json");
 const reportPath =
   reportFlagIndex >= 0
     ? path.resolve(ROOT_DIR, args[reportFlagIndex + 1] ?? DEFAULT_REPORT_PATH)
-    : undefined;
+    : DEFAULT_REPORT_PATH;
 if (args.includes("--setup")) {
   setup();
   if (args.length === 1) process.exit(0);
@@ -318,18 +348,35 @@ const baseline = loadBaseline();
 const nextBaseline: Baseline = {};
 let failed = false;
 const allDiagnostics: FileDiagnostic[] = [];
+const rawBlockerReport: Record<
+  string,
+  Record<Format, { reason: string; part: string; count: number }[]>
+> = {};
 
-if (LIBRARIES.some((lib) => !fs.existsSync(path.resolve(ROOT_DIR, lib.dest)))) {
-  console.error("corpus gate: corpus is incomplete — run pnpm corpus:setup first");
-  process.exit(1);
+console.log("\n[synthetic]");
+const synthetic = await runSyntheticCorpus();
+if (synthetic.diagnostics.length > 0) failed = true;
+
+const missingLibraries = LIBRARIES.filter(
+  (lib) => !fs.existsSync(path.resolve(ROOT_DIR, lib.dest)),
+);
+if (missingLibraries.length > 0) {
+  console.warn(
+    `\nexternal corpus incomplete (${missingLibraries.length}/${LIBRARIES.length} libraries missing) — synthetic gate only; run pnpm corpus:setup first`,
+  );
 }
 
-for (const lib of LIBRARIES) {
+for (const lib of LIBRARIES.filter((lib) => !missingLibraries.includes(lib))) {
   if (only && lib.id !== only) continue;
   const dest = path.resolve(ROOT_DIR, lib.dest);
   console.log(`\n[${lib.id}] ${lib.dest}`);
   const result = await runLibrary(lib);
   allDiagnostics.push(...result.diagnostics);
+  rawBlockerReport[lib.id] = {
+    docx: [...result.rawBlockers.docx].map(([key, count]) => splitRawBlocker(key, count)),
+    xlsx: [...result.rawBlockers.xlsx].map(([key, count]) => splitRawBlocker(key, count)),
+    pptx: [...result.rawBlockers.pptx].map(([key, count]) => splitRawBlocker(key, count)),
+  };
   const libBaseline = baseline[lib.id];
   nextBaseline[lib.id] = { docx: result.docx, xlsx: result.xlsx, pptx: result.pptx };
 
@@ -343,6 +390,12 @@ for (const lib of LIBRARIES) {
       console.log(
         `      rawParts audit: ${raw.files} files | ${raw.xmlParts} XML parts (absorption gaps) | ${raw.binaryParts} opaque binaries`,
       );
+    const rawBlockers = [...result.rawBlockers[format]]
+      .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+      .slice(0, 8);
+    for (const [blocker, count] of rawBlockers) {
+      console.log(`      rawParts blocker ${blocker}: ${count}`);
+    }
     const top = [...result.blockers[format]].sort((x, y) => y[1] - x[1]).slice(0, 8);
     for (const [k, n] of top) console.log(`      blocker ${k}: ${n}`);
 
@@ -370,7 +423,18 @@ if (updateBaseline) {
 
 if (reportPath) {
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
-  fs.writeFileSync(reportPath, `${JSON.stringify({ diagnostics: allDiagnostics }, null, 2)}\n`);
+  fs.writeFileSync(
+    reportPath,
+    `${JSON.stringify(
+      {
+        diagnostics: allDiagnostics,
+        synthetic: synthetic.diagnostics,
+        rawBlockers: rawBlockerReport,
+      },
+      null,
+      2,
+    )}\n`,
+  );
   console.log(`\ncorpus diagnostics: ${path.relative(ROOT_DIR, reportPath)}`);
 }
 

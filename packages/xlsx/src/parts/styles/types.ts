@@ -375,6 +375,12 @@ export interface CellStyleXfOptions {
   applyProtection?: boolean;
 }
 
+/** Fonts container metadata (CT_Fonts `@x14ac:knownFonts`). */
+export interface FontsContainerOptions {
+  /** Whether Excel marked the font table as known (CT_Fonts `@x14ac:knownFonts`). */
+  knownFonts?: boolean;
+}
+
 /** Snapshot of Styles internal state for descriptor-based XML generation. */
 export interface StylesState {
   customNumFmts: ReadonlyMap<string, number>;
@@ -437,6 +443,7 @@ export interface StylesParseResult {
   /** numFmts section entries in document order (for table adoption). */
   numFmts?: NumFmtEntry[];
   fonts?: FontOptions[];
+  fontsContainer?: FontsContainerOptions;
   fills?: CellFillOptions[];
   borders?: BorderSideOptions[];
   cellStyleXfs?: CellStyleXfOptions[];

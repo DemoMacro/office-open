@@ -114,6 +114,7 @@ export class SharedStrings {
    * resolve back to the original index instead of appending a duplicate si.
    */
   private richIndexMap = new Map<RichTextOptions, number>();
+  private sourceCount?: number;
 
   /**
    * Register a plain string and return its index.
@@ -167,22 +168,29 @@ export class SharedStrings {
     return this.entries.length;
   }
 
+  /** Preserve the source's total-reference count across a round trip. */
+  public setSourceCount(value: number): void {
+    this.sourceCount = value;
+  }
+
   /** Return a serializable snapshot for the descriptor. */
-  public toDescriptorOptions(): { entries: SstEntry[] } {
-    return { entries: this.entries };
+  public toDescriptorOptions(): { entries: SstEntry[]; count?: number } {
+    return {
+      entries: this.entries,
+      ...(this.sourceCount !== undefined ? { count: this.sourceCount } : {}),
+    };
   }
 
   /** Serialize to xl/sharedStrings.xml content (without XML declaration). */
   public serialize(): string {
-    return serializeSstEntries(this.entries);
+    return serializeSst(this.entries, this.sourceCount ?? this.entries.length);
   }
 }
 
-/** Serialize entry list to the <sst> part body shared by both emit paths. */
-function serializeSstEntries(entries: (string | RichTextOptions)[]): string {
+function serializeSst(entries: (string | RichTextOptions)[], referenceCount: number): string {
   const p: string[] = [
     '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-    ` count="${entries.length}" uniqueCount="${entries.length}">`,
+    ` count="${referenceCount}" uniqueCount="${entries.length}">`,
   ];
   for (const entry of entries) {
     if (typeof entry === "string") {
@@ -203,6 +211,8 @@ function serializeSstEntries(entries: (string | RichTextOptions)[]): string {
 export interface SharedStringsDocOptions {
   /** All entries (plain strings and rich text), in registration order. */
   entries: (string | RichTextOptions)[];
+  /** Total string-cell references (<sst/@count>); defaults to entries.length. */
+  count?: number;
 }
 
 // ── Descriptor ──
@@ -212,7 +222,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 
   stringify(opts, _ctx) {
     if (opts.entries.length === 0) return undefined;
-    return serializeSstEntries(opts.entries);
+    return serializeSst(opts.entries, opts.count ?? opts.entries.length);
   },
 
   parse(el, _ctx) {

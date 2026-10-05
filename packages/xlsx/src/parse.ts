@@ -15,6 +15,7 @@ import {
 import {
   collectPassthroughParts,
   isEncryptedContainer,
+  opaquePassthroughPolicy,
   partPathToRelsPath,
   pickNonVisualDrawingProperties,
   resolveRelationshipTarget,
@@ -27,7 +28,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
-import { attr } from "@office-open/xml";
+import { attr, attrNum } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
@@ -299,10 +300,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // cell lookup and the rebuilt table keep their structure; generate() seeds
   // the write context from opts.sharedStrings to preserve si indices.
   let sstEntries: (string | RichTextOptions)[] = [];
+  let sharedStringsCount: number | undefined;
   if (xlsx.sharedStrings) {
     sstEntries = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never).entries;
+    sharedStringsCount = attrNum(xlsx.sharedStrings, "count");
   }
   if (sstEntries.length > 0) opts.sharedStrings = sstEntries;
+  if (sharedStringsCount !== undefined) opts.sharedStringsCount = sharedStringsCount;
 
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, sstEntries);
@@ -393,6 +397,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     // definitions — the SDK's Stylesheet model.
     if (parsedStyles.dxfs) opts.dxfs = parsedStyles.dxfs;
     opts.fonts = parsedStyles.fonts ?? [];
+    if (parsedStyles.fontsContainer) opts.fontsContainer = parsedStyles.fontsContainer;
     opts.fills = parsedStyles.fills ?? [];
     opts.borders = parsedStyles.borders ?? [];
     opts.cellXfs = parsedStyles.cellXfs ?? [];
@@ -437,6 +442,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     // Workbook-level properties
     if (wbData.protection) opts.workbookProtection = wbData.protection;
     if (wbData.bookView) opts.bookView = wbData.bookView;
+    if (wbData.fileVersion !== undefined) opts.fileVersion = wbData.fileVersion;
     if (wbData.calculation) opts.calculation = wbData.calculation;
     if (wbData.oleSize) opts.oleSize = wbData.oleSize;
     if (wbData.customViews) opts.customWorkbookViews = wbData.customViews;
@@ -836,6 +842,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   if (calcChainEl) {
     const calcData = calcChainDesc.parse(calcChainEl, readContext);
     if (calcData.cells) opts.calcChain = calcData.cells;
+  } else {
+    opts.calcChain = false;
   }
 
   // Connections (xl/connections.xml)
@@ -953,13 +961,17 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const rebuilt: string[] = [
     "xl/workbook.xml",
     "xl/_rels/workbook.xml.rels",
-    ...(xlsx.styles ? ["xl/styles.xml"] : []),
     ...(xlsx.coreProps ? [xlsx.coreProps] : []),
     ...(xlsx.appProps ? [xlsx.appProps] : []),
     ...(xlsx.customProps ? [xlsx.customProps] : []),
     ...xlsx.worksheets,
     ...chartsheetPaths,
     ...dialogsheetPaths,
+    ...(xlsx.styles ? ["xl/styles.xml", "xl/_rels/styles.xml.rels"] : []),
+    ...(xlsx.theme ? [xlsx.theme, partPathToRelsPath(xlsx.theme)] : []),
+    ...(sstEntries.length > 0 ? ["xl/sharedStrings.xml"] : []),
+    ...(calcChainEl ? ["xl/calcChain.xml"] : []),
+    ...xlsx.partRefs.drawings.flatMap((path) => [path, partPathToRelsPath(path)]),
     ...pivotCaches.flatMap((cache) => [
       cache.definitionPath,
       ...(cache.recordsPath ? [cache.recordsPath] : []),
@@ -973,14 +985,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     rebuilt,
     // Stage-0 rawParts policy: XML parts not listed here are flagged by the
     // audit as modeled-XML absorption gaps (strict policy rejects them).
-    {
-      opaquePatterns: [
-        /^xl\/vbaProject\.bin$/i,
-        /^xl\/vbaData\.xml$/i,
-        /^xl\/embeddings\//i,
-        /^xl\/printerSettings\//i,
-      ],
-    },
+    opaquePassthroughPolicy("xlsx"),
   );
   passthroughParts.push(
     ...xlsx.doc
