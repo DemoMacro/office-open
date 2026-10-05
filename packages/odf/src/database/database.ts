@@ -1,19 +1,10 @@
-import {
-  childNamed,
-  childrenNamed,
-  generateOcf,
-  metaXml,
-  ODF_NAMESPACES,
-  parseMeta,
-  readOcf,
-  readXml,
-  textOf,
-  xmlElement,
-} from "@office-open/ocf";
 import type { Element } from "@office-open/xml";
 
-import { OdfSchemaError } from "./error";
-import { formsXml, parseOfficeForms, type OfficeFormsOptions } from "./forms";
+import { generateOcf, readOcf, readXml } from "../container/package";
+import { OdfSchemaError } from "../errors";
+import { formsXml, parseOfficeForms, type OfficeFormsOptions } from "../forms/forms";
+import { metaXml, ODF_NAMESPACES, parseMeta } from "../meta/core-properties";
+import { childNamed, childrenNamed, textOf, xmlElement } from "../runtime/xml";
 
 const MIME = "application/vnd.oasis.opendocument.database";
 const NAMESPACES = `${ODF_NAMESPACES} xmlns:db="urn:oasis:names:tc:opendocument:xmlns:database:1.0" xmlns:xforms="http://www.w3.org/2002/xforms"`;

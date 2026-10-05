@@ -1,7 +1,7 @@
 import type { CorePropertiesOptions } from "@office-open/core";
 
-import { readXml, type OdfFiles } from "./package";
-import { childNamed, textOf } from "./xml";
+import { readXml, type OdfFiles } from "../container/package";
+import { childNamed, escapeText, textOf } from "../runtime/xml";
 
 export const ODF_NAMESPACES = [
   'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
@@ -59,8 +59,4 @@ export function parseMeta(files: OdfFiles): CorePropertiesOptions {
     lastPrinted: value("meta:print-date"),
     revision: revision ? Number(revision) : undefined,
   };
-}
-
-export function escapeText(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

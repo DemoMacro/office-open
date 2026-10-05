@@ -22,35 +22,33 @@ import type {
 import {
   attributeNumber,
   attributeString,
+  CHART_MIME,
+  chartBodyXml,
   childNamed,
   childrenNamed,
   emuToLength,
   escapeText,
   generateOcf,
+  graphicFill,
+  graphicOutline,
   lengthToEmu,
   metaXml,
   ODF_NAMESPACES,
+  OdfSchemaError,
+  parseEmbeddedCharts,
+  parseGraphicStyles,
   parseMeta,
+  PRESET_GEOMETRY_DOCX,
+  presetGeometryOdf,
+  pushShapeStyle,
   readOcf,
   readXml,
   textOf,
   xmlElement,
+  type GraphicStyle,
   type OdfFiles,
   type OdfPackageFiles,
-} from "@office-open/ocf";
-import {
-  CHART_MIME,
-  chartBodyXml,
-  graphicFill,
-  graphicOutline,
-  parseEmbeddedCharts,
-  parseGraphicStyles,
-  OdfSchemaError,
-  PRESET_GEOMETRY_DOCX,
-  presetGeometryOdf,
-  pushShapeStyle,
-} from "@office-open/odf-schema";
-import type { GraphicStyle } from "@office-open/odf-schema";
+} from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdtParseError } from "./error";

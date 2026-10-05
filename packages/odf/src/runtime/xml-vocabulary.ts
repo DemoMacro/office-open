@@ -1,7 +1,7 @@
-import { escapeText, xmlElement } from "@office-open/ocf";
 import { parse, textOf, type Element } from "@office-open/xml";
 
-import { OdfSchemaError } from "./error";
+import { OdfSchemaError } from "../errors";
+import { escapeText, xmlElement } from "./xml";
 
 export const DRAWING_VOCABULARY_ELEMENTS = [
   "dr3d:cube",

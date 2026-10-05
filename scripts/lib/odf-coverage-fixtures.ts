@@ -1,24 +1,22 @@
-import { generateOcf } from "@office-open/ocf";
 import {
+  drawingVocabularyXml,
   generateChartDocument,
   generateDatabaseDocument,
+  generateOcf,
   officeFormsXml,
+  manifestOptionsXml,
   parseChartBody,
   parseChartDocument,
   parseDatabaseDocument,
+  parseDrawingVocabulary,
   parseOfficeForms,
-} from "@office-open/odf-schema";
+  parseManifestOptions,
+} from "@office-open/odf";
 import { generateOdp, parseOdp } from "@office-open/odp";
 import { generateOds, parseOds } from "@office-open/ods";
 import { generateOdt, parseOdt } from "@office-open/odt";
 import { parse, type Element } from "@office-open/xml";
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-
-import { manifestOptionsXml, parseManifestOptions } from "../../packages/ocf/src/manifest-model";
-import {
-  drawingVocabularyXml,
-  parseDrawingVocabulary,
-} from "../../packages/odf-schema/src/xml-vocabulary";
 
 function assert(condition: unknown, message: string): void {
   if (!condition) throw new Error(message);

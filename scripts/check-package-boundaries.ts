@@ -26,8 +26,7 @@ const FORMAT_PACKAGES = new Set([
   "ppt",
   "pptx",
   "rtf",
-  "ocf",
-  "odf-schema",
+  "odf",
   "odt",
   "ods",
   "odp",
@@ -35,30 +34,26 @@ const FORMAT_PACKAGES = new Set([
 
 const ARCHITECTURE: Record<string, ArchitectureRule> = {
   core: { denied: FORMAT_PACKAGES },
-  ocf: {
-    runtime: new Set(["core", "xml"]),
-    type: new Set(["core", "xml"]),
+  odf: {
+    runtime: new Set(["xml"]),
+    type: new Set(["core"]),
     denied: new Set(["docx", "xlsx", "pptx", "odt", "ods", "odp"]),
   },
-  "odf-schema": {
-    runtime: new Set(["core", "xml", "ocf"]),
-    type: new Set(["core", "xml"]),
-  },
   odt: {
-    runtime: new Set(["core", "xml", "ocf", "odf-schema"]),
+    runtime: new Set(["core", "odf"]),
     type: new Set(["core", "xml", "docx"]),
   },
   ods: {
-    runtime: new Set(["core", "xml", "ocf", "odf-schema"]),
+    runtime: new Set(["odf"]),
     type: new Set(["core", "xml", "xlsx"]),
   },
   odp: {
-    runtime: new Set(["core", "xml", "ocf", "odf-schema"]),
+    runtime: new Set(["core", "odf"]),
     type: new Set(["core", "xml", "pptx"]),
   },
 };
 
-const TARGET_PACKAGES = new Set(["ocf", "odf-schema", "odt", "ods", "odp"]);
+const TARGET_PACKAGES = new Set(["odf", "odt", "ods", "odp"]);
 
 function stripComments(source: string): string {
   return source

@@ -10,7 +10,7 @@ import {
   readOcf,
   serializeOdfNodes,
   type OdfXmlNode,
-} from "./index";
+} from "../index";
 
 describe("OCF runtime", () => {
   it("contains every unique element in the ODF and manifest schemas", () => {

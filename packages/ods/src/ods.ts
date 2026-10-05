@@ -6,6 +6,8 @@ import type {
 import {
   attributeNumber,
   attributeString,
+  CHART_MIME,
+  chartBodyXml,
   childNamed,
   childrenNamed,
   emuToLength,
@@ -13,20 +15,16 @@ import {
   generateOcf,
   lengthToEmu,
   metaXml,
+  OdfSchemaError,
+  parseEmbeddedCharts,
   parseMeta,
   readOcf,
   readXml,
   textOf,
   xmlElement,
-  type OdfPackageFiles,
   type XmlAttributes,
-} from "@office-open/ocf";
-import {
-  CHART_MIME,
-  chartBodyXml,
-  OdfSchemaError,
-  parseEmbeddedCharts,
-} from "@office-open/odf-schema";
+  type OdfPackageFiles,
+} from "@office-open/odf";
 import type {
   AlignmentOptions,
   BorderOptions,

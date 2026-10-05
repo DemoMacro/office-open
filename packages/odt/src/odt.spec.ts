@@ -1,5 +1,5 @@
 import type { ParagraphOptions } from "@office-open/docx";
-import { generateOcf, ODF_NAMESPACES } from "@office-open/ocf";
+import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateOdt, OdtParseError, parseOdt, type DocumentOptions } from "./index";

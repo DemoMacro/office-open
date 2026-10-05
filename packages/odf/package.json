@@ -1,15 +1,19 @@
 {
-  "name": "@office-open/ocf",
+  "name": "@office-open/odf",
   "version": "0.14.6",
-  "description": "Read and write OpenDocument Container Format packages with typed XML and metadata helpers",
+  "description": "Shared OpenDocument container, XML runtime, metadata, chart, database, form, and drawing codecs",
   "keywords": [
+    "chart",
     "container",
+    "database",
+    "forms",
     "manifest",
     "ocf",
     "odf",
     "office-open",
     "opendocument",
     "typescript",
+    "xml",
     "zip"
   ],
   "homepage": "https://www.office-open.com",
@@ -25,7 +29,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/DemoMacro/office-open.git",
-    "directory": "packages/ocf"
+    "directory": "packages/odf"
   },
   "files": [
     "dist"
@@ -48,8 +52,10 @@
     "check": "vp check --fix"
   },
   "dependencies": {
-    "@office-open/core": "workspace:*",
     "@office-open/xml": "workspace:*",
     "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@office-open/core": "workspace:*"
   }
 }

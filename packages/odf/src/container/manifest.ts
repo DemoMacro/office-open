@@ -1,7 +1,7 @@
 import { parse, type Element } from "@office-open/xml";
 
-import { OcfManifestError } from "./error";
-import { textOf, xmlElement } from "./xml";
+import { OcfManifestError } from "../errors";
+import { textOf, xmlElement } from "../runtime/xml";
 
 export const MANIFEST_ELEMENTS = [
   "manifest:manifest",

@@ -70,7 +70,7 @@ Highlights from the per-package benchmarks (ops/s, higher is better; Windows 11,
 
 The matrix is a capability contract, not an invitation to synthesize unsupported editing: legacy and RTF have no writers, and ODF codecs do not expose patch operations.
 
-The package graph follows format ownership: `ocf` owns ODF containers and generic nodes, `odf-schema` owns shared chart/database models and may use `ocf`/`xml` at runtime with `core` types only, each ODF document codec may type-import its OOXML peer while using `ocf`/`odf-schema` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every codec.
+The package graph follows format ownership: `odf` owns the OCF container, XML runtime, metadata, and shared chart/database codecs, each ODF document codec may type-import its OOXML peer while using `odf` at runtime, peer codecs do not import one another, `core` never imports a format codec, and only `office-open` aggregates every public document codec.
 
 ## Quick Start
 

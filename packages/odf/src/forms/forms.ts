@@ -1,3 +1,6 @@
+import type { Element } from "@office-open/xml";
+
+import { OdfSchemaError } from "../errors";
 import {
   attributeString,
   childNamed,
@@ -5,10 +8,7 @@ import {
   escapeText,
   textOf,
   xmlElement,
-} from "@office-open/ocf";
-import type { Element } from "@office-open/xml";
-
-import { OdfSchemaError } from "./error";
+} from "../runtime/xml";
 
 export const FORM_ELEMENT_NAMES = [
   "form:form",

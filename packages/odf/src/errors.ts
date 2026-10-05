@@ -28,3 +28,17 @@ export class OdfXmlError extends OcfError {
     super(`ODF package is missing or cannot read ${path}`, options);
   }
 }
+
+/** Structured error raised for an ODF element that cannot be mapped canonically. */
+export class OdfSchemaError extends Error {
+  constructor(
+    message: string,
+    readonly part: string,
+    readonly path: string,
+    readonly name: string,
+    readonly reason: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+  }
+}

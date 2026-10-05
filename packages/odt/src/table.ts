@@ -5,7 +5,7 @@ import {
   childrenNamed,
   lengthToEmu,
   xmlElement,
-} from "@office-open/ocf";
+} from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 /** Serializes a docx table to table:table XML shared by ODT and ODP bodies. */
