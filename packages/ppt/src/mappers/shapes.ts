@@ -1,11 +1,6 @@
 import type { TextBodyOptions } from "@office-open/core";
-import type {
-  GroupOptions,
-  PictureOptions,
-  ShapeOptions,
-  SlideChild,
-  TableOptions,
-} from "@office-open/pptx";
+import type { ShapePropertiesOptions } from "@office-open/core/drawing";
+import type { GroupOptions, ShapeOptions, SlideChild, TableOptions } from "@office-open/pptx";
 
 import {
   LegacyPowerPointError,
@@ -17,25 +12,43 @@ import {
   type RecordNode,
 } from "../records";
 import { TABLE_BOUND_TOLERANCE } from "./constants";
-import type { DrawingContext, LegacyPicture, TableCell } from "./models";
+import {
+  CONNECTOR_TYPE_PRESETS,
+  SHAPE_TYPE_PRESETS,
+  readShapeFlags,
+  readShapeProperties,
+  type EscherShapeStyle,
+} from "./escher-properties";
+import type { DrawingContext, TableCell } from "./models";
 import {
   applyClientHyperlinks,
   collectEmbeddedText,
   createTextBody,
   masterUnitsToEmu,
 } from "./text";
+
+type EndpointShapeProperties = Pick<ShapePropertiesOptions, "fill" | "outline" | "effects">;
 export function readDrawingChildren(
   view: DataView,
   drawing: RecordNode,
   context: DrawingContext,
 ): SlideChild[] {
   const pageContainer = findDirect(drawing, RecordType.escherDrawingContainer);
-  const shapeGroups = pageContainer
-    ? pageContainer.children.filter((child) => child.type === RecordType.escherShapeGroupContainer)
+  const childContainers = pageContainer
+    ? pageContainer.children.filter(
+        (child) =>
+          child.type === RecordType.escherShapeGroupContainer ||
+          child.type === RecordType.escherShapeContainer,
+      )
     : [];
   const children: SlideChild[] = [];
-  for (const shapeGroup of shapeGroups) {
-    children.push(...parseShapeGroup(view, shapeGroup, context, 0));
+  for (const childContainer of childContainers) {
+    if (childContainer.type === RecordType.escherShapeContainer) {
+      const shape = parseShape(view, childContainer, context);
+      if (shape) children.push(shape);
+      continue;
+    }
+    children.push(...parseShapeGroup(view, childContainer, context, 0));
   }
   return children;
 }
@@ -67,9 +80,7 @@ function parseShapeGroup(
     }
     if (child.type !== RecordType.escherShapeContainer || child === metadata) continue;
     const shape = parseShape(view, child, context);
-    if (!shape) continue;
-    if ("data" in shape) children.push({ picture: shape });
-    else children.push({ shape });
+    if (shape) children.push(shape);
   }
 
   if (children.length === 0) return [];
@@ -118,10 +129,10 @@ function detectGroupedTable(
       right: number;
       bottom: number;
     }[] => {
-      const shape = parseShape(view, record, context);
+      const child = parseShape(view, record, context);
       const anchor = readAnchorBounds(view, record);
-      if (!shape || !("textBody" in shape) || !anchor) return [];
-      return [{ shape, ...anchor }];
+      if (!child || !("shape" in child) || !child.shape.textBody || !anchor) return [];
+      return [{ shape: child.shape, ...anchor }];
     },
   );
   if (!frame || frame.width <= 0 || frame.height <= 0) return undefined;
@@ -386,16 +397,15 @@ function parseShape(
   view: DataView,
   container: RecordNode,
   context: DrawingContext,
-): ShapeOptions | PictureOptions | undefined {
+): SlideChild | undefined {
   const shapeRecord = findDirect(container, RecordType.escherShape);
   if (!shapeRecord) return undefined;
   const bounds = readAnchorBounds(view, container);
   if (!bounds) return undefined;
-  const picture =
-    shapeRecord.instance === 75 ? readShapePicture(view, container, context.pictures) : undefined;
+  const optionsRecord = findDirect(container, RecordType.escherShapeProperties);
+  const style = optionsRecord ? readShapeProperties(view, optionsRecord) : {};
+  const flags = readShapeFlags(view, shapeRecord);
   const text = readContainerText(view, container, context);
-  if (!text && !picture) return undefined;
-
   const position = {
     ...(shapeRecord.length >= 4 ? { id: readInt32(view, shapeRecord, 0) } : {}),
     x: masterUnitsToEmu(Math.min(bounds.left, bounds.right)),
@@ -403,52 +413,138 @@ function parseShape(
     width: masterUnitsToEmu(Math.abs(bounds.right - bounds.left)),
     height: masterUnitsToEmu(Math.abs(bounds.bottom - bounds.top)),
   };
-  if (picture && !text) return { ...position, type: picture.type, data: picture.data };
-  if (picture) {
+
+  if (shapeRecord.instance === 75) {
+    return parsePictureShape(position, style, flags, text, context);
+  }
+  if (shapeRecord.instance === 20) {
+    const lineProperties = endpointShapeProperties(style, context);
     return {
-      ...position,
-      textBox: true,
-      properties: {
-        fill: { type: "blip", data: picture.data, imageType: picture.type },
+      line: {
+        ...(position.id !== undefined ? { id: position.id } : {}),
+        x1: masterUnitsToEmu(bounds.left),
+        y1: masterUnitsToEmu(bounds.top),
+        x2: masterUnitsToEmu(bounds.right),
+        y2: masterUnitsToEmu(bounds.bottom),
+        ...(style.rotation !== undefined ? { rotation: style.rotation } : {}),
+        ...(Object.keys(lineProperties).length > 0 ? { properties: lineProperties } : {}),
+        ...(text ? { textBody: text } : {}),
       },
-      textBody: text,
     };
   }
+  if (CONNECTOR_TYPE_PRESETS[shapeRecord.instance] !== undefined || flags.connector) {
+    const preset = CONNECTOR_TYPE_PRESETS[shapeRecord.instance];
+    const properties = endpointShapeProperties(style, context);
+    return {
+      connector: {
+        ...(position.id !== undefined ? { id: position.id } : {}),
+        x1: masterUnitsToEmu(bounds.left),
+        y1: masterUnitsToEmu(bounds.top),
+        x2: masterUnitsToEmu(bounds.right),
+        y2: masterUnitsToEmu(bounds.bottom),
+        ...(style.rotation !== undefined ? { rotation: style.rotation } : {}),
+        ...(preset !== undefined || Object.keys(properties).length > 0
+          ? { properties: { ...(preset !== undefined ? { geometry: preset } : {}), ...properties } }
+          : {}),
+      },
+    };
+  }
+
+  const properties: ShapeOptions["properties"] = {};
+  const geometry = SHAPE_TYPE_PRESETS[shapeRecord.instance];
+  if (geometry !== undefined) properties.geometry = geometry;
+  const fill = resolveFill(style, context);
+  if (fill) properties.fill = fill;
+  if (style.outline) properties.outline = style.outline;
+  if (style.effects) properties.effects = style.effects;
   return {
-    ...position,
-    textBox: true,
-    textBody: text,
+    shape: {
+      ...position,
+      ...(style.rotation !== undefined ? { rotation: style.rotation } : {}),
+      ...(flags.flipHorizontal ? { flipHorizontal: true } : {}),
+      ...(flags.flipVertical ? { flipVertical: true } : {}),
+      ...(Object.keys(properties).length > 0 ? { properties } : {}),
+      ...(text ? { textBox: true, textBody: text } : {}),
+    },
   };
 }
 
-function readShapePicture(
-  view: DataView,
-  container: RecordNode,
-  pictures: readonly (LegacyPicture | undefined)[],
-): LegacyPicture | undefined {
-  const options = findDirect(container, RecordType.escherShapeProperties);
-  if (!options) return undefined;
-  const reference = findShapePictureReference(view, options);
-  if (reference === undefined || reference <= 0 || reference >= pictures.length) return undefined;
-  return pictures[reference];
+function parsePictureShape(
+  position: { id?: number; x: number; y: number; width: number; height: number },
+  style: EscherShapeStyle,
+  flags: ReturnType<typeof readShapeFlags>,
+  text: TextBodyOptions | undefined,
+  context: DrawingContext,
+): SlideChild | undefined {
+  const reference = style.blipReference;
+  const picture =
+    reference !== undefined && reference > 0 && reference < context.pictures.length
+      ? context.pictures[reference]
+      : undefined;
+  if (!picture) {
+    return text
+      ? {
+          shape: {
+            ...position,
+            textBox: true,
+            textBody: text,
+          },
+        }
+      : undefined;
+  }
+  if (!text) {
+    return {
+      picture: {
+        ...position,
+        ...(flags.flipHorizontal ? { flipHorizontal: true } : {}),
+        ...(flags.flipVertical ? { flipVertical: true } : {}),
+        ...(style.rotation !== undefined ? { rotation: style.rotation } : {}),
+        type: picture.type,
+        data: picture.data,
+      },
+    };
+  }
+  const fill =
+    resolveFill(style, context) ??
+    ({
+      type: "blip",
+      data: picture.data,
+      imageType: picture.type,
+    } as const);
+  return {
+    shape: {
+      ...position,
+      textBox: true,
+      properties: { fill },
+      textBody: text,
+    },
+  };
 }
 
-function findShapePictureReference(view: DataView, options: RecordNode): number | undefined {
-  const headerEnd = options.offset + 8;
-  const propertyCount = options.instance;
-  const propertiesEnd = headerEnd + propertyCount * 6;
-  if (propertiesEnd > options.end) return undefined;
-  let cursor = options.offset + 8;
-  let result: number | undefined;
-  for (let index = 0; index < propertyCount; index += 1) {
-    const packedId = view.getUint16(cursor, true);
-    const value = view.getUint32(cursor + 2, true);
-    const propertyId = packedId & 0x3fff;
-    const isBlip = (packedId & 0x4000) !== 0;
-    if (propertyId === 0x0104 && isBlip) result = value;
-    cursor += 6;
+function endpointShapeProperties(
+  style: EscherShapeStyle,
+  context: DrawingContext,
+): EndpointShapeProperties {
+  const properties: EndpointShapeProperties = {};
+  const fill = resolveFill(style, context);
+  if (fill) properties.fill = fill;
+  if (style.outline) properties.outline = style.outline;
+  if (style.effects) properties.effects = style.effects;
+  return properties;
+}
+
+function resolveFill(style: EscherShapeStyle, context: DrawingContext) {
+  if (style.fillType === 5) {
+    const reference = style.fillBlipReference;
+    const picture =
+      reference !== undefined && reference > 0 && reference < context.pictures.length
+        ? context.pictures[reference]
+        : undefined;
+    return picture
+      ? ({ type: "blip", data: picture.data, imageType: picture.type } as const)
+      : undefined;
   }
-  return result;
+  return style.fill;
 }
 
 export function readContainerText(

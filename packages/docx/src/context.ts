@@ -69,6 +69,9 @@ function maxCommentId(comments: readonly CommentOptions[] | undefined): number {
   return max;
 }
 
+const PRINTER_SETTINGS_RELATIONSHIP_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings";
+
 /** Narrows an object to a `{ id: number }` marker without an `as` cast. */
 function isNumericIdMarker(value: unknown): value is { id: number } {
   return (
@@ -504,6 +507,11 @@ export class DocxWriteContext implements WriteContext {
           : undefined,
       },
     };
+    if (properties?.printerSettingsPath !== undefined) {
+      sectPrOptions.printerSettingsId = this.registerPrinterSettingsRelationship(
+        properties.printerSettingsPath,
+      );
+    }
     this._sectionProperties.push(sectPrOptions);
   }
 
@@ -671,6 +679,18 @@ export class DocxWriteContext implements WriteContext {
         ? Number(m[1])
         : this.document.relationships.nextRelationshipId;
     this.document.relationships.addRelationship(id, type, target);
+  }
+
+  private registerPrinterSettingsRelationship(partPath: string): string {
+    const target = partPath.startsWith("word/") ? partPath.slice("word/".length) : `../${partPath}`;
+    this.registerDocumentRel(PRINTER_SETTINGS_RELATIONSHIP_TYPE as RelationshipType, target);
+    const relationshipId = this.document.relationships.idOf(
+      PRINTER_SETTINGS_RELATIONSHIP_TYPE,
+      target,
+    );
+    if (!relationshipId)
+      throw new Error(`printerSettings relationship not registered: ${partPath}`);
+    return relationshipId;
   }
 
   /**

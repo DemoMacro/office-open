@@ -178,13 +178,7 @@ export function parseSectionProperties(
   const records = parsePlcf(table, plcfsepx, 12, message);
   const properties: SectionModel[] = [];
   for (const record of records) {
-    try {
-      parseOneSection(record, word, properties);
-    } catch {
-      properties.push({});
-      // Tolerate individual corrupt SEPX records — sections are auxiliary
-      // geometry and the remaining sections should still be read.
-    }
+    parseOneSection(record, word, properties);
   }
   return { sections: properties };
 }
@@ -261,6 +255,15 @@ export function parseLists(table: Uint8Array, list: NumberPair, overrides: Numbe
     const count = readUint16(table, list.offset, message);
     let offset = list.offset + 2;
     for (let index = 0; index < count; index += 1) {
+      if (offset + 28 > list.offset + list.length) {
+        throw new DocParseError(`${message}: truncated abstract numbering`, {
+          part: "table",
+          path: "PlfLst",
+          offset,
+          length: 28,
+          reason: "out-of-range",
+        });
+      }
       requireRange(table, offset, 28, message);
       const reference = readUint32(table, offset, message);
       const flags = table[offset + 26]!;
@@ -284,6 +287,15 @@ export function parseLists(table: Uint8Array, list: NumberPair, overrides: Numbe
     const count = readUint32(table, overrides.offset, message);
     let offset = overrides.offset + 4;
     for (let index = 0; index < count; index += 1) {
+      if (offset + 6 > overrides.offset + overrides.length) {
+        throw new DocParseError(`${message}: truncated list override`, {
+          part: "table",
+          path: "Plcflfo",
+          offset,
+          length: 6,
+          reason: "out-of-range",
+        });
+      }
       requireRange(table, offset, 6, message);
       listOverrides.push({
         listIndex: index,

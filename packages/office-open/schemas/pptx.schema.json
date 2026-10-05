@@ -362,6 +362,18 @@
       "enum": ["left", "right", "up", "down", "horizontal", "vertical"],
       "type": "string"
     },
+    "AnimationDuration": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "const": "indefinite",
+          "type": "string"
+        }
+      ],
+      "description": "Animation timing value in milliseconds, or \"indefinite\" for open-ended timing."
+    },
     "AnimationEntry": {
       "additionalProperties": false,
       "description": "One animated shape: the animation settings plus the target shape reference.",
@@ -490,7 +502,7 @@
           "type": "number"
         },
         "delay": {
-          "type": "number"
+          "$ref": "#/definitions/AnimationDuration"
         },
         "direction": {
           "$ref": "#/definitions/AnimationDirection"
@@ -500,7 +512,7 @@
           "type": "boolean"
         },
         "duration": {
-          "type": "number"
+          "$ref": "#/definitions/AnimationDuration"
         },
         "effectProgress": {
           "$ref": "#/definitions/AnimationVariantOptions",
@@ -710,8 +722,8 @@
           "type": "number"
         },
         "repeatDuration": {
-          "description": "Repeat duration (\"indefinite\" or milliseconds).",
-          "type": "string"
+          "$ref": "#/definitions/AnimationDuration",
+          "description": "Repeat duration in milliseconds, or \"indefinite\" for open-ended timing."
         },
         "restart": {
           "description": "Restart behavior: \"always\", \"whenNotActive\", \"never\".",
@@ -962,7 +974,7 @@
           "type": "number"
         },
         "delay": {
-          "type": "number"
+          "$ref": "#/definitions/AnimationDuration"
         },
         "direction": {
           "$ref": "#/definitions/AnimationDirection"
@@ -972,7 +984,7 @@
           "type": "boolean"
         },
         "duration": {
-          "type": "number"
+          "$ref": "#/definitions/AnimationDuration"
         },
         "effectProgress": {
           "$ref": "#/definitions/AnimationVariantOptions",
@@ -1085,8 +1097,8 @@
           "type": "number"
         },
         "repeatDuration": {
-          "description": "Repeat duration (\"indefinite\" or milliseconds).",
-          "type": "string"
+          "$ref": "#/definitions/AnimationDuration",
+          "description": "Repeat duration in milliseconds, or \"indefinite\" for open-ended timing."
         },
         "restart": {
           "$ref": "#/definitions/AnimationEntry/properties/restart"
@@ -5369,7 +5381,7 @@
       "additionalProperties": false,
       "properties": {
         "delay": {
-          "type": "string"
+          "$ref": "#/definitions/AnimationDuration"
         },
         "event": {
           "description": "Trigger event (p:cond `@evt`)",

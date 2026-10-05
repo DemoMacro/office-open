@@ -118,6 +118,7 @@ export {
 
 // Animation
 export {
+  type AnimationDuration,
   type AnimationType,
   type AnimationTrigger,
   type AnimationDirection,

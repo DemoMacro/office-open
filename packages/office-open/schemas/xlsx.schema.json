@@ -1083,6 +1083,40 @@
       },
       "type": "object"
     },
+    "BooleanPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "boolean",
+          "description": "Value kind discriminator: Boolean value.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "BorderOptions": {
       "additionalProperties": false,
       "properties": {
@@ -1477,6 +1511,110 @@
       "required": ["embed", "type"],
       "type": "object"
     },
+    "CacheHierarchyOptions": {
+      "additionalProperties": false,
+      "description": "Cache hierarchy for OLAP pivot caches",
+      "properties": {
+        "allCaption": {
+          "type": "string"
+        },
+        "allUniqueName": {
+          "type": "string"
+        },
+        "attribute": {
+          "description": "Is attribute (default: false)",
+          "type": "boolean"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "count": {
+          "description": "Count (required)",
+          "type": "number"
+        },
+        "defaultMemberUniqueName": {
+          "type": "string"
+        },
+        "dimensionUniqueName": {
+          "type": "string"
+        },
+        "displayFolder": {
+          "type": "string"
+        },
+        "fieldsUsage": {
+          "description": "Fields usage",
+          "items": {
+            "$ref": "#/definitions/FieldUsageOptions"
+          },
+          "type": "array"
+        },
+        "groupLevels": {
+          "description": "Group levels",
+          "items": {
+            "$ref": "#/definitions/GroupLevelOptions"
+          },
+          "type": "array"
+        },
+        "hidden": {
+          "description": "Hidden (default: false)",
+          "type": "boolean"
+        },
+        "iconSet": {
+          "description": "Icon set (default: 0)",
+          "type": "number"
+        },
+        "keyAttribute": {
+          "description": "Key attribute (default: false)",
+          "type": "boolean"
+        },
+        "measure": {
+          "description": "Is measure (default: false)",
+          "type": "boolean"
+        },
+        "measureGroup": {
+          "type": "string"
+        },
+        "measures": {
+          "description": "Is measures (default: false)",
+          "type": "boolean"
+        },
+        "memberValueDatatype": {
+          "description": "Member value datatype",
+          "enum": ["string", "number", "integer", "boolean", "error"],
+          "type": "string"
+        },
+        "oneField": {
+          "description": "One field (default: false)",
+          "type": "boolean"
+        },
+        "parentSet": {
+          "description": "Parent set index",
+          "type": "number"
+        },
+        "set": {
+          "description": "Is set (default: false)",
+          "type": "boolean"
+        },
+        "time": {
+          "description": "Is time dimension (default: false)",
+          "type": "boolean"
+        },
+        "unbalanced": {
+          "description": "Unbalanced",
+          "type": "boolean"
+        },
+        "unbalancedGroup": {
+          "description": "Unbalanced group",
+          "type": "boolean"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        }
+      },
+      "required": ["uniqueName", "count"],
+      "type": "object"
+    },
     "CalcCell": {
       "additionalProperties": false,
       "description": "One calc-chain entry (xl/calcChain.xml c:r — a formula cell in calc order).",
@@ -1869,93 +2007,93 @@
     "CellGraphicOptions": {
       "anyOf": [
         {
-          "$ref": "#/definitions/CellImageGraphicOptions"
+          "additionalProperties": false,
+          "properties": {
+            "data": {
+              "description": "Embedded image bytes as base64, or omit with sourceUrl for a linked-only image.",
+              "type": "string"
+            },
+            "description": {
+              "description": "Accessible image description.",
+              "type": "string"
+            },
+            "endCellAddress": {
+              "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
+              "type": "string"
+            },
+            "endX": {
+              "description": "Horizontal offset of the end anchor in EMU.",
+              "type": "number"
+            },
+            "endY": {
+              "description": "Vertical offset of the end anchor in EMU.",
+              "type": "number"
+            },
+            "height": {
+              "description": "Graphic height in EMU.",
+              "type": "number"
+            },
+            "href": {
+              "description": "Image package URI, without the leading slash.",
+              "type": "string"
+            },
+            "id": {
+              "description": "Drawing identifier.",
+              "type": "string"
+            },
+            "name": {
+              "description": "Accessible image name.",
+              "type": "string"
+            },
+            "relativeHeight": {
+              "description": "Relative frame height from the package style system.",
+              "type": "string"
+            },
+            "relativeWidth": {
+              "description": "Relative frame width from the package style system.",
+              "type": "string"
+            },
+            "sourceUrl": {
+              "description": "External image URL used when data is omitted.",
+              "type": "string"
+            },
+            "styleName": {
+              "description": "Package-local graphic style reference.",
+              "type": "string"
+            },
+            "textStyleName": {
+              "description": "Text style reference for labels attached to the frame.",
+              "type": "string"
+            },
+            "type": {
+              "const": "image",
+              "description": "Image graphic discriminant.",
+              "type": "string"
+            },
+            "width": {
+              "description": "Graphic width in EMU.",
+              "type": "number"
+            },
+            "x": {
+              "description": "Horizontal offset from the cell in EMU.",
+              "type": "number"
+            },
+            "y": {
+              "description": "Vertical offset from the cell in EMU.",
+              "type": "number"
+            },
+            "zIndex": {
+              "description": "Painting order; higher numbers render above lower numbers.",
+              "type": "number"
+            }
+          },
+          "required": ["href", "type"],
+          "type": "object"
         },
         {
           "$ref": "#/definitions/CellObjectGraphicOptions"
         }
       ]
-    },
-    "CellImageGraphicOptions": {
-      "additionalProperties": false,
-      "description": "Image graphic anchored to a spreadsheet cell.",
-      "properties": {
-        "data": {
-          "description": "Image bytes encoded with base64.",
-          "type": "string"
-        },
-        "description": {
-          "description": "Accessible image description.",
-          "type": "string"
-        },
-        "endCellAddress": {
-          "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
-          "type": "string"
-        },
-        "endX": {
-          "description": "Horizontal offset of the end anchor in EMU.",
-          "type": "number"
-        },
-        "endY": {
-          "description": "Vertical offset of the end anchor in EMU.",
-          "type": "number"
-        },
-        "height": {
-          "description": "Graphic height in EMU.",
-          "type": "number"
-        },
-        "href": {
-          "description": "Image package URI, without the leading slash.",
-          "type": "string"
-        },
-        "id": {
-          "description": "Drawing identifier.",
-          "type": "string"
-        },
-        "name": {
-          "description": "Accessible image name.",
-          "type": "string"
-        },
-        "relativeHeight": {
-          "description": "Relative frame height from the package style system.",
-          "type": "string"
-        },
-        "relativeWidth": {
-          "description": "Relative frame width from the package style system.",
-          "type": "string"
-        },
-        "styleName": {
-          "description": "Package-local graphic style reference.",
-          "type": "string"
-        },
-        "textStyleName": {
-          "description": "Text style reference for labels attached to the frame.",
-          "type": "string"
-        },
-        "type": {
-          "const": "image",
-          "description": "Image graphic discriminant.",
-          "type": "string"
-        },
-        "width": {
-          "description": "Graphic width in EMU.",
-          "type": "number"
-        },
-        "x": {
-          "description": "Horizontal offset from the cell in EMU.",
-          "type": "number"
-        },
-        "y": {
-          "description": "Vertical offset from the cell in EMU.",
-          "type": "number"
-        },
-        "zIndex": {
-          "description": "Painting order; higher numbers render above lower numbers.",
-          "type": "number"
-        }
-      },
-      "required": ["type", "href", "data"],
-      "type": "object"
     },
     "CellObjectGraphicOptions": {
       "additionalProperties": false,
@@ -1970,7 +2108,7 @@
           "type": "string"
         },
         "endCellAddress": {
-          "$ref": "#/definitions/CellImageGraphicOptions/properties/endCellAddress"
+          "$ref": "#/definitions/CellGraphicOptions/anyOf/0/properties/endCellAddress"
         },
         "endX": {
           "description": "Horizontal offset of the end anchor in EMU.",
@@ -4152,6 +4290,58 @@
       ],
       "type": "string"
     },
+    "ConsolidationOptions": {
+      "additionalProperties": false,
+      "description": "Consolidation source",
+      "properties": {
+        "autoPage": {
+          "description": "Auto page (default: true)",
+          "type": "boolean"
+        },
+        "pages": {
+          "description": "Pages (max 4)",
+          "items": {
+            "$ref": "#/definitions/ConsolidationPageOptions"
+          },
+          "type": "array"
+        },
+        "rangeSets": {
+          "description": "Range sets (required)",
+          "items": {
+            "$ref": "#/definitions/RangeSetOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["rangeSets"],
+      "type": "object"
+    },
+    "ConsolidationPageItemOptions": {
+      "additionalProperties": false,
+      "description": "Page item for consolidation",
+      "properties": {
+        "name": {
+          "description": "Page item name",
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
+    "ConsolidationPageOptions": {
+      "additionalProperties": false,
+      "description": "Page for consolidation",
+      "properties": {
+        "items": {
+          "description": "Page items",
+          "items": {
+            "$ref": "#/definitions/ConsolidationPageItemOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "ContentTypeDefault": {
       "additionalProperties": false,
       "properties": {
@@ -5231,6 +5421,40 @@
       "required": ["dateTimeGrouping"],
       "type": "object"
     },
+    "DatePivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "date",
+          "description": "Value kind discriminator: ISO date-time value.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "DdeItemOptions": {
       "additionalProperties": false,
       "description": "One DDE item",
@@ -5427,6 +5651,33 @@
         }
       },
       "required": ["value", "name"],
+      "type": "object"
+    },
+    "DefinitionPivotCacheOptions": {
+      "additionalProperties": false,
+      "description": "A fully parsed or hand-authored pivot cache pair.",
+      "properties": {
+        "cacheId": {
+          "type": "number"
+        },
+        "definition": {
+          "$ref": "#/definitions/PivotCacheDefinitionOptions"
+        },
+        "definitionPath": {
+          "type": "string"
+        },
+        "mode": {
+          "const": "definition",
+          "type": "string"
+        },
+        "records": {
+          "$ref": "#/definitions/PivotCacheRecordsOptions"
+        },
+        "recordsPath": {
+          "type": "string"
+        }
+      },
+      "required": ["mode", "cacheId", "definitionPath", "definition"],
       "type": "object"
     },
     "DialogsheetOptions": {
@@ -6084,6 +6335,40 @@
       "enum": ["both", "minus", "plus"],
       "type": "string"
     },
+    "ErrorPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "error",
+          "description": "Value kind discriminator: Cached formula error.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "ErrorValueType": {
       "description": "Error amount source: custom plus/minus values (see plusValue/minusValue), a fixed value, a percentage of the data point, standard deviation, or standard error.",
       "enum": ["custom", "fixedValue", "percentage", "standardDeviation", "standardError"],
@@ -6296,6 +6581,18 @@
         }
       },
       "required": ["colorScheme"],
+      "type": "object"
+    },
+    "FieldUsageOptions": {
+      "additionalProperties": false,
+      "description": "Field usage",
+      "properties": {
+        "value": {
+          "description": "Field index",
+          "type": "number"
+        }
+      },
+      "required": ["value"],
       "type": "object"
     },
     "FileRecoveryPropertiesOptions": {
@@ -7227,6 +7524,35 @@
       "required": ["properties"],
       "type": "object"
     },
+    "GroupLevelOptions": {
+      "additionalProperties": false,
+      "description": "Group level",
+      "properties": {
+        "caption": {
+          "description": "Caption (required)",
+          "type": "string"
+        },
+        "customRollUp": {
+          "type": "boolean"
+        },
+        "groups": {
+          "items": {
+            "$ref": "#/definitions/LevelGroupOptions"
+          },
+          "type": "array"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        },
+        "user": {
+          "description": "User-defined",
+          "type": "boolean"
+        }
+      },
+      "required": ["uniqueName", "caption"],
+      "type": "object"
+    },
     "GroupLockingOptions": {
       "additionalProperties": false,
       "properties": {
@@ -7252,6 +7578,22 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "GroupMemberOptions": {
+      "additionalProperties": false,
+      "description": "Group member",
+      "properties": {
+        "group": {
+          "description": "Is group",
+          "type": "boolean"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        }
+      },
+      "required": ["uniqueName"],
       "type": "object"
     },
     "GroupOptions": {
@@ -7980,6 +8322,54 @@
       "required": ["color"],
       "type": "object"
     },
+    "KpiOptions": {
+      "additionalProperties": false,
+      "description": "KPI definition for pivot cache",
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "displayFolder": {
+          "type": "string"
+        },
+        "goal": {
+          "description": "Goal expression",
+          "type": "string"
+        },
+        "measureGroup": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "status": {
+          "description": "Status expression",
+          "type": "string"
+        },
+        "time": {
+          "description": "Time expression",
+          "type": "string"
+        },
+        "trend": {
+          "description": "Trend expression",
+          "type": "string"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        },
+        "value": {
+          "description": "Value expression (required)",
+          "type": "string"
+        },
+        "weight": {
+          "description": "Weight expression",
+          "type": "string"
+        }
+      },
+      "required": ["uniqueName", "value"],
+      "type": "object"
+    },
     "LayoutMode": {
       "description": "How x/y/w/h are read: \"edge\" offset from the chart edge, \"factor\" fraction of the plot area.",
       "enum": ["edge", "factor"],
@@ -8013,6 +8403,39 @@
       "description": "Legend placement (c:legendPos); \"topRight\" is the corner slot.",
       "enum": ["bottom", "topRight", "left", "right", "top"],
       "type": "string"
+    },
+    "LevelGroupOptions": {
+      "additionalProperties": false,
+      "description": "Level group",
+      "properties": {
+        "caption": {
+          "description": "Caption (required)",
+          "type": "string"
+        },
+        "id": {
+          "description": "Group ID",
+          "type": "number"
+        },
+        "members": {
+          "items": {
+            "$ref": "#/definitions/GroupMemberOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Name (required)",
+          "type": "string"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        },
+        "uniqueParent": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "uniqueName", "caption", "members"],
+      "type": "object"
     },
     "LightRigDirection": {
       "description": "Light direction — full words; XSD tokens topLeft→tl etc.",
@@ -8450,6 +8873,37 @@
       },
       "type": "object"
     },
+    "MeasureDimensionMapOptions": {
+      "additionalProperties": false,
+      "description": "Measure dimension map",
+      "properties": {
+        "dimension": {
+          "description": "Dimension index",
+          "type": "number"
+        },
+        "measureGroup": {
+          "description": "Measure group index",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "MeasureGroupOptions": {
+      "additionalProperties": false,
+      "description": "Measure group",
+      "properties": {
+        "caption": {
+          "description": "Caption (required)",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name (required)",
+          "type": "string"
+        }
+      },
+      "required": ["name", "caption"],
+      "type": "object"
+    },
     "MemberOptions": {
       "additionalProperties": false,
       "description": "Member in pivot hierarchy",
@@ -8725,6 +9179,49 @@
       "required": ["name", "minSupportedVersion"],
       "type": "object"
     },
+    "MissingPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "description": "Serialized x children, in document order.",
+          "items": {
+            "$ref": "#/definitions/PivotXmlElementOptions"
+          },
+          "type": "array"
+        },
+        "tuples": {
+          "description": "Serialized tpls children, in document order.",
+          "items": {
+            "$ref": "#/definitions/PivotXmlElementOptions"
+          },
+          "type": "array"
+        },
+        "type": {
+          "const": "missing",
+          "description": "Value kind discriminator: Missing value.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "Cached value; number for n, string for other value types.",
+          "type": ["string", "number", "boolean"]
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "NonVisualDrawingPropertiesOptions": {
       "additionalProperties": false,
       "description": "Mirrors a: — name/descr/title/hidden. id is runtime; hyperlinks stay package-side.",
@@ -8799,6 +9296,40 @@
         }
       },
       "required": ["numFmtId", "formatCode"],
+      "type": "object"
+    },
+    "NumberPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "number",
+          "description": "Value kind discriminator: Numeric value.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
       "type": "object"
     },
     "OLAPPropertiesOptions": {
@@ -10120,204 +10651,443 @@
       },
       "type": "object"
     },
-    "PivotCacheDefCacheField": {
+    "PivotCacheDefinitionOptions": {
       "additionalProperties": false,
-      "description": "Cache field parsed from a pivotCacheDefinition.",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "numFmtId": {
-          "type": "number"
-        },
-        "sharedItems": {
-          "items": {
-            "type": ["string", "number"]
-          },
-          "type": "array"
-        }
-      },
-      "type": "object"
-    },
-    "PivotCacheDefParseResult": {
-      "additionalProperties": false,
-      "description": "Structured pivotCacheDefinition.xml parse output — flat attributes + source + fields.",
       "properties": {
         "backgroundQuery": {
+          "description": "XML attribute",
           "type": "boolean"
         },
+        "cacheFieldOverrides": {
+          "additionalProperties": false,
+          "description": "Additional cache-field attributes keyed by source field index.",
+          "properties": {
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": ["size"],
+          "type": "object"
+        },
         "cacheFields": {
+          "$ref": "#/definitions/PivotCacheFieldsOptions",
+          "description": "Parsed cacheFields container."
+        },
+        "cacheHierarchies": {
+          "description": "Serialized cacheHierarchies child.",
           "items": {
-            "$ref": "#/definitions/PivotCacheDefCacheField"
+            "$ref": "#/definitions/CacheHierarchyOptions"
+          },
+          "type": "array"
+        },
+        "cacheSource": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized cacheSource child."
+        },
+        "calculatedItems": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized calculatedItems child."
+        },
+        "calculatedMembers": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized calculatedMembers child."
+        },
+        "consolidation": {
+          "$ref": "#/definitions/ConsolidationOptions",
+          "description": "Consolidation source (alternative to worksheetSource)."
+        },
+        "createdVersion": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "dimensions": {
+          "description": "Serialized dimensions child.",
+          "items": {
+            "$ref": "#/definitions/PivotDimensionOptions"
           },
           "type": "array"
         },
         "enableRefresh": {
+          "description": "XML attribute",
           "type": "boolean"
+        },
+        "entries": {
+          "description": "Tuple-cache entries.",
+          "items": {
+            "$ref": "#/definitions/TupleCacheEntryOptions"
+          },
+          "type": "array"
+        },
+        "extLst": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized extLst child."
+        },
+        "externalRelationships": {
+          "description": "Additional source .rels relationships, excluding records — round-trip only.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "targetMode": {
+                "const": "External",
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "type", "target"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "fieldGroups": {
+          "additionalProperties": false,
+          "description": "Field groups keyed by source field index.",
+          "properties": {
+            "size": {
+              "type": "number"
+            }
+          },
+          "required": ["size"],
+          "type": "object"
         },
         "invalid": {
+          "description": "XML attribute",
           "type": "boolean"
+        },
+        "kpis": {
+          "description": "Serialized kpis child.",
+          "items": {
+            "$ref": "#/definitions/KpiOptions"
+          },
+          "type": "array"
+        },
+        "maps": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized maps child."
+        },
+        "measureDimensionMaps": {
+          "description": "Measure-dimension maps.",
+          "items": {
+            "$ref": "#/definitions/MeasureDimensionMapOptions"
+          },
+          "type": "array"
+        },
+        "measureGroups": {
+          "description": "Serialized measureGroups child.",
+          "items": {
+            "$ref": "#/definitions/MeasureGroupOptions"
+          },
+          "type": "array"
+        },
+        "minRefreshableVersion": {
+          "description": "XML attribute",
+          "type": "number"
         },
         "missingItemsLimit": {
+          "description": "XML attribute",
           "type": "number"
+        },
+        "mpMaps": {
+          "description": "Member-property maps (mpMap).",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "fieldIndex": {
+                "type": "number"
+              },
+              "x": {
+                "type": "number"
+              }
+            },
+            "required": ["fieldIndex", "x"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "olap": {
+          "$ref": "#/definitions/OLAPPropertiesOptions",
+          "description": "Legacy OLAP properties merged into cacheSource/extLst on source output."
         },
         "optimizeMemory": {
+          "description": "XML attribute",
           "type": "boolean"
         },
+        "queryCache": {
+          "description": "Tuple-cache query entries.",
+          "items": {
+            "$ref": "#/definitions/QueryCacheEntryOptions"
+          },
+          "type": "array"
+        },
         "recordCount": {
+          "description": "XML attribute",
           "type": "number"
         },
+        "recordsRelationshipId": {
+          "description": "Cache records relationship id (`@r:id`).",
+          "type": "string"
+        },
+        "recordsRelationshipSourceId": {
+          "description": "Source records relationship id from .rels — round-trip only.",
+          "type": "string"
+        },
+        "recordsRelationshipTarget": {
+          "description": "Source records relationship target — filled by parse, round-trip only.",
+          "type": "string"
+        },
         "refreshOnLoad": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "refreshedBy": {
+          "description": "XML attribute",
           "type": "string"
         },
         "refreshedDate": {
+          "description": "XML attribute",
           "type": "number"
         },
         "refreshedDateIso": {
+          "description": "XML attribute",
           "type": "string"
+        },
+        "refreshedVersion": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "relationshipOrder": {
+          "description": "Source .rels relationship ids in document order — round-trip only.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "saveData": {
+          "description": "XML attribute",
           "type": "boolean"
         },
-        "sourceType": {
-          "type": "string"
+        "serverFormats": {
+          "description": "Tuple-cache server formats.",
+          "items": {
+            "$ref": "#/definitions/ServerFormatOptions"
+          },
+          "type": "array"
+        },
+        "sets": {
+          "description": "Tuple-cache sets.",
+          "items": {
+            "$ref": "#/definitions/SetOptions"
+          },
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/definitions/PivotTableDefinitionOptions/properties/source"
         },
         "supportAdvancedDrill": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "supportSubquery": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "tupleCache": {
+          "description": "XML attribute",
           "type": "boolean"
+        },
+        "tupleCacheData": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized tupleCache child."
         },
         "upgradeOnRefresh": {
+          "description": "XML attribute",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "PivotCacheFieldOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "databaseField": {
+          "description": "XML attribute",
           "type": "boolean"
         },
-        "worksheetSource": {
-          "$ref": "#/definitions/PivotCacheDefWorksheetSource"
-        }
-      },
-      "type": "object"
-    },
-    "PivotCacheDefWorksheetSource": {
-      "additionalProperties": false,
-      "description": "Worksheet source parsed from a pivotCacheDefinition.",
-      "properties": {
-        "ref": {
+        "extLst": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized extLst child."
+        },
+        "fieldGroup": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized fieldGroup child."
+        },
+        "formula": {
+          "description": "XML attribute",
           "type": "string"
         },
-        "sheet": {
-          "type": "string"
-        }
-      },
-      "type": "object"
-    },
-    "PivotCacheRecordEntry": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "string",
-              "type": "string"
-            },
-            "v": {
-              "type": "number"
-            }
-          },
-          "required": ["type", "v"],
-          "type": "object"
+        "hierarchy": {
+          "description": "XML attribute",
+          "type": "number"
         },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "number",
-              "type": "string"
-            },
-            "v": {
-              "type": "number"
-            }
-          },
-          "required": ["type", "v"],
-          "type": "object"
+        "level": {
+          "description": "XML attribute",
+          "type": "number"
         },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "date",
-              "type": "string"
-            },
-            "v": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "v"],
-          "type": "object"
+        "mappingCount": {
+          "description": "XML attribute",
+          "type": "number"
         },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "error",
-              "type": "string"
-            },
-            "v": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "v"],
-          "type": "object"
+        "memberPropertyField": {
+          "description": "XML attribute",
+          "type": "boolean"
         },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "missing",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        }
-      ],
-      "description": "One parsed cell from a pivotCacheRecords row."
-    },
-    "PivotCacheRecordsParseResult": {
-      "additionalProperties": false,
-      "description": "Structured pivotCacheRecords.xml parse output.",
-      "properties": {
-        "records": {
+        "mpMaps": {
+          "description": "Serialized mpMap children, in document order.",
           "items": {
-            "items": {
-              "$ref": "#/definitions/PivotCacheRecordEntry"
-            },
-            "type": "array"
+            "$ref": "#/definitions/PivotXmlElementOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "numFmtId": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "propertyName": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "serverField": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "sharedItems": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized sharedItems child."
+        },
+        "sharedItemsAttributes": {
+          "$ref": "#/definitions/PivotSharedItemsAttributes",
+          "description": "Typed sharedItems attributes; child values stay on sharedItems."
+        },
+        "sqlType": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "uniqueList": {
+          "description": "XML attribute",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "PivotCacheFieldsOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "fields": {
+          "description": "Cache fields, in document order.",
+          "items": {
+            "$ref": "#/definitions/PivotCacheFieldOptions"
           },
           "type": "array"
         }
       },
-      "required": ["records"],
+      "required": ["fields"],
       "type": "object"
     },
-    "PivotCacheReference": {
-      "additionalProperties": false,
-      "description": "A pivot cache hookup (workbook.xml pivotCache",
-      "properties": {
-        "cacheId": {
-          "type": "number"
+    "PivotCacheOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SourcePivotCacheOptions"
         },
-        "rId": {
-          "type": "string"
+        {
+          "$ref": "#/definitions/DefinitionPivotCacheOptions"
+        }
+      ]
+    },
+    "PivotCacheRecordEntry": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/MissingPivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/NumberPivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/BooleanPivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/ErrorPivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/StringPivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/DatePivotCacheRecord"
+        },
+        {
+          "$ref": "#/definitions/SharedItemPivotCacheRecord"
+        }
+      ]
+    },
+    "PivotCacheRecordOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "description": "Cached cells, in document order.",
+          "items": {
+            "$ref": "#/definitions/PivotCacheRecordEntry"
+          },
+          "type": "array"
+        },
+        "extLst": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Record-level extension list."
         }
       },
-      "required": ["cacheId", "rId"],
+      "required": ["entries"],
+      "type": "object"
+    },
+    "PivotCacheRecordsOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "extLst": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Root extension list."
+        },
+        "records": {
+          "description": "Cached records, in document order.",
+          "items": {
+            "$ref": "#/definitions/PivotCacheRecordOptions"
+          },
+          "type": "array"
+        },
+        "source": {
+          "$ref": "#/definitions/PivotTableDefinitionOptions/properties/source"
+        }
+      },
+      "required": ["records"],
       "type": "object"
     },
     "PivotConditionalFormatOptions": {
@@ -10396,6 +11166,30 @@
         }
       },
       "required": ["field"],
+      "type": "object"
+    },
+    "PivotDimensionOptions": {
+      "additionalProperties": false,
+      "description": "Pivot dimension",
+      "properties": {
+        "caption": {
+          "description": "Caption (required)",
+          "type": "string"
+        },
+        "measure": {
+          "description": "Is measure (default: false)",
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Name (required)",
+          "type": "string"
+        },
+        "uniqueName": {
+          "description": "Unique name (required)",
+          "type": "string"
+        }
+      },
+      "required": ["name", "uniqueName", "caption"],
       "type": "object"
     },
     "PivotFieldOverrideOptions": {
@@ -10845,6 +11639,105 @@
       },
       "type": "object"
     },
+    "PivotSharedItemsAttributes": {
+      "additionalProperties": false,
+      "properties": {
+        "containsBlank": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsDate": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsInteger": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsMixedTypes": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsNonDate": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsNumber": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsSemiMixedTypes": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "containsString": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "count": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "longText": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "maxDate": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "maxValue": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "minDate": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "minValue": {
+          "description": "XML attribute",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "PivotSourceData": {
+      "additionalProperties": false,
+      "description": "Parsed source data for pivot cache generation.",
+      "properties": {
+        "fieldNames": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "records": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                },
+                {
+                  "format": "date-time",
+                  "type": "string"
+                }
+              ]
+            },
+            "type": "array"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["fieldNames", "records"],
+      "type": "object"
+    },
     "PivotSourceOptions": {
       "additionalProperties": false,
       "description": "Pivot chart source.",
@@ -10859,318 +11752,402 @@
       "required": ["name", "formatId"],
       "type": "object"
     },
-    "PivotTableOptions": {
+    "PivotTableDefinitionOptions": {
       "additionalProperties": false,
-      "description": "Options for a single pivot table on a worksheet.",
       "properties": {
         "asteriskTotals": {
-          "description": "Asterisk totals",
+          "description": "XML attribute",
           "type": "boolean"
         },
-        "autoSortScope": {
-          "$ref": "#/definitions/PivotAreaOptions",
-          "description": "Auto sort scope"
+        "cacheId": {
+          "description": "XML attribute",
+          "type": "number"
         },
-        "calculatedItems": {
-          "description": "Calculated items",
-          "items": {
-            "$ref": "#/definitions/CalculatedItemOptions"
-          },
-          "type": "array"
+        "cacheRelationshipId": {
+          "description": "Source cache relationship id — filled by parse, round-trip only.",
+          "type": "string"
         },
-        "calculatedMembers": {
-          "description": "Calculated members",
-          "items": {
-            "$ref": "#/definitions/CalculatedMemberOptions"
-          },
-          "type": "array"
+        "cacheRelationshipTarget": {
+          "description": "Source cache relationship target — filled by parse, round-trip only.",
+          "type": "string"
+        },
+        "cacheRelationshipType": {
+          "description": "Source cache relationship type — filled by parse, round-trip only.",
+          "type": "string"
         },
         "chartFormat": {
-          "description": "Chart format applied",
-          "type": "boolean"
+          "description": "XML attribute",
+          "type": "number"
         },
         "chartFormats": {
-          "description": "Chart formats",
-          "items": {
-            "$ref": "#/definitions/ChartFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized chartFormats child element (complete CT subtree)."
+        },
+        "colFields": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized colFields child element (complete CT subtree)."
+        },
+        "colGrandTotals": {
+          "description": "XML attribute",
+          "type": "boolean"
         },
         "colHeaderCaption": {
-          "description": "Column header caption",
+          "description": "XML attribute",
           "type": "string"
         },
         "colHierarchiesUsage": {
-          "description": "Column hierarchy usage",
-          "items": {
-            "$ref": "#/definitions/HierarchyUsageOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized colHierarchiesUsage child element (complete CT subtree)."
         },
-        "columns": {
-          "description": "Field names to use as column labels",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "colItems": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized colItems child element (complete CT subtree)."
         },
-        "customListSort": {
+        "compact": {
+          "description": "XML attribute",
           "type": "boolean"
         },
-        "data": {
-          "description": "Data fields with aggregation settings",
-          "items": {
-            "$ref": "#/definitions/PivotDataField"
-          },
-          "type": "array"
+        "compactData": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "conditionalFormats": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized conditionalFormats child element (complete CT subtree)."
+        },
+        "createdVersion": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "customListSort": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "dataCaption": {
+          "description": "XML attribute",
+          "type": "string"
+        },
+        "dataFields": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized dataFields child element (complete CT subtree)."
         },
         "dataOnRows": {
-          "description": "Data fields on rows instead of columns",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "dataPosition": {
-          "description": "Data position",
+          "description": "XML attribute",
           "type": "number"
         },
         "disableFieldList": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "editData": {
-          "description": "Edit data in-place",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "enableDrill": {
-          "description": "Enable drill-down",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "enableFieldProperties": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "enableWizard": {
-          "description": "Enable layout wizard",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "errorCaption": {
-          "description": "Error caption text",
+          "description": "XML attribute",
           "type": "string"
         },
+        "extLst": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized extLst child element (complete CT subtree)."
+        },
         "fieldListSortAscending": {
-          "description": "Sort field list ascending",
+          "description": "XML attribute",
           "type": "boolean"
         },
-        "fieldOverrides": {
-          "description": "Per-field overrides for pivotField",
-          "items": {
-            "$ref": "#/definitions/PivotFieldOverrideOptions"
-          },
-          "type": "array"
-        },
         "fieldPrintTitles": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "filters": {
-          "description": "Pivot filters",
-          "items": {
-            "$ref": "#/definitions/PivotFilterOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized filters child element (complete CT subtree)."
         },
         "formats": {
-          "description": "Pivot format areas",
-          "items": {
-            "$ref": "#/definitions/PivotFormatOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized formats child element (complete CT subtree)."
         },
         "grandTotalCaption": {
-          "description": "Grand total caption text",
+          "description": "XML attribute",
           "type": "string"
         },
         "gridDropZones": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "immersive": {
-          "description": "Immersive",
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "indent": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "itemPrintTitles": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "location": {
-          "description": "Target cell for the pivot table output (default: \"A3\")",
-          "type": "string"
-        },
-        "locationColPageCount": {
-          "description": "Location column page count",
-          "type": "number"
-        },
-        "locationRowPageCount": {
-          "description": "Location row page count",
-          "type": "number"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized location child element (complete CT subtree)."
         },
         "mdxSubqueries": {
-          "description": "MDX subqueries enabled",
+          "description": "XML attribute",
           "type": "boolean"
-        },
-        "memberProperties": {
-          "description": "Member properties per field",
-          "items": {
-            "$ref": "#/definitions/MemberPropertyOptions"
-          },
-          "type": "array"
         },
         "mergeItem": {
-          "description": "Merge item labels",
+          "description": "XML attribute",
           "type": "boolean"
         },
+        "minRefreshableVersion": {
+          "description": "XML attribute",
+          "type": "number"
+        },
         "missingCaption": {
-          "description": "Missing caption text",
+          "description": "XML attribute",
           "type": "string"
         },
         "multipleFieldFilters": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "name": {
-          "description": "Pivot table name (default: \"PivotTable{N}\")",
+          "description": "XML attribute",
           "type": "string"
         },
+        "outline": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "outlineData": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "pageFields": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized pageFields child element (complete CT subtree)."
+        },
         "pageOverThenDown": {
-          "description": "Page layout over then down",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "pageStyle": {
-          "description": "Custom page style name",
+          "description": "XML attribute",
           "type": "string"
         },
         "pageWrap": {
-          "description": "Number of page fields per row/column",
+          "description": "XML attribute",
           "type": "number"
         },
-        "pages": {
-          "description": "Page/report filter fields",
-          "items": {
-            "$ref": "#/definitions/PivotPageFieldOptions"
-          },
-          "type": "array"
-        },
-        "pivotConditionalFormats": {
-          "description": "Conditional formats",
-          "items": {
-            "$ref": "#/definitions/PivotConditionalFormatOptions"
-          },
-          "type": "array"
+        "pivotFields": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized pivotFields child element (complete CT subtree)."
         },
         "pivotHierarchies": {
-          "description": "Pivot hierarchies",
-          "items": {
-            "$ref": "#/definitions/PivotHierarchyOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized pivotHierarchies child element (complete CT subtree)."
         },
         "pivotTableStyle": {
-          "description": "Custom pivot table style name",
+          "description": "XML attribute",
           "type": "string"
         },
+        "pivotTableStyleInfo": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized pivotTableStyleInfo child element (complete CT subtree)."
+        },
         "preserveFormatting": {
-          "description": "Preserve formatting on refresh",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "printDrill": {
-          "description": "Print drill indicators",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "published": {
-          "description": "Published to server",
+          "description": "XML attribute",
+          "type": "boolean"
+        },
+        "rowFields": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized rowFields child element (complete CT subtree)."
+        },
+        "rowGrandTotals": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "rowHeaderCaption": {
+          "description": "XML attribute",
           "type": "string"
         },
         "rowHierarchiesUsage": {
-          "description": "Row hierarchy usage",
-          "items": {
-            "$ref": "#/definitions/HierarchyUsageOptions"
-          },
-          "type": "array"
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized rowHierarchiesUsage child element (complete CT subtree)."
         },
-        "rows": {
-          "description": "Field names to use as row labels",
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+        "rowItems": {
+          "$ref": "#/definitions/PivotXmlElementOptions",
+          "description": "Serialized rowItems child element (complete CT subtree)."
         },
         "showCalcMbrs": {
-          "description": "Show calculated members",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showDataDropDown": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showDataTips": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showDrill": {
-          "description": "Show drill indicators",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showDropZones": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showEmptyCol": {
-          "description": "Show empty column",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showEmptyRow": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showError": {
-          "description": "Show error messages",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showHeaders": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showItems": {
-          "description": "Show items with no data",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showMemberPropertyTips": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showMissing": {
-          "description": "Show missing items",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "showMultipleLabel": {
-          "description": "Show multiple labels",
+          "description": "XML attribute",
           "type": "boolean"
         },
         "source": {
-          "description": "Source data range, e.g. \"A1:D11\" — must be on the same or a different sheet",
+          "description": "Exact source XML captured by parse — round-trip only, do not hand-author.",
           "type": "string"
         },
-        "sourceSheet": {
-          "description": "Source sheet name (default: current sheet)",
-          "type": "string"
-        },
-        "style": {
-          "description": "Pivot style name (default: \"PivotStyleLight16\")",
+        "sourcePath": {
+          "description": "Source pivotTable part path — filled by parse, round-trip only.",
           "type": "string"
         },
         "subtotalHiddenItems": {
+          "description": "XML attribute",
           "type": "boolean"
         },
         "tag": {
-          "description": "Tag string",
+          "description": "XML attribute",
           "type": "string"
         },
+        "updatedVersion": {
+          "description": "XML attribute",
+          "type": "number"
+        },
+        "useAutoFormatting": {
+          "description": "XML attribute",
+          "type": "boolean"
+        },
         "vacatedStyle": {
-          "description": "Vacated style",
+          "description": "XML attribute",
           "type": "string"
         },
         "visualTotals": {
+          "description": "XML attribute",
           "type": "boolean"
         }
       },
-      "required": ["source", "rows", "data"],
+      "type": "object"
+    },
+    "PivotTableOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SourcePivotTableOptions"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "cacheId": {
+              "type": "number"
+            },
+            "definition": {
+              "$ref": "#/definitions/PivotTableDefinitionOptions"
+            },
+            "mode": {
+              "const": "definition",
+              "type": "string"
+            }
+          },
+          "required": ["mode", "cacheId", "definition"],
+          "type": "object"
+        }
+      ],
+      "description": "One pivot table, either derived from source data or a complete definition."
+    },
+    "PivotXmlAttributeValue": {
+      "type": ["string", "number", "boolean"]
+    },
+    "PivotXmlElementOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/PivotXmlAttributeValue"
+              },
+              {
+                "not": {}
+              }
+            ]
+          },
+          "type": "object"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/PivotXmlElementOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
       "type": "object"
     },
     "Point3D": {
@@ -11700,6 +12677,25 @@
       },
       "type": "object"
     },
+    "QueryCacheEntryOptions": {
+      "additionalProperties": false,
+      "description": "Query cache entry",
+      "properties": {
+        "mdx": {
+          "description": "MDX query string (required)",
+          "type": "string"
+        },
+        "tpls": {
+          "description": "Tuples",
+          "items": {
+            "$ref": "#/definitions/TupleOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["mdx"],
+      "type": "object"
+    },
     "QueryTableDeletedFieldOptions": {
       "additionalProperties": false,
       "description": "Deleted query-table field.",
@@ -11878,6 +12874,45 @@
       "description": "Radar variant: \"standard\" lines, \"marker\" lines with point markers, \"filled\" polygon.",
       "enum": ["standard", "marker", "filled"],
       "type": "string"
+    },
+    "RangeSetOptions": {
+      "additionalProperties": false,
+      "description": "Range set for consolidation source",
+      "properties": {
+        "name": {
+          "description": "Named range",
+          "type": "string"
+        },
+        "pageFieldIndex1": {
+          "description": "Index for page field 1",
+          "type": "number"
+        },
+        "pageFieldIndex2": {
+          "description": "Index for page field 2",
+          "type": "number"
+        },
+        "pageFieldIndex3": {
+          "description": "Index for page field 3",
+          "type": "number"
+        },
+        "pageFieldIndex4": {
+          "description": "Index for page field 4",
+          "type": "number"
+        },
+        "rId": {
+          "description": "Relationship ID to external workbook",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Cell reference",
+          "type": "string"
+        },
+        "sheet": {
+          "description": "Sheet name",
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "RectAlignment": {
       "description": "Rectangle alignment for shadow positioning.",
@@ -13613,6 +14648,70 @@
       },
       "type": "object"
     },
+    "ServerFormatOptions": {
+      "additionalProperties": false,
+      "description": "Server format",
+      "properties": {
+        "culture": {
+          "type": "string"
+        },
+        "format": {
+          "description": "Format string",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "SetOptions": {
+      "additionalProperties": false,
+      "description": "Set definition",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "maxRank": {
+          "description": "Max rank (required)",
+          "type": "number"
+        },
+        "queryFailed": {
+          "description": "Query failed (default: false)",
+          "type": "boolean"
+        },
+        "setDefinition": {
+          "description": "Set definition MDX (required)",
+          "type": "string"
+        },
+        "sortByTuple": {
+          "description": "Sort-by tuples",
+          "items": {
+            "$ref": "#/definitions/TupleOptions"
+          },
+          "type": "array"
+        },
+        "sortType": {
+          "description": "Sort type (default: \"none\")",
+          "enum": [
+            "none",
+            "ascending",
+            "descending",
+            "ascendingAlpha",
+            "descendingAlpha",
+            "ascendingNatural",
+            "descendingNatural"
+          ],
+          "type": "string"
+        },
+        "tpls": {
+          "description": "Sort/filter tuples",
+          "items": {
+            "$ref": "#/definitions/TupleOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["maxRank", "setDefinition"],
+      "type": "object"
+    },
     "Shape3DOptions": {
       "additionalProperties": false,
       "description": "Options for 3D shape properties.",
@@ -14144,6 +15243,40 @@
       ],
       "type": "string"
     },
+    "SharedItemPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "sharedItem",
+          "description": "Value kind discriminator: Shared-items index.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
     "SharedUserOptions": {
       "additionalProperties": false,
       "description": "One shared-workbook user.",
@@ -14582,6 +15715,343 @@
       "required": ["ref", "conditions"],
       "type": "object"
     },
+    "SourcePivotCacheOptions": {
+      "additionalProperties": false,
+      "description": "Generate a pivot cache from worksheet records.",
+      "properties": {
+        "definition": {
+          "$ref": "#/definitions/PivotCacheDefinitionOptions"
+        },
+        "mode": {
+          "const": "source",
+          "type": "string"
+        },
+        "sourceData": {
+          "$ref": "#/definitions/PivotSourceData"
+        }
+      },
+      "required": ["mode", "sourceData"],
+      "type": "object"
+    },
+    "SourcePivotTableOptions": {
+      "additionalProperties": false,
+      "description": "Options for generating a pivot table from worksheet source data.",
+      "properties": {
+        "asteriskTotals": {
+          "description": "Asterisk totals",
+          "type": "boolean"
+        },
+        "autoSortScope": {
+          "$ref": "#/definitions/PivotAreaOptions",
+          "description": "Auto sort scope"
+        },
+        "calculatedItems": {
+          "description": "Calculated items",
+          "items": {
+            "$ref": "#/definitions/CalculatedItemOptions"
+          },
+          "type": "array"
+        },
+        "calculatedMembers": {
+          "description": "Calculated members",
+          "items": {
+            "$ref": "#/definitions/CalculatedMemberOptions"
+          },
+          "type": "array"
+        },
+        "chartFormat": {
+          "description": "Chart format applied",
+          "type": "boolean"
+        },
+        "chartFormats": {
+          "description": "Chart formats",
+          "items": {
+            "$ref": "#/definitions/ChartFormatOptions"
+          },
+          "type": "array"
+        },
+        "colHeaderCaption": {
+          "description": "Column header caption",
+          "type": "string"
+        },
+        "colHierarchiesUsage": {
+          "description": "Column hierarchy usage",
+          "items": {
+            "$ref": "#/definitions/HierarchyUsageOptions"
+          },
+          "type": "array"
+        },
+        "columns": {
+          "description": "Field names to use as column labels",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "customListSort": {
+          "type": "boolean"
+        },
+        "data": {
+          "description": "Data fields with aggregation settings",
+          "items": {
+            "$ref": "#/definitions/PivotDataField"
+          },
+          "type": "array"
+        },
+        "dataOnRows": {
+          "description": "Data fields on rows instead of columns",
+          "type": "boolean"
+        },
+        "dataPosition": {
+          "description": "Data position",
+          "type": "number"
+        },
+        "disableFieldList": {
+          "type": "boolean"
+        },
+        "editData": {
+          "description": "Edit data in-place",
+          "type": "boolean"
+        },
+        "enableDrill": {
+          "description": "Enable drill-down",
+          "type": "boolean"
+        },
+        "enableFieldProperties": {
+          "type": "boolean"
+        },
+        "enableWizard": {
+          "description": "Enable layout wizard",
+          "type": "boolean"
+        },
+        "errorCaption": {
+          "description": "Error caption text",
+          "type": "string"
+        },
+        "fieldListSortAscending": {
+          "description": "Sort field list ascending",
+          "type": "boolean"
+        },
+        "fieldOverrides": {
+          "description": "Per-field overrides for pivotField",
+          "items": {
+            "$ref": "#/definitions/PivotFieldOverrideOptions"
+          },
+          "type": "array"
+        },
+        "fieldPrintTitles": {
+          "type": "boolean"
+        },
+        "filters": {
+          "description": "Pivot filters",
+          "items": {
+            "$ref": "#/definitions/PivotFilterOptions"
+          },
+          "type": "array"
+        },
+        "formats": {
+          "description": "Pivot format areas",
+          "items": {
+            "$ref": "#/definitions/PivotFormatOptions"
+          },
+          "type": "array"
+        },
+        "grandTotalCaption": {
+          "description": "Grand total caption text",
+          "type": "string"
+        },
+        "gridDropZones": {
+          "type": "boolean"
+        },
+        "immersive": {
+          "description": "Immersive",
+          "type": "boolean"
+        },
+        "location": {
+          "description": "Target cell for the pivot table output (default: \"A3\")",
+          "type": "string"
+        },
+        "locationColPageCount": {
+          "description": "Location column page count",
+          "type": "number"
+        },
+        "locationRowPageCount": {
+          "description": "Location row page count",
+          "type": "number"
+        },
+        "mdxSubqueries": {
+          "description": "MDX subqueries enabled",
+          "type": "boolean"
+        },
+        "memberProperties": {
+          "description": "Member properties per field",
+          "items": {
+            "$ref": "#/definitions/MemberPropertyOptions"
+          },
+          "type": "array"
+        },
+        "mergeItem": {
+          "description": "Merge item labels",
+          "type": "boolean"
+        },
+        "missingCaption": {
+          "description": "Missing caption text",
+          "type": "string"
+        },
+        "mode": {
+          "const": "source",
+          "description": "Input mode; omitted means source.",
+          "type": "string"
+        },
+        "multipleFieldFilters": {
+          "type": "boolean"
+        },
+        "name": {
+          "description": "Pivot table name (default: \"PivotTable{N}\")",
+          "type": "string"
+        },
+        "pageOverThenDown": {
+          "description": "Page layout over then down",
+          "type": "boolean"
+        },
+        "pageStyle": {
+          "description": "Custom page style name",
+          "type": "string"
+        },
+        "pageWrap": {
+          "description": "Number of page fields per row/column",
+          "type": "number"
+        },
+        "pages": {
+          "description": "Page/report filter fields",
+          "items": {
+            "$ref": "#/definitions/PivotPageFieldOptions"
+          },
+          "type": "array"
+        },
+        "pivotConditionalFormats": {
+          "description": "Conditional formats",
+          "items": {
+            "$ref": "#/definitions/PivotConditionalFormatOptions"
+          },
+          "type": "array"
+        },
+        "pivotHierarchies": {
+          "description": "Pivot hierarchies",
+          "items": {
+            "$ref": "#/definitions/PivotHierarchyOptions"
+          },
+          "type": "array"
+        },
+        "pivotTableStyle": {
+          "description": "Custom pivot table style name",
+          "type": "string"
+        },
+        "preserveFormatting": {
+          "description": "Preserve formatting on refresh",
+          "type": "boolean"
+        },
+        "printDrill": {
+          "description": "Print drill indicators",
+          "type": "boolean"
+        },
+        "published": {
+          "description": "Published to server",
+          "type": "boolean"
+        },
+        "rowHeaderCaption": {
+          "type": "string"
+        },
+        "rowHierarchiesUsage": {
+          "description": "Row hierarchy usage",
+          "items": {
+            "$ref": "#/definitions/HierarchyUsageOptions"
+          },
+          "type": "array"
+        },
+        "rows": {
+          "description": "Field names to use as row labels",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "showCalcMbrs": {
+          "description": "Show calculated members",
+          "type": "boolean"
+        },
+        "showDataDropDown": {
+          "type": "boolean"
+        },
+        "showDataTips": {
+          "type": "boolean"
+        },
+        "showDrill": {
+          "description": "Show drill indicators",
+          "type": "boolean"
+        },
+        "showDropZones": {
+          "type": "boolean"
+        },
+        "showEmptyCol": {
+          "description": "Show empty column",
+          "type": "boolean"
+        },
+        "showEmptyRow": {
+          "type": "boolean"
+        },
+        "showError": {
+          "description": "Show error messages",
+          "type": "boolean"
+        },
+        "showHeaders": {
+          "type": "boolean"
+        },
+        "showItems": {
+          "description": "Show items with no data",
+          "type": "boolean"
+        },
+        "showMemberPropertyTips": {
+          "type": "boolean"
+        },
+        "showMissing": {
+          "description": "Show missing items",
+          "type": "boolean"
+        },
+        "showMultipleLabel": {
+          "description": "Show multiple labels",
+          "type": "boolean"
+        },
+        "source": {
+          "description": "Source data range, e.g. \"A1:D11\" — must be on the same or a different sheet",
+          "type": "string"
+        },
+        "sourceSheet": {
+          "description": "Source sheet name (default: current sheet)",
+          "type": "string"
+        },
+        "style": {
+          "description": "Pivot style name (default: \"PivotStyleLight16\")",
+          "type": "string"
+        },
+        "subtotalHiddenItems": {
+          "type": "boolean"
+        },
+        "tag": {
+          "description": "Tag string",
+          "type": "string"
+        },
+        "vacatedStyle": {
+          "description": "Vacated style",
+          "type": "string"
+        },
+        "visualTotals": {
+          "type": "boolean"
+        }
+      },
+      "required": ["source", "rows", "data"],
+      "type": "object"
+    },
     "SourceRectangleOptions": {
       "additionalProperties": false,
       "description": "Options for source rectangle cropping.\n\nEach value is integer percent (10 = 10% crop from that edge of the image).",
@@ -14634,6 +16104,40 @@
       "description": "Strikethrough. Friendly spellings; xsdStrikeStyle maps them to the XML tokens.",
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
+    },
+    "StringPivotCacheRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "caption": {
+          "type": "string"
+        },
+        "captionLength": {
+          "type": "number"
+        },
+        "formula": {
+          "type": "boolean"
+        },
+        "indexes": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/indexes"
+        },
+        "tuples": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/tuples"
+        },
+        "type": {
+          "const": "string",
+          "description": "Value kind discriminator: String value.",
+          "type": "string"
+        },
+        "unformatted": {
+          "description": "Cell metadata attributes shared by cached values.",
+          "type": "boolean"
+        },
+        "value": {
+          "$ref": "#/definitions/MissingPivotCacheRecord/properties/value"
+        }
+      },
+      "required": ["type"],
+      "type": "object"
     },
     "StyleExtensionOptions": {
       "additionalProperties": false,
@@ -16226,6 +17730,49 @@
       "enum": ["exponential", "linear", "logarithmic", "movingAverage", "polynomial", "power"],
       "type": "string"
     },
+    "TupleCacheEntryOptions": {
+      "additionalProperties": false,
+      "description": "Tuple cache entry",
+      "properties": {
+        "captionIndex": {
+          "description": "Member-property count/caption index — OLAP caches only",
+          "type": "number"
+        },
+        "propertyIndex": {
+          "description": "Property index — OLAP caches only",
+          "type": "number"
+        },
+        "type": {
+          "description": "Entry type",
+          "enum": ["m", "n", "e", "s"],
+          "type": "string"
+        },
+        "underline": {
+          "description": "Underline flag",
+          "type": "boolean"
+        },
+        "value": {
+          "description": "Value (required for n/s, optional for e)",
+          "type": ["number", "string"]
+        }
+      },
+      "required": ["type"],
+      "type": "object"
+    },
+    "TupleOptions": {
+      "additionalProperties": false,
+      "description": "Tuple",
+      "properties": {
+        "items": {
+          "description": "Tuple items (field indices)",
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "UnderlineStyle": {
       "description": "Underline.",
       "enum": ["single", "double", "none"],
@@ -17135,24 +18682,10 @@
           },
           "type": "array"
         },
-        "pivotCacheRecords": {
-          "description": "Pivot cache records — parse-only (CT-layer)",
-          "items": {
-            "$ref": "#/definitions/PivotCacheRecordsParseResult"
-          },
-          "type": "array"
-        },
-        "pivotCacheRefs": {
-          "description": "Pivot cache references from workbook.xml — parse-only round-trip wiring",
-          "items": {
-            "$ref": "#/definitions/PivotCacheReference"
-          },
-          "type": "array"
-        },
         "pivotCaches": {
-          "description": "Pivot cache definitions — parse-only (CT-layer); compiler regenerates from sourceData",
+          "description": "Pivot caches, either generated from source data or fully defined.",
           "items": {
-            "$ref": "#/definitions/PivotCacheDefParseResult"
+            "$ref": "#/definitions/PivotCacheOptions"
           },
           "type": "array"
         },

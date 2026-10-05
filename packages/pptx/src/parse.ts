@@ -891,6 +891,11 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     pptx.doc,
     rebuilt,
+    // Stage-0 rawParts policy: XML parts not listed here are flagged by the
+    // audit as modeled-XML absorption gaps (strict policy rejects them).
+    {
+      opaquePatterns: [/^ppt\/vbaProject\.bin$/i, /^ppt\/embeddings\//i],
+    },
   );
   passthroughRels.push(...collectExternalPartRelationships(pptx.doc, pptx.slides));
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;

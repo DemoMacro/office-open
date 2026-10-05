@@ -18370,6 +18370,9 @@
         "paperSrc": {
           "$ref": "#/definitions/SectionPropertiesOptions/properties/paperSrc"
         },
+        "printerSettingsPath": {
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/printerSettingsPath"
+        },
         "rtlGutter": {
           "type": "boolean"
         },
@@ -18484,6 +18487,10 @@
             }
           },
           "type": "object"
+        },
+        "printerSettingsPath": {
+          "description": "Printer settings binary part path, e.g. word/printerSettings/printerSettings1.bin.",
+          "type": "string"
         },
         "revision": {
           "$ref": "#/definitions/SectionPropertiesChangeOptions"

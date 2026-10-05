@@ -12,6 +12,8 @@ export interface XlsParseContext {
   readonly recordName?: string;
   /** Stream-relative byte offset at which validation failed. */
   readonly offset?: number;
+  /** Underlying low-level error, preserved for structured diagnostics. */
+  readonly cause?: unknown;
   /** Required or declared field/record length in bytes. */
   readonly length?: number;
   /** Inclusive stream-relative byte range, when a malformed range is known. */

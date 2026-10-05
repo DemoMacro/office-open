@@ -2,6 +2,7 @@ import {
   attributeString,
   childNamed,
   childrenNamed,
+  emuToLength,
   lengthToEmu,
   xmlElement,
   type XmlAttributes,
@@ -15,7 +16,9 @@ import type {
 } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { OdsParseError } from "./error";
 import { numFmtDataStyle } from "./numbering";
+import type { OdsStyleOverlay } from "./semantics";
 
 export interface DimensionStyle {
   width?: number;
@@ -41,6 +44,43 @@ export function addCellStyle(style: StyleOptions, styles: string[]): string {
     ),
   );
   return styleName;
+}
+
+export function styleOverlaysXml(overlays: OdsStyleOverlay[] | undefined): string[] {
+  return (overlays ?? []).map((overlay) =>
+    xmlElement(
+      "style:style",
+      { "style:name": overlay.name, "style:family": overlay.family },
+      overlay.properties.map((property) =>
+        xmlElement(property.name, overlayAttributesXml(property.attributes)),
+      ),
+    ),
+  );
+}
+
+function overlayAttributesXml(
+  attributes: Record<string, string | number | boolean>,
+): Record<string, string | number | boolean> {
+  return Object.fromEntries(
+    Object.entries(attributes).map(([name, value]) => [
+      name,
+      typeof value === "string"
+        ? value
+        : isPercentAttribute(name)
+          ? `${value}%`
+          : typeof value === "boolean"
+            ? value
+            : name === "style:column-width"
+              ? emuToLength(value * 9525)
+              : name === "style:row-height" || name === "style:min-row-height"
+                ? `${value}pt`
+                : value,
+    ]),
+  );
+}
+
+function isPercentAttribute(name: string): boolean {
+  return /(line-height|rel-width|rel-height|opacity|transparency)/.test(name);
 }
 
 /** Font/fill properties as ODF style children; empty array when styleless. */
@@ -206,6 +246,104 @@ export function parseDimensionStyles(container: Element | undefined): Map<string
     });
   }
   return result;
+}
+
+const ODS_STYLE_PROPERTIES: Record<string, string[]> = {
+  paragraph: ["style:paragraph-properties", "style:text-properties"],
+  text: ["style:text-properties"],
+  graphic: ["style:graphic-properties", "style:paragraph-properties", "style:text-properties"],
+  table: ["style:table-properties"],
+  "table-column": ["style:table-column-properties"],
+  "table-row": ["style:table-row-properties"],
+  "table-cell": [
+    "style:table-cell-properties",
+    "style:paragraph-properties",
+    "style:text-properties",
+  ],
+  section: ["style:section-properties"],
+  "drawing-page": ["style:drawing-page-properties"],
+};
+
+export function parseStyleOverlays(container: Element | undefined): OdsStyleOverlay[] {
+  const result: OdsStyleOverlay[] = [];
+  for (const style of childrenNamed(container, "style:style")) {
+    const name = attributeString(style, "style:name") ?? "";
+    const family = attributeString(style, "style:family") ?? "";
+    const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
+    if (!ODS_STYLE_PROPERTIES[family]) {
+      const reason = "unknown style family";
+      throw new OdsParseError(
+        `content.xml: ${path}: ${family}: ${reason}`,
+        "content.xml",
+        path,
+        family,
+        reason,
+      );
+    }
+    const propertyElements = (style.elements ?? []).filter(
+      (child) => child.type === "element" && child.name !== "style:tab-stops",
+    );
+    const properties: OdsStyleOverlay["properties"] = [];
+    for (const property of propertyElements) {
+      const propertyName = property.name ?? "";
+      if (!ODS_STYLE_PROPERTIES[family]!.includes(propertyName)) {
+        const reason = "unknown style property element";
+        throw new OdsParseError(
+          `content.xml: ${path}: ${propertyName}: ${reason}`,
+          "content.xml",
+          path,
+          propertyName,
+          reason,
+        );
+      }
+      const attributes: Record<string, string | number> = {};
+      for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
+        if (
+          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext):/.test(attribute)
+        ) {
+          const reason = "attribute has no ODF RNG mapping";
+          throw new OdsParseError(
+            `content.xml: ${path}: ${attribute}: ${reason}`,
+            "content.xml",
+            path,
+            attribute,
+            reason,
+          );
+        }
+        if (isMappedDimensionAttribute(property.name ?? "", attribute)) continue;
+        attributes[attribute] = overlayValue(attribute, String(value));
+      }
+      if (Object.keys(attributes).length > 0)
+        properties.push({ name: property.name ?? "", attributes });
+    }
+    if (properties.length > 0) result.push({ name, family, properties });
+  }
+  return result;
+}
+
+function isMappedDimensionAttribute(element: string, attribute: string): boolean {
+  return (
+    (element === "style:table-column-properties" &&
+      ["style:column-width", "style:use-optimal-column-width"].includes(attribute)) ||
+    (element === "style:table-row-properties" &&
+      [
+        "style:row-height",
+        "style:use-optimal-row-height",
+        "style:column-hidden",
+        "style:row-hidden",
+      ].includes(attribute))
+  );
+}
+
+function overlayValue(name: string, value: string): string | number {
+  if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
+  if (name === "style:column-width") return Math.round((lengthToEmu(value) ?? 0) / 9525);
+  if (name === "style:row-height" || name === "style:min-row-height") {
+    const emu = lengthToEmu(value);
+    return emu === undefined ? value : emu / 12700;
+  }
+  if (/(angle|rotation)/.test(name) && Number.isFinite(Number(value))) return Number(value);
+  return value;
 }
 
 /** ODF #RRGGBB → xlsx RRGGBB hex. */

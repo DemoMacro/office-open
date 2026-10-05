@@ -227,7 +227,7 @@ export function writeRtf(options: DocumentOptions): string {
   const first = options.sections[0] ?? { children: [] };
   const body = [
     writeMetadata(options),
-    writeStyles(options.styles),
+    writeStyles(options.styles, context),
     writeNumberingTable(options.numbering, references),
     writeDestinations(first, "sections[0]"),
     writeFootnotes(options),

@@ -17,13 +17,13 @@ import type {
   PivotFieldOverrideOptions,
   PivotHierarchyOptions,
   PivotSourceData,
-  PivotTableOptions,
+  SourcePivotTableOptions,
 } from "../pivot/pivot-utils";
 
 // ── Stringify implementation ──
 
 export function stringifyPivotTable(
-  o: PivotTableOptions,
+  o: SourcePivotTableOptions,
   sd: PivotSourceData,
   cacheId: number,
 ): string {
@@ -301,7 +301,7 @@ function buildFieldOverrideAttrs(fo: PivotFieldOverrideOptions): string {
 }
 
 function buildPivotFields(
-  o: PivotTableOptions,
+  o: SourcePivotTableOptions,
   sd: PivotSourceData,
   rowIndices: number[],
   colIndices: number[],
@@ -375,7 +375,7 @@ function buildPivotFields(
   return parts.join("");
 }
 
-function buildPageFields(o: PivotTableOptions, pageIndices: number[]): string {
+function buildPageFields(o: SourcePivotTableOptions, pageIndices: number[]): string {
   if (pageIndices.length === 0) return "";
   const parts: string[] = [`<pageFields count="${pageIndices.length}">`];
   const pageFields = o.pages ?? [];

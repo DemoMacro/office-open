@@ -8,7 +8,8 @@
 
 import { RELATIONSHIP_TYPES, Relationships } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
-import type { PivotSourceData, PivotTableOptions } from "@parts/pivot";
+import type { WorkbookOptions } from "@parts/file";
+import type { PivotSourceData, SourcePivotTableOptions } from "@parts/pivot";
 import { aggregate, profilePivotFields } from "@parts/pivot";
 import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
 import { pivotTableDesc } from "@parts/pivot-table";
@@ -32,12 +33,38 @@ export function compileSheetPivots(
   mapping: Record<string, { data: string; path: string }>,
   state: WorksheetCompileState,
   wsRels: Relationships,
+  wsPath: string,
   sheetName: string,
 ): void {
   const pivotOpts = wsOpts.pivotTables ?? [];
   for (const pt of pivotOpts) {
     state.globalPivotIdx++;
     const pivotIdx = state.globalPivotIdx;
+
+    if (pt.mode === "definition") {
+      const cachePath = state.pivotCachePathById.get(pt.cacheId);
+      if (!cachePath) continue;
+      const pivotTablePath = pt.definition.sourcePath ?? `xl/pivotTables/pivotTable${pivotIdx}.xml`;
+      mapping[`PivotTablePath:${pivotTablePath}`] = {
+        data: XML_DECL + pivotTableDesc.stringify({ definition: pt.definition }, ctx),
+        path: pivotTablePath,
+      };
+      const ptRels = new Relationships();
+      const sourceRid = Number(pt.definition.cacheRelationshipId?.replace(/^rId/, "") ?? 1);
+      ptRels.addRelationship(
+        Number.isFinite(sourceRid) && sourceRid > 0 ? sourceRid : 1,
+        (pt.definition.cacheRelationshipType ??
+          RELATIONSHIP_TYPES.pivotCacheDefinition) as Parameters<typeof ptRels.addRelationship>[1],
+        pt.definition.cacheRelationshipTarget ?? relativePartTarget(pivotTablePath, cachePath),
+      );
+      const ptRelsPath = pivotTablePath.replace(/([^/]+)$/, "_rels/$1.rels");
+      mapping[`PivotTableRelsPath:${ptRelsPath}`] = {
+        data: XML_DECL + ptRels.serialize(),
+        path: ptRelsPath,
+      };
+      wsRels.add(RELATIONSHIP_TYPES.pivotTable, relativePartTarget(wsPath, pivotTablePath));
+      continue;
+    }
 
     // Extract source data from source sheet
     const sourceSheet = pt.sourceSheet ?? sheetName;
@@ -58,8 +85,7 @@ export function compileSheetPivots(
       cacheId = existing.cacheId;
       cacheIdx = existing.cacheIdx;
     } else {
-      state.globalPivotCacheIdx++;
-      cacheIdx = state.globalPivotCacheIdx;
+      cacheIdx = ++state.globalPivotCacheIdx + state.definedPivotCacheCount;
       cacheId = cacheIdx;
       state.pivotCacheDataMap.set(cacheKey, { cacheId, cacheIdx });
 
@@ -107,6 +133,7 @@ export function compileSheetPivots(
         `pivotCache/pivotCacheDefinition${cacheIdx}.xml`,
       );
       ctx.pivotCacheRefs.push({ cacheId, rId: `rId${wbPivotRid}` });
+      state.pivotCachePathById.set(cacheId, `xl/pivotCache/pivotCacheDefinition${cacheIdx}.xml`);
     }
 
     // Generate pivotTable
@@ -132,6 +159,96 @@ export function compileSheetPivots(
     // Worksheet rels → pivotTable
     wsRels.add(RELATIONSHIP_TYPES.pivotTable, `../pivotTables/pivotTable${pivotIdx}.xml`);
   }
+}
+
+export function compileDefinitionPivotCaches(
+  options: { pivotCaches?: WorkbookOptions["pivotCaches"] },
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+  state: WorksheetCompileState,
+): void {
+  for (const cache of options.pivotCaches ?? []) {
+    if (cache.mode !== "definition") continue;
+    state.definedPivotCacheCount++;
+    const definitionXml = pivotCacheDefDesc.stringify({ definition: cache.definition }, ctx);
+    mapping[`PivotCachePath:${cache.definitionPath}`] = {
+      data: XML_DECL + definitionXml,
+      path: cache.definitionPath,
+    };
+    if (cache.recordsPath && cache.records) {
+      mapping[`PivotCacheRecordsPath:${cache.recordsPath}`] = {
+        data: XML_DECL + pivotCacheRecordsDesc.stringify({ records: cache.records }, ctx),
+        path: cache.recordsPath,
+      };
+      const rels = new Relationships();
+      const sourceRid = Number(
+        (
+          cache.definition.recordsRelationshipSourceId ??
+          cache.definition.recordsRelationshipId ??
+          "rId1"
+        ).replace(/^rId/, ""),
+      );
+      const relationshipType = RELATIONSHIP_TYPES.pivotCacheRecords;
+      const relationshipsById = new Map(
+        (cache.definition.externalRelationships ?? []).map((relationship) => [
+          relationship.id,
+          {
+            id: relationship.id,
+            type: relationship.type as Parameters<typeof rels.addRelationship>[1],
+            target: relationship.target,
+            targetMode: relationship.targetMode,
+          },
+        ]),
+      );
+      const recordsId = `rId${Number.isFinite(sourceRid) && sourceRid > 0 ? sourceRid : 1}`;
+      relationshipsById.set(recordsId, {
+        id: recordsId,
+        type: relationshipType,
+        target:
+          cache.definition.recordsRelationshipTarget ??
+          relativePartTarget(cache.definitionPath, cache.recordsPath),
+        targetMode: undefined,
+      });
+      const orderedIds = [
+        ...new Set([...(cache.definition.relationshipOrder ?? []), ...relationshipsById.keys()]),
+      ];
+      for (const id of orderedIds) {
+        const relationship = relationshipsById.get(id);
+        if (relationship)
+          rels.addRelationship(
+            relationship.id,
+            relationship.type,
+            relationship.target,
+            relationship.targetMode,
+          );
+      }
+      const relsPath = cache.definitionPath.replace(/([^/]+)$/, "_rels/$1.rels");
+      mapping[`PivotCacheRelsPath:${relsPath}`] = {
+        data: XML_DECL + rels.serialize(),
+        path: relsPath,
+      };
+    }
+    const wbRid = ctx.workbookRels.nextRelationshipId;
+    ctx.workbookRels.addRelationship(
+      wbRid,
+      RELATIONSHIP_TYPES.pivotCacheDefinition,
+      relativePartTarget("xl/workbook.xml", cache.definitionPath),
+    );
+    ctx.pivotCacheRefs.push({ cacheId: cache.cacheId, rId: `rId${wbRid}` });
+    state.pivotCachePathById.set(cache.cacheId, cache.definitionPath);
+  }
+}
+
+function relativePartTarget(sourcePath: string, targetPath: string): string {
+  const source = sourcePath.split("/").slice(0, -1);
+  const target = targetPath.split("/").slice(0, -1);
+  let common = 0;
+  while (common < source.length && common < target.length && source[common] === target[common])
+    common++;
+  return [
+    ...Array.from({ length: source.length - common }, () => ".."),
+    ...targetPath.split("/").slice(common),
+  ].join("/");
 }
 
 function extractPivotSourceData(rows: RowOptions[], sourceRef: string): PivotSourceData {
@@ -198,7 +315,7 @@ function findWorksheetIndex(configs: WorksheetOptions[], name: string): number {
 }
 
 export function renderPivotSheetData(
-  pivotOpts: PivotTableOptions[],
+  pivotOpts: SourcePivotTableOptions[],
   worksheetConfigs: WorksheetOptions[],
   sharedStrings: SharedStrings,
   currentSheetName: string,

@@ -5,7 +5,8 @@ export type RtfToken =
   | { kind: "group-end"; position: number }
   | { kind: "control"; word?: string; symbol?: string; param?: number; position: number }
   | { kind: "text"; value: string; position: number }
-  | { kind: "hex"; value: string; position: number };
+  | { kind: "hex"; value: string; position: number }
+  | { kind: "binary"; byteLength: number; data: Uint8Array; position: number };
 
 const CONTROL_WORD = /[a-zA-Z]/;
 const HEX_DIGITS = /^[0-9a-fA-F]{2}/;
@@ -92,10 +93,18 @@ export function tokenizeRtf(source: string): RtfToken[] {
             source,
           );
         }
-        position += parameter ?? 0;
+        if (source[position] === " ") position += 1;
+        const byteLength = parameter ?? 0;
+        position += byteLength;
         if (position > source.length) {
           throw new RtfParseError("\\bin data extends past end of input", wordStart - 1, source);
         }
+        const data = new Uint8Array(byteLength);
+        for (let index = 0; index < byteLength; index += 1) {
+          data[index] = source.charCodeAt(position - byteLength + index) & 0xff;
+        }
+        tokens.push({ kind: "binary", byteLength, data, position: wordStart - 1 });
+        continue;
       }
       if (source[position] === " ") position += 1;
       tokens.push({ kind: "control", word, param: parameter, position: wordStart - 1 });

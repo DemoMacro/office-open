@@ -12,6 +12,7 @@ import { element as buildXml } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
 import type {
+  AnimationDuration,
   AnimationBuildOptions,
   AnimationClass,
   AnimationOptions,
@@ -21,6 +22,16 @@ import type {
   EndConditionOptions,
   PathAnimationType,
 } from "./types";
+
+function animationDurationXml(value: AnimationDuration | undefined, fallback?: number): string {
+  if (value === "indefinite") return value;
+  if (value !== undefined) return String(value);
+  return fallback === undefined ? "" : String(fallback);
+}
+
+function animationDurationMs(value: AnimationDuration | undefined, fallback = 0): number {
+  return value === "indefinite" || value === undefined ? fallback : value;
+}
 
 // --- Preset ID mappings ---
 // Single source for both stringify (here) and parse (descriptors/animation.ts
@@ -277,7 +288,11 @@ function buildEntrOrExitEffects(
 
     const animEffectChildren: string[] = [
       buildXml("p:cBhvr", undefined, [
-        buildXml("p:cTn", { id: ids.effect, dur: String(options.duration ?? 500), fill: "hold" }),
+        buildXml("p:cTn", {
+          id: ids.effect,
+          dur: animationDurationXml(options.duration, 500),
+          fill: "hold",
+        }),
         buildXml("p:tgtEl", undefined, [buildXml("p:spTgt", { spid })]),
       ]),
     ];
@@ -302,7 +317,7 @@ function buildEmphasisEffects(
 ): string[] {
   const emphType = options.emphasisType ?? "growShrink";
   const children: string[] = [];
-  const dur = String(options.duration ?? 500);
+  const dur = animationDurationXml(options.duration, 500);
 
   // Common target element
   const tgtEl = buildXml("p:tgtEl", undefined, [buildXml("p:spTgt", { spid })]);
@@ -460,7 +475,7 @@ function buildPathEffects(
   ids: { set: number; effect: number },
 ): string[] {
   const pathStr = options.path ?? PATH_STRINGS[options.pathType ?? "customPath"] ?? "";
-  const dur = String(options.duration ?? 1000);
+  const dur = animationDurationXml(options.duration, 1000);
 
   const animMotionAttrs: Record<string, string | undefined> = {
     origin: "layout",
@@ -515,7 +530,7 @@ function buildMediaPlayCommand(
     buildXml("p:cBhvr", undefined, [
       buildXml("p:cTn", {
         id: ids.cmd,
-        dur: String(options.duration ?? 10000),
+        dur: animationDurationXml(options.duration, 10000),
         fill: "hold",
       }),
       buildTargetElement(spid),
@@ -534,7 +549,7 @@ function buildCommand(options: AnimationOptions, spid: number, ids: { cmd: numbe
     buildXml("p:cBhvr", undefined, [
       buildXml("p:cTn", {
         id: ids.cmd,
-        dur: String(options.duration ?? 1000),
+        dur: animationDurationXml(options.duration, 1000),
         fill: "hold",
       }),
       buildTargetElement(spid),
@@ -609,7 +624,7 @@ function buildVariantValue(variant: AnimationVariantOptions): string {
  */
 function buildCondition(cond: EndConditionOptions): string {
   const attrs: Record<string, string | number | undefined> = {};
-  if (cond.delay !== undefined) attrs.delay = cond.delay;
+  if (cond.delay !== undefined) attrs.delay = animationDurationXml(cond.delay);
   if (cond.event !== undefined) attrs.evt = cond.event;
 
   const children: string[] = [];
@@ -691,7 +706,7 @@ function buildPropertyAnimation(
   const cBhvrChildren: string[] = [
     buildXml("p:cTn", {
       id: ids.cBhvr,
-      dur: String(options.duration ?? 500),
+      dur: animationDurationXml(options.duration, 500),
       fill: "hold",
     }),
     buildTargetElement(spid, options),
@@ -938,7 +953,8 @@ export class SlideTiming {
             : "clickEffect";
 
       if (options.trigger === "afterPrevious" && i > 0) {
-        clickGroupDelay += (options.duration ?? 500) + (options.delay ?? 0);
+        clickGroupDelay +=
+          animationDurationMs(options.duration, 500) + animationDurationMs(options.delay);
       }
       if (options.trigger === "onClick" || options.trigger === undefined) {
         clickGroupDelay = 0;
@@ -1010,7 +1026,8 @@ export class SlideTiming {
       if (options.speed !== undefined) cTnAttrs.spd = String(options.speed * 1000);
       if (options.repeatCount !== undefined) cTnAttrs.repeatCount = String(options.repeatCount);
       if (options.autoReverse) cTnAttrs.autoRev = 1;
-      if (options.repeatDuration !== undefined) cTnAttrs.repeatDur = options.repeatDuration;
+      if (options.repeatDuration !== undefined)
+        cTnAttrs.repeatDur = animationDurationXml(options.repeatDuration);
       if (options.acceleration !== undefined) cTnAttrs.accel = options.acceleration * 1000;
       if (options.deceleration !== undefined) cTnAttrs.decel = options.deceleration * 1000;
       if (options.restart !== undefined) cTnAttrs.restart = options.restart;
@@ -1032,7 +1049,7 @@ export class SlideTiming {
       // Build effect cTn
       const effectCtnChildren: string[] = [
         buildXml("p:stCondLst", undefined, [
-          buildXml("p:cond", { delay: String(options.delay ?? 0) }),
+          buildXml("p:cond", { delay: animationDurationXml(options.delay, 0) }),
         ]),
       ];
 
@@ -1045,9 +1062,9 @@ export class SlideTiming {
 
       // Add endSync (A2) — directly CT_TLTimeCondition, no cond wrapper
       if (options.endSyncCondition) {
-        const syncAttrs: Record<string, string | undefined> = {};
+        const syncAttrs: Record<string, string | number | undefined> = {};
         if (options.endSyncCondition.delay !== undefined)
-          syncAttrs.delay = options.endSyncCondition.delay;
+          syncAttrs.delay = animationDurationXml(options.endSyncCondition.delay);
         if (options.endSyncCondition.event !== undefined)
           syncAttrs.evt = options.endSyncCondition.event;
 
@@ -1095,11 +1112,11 @@ export class SlideTiming {
                   "p:cTn",
                   {
                     id: subId,
-                    dur: String(subOpts.duration ?? 0),
+                    dur: animationDurationXml(subOpts.duration, 0),
                   },
                   [
                     buildXml("p:stCondLst", undefined, [
-                      buildXml("p:cond", { delay: String(subOpts.delay ?? 0) }),
+                      buildXml("p:cond", { delay: animationDurationXml(subOpts.delay, 0) }),
                     ]),
                   ],
                 ),

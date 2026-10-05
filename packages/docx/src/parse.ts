@@ -763,6 +763,17 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     docx.doc,
     rebuilt,
+    // Stage-0 rawParts policy: XML parts not listed here are flagged by the
+    // audit as modeled-XML absorption gaps (strict policy rejects them).
+    {
+      opaquePatterns: [
+        /^word\/vbaProject\.bin$/i,
+        /^word\/vbaData\.xml$/i,
+        /^word\/embeddings\//i,
+        /^word\/printerSettings\//i,
+        /^word\/fonts\//i,
+      ],
+    },
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;

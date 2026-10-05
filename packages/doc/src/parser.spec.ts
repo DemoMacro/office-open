@@ -5,7 +5,14 @@ import { DocParseError } from "./errors";
 import { parseDocument } from "./index";
 import { parseCommentRanges } from "./mappers/document";
 import type { LegacyDocumentOptions } from "./records/models";
-import { parseFields, parsePictures } from "./records/structures";
+import {
+  parseBookmarks,
+  parseFields,
+  parseLists,
+  parsePictures,
+  parseSectionProperties,
+  parseStylesheet,
+} from "./records/structures";
 import { parsePieceTable } from "./streams/pieces";
 
 const END_OF_CHAIN = 0xfffffffe;
@@ -578,10 +585,23 @@ describe("legacy DOC parser", () => {
     ]);
   });
 
-  it("degrades malformed character bin tables without losing text", () => {
+  it("rejects malformed character bin tables with structured context", () => {
     const { data } = buildDocument({ characterBinTableLength: 13 });
-    const children = parseDocument(data).sections[0]!.children;
-    expect(children).toHaveLength(2);
+    let error: DocParseError | undefined;
+    try {
+      parseDocument(data);
+    } catch (thrown) {
+      error = thrown as DocParseError;
+    }
+    expect(error).toBeInstanceOf(DocParseError);
+    expect(error!.context).toMatchObject({
+      format: "doc",
+      part: "table",
+      path: "PlcfbteChpx",
+      recordType: 12,
+      recordName: "fcPlcfbteChpx",
+      reason: "invalid-record-length",
+    });
   });
 
   it("projects actual textbox boundaries and skips reusable FTXBXS records", () => {
@@ -604,11 +624,19 @@ describe("legacy DOC parser", () => {
     expect("textbox" in children[0]!).toBe(false);
   });
 
-  it("degrades malformed textbox boundary tables without losing text", () => {
+  it("tolerates malformed textbox boundary tables with a structured warning", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
-    const children = parseDocument(data).sections[0]!.children;
-    expect(children).toHaveLength(1);
-    expect("textbox" in children[0]!).toBe(false);
+    const warnings: string[] = [];
+    const warn = console.warn;
+    console.warn = (message: string) => warnings.push(message);
+    try {
+      const document = parseDocument(data);
+      expect(document.sections[0]?.children.every((child) => !("textbox" in child))).toBe(true);
+    } finally {
+      console.warn = warn;
+    }
+    expect(warnings.some((message) => message.includes("PlcftxbxTxt"))).toBe(true);
+    expect(warnings.some((message) => message.includes("invalid-record-length"))).toBe(true);
   });
 
   it("projects individual footnote boundaries", () => {
@@ -757,6 +785,26 @@ describe("legacy DOC parser", () => {
     expect(parseDocument(data).styles?.paragraphStyles).toEqual([
       { id: "style-0", name: "Normal", basedOn: undefined },
     ]);
+  });
+
+  it("rejects malformed auxiliary structures with structured context", () => {
+    const { table, word } = buildDocument({ sectionProperties: true });
+    expect(() => parseSectionProperties(table, { offset: 800, length: 21 }, word)).toThrow(
+      DocParseError,
+    );
+    expect(() => parseStylesheet(table, { offset: 768, length: 3 })).toThrow(DocParseError);
+    expect(() =>
+      parseBookmarks(
+        table,
+        { offset: 832, length: 3 },
+        { offset: 0, length: 0 },
+        { offset: 0, length: 0 },
+      ),
+    ).toThrow(DocParseError);
+    new DataView(table.buffer).setUint32(1280, 2, true);
+    expect(() => parseLists(table, { offset: 0, length: 0 }, { offset: 1280, length: 10 })).toThrow(
+      DocParseError,
+    );
   });
 
   it("extracts Word 6.0/95 text without modern FIB extensions", () => {

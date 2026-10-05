@@ -94,6 +94,48 @@ function anchoredTextShape(): number[] {
   return container(0xf004, anchoredTextShapeBody());
 }
 
+function optEntry(id: number, value: number, blip = false): number[] {
+  return [...int16(id | (blip ? 0x4000 : 0)), ...int32(value)];
+}
+
+function optRecord(entries: readonly number[][]): number[] {
+  return record(0xf00b, entries.flat(), { version: 3, instance: entries.length });
+}
+
+function anchoredShape(
+  id: number,
+  instance: number,
+  anchor: readonly number[],
+  entries: readonly number[][] = [],
+  textbox = false,
+): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(0x220)], { instance }),
+    record(
+      0xf010,
+      anchor.flatMap((value) => int16(value)),
+    ),
+    ...(entries.length > 0 ? [optRecord(entries)] : []),
+    ...(textbox ? [container(0xf00d, [record(3998, int32(0))])] : []),
+  ]);
+}
+
+function childShape(
+  id: number,
+  instance: number,
+  anchor: readonly number[],
+  entries: readonly number[][] = [],
+): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(id), ...int32(0x220)], { instance }),
+    record(
+      0xf00f,
+      anchor.flatMap((value) => int32(value)),
+    ),
+    ...(entries.length > 0 ? [optRecord(entries)] : []),
+  ]);
+}
+
 function childTextShape(
   id: number,
   textIndex: number,
@@ -689,6 +731,161 @@ describe("parsePresentation", () => {
     expect(shape.shape?.y).toBe(31_750);
     expect(shape.shape?.width).toBe(158_750);
     expect(shape.shape?.height).toBe(238_125);
+  });
+
+  it("keeps a no-text autoshape as a base shape", () => {
+    const { document, currentUser } = buildDocument([anchoredShape(2060, 1, [40, 100, 300, 180])]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.id).toBe(2060);
+    expect(child.shape?.x).toBe(158_750);
+    expect(child.shape?.y).toBe(63_500);
+    expect(child.shape?.width).toBe(317_500);
+    expect(child.shape?.height).toBe(222_250);
+    expect(child.shape?.textBox).toBeUndefined();
+    expect(child.shape?.properties?.geometry).toBe("rect");
+  });
+
+  it("keeps a legacy line as a line child", () => {
+    const { document, currentUser } = buildDocument([
+      anchoredShape(2061, 20, [40, 100, 300, 180], [optEntry(0x01c0, 0x0000ff)]),
+    ]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("line" in child)) throw new TypeError("Expected a line child");
+    expect(child.line?.id).toBe(2061);
+    expect(child.line?.x1).toBe(158_750);
+    expect(child.line?.y1).toBe(63_500);
+    expect(child.line?.x2).toBe(476_250);
+    expect(child.line?.y2).toBe(285_750);
+    expect(child.line?.properties?.outline).toMatchObject({
+      type: "solidFill",
+      color: "FF0000",
+    });
+  });
+
+  it("keeps a connector as a connector child", () => {
+    const { document, currentUser } = buildDocument([anchoredShape(2062, 34, [40, 100, 300, 180])]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("connector" in child)) throw new TypeError("Expected a connector child");
+    expect(child.connector?.id).toBe(2062);
+    expect(child.connector?.x1).toBe(158_750);
+    expect(child.connector?.y1).toBe(63_500);
+    expect(child.connector?.x2).toBe(476_250);
+    expect(child.connector?.y2).toBe(285_750);
+    expect(child.connector?.properties?.geometry).toBe("bentConnector3");
+  });
+
+  it("preserves shape, picture, and connector order in groups", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const blip = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const bseBody = Array.from<number>({ length: 36 }).fill(0);
+    bseBody[33] = 2;
+    const bse = record(0xf007, [...bseBody, 0, 0, ...blip], { version: 2, instance: 0x6e0 });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(container(0xf001, [bse]), 0);
+    const { document, currentUser } = buildDocument(
+      nestedGroupDrawing([
+        childShape(4100, 1, [0, 0, 100, 50]),
+        childShape(4101, 75, [100, 0, 200, 50], [optEntry(0x0104, 1, true)]),
+        childShape(4102, 34, [200, 0, 300, 50]),
+      ]),
+      ["Slide"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("group" in child)) throw new TypeError("Expected a group child");
+    expect(child.group?.children.map((nested) => Object.keys(nested)[0])).toEqual([
+      "shape",
+      "picture",
+      "connector",
+    ]);
+    const picture = child.group?.children[1];
+    if (!picture || !("picture" in picture)) throw new TypeError("Expected a nested picture");
+    expect(picture.picture?.id).toBe(4101);
+    expect(picture.picture?.type).toBe("png");
+  });
+
+  it("keeps text on a shape with an OPT picture fill", () => {
+    const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    const blip = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
+      version: 2,
+      instance: 0x6e0,
+    });
+    const bseBody = Array.from<number>({ length: 36 }).fill(0);
+    bseBody[33] = 2;
+    const bse = record(0xf007, [...bseBody, 0, 0, ...blip], { version: 2, instance: 0x6e0 });
+    const pictureStream = new Uint8Array(4096);
+    pictureStream.set(container(0xf001, [bse]), 0);
+    const { document, currentUser } = buildDocument(
+      [
+        anchoredShape(
+          2063,
+          1,
+          [40, 100, 300, 180],
+          [optEntry(0x0180, 5), optEntry(0x0186, 1, true)],
+          true,
+        ),
+      ],
+      ["Filled"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+      { name: "Pictures", data: pictureStream },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.properties?.fill).toEqual({
+      type: "blip",
+      data: new Uint8Array(png),
+      imageType: "png",
+    });
+    expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "Filled" }] }]);
+  });
+
+  it("reports unknown visual shape properties structurally", () => {
+    const { document, currentUser } = buildDocument([
+      anchoredShape(2064, 1, [40, 100, 300, 180], [optEntry(0x0500, 7)]),
+    ]);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    let error: PptParseError | undefined;
+    try {
+      parsePresentation(fixture);
+    } catch (thrown) {
+      error = thrown as PptParseError;
+    }
+    expect(error).toBeInstanceOf(PptParseError);
+    expect(error!.context).toMatchObject({
+      format: "ppt",
+      part: "record",
+      recordType: 0xf00b,
+      recordName: "OfficeArtFOPT",
+      propertyId: 0x0500,
+      reason: "unknown-visual-property",
+    });
+    expect(error!.context.byteRange).toBeDefined();
   });
 
   it("projects an embedded BSE picture and trims its name", () => {

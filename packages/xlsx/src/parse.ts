@@ -27,7 +27,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
-import { attr, findChild } from "@office-open/xml";
+import { attr } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
@@ -39,9 +39,11 @@ import { drawingDesc, pickAnchorOptions } from "@parts/drawing";
 import { externalLinkDesc } from "@parts/external-link";
 import type { ExternalLinkOptions } from "@parts/external-link";
 import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
+import type { DefinitionPivotCacheOptions } from "@parts/file";
 import { metadataDesc } from "@parts/metadata";
-import { pivotCacheDefDesc, pivotCacheRecordsDesc } from "@parts/pivot-cache";
-import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "@parts/pivot-cache";
+import { parsePivotCacheDefinition } from "@parts/pivot-cache-definition";
+import { parsePivotCacheRecords } from "@parts/pivot-cache-records";
+import { parsePivotTableDefinition } from "@parts/pivot-table";
 import { queryTableDesc } from "@parts/query-table";
 import type { QueryTableOptions } from "@parts/query-table";
 import {
@@ -56,7 +58,6 @@ import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { parseVolTypesEl } from "@parts/vol-types";
 import { workbookDesc } from "@parts/workbook";
-import type { PivotCacheReference } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type {
@@ -306,26 +307,78 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, sstEntries);
 
-  // Pivot cache definitions, keyed by part path — surfaced on
-  // WorkbookOptions.pivotCaches for the model layer.
-  const pivotCacheByPath = new Map<string, PivotCacheDefParseResult>();
-  for (const key of xlsx.doc.keys("xl/pivotCache/")) {
-    if (!key.includes("pivotCacheDefinition")) continue;
-    const pcdEl = xlsx.doc.get(key);
-    if (!pcdEl) continue;
-    pivotCacheByPath.set(key, pivotCacheDefDesc.parse(pcdEl, readContext));
-  }
-  // workbook.xml pivotCaches: cacheId → rId reference chain.
-  const pivotCacheRefs: PivotCacheReference[] = [];
-  const wbPivotCaches = xlsx.workbook ? findChild(xlsx.workbook, "pivotCaches") : undefined;
+  // Pivot caches are canonical model entries; records are attached through
+  // the definition part's own relationship.
+  const pivotCaches: DefinitionPivotCacheOptions[] = [];
+  const pivotCacheIdByPath = new Map<string, number>();
+  const wbPivotCaches = (xlsx.workbook?.elements ?? []).find(
+    (element) => element.name?.replace(/^.*:/, "") === "pivotCaches",
+  );
   for (const pc of wbPivotCaches?.elements ?? []) {
-    if (pc.name !== "pivotCache") continue;
+    if (pc.name?.replace(/^.*:/, "") !== "pivotCache") continue;
     const cacheId = attr(pc, "cacheId");
-    const rId = attr(pc, "r:id");
+    const rId = Object.entries(pc.attributes ?? {}).find(
+      ([name]) => name.replace(/^.*:/, "") === "id" && name.includes(":"),
+    )?.[1];
     if (cacheId === undefined || rId === undefined) continue;
-    pivotCacheRefs.push({ cacheId: Number(cacheId), rId });
+    const target = readContext.resolveWorksheetRel("xl/workbook.xml", String(rId));
+    if (target) pivotCacheIdByPath.set(target, Number(cacheId));
   }
-  if (pivotCacheRefs.length > 0) opts.pivotCacheRefs = pivotCacheRefs;
+  for (const definitionPath of xlsx.doc.keys()) {
+    if (!/(?:^|\/)pivotCache\/pivotCacheDefinition\d*\.xml$/.test(definitionPath)) continue;
+    const definitionEl = xlsx.doc.get(definitionPath);
+    if (!definitionEl) continue;
+    const definition = parsePivotCacheDefinition(definitionPath, definitionEl);
+    const definitionRels = xlsx.doc.get(partPathToRelsPath(definitionPath))?.elements ?? [];
+    const rawDefinitionRelationships = definitionRels.filter(
+      (rel) => rel.name === "Relationship" && rel.attributes?.["Id"] !== undefined,
+    );
+    let recordsPath = readContext
+      .getWorksheetRelsByType(definitionPath, "/pivotCacheRecords")
+      .find(
+        (rel) => !definition.recordsRelationshipId || rel.rId === definition.recordsRelationshipId,
+      )?.target;
+    const recordsEl = recordsPath ? xlsx.doc.get(recordsPath) : undefined;
+    const records = recordsEl ? parsePivotCacheRecords(recordsPath!, recordsEl) : undefined;
+    let recordsRelationshipSourceId: string | undefined;
+    let recordsRelationshipTarget: string | undefined;
+    if (recordsPath) {
+      const recordsRel = readContext
+        .getWorksheetRelsByType(definitionPath, "/pivotCacheRecords")
+        .find((rel) => rel.target === recordsPath);
+      recordsRelationshipSourceId = recordsRel?.rId;
+      recordsRelationshipTarget = rawDefinitionRelationships.find(
+        (rel) => rel.attributes?.["Id"] === recordsRelationshipSourceId,
+      )?.attributes?.["Target"] as string | undefined;
+    }
+    const externalRelationships = rawDefinitionRelationships
+      .filter((rel) => rel.attributes?.["Id"] !== recordsRelationshipSourceId)
+      .map((rel) => ({
+        id: String(rel.attributes?.["Id"]),
+        type: String(rel.attributes?.["Type"]),
+        target: String(rel.attributes?.["Target"]),
+        ...(rel.attributes?.["TargetMode"] === "External"
+          ? { targetMode: "External" as const }
+          : {}),
+      }));
+    const cacheId = pivotCacheIdByPath.get(definitionPath) ?? pivotCaches.length + 1;
+    if (recordsRelationshipSourceId)
+      definition.recordsRelationshipSourceId = recordsRelationshipSourceId;
+    if (recordsRelationshipTarget) definition.recordsRelationshipTarget = recordsRelationshipTarget;
+    definition.relationshipOrder = rawDefinitionRelationships.map((rel) =>
+      String(rel.attributes?.["Id"]),
+    );
+    if (externalRelationships.length > 0) definition.externalRelationships = externalRelationships;
+    pivotCaches.push({
+      mode: "definition",
+      cacheId,
+      definitionPath,
+      ...(recordsPath ? { recordsPath } : {}),
+      definition,
+      ...(records ? { records } : {}),
+    });
+  }
+  if (pivotCaches.length > 0) opts.pivotCaches = pivotCaches;
 
   // Parse styles (fonts, fills, borders, cellXfs)
   if (xlsx.styles) {
@@ -665,14 +718,35 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       if (singleXmlCells.length > 0) wsOpts.singleXmlCells = singleXmlCells;
     }
 
-    // Pivot tables — rebuild the user-layer shape from the CT-layer parse
-    // result: field indices resolve against the cache definition's field
-    // names, the data range against its worksheetSource.
-    // PivotTable parts are NOT absorbed into the model here: the authoring
-    // model (source ref + field-name rows/columns/data) is a lossy projection
-    // that the compiler would rebuild from, reinterpreting the source. A
-    // round-tripped pivot table stays in the verbatim passthrough set —
-    // sheet-level pivotTable relationships re-attach via passthrough rels.
+    // Pivot tables remain complete CT definitions; each worksheet relationship
+    // identifies its part and its cache relationship identifies the cacheId.
+    const pivotTableRelTargets = readContext
+      .getWorksheetRelsByType(wsPath, "/pivotTable")
+      .map((rel) => rel.target);
+    for (const pivotTablePath of pivotTableRelTargets) {
+      const pivotTableEl = xlsx.doc.get(pivotTablePath);
+      if (!pivotTableEl) continue;
+      const definition = parsePivotTableDefinition(pivotTablePath, pivotTableEl);
+      const cacheRel = readContext
+        .getWorksheetRelsByType(pivotTablePath, "/pivotCacheDefinition")
+        .find((rel) => pivotCacheIdByPath.has(rel.target));
+      const cachePath = cacheRel?.target;
+      const cacheId = cachePath ? pivotCacheIdByPath.get(cachePath) : undefined;
+      if (cacheId === undefined) continue;
+      const rawCacheRel = (xlsx.doc.get(partPathToRelsPath(pivotTablePath))?.elements ?? []).find(
+        (rel) => rel.name === "Relationship" && rel.attributes?.["Id"] === cacheRel?.rId,
+      );
+      (wsOpts.pivotTables ??= []).push({
+        mode: "definition",
+        cacheId,
+        definition: {
+          ...definition,
+          cacheRelationshipId: cacheRel?.rId,
+          cacheRelationshipTarget: rawCacheRel?.attributes?.["Target"] as string | undefined,
+          cacheRelationshipType: rawCacheRel?.attributes?.["Type"] as string | undefined,
+        },
+      });
+    }
 
     // Resolve external hyperlink URLs
     const hyperlinks = wsOpts.hyperlinks;
@@ -753,24 +827,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     if (dialogsheets.length > 0) opts.dialogsheets = dialogsheets;
   }
 
-  // Pivot cache definitions (parsed into pivotCacheByPath above) and records
-  if (pivotCacheByPath.size > 0) {
-    opts.pivotCaches = [...pivotCacheByPath.values()];
-  }
-
-  const pivotCacheRecPaths = xlsx.doc
-    .keys("xl/pivotCache/")
-    .filter((k) => k.includes("pivotCacheRecords"));
-  if (pivotCacheRecPaths.length > 0) {
-    const pivotCacheRecords: PivotCacheRecordsParseResult[] = [];
-    for (const pcrPath of pivotCacheRecPaths) {
-      const pcrEl = xlsx.doc.get(pcrPath);
-      if (!pcrEl) continue;
-      const pcrData = pivotCacheRecordsDesc.parse(pcrEl, readContext);
-      pivotCacheRecords.push(pcrData);
-    }
-    if (pivotCacheRecords.length > 0) opts.pivotCacheRecords = pivotCacheRecords;
-  }
+  const pivotTablePaths = xlsx.worksheets.flatMap((worksheetPath) =>
+    readContext.getWorksheetRelsByType(worksheetPath, "/pivotTable").map((rel) => rel.target),
+  );
 
   // Calculation chain
   const calcChainEl = xlsx.doc.get("xl/calcChain.xml");
@@ -901,10 +960,33 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.worksheets,
     ...chartsheetPaths,
     ...dialogsheetPaths,
+    ...pivotCaches.flatMap((cache) => [
+      cache.definitionPath,
+      ...(cache.recordsPath ? [cache.recordsPath] : []),
+      partPathToRelsPath(cache.definitionPath),
+    ]),
+    ...pivotTablePaths,
+    ...pivotTablePaths.map((pivotTablePath) => partPathToRelsPath(pivotTablePath)),
   ];
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     xlsx.doc,
     rebuilt,
+    // Stage-0 rawParts policy: XML parts not listed here are flagged by the
+    // audit as modeled-XML absorption gaps (strict policy rejects them).
+    {
+      opaquePatterns: [
+        /^xl\/vbaProject\.bin$/i,
+        /^xl\/vbaData\.xml$/i,
+        /^xl\/embeddings\//i,
+        /^xl\/printerSettings\//i,
+      ],
+    },
+  );
+  passthroughParts.push(
+    ...xlsx.doc
+      .keys()
+      .filter((path) => /^xl\/(?:pivotCache|pivotTables)(?:\/_rels)?\/$/i.test(path))
+      .map((path) => ({ path, data: new Uint8Array(0) })),
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;

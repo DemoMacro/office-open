@@ -1,4 +1,5 @@
 export type {
+  AnimationDuration,
   AnimationOptions,
   AnimationType,
   AnimationTrigger,

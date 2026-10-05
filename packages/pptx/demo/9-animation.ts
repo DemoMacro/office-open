@@ -640,8 +640,8 @@ const options: PresentationOptions = {
           shapeId: 6,
           type: "fade",
           duration: 500,
-          endConditions: [{ delay: "5000" }],
-          endSyncCondition: { event: "onNext", delay: "0" },
+          endConditions: [{ delay: 5000 }],
+          endSyncCondition: { event: "onNext", delay: 0 },
           subTimeNodes: [{ duration: 300, delay: 100 }],
         },
         {

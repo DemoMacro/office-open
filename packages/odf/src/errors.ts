@@ -17,7 +17,15 @@ export class OcfMimeTypeError extends OcfError {
 }
 
 /** META-INF/manifest.xml is missing or structurally invalid. */
-export class OcfManifestError extends OcfError {}
+export class OcfManifestError extends OcfError {
+  constructor(message: string, options?: ErrorOptions & { fullPath?: string }) {
+    super(message, options === undefined ? undefined : { cause: options.cause });
+    if (options?.fullPath !== undefined) this.fullPath = options.fullPath;
+  }
+
+  /** Entry path that caused a manifest conflict, when applicable. */
+  readonly fullPath?: string;
+}
 
 /** A required XML part is absent or cannot be parsed. */
 export class OdfXmlError extends OcfError {

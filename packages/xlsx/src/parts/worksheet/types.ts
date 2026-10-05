@@ -6,7 +6,7 @@
 import type {
   BasePictureOptions,
   ChartSpaceOptions,
-  CellGraphicOptions,
+  CellGraphicOptions as CoreCellGraphicOptions,
   CoveredCellOptions,
   DataType,
   NonVisualDrawingPropertiesOptions,
@@ -178,6 +178,17 @@ export interface CellOptions {
   /** Graphics anchored to this spreadsheet cell. */
   graphics?: CellGraphicOptions[];
 }
+
+type CellImageGraphicOptions = Omit<Extract<CoreCellGraphicOptions, { type: "image" }>, "data"> & {
+  /** Embedded image bytes as base64, or omit with sourceUrl for a linked-only image. */
+  data?: string;
+  /** External image URL used when data is omitted. */
+  sourceUrl?: string;
+};
+
+export type CellGraphicOptions =
+  | CellImageGraphicOptions
+  | Extract<CoreCellGraphicOptions, { type: "object" }>;
 
 /** Cell formula type (maps to ST_CellFormulaType). */
 export const FormulaType = {

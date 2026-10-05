@@ -192,6 +192,7 @@ const buffer = await generateWorkbook({
       name: "Pivot",
       pivotTables: [
         {
+          mode: "source",
           name: "MaxPivot",
           source: "A1:C7",
           sourceSheet: "TableHost",

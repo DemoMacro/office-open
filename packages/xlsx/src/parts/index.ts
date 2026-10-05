@@ -3,7 +3,12 @@
  *
  * @module
  */
-export { type WorkbookOptions } from "./file";
+export {
+  type WorkbookOptions,
+  type PivotCacheOptions,
+  type SourcePivotCacheOptions,
+  type DefinitionPivotCacheOptions,
+} from "./file";
 export { SharedStrings, sharedStringsDesc, type SharedStringsDocOptions } from "./shared-strings";
 export { Styles, stylesDesc, type StylesDocOptions } from "./styles";
 export type {
@@ -125,13 +130,26 @@ export type {
   MetadataBlockOptions,
   MetadataRecordOptions,
 } from "./metadata";
-export { pivotTableDesc, type PivotTableDescriptorOptions } from "./pivot-table";
+export {
+  pivotTableDesc,
+  type PivotTableDescriptorOptions,
+  type PivotTableDefinitionAttributes,
+  type PivotTableDefinitionOptions,
+} from "./pivot-table";
 export {
   pivotCacheDefDesc,
   pivotCacheRecordsDesc,
   type PivotCacheDefDescriptorOptions,
+  type PivotCacheDefinitionAttributes,
+  type PivotCacheDefinitionOptions,
+  type PivotCacheFieldsOptions,
+  type PivotCacheFieldOptions,
+  type PivotCacheRecordsDescriptorOptions,
+  type PivotCacheRecordsOptions,
 } from "./pivot-cache";
+export { XlsxParseError, type PivotXmlElementOptions } from "./pivot/pivot-xml";
 export type {
+  SourcePivotTableOptions,
   PivotTableOptions,
   PivotDataField,
   PivotPageFieldOptions,

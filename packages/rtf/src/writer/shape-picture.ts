@@ -105,5 +105,18 @@ export function writeDrawingChild(child: object, path: string): string | undefin
     if (typeof shape !== "object" || shape === null) return undefined;
     return writeShape(shape as ShapeOptions, `${path}.wpsShape`);
   }
+  if ("object" in child) {
+    const object = child.object as { embed?: { data?: Uint8Array; progId?: string } };
+    if (
+      typeof object !== "object" ||
+      object === null ||
+      !(object.embed?.data instanceof Uint8Array)
+    )
+      reject("object", `${path}.object`, "embed", "RTF objects require embedded binary data");
+    let binary = "";
+    for (const byte of object.embed!.data) binary += String.fromCharCode(byte);
+    const className = object.embed!.progId;
+    return `{\\object${className ? `{\\objclass ${className}}` : ""}{\\objdata${control("bin", object.embed!.data.length)} ${binary}}}`;
+  }
   return undefined;
 }

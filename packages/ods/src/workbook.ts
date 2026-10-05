@@ -8,6 +8,7 @@ import {
   childrenNamed,
   escapeText,
   generateOcf,
+  hasOcfManifestOverlay,
   metaXml,
   OdfSchemaError,
   parseEmbeddedCharts,
@@ -24,8 +25,9 @@ import type { Element } from "@office-open/xml";
 import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
+import type { OdsDocumentOptions } from "./semantics";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./shared-data";
-import { parseDimensionStyles } from "./styles";
+import { parseDimensionStyles, parseStyleOverlays, styleOverlaysXml } from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
@@ -46,7 +48,8 @@ export const NAMESPACES = [
 ].join(" ");
 
 export function generateWorkbook(options: WorkbookOptions): Uint8Array {
-  const styles: string[] = [];
+  const { packageManifest, styleOverlays } = options as OdsDocumentOptions;
+  const styles: string[] = styleOverlaysXml(styleOverlays);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
       name: chart.name ?? `Object ${worksheetIndex + chartIndex + 1}`,
@@ -73,9 +76,18 @@ export function generateWorkbook(options: WorkbookOptions): Uint8Array {
     for (const row of worksheet.rows ?? []) {
       for (const cell of row.cells ?? []) {
         for (const graphic of cell.graphics ?? []) {
-          if (graphic.type === "image") files[graphic.href] = base64ToBytes(graphic.data);
-          else {
-            if (graphic.chart) files[`${graphic.href}/content.xml`] = chartBodyXml(graphic.chart);
+          if (graphic.type === "image") {
+            if (graphic.data !== undefined) files[graphic.href] = base64ToBytes(graphic.data);
+            else if (graphic.sourceUrl === undefined)
+              throw new OdsParseError(
+                `content.xml: ${graphic.href}: image data or source URL is missing`,
+                "content.xml",
+                "/office:document-content/office:body/office:spreadsheet/table:table/table:table-row/table:table-cell/draw:frame/draw:image",
+                "draw:image",
+                "missing-image-source",
+              );
+          } else if (graphic.chart) {
+            files[`${graphic.href}/content.xml`] = chartBodyXml(graphic.chart);
           }
         }
       }
@@ -89,14 +101,19 @@ export function generateWorkbook(options: WorkbookOptions): Uint8Array {
       ...(options.worksheets ?? []).flatMap((worksheet) =>
         (worksheet.rows ?? []).flatMap((row) =>
           (row.cells ?? []).flatMap((cell) =>
-            (cell.graphics ?? []).map((graphic) => [
-              graphic.type === "image" ? graphic.href : `${graphic.href}/`,
-              graphic.type === "image" ? imageMediaType(graphic.href) : CHART_MIME,
-            ]),
+            (cell.graphics ?? [])
+              .filter(
+                (graphic) =>
+                  graphic.type === "image" &&
+                  graphic.data !== undefined &&
+                  graphic.sourceUrl === undefined,
+              )
+              .map((graphic) => [graphic.href, imageMediaType(graphic.href)]),
           ),
         ),
       ),
     ]),
+    packageManifest,
   );
 }
 
@@ -108,6 +125,10 @@ export function unsupportedOdsValue(name: string, reason: string): OdsParseError
     name,
     "no canonical ODS mapping",
   );
+}
+
+function isExternalUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
 }
 
 export function parseWorkbook(data: Uint8Array): WorkbookOptions {
@@ -131,7 +152,7 @@ export function parseWorkbook(data: Uint8Array): WorkbookOptions {
   }
 }
 
-function parseOdsBody(data: Uint8Array): WorkbookOptions {
+function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");
@@ -158,10 +179,21 @@ function parseOdsBody(data: Uint8Array): WorkbookOptions {
       for (const cell of row.cells ?? []) {
         for (const graphic of cell.graphics ?? []) {
           if (graphic.type === "image") {
+            if (isExternalUrl(graphic.href)) {
+              graphic.sourceUrl = graphic.href;
+              graphic.data = undefined;
+              continue;
+            }
             const binary = binaries[graphic.href];
             graphic.data = binary ? bytesToBase64(binary) : "";
             if (!graphic.data)
-              throw unsupportedOdsValue(graphic.href, "referenced image is missing");
+              throw new OdsParseError(
+                `content.xml: ${graphic.href}: package image is missing`,
+                "content.xml",
+                "/draw:frame/draw:image/@xlink:href",
+                "draw:image",
+                "missing-package-part",
+              );
           } else {
             const chart = chartPool.get(graphic.href);
             if (chart) graphic.chart = chart;
@@ -171,14 +203,19 @@ function parseOdsBody(data: Uint8Array): WorkbookOptions {
     }
   }
   rejectUnknownSpreadsheetChildren(body);
-  const result = {
+  const result: WorkbookOptions = {
     ...parseMeta(files),
     ...(definedNames.length > 0 ? { definedNames } : {}),
     ...(calcProperties ? { calculation: calcProperties } : {}),
     ...(forms.length > 0 ? { forms } : {}),
     worksheets,
   };
-  return result;
+  const styleOverlays = parseStyleOverlays(automaticStyles);
+  return {
+    ...result,
+    ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
+  };
 }
 
 export function contentXml(

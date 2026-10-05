@@ -12,7 +12,14 @@ export function parseBinTable(
   requireRange(table, range.offset, range.length, message);
   if (range.length === 0) return [];
   if (range.length < 12 || (range.length - 4) % 8 !== 0) {
-    throw new DocParseError(`Invalid DOC ${kind} bin table: malformed FC and page counts`);
+    throw new DocParseError(`Invalid DOC ${kind} bin table: malformed FC and page counts`, {
+      part: "table",
+      path: `Plcfbte${kind === "character" ? "Chpx" : "Papx"}`,
+      offset: range.offset,
+      length: range.length,
+      byteRange: [range.offset, range.offset + range.length],
+      reason: "invalid-record-length",
+    });
   }
   const count = (range.length - 4) / 8;
   const entries: BinTableEntry[] = [];
@@ -100,7 +107,14 @@ export function parseTextboxBoundaries(
   const message = "Invalid DOC textbox table: it is outside the table stream";
   requireRange(table, range.offset, range.length, message);
   if (range.length < 4 || (range.length - 4) % 26 !== 0) {
-    throw new DocParseError("Invalid DOC textbox table: malformed CP and textbox counts");
+    throw new DocParseError("Invalid DOC textbox table: malformed CP and textbox counts", {
+      part: "table",
+      path: "PlcftxbxTxt",
+      offset: range.offset,
+      length: range.length,
+      byteRange: [range.offset, range.offset + range.length],
+      reason: "invalid-record-length",
+    });
   }
   const count = (range.length - 4) / 26;
   const boundaries: TextboxBoundary[] = [];

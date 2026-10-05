@@ -8,6 +8,7 @@ import type {
 } from "@office-open/core";
 import { parse, type Element } from "@office-open/xml";
 
+import type { OcfManifestOptions } from "../container/manifest";
 import { generateOcf, readOcf, readXml, type OdfFiles } from "../container/package";
 import {
   graphicFill,
@@ -140,16 +141,62 @@ export function parseChartBody(xml: string): ChartSpaceOptions | undefined {
 
 /** Embedded chart subdocuments from the manifest, keyed by their object name. */
 export function parseEmbeddedCharts(
-  manifest: Element,
+  manifest: OcfManifestOptions,
   files: OdfFiles,
 ): Map<string, ChartSpaceOptions> {
   const result = new Map<string, ChartSpaceOptions>();
-  for (const entry of childrenNamed(manifest, "manifest:file-entry")) {
-    const fullPath = attributeString(entry, "manifest:full-path");
-    if (!fullPath || fullPath === "/" || !fullPath.endsWith("/")) continue;
+  for (const entry of manifest.entries) {
+    const fullPath = entry.fullPath;
+    if (fullPath === "/" || !fullPath.endsWith("/")) continue;
     const content = files[`${fullPath}content.xml`];
-    const chart = content ? parseChartBody(content) : undefined;
-    if (chart) result.set(fullPath.replace(/\/$/, ""), chart);
+    if (!content) {
+      if (entry.mediaType === MIME) {
+        throw unsupported(
+          "META-INF/manifest.xml",
+          `/manifest:manifest/manifest:file-entry[@manifest:full-path="${fullPath}"]`,
+          "manifest:file-entry",
+          "chart subdocument is missing content.xml",
+        );
+      }
+      continue;
+    }
+    const chart = parseChartBody(content);
+    if (entry.mediaType === MIME && !chart) {
+      throw unsupported(
+        `${fullPath}content.xml`,
+        "/office:document-content/office:body/office:chart",
+        "office:chart",
+        "referenced chart subdocument is missing its chart body",
+      );
+    }
+    if (chart && entry.mediaType !== undefined && entry.mediaType !== MIME) {
+      throw unsupported(
+        "META-INF/manifest.xml",
+        `/manifest:manifest/manifest:file-entry[@manifest:full-path="${fullPath}"]`,
+        "manifest:media-type",
+        "chart subdocument manifest entry has an incompatible media type",
+      );
+    }
+    if (!chart) {
+      continue;
+    }
+    result.set(fullPath.replace(/\/$/, ""), chart);
+  }
+  for (const [path, content] of Object.entries(files)) {
+    const match = /^(.+)\/content\.xml$/.exec(path);
+    if (!match?.[1] || !content.includes("<office:chart")) continue;
+    const objectPath = match[1];
+    if (
+      !result.has(objectPath) &&
+      !manifest.entries.some((entry) => entry.fullPath === `${objectPath}/`)
+    ) {
+      throw unsupported(
+        "META-INF/manifest.xml",
+        `/manifest:manifest/manifest:file-entry[@manifest:full-path="${objectPath}/"]`,
+        "manifest:file-entry",
+        "chart subdocument path is not declared",
+      );
+    }
   }
   return result;
 }

@@ -51,7 +51,7 @@ import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
 import { buildVolTypesXml } from "@parts/vol-types";
-import type { PivotCacheReference, TablePartReference, SheetDefinition } from "@parts/workbook";
+import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import {
   buildWorksheetXml,
@@ -64,7 +64,11 @@ import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import { columnToLetter } from "@util/index";
 
 import { bindMediaPlaceholders, compileSheetDrawing } from "./compile/sheet-drawing";
-import { compileSheetPivots, renderPivotSheetData } from "./compile/sheet-pivots";
+import {
+  compileDefinitionPivotCaches,
+  compileSheetPivots,
+  renderPivotSheetData,
+} from "./compile/sheet-pivots";
 import { XlsxWriteContext } from "./context";
 
 const XML_DECL = OOXML_XML_DECLARATION;
@@ -228,9 +232,12 @@ export function compileWorkbook(
     globalQueryTableIdx: 0,
     globalSingleXmlCellsIdx: 0,
     pivotCacheDataMap: new Map<string, { cacheId: number; cacheIdx: number }>(),
+    pivotCachePathById: new Map<number, string>(),
+    definedPivotCacheCount: 0,
     calcCells: [],
     allTableParts: [],
   };
+  compileDefinitionPivotCaches(options, ctx, mapping, state);
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
     compileWorksheetPart(
       wsOpts,
@@ -246,32 +253,12 @@ export function compileWorkbook(
 
   compileChartsheets(chartsheetConfigs, ctx, mapping, options.passthroughRelationships);
   compileDialogsheets(dialogsheetConfigs, ctx, mapping);
-  // Round-trip pivotCache references: register the passthrough pivotCache
-  // definition relationship here (before the workbook XML below and the
-  // generic workbook-rels replay later) so the element and the rels agree on
-  // the possibly renumbered id.
-  let rtPivotRefs: PivotCacheReference[] | undefined;
-  if (options.pivotCacheRefs && options.pivotCacheRefs.length > 0) {
-    rtPivotRefs = [];
-    for (const ref of options.pivotCacheRefs) {
-      const rel = (options.passthroughRelationships ?? []).find(
-        (r) => r.source === "xl/workbook.xml" && r.rId === ref.rId,
-      );
-      if (!rel) continue;
-      let rid = ctx.workbookRels.idOf(rel.relationshipType, rel.target);
-      if (rid === undefined) {
-        ctx.workbookRels.add(rel.relationshipType as RelationshipType, rel.target);
-        rid = ctx.workbookRels.idOf(rel.relationshipType, rel.target);
-      }
-      if (rid) rtPivotRefs.push({ cacheId: ref.cacheId, rId: rid });
-    }
-  }
   // Workbook XML (via descriptor)
   let wbXml =
     workbookDesc.stringify(
       {
         sheets,
-        pivotCaches: ctx.pivotCacheRefs.length > 0 ? ctx.pivotCacheRefs : (rtPivotRefs ?? []),
+        pivotCaches: ctx.pivotCacheRefs,
         protection: options.workbookProtection,
         customViews: options.customWorkbookViews,
         fileRecovery: options.fileRecovery,
@@ -533,6 +520,8 @@ export interface WorksheetCompileState {
   globalQueryTableIdx: number;
   globalSingleXmlCellsIdx: number;
   pivotCacheDataMap: Map<string, { cacheId: number; cacheIdx: number }>;
+  pivotCachePathById: Map<number, string>;
+  definedPivotCacheCount: number;
   calcCells: CalcCell[];
   allTableParts: TablePartReference[];
 }
@@ -793,7 +782,7 @@ function compileWorksheetPart(
 
   // Pivot tables
   if (hasPivots) {
-    compileSheetPivots(wsOpts, worksheetConfigs, ctx, mapping, state, wsRels!, sheetName);
+    compileSheetPivots(wsOpts, worksheetConfigs, ctx, mapping, state, wsRels!, wsPath, sheetName);
   }
 
   // Tables (list objects)
@@ -853,7 +842,7 @@ function compileWorksheetPart(
   // Pre-render pivot table data into sheetData
   if (hasPivots) {
     const rendered = renderPivotSheetData(
-      pivotOpts,
+      pivotOpts.filter((pivot) => pivot.mode !== "definition"),
       worksheetConfigs,
       ctx.sharedStrings,
       sheetName,

@@ -1,12 +1,73 @@
-import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generatePresentation, OdpParseError, parsePresentation } from "./index";
+import {
+  generatePresentation,
+  OdpParseError,
+  parsePresentation,
+  type OdpDocumentOptions,
+} from "./index";
 
 describe("ODP codec", () => {
   it("round-trips a presentation through canonical PresentationOptions", () => {
     const parsed = parsePresentation(generatePresentation({ slides: [{ notes: "ODP" }] }));
     expect(parsed.slides?.[0]?.notes).toBe("ODP");
+  });
+
+  it("round-trips a linked picture with a parent-relative URL", () => {
+    const options: OdpDocumentOptions = {
+      slides: [
+        {
+          children: [
+            {
+              picture: {
+                type: "png",
+                sourceUrl: "../images/logo.png",
+                x: 360000,
+                y: 360000,
+                width: 360000,
+                height: 360000,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    expect(
+      parsePresentation(generatePresentation(options)).slides?.[0]?.children?.[0],
+    ).toMatchObject({ picture: { sourceUrl: "../images/logo.png" } });
+  });
+
+  it("restores percent and length semantics in style overlays", () => {
+    const options: OdpDocumentOptions = {
+      slides: [{ notes: "Overlay" }],
+      styleOverlays: [
+        {
+          name: "P1",
+          family: "paragraph",
+          properties: [
+            {
+              name: "style:paragraph-properties",
+              attributes: { "fo:line-height": 150, "fo:margin-left": 360000 },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = generatePresentation(options);
+    const first = readOcf(generated, "application/vnd.oasis.opendocument.presentation").files[
+      "content.xml"
+    ]!;
+    expect(first).toContain('fo:line-height="150%"');
+    expect(first).toContain('fo:margin-left="1cm"');
+
+    const parsed = parsePresentation(generated) as OdpDocumentOptions;
+    const second = readOcf(
+      generatePresentation(parsed),
+      "application/vnd.oasis.opendocument.presentation",
+    ).files["content.xml"]!;
+    expect(second).toContain('fo:line-height="150%"');
+    expect(second).toContain('fo:margin-left="1cm"');
   });
 
   it("wraps invalid packages in OdpParseError", () => {

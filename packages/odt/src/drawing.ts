@@ -10,6 +10,7 @@ import type {
 } from "@office-open/docx";
 import {
   attributeString,
+  CHART_MIME,
   childNamed,
   childrenNamed,
   emuToLength,
@@ -24,6 +25,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import { unknownOdtElement, type ParseContext } from "./body";
+import { OdtParseError } from "./error";
 
 export type PictureType = NonNullable<PictureOptions["type"]>;
 
@@ -111,10 +113,15 @@ export function addShapeStyle(shape: ShapeOptions, styles: string[]): string | u
 /** Inline picture renders as a character-anchored draw:frame + draw:image. */
 export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): string {
   const raster = picture.type === "svg" ? picture.fallback : picture;
-  if (raster.data === undefined) return "";
-  const data = toUint8Array(raster.data);
-  const path = `Pictures/picture${images.length + 1}.${raster.type}`;
-  images.push({ path, data });
+  let path: string;
+  if (raster.data === undefined) {
+    if (!picture.sourceUrl) return "";
+    path = picture.sourceUrl;
+  } else {
+    const data = toUint8Array(raster.data);
+    path = `Pictures/picture${images.length + 1}.${raster.type}`;
+    images.push({ path, data });
+  }
   return xmlElement(
     "draw:frame",
     {
@@ -123,7 +130,14 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
       "svg:height": emuToLength(picture.transformation.height),
       "draw:name": picture.altText?.name,
     },
-    [xmlElement("draw:image", { "xlink:href": path })],
+    [
+      xmlElement("draw:image", {
+        "xlink:href": path,
+        ...(picture.sourceUrl && raster.data === undefined
+          ? { "xlink:type": "simple", "xlink:show": "embed" }
+          : {}),
+      }),
+    ],
   );
 }
 
@@ -166,7 +180,30 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   const href = attributeString(childNamed(frame, "draw:image"), "xlink:href");
   const path = href?.replace(/^\//, "");
   const data = path ? context.binaries[path] : undefined;
-  if (!data || !path) return [];
+  if (!data || !path) {
+    if (href && isExternalUrl(href))
+      return [
+        {
+          picture: {
+            type: pictureTypeFromUrl(href),
+            sourceUrl: href,
+            transformation: {
+              width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
+              height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
+            },
+          },
+        },
+      ];
+    if (href)
+      throw new OdtParseError(
+        `content.xml: ${href}: package image is missing`,
+        "content.xml",
+        "/draw:frame/draw:image/@xlink:href",
+        "draw:image",
+        "missing-package-part",
+      );
+    return [];
+  }
   const extension = path.split(".").pop() ?? "png";
   const imageType = extension === "jpeg" ? "jpg" : extension;
   if (!isRasterPictureType(imageType)) {
@@ -186,13 +223,39 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   ];
 }
 
+export function isExternalUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
+}
+
+function pictureTypeFromUrl(value: string): RasterPictureType {
+  const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
+  if (extension === "jpeg") return "jpg";
+  return isRasterPictureType(extension ?? "") ? (extension as RasterPictureType) : "png";
+}
+
 /** draw:frame + draw:object resolves an embedded chart subdocument. */
 export function parseChartFrame(frame: Element, context: ParseContext): RunOptions[] {
   const href = attributeString(childNamed(frame, "draw:object"), "xlink:href")
     ?.replace(/^\.\//, "")
     .replace(/^\//, "");
   const chart = href ? context.chartBodies.get(href) : undefined;
-  if (!chart) return [];
+  if (!chart) {
+    const mediaType = href ? context.objectMediaTypes.get(href) : undefined;
+    const reason = !href
+      ? "chart frame has no object reference"
+      : mediaType === undefined
+        ? "embedded object media type is not declared"
+        : mediaType === CHART_MIME
+          ? "referenced chart subdocument is missing"
+          : "embedded object has no canonical ODT mapping";
+    throw new OdtParseError(
+      `content.xml: ${href ?? "draw:object"}: ${reason}`,
+      "content.xml",
+      "/draw:frame/draw:object/@xlink:href",
+      "draw:object",
+      reason,
+    );
+  }
   return [
     {
       chart: {

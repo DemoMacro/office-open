@@ -72,6 +72,8 @@ export interface SectionPropertiesOptionsBase {
   columns?: ColumnsProperties;
   /** Section-break placement: "nextPage"/"nextColumn" start there, "continuous" flows on, "evenPage"/"oddPage" next even/odd page. */
   type?: (typeof SectionType)[keyof typeof SectionType];
+  /** Printer settings binary part path, e.g. word/printerSettings/printerSettings1.bin. */
+  printerSettingsPath?: string;
   noEndnote?: boolean;
   formProtection?: boolean;
   bidi?: boolean;

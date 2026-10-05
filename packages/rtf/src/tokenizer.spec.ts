@@ -35,4 +35,15 @@ describe("tokenizeRtf", () => {
     const tokens = tokenizeRtf(String.raw`{\rtf1{\pict\bin hex}}`);
     expect(tokens.some((token) => token.kind === "text" && token.value === "hex")).toBe(true);
   });
+
+  it("materializes binary payload bytes and reports invalid lengths", () => {
+    expect(tokenizeRtf(String.raw`\bin4 ABCD`)).toEqual([
+      { kind: "binary", byteLength: 4, data: new Uint8Array([65, 66, 67, 68]), position: 0 },
+    ]);
+    expect(tokenizeRtf(String.raw`\bin0`)).toEqual([
+      { kind: "binary", byteLength: 0, data: new Uint8Array(0), position: 0 },
+    ]);
+    expect(() => tokenizeRtf("\\bin-1")).toThrow("non-negative byte count");
+    expect(() => tokenizeRtf("\\bin4 AB")).toThrow("extends past end");
+  });
 });

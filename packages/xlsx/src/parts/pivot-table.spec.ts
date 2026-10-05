@@ -1,39 +1,18 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
-import { describe, expect, it } from "vite-plus/test";
+import { expect, it } from "vite-plus/test";
 
-import { pivotTableDesc } from "./pivot-table";
-import type { PivotTableDescriptorOptions } from "./pivot-table";
+import { pivotTableDesc, type PivotTableDescriptorOptions } from "./pivot-table";
 import type { PivotSourceData } from "./pivot/pivot-utils";
+import { XlsxParseError } from "./pivot/pivot-xml";
 
-const writeCtx = {
-  addRelationship: () => "rId1",
-  addMedia: () => "",
-} as unknown as WriteContext;
-
+const writeCtx = { addRelationship: () => "rId1", addMedia: () => "" } as unknown as WriteContext;
 const readCtx = {
+  currentPart: "xl/pivotTables/pivotTable1.xml",
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
 } as unknown as ReadContext;
-
-interface PivotTableParseResult extends PivotTableDescriptorOptions {
-  name?: string;
-  location?: string;
-  pivotFields?: Array<{ axis?: string }>;
-  dataFields?: Array<{ name?: string; subtotal?: string }>;
-  style?: string;
-}
-
-function roundTrip(opts: PivotTableDescriptorOptions) {
-  const xml = pivotTableDesc.stringify(opts, writeCtx)!;
-  const doc = parseXml(xml);
-  const el = doc.elements?.[0];
-  if (!el) throw new Error("parsed document has no root element");
-  return pivotTableDesc.parse(el, readCtx) as unknown as PivotTableParseResult;
-}
-
-// ── Shared source data ──
 
 const sourceData: PivotSourceData = {
   fieldNames: ["Region", "Product", "Sales"],
@@ -45,121 +24,66 @@ const sourceData: PivotSourceData = {
   ],
 };
 
-// ── Tests ──
+function roundTrip(opts: PivotTableDescriptorOptions) {
+  const xml = pivotTableDesc.stringify(opts, writeCtx)!;
+  const el = parseXml(xml).elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return { xml, result: pivotTableDesc.parse(el, readCtx) };
+}
 
-describe("pivotTableDesc round-trip", () => {
-  it("round-trips basic pivot with rows and data", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        source: "Sheet1!A1:C5",
-        rows: ["Region"],
-        data: [{ field: "Sales", summarize: "sum" }],
-      },
-      sourceData,
-      cacheId: 1,
-    };
-    const result = roundTrip(opts);
+it("round-trips a complete pivotTable definition", () => {
+  const xml =
+    '<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" name="SalesPivot" cacheId="7" dataCaption="Values" applyNumberFormats="0" applyWidthHeightFactors="1">' +
+    '<location ref="A3:D9" firstHeaderRow="1" firstDataRow="2" firstDataCol="1" rowPageCount="1" colPageCount="1"/>' +
+    '<pivotFields count="3"><pivotField axis="axisRow" showAll="0"/><pivotField axis="axisCol" showAll="0"/><pivotField dataField="1" showAll="0"/></pivotFields>' +
+    '<rowFields count="1"><field x="0"/></rowFields><rowItems count="2"><i><x/></i><i t="grand"><x/></i></rowItems>' +
+    '<colFields count="1"><field x="1"/></colFields><colItems count="2"><i><x/></i><i t="grand"><x/></i></colItems>' +
+    '<dataFields count="1"><dataField name="Sum of Sales" fld="2" baseField="0" baseItem="0"/></dataFields>' +
+    '<pivotTableStyleInfo name="PivotStyleDark1" showRowHeaders="1" showColHeaders="1"/></pivotTableDefinition>';
+  const definition = pivotTableDesc.parse(parseXml(xml).elements![0]!, readCtx);
+  expect(definition.name).toBe("SalesPivot");
+  expect(definition.cacheId).toBe(7);
+  expect(definition.location?.attributes?.ref).toBe("A3:D9");
+  expect(definition.pivotFields?.children?.[0]?.attributes?.axis).toBe("axisRow");
+  expect(definition.rowItems?.children?.map((item) => item.name)).toEqual(["i", "i"]);
+  expect(definition.dataFields?.children?.[0]?.attributes?.name).toBe("Sum of Sales");
+  expect(pivotTableDesc.stringify({ definition }, writeCtx)).toBe(xml);
+});
 
-    expect(result.name).toBe("PivotTable1");
-    expect(result.cacheId).toBe(1);
-    expect(result.location).toBeDefined();
-    expect(typeof result.location).toBe("string");
-
-    const pivotFields = result.pivotFields!;
-    expect(pivotFields).toHaveLength(3);
-    // Region is axisRow
-    expect(pivotFields[0]?.axis).toBe("axisRow");
-    // Sales is dataField
-    expect(pivotFields[2]?.axis).toBeUndefined();
+it("keeps source-mode generation and parses its complete definition", () => {
+  const { result } = roundTrip({
+    options: {
+      mode: "source",
+      source: "Sheet1!A1:C5",
+      rows: ["Region", "Product"],
+      columns: undefined,
+      data: [{ field: "Sales", summarize: "average", name: "Avg Sales" }],
+      style: "PivotStyleDark1",
+    },
+    sourceData,
+    cacheId: 5,
   });
+  expect(result.name).toBe("PivotTable1");
+  expect(result.cacheId).toBe(5);
+  expect(result.location?.attributes?.ref).toBeDefined();
+  expect(result.pivotFields?.children?.[0]?.attributes?.axis).toBe("axisRow");
+  expect(result.pivotFields?.children?.[1]?.attributes?.axis).toBe("axisRow");
+  expect(result.dataFields?.children?.[0]?.attributes?.subtotal).toBe("average");
+  expect(result.pivotTableStyleInfo?.attributes?.name).toBe("PivotStyleDark1");
+});
 
-  it("round-trips pivot with custom name", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        name: "MyPivot",
-        source: "A1:C5",
-        rows: ["Region"],
-        data: [{ field: "Sales" }],
-      },
-      sourceData,
-      cacheId: 5,
-    };
-    const result = roundTrip(opts);
-
-    expect(result.name).toBe("MyPivot");
-    expect(result.cacheId).toBe(5);
-  });
-
-  it("round-trips data fields with subtotal type", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        source: "A1:C5",
-        rows: ["Region"],
-        data: [
-          { field: "Sales", summarize: "average", name: "Avg Sales" },
-          { field: "Sales", summarize: "count", name: "Count" },
-        ],
-      },
-      sourceData,
-      cacheId: 1,
-    };
-    const result = roundTrip(opts);
-
-    const dataFields = result.dataFields!;
-    expect(dataFields).toHaveLength(2);
-    expect(dataFields[0]?.name).toBe("Avg Sales");
-    expect(dataFields[0]?.subtotal).toBe("average");
-    expect(dataFields[1]?.name).toBe("Count");
-    expect(dataFields[1]?.subtotal).toBe("count");
-  });
-
-  it("round-trips pivot with columns", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        source: "A1:C5",
-        rows: ["Region"],
-        columns: ["Product"],
-        data: [{ field: "Sales" }],
-      },
-      sourceData,
-      cacheId: 1,
-    };
-    const result = roundTrip(opts);
-
-    const pivotFields = result.pivotFields!;
-    expect(pivotFields[1]?.axis).toBe("axisCol");
-  });
-
-  it("round-trips pivot with style", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        source: "A1:C5",
-        rows: ["Region"],
-        data: [{ field: "Sales" }],
-        style: "PivotStyleDark1",
-      },
-      sourceData,
-      cacheId: 1,
-    };
-    const result = roundTrip(opts);
-
-    expect(result.style).toBe("PivotStyleDark1");
-  });
-
-  it("round-trips pivot with multiple rows", () => {
-    const opts: PivotTableDescriptorOptions = {
-      options: {
-        source: "A1:C5",
-        rows: ["Region", "Product"],
-        data: [{ field: "Sales" }],
-      },
-      sourceData,
-      cacheId: 1,
-    };
-    const result = roundTrip(opts);
-
-    const pivotFields = result.pivotFields!;
-    expect(pivotFields[0]?.axis).toBe("axisRow");
-    expect(pivotFields[1]?.axis).toBe("axisRow");
-  });
+it("reports unknown pivotTable children structurally", () => {
+  const xml =
+    '<pivotTableDefinition xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><location/><notAllowed/></pivotTableDefinition>';
+  try {
+    pivotTableDesc.parse(parseXml(xml).elements![0]!, readCtx);
+    throw new Error("expected parse failure");
+  } catch (error) {
+    expect(error).toBeInstanceOf(XlsxParseError);
+    const parseError = error as XlsxParseError;
+    expect(parseError.part).toBe("xl/pivotTables/pivotTable1.xml");
+    expect(parseError.path).toBe("/pivotTableDefinition");
+    expect(parseError.name).toBe("notAllowed");
+    expect(parseError.reason).toContain("unexpected child");
+  }
 });

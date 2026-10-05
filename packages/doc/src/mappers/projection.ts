@@ -145,11 +145,53 @@ export function applyHyperlinkFields(
   }
 }
 
-export function parseOptional<T>(parse: () => T, fallback: T): T {
+export interface RequiredRecordContext {
+  readonly part: "stream" | "table" | "data" | "document";
+  readonly path: string;
+  readonly recordType?: number | string;
+  readonly recordName?: string;
+  readonly offset?: number;
+  readonly byteRange?: readonly [number, number];
+}
+
+export function parseRequired<T>(context: RequiredRecordContext, parse: () => T): T {
   try {
     return parse();
   } catch (error) {
-    if (!(error instanceof DocParseError)) throw error;
+    if (error instanceof DocParseError) {
+      throw new DocParseError(error.message, {
+        ...error.context,
+        ...context,
+        reason: error.context.reason,
+      });
+    }
+    throw new DocParseError((error as Error).message, { ...context, reason: "invalid-record" });
+  }
+}
+
+/**
+ * Tolerant auxiliary-structure parsing: real-world DOC files (all of which
+ * Word opens) routinely carry auxiliary tables with non-fatal anomalies —
+ * truncated style sheets, section tables outside the table stream, …  A
+ * failure there skips the structure instead of failing the document, and the
+ * abandonment is reported as a structured warning rather than dropped
+ * silently. Main-document-stream parsing stays strict (parseRequired).
+ */
+export function parseTolerant<T>(context: RequiredRecordContext, fallback: T, parse: () => T): T {
+  try {
+    return parse();
+  } catch (error) {
+    const reason =
+      error instanceof DocParseError
+        ? (error.context.reason ?? "invalid-record")
+        : "invalid-record";
+    console.warn(
+      `doc parse diagnostic: skipped ${context.recordName ?? context.path} (${JSON.stringify({
+        ...context,
+        reason,
+        detail: String((error as Error).message).slice(0, 160),
+      })})`,
+    );
     return fallback;
   }
 }

@@ -5,6 +5,7 @@
  *
  * @module
  */
+import { partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
 import { attr, findChild, findDeep, findFirst, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseAltChunk } from "@parts/alt-chunk/alt-chunk-parse";
@@ -31,8 +32,12 @@ import {
   runRPrXml,
 } from "../body";
 import { DocxReadContext } from "../context";
+import { DocxParseError } from "../errors";
 import { setBodyParseChild } from "../parts";
 import { stringifyElement } from "../util/stringify-element";
+
+const PRINTER_SETTINGS_RELATIONSHIP_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings";
 
 // ── Section properties parser ────────────────────────────────────────────────
 
@@ -50,6 +55,7 @@ type ParsedSectionProperties = SectionPropertiesOptions & {
  */
 function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectionProperties {
   const opts: ParsedSectionProperties = parseSectionPropertiesEl(el);
+  parsePrinterSettingsPath(el, ctx, opts);
 
   // Headers/footers - parse from references and store in a separate field
   const headerRefs: Record<string, SectionChild[]> = {};
@@ -85,6 +91,37 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
   }
 
   return opts;
+}
+
+function parsePrinterSettingsPath(
+  el: Element,
+  ctx: DocxReadContext,
+  opts: ParsedSectionProperties,
+): void {
+  const printerSettings = findChild(el, "w:printerSettings");
+  if (!printerSettings) return;
+  const relationshipId = attr(printerSettings, "r:id");
+  const relationship = ctx.docx.doc
+    .get(partPathToRelsPath(ctx.currentPart))
+    ?.elements?.find(
+      (candidate) =>
+        candidate.name === "Relationship" &&
+        attr(candidate, "Id") === relationshipId &&
+        attr(candidate, "Type") === PRINTER_SETTINGS_RELATIONSHIP_TYPE,
+    );
+  const target = relationship ? attr(relationship, "Target") : undefined;
+  if (!target) return;
+  const targetPath = resolveRelationshipTarget(ctx.currentPart, target);
+  if (!ctx.docx.doc.has(targetPath)) {
+    throw new DocxParseError(
+      `Missing printer settings part: ${targetPath}`,
+      "word/document.xml",
+      "w:body/w:sectPr/w:printerSettings",
+      "missing-printer-settings-part",
+      targetPath,
+    );
+  }
+  opts.printerSettingsPath = targetPath;
 }
 
 /**

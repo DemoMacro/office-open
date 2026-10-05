@@ -90,6 +90,7 @@ describe("parseWorkbook round-trip", () => {
           rows: [],
           pivotTables: [
             {
+              mode: "source",
               source: "A1:C3",
               sourceSheet: "Data",
               rows: ["City"],

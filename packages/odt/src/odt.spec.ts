@@ -2,7 +2,13 @@ import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateDocument, OdtParseError, parseDocument, type DocumentOptions } from "./index";
+import {
+  generateDocument,
+  OdtParseError,
+  parseDocument,
+  type DocumentOptions,
+  type OdtDocumentOptions,
+} from "./index";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
 
@@ -13,6 +19,13 @@ function projection(value: unknown): unknown {
 function odtPackage(body: string): Uint8Array {
   return generateOcf("application/vnd.oasis.opendocument.text", {
     "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles/><office:body><office:text>${body}</office:text></office:body></office:document-content>`,
+    "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+  });
+}
+
+function odtStyledPackage(styles: string, body: string): Uint8Array {
+  return generateOcf("application/vnd.oasis.opendocument.text", {
+    "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} ${FORM_NAMESPACE}><office:automatic-styles>${styles}</office:automatic-styles><office:body><office:text>${body}</office:text></office:body></office:document-content>`,
     "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
   });
 }
@@ -42,6 +55,123 @@ describe("ODT canonical projection", () => {
 
   it("rejects invalid packages with a structured error", () => {
     expect(() => parseDocument(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
+  });
+
+  it("round-trips mixed canonical and overlay paragraph styles", () => {
+    const source = odtStyledPackage(
+      '<style:style style:name="P1" style:family="paragraph"><style:paragraph-properties fo:text-align="center" style:contextual-spacing="true"/></style:style>',
+      '<text:p text:style-name="P1">Styled</text:p>',
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { text: "Styled", style: "P1", alignment: "center" },
+    });
+    expect(parsed.styleOverlays).toEqual([
+      {
+        name: "P1",
+        family: "paragraph",
+        properties: [
+          {
+            name: "style:paragraph-properties",
+            attributes: { "fo:text-align": "center", "style:contextual-spacing": "true" },
+          },
+        ],
+      },
+    ]);
+
+    expect(
+      (parseDocument(generateDocument(parsed)) as OdtDocumentOptions).sections[0]?.children?.[0],
+    ).toMatchObject({
+      paragraph: { text: "Styled", style: "P1", alignment: "center" },
+    });
+  });
+
+  it("round-trips mixed canonical and overlay run styles", () => {
+    const source = odtStyledPackage(
+      '<style:style style:name="C1" style:family="text"><style:text-properties fo:font-weight="bold" fo:background-color="#00ff00"/></style:style>',
+      '<text:p><text:span text:style-name="C1">Styled</text:span></text:p>',
+    );
+    const parsed = parseDocument(source) as OdtDocumentOptions;
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
+    });
+
+    expect(
+      (parseDocument(generateDocument(parsed)) as OdtDocumentOptions).sections[0]?.children?.[0],
+    ).toMatchObject({
+      paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
+    });
+  });
+
+  it("round-trips a linked picture with a parent-relative URL", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "png",
+                      sourceUrl: "../images/logo.png",
+                      transformation: { width: 360000, height: 360000 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseDocument(generateDocument(options));
+    expect(parsed.sections[0]?.children?.[0]).toMatchObject({
+      paragraph: {
+        children: [
+          {
+            picture: {
+              type: "png",
+              sourceUrl: "../images/logo.png",
+              transformation: { width: 360000, height: 360000 },
+            },
+          },
+        ],
+      },
+    });
+  });
+
+  it("rejects a non-chart embedded object with a structured error", () => {
+    const source = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles/><office:body><office:text><text:p><draw:frame svg:width="4cm" svg:height="3cm"><draw:object xlink:href="./Object 1" xlink:type="simple" xlink:show="embed" xlink:actuate="onLoad"/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/": "",
+      },
+      {},
+      {
+        version: "1.3",
+        entries: [
+          { fullPath: "/", version: "1.3", mediaType: "application/vnd.oasis.opendocument.text" },
+          { fullPath: "content.xml", mediaType: "text/xml" },
+          { fullPath: "styles.xml", mediaType: "text/xml" },
+          { fullPath: "Object 1/", mediaType: "application/vnd.oasis.opendocument.presentation" },
+        ],
+      },
+    );
+    let error: unknown;
+    try {
+      parseDocument(source);
+    } catch (cause) {
+      error = cause;
+    }
+    expect(error).toBeInstanceOf(OdtParseError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      name: "draw:object",
+      reason: "embedded object has no canonical ODT mapping",
+    });
   });
 
   it("round-trips revisions through canonical insertion and deletion children", () => {

@@ -49,6 +49,9 @@ export type PathAnimationType =
 /** Media playback action: playAudio, playVideo, or "play" (media-type-agnostic). */
 export type MediaAnimationType = "playAudio" | "playVideo" | "play";
 
+/** Animation timing value in milliseconds, or "indefinite" for open-ended timing. */
+export type AnimationDuration = number | "indefinite";
+
 /** Interpolation for property animations (p:anim @calcmode). */
 export type AnimationCalcMode = "discrete" | "linear" | "formula";
 
@@ -77,7 +80,7 @@ export interface EndConditionOptions {
     | "onNext"
     | "onPrev"
     | "onStopAudio";
-  delay?: string;
+  delay?: AnimationDuration;
   timeNodeId?: number;
   /** Which sibling time nodes the condition covers: first, last, or all. */
   runtimeNode?: "first" | "last" | "all";
@@ -161,8 +164,8 @@ export interface AnimationTemplateOptions {
 
 export interface AnimationOptions {
   type?: AnimationType;
-  duration?: number;
-  delay?: number;
+  duration?: AnimationDuration;
+  delay?: AnimationDuration;
   trigger?: AnimationTrigger;
   direction?: AnimationDirection;
   class?: AnimationClass;
@@ -218,8 +221,8 @@ export interface AnimationOptions {
   };
 
   // cTn advanced time node attributes
-  /** Repeat duration ("indefinite" or milliseconds). */
-  repeatDuration?: string;
+  /** Repeat duration in milliseconds, or "indefinite" for open-ended timing. */
+  repeatDuration?: AnimationDuration;
   /** Acceleration as integer percent (default 0). */
   acceleration?: number;
   /** Deceleration as integer percent (default 0). */

@@ -1,7 +1,7 @@
-import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateWorkbook, OdsParseError, parseWorkbook } from "./index";
+import { generateWorkbook, OdsParseError, parseWorkbook, type OdsDocumentOptions } from "./index";
 
 describe("ODS codec", () => {
   it("round-trips a workbook through canonical WorkbookOptions", () => {
@@ -105,6 +105,92 @@ describe("ODS codec", () => {
       path: '/office:document-content/office:body/office:spreadsheet/table:table[@table:name="Sheet1"]/table:unknown',
       name: "table:unknown",
       reason: "element has no canonical WorksheetOptions mapping",
+    });
+  });
+
+  it("emits linked-only cell images without a package media part", () => {
+    const image = {
+      type: "image" as const,
+      href: "https://example.com/logo.png",
+      sourceUrl: "https://example.com/logo.png",
+      width: 914400,
+      height: 914400,
+    };
+    const generated = generateWorkbook({
+      worksheets: [{ rows: [{ cells: [{ value: "Logo", graphics: [image] }] }] }],
+    });
+    const { binaries, manifest } = readOcf(
+      generated,
+      "application/vnd.oasis.opendocument.spreadsheet",
+    );
+
+    expect(Object.keys(binaries)).toEqual([]);
+    expect(manifest.entries.map((entry) => entry.fullPath)).not.toContain(image.href);
+    expect(
+      parseWorkbook(generated).worksheets?.[0]?.rows?.[0]?.cells?.[0]?.graphics?.[0],
+    ).toMatchObject({ sourceUrl: image.sourceUrl, data: undefined });
+  });
+
+  it("restores percent and length semantics in style overlays", () => {
+    const options: OdsDocumentOptions = {
+      worksheets: [{ rows: [{ cells: [{ value: "Overlay" }] }] }],
+      styleOverlays: [
+        {
+          name: "ro1",
+          family: "table-row",
+          properties: [
+            {
+              name: "style:table-row-properties",
+              attributes: { "style:row-height": 20, "style:use-optimal-row-height": false },
+            },
+          ],
+        },
+        {
+          name: "P1",
+          family: "paragraph",
+          properties: [
+            {
+              name: "style:paragraph-properties",
+              attributes: { "fo:line-height": 150 },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = generateWorkbook(options);
+    const content = readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet").files[
+      "content.xml"
+    ]!;
+    expect(content).toContain('style:row-height="20pt"');
+    expect(content).toContain('fo:line-height="150%"');
+    expect(content).not.toMatch(/(?:row-height|line-height)="(?:150|20)"(?:\s|\/>)/);
+  });
+
+  it("rejects a cell image with neither embedded data nor a source URL", () => {
+    let error: unknown;
+    try {
+      generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  { value: "Logo", graphics: [{ type: "image", href: "Pictures/logo.png" }] },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+    } catch (cause) {
+      error = cause;
+    }
+
+    expect(error).toBeInstanceOf(OdsParseError);
+    expect(error).toMatchObject({
+      part: "content.xml",
+      name: "draw:image",
+      reason: "missing-image-source",
     });
   });
 

@@ -36,6 +36,7 @@ export {
 } from "./runtime/xml-vocabulary";
 export {
   generateOcf,
+  hasOcfManifestOverlay,
   manifestXml,
   readOcf,
   readXml,
@@ -50,10 +51,10 @@ export {
   manifestOptionsXml,
   parseManifestOptions,
   type ManifestAttributeName,
-  type ManifestAttributes,
-  type ManifestElementName,
-  type OcfManifestElement,
+  type OcfManifestFileEntryOptions,
   type OcfManifestOptions,
+  type OcfEncryptionDataOptions,
+  type OcfEncryptedKeyOptions,
 } from "./container/manifest";
 export {
   OcfError,
@@ -62,6 +63,12 @@ export {
   OdfSchemaError,
   OdfXmlError,
 } from "./errors";
+export {
+  compareOcfSemantic,
+  ocfSemanticDigest,
+  type OcfEntrySemanticDigest,
+  type OcfSemanticDigest,
+} from "./container/digest";
 export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta/core-properties";
 export {
   CHART_MIME,

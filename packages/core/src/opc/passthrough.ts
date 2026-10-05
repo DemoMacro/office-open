@@ -56,9 +56,28 @@ export interface PassthroughRelationship {
   targetMode?: "External";
 }
 
+/**
+ * Format-side rawParts policy. `opaquePatterns` declares parts with no
+ * canonical XML equivalent (vbaProject.bin, printerSettings .bin, OLE
+ * embeddings, …) that may travel verbatim. Everything else — especially
+ * XML parts of rebuilt documents — must eventually be absorbed into the
+ * model; the stage-0 audit only flags the gap.
+ */
+export interface PassthroughPolicy {
+  /** Matched (case-sensitively) against the full part path. */
+  opaquePatterns?: RegExp[];
+}
+
 export interface PassthroughResult {
   parts: PassthroughPart[];
   relationships: PassthroughRelationship[];
+  /**
+   * Stage-0 rawParts audit: XML/.rels parts collected under a policy that
+   * did not declare them opaque. These are candidate modeled-XML absorption
+   * gaps; the strict policy will reject them once packages migrate. Kept
+   * out of PassthroughPart so public `rawParts` options stay schema-clean.
+   */
+  audit: { path: string; reason: "modeled-xml-requires-absorption" }[];
 }
 
 // ── Collection ──
@@ -84,6 +103,7 @@ function extensionOf(path: string): string | undefined {
 export function collectPassthroughParts(
   archive: ParsedArchive,
   rebuiltPaths: Iterable<string>,
+  policy?: PassthroughPolicy,
 ): PassthroughResult {
   const rebuilt = new Set<string>(ALWAYS_REBUILT);
   for (const p of rebuiltPaths) rebuilt.add(p);
@@ -111,6 +131,7 @@ export function collectPassthroughParts(
     return ext ? defaultMap.get(ext.toLowerCase()) : undefined;
   };
 
+  const auditEntries: PassthroughResult["audit"] = [];
   // Everything not rebuilt passes through. The default is "keep": companion
   // .rels of passthrough parts and media referenced only through them fall
   // out of this same loop — no closure walk needed, because not-rebuilt IS
@@ -133,7 +154,12 @@ export function collectPassthroughParts(
         : sourceData;
     kept.add(path.toLowerCase());
     const contentType = contentTypeFor(path);
-    parts.push(contentType === undefined ? { path, data } : { path, data, contentType });
+    const isXmlPart = path.endsWith(".xml") || path.endsWith(".rels");
+    const part: PassthroughPart = { path, data };
+    if (contentType !== undefined) part.contentType = contentType;
+    if (isXmlPart && !policy?.opaquePatterns?.some((p) => p.test(path)))
+      auditEntries.push({ path, reason: "modeled-xml-requires-absorption" });
+    parts.push(part);
   }
 
   // Rebuilt parts whose source .rels point at passthrough parts: keep the
@@ -176,7 +202,7 @@ export function collectPassthroughParts(
   // thumbnail above all — must be captured the same way.
   captureRels(archive.get("_rels/.rels"), "");
 
-  return { parts, relationships };
+  return { parts, relationships, audit: auditEntries };
 }
 
 // ── Dangling-relationship guard ──

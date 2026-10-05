@@ -10,6 +10,8 @@ export interface PptParseContext {
   readonly recordType?: number | string;
   /** Human-readable PowerPoint record name when available. */
   readonly recordName?: string;
+  /** Escher OPT property id when the failure is scoped to one property. */
+  readonly propertyId?: number;
   /** Stream-relative byte offset at which validation failed. */
   readonly offset?: number;
   /** Required or declared field/record length in bytes. */

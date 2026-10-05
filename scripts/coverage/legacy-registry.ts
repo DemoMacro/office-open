@@ -269,7 +269,12 @@ export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
         {
           name: "External references",
           assertion: "SUPBOOK and EXTERNSHEET project",
-          testId: "parses SUPBOOK and EXTERNSHEET",
+          testId: "parses internal and external SUPBOOK references",
+        },
+        {
+          name: "DDE and OLE references",
+          assertion: "DDE and OLE SUPBOOK targets project",
+          testId: "parses DDE and OLE SUPBOOK references",
         },
         {
           name: "Hyperlinks",
@@ -358,6 +363,26 @@ export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
           name: "Group anchors",
           assertion: "nested groups retain 32-bit child anchors",
           testId: "reads 32-bit child anchors in nested groups",
+        },
+        {
+          name: "No-text autoshapes",
+          assertion: "no-text autoshapes project as base shapes with geometry",
+          testId: "keeps a no-text autoshape as a base shape",
+        },
+        {
+          name: "Legacy lines and connectors",
+          assertion: "lines and connectors project as endpoint children",
+          testId: "keeps a legacy line as a line child",
+        },
+        {
+          name: "Mixed group children",
+          assertion: "shape, picture, and connector order is retained in groups",
+          testId: "preserves shape, picture, and connector order in groups",
+        },
+        {
+          name: "Unknown visual properties",
+          assertion: "unknown visual OPT properties fail structurally",
+          testId: "reports unknown visual shape properties structurally",
         },
         {
           name: "Embedded picture stream",
@@ -485,6 +510,21 @@ export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
           name: "Pictures",
           assertion: "PNG bytes and dimensions project",
           testId: "extracts PNG picture bytes and twip dimensions",
+        },
+        {
+          name: "Binary destinations",
+          assertion: "picture and object binary payloads project",
+          testId: "recognizes an embedded object class",
+        },
+        {
+          name: "Stylesheets",
+          assertion: "complete style metadata and formatting project",
+          testId: "projects stylesheet metadata and body formatting",
+        },
+        {
+          name: "Numbering tables",
+          assertion: "complete list tables and overrides project",
+          testId: "projects a complete list table and override",
         },
         {
           name: "Bookmarks",

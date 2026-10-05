@@ -425,6 +425,10 @@ function externSheetRecord(): Uint8Array {
   return record(0x0017, uint16Body([1, 0, 0, 0]));
 }
 
+function externalReferenceToken(externIndex: number, row = 0, column = 0): Uint8Array {
+  return concat([new Uint8Array([0x3a]), uint16Body([externIndex, row, column | 0x4000])]);
+}
+
 function mergedCellsRecord(): Uint8Array {
   return record(0x00e5, uint16Body([1, 0, 0, 0, 1, 0]));
 }
@@ -1051,7 +1055,23 @@ describe("parseWorkbook", () => {
     ]);
   });
 
-  it("parses SUPBOOK and EXTERNSHEET", () => {
+  it("parses internal and external SUPBOOK references", () => {
+    const internalData = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        record(0x01ae, concat([uint16Body([1, 0x0401]), ...["Local"].map(shortBiff8String)])),
+        externSheetRecord(),
+        nameRecord("Link", externalReferenceToken(1)),
+      ],
+    );
+    expect(parseWorkbook(xls(internalData)).definedNames).toEqual([
+      expect.objectContaining({ name: "Link", value: "Local!$A$1" }),
+    ]);
+    expect(parseWorkbook(xls(internalData)).externalLinks).toBeUndefined();
+
     const data = workbook(
       8,
       [{ name: "Sheet", cells: [] }],
@@ -1063,6 +1083,89 @@ describe("parseWorkbook", () => {
       target: "external.xlsx",
       sheetNames: ["Data"],
     });
+  });
+
+  it("parses DDE and OLE SUPBOOK references", () => {
+    const dde = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [supbookRecord("Excel|Topic", ["Item"]), externSheetRecord()],
+    );
+    expect(parseWorkbook(xls(dde)).externalLinks?.[0]?.ddeLink).toEqual({
+      ddeService: "Excel",
+      ddeTopic: "Topic",
+      ddeItems: [{ name: "Item" }],
+    });
+
+    const ole = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [supbookRecord("package:Word.Document.12", ["Item"]), externSheetRecord()],
+    );
+    expect(parseWorkbook(xls(ole)).externalLinks?.[0]?.oleLink).toEqual({
+      progId: "Word.Document.12",
+      oleItems: [{ name: "Item" }],
+    });
+  });
+
+  it("tolerates unknown records and malformed auxiliary structures with warnings", () => {
+    const warnings: string[] = [];
+    const warn = console.warn;
+    console.warn = (message: string) => warnings.push(message);
+    try {
+      const unknown = workbook(
+        8,
+        [{ name: "Sheet", cells: [] }],
+        [],
+        [],
+        [record(0xffff, new Uint8Array(1))],
+      );
+      const parsed = parseWorkbook(xls(unknown));
+      expect(parsed.worksheets?.[0]?.name).toBe("Sheet");
+      expect(warnings.some((message) => message.includes("unknown-record"))).toBe(true);
+      expect(warnings.some((message) => message.includes("0xffff"))).toBe(true);
+
+      warnings.length = 0;
+      const malformedSupbook = workbook(
+        8,
+        [{ name: "Sheet", cells: [] }],
+        [],
+        [],
+        [record(0x01ae, new Uint8Array(1))],
+      );
+      parseWorkbook(xls(malformedSupbook));
+      expect(warnings.some((message) => message.includes("truncated-supbook"))).toBe(true);
+
+      warnings.length = 0;
+      const malformedName = workbook(
+        8,
+        [{ name: "Sheet", cells: [] }],
+        [],
+        [],
+        [nameRecord("Broken", new Uint8Array([0xff]))],
+      );
+      parseWorkbook(xls(malformedName));
+      expect(warnings.some((message) => message.includes("invalid-defined-name-formula"))).toBe(
+        true,
+      );
+    } finally {
+      console.warn = warn;
+    }
+  });
+
+  it("skips registered structural no-op records", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [record(0x005c, new TextEncoder().encode("office-open"))],
+    );
+    expect(parseWorkbook(xls(data)).worksheets).toHaveLength(1);
   });
 
   it("parses HLINK hyperlinks", () => {

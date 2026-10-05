@@ -256,10 +256,17 @@ describe("parseDocument RTF rich destinations", () => {
     });
   });
 
-  it("skips a malformed picture without failing the document", () => {
-    expect(parseDocument(String.raw`{\rtf1{\pict\pngblip\picw0\pich0 zz}Text}`)).toEqual({
-      sections: [{ children: [{ paragraph: { children: [{ text: "Text" }] } }] }],
-    });
+  it("rejects a malformed picture with structured context", () => {
+    expect(() => parseDocument(String.raw`{\rtf1{\pict\pngblip\picw0\pich0 zz}Text}`)).toThrow(
+      expect.objectContaining({
+        context: {
+          part: "RTF picture destination",
+          path: "\\pict",
+          name: "picture",
+          reason: "missing data or dimensions",
+        },
+      }),
+    );
   });
 
   it("pairs bookmark starts and ends", () => {
@@ -292,6 +299,126 @@ describe("parseDocument RTF rich destinations", () => {
     });
   });
 
+  it("projects a complete list table and override", () => {
+    const source = String.raw`{\rtf1{\listtable{\list\listtemplateid9\listhybrid{\listlevel\levelnfc2\leveljc1\levelstartat3\levelindent720{\leveltext\'02\'00.;}{\levelnumbers;}}{\listname rtf-list-template-9;}\listid77}}{\listoverridetable{\listoverride\listid77\listoverridecount0\ls4}}\ls4\ilvl0\par Item}`;
+    expect(parseDocument(source).numbering?.abstractNumberings).toEqual([
+      {
+        reference: "rtf-list-template-9",
+        levels: [
+          {
+            level: 0,
+            format: "lowerRoman",
+            alignment: "center",
+            start: 3,
+            text: "%1.",
+            paragraph: { indent: { left: 720 } },
+          },
+        ],
+      },
+    ]);
+    expect(firstParagraph(source).numbering).toEqual({
+      reference: "rtf-list-template-9",
+      level: 0,
+    });
+  });
+
+  it("projects stylesheet metadata and body formatting", () => {
+    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}{\stylesheet{\s7 Base;\sbasedon7\snext7\shidden\spriority9\sqformat\ql\li120\sb240\brdrb\brdrw15\cbpat1}{\cs8 Link;\b\i}}\s7 Body}`;
+    const styles = parseDocument(source).styles;
+    expect(styles?.paragraphStyles?.[0]).toMatchObject({
+      id: "rtf-style-7",
+      basedOn: "rtf-style-7",
+      next: "rtf-style-7",
+      hidden: true,
+      uiPriority: 9,
+      quickFormat: true,
+      paragraph: {
+        alignment: "left",
+        indent: { left: 120 },
+        spacing: { before: 240 },
+        border: { bottom: { style: "single", size: 15 } },
+        shading: { type: "clear", fill: "FF0000" },
+      },
+    });
+    expect(styles?.characterStyles?.[0]).toMatchObject({
+      id: "rtf-character-style-8",
+      run: { bold: true, italic: true },
+    });
+  });
+
+  it("rejects an unlisted non-starred destination", () => {
+    expect(() => parseDocument(String.raw`{\rtf1Keep{\unknown Hidden}}`)).toThrow(
+      expect.objectContaining({
+        context: {
+          part: "RTF destination",
+          path: "destination/unknown",
+          name: "unknown",
+          reason: "no canonical DocumentOptions equivalent and writer does not regenerate it",
+        },
+      }),
+    );
+  });
+
+  it("projects a complete list table and override", () => {
+    const source = String.raw`{\rtf1{\listtable{\list\listtemplateid9\listhybrid{\listlevel\levelnfc2\leveljc1\levelstartat3\levelindent720{\leveltext\'02\'00.;}{\levelnumbers;}}{\listname rtf-list-template-9;}\listid77}}{\listoverridetable{\listoverride\listid77\listoverridecount0\ls4}}\ls4\ilvl0\par Item}`;
+    expect(parseDocument(source).numbering?.abstractNumberings).toEqual([
+      {
+        reference: "rtf-list-template-9",
+        levels: [
+          {
+            level: 0,
+            format: "lowerRoman",
+            alignment: "center",
+            start: 3,
+            text: "%1.",
+            paragraph: { indent: { left: 720 } },
+          },
+        ],
+      },
+    ]);
+    expect(firstParagraph(source).numbering).toEqual({
+      reference: "rtf-list-template-9",
+      level: 0,
+    });
+  });
+
+  it("projects stylesheet metadata and body formatting", () => {
+    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}{\stylesheet{\s7 Base;\sbasedon7\snext7\shidden\spriority9\sqformat\ql\li120\sb240\brdrb\brdrw15\cbpat1}{\cs8 Link;\b\i}}\s7 Body}`;
+    const styles = parseDocument(source).styles;
+    expect(styles?.paragraphStyles?.[0]).toMatchObject({
+      id: "rtf-style-7",
+      basedOn: "rtf-style-7",
+      next: "rtf-style-7",
+      hidden: true,
+      uiPriority: 9,
+      quickFormat: true,
+      paragraph: {
+        alignment: "left",
+        indent: { left: 120 },
+        spacing: { before: 240 },
+        border: { bottom: { style: "single", size: 15 } },
+        shading: { type: "clear", fill: "FF0000" },
+      },
+    });
+    expect(styles?.characterStyles?.[0]).toMatchObject({
+      id: "rtf-character-style-8",
+      run: { bold: true, italic: true },
+    });
+  });
+
+  it("rejects an unlisted non-starred destination", () => {
+    expect(() => parseDocument(String.raw`{\rtf1Keep{\unknown Hidden}}`)).toThrow(
+      expect.objectContaining({
+        context: {
+          part: "RTF destination",
+          path: "destination/unknown",
+          name: "unknown",
+          reason: "no canonical DocumentOptions equivalent and writer does not regenerate it",
+        },
+      }),
+    );
+  });
+
   it("projects section page size", () => {
     const document = parseDocument(String.raw`{\rtf1\sectd\pgwsxn10000\pghsxn12000\par Page}`);
     expect(document.sections[0]?.properties).toEqual({
@@ -322,7 +449,19 @@ describe("parseDocument RTF rich destinations", () => {
 
   it("recognizes an embedded object class", () => {
     expect(
-      firstParagraph(String.raw`{\rtf1{\object{\objclass Excel.Sheet.8}{\objdata 0000}}}`),
-    ).toEqual({ children: [{ text: "[Embedded object: Excel.Sheet.8]" }] });
+      firstParagraph(String.raw`{\rtf1{\object{\objclass Excel.Sheet.8}{\objdata\bin4 ABCD}}}`),
+    ).toEqual({
+      children: [
+        {
+          children: [
+            {
+              object: {
+                embed: { data: new Uint8Array([65, 66, 67, 68]), progId: "Excel.Sheet.8" },
+              },
+            },
+          ],
+        },
+      ],
+    });
   });
 });

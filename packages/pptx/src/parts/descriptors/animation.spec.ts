@@ -142,6 +142,60 @@ describe("timingDesc round-trip", () => {
     expect(entry?.iterate).toEqual({ type: "letter", backwards: true, interval: 200 });
   });
 
+  it("round-trips indefinite duration and delay", () => {
+    const entries: AnimationEntry[] = [
+      { shapeId: 2, type: "fade", trigger: "onClick", duration: "indefinite" },
+      { shapeId: 3, type: "appear", trigger: "withPrevious", delay: "indefinite" },
+    ];
+    const result = roundTrip(entries);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.duration).toBe("indefinite");
+    expect(result[1]?.delay).toBe("indefinite");
+  });
+
+  it("round-trips indefinite repeat duration", () => {
+    const result = roundTrip([
+      { shapeId: 2, type: "fade", trigger: "onClick", repeatDuration: "indefinite" },
+    ]);
+    expect(result[0]?.repeatDuration).toBe("indefinite");
+  });
+
+  it("keeps source order when indefinite and timed effects are mixed", () => {
+    const entries: AnimationEntry[] = [
+      { shapeId: 3, type: "fade", trigger: "onClick", duration: "indefinite" },
+      { shapeId: 2, type: "fade", trigger: "withPrevious", duration: 500 },
+      { shapeId: 3, type: "wipe", trigger: "afterPrevious", duration: 700 },
+    ];
+    const result = roundTrip(entries);
+    expect(result.map((entry) => `${entry.shapeId}:${entry.duration}`)).toEqual([
+      "3:indefinite",
+      "2:500",
+      "3:700",
+    ]);
+  });
+
+  it("throws structured diagnostics for invalid durations", () => {
+    const xml = timingDesc
+      .stringify([{ shapeId: 2, type: "fade", trigger: "onClick", duration: 500 }], writeCtx)!
+      .replaceAll('dur="500"', 'dur="soon"');
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    let error: unknown;
+    try {
+      timingDesc.parse(el, readCtx);
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toBeInstanceOf(Error);
+    expect(error).toMatchObject({
+      name: "PptxParseError",
+      part: "p:timing",
+      path: "/p:timing//p:cBhvr/p:cTn/@dur",
+      reason: "invalid-duration",
+    });
+  });
+
   it("falls back to verbatim inner XML when the model cannot rebuild the tree", () => {
     const xml = `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst><p:audio><p:cMediaNode vol="80000"><p:cTn id="3" fill="hold" display="0"><p:stCondLst><p:cond delay="indefinite"/></p:stCondLst></p:cTn><p:tgtEl><p:spTgt spid="5"/></p:tgtEl></p:cMediaNode></p:audio></p:childTnLst></p:cTn></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst></p:timing>`;
     const result = parseTimingXml(xml);

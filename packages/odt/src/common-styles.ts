@@ -74,8 +74,84 @@ export function documentStylesXml(
     ? `<office:master-styles><style:master-page style:name="Standard" style:page-layout-name="pm1">${headerFooter}</style:master-page></office:master-styles>`
     : "";
   const notes =
-    notesConfigurationXml(settings) + outlineStyleXml(numbering) + defaultStyleXml(styles);
+    commonStylesXml(styles) +
+    notesConfigurationXml(settings) +
+    outlineStyleXml(numbering) +
+    defaultStyleXml(styles);
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles>${notes}</office:styles><office:automatic-styles>${pageLayout}</office:automatic-styles>${masterStyles}</office:document-styles>`;
+}
+
+export function commonStylesXml(styles: DocumentOptions["styles"]): string {
+  return [
+    ...(styles?.paragraphStyles ?? []).map((style) => {
+      const paragraph = style.paragraph;
+      return xmlElement(
+        "style:style",
+        {
+          "style:name": style.id,
+          "style:family": "paragraph",
+          "style:display-name": style.name,
+          "style:parent-style-name": style.basedOn,
+          "style:next-style-name": style.next,
+        },
+        [
+          xmlElement("style:paragraph-properties", {
+            "fo:text-align": paragraph?.alignment,
+            "fo:margin-left":
+              paragraph?.indent?.left !== undefined
+                ? twipsToLength(paragraph.indent.left)
+                : undefined,
+            "fo:margin-right":
+              paragraph?.indent?.right !== undefined
+                ? twipsToLength(paragraph.indent.right)
+                : undefined,
+            "fo:margin-top":
+              paragraph?.spacing?.before !== undefined
+                ? twipsToLength(paragraph.spacing.before)
+                : undefined,
+            "fo:margin-bottom":
+              paragraph?.spacing?.after !== undefined
+                ? twipsToLength(paragraph.spacing.after)
+                : undefined,
+          }),
+          xmlElement("style:text-properties", {
+            "fo:font-weight": style.run?.bold ? "bold" : undefined,
+            "fo:font-style": style.run?.italic ? "italic" : undefined,
+            "style:text-underline-style": style.run?.underline?.type ? "solid" : undefined,
+            "style:text-line-through-style": style.run?.strike ? "solid" : undefined,
+            "fo:font-size": typeof style.run?.size === "number" ? `${style.run.size}pt` : undefined,
+            "fo:color":
+              typeof style.run?.color === "string" ? `#${style.run.color.slice(-6)}` : undefined,
+            "fo:font-family": typeof style.run?.font === "string" ? style.run.font : undefined,
+          }),
+        ],
+      );
+    }),
+    ...(styles?.characterStyles ?? []).map((style) =>
+      xmlElement(
+        "style:style",
+        {
+          "style:name": style.id,
+          "style:family": "text",
+          "style:display-name": style.name,
+          "style:parent-style-name": style.basedOn,
+          "style:next-style-name": style.next,
+        },
+        [
+          xmlElement("style:text-properties", {
+            "fo:font-weight": style.run?.bold ? "bold" : undefined,
+            "fo:font-style": style.run?.italic ? "italic" : undefined,
+            "style:text-underline-style": style.run?.underline?.type ? "solid" : undefined,
+            "style:text-line-through-style": style.run?.strike ? "solid" : undefined,
+            "fo:font-size": typeof style.run?.size === "number" ? `${style.run.size}pt` : undefined,
+            "fo:color":
+              typeof style.run?.color === "string" ? `#${style.run.color.slice(-6)}` : undefined,
+            "fo:font-family": typeof style.run?.font === "string" ? style.run.font : undefined,
+          }),
+        ],
+      ),
+    ),
+  ].join("");
 }
 
 /** Docx document defaults → ODF style:default-style (paragraph family). */
@@ -187,4 +263,52 @@ export function parseDefaultStyle(files: OdfFiles): DocumentDefaults | undefined
         }
       : {}),
   };
+}
+
+export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
+  const container = childNamed(readXml(files, "styles.xml"), "office:styles");
+  const parsed = new Map<
+    string,
+    { family?: string; alignment?: string; character: Record<string, unknown> }
+  >();
+  for (const style of childrenNamed(container, "style:style")) {
+    const character = childNamed(style, "style:text-properties");
+    const size = attributeString(character, "fo:font-size");
+    const color = attributeString(character, "fo:color");
+    parsed.set(attributeString(style, "style:name") ?? "", {
+      family: attributeString(style, "style:family"),
+      alignment: attributeString(childNamed(style, "style:paragraph-properties"), "fo:text-align"),
+      character: {
+        bold: attributeString(character, "fo:font-weight") === "bold" || undefined,
+        italic: attributeString(character, "fo:font-style") === "italic" || undefined,
+        underline:
+          attributeString(character, "style:text-underline-style") === "solid"
+            ? { type: "single" as const }
+            : undefined,
+        strike:
+          attributeString(character, "style:text-line-through-style") === "solid" || undefined,
+        ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
+        color: color?.startsWith("#") ? color.slice(1) : undefined,
+        font: attributeString(character, "fo:font-family") || undefined,
+      },
+    });
+  }
+  const paragraphStyles = [...parsed]
+    .filter(([, style]) => style.family === "paragraph")
+    .map(([name, style]) => ({
+      id: name,
+      name,
+      paragraph: {
+        alignment: style.alignment as never,
+      },
+      run: style.character as never,
+    }));
+  const characterStyles = [...parsed]
+    .filter(([, style]) => style.family === "text")
+    .map(([name, style]) => ({ id: name, name, run: style.character as never }));
+  const result = {
+    ...(paragraphStyles.length > 0 ? { paragraphStyles } : {}),
+    ...(characterStyles.length > 0 ? { characterStyles } : {}),
+  };
+  return Object.keys(result).length > 0 ? result : undefined;
 }

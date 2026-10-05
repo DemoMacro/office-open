@@ -554,6 +554,12 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       while ((m = quotedPrefixedRe.exec(src)) !== null) {
         found.add(m[2]);
       }
+
+      // Pattern 10: generic runtime XML nodes — `{ name: "calculatedItem", ... }`.
+      const runtimeNodeRe = /\bname:\s*"([a-z][a-z0-9]*:)?([a-zA-Z][a-zA-Z0-9]+)"/g;
+      while ((m = runtimeNodeRe.exec(src)) !== null) {
+        found.add(m[2]);
+      }
     }
   }
 
@@ -637,7 +643,7 @@ function extractUsedAttributes(config: XsdConfig): Set<string> {
       }
 
       // Pattern 4: attr(el, "name") — parse helper from @office-open/xml
-      const attrHelperRe = /\battr\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
+      const attrHelperRe = /\b(?:attr|setAttribute)\([^,]+,\s*["']([a-zA-Z][a-zA-Z0-9]*)["']/g;
       while ((m = attrHelperRe.exec(src)) !== null) {
         found.add(m[1]);
       }

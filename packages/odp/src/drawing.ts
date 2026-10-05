@@ -30,10 +30,15 @@ export interface OdpChart {
 
 /** Slide picture renders as a positioned draw:frame + draw:image. */
 export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): string {
-  if (picture.data === undefined) return "";
-  const data = toUint8Array(picture.data);
-  const path = `Pictures/image${images.length + 1}.${picture.type}`;
-  images.push({ path, data });
+  let path: string;
+  if (picture.data === undefined) {
+    if (!picture.sourceUrl) return "";
+    path = picture.sourceUrl;
+  } else {
+    const data = toUint8Array(picture.data);
+    path = `Pictures/image${images.length + 1}.${picture.type}`;
+    images.push({ path, data });
+  }
   return xmlElement(
     "draw:frame",
     {
@@ -43,7 +48,14 @@ export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): st
       "svg:width": toOdfLength(picture.width),
       "svg:height": toOdfLength(picture.height),
     },
-    [xmlElement("draw:image", { "xlink:href": path })],
+    [
+      xmlElement("draw:image", {
+        "xlink:href": path,
+        ...(picture.sourceUrl && picture.data === undefined
+          ? { "xlink:type": "simple", "xlink:show": "embed" }
+          : {}),
+      }),
+    ],
   );
 }
 
@@ -133,7 +145,30 @@ export function parsePictureFrame(
   if (!image) return undefined;
   const path = attributeString(image, "xlink:href")?.replace(/^\//, "");
   const data = path ? binaries[path] : undefined;
-  if (!data || !path) return undefined;
+  if (!data || !path) {
+    const href = attributeString(image, "xlink:href");
+    if (!href) return undefined;
+    if (isExternalUrl(href))
+      return {
+        picture: {
+          type: pictureTypeFromUrl(href),
+          sourceUrl: href,
+          x: lengthToEmu(attributeString(frame, "svg:x")),
+          y: lengthToEmu(attributeString(frame, "svg:y")),
+          width: lengthToEmu(attributeString(frame, "svg:width")),
+          height: lengthToEmu(attributeString(frame, "svg:height")),
+        },
+      };
+    const reason = "missing-package-part";
+    const referencePath = "/draw:frame/draw:image/@xlink:href";
+    throw new OdpParseError(
+      `content.xml: ${href}: package image is missing`,
+      "content.xml",
+      referencePath,
+      "draw:image",
+      reason,
+    );
+  }
   return {
     picture: {
       type: (path.split(".").pop() ?? "png") as PictureOptions["type"],
@@ -144,4 +179,17 @@ export function parsePictureFrame(
       height: lengthToEmu(attributeString(frame, "svg:height")),
     },
   };
+}
+
+function isExternalUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
+}
+
+function pictureTypeFromUrl(value: string): PictureOptions["type"] {
+  const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
+  return extension === "jpeg"
+    ? "jpg"
+    : ((["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "")
+        ? extension
+        : "png") as PictureOptions["type"]);
 }

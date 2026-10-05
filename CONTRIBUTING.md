@@ -76,6 +76,16 @@ Validate generated ODF output (including parse → generate round trips) against
 pnpm validate:odf
 ```
 
+## Raw Parts Policy
+
+`rawParts` is a round-trip channel for **opaque, independent package members** — binaries with no canonical model, such as `vbaProject.bin`, `printerSettings/*.bin`, and OLE embeddings. It is not an escape hatch for XML that the model should represent.
+
+- Every format parser declares an explicit `PassthroughPolicy`; only policy-approved opaque parts may survive as raw data.
+- Modeled XML parts and `.rels` for rebuilt parts must parse into typed canonical fields. Unknown elements inside those parts fail with a structured parse error instead of silently round-tripping.
+- A canonical Options object may not expose `rawXml` for content that belongs to the family model. Namespace extensions are exceptions only when their schema and ownership are explicitly declared.
+- Raw relationships use package paths across parse/generate; writers allocate fresh relationship ids when rebuilding the package.
+- Corpus coverage reports XML parts found in `rawParts` as absorption gaps. The strict corpus gate fails when a modeled path reaches the passthrough channel or canonical data contains undeclared raw XML.
+
 ## Naming Conventions
 
 ### Files and Directories

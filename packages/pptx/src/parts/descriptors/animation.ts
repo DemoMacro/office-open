@@ -30,6 +30,7 @@ import {
 } from "@shared/animation/timing";
 import type {
   AnimationClass,
+  AnimationDuration,
   AnimationOptions,
   AnimationType,
   EmphasisType,
@@ -60,13 +61,25 @@ for (const [k, v] of Object.entries(DIRECTION_SUBTYPES)) SUBTYPE_TO_DIRECTION.se
 
 // ── Parse helpers ──
 
+class PptxParseError extends Error {
+  constructor(
+    message: string,
+    readonly part: string,
+    readonly path: string,
+    readonly reason: string,
+  ) {
+    super(message);
+    this.name = "PptxParseError";
+  }
+}
+
 /**
  * Parse p:timing element and return animation entries grouped by shape ID.
  * A shape can carry several effects (e.g. entrance + emphasis), so each
  * parsed effect becomes its own entry instead of overwriting the previous one.
  */
-function parseTiming(el: XmlElement): Map<number, AnimationOptions[]> {
-  const result = new Map<number, AnimationOptions[]>();
+function parseTiming(el: XmlElement): { shapeId: number; options: AnimationOptions }[] {
+  const result: { shapeId: number; options: AnimationOptions }[] = [];
 
   const tnLst = findChild(el, "p:tnLst");
   if (!tnLst) return result;
@@ -101,11 +114,7 @@ function parseTiming(el: XmlElement): Map<number, AnimationOptions[]> {
       if (!anim) continue;
 
       const shapeId = extractTargetShapeId(effectEl);
-      if (shapeId !== undefined) {
-        const list = result.get(shapeId);
-        if (list) list.push(anim);
-        else result.set(shapeId, [anim]);
-      }
+      if (shapeId !== undefined) result.push({ shapeId, options: anim });
     }
   }
 
@@ -131,20 +140,14 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
   const presetID = attrNum(cTn, "presetID");
 
   const dur = attr(cTn, "dur");
-  if (dur) {
-    const ms = parseDuration(dur);
-    if (ms !== undefined) opts.duration = ms;
-  }
+  if (dur) opts.duration = parseDuration(dur, "/p:timing//p:cTn/@dur");
 
   const stCondLst = findChild(cTn, "p:stCondLst");
   if (stCondLst) {
     const cond = findChild(stCondLst, "p:cond");
     if (cond) {
       const delay = attr(cond, "delay");
-      if (delay) {
-        const ms = parseDuration(delay);
-        if (ms !== undefined) opts.delay = ms;
-      }
+      if (delay) opts.delay = parseDuration(delay, "/p:timing//p:cond/@delay");
     }
   }
 
@@ -174,6 +177,11 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
     }
   }
 
+  const repeatDuration = attr(cTn, "repeatDur");
+  if (repeatDuration) {
+    opts.repeatDuration = parseDuration(repeatDuration, "/p:timing//p:cTn/@repeatDur");
+  }
+
   const childTnLst = findChild(cTn, "p:childTnLst");
   if (childTnLst) {
     for (const sub of childTnLst.elements ?? []) {
@@ -184,10 +192,7 @@ function parseAnimationEffect(el: XmlElement): AnimationOptions | undefined {
             const subCTn = cBhvr ? findChild(cBhvr, "p:cTn") : undefined;
             if (subCTn) {
               const subDur = attr(subCTn, "dur");
-              if (subDur) {
-                const ms = parseDuration(subDur);
-                if (ms !== undefined) opts.duration = ms;
-              }
+              if (subDur) opts.duration = parseDuration(subDur, "/p:timing//p:cBhvr/p:cTn/@dur");
             }
           }
           break;
@@ -326,27 +331,37 @@ function readSubDuration(sub: XmlElement, opts: Record<string, unknown>): void {
   const subCTn = cBhvr ? findChild(cBhvr, "p:cTn") : undefined;
   if (subCTn) {
     const subDur = attr(subCTn, "dur");
-    if (subDur) {
-      const ms = parseDuration(subDur);
-      if (ms !== undefined) opts.duration = ms;
-    }
+    if (subDur) opts.duration = parseDuration(subDur, "/p:timing//p:cBhvr/p:cTn/@dur");
   }
 }
 
-function parseDuration(val: string): number | undefined {
-  if (val.startsWith("PT")) {
-    let ms = 0;
-    const sMatch = val.match(/(\d+\.?\d*)S/);
-    if (sMatch) ms += Math.round(parseFloat(sMatch[1] ?? "") * 1000);
-    const mMatch = val.match(/(\d+\.?\d*)M/);
-    if (mMatch) ms += Math.round(parseFloat(mMatch[1] ?? "") * 60000);
-    const hMatch = val.match(/(\d+\.?\d*)H/);
-    if (hMatch) ms += Math.round(parseFloat(hMatch[1] ?? "") * 3600000);
-    return ms;
+function parseDuration(val: string, path: string): AnimationDuration {
+  if (val === "indefinite") return val;
+
+  if (/^\d+(?:\.\d+)?$/.test(val)) return Math.round(Number(val));
+
+  const duration = val.match(
+    /^P(?:(\d+(?:\.\d+)?)Y)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)D)?(?:T(?:(\d+(?:\.\d+)?)H)?(?:(\d+(?:\.\d+)?)M)?(?:(\d+(?:\.\d+)?)S)?)?$/,
+  );
+  if (!duration || duration.slice(1).every((part) => part === undefined)) {
+    throw new PptxParseError(
+      `Invalid animation duration "${val}" at ${path}`,
+      "p:timing",
+      path,
+      "invalid-duration",
+    );
   }
-  if (val === "indefinite") return undefined;
-  const num = parseInt(val, 10);
-  return isNaN(num) ? undefined : num;
+
+  const [years = "0", months = "0", days = "0", hours = "0", minutes = "0", seconds = "0"] =
+    duration.slice(1);
+  return Math.round(
+    Number(years) * 365 * 24 * 3_600_000 +
+      Number(months) * 30 * 24 * 3_600_000 +
+      Number(days) * 24 * 3_600_000 +
+      Number(hours) * 3_600_000 +
+      Number(minutes) * 60_000 +
+      Number(seconds) * 1000,
+  );
 }
 
 // ── Descriptor ──
@@ -397,12 +412,10 @@ export const timingDesc: CustomDescriptor<AnimationsOptions> = {
   parse(el, _ctx) {
     const animMap = parseTiming(el);
     const entries: ResolvedAnimationEntry[] = [];
-    for (const [shapeId, optionsList] of animMap) {
-      for (const options of optionsList) {
-        // Parsed options never carry builds (bldLst parses verbatim-side), so
-        // the shapeId from the spTgt map key is the only reference to fill.
-        entries.push({ ...options, shapeId } as ResolvedAnimationEntry);
-      }
+    for (const { shapeId, options } of animMap) {
+      // Parsed options never carry builds (bldLst parses verbatim-side), so
+      // the shapeId from the spTgt map key is the only reference to fill.
+      entries.push({ ...options, shapeId } as ResolvedAnimationEntry);
     }
     // Fidelity gate: rebuilding reorganizes the timing tree, so compare the
     // rebuilt tag multiset against the source — any drift (including trees the

@@ -28,6 +28,16 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("round-trips complete numbering tables and pntext shadow controls", () => {
+    const source = String.raw`{\rtf1{\listtable{\list\listtemplateid9\listhybrid{\listlevel\levelnfc2\leveljc1\levelstartat3\levelindent720{\leveltext\'02\'00.;}{\levelnumbers;}}{\listname rtf-list-template-9;}\listid77}}{\listoverridetable{\listoverride\listid77\listoverridecount0\ls4}}\ls4\ilvl0\par Item}`;
+    expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
+  it("round-trips complete numbering tables and pntext shadow controls", () => {
+    const source = String.raw`{\rtf1{\listtable{\list\listtemplateid9\listhybrid{\listlevel\levelnfc2\leveljc1\levelstartat3\levelindent720{\leveltext\'02\'00.;}{\levelnumbers;}}{\listname rtf-list-template-9;}\listid77}}{\listoverridetable{\listoverride\listid77\listoverridecount0\ls4}}\ls4\ilvl0\par Item}`;
+    expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
   it("projects flat and nested tables", () => {
     const source = String.raw`{\rtf1\trowd\cellx1000\cellx2000 Outer{\trowd\cellx500 Inner\cell}\nestrow End\cell\row}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));

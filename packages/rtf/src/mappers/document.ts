@@ -6,7 +6,6 @@ import type {
   ParagraphChild,
   SectionChild,
   SectionOptions,
-  StylesOptions,
   RunOptions,
 } from "@office-open/docx";
 
@@ -20,13 +19,15 @@ import {
 } from "../blocks";
 import {
   CAPTURED_METADATA,
-  IGNORED_DESTINATIONS,
+  destinationDisposition,
   type Destination,
   type GroupFrame,
 } from "../destinations";
 import { RtfParseError } from "../errors";
 import { type RtfToken } from "../tokenizer";
+import { numberingFromParsed, parseListOverrides, parseListTable } from "./numbering";
 import { parseRtfShape } from "./shape";
+import { parseStylesheet, stylesFromDrafts, type StyleDraft } from "./stylesheet";
 
 export function parseRtfTokens(tokens: readonly RtfToken[], source: string): DocumentOptions {
   const fonts = new Map<number, string>();
@@ -42,10 +43,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   const headerBlocks = new Map<"default" | "first", SectionChild[]>();
   const footerBlocks = new Map<"default" | "first", SectionChild[]>();
   const metadata = new Map<string, string>();
-  const styleDefinitions: { name: string; type: "paragraph" | "character"; basedOn?: string }[] =
-    [];
+  const styleDefinitions: StyleDraft[] = [];
   const shapes: ParagraphChild[] = [];
-  const listOverrides: { id: string; format: "bullet" | "decimal"; level: number }[] = [];
+  const listDefinitions: NonNullable<NumberingOptions["abstractNumberings"]> = [];
+  const listIds = new Map<number, string>();
+  const listInstances = new Map<number, string>();
   let objectType: string | undefined;
   let bookmarkId = 1;
   const bookmarkIds = new Map<string, number>();
@@ -124,6 +126,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     let width = 0;
     let height = 0;
     let hex = "";
+    const binary: number[] = [];
     for (let index = start; index < end; index += 1) {
       const token = tokens[index];
       if (token?.kind === "control") {
@@ -136,18 +139,69 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         else if ((token.word === "pich" || token.word === "pichgoal") && token.param !== undefined)
           height = token.param * 635;
       } else if (token?.kind === "hex") hex += token.value;
+      else if (token?.kind === "binary") binary.push(...token.data);
       else if (token?.kind === "text") hex += token.value.replace(/[^0-9a-fA-F]/g, "");
     }
-    if (!hex || width <= 0 || height <= 0 || hex.length % 2 !== 0) return undefined;
-    try {
-      const data = new Uint8Array((hex.length / 2) | 0);
-      for (let index = 0; index < data.length; index += 1)
-        data[index] = Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16);
-      if (data.length === 0) return undefined;
-      return { type, data, width, height };
-    } catch {
-      return undefined;
+    const payload =
+      binary.length > 0
+        ? binary
+        : (hex.match(/../gu)?.map((pair) => Number.parseInt(pair, 16)) ?? []);
+    if (binary.length === 0 && hex.length % 2 !== 0)
+      throw new RtfParseError(
+        "\\pict hexadecimal data has an odd byte length",
+        tokens[start]?.position ?? 0,
+        source,
+        {
+          part: "RTF picture destination",
+          path: "\\pict",
+          name: "picture",
+          reason: "odd hexadecimal byte length",
+        },
+      );
+    if (payload.length === 0 || width <= 0 || height <= 0)
+      throw new RtfParseError(
+        "\\pict requires binary data and positive dimensions",
+        tokens[start]?.position ?? 0,
+        source,
+        {
+          part: "RTF picture destination",
+          path: "\\pict",
+          name: "picture",
+          reason: "missing data or dimensions",
+        },
+      );
+    return { type, data: new Uint8Array(payload), width, height };
+  };
+
+  const readObjectData = (start: number, end: number) => {
+    let className = "";
+    let targetClass = false;
+    const bytes: number[] = [];
+    for (let index = start; index < end; index += 1) {
+      const token = tokens[index];
+      if (!token) continue;
+      if (token.kind === "control") {
+        if (token.word === "objclass") targetClass = true;
+        else if (token.word !== undefined) targetClass = false;
+        continue;
+      }
+      if (targetClass && token.kind === "text") className += token.value;
+      else if (token.kind === "binary") bytes.push(...token.data);
+      else if (token.kind === "hex") bytes.push(Number.parseInt(token.value, 16));
     }
+    if (bytes.length === 0)
+      throw new RtfParseError(
+        "\\objdata requires binary payload",
+        tokens[start]?.position ?? 0,
+        source,
+        {
+          part: "RTF object destination",
+          path: "\\object/\\objdata",
+          name: "object",
+          reason: "missing embedded binary",
+        },
+      );
+    return { className: className.trim(), data: new Uint8Array(bytes) };
   };
 
   const readField = (start: number, end: number) => {
@@ -465,7 +519,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         return;
       case "ls":
         if (token.param !== undefined) {
-          listReference = `rtf-list-${token.param}`;
+          listReference = listInstances.get(token.param) ?? `rtf-list-${token.param}`;
           numberingReferences.add(listReference);
           pendingList = { reference: listReference };
         }
@@ -627,9 +681,33 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       handleGroupEnd();
       continue;
     }
+    if (token.kind === "binary") {
+      if (currentFrame?.destination === "generated-shadow") continue;
+      throw new RtfParseError(
+        "binary payload outside a canonical binary consumer",
+        token.position,
+        source,
+        {
+          part: "RTF destination",
+          path: currentFrame ? "destination/binary" : "root",
+          name: "bin",
+          reason: "binary data is only canonical inside picture or object data",
+        },
+      );
+    }
     if (currentFrame?.skip) {
-      if (token.kind === "text" && unicodeSkip > 0) unicodeSkip -= 1;
-      continue;
+      if (
+        currentFrame.starred &&
+        token.kind === "control" &&
+        token.word !== undefined &&
+        destinationDisposition(token.word) === "canonical"
+      ) {
+        currentFrame.skip = false;
+        currentFrame.starred = false;
+      } else {
+        if (token.kind === "text" && unicodeSkip > 0) unicodeSkip -= 1;
+        continue;
+      }
     }
 
     if (token.kind === "control") {
@@ -686,6 +764,10 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           tokenIndex = end;
           continue;
         }
+        if (token.word !== undefined && CONTENT_GROUP_CONTROLS.has(token.word)) {
+          applyControl(token, destination);
+          continue;
+        }
         if (
           token.word === "pict" ||
           token.word === "field" ||
@@ -700,14 +782,13 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
             const end = consumeGroup(tokenIndex);
             if (token.word === "pict") {
               const picture = readPicture(tokenIndex, end);
-              if (picture)
-                appendInline({
-                  picture: {
-                    type: picture.type,
-                    data: picture.data,
-                    transformation: { width: picture.width, height: picture.height },
-                  },
-                });
+              appendInline({
+                picture: {
+                  type: picture.type,
+                  data: picture.data,
+                  transformation: { width: picture.width, height: picture.height },
+                },
+              });
             } else if (token.word === "field") {
               const child = readField(tokenIndex, end);
               if (child) appendInline(child);
@@ -720,7 +801,13 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
               const children = blocksFromText(tokenIndex, end);
               if (children.length > 0) footnotes.push({ children });
             } else if (token.word === "objdata") {
-              appendText(objectType ? `[Embedded object: ${objectType}]` : "[Embedded object]");
+              const objectData = readObjectData(tokenIndex, end);
+              if (objectData.className) objectType = objectData.className;
+              appendInline({
+                object: {
+                  embed: { data: objectData.data, ...(objectType ? { progId: objectType } : {}) },
+                },
+              });
             } else if (token.word === "pn") {
               for (let index = tokenIndex; index < end; index += 1) {
                 const nested = tokens[index];
@@ -730,25 +817,32 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
                 }
               }
             } else if (token.word === "object") {
-              let targetClass = false;
-              let className = "";
-              for (let index = tokenIndex; index < end; index += 1) {
-                const nested = tokens[index];
-                if (nested?.kind === "control") {
-                  if (nested.word === "objclass") {
-                    targetClass = true;
-                    className = "";
-                  } else targetClass = false;
-                } else if (targetClass && nested?.kind === "text") className += nested.value;
-              }
-              if (className) objectType = className.trim();
-              appendText(objectType ? `[Embedded object: ${objectType}]` : "[Embedded object]");
+              const objectData = readObjectData(tokenIndex, end);
+              if (objectData.className) objectType = objectData.className;
+              appendInline({
+                object: {
+                  embed: { data: objectData.data, ...(objectType ? { progId: objectType } : {}) },
+                },
+              });
             }
             groupFrames.pop();
             tokenIndex = end;
-          } catch {
-            groupFrames.pop();
-            currentFrame.skip = true;
+          } catch (error) {
+            if (error instanceof RtfParseError && error.context === undefined) {
+              const name = token.word ?? "destination";
+              throw new RtfParseError(
+                error.message.replace(/^Invalid RTF at \d+:\d+: /u, ""),
+                token.position,
+                source,
+                {
+                  part: "RTF destination",
+                  path: `destination/${name}`,
+                  name,
+                  reason: error.message.replace(/^Invalid RTF at \d+:\d+: /u, ""),
+                },
+              );
+            }
+            throw error;
           }
           continue;
         }
@@ -767,65 +861,25 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         }
         if (token.word === "stylesheet") {
           const end = consumeGroup(tokenIndex);
-          for (let si = tokenIndex; si < end; si++) {
-            const st = tokens[si];
-            if (st?.kind !== "control" || (st.word !== "s" && st.word !== "cs")) continue;
-            const entry: { name: string; type: "paragraph" | "character"; basedOn?: string } = {
-              name: "",
-              type: st.word === "cs" ? "character" : "paragraph",
-            };
-            let se = si + 1;
-            let depth = 0;
-            for (let j = si + 1; j < end; j++) {
-              const t = tokens[j];
-              if (t?.kind === "group-start") {
-                depth++;
-                continue;
-              }
-              if (t?.kind === "group-end") {
-                if (depth === 0) {
-                  se = j;
-                  break;
-                }
-                depth--;
-                continue;
-              }
-              if (depth === 0 && t?.kind === "control" && (t.word === "s" || t.word === "cs")) {
-                se = j;
-                break;
-              }
-              if (t?.kind === "text" && !entry.name) entry.name = t.value.trim();
-              if (t?.kind === "control" && t.word === "basedOn" && t.param !== undefined)
-                entry.basedOn = String(t.param);
-            }
-            if (entry.name) styleDefinitions.push(entry);
-            si = se - 1;
-          }
+          styleDefinitions.push(...parseStylesheet(tokens, tokenIndex, end, colors, fonts));
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "listtable") {
+          const end = consumeGroup(tokenIndex);
+          const parsed = parseListTable(tokens, tokenIndex, end);
+          listDefinitions.push(...parsed.definitions);
+          for (const [key, value] of parsed.listIds) listIds.set(key, value);
           groupFrames.pop();
           tokenIndex = end;
           continue;
         }
         if (token.word === "listoverridetable") {
           const end = consumeGroup(tokenIndex);
-          let currentId: string | undefined;
-          let currentFormat: "bullet" | "decimal" = "decimal";
-          let currentLevel = 0;
-          for (let li = tokenIndex; li < end; li++) {
-            const lt = tokens[li];
-            if (lt?.kind !== "control") continue;
-            if (lt.word === "ls" && lt.param !== undefined) {
-              if (currentId)
-                listOverrides.push({ id: currentId, format: currentFormat, level: currentLevel });
-              currentId = `rtf-list-override-${lt.param}`;
-              currentFormat = "decimal";
-              currentLevel = 0;
-            }
-            if (lt.word === "ilvl" && lt.param !== undefined) currentLevel = lt.param;
-            if (lt.word === "pndec") currentFormat = "decimal";
-            if (lt.word === "pnbullet") currentFormat = "bullet";
-          }
-          if (currentId)
-            listOverrides.push({ id: currentId, format: currentFormat, level: currentLevel });
+          const parsed = parseListOverrides(tokens, tokenIndex, end, listIds);
+          listDefinitions.push(...parsed.definitions);
+          for (const [key, value] of parsed.listInstances) listInstances.set(key, value);
           groupFrames.pop();
           tokenIndex = end;
           continue;
@@ -846,10 +900,20 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           currentFrame.skip = true;
           continue;
         }
-        const ignored = token.word !== undefined && IGNORED_DESTINATIONS.has(token.word);
-        if (ignored) {
+        const disposition =
+          token.word === undefined ? "canonical" : destinationDisposition(token.word);
+        if (disposition === "generated-shadow") {
           currentFrame.skip = true;
           continue;
+        }
+        if (disposition === "unsupported") {
+          const name = token.word ?? "unknown";
+          throw new RtfParseError(`unsupported RTF destination \\${name}`, token.position, source, {
+            part: "RTF destination",
+            path: `destination/${name}`,
+            name,
+            reason: "no canonical DocumentOptions equivalent and writer does not regenerate it",
+          });
         }
         if (token.word === "fonttbl") {
           currentFrame.destination = "font-table";
@@ -918,32 +982,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     if (firstFooters) first.footers = { ...first.footers, first: firstFooters };
   }
 
-  const numbering: NumberingOptions | undefined =
-    numberingReferences.size > 0 || listOverrides.length > 0
-      ? {
-          abstractNumberings: [
-            ...[...numberingReferences].map((reference) => ({
-              reference,
-              levels: [
-                {
-                  level: 0,
-                  format:
-                    listFormats.get(reference) === "bullet"
-                      ? ("bullet" as const)
-                      : ("decimal" as const),
-                  text: listFormats.get(reference) === "bullet" ? "●" : "%1.",
-                },
-              ],
-            })),
-            ...listOverrides.map((lo) => ({
-              reference: lo.id,
-              levels: [
-                { level: lo.level, format: lo.format, text: lo.format === "bullet" ? "●" : "%1." },
-              ],
-            })),
-          ],
-        }
-      : undefined;
+  const numbering = numberingFromParsed(listDefinitions, numberingReferences);
 
   const metadataEntries = Object.fromEntries(metadata);
   const hasCoreMetadata =
@@ -954,17 +993,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     metadataEntries.doccomm !== undefined ||
     metadataEntries.category !== undefined;
 
-  const styles: StylesOptions | undefined =
-    styleDefinitions.length > 0
-      ? {
-          paragraphStyles: styleDefinitions
-            .filter((s) => s.type === "paragraph")
-            .map((s, i) => ({ id: `rtf-style-${i}`, name: s.name, basedOn: s.basedOn })),
-          characterStyles: styleDefinitions
-            .filter((s) => s.type === "character")
-            .map((s, i) => ({ id: `rtf-cstyle-${i}`, name: s.name, basedOn: s.basedOn })),
-        }
-      : undefined;
+  const styles = stylesFromDrafts(styleDefinitions);
 
   return {
     sections,

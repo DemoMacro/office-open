@@ -142,12 +142,13 @@ export function paragraphXml(
   }
   const alignment = typeof options.alignment === "string" ? options.alignment : undefined;
   const styleName =
-    alignment || options.pageBreakBefore || options.tabStops?.length
+    options.style ??
+    (alignment || options.pageBreakBefore || options.tabStops?.length
       ? addParagraphStyle(
           { alignment, pageBreakBefore: options.pageBreakBefore, tabStops: options.tabStops },
           styles,
         )
-      : undefined;
+      : undefined);
   const heading = /^Heading([1-9])$/.exec(options.heading ?? "");
   const attributes = {
     "text:style-name": styleName,
@@ -277,7 +278,7 @@ export function runXml(
     }
     if ("text" in child) {
       const run = child as RunOptions;
-      const styleName = addCharacterStyle(characterProperties(run), styles);
+      const styleName = run.style ?? addCharacterStyle(characterProperties(run), styles);
       return (
         lineBreakXml(run) +
         xmlElement("text:span", { "text:style-name": styleName }, [spacesXml(run.text ?? "")])
@@ -699,6 +700,8 @@ export function parseParagraph(element: Element, context: ParseContext): Paragra
   const runs = parseRuns(element, context);
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
+  if (style?.properties?.some((property) => Object.keys(property.attributes).length > 0))
+    result.style = attributeString(element, "text:style-name");
   if (style?.pageBreakBefore) result.pageBreakBefore = true;
   if (style?.tabStops) result.tabStops = style.tabStops;
   if (headingLevel && headingLevel <= 6) {
@@ -862,12 +865,16 @@ export function parseRuns(
       if (child.name === "draw:ellipse" || child.name === "draw:rect")
         return [{ wpsShape: parseShape(child) }];
       if (child.name === "text:span") {
-        const properties = context.styles.get(
-          attributeString(child, "text:style-name") ?? "",
-        )?.character;
+        const styleEntry = context.styles.get(attributeString(child, "text:style-name") ?? "");
+        const properties = styleEntry?.character;
         return [
           {
             text: textOf(child),
+            ...(styleEntry?.properties?.some(
+              (property) => Object.keys(property.attributes).length > 0,
+            )
+              ? { style: attributeString(child, "text:style-name") }
+              : {}),
             ...properties,
             underline: properties?.underline ? { type: "single" } : undefined,
           },

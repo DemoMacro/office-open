@@ -8,6 +8,8 @@ import { parseOnOff } from "@office-open/core";
 import { attr, attrNum, escapeXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import type { PivotTableDefinitionOptions } from "../pivot-table/definition-types";
+
 /** Aggregation function for data fields (maps to ST_DataConsolidateFunction). */
 export const ConsolidateFunction = {
   SUM: "sum",
@@ -230,8 +232,10 @@ export interface PivotPageFieldOptions {
   item?: number;
 }
 
-/** Options for a single pivot table on a worksheet. */
-export interface PivotTableOptions {
+/** Options for generating a pivot table from worksheet source data. */
+export interface SourcePivotTableOptions {
+  /** Input mode; omitted means source. */
+  mode?: "source";
   /** Pivot table name (default: "PivotTable{N}") */
   name?: string;
   /** Source data range, e.g. "A1:D11" — must be on the same or a different sheet */
@@ -356,6 +360,11 @@ export interface PivotTableOptions {
   /** Per-field overrides for pivotField (CT_PivotField attributes) */
   fieldOverrides?: PivotFieldOverrideOptions[];
 }
+
+/** One pivot table, either derived from source data or a complete definition. */
+export type PivotTableOptions =
+  | SourcePivotTableOptions
+  | { mode: "definition"; cacheId: number; definition: PivotTableDefinitionOptions };
 
 /** Pivot format (CT_Format). */
 export interface PivotFormatOptions {

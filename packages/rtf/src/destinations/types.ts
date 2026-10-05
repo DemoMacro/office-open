@@ -2,7 +2,7 @@ import type { ParagraphOptions } from "@office-open/docx";
 
 import type { RunFormat } from "../blocks";
 
-export type Destination = "root" | "font-table" | "color-table" | "ignored";
+export type Destination = "root" | "font-table" | "color-table" | "generated-shadow";
 
 export type GroupFrame = {
   destination: Destination;

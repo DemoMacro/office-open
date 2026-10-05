@@ -402,7 +402,7 @@ export function parseRow(
                   }
                 : {
                     type: "image",
-                    href: href.replace(/^\//, ""),
+                    href: isExternalUrl(href) ? href : href.replace(/^\//, ""),
                     data: "",
                     ...(attributeString(child, "draw:name")
                       ? { name: attributeString(child, "draw:name") }
@@ -447,6 +447,10 @@ export function parseRow(
       })
       .filter((cell): cell is CellOptions => cell !== undefined),
   };
+}
+
+function isExternalUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value);
 }
 
 export function parseCell(

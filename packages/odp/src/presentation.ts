@@ -9,6 +9,7 @@ import {
   emuToLength,
   escapeText,
   generateOcf,
+  hasOcfManifestOverlay,
   lengthToEmu,
   metaXml,
   OdfSchemaError,
@@ -26,8 +27,9 @@ import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
 import { OdpParseError } from "./error";
+import type { OdpDocumentOptions } from "./semantics";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
-import { parseTextStyles } from "./styles";
+import { parseStyleOverlays, parseTextStyles, styleOverlaysXml } from "./styles";
 
 export const MIME = "application/vnd.oasis.opendocument.presentation";
 
@@ -46,7 +48,8 @@ export const NAMESPACES = [
 ].join(" ");
 
 export function generatePresentation(options: PresentationOptions): Uint8Array {
-  const styles: string[] = [];
+  const { packageManifest, styleOverlays } = options as OdpDocumentOptions;
+  const styles: string[] = styleOverlaysXml(styleOverlays);
   const images: OdpImage[] = [];
   const charts: OdpChart[] = [];
   const size = normalizeSize(options.size);
@@ -70,6 +73,7 @@ export function generatePresentation(options: PresentationOptions): Uint8Array {
     MIME,
     files,
     Object.fromEntries(charts.map((chart) => [`${chart.path}/`, CHART_MIME])),
+    packageManifest,
   );
 }
 
@@ -94,7 +98,7 @@ export function parsePresentation(data: Uint8Array): PresentationOptions {
   }
 }
 
-function parseOdpBody(data: Uint8Array): PresentationOptions {
+function parseOdpBody(data: Uint8Array): OdpDocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");
@@ -121,7 +125,12 @@ function parseOdpBody(data: Uint8Array): PresentationOptions {
       ),
     ),
   };
-  return result;
+  const styleOverlays = parseStyleOverlays(childNamed(content, "office:automatic-styles"));
+  return {
+    ...result,
+    ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
+  };
 }
 
 export function contentXml(pages: string, styles: string[]): string {

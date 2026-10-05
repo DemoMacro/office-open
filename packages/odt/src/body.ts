@@ -17,6 +17,7 @@ import {
   childNamed,
   childrenNamed,
   generateOcf,
+  hasOcfManifestOverlay,
   metaXml,
   ODF_NAMESPACES,
   OdfSchemaError,
@@ -31,12 +32,18 @@ import {
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
-import { parseStyles, type StyleMap } from "./automatic-styles";
+import {
+  automaticStyleOverlaysXml,
+  parseStyles,
+  type OdtAutomaticStyleOverlay,
+  type StyleMap,
+} from "./automatic-styles";
 import {
   documentStylesXml,
   fontFaceDecls,
   parseDefaultStyle,
   parseFontFace,
+  parseCommonStyles,
 } from "./common-styles";
 import {
   parseShape,
@@ -82,6 +89,7 @@ import {
   type NoteEntry,
   type NotesContext,
 } from "./section";
+import type { OdtDocumentOptions } from "./semantics";
 import { parseTable, tableXml } from "./table";
 
 export const MIME = "application/vnd.oasis.opendocument.text";
@@ -94,6 +102,7 @@ export interface ParseContext {
   listStyles: Map<string, boolean>;
   graphicStyles: Map<string, GraphicStyle>;
   chartBodies: Map<string, ChartSpaceOptions>;
+  objectMediaTypes: Map<string, string | undefined>;
   listDefinitions: AbstractNumbering[];
   outline?: AbstractNumbering;
   binaries: Record<string, Uint8Array>;
@@ -115,7 +124,8 @@ export interface ParseContext {
 }
 
 export function generateDocument(options: DocumentOptions): Uint8Array {
-  const styles: string[] = [];
+  const { packageManifest, styleOverlays } = options as OdtDocumentOptions;
+  const styles: string[] = automaticStyleOverlaysXml(styleOverlays);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
@@ -148,6 +158,7 @@ export function generateDocument(options: DocumentOptions): Uint8Array {
     MIME,
     files,
     Object.fromEntries(charts.map((entry) => [`${entry.path}/`, CHART_MIME])),
+    packageManifest,
   );
 }
 
@@ -271,7 +282,7 @@ export function parseDocument(data: Uint8Array): DocumentOptions {
   }
 }
 
-function parseOdtBody(data: Uint8Array): DocumentOptions {
+function parseOdtBody(data: Uint8Array): OdtDocumentOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:text");
@@ -279,11 +290,17 @@ function parseOdtBody(data: Uint8Array): DocumentOptions {
   const styleMap = parseStyles(styleContainer);
   const graphicStyles = parseGraphicStyles(styleContainer);
   const chartBodies = parseEmbeddedCharts(manifest, files);
+  const objectMediaTypes = new Map(
+    manifest.entries
+      .filter((entry) => entry.fullPath.endsWith("/"))
+      .map((entry) => [entry.fullPath.replace(/\/$/, ""), entry.mediaType]),
+  );
   const context: ParseContext = {
     styles: styleMap,
     listStyles: parseListStyles(styleContainer),
     graphicStyles,
     chartBodies,
+    objectMediaTypes,
     listDefinitions: parseListNumberings(styleContainer),
     outline: parseOutlineStyle(files),
     binaries,
@@ -299,10 +316,23 @@ function parseOdtBody(data: Uint8Array): DocumentOptions {
   const meta = Object.fromEntries(
     Object.entries(parseMeta(files)).filter(([, value]) => value !== undefined),
   );
-  const result: DocumentOptions = {
+  const result: OdtDocumentOptions = {
     ...meta,
     sections: [{ properties: parsePageLayout(files), children }],
   };
+  const styleOverlays: OdtAutomaticStyleOverlay[] = [...styleMap]
+    .filter(([, style]) =>
+      (style.properties ?? []).some((property) => Object.keys(property.attributes).length > 0),
+    )
+    .map(([name, style]) => ({
+      name,
+      family: style.family,
+      properties: (style.properties ?? []).filter(
+        (property) => Object.keys(property.attributes).length > 0,
+      ),
+    }));
+  if (styleOverlays.length > 0) result.styleOverlays = styleOverlays;
+  if (hasOcfManifestOverlay(manifest)) result.packageManifest = manifest;
   if (context.notes.forms.length > 0) result.forms = context.notes.forms;
   if (context.declaredSequences.length > 0) result.sequenceDeclarations = context.declaredSequences;
   if (context.declaredVariables.length > 0) result.variableDeclarations = context.declaredVariables;
@@ -322,8 +352,10 @@ function parseOdtBody(data: Uint8Array): DocumentOptions {
   if (notesConfiguration.footnoteProperties || notesConfiguration.endnoteProperties)
     result.settings = { ...result.settings, ...notesConfiguration };
   const defaultStyle = parseDefaultStyle(files);
-  if (defaultStyle)
+  const commonStyles = parseCommonStyles(files);
+  if (defaultStyle || commonStyles)
     result.styles = {
+      ...commonStyles,
       ...result.styles,
       default: { ...result.styles?.default, document: defaultStyle },
     };

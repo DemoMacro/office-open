@@ -144,6 +144,7 @@ async function runLibrary(lib: Library): Promise<
   Record<Format, FormatCounts> & {
     blockers: Record<Format, Map<string, number>>;
     diagnostics: FileDiagnostic[];
+    rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }>;
   }
 > {
   const counts = {
@@ -157,6 +158,14 @@ async function runLibrary(lib: Library): Promise<
     pptx: new Map(),
   };
   const diagnostics: FileDiagnostic[] = [];
+  // Stage-0 rawParts audit: XML parts riding the passthrough channel are
+  // candidate modeled-XML absorption gaps under the strict policy. Report
+  // only — the strict gate lands once packages finish absorbing them.
+  const rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }> = {
+    docx: { files: 0, xmlParts: 0, binaryParts: 0 },
+    xlsx: { files: 0, xmlParts: 0, binaryParts: 0 },
+    pptx: { files: 0, xmlParts: 0, binaryParts: 0 },
+  };
 
   for (const { path: f, format, type } of walk(path.resolve(ROOT_DIR, lib.dest))) {
     const a = counts[format];
@@ -200,6 +209,14 @@ async function runLibrary(lib: Library): Promise<
       });
       continue;
     }
+    const rawParts = (opts as { rawParts?: { path: string }[] }).rawParts;
+    if (rawParts?.length) {
+      rawAudit[format].files++;
+      for (const part of rawParts) {
+        if (/\.xml$|\.rels$/i.test(part.path)) rawAudit[format].xmlParts++;
+        else rawAudit[format].binaryParts++;
+      }
+    }
     let parts: string[];
     let semanticDiffs: ReturnType<typeof archiveSemanticDiffDetails> = [];
     try {
@@ -242,7 +259,7 @@ async function runLibrary(lib: Library): Promise<
       });
     }
   }
-  return { ...counts, blockers, diagnostics };
+  return { ...counts, blockers, diagnostics, rawAudit };
 }
 
 // ── setup & baseline ──
@@ -321,6 +338,11 @@ for (const lib of LIBRARIES) {
     console.log(
       `  ${format}  total ${a.total} | clean ${a.clean} | diff ${a.diff} | parseFail ${a.parseFail} | genFail ${a.genFail}`,
     );
+    const raw = result.rawAudit[format];
+    if (raw.files > 0)
+      console.log(
+        `      rawParts audit: ${raw.files} files | ${raw.xmlParts} XML parts (absorption gaps) | ${raw.binaryParts} opaque binaries`,
+      );
     const top = [...result.blockers[format]].sort((x, y) => y[1] - x[1]).slice(0, 8);
     for (const [k, n] of top) console.log(`      blocker ${k}: ${n}`);
 

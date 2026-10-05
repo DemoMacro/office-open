@@ -22,6 +22,7 @@ const pivotTables = funcs.map((f, i) => {
   const colLetter = String.fromCharCode(65 + col);
   const label = f.charAt(0).toUpperCase() + f.slice(1);
   return {
+    mode: "source" as const,
     name: `PivotTable_${label}`,
     source: "A1:C9",
     sourceSheet: "Data",
@@ -57,6 +58,7 @@ const buffer = await generateWorkbook({
       rows: [],
       pivotTables: [
         {
+          mode: "source",
           name: "FilteredPivot",
           source: "A1:C9",
           sourceSheet: "Data",
@@ -80,6 +82,7 @@ const buffer = await generateWorkbook({
       rows: [],
       pivotTables: [
         {
+          mode: "source",
           name: "Pivot_Advanced",
           source: "A1:C9",
           sourceSheet: "Data",

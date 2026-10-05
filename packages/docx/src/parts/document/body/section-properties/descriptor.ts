@@ -199,11 +199,7 @@ function pageBordersXml(opts: NonNullable<PageBordersOptions>): string {
 export interface SectionPropertiesDescriptorOptions extends SectionPropertiesOptions {
   headerReferences?: HeaderFooterGroup<HeaderFooterReference>;
   footerReferences?: HeaderFooterGroup<HeaderFooterReference>;
-  /**
-   * printerSettings relationship id (w:printerSettings `@r:id`) — compiler wiring
-   * that only the descriptor consumes. Dropped on parse: the printerSettings
-   * binary part is not round-tripped, so a carried-over id would dangle.
-   */
+  /** printerSettings relationship id (w:printerSettings `@r:id`) — compiler wiring that only the descriptor consumes. */
   printerSettingsId?: string;
 }
 
@@ -659,10 +655,6 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
     if (other !== undefined) ps.other = other;
     if (Object.keys(ps).length > 0) opts.paperSrc = ps;
   }
-
-  // Printer settings (w:printerSettings) is not round-tripped: the binary
-  // part behind the r:id is not carried over, so keeping the reference would
-  // emit a dangling id.
 
   // Header/footer references are not emitted: users author headers/footers
   // on the section (SectionOptions.headers/footers), and the round-trip path

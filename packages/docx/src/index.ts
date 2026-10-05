@@ -33,6 +33,7 @@ export * from "./parts";
 export * from "./shared";
 export * from "./patch";
 export * from "./parse";
+export { DocxParseError } from "./errors";
 export { generateDocument, generateDocumentSync, generateDocumentStream } from "./generate";
 export { compileDocument } from "./compiler";
 export { DocxWriteContext, DocxReadContext } from "./context";

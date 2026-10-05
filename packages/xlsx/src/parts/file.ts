@@ -47,9 +47,9 @@ import type { ConnectionOptions } from "./connection";
 import type { DialogsheetOptions } from "./dialogsheet";
 import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
-import type { PivotCacheDefParseResult, PivotCacheRecordsParseResult } from "./pivot-cache";
+import type { PivotSourceData } from "./pivot";
+import type { PivotCacheDefinitionOptions, PivotCacheRecordsOptions } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
-import type { PivotCacheReference } from "./workbook";
 import type { RevisionPtrOptions, WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
@@ -147,12 +147,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   /** Calculation chain cells (xl/calcChain.xml) — set on parse; the compiler
    * round-trips them verbatim and rebuilds from formula cells only when absent */
   calcChain?: CalcCell[];
-  /** Pivot cache definitions — parse-only (CT-layer); compiler regenerates from sourceData */
-  pivotCaches?: PivotCacheDefParseResult[];
-  /** Pivot cache references from workbook.xml — parse-only round-trip wiring */
-  pivotCacheRefs?: PivotCacheReference[];
-  /** Pivot cache records — parse-only (CT-layer) */
-  pivotCacheRecords?: PivotCacheRecordsParseResult[];
+  /** Pivot caches, either generated from source data or fully defined. */
+  pivotCaches?: PivotCacheOptions[];
   /**
    * Shared string table (xl/sharedStrings.xml), in table order. Round-trip only:
    * parse fills it so rich-text si entries keep their structure and index; fresh
@@ -192,6 +188,25 @@ export interface WorkbookOptions extends CorePropertiesOptions {
     targetMode?: "External";
   }[];
 }
+
+/** Generate a pivot cache from worksheet records. */
+export interface SourcePivotCacheOptions {
+  mode: "source";
+  sourceData: PivotSourceData;
+  definition?: PivotCacheDefinitionOptions;
+}
+
+/** A fully parsed or hand-authored pivot cache pair. */
+export interface DefinitionPivotCacheOptions {
+  mode: "definition";
+  cacheId: number;
+  definitionPath: string;
+  recordsPath?: string;
+  definition: PivotCacheDefinitionOptions;
+  records?: PivotCacheRecordsOptions;
+}
+
+export type PivotCacheOptions = SourcePivotCacheOptions | DefinitionPivotCacheOptions;
 
 /** Shared-workbook revision tracking data. */
 export interface SharedWorkbookOptions {

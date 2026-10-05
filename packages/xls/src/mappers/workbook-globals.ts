@@ -12,10 +12,12 @@ import {
   readRecord,
   recordHeaderSize,
   recordsFrom,
+  type BiffRecord,
   type BiffVersion,
 } from "../records";
 import { escherImages } from "../records/escher";
 import { decodeFormula } from "../records/formula";
+import { assertRegisteredBiffRecord, biffRecordContext } from "../records/registry";
 import {
   BEGIN_OF_FILE_CODES,
   detectBiffVersion,
@@ -42,7 +44,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const externSheetNames = new Map<number, string>();
   const styleTable = new Map<number, { fontIndex?: number; numberFormatId?: number }>();
   const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[] = [];
-  const pendingSupbooks: { target: string; sheetNames: string[] }[] = [];
+  const pendingSupbooks: Supbook[] = [];
   let externSheetReferenceCount = 0;
   let codepage = 1252;
   let date1904 = false;
@@ -67,6 +69,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     }
     if (!inGlobals) continue;
 
+    assertRegisteredBiffRecord(record);
     if (sharedStringParts && record.code !== RecordCode.Continue) {
       sharedStrings.push(
         ...parseSharedStrings(
@@ -159,21 +162,45 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
         break;
       }
       case RecordCode.Supbook: {
+        // Excel tolerates truncated SUPBOOK tables by ignoring them; the
+        // workbook cells do not depend on them, so we do the same with a
+        // structured warning instead of failing the file.
         try {
-          const supbook = parseSupbook(record.body, encodingForCodepage(codepage));
-          if (supbook) pendingSupbooks.push(supbook);
-        } catch {
-          // Malformed external-workbook metadata is auxiliary and can be omitted.
+          pendingSupbooks.push(parseSupbook(record, encodingForCodepage(codepage)));
+        } catch (error) {
+          console.warn(
+            `xls parse diagnostic: skipped SUPBOOK (${JSON.stringify({
+              path: "workbook-globals/SUPBOOK",
+              recordType: 0x01ae,
+              reason: "truncated-supbook",
+              detail: String((error as Error).message).slice(0, 140),
+            })})`,
+          );
         }
         break;
       }
       case RecordCode.ExternSheet: {
-        const references = parseExternSheet(record.body);
+        // Companion of the tolerant SUPBOOK handling: a malformed EXTERNSHEET
+        // only affects external-reference name resolution, never cell data.
+        let references: ReturnType<typeof parseExternSheet>;
+        try {
+          references = parseExternSheet(record);
+        } catch (error) {
+          console.warn(
+            `xls parse diagnostic: skipped EXTERNSHEET (${JSON.stringify({
+              path: "workbook-globals/EXTERNSHEET",
+              recordType: 0x0017,
+              reason: "truncated-externsheet",
+              detail: String((error as Error).message).slice(0, 140),
+            })})`,
+          );
+          break;
+        }
         references.forEach((reference) => {
-          const supbook = pendingSupbooks.at(-1);
-          const sheetName = supbook?.sheetNames[reference.firstSheet] ?? "#REF";
+          const supbook = pendingSupbooks[reference.supbookIndex];
+          const sheetName = supbook?.sheetNames?.[reference.firstSheet] ?? "#REF";
           externSheetNames.set(++externSheetReferenceCount, sheetName);
-          if (supbook) {
+          if (supbook?.kind === "external") {
             externalLinks.push({
               externalBook: {
                 target: supbook.target,
@@ -181,22 +208,35 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
               },
             });
           }
+          if (supbook?.kind === "dde") {
+            const [ddeService = supbook.target, ddeTopic = ""] = supbook.target.split("|");
+            externalLinks.push({
+              ddeLink: {
+                ddeService,
+                ddeTopic,
+                ddeItems: [{ name: sheetName }],
+              },
+            });
+          }
+          if (supbook?.kind === "ole") {
+            externalLinks.push({
+              oleLink: {
+                progId: supbook.target,
+                oleItems: [{ name: sheetName }],
+              },
+            });
+          }
         });
         break;
       }
       case RecordCode.Name: {
-        try {
-          const name = parseName(
-            record.body,
-            workbookVersion === 8,
-            encodingForCodepage(codepage),
-            externSheetNames,
-          );
-          definedNames.push(name);
-        } catch {
-          // Tolerate truncated NAME records (corrupt fixtures, BIFF5 edge
-          // layouts) — defined names are auxiliary metadata.
-        }
+        const name = parseName(
+          record,
+          workbookVersion === 8,
+          encodingForCodepage(codepage),
+          externSheetNames,
+        );
+        definedNames.push(name);
         break;
       }
       case RecordCode.Xf: {
@@ -334,41 +374,91 @@ export function readLegacyWorkbookGlobals(
   };
 }
 
-export function parseSupbook(
-  body: Uint8Array,
-  encoding: string,
-): { target: string; sheetNames: string[] } | undefined {
-  if (body.byteLength < 2) return undefined;
+export type Supbook =
+  | { kind: "internal"; ctag: string; sheetNames: string[] }
+  | { kind: "external"; target: string; sheetNames: string[] }
+  | { kind: "dde"; target: string; sheetNames?: string[] }
+  | { kind: "ole"; target: string; sheetNames?: string[] };
+
+export function parseSupbook(record: BiffRecord, encoding: string): Supbook {
+  const body = record.body;
+  if (body.byteLength < 2)
+    throw new LegacyExcelError(
+      "Invalid legacy XLS file: truncated SUPBOOK",
+      biffRecordContext(record, "truncated-supbook-count"),
+    );
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const sheetCount = view.getUint16(0, true);
-  if (body.byteLength >= 4 && view.getUint16(2, true) === 0x0401) return undefined;
-  const target = readBiff8String(body, 2, encoding);
+  const isInternal = body.byteLength >= 4 && view.getUint16(2, true) === 0x0401;
+  let target: { value: string; offset: number };
+  try {
+    target = isInternal ? { value: "0x0401", offset: 4 } : readBiff8String(body, 2, encoding);
+  } catch (error) {
+    throw new LegacyExcelError("Invalid legacy XLS file: truncated SUPBOOK path", {
+      ...biffRecordContext(record, "truncated-supbook-path"),
+      cause: error,
+    });
+  }
   const sheetNames: string[] = [];
   for (let index = 0; index < sheetCount; index++) {
-    sheetNames.push(readShortBiff8String(body, target.offset, encoding).value);
+    try {
+      const value = readShortBiff8String(body, target.offset, encoding);
+      sheetNames.push(value.value);
+      target.offset = value.offset;
+    } catch (error) {
+      throw new LegacyExcelError("Invalid legacy XLS file: truncated SUPBOOK sheet name", {
+        ...biffRecordContext(record, "truncated-supbook-sheet-name"),
+        cause: error,
+      });
+    }
   }
-  return { target: target.value, sheetNames };
+  if (isInternal) return { kind: "internal", ctag: target.value, sheetNames };
+  if (target.value.includes("|")) return { kind: "dde", target: target.value, sheetNames };
+  if (/^(ole:|package:)/i.test(target.value)) {
+    return {
+      kind: "ole",
+      target: target.value.replace(/^(ole:|package:)/i, ""),
+      sheetNames,
+    };
+  }
+  return { kind: "external", target: target.value, sheetNames };
 }
 
-export function parseExternSheet(body: Uint8Array): { firstSheet: number; lastSheet: number }[] {
+export function parseExternSheet(
+  record: BiffRecord,
+): { supbookIndex: number; firstSheet: number; lastSheet: number }[] {
+  const body = record.body;
   if (body.byteLength < 2)
-    throw new LegacyExcelError("Invalid legacy XLS file: truncated EXTERNSHEET");
+    throw new LegacyExcelError(
+      "Invalid legacy XLS file: truncated EXTERNSHEET",
+      biffRecordContext(record, "truncated-externsheet-count"),
+    );
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const count = view.getUint16(0, true);
-  if (body.byteLength < 2 + count * 6) return [];
+  if (body.byteLength < 2 + count * 6)
+    throw new LegacyExcelError(
+      "Invalid legacy XLS file: truncated EXTERNSHEET",
+      biffRecordContext(record, "truncated-externsheet-reference"),
+    );
   return Array.from({ length: count }, (_, index) => ({
+    supbookIndex: view.getUint16(2 + index * 6, true),
     firstSheet: view.getUint16(4 + index * 6, true),
     lastSheet: view.getUint16(6 + index * 6, true),
   }));
 }
 
 export function parseName(
-  body: Uint8Array,
+  record: BiffRecord,
   isBiff8: boolean,
   encoding: string,
   externSheetNames: Map<number, string>,
 ): DefinedNameOptions {
-  if (body.byteLength < 14) throw new LegacyExcelError("Invalid legacy XLS file: truncated NAME");
+  const body = record.body;
+  if (body.byteLength < 14)
+    throw new LegacyExcelError(
+      "Invalid legacy XLS file: truncated NAME",
+      biffRecordContext(record, "truncated-defined-name"),
+    );
   const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
   const flags = view.getUint16(0, true);
   const formulaLength = view.getUint16(4, true);
@@ -377,15 +467,22 @@ export function parseName(
     ? readShortBiff8String(body, 14, encoding)
     : readBiff5String(body, 14, encoding);
   let value = name.value;
+  const tokens = body.subarray(name.offset, name.offset + formulaLength);
   try {
-    const tokens = body.subarray(name.offset, name.offset + formulaLength);
     value = decodeFormula(tokens, {
       baseRow: 0,
       baseColumn: 0,
       sheetNameByExternIndex: (index) => externSheetNames.get(index),
     }).formula;
-  } catch {
-    value = name.value;
+  } catch (error) {
+    // Excel keeps the defined name even when its cached formula cannot be
+    // decoded; the name survives with its literal text instead of failing.
+    console.warn(
+      `xls parse diagnostic: skipped NAME formula (${JSON.stringify({
+        ...biffRecordContext(record, "invalid-defined-name-formula"),
+        detail: String((error as Error).message).slice(0, 140),
+      })})`,
+    );
   }
   return {
     name: name.value,
