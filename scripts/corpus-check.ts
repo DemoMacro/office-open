@@ -1,13 +1,10 @@
 /**
  * Third-party corpus round-trip gate.
  *
- * Real-world Office files from open-source projects are cloned under .temp
- * (gitignored), round-tripped through parse → generate, and the output is
- * compared against the source archive per part. Comparison is prefix-blind
- * tag counting: producers bind arbitrary prefixes to the same namespaces
- * (ClosedXML writes x:workbook), so elements are counted by localname, and a
- * part passes when every localname count matches. theme parts are skipped
- * (tracked separately) and byte-equal parts short-circuit before counting.
+ * Real-world Office files are pinned by commit in corpus-sources.json, cloned
+ * under gitignored .temp, round-tripped through parse → generate, and compared
+ * with a namespace-aware canonical semantic digest. XML nodes, attributes,
+ * text, relationships, content types, and binary payload identity are checked.
  *
  * Baseline gate (scripts/corpus-baseline.json): per library and format,
  * `clean` must not drop and `parseFail`/`genFail` must not rise — absolute
@@ -28,8 +25,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { unzipSync } from "fflate";
-
 // dist imports — deliberate, not a convenience: package sources use internal
 // tsconfig aliases (@parts/*, @shared/*) that collide across packages (same
 // alias, different roots), and tsx paths cannot route per importing package.
@@ -41,42 +36,42 @@ import { OOXML_PACKAGE_FORMATS } from "../packages/core/dist/index.mjs";
 import { parseDocument, generateDocument } from "../packages/docx/dist/index.mjs";
 import { parsePresentation, generatePresentation } from "../packages/pptx/dist/index.mjs";
 import { parseWorkbook, generateWorkbook } from "../packages/xlsx/dist/index.mjs";
+import corpusSources from "./corpus-sources.json";
+import {
+  archiveSemanticDiffDetails,
+  archiveTagDiffs,
+  classifyPackageFailure,
+  type CorpusFailureKind,
+} from "./lib/corpus-semantics";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, "..");
 const BASELINE_PATH = path.join(__dirname, "corpus-baseline.json");
+const DEFAULT_REPORT_PATH = path.resolve(__dirname, "../.temp/corpus-report.json");
+const STRICT_SEMANTIC_GATE = process.env.CORPUS_STRICT_SEMANTIC === "1";
 
-interface Library {
-  /** Stable id used in --only and the baseline file. */
+interface CorpusSource {
   id: string;
-  repo: string;
-  /** Clone destination relative to the repo root. */
-  dest: string;
+  repository: string;
+  destination: string;
+  commit: string;
 }
 
-const LIBRARIES: Library[] = [
-  // The primary gate corpus: Microsoft's own generated test assets, spanning
-  // docx/pptx/xlsx far beyond what any single format project covers.
-  { id: "sdk", repo: "https://github.com/dotnet/Open-XML-SDK", dest: ".temp/corpus/Open-XML-SDK" },
-  { id: "calamine", repo: "https://github.com/tafia/calamine.git", dest: ".temp/corpus/calamine" },
-  {
-    id: "closedxml",
-    repo: "https://github.com/ClosedXML/ClosedXML.git",
-    dest: ".temp/corpus/closedxml",
-  },
-  {
-    id: "oletools",
-    repo: "https://github.com/decalage2/oletools.git",
-    dest: ".temp/corpus/oletools",
-  },
-  { id: "pandoc", repo: "https://github.com/jgm/pandoc.git", dest: ".temp/corpus/pandoc" },
-  {
-    id: "python-pptx",
-    repo: "https://github.com/scanny/python-pptx.git",
-    dest: ".temp/corpus/python-pptx",
-  },
-  { id: "tika", repo: "https://github.com/apache/tika", dest: ".temp/corpus/tika" },
-];
+interface Library {
+  id: string;
+  repo: string;
+  dest: string;
+  commit: string;
+}
+
+const LOCKED_SOURCES = corpusSources.sources as CorpusSource[];
+
+const LIBRARIES = LOCKED_SOURCES.map((source) => ({
+  id: source.id,
+  repo: source.repository,
+  dest: source.destination,
+  commit: source.commit,
+}));
 
 type Format = "docx" | "xlsx" | "pptx";
 type PackageFormat = keyof typeof OOXML_PACKAGE_FORMATS;
@@ -132,47 +127,23 @@ function walk(
   return out;
 }
 
-// ── comparison (same fidelity gate as the historical .temp corpus scripts) ──
-
-const decoder = new TextDecoder();
-
-/** Count elements by localname — prefix-insensitive by design (see header). */
-function tagCounts(s: string): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const match of s.matchAll(/<(?:[\w-]+:)?([\w-]+)[ >/]/g)) {
-    m.set(match[1]!, (m.get(match[1]!) ?? 0) + 1);
-  }
-  return m;
-}
-
-function tagCountsDiffer(a: string, b: string): boolean {
-  const ca = tagCounts(a);
-  const cb = tagCounts(b);
-  for (const [t, n] of ca) if ((cb.get(t) ?? 0) !== n) return true;
-  for (const [t, n] of cb) if ((ca.get(t) ?? 0) !== n) return true;
-  return false;
-}
-
-/** All parts whose localname tag counts differ between the two archives. */
-function archiveDiffParts(src: Uint8Array, out: Uint8Array): string[] {
-  const zs = unzipSync(src);
-  const zo = unzipSync(out);
-  const parts: string[] = [];
-  for (const k of Object.keys(zs)) {
-    if (!k.endsWith(".xml") && !k.endsWith(".rels")) continue;
-    if (k.includes("theme")) continue;
-    const x = decoder.decode(zs[k]!);
-    const y = decoder.decode(zo[k] ?? new Uint8Array(0));
-    if (x !== y && tagCountsDiffer(x, y)) parts.push(k);
-  }
-  return parts;
-}
-
 // ── runner ──
 
-async function runLibrary(
-  lib: Library,
-): Promise<Record<Format, FormatCounts> & { blockers: Record<Format, Map<string, number>> }> {
+export interface FileDiagnostic {
+  file: string;
+  format: Format;
+  outcome: CorpusFailureKind;
+  package?: string;
+  parts?: Array<{ path: string; kind: string }>;
+  error?: string;
+}
+
+async function runLibrary(lib: Library): Promise<
+  Record<Format, FormatCounts> & {
+    blockers: Record<Format, Map<string, number>>;
+    diagnostics: FileDiagnostic[];
+  }
+> {
   const counts = {
     docx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0 },
     xlsx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0 },
@@ -183,6 +154,7 @@ async function runLibrary(
     xlsx: new Map(),
     pptx: new Map(),
   };
+  const diagnostics: FileDiagnostic[] = [];
 
   for (const { path: f, format, type } of walk(path.resolve(ROOT_DIR, lib.dest))) {
     const a = counts[format];
@@ -195,7 +167,13 @@ async function runLibrary(
       );
     } catch (e) {
       a.parseFail++;
-      console.error(`  parseFail ${path.relative(ROOT_DIR, f)}: ${String(e).slice(0, 120)}`);
+      diagnostics.push({
+        file: path.relative(ROOT_DIR, f),
+        format,
+        outcome: classifyPackageFailure(e),
+        package: lib.id,
+        error: String(e).slice(0, 240),
+      });
       continue;
     }
     try {
@@ -211,14 +189,32 @@ async function runLibrary(
               );
     } catch (e) {
       a.genFail++;
-      console.error(`  genFail ${path.relative(ROOT_DIR, f)}: ${String(e).slice(0, 120)}`);
+      diagnostics.push({
+        file: path.relative(ROOT_DIR, f),
+        format,
+        outcome: "invalid-package",
+        package: lib.id,
+        error: String(e).slice(0, 240),
+      });
       continue;
     }
     let parts: string[];
+    let semanticDiffs: ReturnType<typeof archiveSemanticDiffDetails> = [];
     try {
-      parts = archiveDiffParts(new Uint8Array(fs.readFileSync(f)), out);
-    } catch {
+      const source = new Uint8Array(fs.readFileSync(f));
+      semanticDiffs = archiveSemanticDiffDetails(source, out);
+      parts = STRICT_SEMANTIC_GATE
+        ? semanticDiffs.map((diff) => diff.path)
+        : archiveTagDiffs(source, out);
+    } catch (e) {
       a.parseFail++;
+      diagnostics.push({
+        file: path.relative(ROOT_DIR, f),
+        format,
+        outcome: "invalid-zip",
+        package: lib.id,
+        error: String(e).slice(0, 240),
+      });
       continue;
     }
     if (parts.length === 0) a.clean++;
@@ -228,9 +224,16 @@ async function runLibrary(
         const key = part.replace(/(?:word|xl|ppt|powerpoint)[\\/]/, "");
         blockers[format].set(key, (blockers[format].get(key) ?? 0) + 1);
       }
+      diagnostics.push({
+        file: path.relative(ROOT_DIR, f),
+        format,
+        outcome: "valid",
+        package: lib.id,
+        parts: semanticDiffs,
+      });
     }
   }
-  return { ...counts, blockers };
+  return { ...counts, blockers, diagnostics };
 }
 
 // ── setup & baseline ──
@@ -239,11 +242,21 @@ function setup(): void {
   for (const lib of LIBRARIES) {
     const dest = path.resolve(ROOT_DIR, lib.dest);
     if (fs.existsSync(path.join(dest, ".git"))) {
-      console.log(`[setup] ${lib.id}: already cloned at ${lib.dest}`);
+      const current = execSync("git rev-parse HEAD", { cwd: dest, encoding: "utf8" }).trim();
+      if (current === lib.commit) {
+        console.log(`[setup] ${lib.id}: pinned at ${lib.commit}`);
+        continue;
+      }
+      console.log(`[setup] ${lib.id}: checking out ${lib.commit}`);
+      execSync(`git fetch --depth=1 origin "${lib.commit}"`, { cwd: dest, stdio: "inherit" });
+      execSync(`git checkout --quiet "${lib.commit}"`, { cwd: dest, stdio: "inherit" });
       continue;
     }
-    console.log(`[setup] ${lib.id}: cloning ${lib.repo} (shallow) …`);
-    execSync(`git clone --depth 1 --quiet "${lib.repo}" "${dest}"`, { stdio: "inherit" });
+    console.log(`[setup] ${lib.id}: fetching pinned ${lib.commit}`);
+    execSync(`git init --quiet "${dest}"`, { stdio: "inherit" });
+    execSync(`git remote add origin "${lib.repo}"`, { cwd: dest, stdio: "inherit" });
+    execSync(`git fetch --depth=1 origin "${lib.commit}"`, { cwd: dest, stdio: "inherit" });
+    execSync("git checkout --quiet FETCH_HEAD", { cwd: dest, stdio: "inherit" });
   }
 }
 
@@ -258,6 +271,11 @@ function loadBaseline(): Baseline {
 // ── main ──
 
 const args = process.argv.slice(2);
+const reportFlagIndex = args.indexOf("--report-json");
+const reportPath =
+  reportFlagIndex >= 0
+    ? path.resolve(ROOT_DIR, args[reportFlagIndex + 1] ?? DEFAULT_REPORT_PATH)
+    : undefined;
 if (args.includes("--setup")) {
   setup();
   if (args.length === 1) process.exit(0);
@@ -273,6 +291,7 @@ const updateBaseline = args.includes("--update-baseline");
 const baseline = loadBaseline();
 const nextBaseline: Baseline = {};
 let failed = false;
+const allDiagnostics: FileDiagnostic[] = [];
 
 if (LIBRARIES.some((lib) => !fs.existsSync(path.resolve(ROOT_DIR, lib.dest)))) {
   console.error("corpus gate: corpus is incomplete — run pnpm corpus:setup first");
@@ -284,6 +303,7 @@ for (const lib of LIBRARIES) {
   const dest = path.resolve(ROOT_DIR, lib.dest);
   console.log(`\n[${lib.id}] ${lib.dest}`);
   const result = await runLibrary(lib);
+  allDiagnostics.push(...result.diagnostics);
   const libBaseline = baseline[lib.id];
   nextBaseline[lib.id] = { docx: result.docx, xlsx: result.xlsx, pptx: result.pptx };
 
@@ -315,6 +335,12 @@ for (const lib of LIBRARIES) {
 if (updateBaseline) {
   fs.writeFileSync(BASELINE_PATH, JSON.stringify(nextBaseline, null, 2) + "\n");
   console.log(`\nbaseline written to ${path.relative(ROOT_DIR, BASELINE_PATH)}`);
+}
+
+if (reportPath) {
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
+  fs.writeFileSync(reportPath, `${JSON.stringify({ diagnostics: allDiagnostics }, null, 2)}\n`);
+  console.log(`\ncorpus diagnostics: ${path.relative(ROOT_DIR, reportPath)}`);
 }
 
 if (failed) {

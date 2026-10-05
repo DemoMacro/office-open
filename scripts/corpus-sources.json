@@ -1,0 +1,46 @@
+{
+  "sources": [
+    {
+      "id": "sdk",
+      "repository": "https://github.com/dotnet/Open-XML-SDK",
+      "destination": ".temp/corpus/Open-XML-SDK",
+      "commit": "431ab05cf160248cc3885a4a766026d4f8243792"
+    },
+    {
+      "id": "calamine",
+      "repository": "https://github.com/tafia/calamine.git",
+      "destination": ".temp/corpus/calamine",
+      "commit": "0af05f4f6030351e3b8a999ea0810c8618368776"
+    },
+    {
+      "id": "closedxml",
+      "repository": "https://github.com/ClosedXML/ClosedXML.git",
+      "destination": ".temp/corpus/closedxml",
+      "commit": "09f2f21a60e821ce7fb18ca3576b272e5dd6d921"
+    },
+    {
+      "id": "oletools",
+      "repository": "https://github.com/decalage2/oletools.git",
+      "destination": ".temp/corpus/oletools",
+      "commit": "ec10260989dbc48b9109e3d05d22beee19cf2333"
+    },
+    {
+      "id": "pandoc",
+      "repository": "https://github.com/jgm/pandoc.git",
+      "destination": ".temp/corpus/pandoc",
+      "commit": "0507289fce476dacbd165416a4a8ad56275c9f38"
+    },
+    {
+      "id": "python-pptx",
+      "repository": "https://github.com/scanny/python-pptx.git",
+      "destination": ".temp/corpus/python-pptx",
+      "commit": "278b47b1dedd5b46ee84c286e77cdfb0bf4594be"
+    },
+    {
+      "id": "tika",
+      "repository": "https://github.com/apache/tika",
+      "destination": ".temp/corpus/tika",
+      "commit": "424bfd2fcf6d70478965c101a162728463aa38e9"
+    }
+  ]
+}
