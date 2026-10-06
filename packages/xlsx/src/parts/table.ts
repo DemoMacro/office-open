@@ -130,6 +130,8 @@ export interface TableColumnOptions {
 export interface TableOptions {
   /** Unique table id (1-based across the workbook); omit for auto-numbering */
   id?: number;
+  /** Revision UID (CT_Table `@xr:uid`); round-trip only. */
+  uid?: string;
   /** Table name (used in structured references) */
   name?: string;
   /** Display name (required by XSD, defaults to name if not set) */
@@ -207,6 +209,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // Root element with attributes
     const rootAttrs: Record<string, string | number | boolean | undefined> = {
       id: o.id,
+      "xr:uid": o.uid,
       name: o.name ?? o.displayName,
       displayName: o.displayName,
       ref: o.ref,
@@ -371,6 +374,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // to numbers, so boolean attribute checks use String() coercion.
     const id = attrNum(el, "id");
     if (id !== undefined) result.id = id;
+    if (attr(el, "xr:uid")) result.uid = attr(el, "xr:uid");
     if (attr(el, "name")) result.name = attr(el, "name");
     if (attr(el, "displayName")) result.displayName = attr(el, "displayName");
     if (attr(el, "comment")) result.comment = attr(el, "comment");

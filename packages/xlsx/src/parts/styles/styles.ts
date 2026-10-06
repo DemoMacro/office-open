@@ -548,17 +548,22 @@ export class Styles {
             .join("");
           p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
         } else {
-          const patternAttrs = attrs({ patternType: f.patternType ?? "solid" });
+          const patternAttrs =
+            f.legacyPatternElement && f.legacyPatternType !== undefined
+              ? ` patternType="${f.legacyPatternType}"`
+              : attrs({ patternType: f.patternType ?? "solid" });
           const fgChannel =
-            f.themeColor !== undefined
-              ? `theme="${f.themeColor}"`
-              : f.colorIndexed !== undefined
-                ? `indexed="${f.colorIndexed}"`
-                : f.color
-                  ? `rgb="FF${f.color}"`
-                  : f.fgAutoColor
-                    ? 'auto="1"'
-                    : "";
+            f.fgLegacyColorType !== undefined
+              ? `type="${f.fgLegacyColorType}" val="${f.fgLegacyColorValue ?? ""}"`
+              : f.themeColor !== undefined
+                ? `theme="${f.themeColor}"`
+                : f.colorIndexed !== undefined
+                  ? `indexed="${f.colorIndexed}"`
+                  : f.color
+                    ? `rgb="FF${f.color}"`
+                    : f.fgAutoColor
+                      ? 'auto="1"'
+                      : "";
           const fgTint =
             f.tintRaw !== undefined
               ? ` tint="${f.tintRaw}"`
@@ -567,15 +572,17 @@ export class Styles {
                 : "";
           const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
-            f.bgThemeColor !== undefined
-              ? `theme="${f.bgThemeColor}"`
-              : f.bgColorIndexed !== undefined
-                ? `indexed="${f.bgColorIndexed}"`
-                : f.bgColor
-                  ? `rgb="FF${f.bgColor}"`
-                  : f.bgAutoColor
-                    ? 'auto="1"'
-                    : "";
+            f.bgLegacyColorType !== undefined
+              ? `type="${f.bgLegacyColorType}" val="${f.bgLegacyColorValue ?? ""}"`
+              : f.bgThemeColor !== undefined
+                ? `theme="${f.bgThemeColor}"`
+                : f.bgColorIndexed !== undefined
+                  ? `indexed="${f.bgColorIndexed}"`
+                  : f.bgColor
+                    ? `rgb="FF${f.bgColor}"`
+                    : f.bgAutoColor
+                      ? 'auto="1"'
+                      : "";
           const bgTint =
             f.bgTintRaw !== undefined
               ? ` tint="${f.bgTintRaw}"`
@@ -586,8 +593,8 @@ export class Styles {
           const colorContent = fgColor + bgColor;
           p.push(
             colorContent
-              ? `<fill><patternFill${patternAttrs}>${colorContent}</patternFill></fill>`
-              : `<fill><patternFill${patternAttrs}/></fill>`,
+              ? `<fill><${f.legacyPatternElement ? "pattern" : "patternFill"}${patternAttrs}>${colorContent}</${f.legacyPatternElement ? "pattern" : "patternFill"}></fill>`
+              : `<fill><${f.legacyPatternElement ? "pattern" : "patternFill"}${patternAttrs}/></fill>`,
           );
         }
       }
@@ -858,6 +865,11 @@ export class Styles {
     if (this.colors) {
       const c = this.colors;
       const colorParts: string[] = ["<colors>"];
+      if (c.themeColors && c.themeColors.length > 0) {
+        colorParts.push("<themeColors>");
+        for (const value of c.themeColors) colorParts.push(`<rgbColor val="${value}"/>`);
+        colorParts.push("</themeColors>");
+      }
       if (c.indexedColors && c.indexedColors.length > 0) {
         colorParts.push("<indexedColors>");
         for (const ic of c.indexedColors) {
@@ -865,7 +877,13 @@ export class Styles {
         }
         colorParts.push("</indexedColors>");
       }
-      if (c.mruColors && c.mruColors.length > 0) {
+      if (c.legacyMruColors && c.legacyMruColors.length > 0) {
+        colorParts.push("<mruColors>");
+        for (const mc of c.legacyMruColors) {
+          colorParts.push(`<color type="${mc.type}" val="${mc.value}"/>`);
+        }
+        colorParts.push("</mruColors>");
+      } else if (c.mruColors && c.mruColors.length > 0) {
         colorParts.push("<mruColors>");
         for (const mc of c.mruColors) {
           colorParts.push(`<color rgb="FF${mc}"/>`);
@@ -928,6 +946,16 @@ export class Styles {
     if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.autoColor) parts.push('<color auto="1"/>');
+    else if (f.legacyColorType !== undefined)
+      parts.push(
+        `<color type="${f.legacyColorType}" val="${f.legacyColorValue ?? ""}"${
+          f.tintRaw !== undefined
+            ? ` tint="${f.tintRaw}"`
+            : f.tint !== undefined
+              ? ` tint="${decimalAttr(f.tint)}"`
+              : ""
+        }/>`,
+      );
     else if (f.themeColor !== undefined)
       parts.push(
         `<color theme="${f.themeColor}"${
@@ -955,6 +983,14 @@ export class Styles {
     const parts: string[] = [];
     const sideColorXmlStr = (side: BorderOptions): string => {
       if (side.autoColor) return '<color auto="1"/>';
+      if (side.legacyColorType !== undefined)
+        return `<color type="${side.legacyColorType}" val="${side.legacyColorValue ?? ""}"${
+          side.tintRaw !== undefined
+            ? ` tint="${side.tintRaw}"`
+            : side.tint !== undefined
+              ? ` tint="${decimalAttr(side.tint)}"`
+              : ""
+        }/>`;
       if (side.themeColor !== undefined)
         return `<color theme="${side.themeColor}"${
           side.tintRaw !== undefined
@@ -968,7 +1004,7 @@ export class Styles {
       return "";
     };
     const renderSide = (name: string, opts: BorderOptions | undefined, required: boolean) => {
-      if (opts?.style && opts.style !== "none") {
+      if (opts?.style) {
         parts.push(`<${name} style="${opts.style}">${sideColorXmlStr(opts)}</${name}>`);
       } else if (opts || required) {
         parts.push(`<${name}/>`);

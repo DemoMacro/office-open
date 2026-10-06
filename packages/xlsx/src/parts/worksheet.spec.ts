@@ -163,6 +163,31 @@ describe("Worksheet", () => {
       expect(xml).toContain('<formula2 xml:space="preserve"> 10 </formula2>');
     });
 
+    it("round-trips preserved cell value lexemes", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1">` +
+          `<v xml:space="preserve"> 2 </v></c></row></sheetData></worksheet>`,
+      );
+      const cell = result.rows?.[0]?.cells?.[0];
+      expect(cell?.value).toBe(2);
+      expect(cell?.valueRaw).toBe(" 2 ");
+      expect(buildWorksheetXml(result, {})).toContain('<v xml:space="preserve"> 2 </v>');
+    });
+
+    it("round-trips preserved formula cache lexemes", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="str"><f>B1</f>` +
+          `<v xml:space="preserve"> value </v></c></row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]?.valueRaw).toBe(" value ");
+      expect(result.rows?.[0]?.cells?.[0]?.value).toBe(" value ");
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<f>B1</f><v xml:space="preserve"> value </v>',
+      );
+    });
+
     it("round-trips revision uid and explicit filter mode", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +

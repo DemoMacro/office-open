@@ -9,15 +9,15 @@
     },
     "xlsx": {
       "total": 155,
-      "clean": 127,
-      "diff": 28,
+      "clean": 138,
+      "diff": 17,
       "parseFail": 0,
       "genFail": 0
     },
     "pptx": {
       "total": 226,
-      "clean": 220,
-      "diff": 6,
+      "clean": 226,
+      "diff": 0,
       "parseFail": 0,
       "genFail": 0
     }

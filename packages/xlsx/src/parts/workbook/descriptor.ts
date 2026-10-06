@@ -43,6 +43,15 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
   parse(el, _ctx) {
     const result: Partial<WorkbookDescriptorOptions> = {};
+    const childNames = (el.elements ?? [])
+      .map((child) => child.name?.slice(child.name.indexOf(":") + 1))
+      .filter((name): name is string => name !== undefined);
+    if (
+      childNames.indexOf("bookViews") !== -1 &&
+      childNames.indexOf("workbookPr") !== -1 &&
+      childNames.indexOf("bookViews") < childNames.indexOf("workbookPr")
+    )
+      result.legacyChildOrder = true;
 
     // File version (CT_Workbook first child) — Excel version stamp
     const fileVersionEl = findChild(el, "fileVersion");
@@ -70,10 +79,11 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       for (const s of sheetsEl.elements ?? []) {
         if (s.name !== "sheet") continue;
         const name = attr(s, "name") ?? "";
-        const sheetId = attrNum(s, "sheetId") ?? 0;
+        const sheetId = attrNum(s, "sheetId");
+        const tabId = attrNum(s, "tabId");
         const rId = (s.attributes?.["r:id"] as string | undefined) ?? "";
         const state = attr(s, "state") as SheetDefinition["state"];
-        sheets.push({ name, sheetId, rId, state });
+        sheets.push({ name, sheetId, tabId, rId, state });
       }
       result.sheets = sheets;
     }
@@ -190,7 +200,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const id = attrNum(calcPrEl, "iterateDelta");
       if (id !== undefined) calc.iterateDelta = id;
       if (String(attr(calcPrEl, "fullPrecision")) === "0") calc.fullPrecision = false;
-      if (parseOnOff(attr(calcPrEl, "calcCompleted"))) calc.calcCompleted = true;
+      if (attr(calcPrEl, "calcCompleted") !== undefined)
+        calc.calcCompleted = parseOnOff(attr(calcPrEl, "calcCompleted")) ?? false;
       result.calculation = calc;
     }
 
@@ -289,7 +300,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const fileRecoveryEl = findChild(el, "fileRecoveryPr");
     if (fileRecoveryEl?.attributes) {
       const frp: FileRecoveryPropertiesOptions = {};
-      if (String(attr(fileRecoveryEl, "autoRecover")) === "0") frp.autoRecover = false;
+      if (attr(fileRecoveryEl, "autoRecover") !== undefined)
+        frp.autoRecover = parseOnOff(attr(fileRecoveryEl, "autoRecover")) ?? false;
       if (parseOnOff(attr(fileRecoveryEl, "crashSave"))) frp.crashSave = true;
       if (parseOnOff(attr(fileRecoveryEl, "dataExtractLoad"))) frp.dataExtractLoad = true;
       if (parseOnOff(attr(fileRecoveryEl, "repairLoad"))) frp.repairLoad = true;
@@ -334,11 +346,11 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const choice = findChild(acEl, "mc:Choice");
       // Excel writes both prefixes in the wild: x15ac (2010/11/ac, the
       // common form our stringify re-emits) and x15 (2010/11/main, root-bound).
-      const absPathEl = choice
-        ? (findChild(choice, "x15ac:absPath") ?? findChild(choice, "x15:absPath"))
-        : undefined;
+      const legacyAbsPathEl = choice ? findChild(choice, "x15ac:absPath") : undefined;
+      const absPathEl = legacyAbsPathEl ?? (choice ? findChild(choice, "x15:absPath") : undefined);
       const url = absPathEl ? attr(absPathEl, "url") : undefined;
       if (url !== undefined) result.absPath = url;
+      if (legacyAbsPathEl) result.absPathLegacyPrefix = true;
     }
 
     // Coauthoring revision state

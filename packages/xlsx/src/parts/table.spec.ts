@@ -69,6 +69,21 @@ describe("tableDesc round-trip", () => {
     expect(result.displayName).toBe("MyTable");
   });
 
+  it("round-trips a root revision uid", () => {
+    const opts: TableOptions = {
+      id: 1,
+      uid: "{00000000-0000-0000-0000-000000000000}",
+      displayName: "Table1",
+      ref: "A1:B3",
+      columns: [{ name: "A" }, { name: "B" }],
+    };
+    const result = roundTrip(opts);
+    expect(result.uid).toBe(opts.uid);
+    expect(tableDesc.stringify(opts, writeCtx)).toContain(
+      'id="1" xr:uid="{00000000-0000-0000-0000-000000000000}"',
+    );
+  });
+
   it("round-trips table with autoFilter", () => {
     const opts: TableOptions = {
       id: 1,

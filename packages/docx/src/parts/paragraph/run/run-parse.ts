@@ -512,7 +512,7 @@ export function parseRun(
   const rsid = attr(el, "w:rsidR");
   const runPropertiesRsid = attr(el, "w:rsidRPr");
   const deletionRsid = attr(el, "w:rsidDel");
-  let preserveSpace = false;
+  let preserveSpace: boolean | undefined;
 
   for (const child of el.elements ?? []) {
     switch (child.name) {
@@ -521,10 +521,11 @@ export function parseRun(
         break;
       case "w:t": {
         let text = textOf(child);
-        preserveSpace ||= attr(child, "xml:space") === "preserve";
-        children.push(
-          attr(child, "xml:space") === "preserve" ? { text, preserveSpace: true } : text,
-        );
+        const preserve = attr(child, "xml:space") === "preserve";
+        const needsMarker = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text);
+        if (preserve) preserveSpace = true;
+        else if (needsMarker && preserveSpace === undefined) preserveSpace = false;
+        children.push(needsMarker ? { text, preserveSpace: preserve } : text);
         break;
       }
       case "w:delText": {
@@ -751,7 +752,7 @@ export function parseRun(
     additionRsid: rsid,
     runPropertiesRsid,
     deletionRsid,
-    preserveSpace: preserveSpace || undefined,
+    preserveSpace,
   };
 }
 
@@ -793,26 +794,35 @@ export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
 ): RunOptions | { commentReference: number } {
   const contentChildren = parsed.children;
+  const first = contentChildren[0];
+  const firstUnpreservedText =
+    typeof first === "object" &&
+    first !== null &&
+    "text" in first &&
+    "preserveSpace" in first &&
+    first.preserveSpace === false;
 
   // Fast path: the overwhelmingly common run shape — one plain text node, no
   // rsids — skips the reference/symbol/object scans and collection loop.
   if (
     contentChildren.length === 1 &&
-    typeof contentChildren[0] === "string" &&
+    (typeof first === "string" || firstUnpreservedText) &&
     parsed.additionRsid === undefined &&
     parsed.runPropertiesRsid === undefined &&
     parsed.deletionRsid === undefined
   ) {
-    const text = contentChildren[0];
+    const text = typeof first === "string" ? first : first.text;
     const base = parsed.properties === undefined ? { text } : { ...parsed.properties, text };
-    return (parsed.preserveSpace ? { ...base, preserveSpace: true } : base) as RunOptions;
+    return (
+      parsed.preserveSpace === undefined ? base : { ...base, preserveSpace: parsed.preserveSpace }
+    ) as RunOptions;
   }
 
   const opts: Record<string, unknown> = { ...parsed.properties };
   if (parsed.additionRsid) opts.additionRsid = parsed.additionRsid;
   if (parsed.runPropertiesRsid) opts.runPropertiesRsid = parsed.runPropertiesRsid;
   if (parsed.deletionRsid) opts.deletionRsid = parsed.deletionRsid;
-  if (parsed.preserveSpace) opts.preserveSpace = true;
+  if (parsed.preserveSpace !== undefined) opts.preserveSpace = parsed.preserveSpace;
 
   // Check if this run is a pure reference run (commentReference, footnoteReference, endnoteReference)
   const isRefChild = (c: unknown): c is Record<string, number> =>
@@ -905,12 +915,23 @@ export function parsedRunToOptions(
   const extraChildren: Record<string, unknown>[] = [];
   const hasStructuredText = nonRefChildren.some(
     (child) =>
-      typeof child === "object" && child !== null && "text" in child && "preserveSpace" in child,
+      typeof child === "object" &&
+      child !== null &&
+      "text" in child &&
+      "preserveSpace" in child &&
+      child.preserveSpace === true,
   );
 
   for (const child of nonRefChildren) {
     if (typeof child === "string") {
       textParts.push(child);
+    } else if (
+      typeof child === "object" &&
+      child !== null &&
+      "text" in child &&
+      "preserveSpace" in child
+    ) {
+      textParts.push(String(child.text));
     } else if (child === PARSED_LINE_BREAK) {
       breakCount++;
     } else if (child === PARSED_PAGE_BREAK) {

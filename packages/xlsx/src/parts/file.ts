@@ -75,6 +75,10 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    * workbookPr) — round-trip only.
    */
   absPath?: string;
+  /** Namespace prefix for absPath; explicit true preserves the legacy x15ac spelling. */
+  absPathLegacyPrefix?: boolean;
+  /** Legacy SpreadsheetML 2005 workbook child order; round-trip only. */
+  legacyChildOrder?: boolean;
   /** Coauthoring revision state (xr:revisionPtr) — round-trip only. */
   revisionPtr?: RevisionPtrOptions;
   /** Trailing extension list (workbook > extLst > ext) — round-trip only. */

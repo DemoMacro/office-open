@@ -589,6 +589,11 @@ export interface ChartUserShapesOptions {
   relationshipId?: string;
   /** Source companion part path; round-trip only. Fresh authoring omits it. */
   path?: string;
+  /**
+   * Companion root element. `drawing` is the canonical `cdr:userShapes`;
+   * `chart` is a legacy variant (`c:userShapes`) preserved for round-trip.
+   */
+  rootElement?: "chart" | "drawing";
   /** Anchored shapes (the cdr:userShapes part body). */
   anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
 }
@@ -961,7 +966,15 @@ export interface PivotSourceOptions {
 /** Per-series pivot format override (CT_PivotFmt). */
 export interface ChartPivotFormatOptions {
   index: number;
+  /** Marker style/size/shape (c:spPr outside dLbl). */
+  shapeProperties?: ShapePropertiesOptions;
+  /** Pivot format text properties (c:txPr). */
+  textProperties?: TextBodyOptions;
   marker?: MarkerOptions;
+  /** Per-point label override (c:dLbl); its own c:idx is included. */
+  dataLabel?: DataLabelOptions;
+  /** Raw inner XML of the trailing c:extLst — Office extension round-trip. */
+  ext?: string;
 }
 
 // ── Surface band formats (CT_BandFmts) ──

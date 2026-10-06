@@ -34,28 +34,8 @@ const XML_DECL = OOXML_XML_DECLARATION;
 
 const IMAGE_REL = RELATIONSHIP_TYPES.image;
 
-function decimalAttr(value: string): string {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return value;
-  const shortest = String(number);
-  if (shortest.length < 17) return shortest;
-  return number.toPrecision(17).replace(/0+$/, "").replace(/\.$/, "");
-}
-
-function layoutDecimal(value: string): string {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return value;
-  if (number !== 0 && Math.abs(number) < 0.1) {
-    return number.toExponential(16).toUpperCase();
-  }
-  return decimalAttr(value);
-}
-
 export function preserveChartDecimalAttributes(xml: string): string {
-  return xml.replace(
-    /<c:(x|y|w|h) val="([^"]+)"\/>/g,
-    (_match, name: string, value: string) => `<c:${name} val="${layoutDecimal(value)}"/>`,
-  );
+  return xml;
 }
 
 /**
@@ -153,6 +133,31 @@ export function compileSheetDrawing(
     rid = drawingRels.nextRelationshipId;
     return assigned;
   };
+  const remapBlipExtensionRelationships = (extensions: string): string => {
+    const replacements = [...extensions.matchAll(/r:embed="([^"]+)"/g)]
+      .map((match) => match[1]!)
+      .filter((sourceRid, index, ids) => ids.indexOf(sourceRid) === index)
+      .map((sourceRid) => {
+        const sourceRel = sourceDrawingRels.find((rel) => rel.rId === sourceRid);
+        if (!sourceRel) return undefined;
+        const targetRid = addPreservedDrawingRel(
+          sourceRel,
+          sourceRel.relationshipType as RelationshipType,
+          sourceRel.target,
+          sourceRel.targetMode === "External" ? "External" : undefined,
+        );
+        return targetRid === sourceRid ? undefined : { sourceRid, targetRid };
+      })
+      .filter((replacement) => replacement !== undefined);
+    return replacements.reduce(
+      (xml, replacement) =>
+        xml.replaceAll(
+          `r:embed="${replacement!.sourceRid}"`,
+          `r:embed="${replacement!.targetRid}"`,
+        ),
+      extensions,
+    );
+  };
 
   // Process images
   for (const img of imgOpts) {
@@ -204,6 +209,8 @@ export function compileSheetDrawing(
       linkRid = `rId${rid}`;
       rid++;
     }
+    const blipExt =
+      img.blipExt === undefined ? undefined : remapBlipExtensionRelationships(img.blipExt);
 
     drawingImages.push({
       ...pickAnchorOptions(img),
@@ -219,7 +226,7 @@ export function compileSheetDrawing(
         : {}),
       ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
       ...(img.useLocalDpi !== undefined ? { useLocalDpi: img.useLocalDpi } : {}),
-      ...(img.blipExt !== undefined ? { blipExt: img.blipExt } : {}),
+      ...(blipExt !== undefined ? { blipExt } : {}),
       ...(img.locking ? { locking: img.locking } : {}),
       ...(img.hyperlink ? { hyperlink: img.hyperlink } : {}),
       ...(img.zOrder !== undefined ? { zOrder: img.zOrder } : {}),
@@ -268,9 +275,12 @@ export function compileSheetDrawing(
     drawingCharts.push({
       ...pickAnchorOptions(chart),
       ...chartCnvPr,
+      ...(chart.frameExtentCx !== undefined ? { frameExtentCx: chart.frameExtentCx } : {}),
+      ...(chart.frameExtentCy !== undefined ? { frameExtentCy: chart.frameExtentCy } : {}),
       rId: chartRid,
       ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
       ...(chart.macro !== undefined ? { macro: chart.macro } : {}),
+      ...(chart.fPublished !== undefined ? { fPublished: chart.fPublished } : {}),
       ...(chart.hyperlink ? { hyperlink: chart.hyperlink } : {}),
       ...(chart.zOrder !== undefined ? { zOrder: chart.zOrder } : {}),
       ...(chart.shapeId !== undefined ? { shapeId: chart.shapeId } : {}),
@@ -364,6 +374,7 @@ export function compileSheetDrawing(
       ...pickAnchorOptions(webExtension),
       ...pickNonVisualDrawingProperties(webExtension),
       rId,
+      ...(webExtension.elementName ? { elementName: webExtension.elementName } : {}),
       ...(fallback ? { fallback } : {}),
       ...(webExtension.frameLocks ? { frameLocks: webExtension.frameLocks } : {}),
       ...(webExtension.macro !== undefined ? { macro: webExtension.macro } : {}),

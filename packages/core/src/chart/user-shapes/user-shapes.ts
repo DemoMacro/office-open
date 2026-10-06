@@ -37,6 +37,7 @@ import type { DefaultShapeStyleOptions } from "../../theme/theme-options";
 import { parseOnOff } from "../../util/values";
 
 const CDR_NS = "http://schemas.openxmlformats.org/drawingml/2006/chartDrawing";
+const C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 const A_NS = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
 
@@ -150,6 +151,11 @@ export type UserShapeObjectOptions =
 
 /** cdr:userShapes part options (CT_Drawing). */
 export interface UserShapesOptions {
+  /**
+   * Companion root element. `drawing` is the canonical `cdr:userShapes`;
+   * `chart` is a legacy variant (`c:userShapes`) preserved for round-trip.
+   */
+  rootElement?: "chart" | "drawing";
   anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
 }
 
@@ -187,7 +193,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
         `<cdr:nvSpPr>${stringifyCnvPr(obj.id, obj.nonVisualProperties)}` +
         `<cdr:cNvSpPr${obj.textBox ? ' txBox="1"' : ""}/></cdr:nvSpPr>`;
       const spPrXml = stringify(shapePropertiesDesc, obj.shapeProperties, DIRECT_CTX) ?? "";
-      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX) : "";
+      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX, "cdr:style") : "";
       // textBodyDesc yields the bare bodyPr/lstStyle/p sequence — the chart-
       // drawing wrapper element is cdr:txBody (same pattern as c:txPr)
       const txBodyXml = obj.textBody
@@ -205,7 +211,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
     case "connector": {
       const nvCxnSpPr = `<cdr:nvCxnSpPr>${stringifyCnvPr(obj.id, obj.nonVisualProperties)}<cdr:cNvCxnSpPr/></cdr:nvCxnSpPr>`;
       const spPrXml = stringify(shapePropertiesDesc, obj.shapeProperties, DIRECT_CTX) ?? "";
-      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX) : "";
+      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX, "cdr:style") : "";
       return (
         `<cdr:cxnSp${commonAttrs(obj)}>` +
         nvCxnSpPr +
@@ -224,7 +230,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
         "cdr:blipFill",
       );
       const spPrXml = stringify(shapePropertiesDesc, obj.shapeProperties, DIRECT_CTX) ?? "";
-      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX) : "";
+      const styleXml = obj.style ? stringifyShapeStyle(obj.style, DIRECT_CTX, "cdr:style") : "";
       return (
         `<cdr:pic${commonAttrs(obj)}>` +
         nvPicPr +
@@ -330,7 +336,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       };
       if (cNvSpPr && cNvSpPr.attributes?.["txBox"] !== undefined)
         result.textBox = parseOnOff(cNvSpPr.attributes["txBox"]) ?? false;
-      const styleEl = findChild(el, "a:style");
+      const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       const txBody = findChild(el, "cdr:txBody");
       if (txBody) result.textBody = parse(textBodyDesc, txBody, ctx);
@@ -353,7 +359,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
         nonVisualProperties: cnvPr.nvp,
         shapeProperties: parse(shapePropertiesDesc, spPr, ctx),
       };
-      const styleEl = findChild(el, "a:style");
+      const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       Object.assign(result, readCommonAttrs(el));
       return result;
@@ -375,7 +381,7 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
         shapeProperties: parse(shapePropertiesDesc, spPr, ctx),
       };
       if (Object.keys(blipFillOpts).length > 0) result.blipFill = blipFillOpts;
-      const styleEl = findChild(el, "a:style");
+      const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       Object.assign(result, readCommonAttrs(el));
       return result;
@@ -449,6 +455,11 @@ export const userShapesDesc: CustomDescriptor<UserShapesOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
+    const rootTag = opts.rootElement === "chart" ? "c:userShapes" : "cdr:userShapes";
+    const namespaces =
+      opts.rootElement === "chart"
+        ? `xmlns:c="${C_NS}" xmlns:cdr="${CDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}"`
+        : `xmlns:cdr="${CDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}"`;
     const anchors = opts.anchors
       .map((anchor) => {
         const objectXml = stringifyObject(anchor.object);
@@ -471,11 +482,7 @@ export const userShapesDesc: CustomDescriptor<UserShapesOptions> = {
       })
       .join("");
 
-    return (
-      `<cdr:userShapes xmlns:cdr="${CDR_NS}" xmlns:a="${A_NS}" xmlns:r="${R_NS}">` +
-      anchors +
-      `</cdr:userShapes>`
-    );
+    return `<${rootTag} ${namespaces}>` + anchors + `</${rootTag}>`;
   },
 
   parse(el, ctx) {
@@ -502,7 +509,10 @@ export const userShapesDesc: CustomDescriptor<UserShapesOptions> = {
         }
       }
     }
-    return { anchors } as UserShapesOptions;
+    return {
+      rootElement: el.name === "c:userShapes" ? "chart" : "drawing",
+      anchors,
+    } as UserShapesOptions;
   },
 };
 
@@ -525,10 +535,15 @@ function readAnchorObject(
  */
 export function buildUserShapesData(userShapes: {
   relationshipId?: string;
+  rootElement?: UserShapesOptions["rootElement"];
   anchors: UserShapesOptions["anchors"];
 }): { relationshipId: string; xml: string } {
   return {
     relationshipId: userShapes.relationshipId ?? "rId1",
-    xml: userShapesDesc.stringify({ anchors: userShapes.anchors }, DIRECT_CTX) ?? "",
+    xml:
+      userShapesDesc.stringify(
+        { rootElement: userShapes.rootElement, anchors: userShapes.anchors },
+        DIRECT_CTX,
+      ) ?? "",
   };
 }

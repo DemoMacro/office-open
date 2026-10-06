@@ -118,6 +118,28 @@ describe("Styles", () => {
     expect(xml).toContain('<color theme="1" tint="-0.2499771111178930"/>');
   });
 
+  it("preserves an explicit none border style", () => {
+    const styles = new Styles();
+    styles.adopt({
+      fonts: [],
+      fills: [],
+      borders: [
+        {
+          left: { style: "none" },
+          bottom: {
+            style: "thin",
+            legacyColorType: "theme",
+            legacyColorValue: "4",
+            tintRaw: "-0.25",
+          },
+        },
+      ],
+      cellXfs: [],
+    });
+    expect(styles.serialize()).toContain('<left style="none">');
+    expect(styles.serialize()).toContain('<color type="theme" val="4" tint="-0.25"/>');
+  });
+
   it("round-trips accounting underlines", () => {
     const styles = new Styles();
     styles.register({ font: { underline: "singleAccounting" } });

@@ -229,6 +229,28 @@ describe("drawingDesc round-trip", () => {
     expect(chart.description).toBe("Full page");
   });
 
+  it("round-trips an absolute chart's separate frame extent", () => {
+    const opts: DrawingOptions = {
+      charts: [
+        {
+          col: 1,
+          row: 1,
+          anchorType: "absolute",
+          extentCx: 9308969,
+          extentCy: 6096000,
+          frameExtentCx: 0,
+          frameExtentCy: 0,
+          rId: "rId7",
+        },
+      ],
+    };
+    const xml = drawingDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<a:ext cx="0" cy="0"/>');
+    const chart = roundTrip(opts).charts![0]!;
+    expect(chart.frameExtentCx).toBe(0);
+    expect(chart.frameExtentCy).toBe(0);
+  });
+
   it("round-trips mixed images and charts", () => {
     const opts: DrawingOptions = {
       images: [{ col: 1, row: 1, rId: "rId1" }],
@@ -314,6 +336,21 @@ describe("drawingDesc — anchored shapes", () => {
     const result = roundTrip(opts);
     expect(result.shapes![0]?.macro).toBe("Click()");
     expect(result.shapes![0]?.textlink).toBe("rId1");
+  });
+
+  it("round-trips shape black/white and published flags", () => {
+    const result = roundTrip({
+      shapes: [
+        {
+          col: 1,
+          row: 1,
+          properties: { geometry: "rect" },
+          blackWhiteMode: "auto",
+          fPublished: true,
+        },
+      ],
+    });
+    expect(result.shapes![0]).toMatchObject({ blackWhiteMode: "auto", fPublished: true });
   });
 
   it("round-trips a oneCellAnchor shape with extent", () => {
@@ -416,6 +453,58 @@ describe("drawingDesc — anchored groups", () => {
     expect(group.shapes![0]?.name).toBe("Child 1");
     expect(group.connectors).toHaveLength(1);
     expect(group.connectors![0]?.name).toBe("Child Line");
+  });
+});
+
+describe("drawingDesc — group child identity", () => {
+  it("preserves source child ids and drawing attributes", () => {
+    const result = roundTrip({
+      groups: [
+        {
+          col: 1,
+          row: 1,
+          name: "Group 5",
+          properties: {
+            x: 0,
+            y: 0,
+            width: 5000,
+            height: 5000,
+            childOffsetX: 0,
+            childOffsetY: 0,
+            childExtentWidth: 5000,
+            childExtentHeight: 5000,
+          },
+          shapes: [
+            {
+              name: "Rectangle 1",
+              shapeId: 2,
+              blackWhiteMode: "auto",
+              fPublished: true,
+              properties: { geometry: "rect" },
+            },
+          ],
+          connectors: [
+            {
+              name: "Elbow Connector 4",
+              shapeId: 5,
+              blackWhiteMode: "gray",
+              fPublished: false,
+              properties: { geometry: "line" },
+            },
+          ],
+        },
+      ],
+    });
+    expect(result.groups![0]?.shapes![0]).toMatchObject({
+      shapeId: 2,
+      blackWhiteMode: "auto",
+      fPublished: true,
+    });
+    expect(result.groups![0]?.connectors![0]).toMatchObject({
+      shapeId: 5,
+      blackWhiteMode: "gray",
+      fPublished: false,
+    });
   });
 });
 

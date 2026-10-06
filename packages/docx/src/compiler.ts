@@ -157,6 +157,16 @@ type DocxContext = BodyContext;
 /** Factory the compile phases use to derive a per-part stringify context. */
 export type PartCtxFactory = (viewWrapper?: BodyContext["viewWrapper"]) => BodyContext;
 
+/** Source-backed part presence; absent source Content Types means fresh compile. */
+function hasSourcePart(options: DocumentOptions, partName: string): boolean {
+  const result =
+    !options.contentTypes ||
+    options.contentTypes.overrides.some(
+      (override) => override.partName.toLowerCase() === `/${partName.toLowerCase()}`,
+    );
+  return result;
+}
+
 // ── Public API ──
 
 /**
@@ -276,8 +286,8 @@ export function compileDocument(
  */
 interface XmlifyedFileMapping {
   Document: XmlifyedFile;
-  Styles: XmlifyedFile;
-  Properties: XmlifyedFile;
+  Styles?: XmlifyedFile;
+  Properties?: XmlifyedFile;
   Numbering?: XmlifyedFile;
   NumberingRelationships?: XmlifyedFile;
   Relationships: XmlifyedFile;
@@ -287,12 +297,12 @@ interface XmlifyedFileMapping {
   HeaderRelationships: XmlifyedFile[];
   FooterRelationships: XmlifyedFile[];
   CustomProperties?: XmlifyedFile;
-  AppProperties: XmlifyedFile;
+  AppProperties?: XmlifyedFile;
   FootNotes?: XmlifyedFile;
   FootNotesRelationships?: XmlifyedFile;
   Endnotes?: XmlifyedFile;
   EndnotesRelationships?: XmlifyedFile;
-  Settings: XmlifyedFile;
+  Settings?: XmlifyedFile;
   MailMergeRecipients?: XmlifyedFile[];
   Comments?: XmlifyedFile;
   CommentsRelationships?: XmlifyedFile;
@@ -315,6 +325,8 @@ interface XmlifyedFileMapping {
 
 function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const mailMergeRecipients = ctx._options.mailMergeRecipients ?? [];
+  const hasAppProperties =
+    hasSourcePart(ctx._options, "docProps/app.xml") || ctx._options.appProperties !== undefined;
   const recipientData =
     ctx._settingsOptions.mailMerge?.odso?.recipientData?.slice(0, mailMergeRecipients.length) ?? [];
   const mailMerge = ctx._settingsOptions.mailMerge;
@@ -352,10 +364,15 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const documentEntries = compileDocumentEntries(ctx, documentXmlData, documentRelationshipCount);
 
   return {
-    AppProperties: {
-      data: XML_DECL + (appPropertiesDesc.stringify(ctx._options.appProperties ?? {}, ctx) ?? ""),
-      path: "docProps/app.xml",
-    },
+    ...(hasAppProperties
+      ? {
+          AppProperties: {
+            data:
+              XML_DECL + (appPropertiesDesc.stringify(ctx._options.appProperties ?? {}, ctx) ?? ""),
+            path: "docProps/app.xml",
+          },
+        }
+      : {}),
     ...notesParts,
     // docProps/custom.xml — emitted only when custom properties exist (parsed
     // presence or fresh authoring); Word omits the part otherwise.
@@ -472,14 +489,22 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           };
         })()
       : {}),
-    Properties: {
-      data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),
-      path: "docProps/core.xml",
-    },
-    Settings: {
-      data: XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? ""),
-      path: "word/settings.xml",
-    },
+    ...(hasSourcePart(ctx._options, "docProps/core.xml")
+      ? {
+          Properties: {
+            data: XML_DECL + (corePropertiesDesc.stringify(ctx._options, ctx) ?? ""),
+            path: "docProps/core.xml",
+          },
+        }
+      : {}),
+    ...(hasSourcePart(ctx._options, "word/settings.xml")
+      ? {
+          Settings: {
+            data: XML_DECL + (settingsDesc.stringify(ctx._settingsOptions, ctx) ?? ""),
+            path: "word/settings.xml",
+          },
+        }
+      : {}),
     ...(mailMergeRecipients.length > 0
       ? {
           MailMergeRecipients: mailMergeRecipients.map((part, index) => ({
@@ -525,13 +550,17 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           },
         }
       : {}),
-    Styles: {
-      data: (() => {
-        const xmlStyles = ctx.styles.serialize(documentNamespaceDialect(ctx));
-        return replaceNumberingPlaceholders(xmlStyles, ctx.numbering.concreteNumbering);
-      })(),
-      path: "word/styles.xml",
-    },
+    ...(hasSourcePart(ctx._options, "word/styles.xml")
+      ? {
+          Styles: {
+            data: (() => {
+              const xmlStyles = ctx.styles.serialize(documentNamespaceDialect(ctx));
+              return replaceNumberingPlaceholders(xmlStyles, ctx.numbering.concreteNumbering);
+            })(),
+            path: "word/styles.xml",
+          },
+        }
+      : {}),
     ...(ctx._options.bibliography
       ? {
           Bibliography: {

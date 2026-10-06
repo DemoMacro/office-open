@@ -77,6 +77,13 @@ describe("parseRunProperties round-trip", () => {
     });
   });
 
+  it("omits underline val when the source omits it", () => {
+    const xml = stringifyRunProperties({ underline: { color: "FF0000" } })!;
+    expect(xml).toContain('<w:u w:color="FF0000"/>');
+    expect(xml).not.toContain("w:val");
+    expect(roundTrip({ underline: {} })).toEqual({ underline: {} });
+  });
+
   it("round-trips eastAsianLayout", () => {
     const result = roundTrip({
       eastAsianLayout: {

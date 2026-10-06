@@ -34,6 +34,11 @@ export interface MediaTransformation {
   flipVertical?: boolean;
   /** Optional rotation angle in degrees */
   rotation?: number;
+  /**
+   * Shape extent from pic:spPr/a:xfrm/a:ext in EMUs; round-trip only when it
+   * differs from the wrapper extent.
+   */
+  shapeExtent?: { x: number; y: number };
   /** Effect extent (wp:effectExtent) in raw EMUs — passed through verbatim. */
   effectExtent?: { l: number; t: number; r: number; b: number };
 }
@@ -66,6 +71,7 @@ export const createTransformation = (options: MediaTransformation): MediaDataTra
       y: Math.round(convertEmuToPixels(heightEmu)),
     },
     rotation: options.rotation,
+    ...(options.shapeExtent ? { shapeExtent: options.shapeExtent } : {}),
     ...(options.effectExtent ? { effectExtent: options.effectExtent } : {}),
   };
 };

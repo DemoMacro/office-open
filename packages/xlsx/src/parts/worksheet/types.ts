@@ -101,6 +101,24 @@ export interface RowOptions {
  */
 export type RichTextColor = string;
 
+/** CT_RPrElt child spellings; `propertyOrder` records their source order. */
+export type RichTextRunProperty =
+  | "rFont"
+  | "charset"
+  | "family"
+  | "b"
+  | "i"
+  | "strike"
+  | "outline"
+  | "shadow"
+  | "condense"
+  | "extend"
+  | "color"
+  | "sz"
+  | "u"
+  | "vertAlign"
+  | "scheme";
+
 export interface RichTextRunPropertiesOptions {
   /** Font name (CT_FontName → rFont) */
   font?: string;
@@ -134,6 +152,8 @@ export interface RichTextRunPropertiesOptions {
   vertAlign?: "superscript" | "subscript" | "baseline";
   /** Font scheme */
   scheme?: "major" | "minor" | "none";
+  /** Source CT_RPrElt child order; round-trip only. */
+  propertyOrder?: RichTextRunProperty[];
 }
 
 /** A single rich text run (CT_RElt). */
@@ -154,6 +174,31 @@ export interface PhoneticRunOptions {
   text: string;
 }
 
+/** Attributes on the `t` wrapped by a legacy shared-string extension. */
+export interface SharedStringExtensionTextAttributesOptions {
+  a?: string;
+  b?: string;
+  c?: string;
+}
+
+/** Legacy `w14:placeholder` compatibility payload wrapping one `t`. */
+export interface SharedStringExtensionPlaceholderOptions {
+  processContent?: string;
+  preserveAttributes?: string;
+  text: string;
+  textAttributes?: SharedStringExtensionTextAttributesOptions;
+}
+
+/**
+ * Legacy `w14` compatibility content around CT_Rst. `attribute` maps to
+ * `si/@w14:attr`; the remaining fields map to `w14:placeholder` and `w14:no`.
+ */
+export interface SharedStringExtensionOptions {
+  attribute?: string;
+  placeholder?: SharedStringExtensionPlaceholderOptions;
+  no?: boolean;
+}
+
 /** Rich text content (CT_Rst). Either plain text or rich runs. */
 export interface RichTextOptions {
   /** Plain text (mutually exclusive with runs) */
@@ -164,10 +209,14 @@ export interface RichTextOptions {
   phonetics?: PhoneticRunOptions[];
   /** Phonetic font/alignment settings (CT_PhoneticPr, si-level trailing element) */
   phoneticProperties?: PhoneticPropertiesOptions;
+  /** Legacy `w14` compatibility content; round-trip only. */
+  wordDrawingExtension?: SharedStringExtensionOptions;
 }
 
 export interface CellOptions {
   value?: string | number | boolean | Date | RichTextOptions | null;
+  /** Source numeric/text lexical form for `<v xml:space="preserve">`; round-trip only. */
+  valueRaw?: string;
   reference?: string;
   /**
    * Cell style: either style options (resolved to an index at compile time)
@@ -416,6 +465,10 @@ export interface WorksheetChartOptions
     ChartSpaceOptions,
     DrawingAnchorOptions,
     Omit<NonVisualDrawingPropertiesOptions, "title"> {
+  /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
+  frameExtentCx?: number;
+  /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
+  frameExtentCy?: number;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
   frameLocks?: GraphicFrameLockingOptions;
   /**
@@ -428,6 +481,8 @@ export interface WorksheetChartOptions
   shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
   /** Source chart part path; round-trip only and preserves relationship wiring. */
   sourcePath?: string;
   /** Chart-owned external link part for c:externalData — round-trip only. */
@@ -480,6 +535,8 @@ export interface WorksheetWebExtensionOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** WebExtension part path, e.g. "xl/webextensions/webextension1.xml". */
   sourcePath: string;
+  /** Source graphic-data child spelling; `webextensionref` by default. */
+  elementName?: "webextension" | "webextensionref";
   /** Fallback snapshot image path; round-trip only. */
   snapshotSourcePath?: string;
   /** Snapshot picture used by the mc:Fallback branch. */

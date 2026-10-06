@@ -17,7 +17,9 @@ export interface WorkbookExtensionOptions {
 
 export interface SheetDefinition {
   name: string;
-  sheetId: number;
+  sheetId?: number;
+  /** Legacy SpreadsheetML tab identity (sheet/@tabId); mutually exclusive with sheetId. */
+  tabId?: number;
   rId: string;
   state?: "visible" | "hidden" | "veryHidden";
 }
@@ -312,7 +314,7 @@ export interface CalculationPropertiesOptions {
   wildcardSearch?: boolean;
   /** Epoch used for serial dates. */
   nullDate?: { year: number; month: number; day: number };
-  /** Calc completed (CT_CalcPr `@calcCompleted`) */
+  /** Calc completed (CT_CalcPr `@calcCompleted`); explicit false round-trips `0`. */
   calcCompleted?: boolean;
 }
 
@@ -450,6 +452,8 @@ export interface WorkbookDescriptorOptions {
    * workbookPr) — round-trip only.
    */
   absPath?: string;
+  /** Namespace prefix for absPath; explicit true preserves the legacy x15ac spelling. */
+  absPathLegacyPrefix?: boolean;
   /** Coauthoring revision state (xr:revisionPtr) — round-trip only. */
   revisionPtr?: RevisionPtrOptions;
   /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
@@ -477,4 +481,6 @@ export interface WorkbookDescriptorOptions {
   /** Defined names (CT_DefinedNames) — named ranges, constants, formulas */
   definedNames?: DefinedNameOptions[];
   conformance?: WorkbookConformance;
+  /** Legacy SpreadsheetML 2005 child order; round-trip only. */
+  legacyChildOrder?: boolean;
 }

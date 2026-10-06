@@ -187,6 +187,10 @@ export interface DrawingChartOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the chart */
   rId: string;
+  /** Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU). */
+  frameExtentCx?: number;
+  /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
+  frameExtentCy?: number;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.
@@ -229,6 +233,8 @@ export interface DrawingWebExtensionOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
   /** Relationship ID for the WebExtension part (we:webextensionref/@r:id). */
   rId: string;
+  /** Source graphic-data child spelling; `webextensionref` by default. */
+  elementName?: "webextension" | "webextensionref";
   /** Snapshot picture used by the mc:Fallback branch. */
   fallback?: DrawingWebExtensionFallbackOptions;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
@@ -285,6 +291,8 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   fPublished?: boolean;
   /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
   textBox?: boolean;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 /** Anchored connector (xdr:cxnSp): line/arrow geometry via spPr. */
@@ -302,6 +310,8 @@ export interface ConnectorOptions extends DrawingAnchorOptions, BaseConnectorOpt
   macro?: string;
   /** Published-object flag (cxnSp/@fPublished); explicit true/false round-trips. */
   fPublished?: boolean;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 /** Shape nested inside a group (no anchor — positioned via spPr.xfrm). */
@@ -321,6 +331,12 @@ export interface GroupShapeChildOptions extends NonVisualDrawingPropertiesOption
   locking?: ShapeLockingOptions;
   /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */
   textBox?: boolean;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Original cNvPr id (round-trip only; fresh output allocates ids). */
+  shapeId?: number;
+  /** Published-object flag (sp/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
 }
 
 /** Connector nested inside a group (no anchor). */
@@ -334,6 +350,12 @@ export interface GroupConnectorChildOptions extends BaseConnectorOptions {
   /** Theme style-matrix references (xdr:style, CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
   macro?: string;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Original cNvPr id (round-trip only; fresh output allocates ids). */
+  shapeId?: number;
+  /** Published-object flag (cxnSp/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
 }
 
 /** Anchored group (xdr:grpSp): group transform + nested shapes/connectors. */

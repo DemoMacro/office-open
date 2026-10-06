@@ -12,7 +12,7 @@ const readCtx = {} as unknown as DocxReadContext;
 /** The shape office-open's own textbox stringifier emits: w:p > w:r > w:pict. */
 const TEXTBOX_PICT =
   '<w:pict><v:shape id="_x0000_s1026" type="#_x0000_t202" style="width:120pt;height:24pt">' +
-  "<v:textbox><w:txbxContent><w:p><w:r><w:t>In box</w:t></w:r></w:p></w:txbxContent></v:textbox>" +
+  '<v:textbox style="mso-fit-shape-to-text:t" o:insetmode="auto"><w:txbxContent><w:p><w:r><w:t>In box</w:t></w:r></w:p></w:txbxContent></v:textbox>' +
   "</v:shape></w:pict>";
 
 function parseFirstChild(xml: string) {
@@ -39,6 +39,17 @@ describe("parseSectionChild run-wrapped textboxes", () => {
     const child = parseFirstChild(`<w:p><w:r><w:t>Before</w:t>${TEXTBOX_PICT}</w:r></w:p>`);
     expect("textbox" in (child as object)).toBe(false);
     expect(JSON.stringify(child)).toContain("Before");
+  });
+
+  it("keeps a non-canonical textbox pict in its run", () => {
+    const child = parseFirstChild(
+      `<w:p><w:r><w:pict><v:rect type="#_x0000_t202">` +
+        `<v:textbox inset="1pt" o:insetmode="custom"><w:txbxContent>` +
+        `<w:p><w:r><w:t>In box</w:t></w:r></w:p>` +
+        `</w:txbxContent></v:textbox></v:rect></w:pict></w:r></w:p>`,
+    );
+    expect("textbox" in (child as object)).toBe(false);
+    expect(JSON.stringify(child)).toContain('"rect"');
   });
 
   it("does not promote a paragraph that carries extra runs", () => {

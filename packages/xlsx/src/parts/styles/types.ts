@@ -24,6 +24,10 @@ export interface FontOptions {
    * when both are set, matching the XSD's single-channel choice.
    */
   themeColor?: number;
+  /** Legacy SpreadsheetML color channel spelling; round-trip only. */
+  legacyColorType?: "theme" | "icv" | "rgb";
+  /** Source value for legacyColorType; round-trip only. */
+  legacyColorValue?: string;
   /** Tint applied to the theme color (CT_Color `@tint`) */
   tint?: number;
   /** Source lexical form of `tint`; round-trip only — do not hand-author. */
@@ -83,6 +87,10 @@ export interface CellFillOptions {
   tintRaw?: string;
   /** Foreground automatic color (CT_Color `@auto` on fgColor) */
   fgAutoColor?: boolean;
+  /** Legacy fgColor channel spelling; round-trip only. */
+  fgLegacyColorType?: "theme" | "icv" | "rgb";
+  /** Legacy fgColor source value; round-trip only. */
+  fgLegacyColorValue?: string;
   /** Pattern kind (CT_PatternFill `@patternType`, ST_PatternType) */
   patternType?:
     | "none"
@@ -104,6 +112,10 @@ export interface CellFillOptions {
     | "lightTrellis"
     | "gray125"
     | "gray0625";
+  /** Legacy SpreadsheetML `<pattern>` element spelling; round-trip only. */
+  legacyPatternElement?: boolean;
+  /** Source pattern kind when it is outside the modern ST_PatternType union. */
+  legacyPatternType?: string;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: HexColor;
   /** Background theme palette index (CT_Color `@theme` on bgColor) */
@@ -118,6 +130,10 @@ export interface CellFillOptions {
   bgColorIndexed?: number;
   /** Background automatic color (CT_Color `@auto` on bgColor) */
   bgAutoColor?: boolean;
+  /** Legacy bgColor channel spelling; round-trip only. */
+  bgLegacyColorType?: "theme" | "icv" | "rgb";
+  /** Legacy bgColor source value; round-trip only. */
+  bgLegacyColorValue?: string;
   /** Gradient stops (CT_GradientFill/stop) */
   stops?: CellGradientStopOptions[];
   /** Gradient type (CT_GradientFill `@type`) */
@@ -154,6 +170,10 @@ export interface BorderOptions {
   color?: string;
   /** Theme palette index (CT_Color `@theme`) — takes precedence over `color` */
   themeColor?: number;
+  /** Legacy SpreadsheetML color channel spelling; round-trip only. */
+  legacyColorType?: "theme" | "icv" | "rgb";
+  /** Source value for legacyColorType; round-trip only. */
+  legacyColorValue?: string;
   /** Tint applied to the theme color (CT_Color `@tint`) */
   tint?: number;
   /** Source lexical form of `tint`; round-trip only — do not hand-author. */
@@ -249,8 +269,12 @@ export interface IndexedColorOptions {
 export interface ColorsOptions {
   /** Indexed color palette (CT_IndexedColors) */
   indexedColors?: IndexedColorOptions[];
+  /** Legacy theme-palette integer channels; round-trip only. */
+  themeColors?: number[];
   /** Most recently used colors (CT_MRUColors) */
   mruColors?: HexColor[];
+  /** Legacy MRU channels (`type` + decimal `val`); round-trip only. */
+  legacyMruColors?: { type: "rgb" | "theme" | "icv"; value: string }[];
 }
 
 /**

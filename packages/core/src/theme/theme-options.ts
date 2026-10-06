@@ -193,11 +193,19 @@ export interface ThemeFamilyOptions {
 /** Theme customization options (a:theme). */
 export interface ThemeOptions {
   name?: string;
+  /** Root spelling: `a:theme` (default) or legacy `a:officeStyleSheet`. */
+  rootElement?: "theme" | "officeStyleSheet";
+  /** Primary theme-element wrapper: `a:themeElements` or legacy `a:baseStyles`. */
+  elementsContainer?: "themeElements" | "baseStyles";
+  /** Microsoft theme identifier (`a:theme/@thm15:id`). */
+  themeExtensionId?: string;
   colorScheme?: ColorSchemeOptions;
   fontScheme?: FontSchemeOptions;
   formatScheme?: FormatSchemeOptions;
   objectDefaults?: ObjectDefaultsOptions;
   extraColorSchemes?: ExtraColorSchemeOptions[];
+  /** Explicit false preserves a source-absent a:extraClrSchemeLst. */
+  includeExtraColorSchemes?: boolean;
   customColors?: CustomColorOptions[];
   /** Theme family identity (`a:extLst/thm15:themeFamily`). */
   themeFamily?: ThemeFamilyOptions;

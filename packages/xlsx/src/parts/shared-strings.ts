@@ -13,6 +13,8 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import { parseColorHex } from "./styles/parse";
 import type {
+  SharedStringExtensionOptions,
+  RichTextRunProperty,
   RichTextOptions,
   RichTextRunOptions,
   RichTextRunPropertiesOptions,
@@ -20,6 +22,9 @@ import type {
 
 /** String or rich text entry in the SST. */
 type SstEntry = string | RichTextOptions;
+
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+const W14_NS = "http://schemas.microsoft.com/office/word/2008/9/16/wordprocessingDrawing";
 
 /**
  * Serialize a CT_Rst text element. Excel requires xml:space="preserve" on a
@@ -40,19 +45,19 @@ export function buildRPrXml(
   pr: NonNullable<RichTextOptions["runs"]>[number]["properties"],
 ): string {
   if (!pr) return "";
-  const parts: string[] = [];
-  if (pr.bold) parts.push("<b/>");
-  if (pr.italic) parts.push("<i/>");
-  if (pr.strike) parts.push("<strike/>");
-  if (pr.outline) parts.push("<outline/>");
-  if (pr.shadow) parts.push("<shadow/>");
-  if (pr.condense) parts.push("<condense/>");
-  if (pr.extend) parts.push("<extend/>");
+  const partsByTag: Partial<Record<RichTextRunProperty, string>> = {};
+  if (pr.bold) partsByTag.b = "<b/>";
+  if (pr.italic) partsByTag.i = "<i/>";
+  if (pr.strike) partsByTag.strike = "<strike/>";
+  if (pr.outline) partsByTag.outline = "<outline/>";
+  if (pr.shadow) partsByTag.shadow = "<shadow/>";
+  if (pr.condense) partsByTag.condense = "<condense/>";
+  if (pr.extend) partsByTag.extend = "<extend/>";
   // val="none" is explicit: a bare <u/> means underline single, so omitting
   // the attribute would flip none → single on parse.
-  if (pr.underline === "single") parts.push("<u/>");
-  else if (pr.underline) parts.push(`<u val="${pr.underline}"/>`);
-  if (pr.size !== undefined) parts.push(`<sz val="${pr.size}"/>`);
+  if (pr.underline === "single") partsByTag.u = "<u/>";
+  else if (pr.underline) partsByTag.u = `<u val="${pr.underline}"/>`;
+  if (pr.size !== undefined) partsByTag.sz = `<sz val="${pr.size}"/>`;
   if (pr.color) {
     // parseRPr encodes the non-rgb channels in the same string: a short bare
     // number (≤3 digits) is the legacy palette index, "theme:N" a theme slot.
@@ -72,13 +77,34 @@ export function buildRPrXml(
     }
     if (pr.colorTintRaw !== undefined) colorAttrs.push(`tint="${pr.colorTintRaw}"`);
     else if (pr.colorTint !== undefined) colorAttrs.push(`tint="${pr.colorTint}"`);
-    parts.push(`<color ${colorAttrs.join(" ")}/>`);
+    partsByTag.color = `<color ${colorAttrs.join(" ")}/>`;
   }
-  if (pr.font) parts.push(`<rFont val="${escapeXml(pr.font)}"/>`);
-  if (pr.charset !== undefined) parts.push(`<charset val="${pr.charset}"/>`);
-  if (pr.family !== undefined) parts.push(`<family val="${pr.family}"/>`);
-  if (pr.vertAlign) parts.push(`<vertAlign val="${pr.vertAlign}"/>`);
-  if (pr.scheme) parts.push(`<scheme val="${pr.scheme}"/>`);
+  if (pr.font) partsByTag.rFont = `<rFont val="${escapeXml(pr.font)}"/>`;
+  if (pr.charset !== undefined) partsByTag.charset = `<charset val="${pr.charset}"/>`;
+  if (pr.family !== undefined) partsByTag.family = `<family val="${pr.family}"/>`;
+  if (pr.vertAlign) partsByTag.vertAlign = `<vertAlign val="${pr.vertAlign}"/>`;
+  if (pr.scheme) partsByTag.scheme = `<scheme val="${pr.scheme}"/>`;
+  const order = pr.propertyOrder ?? [
+    "b",
+    "i",
+    "strike",
+    "outline",
+    "shadow",
+    "condense",
+    "extend",
+    "u",
+    "sz",
+    "color",
+    "rFont",
+    "charset",
+    "family",
+    "vertAlign",
+    "scheme",
+  ];
+  const parts = order.flatMap((tag) => {
+    const part = partsByTag[tag];
+    return part ? [part] : [];
+  });
   return parts.length > 0 ? `<rPr>${parts.join("")}</rPr>` : "";
 }
 
@@ -107,6 +133,39 @@ export function buildRstXml(rst: RichTextOptions): string {
     parts.push(`<phoneticPr ${attrs.join(" ")}/>`);
   }
   return parts.join("");
+}
+
+function sharedStringExtensionXml(extension: SharedStringExtensionOptions): string {
+  let elements = "";
+  if (extension.placeholder) {
+    const placeholder = extension.placeholder;
+    const attrs: string[] = [];
+    if (placeholder.processContent !== undefined)
+      attrs.push(` mc:ProcessContent="${escapeXml(placeholder.processContent)}"`);
+    if (placeholder.preserveAttributes !== undefined)
+      attrs.push(` mc:PreserveAttributes="${escapeXml(placeholder.preserveAttributes)}"`);
+    const textAttrs: string[] = [];
+    if (placeholder.textAttributes?.a !== undefined)
+      textAttrs.push(` w14:a="${escapeXml(placeholder.textAttributes.a)}"`);
+    if (placeholder.textAttributes?.b !== undefined)
+      textAttrs.push(` w14:b="${escapeXml(placeholder.textAttributes.b)}"`);
+    if (placeholder.textAttributes?.c !== undefined)
+      textAttrs.push(` w14:c="${escapeXml(placeholder.textAttributes.c)}"`);
+    elements +=
+      `<w14:placeholder${attrs.join("")}><t${textAttrs.join("")}>` +
+      `${escapeXml(placeholder.text)}</t></w14:placeholder>`;
+  }
+  if (extension.no) elements += "<w14:no/>";
+  return elements;
+}
+
+function siXml(entry: RichTextOptions): string {
+  const extension = entry.wordDrawingExtension;
+  const attributes = extension
+    ? ` xmlns:mc="${MC_NS}" mc:Ignorable="w14" xmlns:w14="${W14_NS}"` +
+      (extension.attribute !== undefined ? ` w14:attr="${escapeXml(extension.attribute)}"` : "")
+    : "";
+  return `<si${attributes}>${sharedStringExtensionXml(extension ?? {})}${buildRstXml(entry)}</si>`;
 }
 
 export class SharedStrings {
@@ -221,8 +280,7 @@ function serializeSst(
     if (typeof entry === "string") {
       p.push(`<si>${tElement(entry)}</si>`);
     } else {
-      // Rich text (CT_Rst)
-      p.push(`<si>${buildRstXml(entry)}</si>`);
+      p.push(siXml(entry));
     }
   }
   p.push("</sst>");
@@ -257,6 +315,37 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 
     for (const si of el.elements ?? []) {
       if (si.name !== "si") continue;
+      const placeholderEl = findChild(si, "w14:placeholder");
+      const placeholderText = placeholderEl ? findChild(placeholderEl, "t") : undefined;
+      const wordDrawingExtension: SharedStringExtensionOptions | undefined =
+        attr(si, "w14:attr") !== undefined || placeholderEl || findChild(si, "w14:no")
+          ? {
+              ...(attr(si, "w14:attr") !== undefined ? { attribute: attr(si, "w14:attr") } : {}),
+              ...(placeholderEl
+                ? {
+                    placeholder: {
+                      ...(attr(placeholderEl, "mc:ProcessContent") !== undefined
+                        ? { processContent: attr(placeholderEl, "mc:ProcessContent") }
+                        : {}),
+                      ...(attr(placeholderEl, "mc:PreserveAttributes") !== undefined
+                        ? { preserveAttributes: attr(placeholderEl, "mc:PreserveAttributes") }
+                        : {}),
+                      text: textOf(placeholderText ?? placeholderEl) ?? "",
+                      ...(placeholderText?.attributes
+                        ? {
+                            textAttributes: {
+                              a: attr(placeholderText, "w14:a"),
+                              b: attr(placeholderText, "w14:b"),
+                              c: attr(placeholderText, "w14:c"),
+                            },
+                          }
+                        : {}),
+                    },
+                  }
+                : {}),
+              ...(findChild(si, "w14:no") ? { no: true } : {}),
+            }
+          : undefined;
 
       // Simple: <si><t>text</t></si> — phonetic children may still trail
       // (CT_Rst allows t + rPh* + phoneticPr without any r runs), in which
@@ -265,7 +354,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
       const hasPhonetic = (si.elements ?? []).some(
         (e) => e.name === "rPh" || e.name === "phoneticPr",
       );
-      if (t && !hasPhonetic) {
+      if (t && !hasPhonetic && !wordDrawingExtension) {
         entries.push(textOf(t) ?? "");
         continue;
       }
@@ -312,12 +401,14 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
         const entry: RichTextOptions = { runs };
         if (phonetics.length > 0) entry.phonetics = phonetics;
         if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
+        if (wordDrawingExtension) entry.wordDrawingExtension = wordDrawingExtension;
         entries.push(entry);
       } else if (t) {
         // Plain text with trailing phonetics — text + rPh*/phoneticPr.
         const entry: RichTextOptions = { text: textOf(t) ?? "" };
         if (phonetics.length > 0) entry.phonetics = phonetics;
         if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
+        if (wordDrawingExtension) entry.wordDrawingExtension = wordDrawingExtension;
         entries.push(entry);
       } else if (!hasPhonetic) {
         entries.push({});
@@ -331,7 +422,27 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 /** Parse CT_RPrElt (run properties inside shared strings r element). */
 export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
   const result: RichTextRunPropertiesOptions = {};
+  const propertyOrder: RichTextRunProperty[] = [];
   for (const child of el.elements ?? []) {
+    switch (child.name) {
+      case "rFont":
+      case "charset":
+      case "family":
+      case "b":
+      case "i":
+      case "strike":
+      case "outline":
+      case "shadow":
+      case "condense":
+      case "extend":
+      case "color":
+      case "sz":
+      case "u":
+      case "vertAlign":
+      case "scheme":
+        propertyOrder.push(child.name);
+        break;
+    }
     switch (child.name) {
       case "rFont":
         result.font = attr(child, "val") ?? undefined;
@@ -399,5 +510,6 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         break;
     }
   }
+  if (propertyOrder.length > 0) result.propertyOrder = propertyOrder;
   return result;
 }

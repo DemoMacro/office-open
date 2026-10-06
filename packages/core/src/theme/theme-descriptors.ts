@@ -34,7 +34,11 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
     const name = el.attributes?.["name"];
     if (name) result.name = String(name);
 
-    const themeElements = findChild(el, "a:themeElements");
+    if (el.name === "a:officeStyleSheet") result.rootElement = "officeStyleSheet";
+    if (attr(el, "thm15:id") !== undefined) result.themeExtensionId = attr(el, "thm15:id");
+    const elementsContainer = findChild(el, "a:themeElements") ? "themeElements" : "baseStyles";
+    const themeElements = findChild(el, `a:${elementsContainer}`);
+    if (themeElements) result.elementsContainer = elementsContainer;
     if (themeElements) {
       const colorScheme = parseColorScheme(findChild(themeElements, "a:clrScheme"), ctx);
       if (colorScheme) result.colorScheme = colorScheme;
@@ -47,8 +51,10 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
     const objectDefaults = parseObjectDefaults(findChild(el, "a:objectDefaults"), ctx);
     if (objectDefaults) result.objectDefaults = objectDefaults;
 
-    const extraColorSchemes = parseExtraColorSchemes(findChild(el, "a:extraClrSchemeLst"), ctx);
+    const extraColorSchemeList = findChild(el, "a:extraClrSchemeLst");
+    const extraColorSchemes = parseExtraColorSchemes(extraColorSchemeList, ctx);
     if (extraColorSchemes) result.extraColorSchemes = extraColorSchemes;
+    result.includeExtraColorSchemes = extraColorSchemeList !== undefined;
 
     const customColors = parseCustomColors(findChild(el, "a:custClrLst"), ctx);
     if (customColors) result.customColors = customColors;

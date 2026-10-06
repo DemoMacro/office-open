@@ -124,7 +124,12 @@ function sortByNumber(paths: string[]): string[] {
 function readChartUserShapes(
   chartPath: string | undefined,
   chart: {
-    userShapes?: { relationshipId?: string; anchors: unknown[]; path?: string };
+    userShapes?: {
+      relationshipId?: string;
+      anchors: unknown[];
+      path?: string;
+      rootElement?: "chart" | "drawing";
+    };
   },
   readContext: XlsxReadContext,
   doc: XlsxDocument["doc"],
@@ -139,6 +144,7 @@ function readChartUserShapes(
   const body = userShapesDesc.parse(bodyEl, readContext);
   chart.userShapes = {
     ...chart.userShapes,
+    rootElement: body.rootElement,
     anchors: body.anchors,
     ...(rel ? { path: rel.target } : {}),
   };
@@ -517,7 +523,12 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // Parse workbook via descriptor for richer data
   const sheetInfoByPath = new Map<
     string,
-    { name: string; sheetId: number; state?: "visible" | "hidden" | "veryHidden" }
+    {
+      name: string;
+      sheetId?: number;
+      tabId?: number;
+      state?: "visible" | "hidden" | "veryHidden";
+    }
   >();
   if (xlsx.workbook) {
     const wbData = workbookDesc.parse(xlsx.workbook, readContext);
@@ -544,6 +555,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
     if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;
+    if (wbData.absPathLegacyPrefix) opts.absPathLegacyPrefix = true;
+    if (wbData.legacyChildOrder) opts.legacyChildOrder = true;
     if (wbData.revisionPtr) opts.revisionPtr = wbData.revisionPtr;
     if (wbData.extensions) opts.extensions = wbData.extensions;
   }
@@ -561,7 +574,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     const sheetInfo = sheetInfoByPath.get(wsPath);
     if (sheetInfo) {
       wsOpts.name = sheetInfo.name;
-      wsOpts.sheetId = sheetInfo.sheetId;
+      wsOpts.sheetId = sheetInfo.sheetId ?? sheetInfo.tabId;
       if (sheetInfo.state) wsOpts.state = sheetInfo.state;
     }
 
@@ -751,10 +764,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...chartSpace,
             ...pickAnchorOptions(anchor),
             ...chartCnvPr,
+            ...(anchor.frameExtentCx !== undefined ? { frameExtentCx: anchor.frameExtentCx } : {}),
+            ...(anchor.frameExtentCy !== undefined ? { frameExtentCy: anchor.frameExtentCy } : {}),
             ...(chartPath ? { sourcePath: chartPath } : {}),
             ...chartExternalLink,
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
+            ...(anchor.fPublished !== undefined ? { fPublished: anchor.fPublished } : {}),
             ...(anchor.hyperlink ? { hyperlink: anchor.hyperlink } : {}),
             ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
             ...(anchor.shapeId !== undefined ? { shapeId: anchor.shapeId } : {}),
@@ -799,6 +815,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...pickAnchorOptions(anchor),
             ...pickNonVisualDrawingProperties(anchor),
             sourcePath,
+            ...(anchor.elementName ? { elementName: anchor.elementName } : {}),
             ...(snapshotSourcePath ? { snapshotSourcePath } : {}),
             ...(anchor.fallback ? { fallback: anchor.fallback } : {}),
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),

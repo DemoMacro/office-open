@@ -1251,7 +1251,12 @@ function stringifyPivotFormats(
   const inner = formats
     .map((f) => {
       let entry = `<c:idx val="${f.index}"/>`;
+      if (f.shapeProperties) entry += chartSpPr(f.shapeProperties, ctx);
+      if (f.textProperties)
+        entry += `<c:txPr>${textBodyDesc.stringify(f.textProperties, ctx) ?? ""}</c:txPr>`;
       if (f.marker) entry += stringifyMarker(f.marker, ctx);
+      if (f.dataLabel) entry += stringifyDataLabel(f.dataLabel, ctx);
+      if (f.ext) entry += `<c:extLst>${f.ext}</c:extLst>`;
       return `<c:pivotFmt>${entry}</c:pivotFmt>`;
     })
     .join("");
@@ -1714,6 +1719,51 @@ function readErrBars(serEl: XmlElement): ErrorBarOptions | undefined {
   const value = readValNum(ebEl, "c:val");
   if (value !== undefined) opts.value = value;
   return opts;
+}
+
+function readDataLabel(el: XmlElement, ctx: ReadContext): DataLabelOptions {
+  const result: DataLabelOptions = { index: readValNum(el, "c:idx") ?? 0 };
+  const labelDelete = readBoolAttr(el, "c:delete");
+  if (labelDelete !== undefined) result.delete = labelDelete;
+  const layoutEl = findChild(el, "c:layout");
+  if (layoutEl) result.layout = readManualLayout(layoutEl) ?? true;
+  const richEl = findChild(findChild(el, "c:tx"), "c:rich");
+  if (richEl) {
+    const text = textBodyDesc.parse(richEl, ctx);
+    if (text) result.text = text;
+  }
+  const numFmt = attr(findChild(el, "c:numFmt"), "formatCode");
+  if (numFmt) result.numberFormat = numFmt;
+  const lblSpPr = findChild(el, "c:spPr");
+  if (lblSpPr) {
+    const shapeProperties = shapePropertiesDesc.parse(lblSpPr, ctx);
+    if (shapeProperties) result.shapeProperties = shapeProperties;
+  }
+  const lblTxPr = findChild(el, "c:txPr");
+  if (lblTxPr) {
+    const textProperties = textBodyDesc.parse(lblTxPr, ctx);
+    if (textProperties) result.textProperties = textProperties;
+  }
+  const pos = readValStr(el, "c:dLblPos");
+  if (pos) result.position = xsdDataLabelPosition.from(pos) as DataLabelOptions["position"];
+  for (const flag of [
+    "showLegendKey",
+    "showVal",
+    "showCatName",
+    "showSerName",
+    "showPercent",
+    "showBubbleSize",
+  ] as const) {
+    const v = readBoolAttr(el, `c:${flag}`);
+    if (v !== undefined) result[flag] = v;
+  }
+  const sep = textOf(findChild(el, "c:separator"));
+  if (sep) result.separator = sep;
+  const labelExtLst = findChild(el, "c:extLst");
+  if (labelExtLst) {
+    result.ext = (labelExtLst.elements ?? []).map((child) => stringifyElement(child)).join("");
+  }
+  return result;
 }
 
 function readDataLabels(serEl: XmlElement, ctx: ReadContext): DataLabelsOptions | undefined {
@@ -2201,8 +2251,24 @@ function readPivotFormats(
     const idxEl = findChild(fmt, "c:idx");
     if (!idxEl) continue;
     const opt: ChartPivotFormatOptions = { index: Number(attr(idxEl, "val")) };
+    const spPr = findChild(fmt, "c:spPr");
+    if (spPr) {
+      const shapeProperties = shapePropertiesDesc.parse(spPr, ctx);
+      if (shapeProperties) opt.shapeProperties = shapeProperties;
+    }
+    const txPr = findChild(fmt, "c:txPr");
+    if (txPr) {
+      const textProperties = textBodyDesc.parse(txPr, ctx);
+      if (textProperties) opt.textProperties = textProperties;
+    }
     const marker = readMarker(fmt, ctx);
     if (marker) opt.marker = marker;
+    const label = findChild(fmt, "c:dLbl");
+    if (label) opt.dataLabel = readDataLabel(label, ctx);
+    const extLst = findChild(fmt, "c:extLst");
+    if (extLst) {
+      opt.ext = (extLst.elements ?? []).map((child) => stringifyElement(child)).join("");
+    }
     result.push(opt);
   }
   return result.length ? result : undefined;

@@ -316,7 +316,7 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
 
 function underlineStr(opts: NonNullable<RunPropertiesOptions["underline"]>): string {
   const a = attrsRaw({
-    "w:val": opts.type ?? "single",
+    "w:val": opts.type,
     "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
     "w:themeColor": opts.themeColor,
     "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,

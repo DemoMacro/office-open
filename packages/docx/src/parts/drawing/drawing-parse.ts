@@ -484,10 +484,23 @@ export function parsePictureRun(
     const xfrm = findChild(picSpPr, "a:xfrm");
     if (xfrm) {
       const transform = imageOpts.transformation as {
+        width?: number;
+        height?: number;
+        emus?: { x: number; y: number };
+        shapeExtent?: { x: number; y: number };
         rotation?: number;
         flipHorizontal?: boolean;
         flipVertical?: boolean;
       };
+      const shapeExt = findChild(xfrm, "a:ext");
+      const shapeCx = attrNum(shapeExt, "cx");
+      const shapeCy = attrNum(shapeExt, "cy");
+      if (shapeExt && (shapeCx !== undefined || shapeCy !== undefined)) {
+        transform.shapeExtent = {
+          x: shapeCx ?? transform.width ?? 0,
+          y: shapeCy ?? transform.height ?? 0,
+        };
+      }
       const rot = attrNum(xfrm, "rot");
       if (rot !== undefined) transform.rotation = parseAngle(rot);
       const flipH = attrBool(xfrm, "flipH");

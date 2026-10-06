@@ -270,6 +270,7 @@ export function compileWorkbook(
     return id;
   };
   let sheetRelationshipIndex = 0;
+  const sheetIdentity = (sheet: SheetDefinition): number => sheet.sheetId ?? sheet.tabId ?? 0;
   for (const ws of worksheetConfigs) {
     sheets.push({
       name: ws.name ?? `Sheet${sheetId}`,
@@ -295,17 +296,18 @@ export function compileWorkbook(
     });
   }
   if (options.sheetDefinitions?.length === sheets.length) {
-    const sheetsById = new Map(sheets.map((sheet) => [sheet.sheetId, sheet]));
-    const sourceOrder = options.sheetDefinitions
-      .map((sheet) => sheetsById.get(sheet.sheetId))
-      .filter((sheet): sheet is SheetDefinition => sheet !== undefined);
-    if (sourceOrder.length === sheets.length) sheets = sourceOrder;
+    const knownDefinitions =
+      options.sheetDefinitions?.length === sheets.length &&
+      options.sheetDefinitions.every((definition) =>
+        sheets.some((sheet) => sheetIdentity(sheet) === sheetIdentity(definition)),
+      );
+    if (knownDefinitions && options.sheetDefinitions) sheets = [...options.sheetDefinitions];
   }
   // Sheets whose parts the model does not rebuild (Excel 4 macro sheets, …)
   // still need their <sheet> entry: the part travels as passthrough at its
   // source path, so re-emit the entry wired to the source relationship id.
   const unmatchedDefinitions = (options.sheetDefinitions ?? []).filter(
-    (definition) => !sheets.some((sheet) => sheet.sheetId === definition.sheetId),
+    (definition) => !sheets.some((sheet) => sheetIdentity(sheet) === sheetIdentity(definition)),
   );
   if (unmatchedDefinitions.length > 0) {
     for (const definition of unmatchedDefinitions) {
@@ -325,17 +327,21 @@ export function compileWorkbook(
       sheets.push({
         name: definition.name,
         sheetId: definition.sheetId,
+        tabId: definition.tabId,
         state: definition.state,
         rId: definition.rId,
       });
     }
     const definitionOrder = new Map(
-      (options.sheetDefinitions ?? []).map((definition, index) => [definition.sheetId, index]),
+      (options.sheetDefinitions ?? []).map((definition, index) => [
+        sheetIdentity(definition),
+        index,
+      ]),
     );
     sheets.sort(
       (left, right) =>
-        (definitionOrder.get(left.sheetId) ?? Number.POSITIVE_INFINITY) -
-        (definitionOrder.get(right.sheetId) ?? Number.POSITIVE_INFINITY),
+        (definitionOrder.get(sheetIdentity(left)) ?? Number.POSITIVE_INFINITY) -
+        (definitionOrder.get(sheetIdentity(right)) ?? Number.POSITIVE_INFINITY),
     );
   }
 
@@ -377,6 +383,7 @@ export function compileWorkbook(
     workbookDesc.stringify(
       {
         sheets,
+        ...(options.legacyChildOrder ? { legacyChildOrder: true } : {}),
         pivotCaches: ctx.pivotCacheRefs,
         protection: options.workbookProtection,
         customViews: options.customWorkbookViews,
@@ -392,6 +399,7 @@ export function compileWorkbook(
         oleSize: options.oleSize,
         bookView: options.bookView,
         ...(options.absPath !== undefined ? { absPath: options.absPath } : {}),
+        ...(options.absPathLegacyPrefix ? { absPathLegacyPrefix: true } : {}),
         ...(options.revisionPtr ? { revisionPtr: options.revisionPtr } : {}),
         ...(options.extensions ? { extensions: options.extensions } : {}),
       },
@@ -1164,14 +1172,21 @@ function compileWorksheetPart(
 
   // Single-cell XML tables
   if (singleXmlCellOpts.length > 0) {
+    const sourceSingleXmlCellRels = sourceWorksheetRels.filter((rel) =>
+      rel.relationshipType.endsWith("/tableSingleCells"),
+    );
     state.globalSingleXmlCellsIdx++;
+    const singleXmlCellRel = sourceSingleXmlCellRels[0];
     mapping[`TableSingleCells${state.globalSingleXmlCellsIdx}`] = {
       data: XML_DECL + singleXmlCellsDesc.stringify({ cells: singleXmlCellOpts }, ctx),
-      path: `xl/tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
+      path: sourceRelationshipPath(
+        singleXmlCellRel,
+        `xl/tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
+      ),
     };
-    wsRels!.add(
+    addWorksheetRelationship(
       RELATIONSHIP_TYPES.tableSingleCells,
-      `../tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
+      singleXmlCellRel?.target ?? `../tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
     );
   }
 

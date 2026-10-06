@@ -181,6 +181,33 @@ function findRunTextboxPict(el: Element): Element | undefined {
   return pict;
 }
 
+function isGeneratedTextboxPict(pict: Element): boolean {
+  const shapes = (pict.elements ?? []).filter(
+    (child) => child.type === "element" && child.name === "v:shape",
+  );
+  if (shapes.length !== 1) return false;
+  const shape = shapes[0]!;
+  const shapeAttrs = shape.attributes ?? {};
+  if (Object.keys(shapeAttrs).some((key) => key !== "id" && key !== "type" && key !== "style"))
+    return false;
+  if (shapeAttrs.type !== "#_x0000_t202") return false;
+
+  const textboxes = (shape.elements ?? []).filter(
+    (child) => child.type === "element" && child.name === "v:textbox",
+  );
+  if (textboxes.length !== 1) return false;
+  const textbox = textboxes[0]!;
+  const textboxAttrs = textbox.attributes ?? {};
+  if (Object.keys(textboxAttrs).some((key) => key !== "style" && key !== "o:insetmode"))
+    return false;
+  if (textboxAttrs["o:insetmode"] !== "auto") return false;
+  if (textboxAttrs.style !== undefined && textboxAttrs.style !== "mso-fit-shape-to-text:t")
+    return false;
+  return (textbox.elements ?? []).some(
+    (child) => child.type === "element" && child.name === "w:txbxContent",
+  );
+}
+
 /**
  * Parse a single body child element into a SectionChild.
  */
@@ -191,7 +218,7 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       const pict = findChild(el, "w:pict") ?? findRunTextboxPict(el);
       if (pict) {
         const textbox = findFirst(pict, "v:textbox");
-        if (textbox) {
+        if (textbox && isGeneratedTextboxPict(pict)) {
           const textboxOpts = parseTextbox(pict, ctx, parseSectionChildrenElements);
           return { textbox: textboxOpts as SectionChild extends { textbox: infer T } ? T : never };
         }

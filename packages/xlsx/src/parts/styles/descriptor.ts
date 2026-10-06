@@ -311,6 +311,17 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
     const colorsEl = findChild(el, "colors");
     if (colorsEl) {
       const colors: ColorsOptions = {};
+      const themeEl = findChild(colorsEl, "themeColors");
+      if (themeEl) {
+        const values: number[] = [];
+        for (const rgb of themeEl.elements ?? []) {
+          if (rgb.name === "rgbColor") {
+            const value = Number(attr(rgb, "val"));
+            if (!Number.isNaN(value)) values.push(value);
+          }
+        }
+        colors.themeColors = values;
+      }
       const icEl = findChild(colorsEl, "indexedColors");
       if (icEl) {
         const indexed: IndexedColorOptions[] = [];
@@ -325,7 +336,13 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
       if (mruEl) {
         const mru: string[] = [];
         for (const c of mruEl.elements ?? []) {
-          if (c.name === "color") {
+          const channelType = attr(c, "type");
+          if (c.name === "color" && channelType !== undefined) {
+            (colors.legacyMruColors ??= []).push({
+              type: channelType as NonNullable<ColorsOptions["legacyMruColors"]>[number]["type"],
+              value: attr(c, "val") ?? "",
+            });
+          } else if (c.name === "color") {
             const hex = parseColorHex(c);
             if (hex) mru.push(hex);
           }

@@ -35,6 +35,25 @@ describe("themeDesc", () => {
     expect(roundTrip(opts).themeFamily).toEqual(opts.themeFamily);
   });
 
+  it("round-trips legacy office style-sheet structure", () => {
+    const result = roundTrip({
+      rootElement: "officeStyleSheet",
+      elementsContainer: "baseStyles",
+      includeExtraColorSchemes: false,
+      colorScheme: { name: "Office Colors", accent1: "4F81BD" },
+    });
+    expect(result.rootElement).toBe("officeStyleSheet");
+    expect(result.elementsContainer).toBe("baseStyles");
+    expect(result.includeExtraColorSchemes).toBe(false);
+    expect(result.colorScheme?.accent1).toBe("4F81BD");
+  });
+
+  it("round-trips a root thm15 identifier", () => {
+    const id = "{62F939B6-93AF-4DB8-9C6B-D6C7DFDC589F}";
+    const result = roundTrip({ themeExtensionId: id });
+    expect(result.themeExtensionId).toBe(id);
+  });
+
   it("round-trips color scheme", () => {
     const opts: ThemeOptions = {
       colorScheme: {

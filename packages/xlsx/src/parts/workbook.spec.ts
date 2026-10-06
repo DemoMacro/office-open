@@ -45,6 +45,48 @@ describe("workbookDesc round-trip", () => {
     expect(result.sheets[1]?.name).toBe("Sheet2");
   });
 
+  it("round-trips legacy tab identities without inventing sheet ids", () => {
+    const result = roundTrip({
+      sheets: [
+        { name: "A", tabId: 2, rId: "rId1" },
+        { name: "B", tabId: 1, rId: "rId2" },
+      ],
+    });
+    expect(result.sheets?.map((sheet) => [sheet.tabId, sheet.sheetId])).toEqual([
+      [2, undefined],
+      [1, undefined],
+    ]);
+    const xml = workbookDesc.stringify(result, writeCtx)!;
+    expect(xml).toContain('tabId="2"');
+    expect(xml).not.toContain("sheetId=");
+  });
+
+  it("preserves legacy workbook child order", () => {
+    const xml =
+      '<workbook><fileVersion/><bookViews/><sheets><sheet name="A" tabId="1" r:id="rId1"/></sheets>' +
+      '<workbookPr/><webPublishing codePage="1252"/><fileRecoveryPr autoRecover="1"/><calcPr calcId="1"/></workbook>';
+    const doc = parseXml(xml);
+    const result = workbookDesc.parse(doc.elements?.[0]!, readCtx);
+    expect(result.legacyChildOrder).toBe(true);
+    const output = workbookDesc.stringify(result, writeCtx)!;
+    expect(output.indexOf("<bookViews")).toBeLessThan(output.indexOf("<workbookPr"));
+    expect(output.indexOf("<webPublishing")).toBeLessThan(output.indexOf("<fileRecoveryPr"));
+    expect(output.indexOf("<fileRecoveryPr")).toBeLessThan(output.indexOf("<calcPr"));
+  });
+
+  it("round-trips explicit incomplete calculation", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      calculation: { calcId: 152511, calcCompleted: false, calcOnSave: false },
+    });
+    expect(result.calculation).toEqual({
+      calcId: 152511,
+      calcCompleted: false,
+      calcOnSave: false,
+    });
+    expect(workbookDesc.stringify(result, writeCtx)).toContain('calcCompleted="0"');
+  });
+
   it("round-trips fileVersion", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
@@ -391,5 +433,19 @@ describe("workbookDesc round-trip", () => {
     if (!el) throw new Error("no root element");
     const result = workbookDesc.parse(el, readCtx) as unknown as WorkbookDescriptorOptions;
     expect(result.absPath).toBe("C:\\Users\\kazuma\\Desktop\\");
+    expect(result.absPathLegacyPrefix).toBeUndefined();
+    const output = workbookDesc.stringify(result, writeCtx)!;
+    expect(output).toContain("<x15:absPath");
+    expect(output).not.toContain("x15ac:absPath");
+  });
+
+  it("preserves the legacy x15ac absPath prefix", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      absPath: "C:\\Temp\\",
+      absPathLegacyPrefix: true,
+    });
+    expect(result.absPathLegacyPrefix).toBe(true);
+    expect(workbookDesc.stringify(result, writeCtx)).toContain("<x15ac:absPath");
   });
 });

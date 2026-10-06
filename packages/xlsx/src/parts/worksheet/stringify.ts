@@ -1214,6 +1214,11 @@ function buildCellString(
     return `<c${rAttr}${sAttr}${mdAttr} t="e">${errorV}</c>`;
   }
 
+  const rawValue =
+    typeof value === "number" || typeof value === "string" ? cell.valueRaw : undefined;
+  const valueElement = (content: string, preserve = false): string =>
+    `<v${preserve ? ' xml:space="preserve"' : ""}>${content}</v>`;
+
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);
@@ -1223,13 +1228,16 @@ function buildCellString(
     let vStr = "";
     let tAttr = "";
     if (typeof value === "number") {
-      vStr = `<v>${value}</v>`;
+      vStr = valueElement(
+        rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
+        rawValue !== undefined,
+      );
     } else if (typeof value === "boolean") {
       tAttr = ' t="b"';
       vStr = `<v>${value ? 1 : 0}</v>`;
     } else if (typeof value === "string") {
       tAttr = ' t="str"';
-      vStr = `<v>${escapeXml(value)}</v>`;
+      vStr = valueElement(escapeXml(rawValue ?? value), rawValue !== undefined);
     } else if (value instanceof Date) {
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
     }
@@ -1265,7 +1273,10 @@ function buildCellString(
   }
 
   if (typeof value === "number") {
-    return `<c${rAttr}${sAttr}${mdAttr}><v>${value}</v></c>`;
+    return `<c${rAttr}${sAttr}${mdAttr}>${valueElement(
+      rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
+      rawValue !== undefined,
+    )}</c>`;
   }
 
   if (typeof value === "boolean") {

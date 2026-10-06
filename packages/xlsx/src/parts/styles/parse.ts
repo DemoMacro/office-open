@@ -75,7 +75,13 @@ export function parseFont(el: XmlElement): FontOptions {
         }
         readThemeColor(child, result);
         const indexed = attrNum(child, "indexed");
-        if (indexed !== undefined) result.colorIndexed = indexed;
+        const legacyIndexed = attr(child, "type") === "icv" ? attrNum(child, "val") : undefined;
+        const resolvedIndexed = indexed ?? legacyIndexed;
+        if (resolvedIndexed !== undefined) result.colorIndexed = resolvedIndexed;
+        if (attr(child, "type") !== undefined) {
+          result.legacyColorType = attr(child, "type") as FontOptions["legacyColorType"];
+          result.legacyColorValue = attr(child, "val");
+        }
         if (parseOnOff(attr(child, "auto"))) result.autoColor = true;
         break;
       case "name":
@@ -99,6 +105,36 @@ export function parseFont(el: XmlElement): FontOptions {
 }
 
 export function parseFill(el: XmlElement): CellFillOptions {
+  const legacyPattern = findChild(el, "pattern");
+  if (legacyPattern) {
+    const result: CellFillOptions = { type: "pattern", legacyPatternElement: true };
+    const patternType = attr(legacyPattern, "patternType");
+    if (patternType) {
+      result.legacyPatternType = patternType;
+      if (["none", "solid", "gray125"].includes(patternType))
+        result.patternType = patternType as CellFillOptions["patternType"];
+    }
+    const fg = findChild(legacyPattern, "fgColor");
+    if (fg) {
+      result.color = parseColorHex(fg);
+      readThemeColor(fg, result);
+      result.fgLegacyColorType = attr(fg, "type") as CellFillOptions["fgLegacyColorType"];
+      result.fgLegacyColorValue = attr(fg, "val");
+      const indexed = attrNum(fg, "indexed");
+      if (indexed !== undefined) result.colorIndexed = indexed;
+    }
+    const bg = findChild(legacyPattern, "bgColor");
+    if (bg) {
+      result.bgColor = parseColorHex(bg);
+      result.bgThemeColor = attrNum(bg, "theme");
+      result.bgLegacyColorType = attr(bg, "type") as CellFillOptions["bgLegacyColorType"];
+      result.bgLegacyColorValue = attr(bg, "val");
+      const bgIndexed = attrNum(bg, "indexed");
+      if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
+    }
+    return result;
+  }
+
   const patternFill = findChild(el, "patternFill");
   if (patternFill) {
     const result: CellFillOptions = {};
@@ -188,12 +224,16 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
       // vertical/horizontal — both round-trip byte-identically.
       const opts: BorderOptions = {};
       const style = attr(sideEl, "style");
-      if (style) opts.style = style as BorderOptions["style"];
+      if (style !== undefined) opts.style = style as BorderOptions["style"];
       const color = findChild(sideEl, "color");
       if (color) {
         const sideColor = parseColorHex(color);
         if (sideColor !== undefined) opts.color = sideColor;
         readThemeColor(color, opts);
+        if (attr(color, "type") !== undefined) {
+          opts.legacyColorType = attr(color, "type") as BorderOptions["legacyColorType"];
+          opts.legacyColorValue = attr(color, "val");
+        }
         if (parseOnOff(attr(color, "auto"))) opts.autoColor = true;
         const indexed = attrNum(color, "indexed");
         if (indexed !== undefined) opts.colorIndexed = indexed;
@@ -259,10 +299,23 @@ export function parseColorHex(el: XmlElement): string | undefined {
  */
 export function readThemeColor(
   el: XmlElement,
-  target: { themeColor?: number; tint?: number; tintRaw?: string },
+  target: {
+    themeColor?: number;
+    tint?: number;
+    tintRaw?: string;
+    legacyColorType?: "theme" | "icv" | "rgb";
+    legacyColorValue?: string;
+  },
 ): void {
-  const theme = attrNum(el, "theme");
+  const legacyColorType = attr(el, "type");
+  const legacyValue = attrNum(el, "val");
+  const theme =
+    attrNum(el, "theme") ??
+    (legacyColorType === "theme" && legacyValue !== undefined ? legacyValue : undefined);
   if (theme !== undefined) target.themeColor = theme;
+  if (legacyColorType !== undefined)
+    target.legacyColorType = legacyColorType as "theme" | "icv" | "rgb";
+  if (legacyValue !== undefined) target.legacyColorValue = String(legacyValue);
   const tint = attrNum(el, "tint");
   if (tint !== undefined) target.tint = tint;
   const tintRaw = attr(el, "tint");

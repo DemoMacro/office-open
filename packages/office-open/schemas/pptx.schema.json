@@ -3506,11 +3506,27 @@
       "additionalProperties": false,
       "description": "Per-series pivot format override.",
       "properties": {
+        "dataLabel": {
+          "$ref": "#/definitions/DataLabelOptions",
+          "description": "Per-point label override (c:dLbl); its own c:idx is included."
+        },
+        "ext": {
+          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
+          "type": "string"
+        },
         "index": {
           "type": "number"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Marker style/size/shape (c:spPr outside dLbl)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Pivot format text properties (c:txPr)."
         }
       },
       "required": ["index"],
@@ -3729,6 +3745,11 @@
         },
         "relationshipId": {
           "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
+          "type": "string"
+        },
+        "rootElement": {
+          "description": "Companion root element. `drawing` is the canonical `cdr:userShapes`; `chart` is a legacy variant (`c:userShapes`) preserved for round-trip.",
+          "enum": ["chart", "drawing"],
           "type": "string"
         }
       },
@@ -14236,6 +14257,11 @@
           },
           "type": "array"
         },
+        "elementsContainer": {
+          "description": "Primary theme-element wrapper: `a:themeElements` or legacy `a:baseStyles`.",
+          "enum": ["themeElements", "baseStyles"],
+          "type": "string"
+        },
         "extraColorSchemes": {
           "items": {
             "$ref": "#/definitions/ExtraColorSchemeOptions"
@@ -14248,11 +14274,24 @@
         "formatScheme": {
           "$ref": "#/definitions/FormatSchemeOptions"
         },
+        "includeExtraColorSchemes": {
+          "description": "Explicit false preserves a source-absent a:extraClrSchemeLst.",
+          "type": "boolean"
+        },
         "name": {
           "type": "string"
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "rootElement": {
+          "description": "Root spelling: `a:theme` (default) or legacy `a:officeStyleSheet`.",
+          "enum": ["theme", "officeStyleSheet"],
+          "type": "string"
+        },
+        "themeExtensionId": {
+          "description": "Microsoft theme identifier (`a:theme/@thm15:id`).",
+          "type": "string"
         },
         "themeFamily": {
           "$ref": "#/definitions/ThemeFamilyOptions",

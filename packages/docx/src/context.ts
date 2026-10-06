@@ -285,6 +285,16 @@ export class DocxWriteContext implements WriteContext {
   /** Preflight result: does the body tree carry any `{ comment }` sugar? */
   declare private _hasCommentSugar: boolean;
 
+  /** Source-backed part presence; absent source Content Types means fresh compile. */
+  private hasSourcePart(partName: string): boolean {
+    return (
+      !this._options.contentTypes ||
+      this._options.contentTypes.overrides.some(
+        (override) => override.partName.toLowerCase() === `/${partName.toLowerCase()}`,
+      )
+    );
+  }
+
   constructor(options: DocumentOptions, reproducible?: ReproducibleScope) {
     this._options = options;
     this.reproducible = reproducible;
@@ -312,6 +322,11 @@ export class DocxWriteContext implements WriteContext {
       "word/document.xml",
       options.customProperties !== undefined,
       options.passthroughRelationships,
+      {
+        includeCoreProperties: this.hasSourcePart("docProps/core.xml"),
+        includeAppProperties:
+          this.hasSourcePart("docProps/app.xml") || this._options.appProperties !== undefined,
+      },
     );
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
@@ -643,7 +658,9 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private addDefaultRelationships(): void {
-    this.registerDocumentRel(RELATIONSHIP_TYPES.styles, "styles.xml");
+    if (this.hasSourcePart("word/styles.xml")) {
+      this.registerDocumentRel(RELATIONSHIP_TYPES.styles, "styles.xml");
+    }
     if (this._hasNumbering) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.numbering, "numbering.xml");
     }
@@ -653,7 +670,9 @@ export class DocxWriteContext implements WriteContext {
     if (this._hasEndnotes) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.endnotes, "endnotes.xml");
     }
-    this.registerDocumentRel(RELATIONSHIP_TYPES.settings, "settings.xml");
+    if (this.hasSourcePart("word/settings.xml")) {
+      this.registerDocumentRel(RELATIONSHIP_TYPES.settings, "settings.xml");
+    }
     // Comments is an optional part — only wire the document→comments relationship
     // when the document actually carries comments. Emitting it unconditionally
     // produces an orphan comments.xml that Word rejects as an OPC violation

@@ -66,6 +66,7 @@ export function buildThemeXml(options?: ThemeOptions, ctx?: WriteContext): strin
     ? stringifyObjectDefaults(opts.objectDefaults, requireCtx(ctx, "objectDefaults"))
     : "<a:objectDefaults/>";
   const extraClrSchemeLst = stringifyExtraColorSchemes(opts.extraColorSchemes, name);
+  const includeExtraClrSchemeLst = opts.includeExtraColorSchemes !== false;
   const custClrLst = opts.customColors
     ? stringifyCustomColors(opts.customColors, requireCtx(ctx, "customColors"))
     : "";
@@ -77,9 +78,17 @@ export function buildThemeXml(options?: ThemeOptions, ctx?: WriteContext): strin
       "</a:ext></a:extLst>"
     : "";
 
+  const rootTag = opts.rootElement ?? "theme";
+  const elementsTag = opts.elementsContainer ?? "themeElements";
+  const themeIdAttrs = opts.themeExtensionId
+    ? ` xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"` +
+      ` xmlns:thm15="http://schemas.microsoft.com/office/thememl/2012/main"` +
+      ` mc:Ignorable="thm15" thm15:id="${escapeXml(opts.themeExtensionId)}"`
+    : "";
   return (
-    `<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="${name}">` +
-    `<a:themeElements>${clrScheme}${fontScheme}${fmtScheme}</a:themeElements>` +
-    `${objectDefaults}${extraClrSchemeLst}${custClrLst}${themeFamilyExt}</a:theme>`
+    `<a:${rootTag} xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"${themeIdAttrs}` +
+    `${opts.name === undefined ? "" : ` name="${escapeXml(opts.name)}"`}>` +
+    `<a:${elementsTag}>${clrScheme}${fontScheme}${fmtScheme}</a:${elementsTag}>` +
+    `${objectDefaults}${includeExtraClrSchemeLst ? extraClrSchemeLst : ""}${custClrLst}${themeFamilyExt}</a:${rootTag}>`
   );
 }

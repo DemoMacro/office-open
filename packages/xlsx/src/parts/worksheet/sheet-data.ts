@@ -322,6 +322,7 @@ export function parseSheetDataRows(
           cellEnd = cellClose + 4;
           let vText: string | undefined;
           let vNum: number | undefined;
+          let vPreserve = false;
           let inlineText: string | undefined;
           let hasInline = false;
           let formula: FormulaOptions | undefined;
@@ -344,7 +345,11 @@ export function parseSheetDataRows(
             const nameLen = nameEnd - (lt + 1);
             const first = raw.charCodeAt(lt + 1);
             if (nameLen === 1 && first === 0x76 /* v */) {
-              if (raw.charCodeAt(tEnd - 1) === 0x2f) {
+              const vSelfClosing = raw.charCodeAt(tEnd - 1) === 0x2f;
+              scanAttrs(raw, nameEnd, vSelfClosing ? tEnd - 1 : tEnd, (name, value) => {
+                if (name === "xml:space" && value === "preserve") vPreserve = true;
+              });
+              if (vSelfClosing) {
                 if (vText === undefined) vText = "";
               } else {
                 const close = raw.indexOf("</v>", tEnd + 1);
@@ -432,6 +437,8 @@ export function parseSheetDataRows(
             cell.value = vNum !== undefined ? vNum === 1 : vText === "1";
           } else if (type === "e" && (vText !== undefined || vNum !== undefined)) {
             cell.error = vNum !== undefined ? String(vNum) : vText!;
+          } else if (type === "str" && vText !== undefined) {
+            cell.value = vText;
           } else if (type === "inlineStr" && hasInline) {
             cell.value = inlineText ?? "";
           } else if (vNum !== undefined) {
@@ -441,6 +448,8 @@ export function parseSheetDataRows(
             cell.value = isNaN(num) ? vText : num;
           }
           if (formula !== undefined) cell.formula = formula;
+          if (vPreserve && vText !== undefined && (type === undefined || type === "str"))
+            cell.valueRaw = vText;
         }
 
         cells.push(cell);

@@ -1,8 +1,10 @@
+import { unzipSync, zipSync } from "@office-open/core";
 import type { GroupChildMediaData } from "@shared/media";
 import { describe, expect, it } from "vite-plus/test";
 
 import { compileDocument } from "./compiler";
 import { generateDocument, generateDocumentSync } from "./generate";
+import { parseDocumentSync } from "./parse";
 
 describe("generateDocument entry guards", () => {
   it("names the missing sections array instead of dying in the compiler", () => {
@@ -145,6 +147,94 @@ describe("chart embedding rels", () => {
       'Id="rId1" Type="http://schemas.microsoft.com/office/2011/relationships/chartStyle"',
     );
     expect(rels).toContain('Target="style1.xml"');
+  });
+});
+
+describe("package metadata presence", () => {
+  const contentTypes = {
+    defaults: [],
+    overrides: [
+      {
+        partName: "/word/document.xml",
+        contentType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml",
+      },
+    ],
+  };
+
+  it("omits source-absent core and app metadata", () => {
+    const files = compileDocument({ sections: [], contentTypes });
+    expect(Object.keys(files)).not.toContain("docProps/core.xml");
+    expect(Object.keys(files)).not.toContain("docProps/app.xml");
+    expect(Object.keys(files)).not.toContain("word/styles.xml");
+    expect(Object.keys(files)).not.toContain("word/settings.xml");
+    const rels = new TextDecoder().decode(files["_rels/.rels"] as Uint8Array);
+    expect(rels).not.toContain("docProps/core.xml");
+    expect(rels).not.toContain("docProps/app.xml");
+    const documentRels = new TextDecoder().decode(
+      files["word/_rels/document.xml.rels"] as Uint8Array,
+    );
+    expect(documentRels).not.toContain("styles.xml");
+    expect(documentRels).not.toContain("settings.xml");
+  });
+
+  it("keeps source-backed metadata and explicit app metadata", () => {
+    const files = compileDocument({
+      sections: [],
+      contentTypes: {
+        ...contentTypes,
+        overrides: [
+          ...contentTypes.overrides,
+          {
+            partName: "/docProps/core.xml",
+            contentType: "application/vnd.openxmlformats-package.core-properties+xml",
+          },
+        ],
+      },
+      appProperties: { application: "Test" },
+    });
+    expect(Object.keys(files)).toContain("docProps/core.xml");
+    expect(Object.keys(files)).toContain("docProps/app.xml");
+    const rels = new TextDecoder().decode(files["_rels/.rels"] as Uint8Array);
+    expect(rels).toContain("docProps/core.xml");
+    expect(rels).toContain("docProps/app.xml");
+  });
+
+  it("removes orphan metadata declarations from damaged sources", () => {
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          '<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+          '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+          '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>' +
+          '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+    });
+    const parsed = parseDocumentSync(source);
+    expect(
+      parsed.contentTypes?.overrides.some((override) => override.partName === "/docProps/core.xml"),
+    ).toBe(false);
+    expect(
+      parsed.contentTypes?.overrides.some((override) => override.partName === "/docProps/app.xml"),
+    ).toBe(false);
+    const output = generateDocumentSync(parsed, { type: "uint8array" });
+    const rootRelsXml = new TextDecoder().decode(unzipSync(output)["_rels/.rels"]!);
+    expect(rootRelsXml).toContain("/relationships/officeDocument");
+    expect(rootRelsXml).not.toContain("docProps/core.xml");
+    expect(rootRelsXml).not.toContain("docProps/app.xml");
+    const contentTypesXml = new TextDecoder().decode(unzipSync(output)["[Content_Types].xml"]!);
+    expect(contentTypesXml).not.toContain("/docProps/core.xml");
+    expect(contentTypesXml).not.toContain("/docProps/app.xml");
   });
 });
 

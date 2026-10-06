@@ -1,7 +1,7 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { SharedStrings, sharedStringsDesc } from "./shared-strings";
+import { buildRPrXml, parseRPr, SharedStrings, sharedStringsDesc } from "./shared-strings";
 
 describe("SharedStrings", () => {
   it("register() returns incrementing indices", () => {
@@ -66,6 +66,41 @@ describe("SharedStrings", () => {
     );
   });
 
+  it("round-trips legacy shared-string compatibility content", () => {
+    const doc = parseXml(
+      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<si xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ' +
+        'mc:Ignorable="w14" w14:attr="value" ' +
+        'xmlns:w14="http://schemas.microsoft.com/office/word/2008/9/16/wordprocessingDrawing">' +
+        '<w14:placeholder mc:ProcessContent="w14:placeholder" mc:PreserveAttributes="w14:a w14:b">' +
+        '<t w14:a="a" w14:b="b" w14:c="c">wrapped</t></w14:placeholder><w14:no/>' +
+        "<t>value</t></si></sst>",
+    );
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const result = sharedStringsDesc.parse(root, {} as never);
+    const entry = result.entries[0];
+    if (typeof entry === "string") throw new Error("expected a rich-text entry");
+    if (!entry) throw new Error("parsed shared string has no entry");
+    expect(entry.wordDrawingExtension).toEqual({
+      attribute: "value",
+      placeholder: {
+        processContent: "w14:placeholder",
+        preserveAttributes: "w14:a w14:b",
+        text: "wrapped",
+        textAttributes: { a: "a", b: "b", c: "c" },
+      },
+      no: true,
+    });
+
+    const xml = sharedStringsDesc.stringify(result, {} as never)!;
+    expect(xml).toContain('w14:attr="value"');
+    expect(xml).toContain('mc:PreserveAttributes="w14:a w14:b"');
+    expect(xml).toContain('<t w14:a="a" w14:b="b" w14:c="c">wrapped</t>');
+    expect(xml).toContain("<w14:no/>");
+    expect(xml.indexOf("<w14:placeholder")).toBeLessThan(xml.indexOf("<t>value</t>"));
+  });
+
   // ── toXml path ──
 
   describe("serialize", () => {
@@ -108,6 +143,19 @@ describe("SharedStrings", () => {
       const xml = ss.serialize();
       expect(xml).toContain("<t>tight</t>");
       expect(xml).not.toContain("xml:space");
+    });
+
+    it("round-trips CT_RPrElt source child order", () => {
+      const el = parseXml(
+        '<rPr xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+          '<rFont val="A"/><family val="2"/><charset val="1"/></rPr>',
+      ).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const properties = parseRPr(el);
+      expect(properties.propertyOrder).toEqual(["rFont", "family", "charset"]);
+      expect(buildRPrXml(properties)).toContain(
+        '<rFont val="A"/><family val="2"/><charset val="1"/>',
+      );
     });
   });
 });

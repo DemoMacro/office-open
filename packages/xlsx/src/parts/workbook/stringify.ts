@@ -12,6 +12,30 @@ import type { TablePartReference, WorkbookDescriptorOptions } from "./types";
 
 // ── Stringify helpers ──
 
+function reorderLegacyWorkbook(parts: string[]): string[] {
+  const order = [
+    "fileVersion",
+    "bookViews",
+    "sheets",
+    "workbookPr",
+    "webPublishing",
+    "fileRecoveryPr",
+    "calcPr",
+  ];
+  const children = parts.slice(1, -1);
+  const reordered = order
+    .map((name) => {
+      const openIndex = children.findIndex((part) => part.startsWith(`<${name}`));
+      if (openIndex === -1) return "";
+      const closeIndex = children.findIndex((part) => part === `</${name}>`);
+      const end = closeIndex === -1 ? openIndex : closeIndex;
+      return children.splice(openIndex, end - openIndex + 1).join("");
+    })
+    .filter(Boolean);
+  const remaining = children.filter((part) => !order.some((name) => part.startsWith(`<${name}`)));
+  return [parts[0]!, ...reordered, ...remaining, parts.at(-1)!];
+}
+
 export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   const confAttr = opts.conformance ? ` conformance="${opts.conformance}"` : "";
   const parts: string[] = [
@@ -96,9 +120,14 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
 
   // AbsPath rides in an mc:AlternateContent between workbookPr and bookViews
   if (opts.absPath !== undefined) {
+    const prefix = opts.absPathLegacyPrefix ? "x15ac" : "x15";
+    const namespace =
+      prefix === "x15"
+        ? "http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"
+        : "http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac";
     parts.push(
       '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
-        `<mc:Choice Requires="x15"><x15ac:absPath url="${escapeXml(opts.absPath)}" xmlns:x15ac="http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac"/></mc:Choice>` +
+        `<mc:Choice Requires="x15"><${prefix}:absPath xmlns:${prefix}="${namespace}" url="${escapeXml(opts.absPath)}"/></mc:Choice>` +
         "</mc:AlternateContent>",
     );
   }
@@ -206,9 +235,9 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   parts.push("<sheets>");
   for (const s of opts.sheets) {
     const stateAttr = s.state ? ` state="${s.state}"` : "";
-    parts.push(
-      `<sheet name="${escapeXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rId}"${stateAttr}/>`,
-    );
+    const identityAttr =
+      s.sheetId === undefined ? ` tabId="${s.tabId ?? 0}"` : ` sheetId="${s.sheetId}"`;
+    parts.push(`<sheet name="${escapeXml(s.name)}"${identityAttr} r:id="${s.rId}"${stateAttr}/>`);
   }
   parts.push("</sheets>");
 
@@ -268,7 +297,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (cp.iterateDelta !== undefined) cpAttrs.push(`iterateDelta="${cp.iterateDelta}"`);
     if (cp.refMode) cpAttrs.push(`refMode="${escapeXml(cp.refMode)}"`);
     if (cp.fullPrecision === false) cpAttrs.push('fullPrecision="0"');
-    if (cp.calcCompleted) cpAttrs.push('calcCompleted="1"');
+    if (cp.calcCompleted !== undefined) cpAttrs.push(`calcCompleted="${cp.calcCompleted ? 1 : 0}"`);
     parts.push(`<calcPr ${cpAttrs.join(" ")}/>`);
   } else {
     parts.push('<calcPr calcId="191029" fullCalcOnLoad="1"/>');
@@ -369,7 +398,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.fileRecovery) {
     const frp = opts.fileRecovery;
     const frpAttrs: string[] = [];
-    if (frp.autoRecover === false) frpAttrs.push('autoRecover="0"');
+    if (frp.autoRecover !== undefined) frpAttrs.push(`autoRecover="${frp.autoRecover ? 1 : 0}"`);
     if (frp.crashSave) frpAttrs.push('crashSave="1"');
     if (frp.dataExtractLoad) frpAttrs.push('dataExtractLoad="1"');
     if (frp.repairLoad) frpAttrs.push('repairLoad="1"');
@@ -410,7 +439,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     parts.push(`<extLst>${exts}</extLst>`);
   }
   parts.push("</workbook>");
-  return parts.join("");
+  return (opts.legacyChildOrder ? reorderLegacyWorkbook(parts) : parts).join("");
 }
 
 // ── Exported helper functions ──

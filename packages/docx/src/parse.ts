@@ -363,25 +363,32 @@ function parseRootRels(doc: ParsedArchive): {
   let appProps: string | undefined;
   let customProps: string | undefined;
 
-  for (const child of relsEl.elements ?? []) {
-    if (child.name !== "Relationship") continue;
+  const relationships = (relsEl.elements ?? []).filter((child) => {
+    if (child.name !== "Relationship") return true;
     const type = attr(child, "Type") ?? "";
     const target = attr(child, "Target") ?? "";
-    if (!target) continue;
-
+    if (!target) return true;
     const path = target.startsWith("/") ? target.slice(1) : target;
-
-    // Transitional packages use the oclc URI form with camelCase segments
-    // (…/extendedProperties); normalize case and hyphens so both resolve.
     const relType = type.toLowerCase().replaceAll("-", "");
-    if (relType.includes("/coreproperties")) {
-      coreProps = path;
-    } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp")) {
-      appProps = path;
-    } else if (relType.includes("/customproperties")) {
+    const isCore = relType.includes("/coreproperties");
+    const isApp = relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp");
+    const isCustom = relType.includes("/customproperties");
+    if (!isCore && !isApp && !isCustom) return true;
+
+    if (attr(child, "TargetMode")?.toLowerCase() === "external") return true;
+    if (isCustom) {
       customProps = path;
+      return true;
     }
-  }
+    const decodedPath = decodeUriPath(path);
+    // Match the Content Types cleanup: metadata declarations without their
+    // metadata part describe a damaged source, not retained package state.
+    if (!(doc.get(path) ?? doc.get(decodedPath))) return false;
+    if (isCore) coreProps = path;
+    else appProps = path;
+    return true;
+  });
+  relsEl.elements = relationships;
 
   return { coreProps, appProps, customProps };
 }
@@ -725,7 +732,17 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   // Content types
   if (docx.contentTypes) {
     const ctResult = contentTypesDesc.parse(docx.contentTypes, ctx);
-    if (ctResult) opts.contentTypes = ctResult;
+    if (ctResult) {
+      const actualCoreProps = docx.coreProps ? docx.doc.get(docx.coreProps) : undefined;
+      const actualAppProps = docx.appProps ? docx.doc.get(docx.appProps) : undefined;
+      ctResult.overrides = ctResult.overrides.filter((override) => {
+        const partName = override.partName.toLowerCase();
+        if (partName === "/docprops/core.xml") return actualCoreProps !== undefined;
+        if (partName === "/docprops/app.xml") return actualAppProps !== undefined;
+        return true;
+      });
+      opts.contentTypes = ctResult;
+    }
   }
 
   // Raw passthrough: parts generate() doesn't rebuild (word/theme/*, customXml/*,

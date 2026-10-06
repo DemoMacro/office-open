@@ -1387,7 +1387,13 @@ describe("chartSpaceDesc", () => {
       categories: ["A", "B"],
       series: [{ name: "S", values: [1, 2] }],
       pivotSource: { name: "PivotTable1", formatId: 42 },
-      pivotFormats: [{ index: 0, marker: { symbol: "circle", size: 7 } }],
+      pivotFormats: [
+        {
+          index: 0,
+          marker: { symbol: "circle", size: 7 },
+          dataLabel: { index: 3, numberFormat: "0%", showVal: true },
+        },
+      ],
       userShapes: { relationshipId: "rId9", anchors: [] },
     };
     const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
@@ -1397,7 +1403,13 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.pivotSource).toEqual({ name: "PivotTable1", formatId: 42 });
-    expect(result.pivotFormats).toEqual([{ index: 0, marker: { symbol: "circle", size: 7 } }]);
+    expect(result.pivotFormats).toEqual([
+      {
+        index: 0,
+        marker: { symbol: "circle", size: 7 },
+        dataLabel: { index: 3, numberFormat: "0%", showVal: true },
+      },
+    ]);
     expect(result.userShapes).toEqual({ relationshipId: "rId9", anchors: [] });
   });
 

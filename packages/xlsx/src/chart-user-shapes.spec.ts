@@ -34,6 +34,12 @@ const WORKBOOK: WorkbookOptions = {
                   type: "shape",
                   id: 1,
                   shapeProperties: { geometry: "rect", fill: { type: "solid", color: "FF0000" } },
+                  style: {
+                    lineReference: { index: 2 },
+                    fillReference: { index: 1 },
+                    effectReference: { index: 0 },
+                    fontReference: { collection: "minor" },
+                  },
                 },
               },
             ],
@@ -94,6 +100,7 @@ describe("chart userShapes companion part", () => {
     const shapes = fileText(entries, "xl/charts/userShapes1.xml");
     expect(shapes).toContain("<cdr:relSizeAnchor>");
     expect(shapes).toContain("<cdr:sp>");
+    expect(shapes).toContain("<cdr:style>");
     expect(shapes).toContain('<a:prstGeom prst="rect">');
 
     const rels = fileText(entries, "xl/charts/_rels/chart1.xml.rels");
@@ -122,6 +129,32 @@ describe("chart userShapes companion part", () => {
     expect(anchor.object.type).toBe("shape");
     if (anchor.object.type !== "shape") throw new Error("expected a shape object");
     expect(anchor.object.shapeProperties.geometry).toEqual({ preset: "rect" });
+    expect(anchor.object.style).toEqual({
+      lineReference: { index: 2 },
+      fillReference: { index: 1 },
+      effectReference: { index: 0 },
+      fontReference: { collection: "minor" },
+    });
+  });
+
+  it("round-trips a legacy companion root element", async () => {
+    const bytes = (await generateWorkbook(WORKBOOK, { type: "uint8array" })) as Uint8Array;
+    const archive = unzipSync(bytes);
+    archive["xl/charts/userShapes1.xml"] = new TextEncoder().encode(
+      fileText(archive, "xl/charts/userShapes1.xml")
+        .replace("<cdr:userShapes ", "<c:userShapes ")
+        .replace("</cdr:userShapes>", "</c:userShapes>"),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const chart = parsed.worksheets?.[0]?.charts?.[0];
+    expect(chart?.userShapes?.rootElement).toBe("chart");
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    const shapes = fileText(result, "xl/charts/userShapes1.xml");
+    expect(shapes).toContain("<c:userShapes ");
+    expect(shapes).toContain("</c:userShapes>");
   });
 
   it("preserves companion parts outside charts directory", async () => {

@@ -488,7 +488,8 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
 }
 
 function textElementXml(tag: string, text: string, preserve?: boolean): string {
-  const attr = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text) ? ' xml:space="preserve"' : "";
+  const preserveSpace = preserve === undefined ? /^[\t\n\r ]|[\t\n\r ]$/.test(text) : preserve;
+  const attr = preserveSpace ? ' xml:space="preserve"' : "";
   return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
 

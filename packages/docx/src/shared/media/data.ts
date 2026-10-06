@@ -37,6 +37,14 @@ export interface MediaDataTransformation {
     /** Height in EMUs (1 inch = 914400 EMUs) */
     y: number;
   };
+  /**
+   * Shape extent from pic:spPr/a:xfrm/a:ext in EMUs when it differs from
+   * wp:extent; omitted when the two source sizes agree.
+   */
+  shapeExtent?: {
+    x: number;
+    y: number;
+  };
   /** Whether to flip the image horizontally (a:xfrm @flipH). */
   flipHorizontal?: boolean;
   /** Whether to flip the image vertically (a:xfrm @flipV). */

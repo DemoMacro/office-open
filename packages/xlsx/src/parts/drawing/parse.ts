@@ -170,6 +170,20 @@ function readPublishedFlag(el: XmlElement): boolean | undefined {
   return value === undefined ? undefined : (parseOnOff(String(value)) ?? false);
 }
 
+function readShapeId(el: XmlElement): number | undefined {
+  const firstCnvPr = (node: XmlElement): XmlElement | undefined => {
+    for (const child of node.elements ?? []) {
+      if ((child.name ?? "").endsWith("cNvPr")) return child;
+      const found = firstCnvPr(child);
+      if (found) return found;
+    }
+    return undefined;
+  };
+  const cNvPr = firstCnvPr(el);
+  const id = cNvPr === undefined ? Number.NaN : Number(cNvPr.attributes?.["id"]);
+  return Number.isNaN(id) ? undefined : id;
+}
+
 export function parseImageAnchor(
   anchor: XmlElement,
   pic: XmlElement,
@@ -266,6 +280,14 @@ export function parseChartAnchor(
   if (!rId) return undefined;
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;
+  const frameXfrm = findChild(graphicFrame, "xdr:xfrm") ?? findChild(graphicFrame, "a:xfrm");
+  const frameExt = frameXfrm ? findChild(frameXfrm, "a:ext") : undefined;
+  if (frameExt?.attributes) {
+    const cx = Number(frameExt.attributes["cx"]);
+    const cy = Number(frameExt.attributes["cy"]);
+    if (!Number.isNaN(cx)) result.frameExtentCx = cx;
+    if (!Number.isNaN(cy)) result.frameExtentCy = cy;
+  }
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr
@@ -340,10 +362,12 @@ export function parseWebExtensionAnchor(
   const reference = graphicData?.elements?.find(
     (child) => child.name === "we:webextensionref" || child.name === "we:webextension",
   );
+  if (!reference) return undefined;
   const rId = reference?.attributes?.["r:id"] as string | undefined;
   if (!rId) return undefined;
 
   const result = { col: 1, row: 1, rId } as DrawingWebExtensionOptions;
+  if (reference.name === "we:webextension") result.elementName = "webextension";
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr
@@ -415,6 +439,8 @@ export function parseShapeAnchor(
 
   const spPr = findXdr(sp, "spPr");
   if (spPr) result.properties = shapePropertiesDesc.parse(spPr, ctx);
+  const bwMode = spPr?.attributes?.["bwMode"];
+  if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
 
   const styleEl = findXdr(sp, "style");
   if (styleEl) {
@@ -517,6 +543,8 @@ export function parseGroupAnchor(
         properties: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupShapeChildOptions;
       Object.assign(childShape, readCNvPr(child, "nvSpPr", ctx));
+      const childShapeId = readShapeId(child);
+      if (childShapeId !== undefined) childShape.shapeId = childShapeId;
       const childNvSpPr = findXdr(child, "nvSpPr");
       const childCnVSpPr = childNvSpPr ? findXdr(childNvSpPr, "cNvSpPr") : undefined;
       if (childCnVSpPr?.attributes?.["txBox"] !== undefined)
@@ -534,6 +562,9 @@ export function parseGroupAnchor(
         childShape.macro = String(child.attributes["macro"]);
       if (child.attributes?.["textlink"] !== undefined)
         childShape.textlink = String(child.attributes["textlink"]);
+      const childBwMode = spPr?.attributes?.["bwMode"];
+      if (childBwMode !== undefined) childShape.blackWhiteMode = childBwMode as BlackWhiteMode;
+      childShape.fPublished = readPublishedFlag(child);
       shapes.push(childShape);
     } else if (local === "cxnSp") {
       const spPr = findXdr(child, "spPr");
@@ -541,8 +572,14 @@ export function parseGroupAnchor(
         properties: spPr ? shapePropertiesDesc.parse(spPr, ctx) : {},
       } as GroupConnectorChildOptions;
       Object.assign(childConn, readCNvPr(child, "nvCxnSpPr", ctx));
+      const childConnectorId = readShapeId(child);
+      if (childConnectorId !== undefined) childConn.shapeId = childConnectorId;
       if (child.attributes?.["macro"] !== undefined)
         childConn.macro = String(child.attributes["macro"]);
+      const childConnectorBwMode = spPr?.attributes?.["bwMode"];
+      if (childConnectorBwMode !== undefined)
+        childConn.blackWhiteMode = childConnectorBwMode as BlackWhiteMode;
+      childConn.fPublished = readPublishedFlag(child);
       readConnectorNonVisual(childConn, child, ctx);
       const connStyle = findXdr(child, "style");
       if (connStyle) {

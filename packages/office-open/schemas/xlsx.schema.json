@@ -1139,6 +1139,13 @@
           "description": "Indexed color palette entry",
           "type": "number"
         },
+        "legacyColorType": {
+          "$ref": "#/definitions/FontOptions/properties/legacyColorType"
+        },
+        "legacyColorValue": {
+          "description": "Source value for legacyColorType; round-trip only.",
+          "type": "string"
+        },
         "style": {
           "description": "Border pattern; \"medium*\" variants thicken the pattern, \"hair\" is the thinnest hairline, \"slantDashDot\" slanted dashes with dots.",
           "enum": [
@@ -1768,7 +1775,7 @@
           "type": "boolean"
         },
         "calcCompleted": {
-          "description": "Calc completed",
+          "description": "Calc completed; explicit false round-trips `0`.",
           "type": "boolean"
         },
         "calcId": {
@@ -1963,6 +1970,15 @@
           "description": "Background color indexed",
           "type": "number"
         },
+        "bgLegacyColorType": {
+          "description": "Legacy bgColor channel spelling; round-trip only.",
+          "enum": ["theme", "icv", "rgb"],
+          "type": "string"
+        },
+        "bgLegacyColorValue": {
+          "description": "Legacy bgColor source value; round-trip only.",
+          "type": "string"
+        },
         "bgThemeColor": {
           "description": "Background theme palette index",
           "type": "number"
@@ -1987,6 +2003,15 @@
           "description": "Foreground automatic color",
           "type": "boolean"
         },
+        "fgLegacyColorType": {
+          "description": "Legacy fgColor channel spelling; round-trip only.",
+          "enum": ["theme", "icv", "rgb"],
+          "type": "string"
+        },
+        "fgLegacyColorValue": {
+          "description": "Legacy fgColor source value; round-trip only.",
+          "type": "string"
+        },
         "gradientBottom": {
           "description": "Gradient bottom position for path",
           "type": "number"
@@ -2010,6 +2035,14 @@
         "gradientType": {
           "description": "Gradient type",
           "enum": ["linear", "path"],
+          "type": "string"
+        },
+        "legacyPatternElement": {
+          "description": "Legacy SpreadsheetML `<pattern>` element spelling; round-trip only.",
+          "type": "boolean"
+        },
+        "legacyPatternType": {
+          "description": "Source pattern kind when it is outside the modern union.",
           "type": "string"
         },
         "patternType": {
@@ -2338,6 +2371,10 @@
         "valueMetadataId": {
           "description": "Value metadata block id, 1-based index into metadata.valueMetadata",
           "type": "number"
+        },
+        "valueRaw": {
+          "description": "Source numeric/text lexical form for `<v xml:space=\"preserve\">`; round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -2722,11 +2759,27 @@
       "additionalProperties": false,
       "description": "Per-series pivot format override.",
       "properties": {
+        "dataLabel": {
+          "$ref": "#/definitions/DataLabelOptions",
+          "description": "Per-point label override (c:dLbl); its own c:idx is included."
+        },
+        "ext": {
+          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
+          "type": "string"
+        },
         "index": {
           "type": "number"
         },
         "marker": {
           "$ref": "#/definitions/MarkerOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Marker style/size/shape (c:spPr outside dLbl)."
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Pivot format text properties (c:txPr)."
         }
       },
       "required": ["index"],
@@ -3380,6 +3433,11 @@
         "relationshipId": {
           "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
           "type": "string"
+        },
+        "rootElement": {
+          "description": "Companion root element. `drawing` is the canonical `cdr:userShapes`; `chart` is a legacy variant (`c:userShapes`) preserved for round-trip.",
+          "enum": ["chart", "drawing"],
+          "type": "string"
         }
       },
       "required": ["anchors"],
@@ -3954,10 +4012,35 @@
           },
           "type": "array"
         },
+        "legacyMruColors": {
+          "description": "Legacy MRU channels (`type` + decimal `val`); round-trip only.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "type": {
+                "enum": ["rgb", "theme", "icv"],
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": ["type", "value"],
+            "type": "object"
+          },
+          "type": "array"
+        },
         "mruColors": {
           "description": "Most recently used colors",
           "items": {
             "$ref": "#/definitions/HexColor"
+          },
+          "type": "array"
+        },
+        "themeColors": {
+          "description": "Legacy theme-palette integer channels; round-trip only.",
+          "items": {
+            "type": "number"
           },
           "type": "array"
         }
@@ -4422,6 +4505,10 @@
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
           "description": "Anchor type (default \"twoCell\")."
+        },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -7506,6 +7593,15 @@
         "italic": {
           "type": "boolean"
         },
+        "legacyColorType": {
+          "description": "Legacy SpreadsheetML color channel spelling; round-trip only.",
+          "enum": ["theme", "icv", "rgb"],
+          "type": "string"
+        },
+        "legacyColorValue": {
+          "description": "Source value for legacyColorType; round-trip only.",
+          "type": "string"
+        },
         "outline": {
           "description": "Font outline",
           "type": "boolean"
@@ -7971,6 +8067,10 @@
       "additionalProperties": false,
       "description": "Connector nested inside a group (no anchor).",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -7984,6 +8084,9 @@
         },
         "ext": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
+        },
+        "fPublished": {
+          "$ref": "#/definitions/ConnectorOptions/properties/fPublished"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -8005,6 +8108,10 @@
         },
         "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
         },
         "startConnection": {
           "$ref": "#/definitions/EndpointConnectionOptions",
@@ -8226,6 +8333,10 @@
       "additionalProperties": false,
       "description": "Shape nested inside a group (no anchor — positioned via spPr.xfrm).",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+        },
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
@@ -8235,6 +8346,9 @@
         },
         "ext": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
+        },
+        "fPublished": {
+          "$ref": "#/definitions/ShapeOptions/properties/fPublished"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -8256,6 +8370,10 @@
         },
         "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
         },
         "style": {
           "$ref": "#/definitions/DefaultShapeStyleOptions",
@@ -14679,6 +14797,10 @@
         "text": {
           "description": "Plain text (mutually exclusive with runs)",
           "type": "string"
+        },
+        "wordDrawingExtension": {
+          "$ref": "#/definitions/SharedStringExtensionOptions",
+          "description": "Legacy `w14` compatibility content; round-trip only."
         }
       },
       "type": "object"
@@ -14741,6 +14863,13 @@
         "outline": {
           "type": "boolean"
         },
+        "propertyOrder": {
+          "description": "Source child order; round-trip only.",
+          "items": {
+            "$ref": "#/definitions/RichTextRunProperty"
+          },
+          "type": "array"
+        },
         "scheme": {
           "description": "Font scheme",
           "enum": ["major", "minor", "none"],
@@ -14769,6 +14898,27 @@
         }
       },
       "type": "object"
+    },
+    "RichTextRunProperty": {
+      "description": "child spellings; `propertyOrder` records their source order.",
+      "enum": [
+        "rFont",
+        "charset",
+        "family",
+        "b",
+        "i",
+        "strike",
+        "outline",
+        "shadow",
+        "condense",
+        "extend",
+        "color",
+        "sz",
+        "u",
+        "vertAlign",
+        "scheme"
+      ],
+      "type": "string"
     },
     "RowColumnAction": {
       "description": "Revision log — option types for shared-workbook change tracking.",
@@ -15485,6 +15635,10 @@
           "$ref": "#/definitions/AnchorType",
           "description": "Anchor type (default \"twoCell\")."
         },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+        },
         "col": {
           "description": "1-based column (from marker)",
           "type": "number"
@@ -15951,6 +16105,58 @@
       "required": ["type"],
       "type": "object"
     },
+    "SharedStringExtensionOptions": {
+      "additionalProperties": false,
+      "description": "Legacy `w14` compatibility content around. `attribute` maps to `si/@w14:attr`; the remaining fields map to `w14:placeholder` and `w14:no`.",
+      "properties": {
+        "attribute": {
+          "type": "string"
+        },
+        "no": {
+          "type": "boolean"
+        },
+        "placeholder": {
+          "$ref": "#/definitions/SharedStringExtensionPlaceholderOptions"
+        }
+      },
+      "type": "object"
+    },
+    "SharedStringExtensionPlaceholderOptions": {
+      "additionalProperties": false,
+      "description": "Legacy `w14:placeholder` compatibility payload wrapping one `t`.",
+      "properties": {
+        "preserveAttributes": {
+          "type": "string"
+        },
+        "processContent": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        },
+        "textAttributes": {
+          "$ref": "#/definitions/SharedStringExtensionTextAttributesOptions"
+        }
+      },
+      "required": ["text"],
+      "type": "object"
+    },
+    "SharedStringExtensionTextAttributesOptions": {
+      "additionalProperties": false,
+      "description": "Attributes on the `t` wrapped by a legacy shared-string extension.",
+      "properties": {
+        "a": {
+          "type": "string"
+        },
+        "b": {
+          "type": "string"
+        },
+        "c": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "SharedUserOptions": {
       "additionalProperties": false,
       "description": "One shared-workbook user.",
@@ -16048,9 +16254,13 @@
         "state": {
           "enum": ["visible", "hidden", "veryHidden"],
           "type": "string"
+        },
+        "tabId": {
+          "description": "Legacy SpreadsheetML tab identity (sheet/@tabId); mutually exclusive with sheetId.",
+          "type": "number"
         }
       },
-      "required": ["name", "sheetId", "rId"],
+      "required": ["name", "rId"],
       "type": "object"
     },
     "SheetFormatPropertiesOptions": {
@@ -17261,6 +17471,10 @@
         "totalsRowShown": {
           "description": "Whether to show totals row (default: true when totalsRowCount > 0)",
           "type": "boolean"
+        },
+        "uid": {
+          "description": "Revision UID; round-trip only.",
+          "type": "string"
         }
       },
       "required": ["displayName", "ref", "columns"],
@@ -18240,6 +18454,11 @@
           },
           "type": "array"
         },
+        "elementsContainer": {
+          "description": "Primary theme-element wrapper: `a:themeElements` or legacy `a:baseStyles`.",
+          "enum": ["themeElements", "baseStyles"],
+          "type": "string"
+        },
         "extraColorSchemes": {
           "items": {
             "$ref": "#/definitions/ExtraColorSchemeOptions"
@@ -18252,11 +18471,24 @@
         "formatScheme": {
           "$ref": "#/definitions/FormatSchemeOptions"
         },
+        "includeExtraColorSchemes": {
+          "description": "Explicit false preserves a source-absent a:extraClrSchemeLst.",
+          "type": "boolean"
+        },
         "name": {
           "type": "string"
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "rootElement": {
+          "description": "Root spelling: `a:theme` (default) or legacy `a:officeStyleSheet`.",
+          "enum": ["theme", "officeStyleSheet"],
+          "type": "string"
+        },
+        "themeExtensionId": {
+          "description": "Microsoft theme identifier (`a:theme/@thm15:id`).",
+          "type": "string"
         },
         "themeFamily": {
           "$ref": "#/definitions/ThemeFamilyOptions",
@@ -21595,6 +21827,10 @@
           "description": "Workbook folder path (x15ac:absPath/@url in an mc:AlternateContent after workbookPr) — round-trip only.",
           "type": "string"
         },
+        "absPathLegacyPrefix": {
+          "description": "Namespace prefix for absPath; explicit true preserves the legacy x15ac spelling.",
+          "type": "boolean"
+        },
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
           "description": "Extended properties (docProps/app.xml)"
@@ -21828,6 +22064,10 @@
         },
         "lastPrinted": {
           "type": "string"
+        },
+        "legacyChildOrder": {
+          "description": "Legacy SpreadsheetML 2005 workbook child order; round-trip only.",
+          "type": "boolean"
         },
         "metadata": {
           "$ref": "#/definitions/MetadataOptions",
@@ -22350,6 +22590,10 @@
           "description": "Source chart-owned external link path — round-trip only.",
           "type": "string"
         },
+        "fPublished": {
+          "description": "Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips.",
+          "type": "boolean"
+        },
         "firstSliceAngle": {
           "description": "Pie/doughnut first slice angle in degrees (c:firstSliceAng).",
           "type": "number"
@@ -22357,6 +22601,14 @@
         "floor": {
           "$ref": "#/definitions/SurfaceOptions",
           "description": "3D floor (c:floor)."
+        },
+        "frameExtentCx": {
+          "description": "Graphic-frame transform width (a:xfrm/a:ext/@cx, EMU).",
+          "type": "number"
+        },
+        "frameExtentCy": {
+          "description": "Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU).",
+          "type": "number"
         },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
@@ -23208,6 +23460,11 @@
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
+        },
+        "elementName": {
+          "description": "Source graphic-data child spelling; `webextensionref` by default.",
+          "enum": ["webextension", "webextensionref"],
+          "type": "string"
         },
         "ext": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"

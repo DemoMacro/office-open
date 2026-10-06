@@ -265,8 +265,12 @@ describe("parseWorkbook round-trip", () => {
     const parsed = parseWorkbookSync(zipSync(archive));
     expect(parsed.worksheets?.[0]?.webExtensions?.[0]).toMatchObject({
       sourcePath: "xl/webextensions/webextension1.xml",
+      elementName: "webextension",
     });
     const output = unzipSync((await generateWorkbook(parsed)) as Uint8Array);
+    expect(new TextDecoder().decode(output["xl/drawings/drawing1.xml"]!)).toContain(
+      "we:webextension ",
+    );
     expect(output["xl/webextensions/webextension1.xml"]).toBeDefined();
     expect(new TextDecoder().decode(output["xl/drawings/_rels/drawing1.xml.rels"]!)).toContain(
       "relationships/webextension",
