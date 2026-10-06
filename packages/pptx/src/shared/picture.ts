@@ -44,6 +44,11 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
    * keeps the source name; fresh generation derives it from the shape name.
    */
   fileName?: string;
+  /**
+   * Source `a:blip` `@r:embed` when the target has no image bytes
+   * (round-trip only — a broken internal reference).
+   */
+  relationshipId?: string;
   /** Compression state (a:blip @cstate); absent = attribute omitted. */
   compression?: BlipCompression;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */

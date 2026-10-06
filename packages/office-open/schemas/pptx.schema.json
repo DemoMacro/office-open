@@ -2388,6 +2388,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -3126,7 +3129,14 @@
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
           "items": {
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MultiLevelCategoryPoint"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "type": "array"
           },
@@ -3385,20 +3395,44 @@
         "bottom": {
           "type": "number"
         },
+        "bottomRaw": {
+          "description": "Source lexical form of `bottom`; round-trip only.",
+          "type": "string"
+        },
         "footer": {
           "type": "number"
+        },
+        "footerRaw": {
+          "description": "Source lexical form of `footer`; round-trip only.",
+          "type": "string"
         },
         "header": {
           "type": "number"
         },
+        "headerRaw": {
+          "description": "Source lexical form of `header`; round-trip only.",
+          "type": "string"
+        },
         "left": {
           "type": "number"
+        },
+        "leftRaw": {
+          "description": "Source lexical form of `left`; round-trip only.",
+          "type": "string"
         },
         "right": {
           "type": "number"
         },
+        "rightRaw": {
+          "description": "Source lexical form of `right`; round-trip only.",
+          "type": "string"
+        },
         "top": {
           "type": "number"
+        },
+        "topRaw": {
+          "description": "Source lexical form of `top`; round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -3564,6 +3598,10 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "description": "Source `c:numCache` presence (round-trip); `false` emits the numRef without a cache.",
+          "type": "boolean"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -3684,6 +3722,10 @@
             ]
           },
           "type": "array"
+        },
+        "path": {
+          "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "type": "string"
         },
         "relationshipId": {
           "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
@@ -8104,6 +8146,35 @@
       },
       "type": "object"
     },
+    "MultiLevelCategoryPoint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/MultiLevelCategoryPointOptions"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Multi-level category label: a dense positional string or sparse point."
+    },
+    "MultiLevelCategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "One sparse point in a multi-level string cache.",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "NonVisualDrawingPropertiesOptions": {
       "additionalProperties": false,
       "description": "Mirrors a: — name/descr/title/hidden. id is runtime; hyperlinks stay package-side.",
@@ -9205,6 +9276,10 @@
         "placeholderSize": {
           "$ref": "#/definitions/PlaceholderSize",
           "description": "`@sz` — sizing hint (default \"full\")."
+        },
+        "relationshipId": {
+          "description": "Source `a:blip` `@r:embed` when the target has no image bytes (round-trip only — a broken internal reference).",
+          "type": "string"
         },
         "rotWithShape": {
           "description": "Rotate image fill with the shape frame (p:blipFill",
@@ -10847,6 +10922,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -11149,6 +11227,13 @@
         "creationId": {
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+        },
+        "customerData": {
+          "description": "Customer-data references (`p:nvPr/p:custDataLst`), including `p:tags`.",
+          "items": {
+            "$ref": "#/definitions/SlideCustomerDataReferenceOptions"
+          },
+          "type": "array"
         },
         "description": {
           "description": "XSD `@descr` — alt text for accessibility; emitted only when present.",
@@ -12860,6 +12945,10 @@
         "horizontalOverflow": {
           "$ref": "#/definitions/TextHorzOverflow",
           "description": "`@horzOverflow` — horizontal overflow behavior."
+        },
+        "listStyle": {
+          "$ref": "#/definitions/TextListStyleOptions",
+          "description": "Cell text-body list style (`a:lstStyle`), including its extension list."
         },
         "margins": {
           "additionalProperties": false,

@@ -264,6 +264,26 @@ describe("dropDanglingPassthroughRels", () => {
     expect(rels).toContain('Target="theme/theme1.xml"');
   });
 
+  it("keeps selected internal rels whose target part is absent", () => {
+    const files = assembled();
+    const dropped = dropDanglingPassthroughRels(
+      files,
+      [
+        {
+          source: "word/document.xml",
+          relationshipType: "http://example.com/absorbed",
+          target: "../customXml/item1.xml",
+          rId: "rId2",
+        },
+      ],
+      (rel) => rel.relationshipType === "http://example.com/absorbed",
+    );
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["word/_rels/document.xml.rels"])).toContain(
+      'Target="../customXml/item1.xml"',
+    );
+  });
+
   it("keeps rels whose target part exists", () => {
     const files = assembled();
     const dropped = dropDanglingPassthroughRels(files, [

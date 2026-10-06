@@ -192,6 +192,24 @@ describe("commentsDesc round-trip", () => {
     expect(pr.anchor?.from).toEqual({ col: 1, row: 1, colOff: 0, rowOff: 0 });
     expect(pr.anchor?.to).toEqual({ col: 3, row: 4, colOff: 0, rowOff: 0 });
   });
+
+  it("round-trips source note shape ids", () => {
+    const emitted = commentsDesc.stringify(
+      { comments: [{ cell: "A1", shapeId: 7, author: "Alice", text: "note" }] },
+      writeCtx,
+    )!;
+    expect(emitted).toContain('<comment ref="A1" shapeId="7" authorId="0">');
+
+    const xml =
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
+      ` xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing">` +
+      `<authors><author>Alice</author></authors><commentList>` +
+      `<comment ref="A1" shapeId="7" authorId="0"><text><t>note</t></text></comment>` +
+      `</commentList></comments>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(commentsDesc.parse(el, readCtx).comments[0]?.shapeId).toBe(7);
+  });
 });
 
 describe("vmlNotesDesc stringify multi-column cell refs", () => {

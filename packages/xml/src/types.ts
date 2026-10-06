@@ -16,6 +16,8 @@ export interface Element {
   };
   instruction?: string;
   attributes?: Attributes;
+  /** Verbatim values for attributes coerced by `nativeTypeAttributes`. */
+  attributeRawValues?: Record<string, string>;
   cdata?: string;
   doctype?: string;
   comment?: string;

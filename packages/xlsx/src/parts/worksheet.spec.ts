@@ -291,10 +291,50 @@ describe("Worksheet", () => {
       ).elements?.[0];
       if (!el) throw new Error("no root");
       const ws = worksheetDesc.parse(el, readCtx);
+      expect(ws.conditionalFormats?.[0]?.rules[0]?.dataBar?.showValue).toBeUndefined();
       const xml = buildWorksheetXml(ws, {});
       expect(xml).toContain('<color theme="4"/>');
       expect(xml).not.toContain('rgb="FF"');
     });
+
+    it("round-trips a hidden data bar value", () => {
+      const readCtx = {
+        resolveRelationship: () => undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+      } as unknown as ReadContext;
+      const el = parseXml(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<conditionalFormatting sqref="G1:G3"><cfRule type="dataBar" priority="5">` +
+          `<dataBar showValue="0"><cfvo type="min" val="0"/><cfvo type="max" val="0"/>` +
+          `<color theme="4"/></dataBar></cfRule></conditionalFormatting></worksheet>`,
+      ).elements?.[0];
+      if (!el) throw new Error("no root");
+      const ws = worksheetDesc.parse(el, readCtx);
+      const xml = buildWorksheetXml(ws, {});
+      expect(ws.conditionalFormats?.[0]?.rules[0]?.dataBar?.showValue).toBe(false);
+      expect(xml).toContain('<dataBar showValue="0">');
+    });
+  });
+
+  it("preserves an empty formula cache as a string result", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const el = parseXml(
+      `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<sheetData><row r="1"><c r="A1" t="str"><f>IFERROR(A2,"")</f><v/></c></row></sheetData>` +
+        `</worksheet>`,
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    const ws = worksheetDesc.parse(el, readCtx);
+    const cell = ws.rows?.[0]?.cells?.[0];
+    expect(cell?.value).toBe("");
+    expect(buildWorksheetXml(ws, {})).toContain(
+      'r="A1" t="str"><f>IFERROR(A2,&quot;&quot;)</f><v></v>',
+    );
   });
 
   describe("sheetProtection", () => {
@@ -442,6 +482,27 @@ describe("Worksheet", () => {
       expect(xml).toContain('display="Example Site"');
     });
 
+    it("preserves coauthoring identity", () => {
+      const readContext = {
+        resolveRelationship: () => undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+      } as unknown as ReadContext;
+      const el = parseXml(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
+          ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"` +
+          ` xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision">` +
+          `<hyperlinks><hyperlink ref="A1" location="Sheet2!A1" xr:uid="{00000000-0000-0000-0000-000000000000}"/>` +
+          `</hyperlinks></worksheet>`,
+      ).elements?.[0];
+      if (!el) throw new Error("no root");
+      const result = worksheetDesc.parse(el, readContext);
+      expect(result.hyperlinks?.[0]?.uid).toBe("{00000000-0000-0000-0000-000000000000}");
+      expect(buildWorksheetXml(result, {})).toContain(
+        'xr:uid="{00000000-0000-0000-0000-000000000000}"',
+      );
+    });
+
     it("emits both r:id and location when url+location are set together", () => {
       // CT_Hyperlink's @r:id and @location are independent — an external
       // workbook plus an internal jump target is a legal combination.
@@ -504,6 +565,60 @@ describe("Worksheet", () => {
       expect(xml).toContain('theme="2"');
       expect(xml).toContain('tint="0.5"');
     });
+  });
+
+  it("preserves page-margin lexical precision", () => {
+    const readCtx = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const el = parseXml(
+      `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<pageMargins left="0.70866141732283472" right="0.70866141732283472"` +
+        ` top="0.74803149606299213" bottom="0.74803149606299213"` +
+        ` header="0.31496062992125984" footer="0.31496062992125984"/>` +
+        `</worksheet>`,
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    const ws = worksheetDesc.parse(el, readCtx);
+    expect(ws.pageMargins?.leftRaw).toBe("0.70866141732283472");
+    expect(buildWorksheetXml(ws, {})).toContain(
+      '<pageMargins left="0.70866141732283472" right="0.70866141732283472"',
+    );
+  });
+
+  it("round-trips data consolidation references and counts", () => {
+    const readCtx = {
+      resolveExternalImage: (rId: string) =>
+        rId === "rId1" ? "/sources/consolidation.xlsm" : undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+    const el = parseXml(
+      `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
+        ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<dataConsolidate function="average" topLabels="1">` +
+        `<dataRefs count="2">` +
+        `<dataRef name="SourceArea" sheet="Sheet1"/>` +
+        `<dataRef ref="A1:B2" sheet="average" r:id="rId1"/>` +
+        `</dataRefs></dataConsolidate></worksheet>`,
+    ).elements?.[0];
+    if (!el) throw new Error("no root");
+    const ws = worksheetDesc.parse(el, readCtx);
+    expect(ws.dataConsolidate).toEqual({
+      function: "average",
+      topLabels: true,
+      count: 2,
+      refs: [
+        { name: "SourceArea", sheet: "Sheet1" },
+        { ref: "A1:B2", sheet: "average", rId: "rId1", target: "/sources/consolidation.xlsm" },
+      ],
+    });
+    expect(buildWorksheetXml(ws, {})).toContain(
+      '<dataRefs count="2"><dataRef sheet="Sheet1" name="SourceArea"/>' +
+        '<dataRef ref="A1:B2" sheet="average" r:id="rId1"/></dataRefs>',
+    );
   });
 
   describe("pageSetup", () => {
@@ -1096,7 +1211,12 @@ describe("Worksheet", () => {
         zeroHeight: false,
         dyDescent: 0.25,
       });
-      expect(result.pageMargins).toEqual({ top: 1, bottom: 1 });
+      expect(result.pageMargins).toEqual({
+        top: 1,
+        bottom: 1,
+        topRaw: "1",
+        bottomRaw: "1",
+      });
     });
 
     it("round-trips pageSetUpPr fitToPage", () => {
@@ -1179,7 +1299,7 @@ describe("Worksheet", () => {
         topLabels: true,
         leftLabels: true,
         link: true,
-        refs: ["Sheet1!A1:B2", "Sheet2!A1:B2"],
+        refs: [{ ref: "Sheet1!A1:B2" }, { ref: "Sheet2!A1:B2" }],
       });
     });
 

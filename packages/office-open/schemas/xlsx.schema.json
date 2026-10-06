@@ -1304,6 +1304,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -2608,20 +2611,44 @@
         "bottom": {
           "type": "number"
         },
+        "bottomRaw": {
+          "description": "Source lexical form of `bottom`; round-trip only.",
+          "type": "string"
+        },
         "footer": {
           "type": "number"
+        },
+        "footerRaw": {
+          "description": "Source lexical form of `footer`; round-trip only.",
+          "type": "string"
         },
         "header": {
           "type": "number"
         },
+        "headerRaw": {
+          "description": "Source lexical form of `header`; round-trip only.",
+          "type": "string"
+        },
         "left": {
           "type": "number"
+        },
+        "leftRaw": {
+          "description": "Source lexical form of `left`; round-trip only.",
+          "type": "string"
         },
         "right": {
           "type": "number"
         },
+        "rightRaw": {
+          "description": "Source lexical form of `right`; round-trip only.",
+          "type": "string"
+        },
         "top": {
           "type": "number"
+        },
+        "topRaw": {
+          "description": "Source lexical form of `top`; round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -2786,6 +2813,10 @@
             "$ref": "#/definitions/TrendlineOptions"
           },
           "type": "array"
+        },
+        "valueCache": {
+          "description": "Source `c:numCache` presence (round-trip); `false` emits the numRef without a cache.",
+          "type": "boolean"
         },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
@@ -3045,7 +3076,14 @@
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
           "items": {
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MultiLevelCategoryPoint"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "type": "array"
           },
@@ -3334,6 +3372,10 @@
             ]
           },
           "type": "array"
+        },
+        "path": {
+          "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "type": "string"
         },
         "relationshipId": {
           "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
@@ -3980,6 +4022,10 @@
         "properties": {
           "$ref": "#/definitions/CommentPropertiesOptions",
           "description": "Comment properties — parsed but never re-emitted (see CommentPropertiesOptions)"
+        },
+        "shapeId": {
+          "description": "Source note shape id. Round-trip only: the live VML note shape is modeled separately.",
+          "type": "number"
         },
         "size": {
           "additionalProperties": false,
@@ -5193,8 +5239,11 @@
     },
     "DataConsolidateOptions": {
       "additionalProperties": false,
-      "description": "Data consolidation",
       "properties": {
+        "count": {
+          "description": "Declared source reference count.",
+          "type": "number"
+        },
         "function": {
           "description": "Consolidation function",
           "enum": [
@@ -5223,7 +5272,14 @@
         "refs": {
           "description": "Source data references",
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/DataReferenceOptions"
+              }
+            ]
           },
           "type": "array"
         },
@@ -5477,6 +5533,33 @@
         }
       },
       "required": ["index"],
+      "type": "object"
+    },
+    "DataReferenceOptions": {
+      "additionalProperties": false,
+      "description": "Data consolidation",
+      "properties": {
+        "name": {
+          "description": "Defined-name source.",
+          "type": "string"
+        },
+        "rId": {
+          "description": "Relationship id.",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Source range.",
+          "type": "string"
+        },
+        "sheet": {
+          "description": "Source workbook or named-range token.",
+          "type": "string"
+        },
+        "target": {
+          "description": "Resolved relationship target; round-trip only.",
+          "type": "string"
+        }
+      },
       "type": "object"
     },
     "DataTableOptions": {
@@ -7386,7 +7469,6 @@
     },
     "FontOptions": {
       "additionalProperties": false,
-      "description": "Styles — option types for xl/styles.xml.\n\nXLSX uses an index-based style system: cells reference style entries via the `s` attribute, which is an index into `cellXfs`.",
       "properties": {
         "autoColor": {
           "description": "Automatic (system) color instead of an explicit RGB",
@@ -7456,7 +7538,7 @@
           "type": "string"
         },
         "underline": {
-          "type": "boolean"
+          "$ref": "#/definitions/FontUnderline"
         },
         "vertAlign": {
           "description": "Vertical alignment: superscript/subscript",
@@ -7497,6 +7579,30 @@
         }
       },
       "type": "object"
+    },
+    "FontUnderline": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "const": "single",
+          "type": "string"
+        },
+        {
+          "const": "double",
+          "type": "string"
+        },
+        {
+          "const": "singleAccounting",
+          "type": "string"
+        },
+        {
+          "const": "doubleAccounting",
+          "type": "string"
+        }
+      ],
+      "description": "Styles — option types for xl/styles.xml.\n\nXLSX uses an index-based style system: cells reference style entries via the `s` attribute, which is an index into `cellXfs`."
     },
     "FontsContainerOptions": {
       "additionalProperties": false,
@@ -8498,6 +8604,10 @@
         },
         "tooltip": {
           "description": "Tooltip text",
+          "type": "string"
+        },
+        "uid": {
+          "description": "Coauthoring identity; round-trip only.",
           "type": "string"
         },
         "url": {
@@ -9650,6 +9760,35 @@
       "required": ["type"],
       "type": "object"
     },
+    "MultiLevelCategoryPoint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/MultiLevelCategoryPointOptions"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Multi-level category label: a dense positional string or sparse point."
+    },
+    "MultiLevelCategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "One sparse point in a multi-level string cache.",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "NonVisualDrawingPropertiesOptions": {
       "additionalProperties": false,
       "description": "Mirrors a: — name/descr/title/hidden. id is runtime; hyperlinks stay package-side.",
@@ -10170,6 +10309,10 @@
             }
           ]
         },
+        "bottomRaw": {
+          "description": "Source lexical form of `bottom`; round-trip only.",
+          "type": "string"
+        },
         "footer": {
           "anyOf": [
             {
@@ -10179,6 +10322,10 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "footerRaw": {
+          "description": "Source lexical form of `footer`; round-trip only.",
+          "type": "string"
         },
         "header": {
           "anyOf": [
@@ -10190,6 +10337,10 @@
             }
           ]
         },
+        "headerRaw": {
+          "description": "Source lexical form of `header`; round-trip only.",
+          "type": "string"
+        },
         "left": {
           "anyOf": [
             {
@@ -10199,6 +10350,10 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "leftRaw": {
+          "description": "Source lexical form of `left`; round-trip only.",
+          "type": "string"
         },
         "right": {
           "anyOf": [
@@ -10210,6 +10365,10 @@
             }
           ]
         },
+        "rightRaw": {
+          "description": "Source lexical form of `right`; round-trip only.",
+          "type": "string"
+        },
         "top": {
           "anyOf": [
             {
@@ -10219,6 +10378,10 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "topRaw": {
+          "description": "Source lexical form of `top`; round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -14809,6 +14972,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -16957,6 +17123,10 @@
         },
         "totalsRowLabel": {
           "description": "Totals row label (used when totalsRowFunction is \"none\" or \"custom\")",
+          "type": "string"
+        },
+        "uid": {
+          "description": "Coauthoring identity. Round-trip only: the attribute rides in the xr3 revision namespace declared as mc:Ignorable.",
           "type": "string"
         },
         "uniqueName": {
@@ -19922,6 +20092,14 @@
       "additionalProperties": false,
       "description": "o:shapelayout options.",
       "properties": {
+        "childOrder": {
+          "description": "Recognized child order; omitted uses idmap, regrouptable, then rules.",
+          "items": {
+            "enum": ["idmap", "regrouptable", "rules"],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
         },

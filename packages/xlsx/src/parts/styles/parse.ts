@@ -34,7 +34,21 @@ export function parseFont(el: XmlElement): FontOptions {
       case "u":
         // ST_UnderlineValues: "none" is the only off spelling; every other
         // value (or the omitted default) means some underline is on.
-        result.underline = attr(child, "val") !== "none";
+        const underline = attr(child, "val");
+        switch (underline) {
+          case undefined:
+            result.underline = true;
+            break;
+          case "none":
+            result.underline = false;
+            break;
+          case "single":
+          case "double":
+          case "singleAccounting":
+          case "doubleAccounting":
+            result.underline = underline;
+            break;
+        }
         break;
       case "strike":
         result.strike = boolProp(child);

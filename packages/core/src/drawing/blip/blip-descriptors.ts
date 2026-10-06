@@ -349,6 +349,11 @@ const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
 
 /** Input shape of blipDesc — BlipOptions plus round-trip-only blip content. */
 export type BlipDescriptorOptions = BlipOptions & {
+  /**
+   * Raw `r:embed` relationship ID emitted without media-placeholder wrapping
+   * (round-trip only — a source reference whose bytes do not resolve).
+   */
+  rawReferenceId?: string;
   blipEffects?: BlipEffectsOptions;
   /**
    * a14:useLocalDpi from the blip extension list — Office's local-DPI display
@@ -370,7 +375,9 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
     // attribute is optional (CT_Blip) and omitted when unset — a linked-only
     // picture carries r:link alone.
     const attrParts: string[] = [];
-    if (opts.referenceId !== undefined)
+    if (opts.rawReferenceId !== undefined)
+      attrParts.push(`r:embed="${escapeXml(opts.rawReferenceId)}"`);
+    else if (opts.referenceId !== undefined)
       attrParts.push(`r:embed="{${escapeXml(opts.referenceId)}}"`);
     if (opts.compression !== undefined) attrParts.push(`cstate="${opts.compression}"`);
     if (opts.linkReferenceId !== undefined)
@@ -417,7 +424,10 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
       const hasUnmodeled = (extLst.elements ?? []).some(
         (ext) => ext.name === "a:ext" && !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI),
       );
-      if (hasUnmodeled) {
+      const hasNonCanonicalUseLocalDpi = (extLst.elements ?? []).some(
+        (ext) => ext.name === "a:ext" && attr(ext, "uri") !== USE_LOCAL_DPI_EXT_URI,
+      );
+      if (hasUnmodeled || hasNonCanonicalUseLocalDpi) {
         const inner = (extLst.elements ?? []).map((e) => stringifyElement(e)).join("");
         if (inner) result.ext = inner;
       } else {

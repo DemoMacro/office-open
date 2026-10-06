@@ -224,6 +224,7 @@ const RE_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 export function dropDanglingPassthroughRels(
   files: Zippable,
   passthroughRelationships: readonly PassthroughRelationship[] | undefined,
+  keepDangling?: (relationship: PassthroughRelationship) => boolean,
 ): number {
   if (!passthroughRelationships || passthroughRelationships.length === 0) return 0;
   // OPC part-name matching is case-insensitive — a source can spell the rel
@@ -259,6 +260,7 @@ export function dropDanglingPassthroughRels(
     // Legacy Office theme blips use Target="NULL" as an explicit unresolved
     // placeholder; preserve the relationship and its r:embed verbatim.
     if (rel.target.toUpperCase() === "NULL") continue;
+    if (keepDangling?.(rel)) continue;
     if (paths.has(resolved.toLowerCase())) continue;
     // A Target is a URI: a part whose name carries spaces/non-ASCII is
     // referenced percent-encoded, so compare the decoded form too before

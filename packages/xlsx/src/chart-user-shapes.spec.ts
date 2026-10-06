@@ -124,6 +124,35 @@ describe("chart userShapes companion part", () => {
     expect(anchor.object.shapeProperties.geometry).toEqual({ preset: "rect" });
   });
 
+  it("preserves companion parts outside charts directory", async () => {
+    const bytes = (await generateWorkbook(WORKBOOK, { type: "uint8array" })) as Uint8Array;
+    const archive = unzipSync(bytes);
+    archive["xl/drawings/chartShapes1.xml"] = archive["xl/charts/userShapes1.xml"]!;
+    delete archive["xl/charts/userShapes1.xml"];
+    archive["xl/charts/_rels/chart1.xml.rels"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["xl/charts/_rels/chart1.xml.rels"]!)
+        .replace('Target="userShapes1.xml"', 'Target="../drawings/chartShapes1.xml"'),
+    );
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace("/xl/charts/userShapes1.xml", "/xl/drawings/chartShapes1.xml"),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const chart = parsed.worksheets?.[0]?.charts?.[0];
+    expect(chart?.userShapes?.path).toBe("xl/drawings/chartShapes1.xml");
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    expect(result["xl/drawings/chartShapes1.xml"]).toBeDefined();
+    expect(result["xl/charts/userShapes1.xml"]).toBeUndefined();
+    expect(fileText(result, "xl/charts/_rels/chart1.xml.rels")).toContain(
+      'Target="../drawings/chartShapes1.xml"',
+    );
+  });
+
   it("rewires chart external data to its typed external link part", async () => {
     const source = (await generateWorkbook(
       {

@@ -126,9 +126,12 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
     const cSldViewPr = findChild(slideViewPr, "p:cSldViewPr");
     if (cSldViewPr) {
       const sv: Partial<SlideViewOptions> = {};
-      if (String(cSldViewPr.attributes?.["snapToGrid"]) === "0") sv.snapToGrid = false;
-      if (parseOnOff(cSldViewPr.attributes?.["snapToObjects"])) sv.snapToObjects = true;
-      if (parseOnOff(cSldViewPr.attributes?.["showGuides"])) sv.showGuides = true;
+      const snapToGrid = parseOnOff(cSldViewPr.attributes?.["snapToGrid"]);
+      if (snapToGrid !== undefined) sv.snapToGrid = snapToGrid;
+      const snapToObjects = parseOnOff(cSldViewPr.attributes?.["snapToObjects"]);
+      if (snapToObjects !== undefined) sv.snapToObjects = snapToObjects;
+      const showGuides = parseOnOff(cSldViewPr.attributes?.["showGuides"]);
+      if (showGuides !== undefined) sv.showGuides = showGuides;
 
       const cViewPr = findChild(cSldViewPr, "p:cViewPr");
       if (cViewPr) sv.view = parseCommonViewProperties(cViewPr);

@@ -118,6 +118,25 @@ describe("Styles", () => {
     expect(xml).toContain('<color theme="1" tint="-0.2499771111178930"/>');
   });
 
+  it("round-trips accounting underlines", () => {
+    const styles = new Styles();
+    styles.register({ font: { underline: "singleAccounting" } });
+    expect(styles.serialize()).toContain('<u val="singleAccounting"/>');
+
+    const xml =
+      `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+      `<fonts count="1"><font><u val="doubleAccounting"/><sz val="11"/><name val="Calibri"/></font></fonts>` +
+      `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>` +
+      `<borders count="1"><border/></borders>` +
+      `<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>` +
+      `<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellXfs>` +
+      `</styleSheet>`;
+    const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+    expect(parsed.fonts?.[0]?.underline).toBe("doubleAccounting");
+  });
+
   // ── DXFs (differential formats) ──
 
   describe("registerDxf", () => {

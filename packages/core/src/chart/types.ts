@@ -51,6 +51,8 @@ export interface ChartSeriesCommon {
   formatCode?: string;
   /** Values cache point count (c:numCache > c:ptCount); false keeps the element absent. */
   valuePointCount?: number | false;
+  /** Source `c:numCache` presence (round-trip); `false` emits the numRef without a cache. */
+  valueCache?: boolean;
   trendlines?: readonly TrendlineOptions[];
   errorBars?: ErrorBarOptions;
   dataLabels?: DataLabelsOptions;
@@ -368,6 +370,17 @@ export interface SecondaryChartGroupOptions {
   axisIds?: readonly number[];
 }
 
+/** One sparse point in a multi-level string cache (CT_StrData c:pt). */
+export interface MultiLevelCategoryPointOptions {
+  /** Cache point index (c:pt @idx); omitted indices are positional. */
+  index?: number;
+  /** Label text (c:v). */
+  text?: string;
+}
+
+/** Multi-level category label: a dense positional string or sparse point. */
+export type MultiLevelCategoryPoint = string | MultiLevelCategoryPointOptions | null;
+
 export interface ChartSpaceOptions {
   /**
    * Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict)
@@ -411,7 +424,7 @@ export interface ChartSpaceOptions {
   /** Category number format (c:numCache > c:formatCode, numeric categories). */
   categoryFormatCode?: string;
   /** Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef). */
-  multiLevelCategories?: readonly (readonly string[])[];
+  multiLevelCategories?: readonly (readonly (MultiLevelCategoryPoint | null)[])[];
   /** Literal category labels, emitted as c:strLit (c:cat > c:strLit). */
   categoryLabels?: readonly string[];
   // Bubble stays an explicit union arm: TS would accept a BubbleSeriesData[]
@@ -574,6 +587,8 @@ export interface ChartUserShapesOptions {
    * unused id when the same chart also carries externalData.
    */
   relationshipId?: string;
+  /** Source companion part path; round-trip only. Fresh authoring omits it. */
+  path?: string;
   /** Anchored shapes (the cdr:userShapes part body). */
   anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
 }
@@ -875,6 +890,18 @@ export interface ChartPageMarginsOptions {
   bottom?: number;
   header?: number;
   footer?: number;
+  /** Source lexical form of `left`; round-trip only. */
+  leftRaw?: string;
+  /** Source lexical form of `right`; round-trip only. */
+  rightRaw?: string;
+  /** Source lexical form of `top`; round-trip only. */
+  topRaw?: string;
+  /** Source lexical form of `bottom`; round-trip only. */
+  bottomRaw?: string;
+  /** Source lexical form of `header`; round-trip only. */
+  headerRaw?: string;
+  /** Source lexical form of `footer`; round-trip only. */
+  footerRaw?: string;
 }
 
 /** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */

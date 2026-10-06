@@ -10,3 +10,4 @@ export * from "./placeholder";
 export * from "./reproducible";
 export * from "./uri-path";
 export * from "./values";
+export * from "./xml-decode";

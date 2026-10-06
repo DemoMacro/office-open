@@ -105,7 +105,6 @@ export const shape3DDesc: CustomDescriptor<Shape3DOptions> = {
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
 
     const content = parts.join("");
-    if (!attrStr && !content) return undefined;
     if (!content) return `<a:sp3d${attrStr}/>`;
     return `<a:sp3d${attrStr}>${content}</a:sp3d>`;
   },

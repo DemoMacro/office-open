@@ -210,7 +210,7 @@ describe("chartSpaceDesc", () => {
       categories: ["Q1"],
       series: [{ name: "R", values: [100] }],
     };
-    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
     expect(xml).toContain("c:chartSpace");
     expect(xml).toContain("c:chart");
     expect(xml).toContain("c:plotArea");
@@ -236,7 +236,7 @@ describe("chartSpaceDesc", () => {
         },
       ],
     };
-    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
     expect(xml).toContain("c:trendline");
     expect(xml).toContain('c:trendlineType val="linear"');
     expect(xml).toContain('c:forward val="2"');
@@ -977,6 +977,22 @@ describe("chartSpaceDesc", () => {
     expect(stringify(chartSpaceDesc, result, {} as WriteContext)).not.toContain("<c:formatCode>");
   });
 
+  it("preserves an absent source number cache", () => {
+    const source =
+      '<?xml version="1.0" encoding="UTF-8"?>' +
+      '<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart">' +
+      "<c:chart><c:plotArea><c:pie3DChart><c:ser>" +
+      '<c:idx val="0"/><c:order val="0"/>' +
+      "<c:val><c:numRef><c:f>Sheet1!$A$1</c:f></c:numRef></c:val>" +
+      "</c:ser></c:pie3DChart></c:plotArea></c:chart></c:chartSpace>";
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("expected a chart root");
+    const result = parse(chartSpaceDesc, el, {} as ReadContext);
+    const series = result.series?.[0] as ChartSeriesData;
+    expect(series.valueCache).toBe(false);
+    expect(stringify(chartSpaceDesc, result, {} as WriteContext)).not.toContain("<c:numCache>");
+  });
+
   it("3D walls and manual layout are byte-stable on round-trip", () => {
     const opts: ChartSpaceOptions = {
       type: "column",
@@ -1217,6 +1233,28 @@ describe("chartSpaceDesc", () => {
     expect(result.categories).toBeUndefined();
   });
 
+  it("round-trips sparse multi-level cache points", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      multiLevelCategories: [
+        ["Alpha", null, { index: 2, text: "Gamma" }, null, { index: 4, text: "Epsilon" }],
+      ],
+      series: [{ name: "S", values: [1, 2, 3, 4, 5] }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    const cacheXml = xml.slice(
+      xml.indexOf("<c:multiLvlStrCache>"),
+      xml.indexOf("</c:multiLvlStrRef>"),
+    );
+    expect(xml).toContain('c:ptCount val="5"');
+    expect(xml).toContain('<c:pt idx="2"><c:v>Gamma</c:v></c:pt>');
+    expect(cacheXml).not.toContain('<c:pt idx="1"');
+    expect(cacheXml).not.toContain('<c:pt idx="3"');
+
+    const result = roundTrip(opts);
+    expect(result.multiLevelCategories).toEqual([["Alpha", null, "Gamma", null, "Epsilon"]]);
+  });
+
   it("round-trips literal category labels as c:strLit", () => {
     const opts: ChartSpaceOptions = {
       type: "line",
@@ -1315,6 +1353,32 @@ describe("chartSpaceDesc", () => {
     expect(result.printSettings?.pageSetup?.orientation).toBe("landscape");
     expect(result.printSettings?.pageSetup?.paperSize).toBe(9);
     expect(result.printSettings?.pageSetup?.copies).toBe(2);
+  });
+
+  it("preserves chart page-margin lexical forms", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      printSettings: {
+        pageMargins: {
+          left: 0.75,
+          right: 0.75,
+          top: 1,
+          bottom: 1,
+          header: 0.5,
+          footer: 0.5,
+          topRaw: "1.0",
+          bottomRaw: "1.0",
+        },
+      },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('t="1.0"');
+    expect(xml).toContain('b="1.0"');
+    const result = roundTrip(opts);
+    expect(result.printSettings?.pageMargins?.topRaw).toBe("1.0");
+    expect(result.printSettings?.pageMargins?.bottomRaw).toBe("1.0");
   });
 
   it("round-trips pivot source, pivot formats, and user shapes", () => {

@@ -1,10 +1,12 @@
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
+import { encryptedPassthroughMatches, isEncryptedPassthrough } from "./library";
 import {
   archiveSemanticDiffDetails,
   archiveSemanticDiffs,
   archiveTagDiffs,
+  assertEncryptedContainerRoundTrip,
   canonicalXmlNodes,
   classifyPackageFailure,
   explainSemanticPartDiff,
@@ -23,6 +25,19 @@ function zip(files: Record<string, string | Uint8Array>): Uint8Array {
 }
 
 describe("corpus semantic comparison", () => {
+  it("compares encrypted containers as opaque passthrough payloads", () => {
+    const data = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 3]);
+    const options = { encrypted: { data } };
+
+    expect(isEncryptedPassthrough(options)).toBe(true);
+    expect(isEncryptedPassthrough({})).toBe(false);
+    expect(encryptedPassthroughMatches(data, new Uint8Array(data))).toBe(true);
+    expect(encryptedPassthroughMatches(data, data.subarray(0, 4))).toBe(false);
+    expect(
+      encryptedPassthroughMatches(data, new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 1, 2, 4])),
+    ).toBe(false);
+  });
+
   it("normalizes document metadata order and namespace dialects", () => {
     const source = parseCanonicalXml(
       '<Properties xmlns="http://purl.oclc.org/ooxml/officeDocument/extended-properties">' +
@@ -221,5 +236,18 @@ describe("corpus semantic comparison", () => {
     });
     expect(archiveTagDiffs(source, zip(files))).toEqual([]);
     expect(archiveSemanticDiffs(source, zip(files))).toEqual([]);
+  });
+});
+
+describe("encrypted DOCX containers", () => {
+  it("requires verbatim passthrough and ignores plain ZIP archives", () => {
+    const encrypted = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);
+    expect(() => assertEncryptedContainerRoundTrip(encrypted, encrypted)).not.toThrow();
+    expect(() => assertEncryptedContainerRoundTrip(encrypted, encrypted.slice(0, 7))).toThrow(
+      "encrypted DOCX container was not re-emitted verbatim",
+    );
+    expect(() =>
+      assertEncryptedContainerRoundTrip(new Uint8Array([0x50, 0x4b]), new Uint8Array([0x50, 0x4c])),
+    ).not.toThrow();
   });
 });

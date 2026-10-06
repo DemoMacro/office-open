@@ -16,9 +16,9 @@
     },
     "pptx": {
       "total": 226,
-      "clean": 218,
-      "diff": 7,
-      "parseFail": 1,
+      "clean": 220,
+      "diff": 6,
+      "parseFail": 0,
       "genFail": 0
     }
   },

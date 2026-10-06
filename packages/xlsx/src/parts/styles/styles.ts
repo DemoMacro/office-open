@@ -33,7 +33,15 @@ import type {
 // ── Style key helpers for deduplication ──
 
 function fontKey(f: FontOptions): string {
-  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${f.underline ? 1 : 0}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}a${f.autoColor ? 1 : 0}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
+  const underlineKey =
+    f.underline === undefined
+      ? ""
+      : f.underline === false
+        ? "0"
+        : f.underline === true
+          ? "1"
+          : f.underline;
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${underlineKey}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}a${f.autoColor ? 1 : 0}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
 function fillKey(f: CellFillOptions): string {
@@ -908,7 +916,15 @@ export class Styles {
     flag("extend", f.extend);
     flag("outline", f.outline);
     flag("shadow", f.shadow);
-    if (f.underline !== undefined) parts.push(f.underline ? "<u/>" : '<u val="none"/>');
+    if (f.underline !== undefined) {
+      parts.push(
+        f.underline === false
+          ? '<u val="none"/>'
+          : f.underline === true
+            ? "<u/>"
+            : `<u val="${f.underline}"/>`,
+      );
+    }
     if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
     if (f.size) parts.push(`<sz val="${f.size}"/>`);
     if (f.autoColor) parts.push('<color auto="1"/>');

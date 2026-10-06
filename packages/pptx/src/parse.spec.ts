@@ -388,6 +388,52 @@ describe("raw fidelity fallbacks", () => {
     ],
   };
 
+  it("rewires canonical master OLE branches without fallback pictures", async () => {
+    const source = await generatePresentation(minimalOptions);
+    const archive = unzipSync(source);
+    const oleFrame =
+      '<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="80" name="Source Object"/>' +
+      "<p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>" +
+      '<p:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="952500"/></p:xfrm>' +
+      '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/presentationml/2006/ole">' +
+      '<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+      '<mc:Choice xmlns:v="urn:v" Requires="v"><p:oleObj name="Canonical" r:id="rId90" progId="Test.Object"><p:embed/></p:oleObj></mc:Choice>' +
+      '<mc:Fallback><p:oleObj name="Fallback" r:id="rId90" progId="Test.Object"><p:embed/>' +
+      '<p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+      '<p:blipFill><a:blip r:embed="{image:fallback.png}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>' +
+      "<p:spPr/></p:pic></p:oleObj></mc:Fallback></mc:AlternateContent>" +
+      "</a:graphicData></a:graphic></p:graphicFrame>";
+    const masterPath = "ppt/slideMasters/slideMaster1.xml";
+    const relsPath = "ppt/slideMasters/_rels/slideMaster1.xml.rels";
+    archive[masterPath] = new TextEncoder().encode(
+      decodeEntry(source, masterPath).replace("<p:sp>", `${oleFrame}<p:sp>`),
+    );
+    archive[relsPath] = new TextEncoder().encode(
+      decodeEntry(source, relsPath).replace(
+        "</Relationships>",
+        '<Relationship Id="rId90" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="../embeddings/source.bin"/></Relationships>',
+      ),
+    );
+    archive["ppt/embeddings/source.bin"] = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0]);
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      decodeEntry(source, "[Content_Types].xml").replace(
+        "</Types>",
+        '<Override PartName="/ppt/embeddings/source.bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/></Types>',
+      ),
+    );
+
+    const parsed = parsePresentationSync(zipSync(archive));
+    const regenerated = await generatePresentation(parsed);
+    const regeneratedMaster = decodeEntry(regenerated, masterPath);
+    const regeneratedRels = decodeEntry(regenerated, relsPath);
+
+    expect(parsed.masters?.[0]?.children?.some((child) => "ole" in child)).toBe(true);
+    expect(regeneratedMaster).not.toContain("{ole:source.bin}");
+    expect(regeneratedMaster).not.toContain("<p:pic>");
+    expect(regeneratedRels).toContain('Id="rId90"');
+    expect(regeneratedRels).toContain('Target="../embeddings/source.bin"');
+  });
+
   it("reuses the source presentation tags part path", async () => {
     const source = await generatePresentation({
       ...minimalOptions,

@@ -11,6 +11,7 @@ import { parseColorChoice, isPlainRgbColor } from "@office-open/core/drawing";
 import type { SolidFillOptions } from "@office-open/core/drawing";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 
 /**
  * Shape options type for PPTX.
@@ -95,6 +96,8 @@ export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transfo
   isPhoto?: boolean;
   userDrawn?: boolean;
   hasCustomPrompt?: boolean;
+  /** Customer-data references (`p:nvPr/p:custDataLst`), including `p:tags`. */
+  customerData?: SlideCustomerDataReferenceOptions[];
   /** Text-box marker (p:cNvSpPr @txBox). */
   textBox?: boolean;
   style?: ShapeStyleOptions;

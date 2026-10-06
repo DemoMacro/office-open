@@ -1864,6 +1864,7 @@ function parseRunLevelChildren(
             cachedValuePreserveSpace?: boolean;
             cachedInstructionText?: string;
             cachedInstructionTextPreserveSpace?: boolean;
+            cachedInstructionRPrXml?: string;
             cachedRuns?: ParagraphChild[];
             fieldLock?: boolean;
             dirty?: boolean;
@@ -1901,6 +1902,8 @@ function parseRunLevelChildren(
           if (cachedInstructionText) {
             sf.cachedInstructionText = cachedInstructionText;
             sf.cachedInstructionTextPreserveSpace = cachedInstructionTextPreserveSpace;
+            const instructionRPrXml = runRPrXml(cachedRunEls[0]!);
+            if (instructionRPrXml) sf.cachedInstructionRPrXml = instructionRPrXml;
           }
           sf.cachedValuePreserveSpace = cachedValuePreserveSpace;
           // The plain template emits one bare text run — cached runs carrying

@@ -310,9 +310,16 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       attrs[name] = value;
     }
 
+    let rawValues: Record<string, string> | undefined;
     if (attrs && nativeTypeAttributes) {
       for (const key in attrs) {
-        attrs[key] = nativeTypeValue(attrs[key] as string) as string;
+        const raw = attrs[key] as string;
+        const value = nativeTypeValue(raw);
+        attrs[key] = value as string;
+        if (typeof value === "boolean") {
+          rawValues ??= {};
+          rawValues[key] = raw;
+        }
       }
     }
 
@@ -365,6 +372,7 @@ export function parse(xmlString: string, options?: ParseOptions): Element {
       attributes: attrs,
       elements: undefined,
     };
+    if (rawValues) element.attributeRawValues = rawValues;
 
     const parent = peek(stack);
     if (!parent.elements) {

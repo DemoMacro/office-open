@@ -540,6 +540,8 @@ export interface HyperlinkOptions {
   tooltip?: string;
   /** Display text */
   display?: string;
+  /** Coauthoring identity (CT_Hyperlink `@xr:uid`); round-trip only. */
+  uid?: string;
 }
 
 export interface HeaderFooterOptions {
@@ -680,6 +682,11 @@ export interface CommentPropertiesOptions {
 export interface CommentOptions {
   /** Cell reference, e.g. "A1" */
   cell: string;
+  /**
+   * Source note shape id (CT_Comment `@shapeId`). Round-trip only: the live
+   * VML note shape is modeled separately.
+   */
+  shapeId?: number;
   /** Author name */
   author: string;
   /** Comment text (plain string or rich text) */
@@ -1398,6 +1405,19 @@ export interface CellWatchOptions {
 }
 
 /** Data consolidation (CT_DataConsolidate) */
+export interface DataReferenceOptions {
+  /** Source range (CT_DataRef `@ref`). */
+  ref?: string;
+  /** Source workbook or named-range token (CT_DataRef `@sheet`). */
+  sheet?: string;
+  /** Defined-name source (CT_DataRef `@name`). */
+  name?: string;
+  /** Relationship id (CT_DataRef `@r:id`). */
+  rId?: string;
+  /** Resolved relationship target; round-trip only. */
+  target?: string;
+}
+
 export interface DataConsolidateOptions {
   /** Consolidation function (CT_DataConsolidate `@function`) */
   function?:
@@ -1420,8 +1440,10 @@ export interface DataConsolidateOptions {
   startLabels?: boolean;
   /** Link to source data (CT_DataConsolidate `@link`) */
   link?: boolean;
+  /** Declared source reference count (CT_DataRefs `@count`). */
+  count?: number;
   /** Source data references */
-  refs?: string[];
+  refs?: (string | DataReferenceOptions)[];
 }
 
 /**
@@ -1615,6 +1637,18 @@ export interface PageMarginsOptions {
   bottom?: number | UniversalMeasure;
   header?: number | UniversalMeasure;
   footer?: number | UniversalMeasure;
+  /** Source lexical form of `left`; round-trip only. */
+  leftRaw?: string;
+  /** Source lexical form of `right`; round-trip only. */
+  rightRaw?: string;
+  /** Source lexical form of `top`; round-trip only. */
+  topRaw?: string;
+  /** Source lexical form of `bottom`; round-trip only. */
+  bottomRaw?: string;
+  /** Source lexical form of `header`; round-trip only. */
+  headerRaw?: string;
+  /** Source lexical form of `footer`; round-trip only. */
+  footerRaw?: string;
 }
 
 /** Sheet calc properties (CT_SheetCalcPr) */

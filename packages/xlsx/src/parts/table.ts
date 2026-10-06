@@ -116,6 +116,11 @@ export interface TableColumnOptions {
   dataCellStyle?: string;
   /** Totals row cell style name */
   totalsRowCellStyle?: string;
+  /**
+   * Coauthoring identity (CT_TableColumn `@xr3:uid`). Round-trip only: the
+   * attribute rides in the xr3 revision namespace declared as mc:Ignorable.
+   */
+  uid?: string;
   /** XML mapping (CT_XmlColumnPr) — binds the column to an XML map */
   mapping?: XmlColumnPropertiesOptions;
   /** Trailing column extension (CT_TableColumn/extLst) — round-trip only. */
@@ -238,9 +243,10 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     p.push(
       `<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
         ` xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"` +
-        ` mc:Ignorable="xr xr2"` +
+        ` mc:Ignorable="xr xr2 xr3"` +
         ` xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"` +
-        ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"${attrs(rootAttrs)}>`,
+        ` xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"` +
+        ` xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"${attrs(rootAttrs)}>`,
     );
 
     // autoFilter (optional, before tableColumns per XSD sequence)
@@ -301,6 +307,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       if (col.headerRowCellStyle) colAttrs.headerRowCellStyle = col.headerRowCellStyle;
       if (col.dataCellStyle) colAttrs.dataCellStyle = col.dataCellStyle;
       if (col.totalsRowCellStyle) colAttrs.totalsRowCellStyle = col.totalsRowCellStyle;
+      if (col.uid) colAttrs["xr3:uid"] = col.uid;
 
       // x:xmlColumnPr @mapId is a required UInt32 — skip the whole element when
       // no usable map id exists (nothing to bind the column to)
@@ -424,6 +431,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
         if (attr(colEl, "dataCellStyle")) col.dataCellStyle = attr(colEl, "dataCellStyle");
         if (attr(colEl, "totalsRowCellStyle"))
           col.totalsRowCellStyle = attr(colEl, "totalsRowCellStyle");
+        if (attr(colEl, "xr3:uid")) col.uid = attr(colEl, "xr3:uid");
         const xcpEl = findChild(colEl, "xmlColumnPr");
         if (xcpEl) {
           col.mapping = {

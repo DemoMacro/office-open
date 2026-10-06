@@ -125,6 +125,19 @@ describe("tableDesc round-trip", () => {
     expect(columns[1]?.calculatedColumnFormula).toBe(" B2*2 ");
   });
 
+  it("round-trips column coauthoring identity", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      columns: [{ name: "A", uid: "{00000000-0000-0000-0000-000000000000}" }, { name: "B" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.columns?.[0]?.uid).toBe("{00000000-0000-0000-0000-000000000000}");
+    expect(result.columns?.[1]?.uid).toBeUndefined();
+  });
+
   it("round-trips table with style", () => {
     const opts: TableOptions = {
       id: 1,

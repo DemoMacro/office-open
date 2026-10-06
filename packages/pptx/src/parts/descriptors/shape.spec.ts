@@ -56,7 +56,7 @@ describe("shapeDesc round-trip", () => {
     const parsed = pictureDesc.parse(element, readCtx);
     expect(parsed.blipExt).toContain('uri="{TEST}"');
 
-    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const writeCtx = new MockWriteContext();
     const emitted = pictureDesc.stringify({ type: "png", blipExt: parsed.blipExt }, writeCtx)!;
     expect(emitted).toContain('uri="{TEST}"');
   });
@@ -73,6 +73,17 @@ describe("shapeDesc round-trip", () => {
     const result = roundTrip({ id: 42, name: "MyShape", x: 0, y: 0, width: 100, height: 100 });
     expect(result.id).toBe(42);
     expect(result.name).toBe("MyShape");
+  });
+
+  it("round-trips shape customer data tags", () => {
+    const result = roundTrip({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      customerData: [{ rId: "rId4", kind: "tags" }],
+    });
+    expect(result.customerData).toEqual([{ rId: "rId4", kind: "tags" }]);
   });
 
   it("round-trips shape with textBody text", () => {
@@ -93,7 +104,7 @@ describe("shapeDesc round-trip", () => {
     const writeCtx = new MockWriteContext() as unknown as WriteContext;
     const xml = shapeDesc.stringify(
       { id: 2, name: "Picture", x: 0, y: 0, width: 100, height: 100 },
-      writeCtx,
+      writeCtx as WriteContext,
     )!;
     expect(xml).not.toContain("<p:txBody");
 
@@ -219,6 +230,25 @@ describe("shapeDesc round-trip", () => {
     // as the placeholder referenceId; tooltip round-trips directly.
     expect(result.hyperlink?.referenceId).toBeDefined();
     expect(result.hyperlink?.tooltip).toBe("Go");
+  });
+
+  it("preserves an empty hyperlink relationship id", () => {
+    const xml =
+      "<p:sp><p:nvSpPr>" +
+      '<p:cNvPr id="2" name="Shape"><a:hlinkClick r:id="" action="ppaction://hlinkshowjump?jump=nextslide"/></p:cNvPr>' +
+      "<p:cNvSpPr/><p:nvPr/></p:nvSpPr></p:sp>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("fixture has no root element");
+    const parsed = shapeDesc.parse(el, readCtx);
+    expect(parsed.hyperlink?.referenceId).toBe("");
+    expect(parsed.hyperlink?.action).toBe("ppaction://hlinkshowjump?jump=nextslide");
+
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const emitted = shapeDesc.stringify(
+      { id: 2, name: "Shape", hyperlink: parsed.hyperlink },
+      writeCtx,
+    )!;
+    expect(emitted).toContain('r:id=""');
   });
 
   it("round-trips shape with blackWhiteMode on spPr", () => {

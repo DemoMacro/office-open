@@ -38,6 +38,7 @@ import type {
 } from "@office-open/core/drawing";
 import type { Element as XmlElement } from "@office-open/xml";
 import { findChild, findFirst, attrNum, attr } from "@office-open/xml";
+import { parseCustDataLst, stringifyCustDataLst } from "@parts/slide/c-sld";
 import { imageTypeFromPath } from "@shared/media/image-type";
 import type { PictureOptions } from "@shared/picture";
 import {
@@ -169,6 +170,8 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       });
       mediaFileName = mediaEntry.fileName;
     }
+    const blipReferenceId = opts.data !== undefined ? mediaFileName : opts.fileName;
+    const blipRawReferenceId = opts.data !== undefined ? undefined : opts.relationshipId;
 
     const parts: string[] = [];
 
@@ -178,7 +181,12 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     // ── p:blipFill ──
     parts.push(
       stringifyPptxBlipFill(
-        { fileName: mediaFileName, sourceUrl: opts.sourceUrl, compression: opts.compression },
+        {
+          fileName: blipReferenceId,
+          rawReferenceId: blipRawReferenceId,
+          sourceUrl: opts.sourceUrl,
+          compression: opts.compression,
+        },
         opts.sourceRectangle,
         opts.blipEffects,
         ctx,
@@ -324,6 +332,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     const blip = findFirst(el, "a:blip");
     if (blip) {
       const parsedBlip = parse(blipDesc, blip, ctx);
+      if (parsedBlip.referenceId !== undefined) result.relationshipId = parsedBlip.referenceId;
       if (parsedBlip.blipEffects) result.blipEffects = parsedBlip.blipEffects;
       if (parsedBlip.useLocalDpi !== undefined) result.useLocalDpi = parsedBlip.useLocalDpi;
       if (parsedBlip.ext !== undefined) result.blipExt = parsedBlip.ext;
@@ -374,7 +383,8 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
   if (opts.isPhoto) nvPrAttrs.push('isPhoto="1"');
   if (opts.userDrawn) nvPrAttrs.push('userDrawn="1"');
   const nvPrAttrsXml = nvPrAttrs.length > 0 ? ` ${nvPrAttrs.join(" ")}` : "";
-  let nvPrContent = nvPrAttrs.length > 0 ? `<p:nvPr${nvPrAttrsXml}/>` : "<p:nvPr/>";
+  const customerDataXml = stringifyCustDataLst(opts.customerData);
+  const nvPrChildren: string[] = [];
   if (opts.placeholder || opts.placeholderIndex !== undefined) {
     const phAttrs: string[] = [];
     if (opts.placeholder) phAttrs.push(`type="${xsdPlaceholderType.to(opts.placeholder)}"`);
@@ -383,8 +393,13 @@ function stringifyNvSpPr(id: number, name: string, opts: ShapeOptions, ctx: Writ
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    nvPrContent = `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/></p:nvPr>`;
+    nvPrChildren.push(`<p:ph ${phAttrs.join(" ")}/>`);
   }
+  if (customerDataXml) nvPrChildren.push(customerDataXml);
+  const nvPrContent =
+    nvPrAttrs.length > 0 || nvPrChildren.length > 0
+      ? `<p:nvPr${nvPrAttrsXml}>${nvPrChildren.join("")}</p:nvPr>`
+      : "<p:nvPr/>";
 
   // cNvSpPr (with optional locking)
   const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
@@ -560,6 +575,8 @@ function stringifyPptxBlipFill(
     sourceUrl?: string;
     /** Compression state (a:blip @cstate); absent = attribute omitted. */
     compression?: BlipCompression;
+    /** Raw r:embed relationship ID for a reference without media bytes. */
+    rawReferenceId?: string;
   },
   sourceRectangle?: SourceRectangleOptions,
   blipEffects?: PictureOptions["blipEffects"],
@@ -580,6 +597,7 @@ function stringifyPptxBlipFill(
     blipDesc,
     {
       referenceId: blip.fileName,
+      rawReferenceId: blip.rawReferenceId,
       linkReferenceId: linkKey,
       compression: blip.compression,
       blipEffects,
@@ -686,6 +704,7 @@ export function readNvSpPr(nvSpPr: XmlElement, ctx: ReadContext): ShapeOptions {
       if (ph.attributes["hasCustomPrompt"] !== undefined)
         result.hasCustomPrompt = parseOnOff(ph.attributes["hasCustomPrompt"]) ?? false;
     }
+    result.customerData = parseCustDataLst(findChild(nvPr, "p:custDataLst"));
   }
 
   const cNvSpPr = findChild(nvSpPr, "p:cNvSpPr");

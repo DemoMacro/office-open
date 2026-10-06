@@ -107,6 +107,71 @@ describe("xlsx relationship topology", () => {
     );
   });
 
+  it("preserves duplicate external data consolidation relationships", async () => {
+    const source = (await generateWorkbook({
+      worksheets: [{ name: "Data", rows: [{ cells: [{ value: "A" }] }] }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    replaceText(
+      archive,
+      "xl/worksheets/sheet1.xml",
+      fileText(archive, "xl/worksheets/sheet1.xml").replace(
+        "</worksheet>",
+        '<dataConsolidate function="sum"><dataRefs count="2">' +
+          '<dataRef ref="A1:B2" sheet="First" r:id="rId1"/>' +
+          '<dataRef ref="C1:D2" sheet="Second" r:id="rId2"/>' +
+          "</dataRefs></dataConsolidate></worksheet>",
+      ),
+    );
+    const relationshipType =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath";
+    replaceText(
+      archive,
+      "xl/worksheets/_rels/sheet1.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${relationshipType}" Target="../externalLinks/source.xml" TargetMode="External"/><Relationship Id="rId2" Type="${relationshipType}" Target="../externalLinks/source.xml" TargetMode="External"/></Relationships>`,
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets?.[0]?.dataConsolidate?.refs).toEqual([
+      { ref: "A1:B2", sheet: "First", rId: "rId1", target: "../externalLinks/source.xml" },
+      { ref: "C1:D2", sheet: "Second", rId: "rId2", target: "../externalLinks/source.xml" },
+    ]);
+    const output = unzipSync(
+      (await generateWorkbook(parseWorkbookSync(zipSync(archive)))) as Uint8Array,
+    );
+    const sheetXml = fileText(output, "xl/worksheets/sheet1.xml");
+    const rels = fileText(output, "xl/worksheets/_rels/sheet1.xml.rels");
+    expect(sheetXml).toContain('<dataRef ref="A1:B2" sheet="First" r:id="rId1"/>');
+    expect(sheetXml).toContain('<dataRef ref="C1:D2" sheet="Second" r:id="rId2"/>');
+    expect(rels.match(/Id="rId1"/)).toHaveLength(1);
+    expect(rels.match(/Id="rId2"/)).toHaveLength(1);
+    expect(rels.match(/Target="..\/externalLinks\/source.xml"/g)).toHaveLength(2);
+  });
+
+  it("preserves a repair-style dangling calc chain relationship", async () => {
+    const source = (await generateWorkbook({
+      worksheets: [{ name: "Data", rows: [{ cells: [{ value: "A" }] }] }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    delete archive["xl/calcChain.xml"];
+    replaceText(
+      archive,
+      "xl/_rels/workbook.xml.rels",
+      fileText(archive, "xl/_rels/workbook.xml.rels").replace(
+        "</Relationships>",
+        '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/></Relationships>',
+      ),
+    );
+
+    const output = unzipSync(
+      (await generateWorkbook(parseWorkbookSync(zipSync(archive)))) as Uint8Array,
+    );
+    expect(output["xl/calcChain.xml"]).toBeUndefined();
+    const rels = fileText(output, "xl/_rels/workbook.xml.rels");
+    expect(rels).toContain('Id="rId9"');
+    expect(rels).toContain("/calcChain");
+  });
+
   it("separates chartsheet names from chart frame names", async () => {
     const source = (await generateWorkbook({
       chartsheets: [

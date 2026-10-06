@@ -35,6 +35,7 @@ import type {
   ChartSeriesData,
   ChartLinesOptions,
   ChartGrouping,
+  MultiLevelCategoryPoint,
   ScatterStyle,
   SecondaryChartGroupOptions,
   ChartType,
@@ -487,14 +488,30 @@ function stringifyStrLit(values: readonly string[]): string {
   return `<c:strLit><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strLit>`;
 }
 
-function stringifyMultiLvlStrRef(levels: readonly (readonly string[])[], formula?: string): string {
-  const ptCount = levels.reduce((max, lvl) => Math.max(max, lvl.length), 0);
-  const lvls = levels
-    .map((lvl) => {
-      const pts = lvl.map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v)}</c:v></c:pt>`).join("");
-      return `<c:lvl>${pts}</c:lvl>`;
+function multiLvlPoint(
+  point: Exclude<MultiLevelCategoryPoint, null>,
+  index: number,
+): { index: number; text: string } {
+  if (typeof point === "string") return { index, text: point };
+  return { index: point.index ?? index, text: point.text ?? "" };
+}
+
+function stringifyMultiLvlLevel(level: readonly (MultiLevelCategoryPoint | null)[]): string {
+  return level
+    .map((point, index) => {
+      if (point === null) return "";
+      const pt = multiLvlPoint(point, index);
+      return `<c:pt idx="${pt.index}"><c:v>${escapeXml(pt.text)}</c:v></c:pt>`;
     })
     .join("");
+}
+
+function stringifyMultiLvlStrRef(
+  levels: readonly (readonly (MultiLevelCategoryPoint | null)[])[],
+  formula?: string,
+): string {
+  const ptCount = levels.reduce((max, lvl) => Math.max(max, lvl.length), 0);
+  const lvls = levels.map((lvl) => `<c:lvl>${stringifyMultiLvlLevel(lvl)}</c:lvl>`).join("");
   return `<c:multiLvlStrRef>${refFormula(formula)}<c:multiLvlStrCache><c:ptCount ${attrVal("val", ptCount)}/>${lvls}</c:multiLvlStrCache></c:multiLvlStrRef>`;
 }
 
@@ -536,7 +553,9 @@ function stringifyNumRef(
   formula?: string,
   formatCode?: string,
   pointCount?: number | false,
+  cachePresent?: boolean,
 ): string {
+  if (cachePresent === false) return `<c:numRef>${refFormula(formula)}</c:numRef>`;
   const pts = values.map((v, i) => stringifyChartPoint(v, i)).join("");
   const count = pointCount ?? values.length;
   const cacheParts = [
@@ -647,7 +666,8 @@ function stringifyPageMargins(opts: ChartPageMarginsOptions): string {
   const b = opts.bottom ?? 0.75;
   const header = opts.header ?? 0.3;
   const footer = opts.footer ?? 0.3;
-  return `<c:pageMargins l="${l}" r="${r}" t="${t}" b="${b}" header="${header}" footer="${footer}"/>`;
+  const raw = (value: number, rawValue: string | undefined) => rawValue ?? String(value);
+  return `<c:pageMargins l="${raw(l, opts.leftRaw)}" r="${raw(r, opts.rightRaw)}" t="${raw(t, opts.topRaw)}" b="${raw(b, opts.bottomRaw)}" header="${raw(header, opts.headerRaw)}" footer="${raw(footer, opts.footerRaw)}"/>`;
 }
 
 function stringifyPageSetup(opts: ChartPageSetupOptions): string {
@@ -922,7 +942,13 @@ function stringifySeries(
     const bs = series as BubbleSeriesData;
     parts.push(`<c:xVal>${stringifyNumRef(bs.xValues, bs.xFormula)}</c:xVal>`);
     parts.push(
-      `<c:yVal>${stringifyNumRef(bs.yValues, bs.valueFormula, bs.formatCode, bs.valuePointCount)}</c:yVal>`,
+      `<c:yVal>${stringifyNumRef(
+        bs.yValues,
+        bs.valueFormula,
+        bs.formatCode,
+        bs.valuePointCount,
+        bs.valueCache,
+      )}</c:yVal>`,
     );
     parts.push(
       `<c:bubbleSize>${stringifyNumRef(bs.bubbleSize, bs.bubbleSizeFormula)}</c:bubbleSize>`,
@@ -932,14 +958,26 @@ function stringifySeries(
       // True numeric axes: c:xVal/c:yVal are CT_NumDataSource references.
       parts.push(`<c:xVal>${stringifyNumRef(series.xValues, series.xFormula)}</c:xVal>`);
       parts.push(
-        `<c:yVal>${stringifyNumRef(series.yValues, series.valueFormula, series.formatCode, series.valuePointCount)}</c:yVal>`,
+        `<c:yVal>${stringifyNumRef(
+          series.yValues,
+          series.valueFormula,
+          series.formatCode,
+          series.valuePointCount,
+          series.valueCache,
+        )}</c:yVal>`,
       );
     } else {
       // Label-x shape: x values share the category source model — string
       // labels round-trip through c:strRef like regular categories.
       parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
       parts.push(
-        `<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode, s.valuePointCount)}</c:yVal>`,
+        `<c:yVal>${stringifyNumRef(
+          s.values,
+          s.valueFormula,
+          s.formatCode,
+          s.valuePointCount,
+          s.valueCache,
+        )}</c:yVal>`,
       );
     }
   } else {
@@ -947,7 +985,11 @@ function stringifySeries(
       parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
     }
     parts.push(
-      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode, s.valuePointCount) : stringifyNumRef(s.values, s.valueFormula, s.formatCode, s.valuePointCount)}</c:val>`,
+      `<c:val>${
+        s.valueLiteral
+          ? stringifyNumLitList(s.values, s.formatCode, s.valuePointCount)
+          : stringifyNumRef(s.values, s.valueFormula, s.formatCode, s.valuePointCount, s.valueCache)
+      }</c:val>`,
     );
   }
 
@@ -1403,20 +1445,23 @@ function readStrLit(el: XmlElement): string[] | undefined {
   return result;
 }
 
-function readMultiLvlStrCache(el: XmlElement): string[][] | undefined {
+function readMultiLvlStrCache(el: XmlElement): (MultiLevelCategoryPoint | null)[][] | undefined {
   const ref = findChild(el, "c:multiLvlStrRef");
   if (!ref) return undefined;
   const cache = findChild(ref, "c:multiLvlStrCache");
   if (!cache) return [];
-  const levels: string[][] = [];
+  const levels: (MultiLevelCategoryPoint | null)[][] = [];
   for (const lvl of cache.elements ?? []) {
     if (lvl.name !== "c:lvl") continue;
-    const level: string[] = [];
+    const level: (MultiLevelCategoryPoint | null)[] = [];
     for (const pt of lvl.elements ?? []) {
       if (pt.name === "c:pt") {
         const v = findChild(pt, "c:v");
-        const text = v ? textOf(v) : "";
-        if (text !== "") level.push(text);
+        if (!v) continue;
+        const index = Number(attr(pt, "idx") ?? level.length);
+        const text = textOf(v) ?? "";
+        while (level.length < index) level.push(null);
+        level.push(index === level.length ? text : { index, text });
       }
     }
     levels.push(level);
@@ -1450,14 +1495,18 @@ function hasNumericXRef(serEl: XmlElement): boolean {
   );
 }
 
-function readNumCache(el: XmlElement): { values: ChartValue[]; pointCount?: number | false } {
+function readNumCache(el: XmlElement): {
+  values: ChartValue[];
+  pointCount?: number | false;
+  cachePresent?: boolean;
+} {
   // c:numLit literal points (CT_NumDataSource choice: numRef | numLit)
   const numLit = findChild(el, "c:numLit");
   if (numLit) return { values: readNumLitPoints(numLit) };
   const numRef = findChild(el, "c:numRef");
   if (!numRef) return { values: [] };
   const numCache = findChild(numRef, "c:numCache");
-  if (!numCache?.elements) return { values: [], pointCount: false };
+  if (!numCache?.elements) return { values: [], pointCount: false, cachePresent: !!numCache };
   const pointCountEl = findChild(numCache, "c:ptCount");
   const declaredCount = pointCountEl ? Number(attr(pointCountEl, "val")) : false;
   const result: ChartValue[] = Array.from(
@@ -1480,6 +1529,7 @@ function readNumCache(el: XmlElement): { values: ChartValue[]; pointCount?: numb
   return {
     values: result.map((value) => value ?? null),
     pointCount: declaredCount,
+    cachePresent: true,
   };
 }
 
@@ -2281,16 +2331,28 @@ function readPageMargins(ps: XmlElement): ChartPageMarginsOptions | undefined {
   };
   const left = readNum("l");
   if (left !== undefined) opts.left = left;
+  const leftRaw = attr(pm, "l");
+  if (leftRaw !== undefined) opts.leftRaw = leftRaw;
   const right = readNum("r");
   if (right !== undefined) opts.right = right;
+  const rightRaw = attr(pm, "r");
+  if (rightRaw !== undefined) opts.rightRaw = rightRaw;
   const top = readNum("t");
   if (top !== undefined) opts.top = top;
+  const topRaw = attr(pm, "t");
+  if (topRaw !== undefined) opts.topRaw = topRaw;
   const bottom = readNum("b");
   if (bottom !== undefined) opts.bottom = bottom;
+  const bottomRaw = attr(pm, "b");
+  if (bottomRaw !== undefined) opts.bottomRaw = bottomRaw;
   const header = readNum("header");
   if (header !== undefined) opts.header = header;
+  const headerRaw = attr(pm, "header");
+  if (headerRaw !== undefined) opts.headerRaw = headerRaw;
   const footer = readNum("footer");
   if (footer !== undefined) opts.footer = footer;
+  const footerRaw = attr(pm, "footer");
+  if (footerRaw !== undefined) opts.footerRaw = footerRaw;
   return Object.keys(opts).length ? opts : undefined;
 }
 
@@ -2874,6 +2936,12 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
               ...(valMeta.formatCode !== undefined ? { formatCode: valMeta.formatCode } : {}),
               ...(valueCache.pointCount !== undefined
                 ? { valuePointCount: valueCache.pointCount }
+                : {}),
+              ...(valueCache.cachePresent !== undefined
+                ? { valueCache: valueCache.cachePresent }
+                : {}),
+              ...(valueCache.cachePresent !== undefined
+                ? { valueCache: valueCache.cachePresent }
                 : {}),
               values: valueCache.values,
               ...readSeriesCommon(serEl, ctx),

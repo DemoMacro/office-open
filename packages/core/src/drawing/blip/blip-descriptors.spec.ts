@@ -147,6 +147,18 @@ describe("blipDesc", () => {
     expect(result.referenceId).toBeUndefined();
   });
 
+  it("preserves a useLocalDpi extension with a source-specific URI", () => {
+    const xml =
+      '<a:blip xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" r:embed="rId1">' +
+      '<a:extLst><a:ext uri="28A0092B-C50C-407e-A947-70E740481C1C">' +
+      '<a14:useLocalDpi xmlns:a14="http://schemas.microsoft.com/office/drawing/2007/7/7/main" val="0"/>' +
+      "</a:ext></a:extLst></a:blip>";
+    const result = parse(blipDesc, parseXml(xml).elements![0]!, {} as ReadContext);
+    expect(result.ext).toContain('uri="28A0092B-C50C-407e-A947-70E740481C1C"');
+    expect(result.ext).toContain("2007/7/7/main");
+    expect(result.useLocalDpi).toBeUndefined();
+  });
+
   it("round-trips embed + link with compression", () => {
     const xml = stringify(
       blipDesc,

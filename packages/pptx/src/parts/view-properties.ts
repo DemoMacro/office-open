@@ -153,9 +153,10 @@ function buildCSldViewPrXml(
   guides?: ViewPropertiesOptions["guides"],
 ): string {
   const attrs: string[] = [];
-  if (opts?.snapToGrid === false) attrs.push(' snapToGrid="0"');
-  if (opts?.snapToObjects) attrs.push(' snapToObjects="1"');
-  if (opts?.showGuides) attrs.push(' showGuides="1"');
+  if (opts?.snapToGrid !== undefined) attrs.push(` snapToGrid="${opts.snapToGrid ? 1 : 0}"`);
+  if (opts?.snapToObjects !== undefined)
+    attrs.push(` snapToObjects="${opts.snapToObjects ? 1 : 0}"`);
+  if (opts?.showGuides !== undefined) attrs.push(` showGuides="${opts.showGuides ? 1 : 0}"`);
 
   // Build guideLst with optional guides
   let guideLstXml = "<p:guideLst/>";

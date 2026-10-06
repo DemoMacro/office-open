@@ -26,6 +26,7 @@ export interface ChartData {
   userShapes?: {
     relationshipId: string;
     xml: string;
+    path?: string;
   };
 }
 

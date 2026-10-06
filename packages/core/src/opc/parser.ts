@@ -1,16 +1,9 @@
 import { parse, stringify } from "@office-open/xml";
 import type { Element, ParseOptions } from "@office-open/xml";
-import {
-  unzipSync,
-  zipSync,
-  strFromU8,
-  strToU8,
-  inflateSync,
-  type ZipOptions,
-  type Zippable,
-} from "fflate";
+import { unzipSync, zipSync, strToU8, inflateSync, type ZipOptions, type Zippable } from "fflate";
 
 import { toUint8ArrayAsync } from "../util/data-type";
+import { decodeXmlBytes } from "../util/xml-decode";
 import { blobSource, type ByteSource } from "./byte-source";
 import { stripOversizedGfxdata } from "./gfxdata";
 import { OOXML_CANONICAL_PREFIXES } from "./namespaces";
@@ -151,7 +144,7 @@ export class ParsedArchive {
     // Check modified first
     const modData = this.modified.get(path);
     if (modData) {
-      const wrapper = parse(strFromU8(modData), opts) as Element;
+      const wrapper = parse(decodeXmlBytes(modData), opts) as Element;
       this.wrapperCache.set(path, wrapper);
       return wrapper.elements?.find((e) => e.type === "element");
     }
@@ -164,7 +157,7 @@ export class ParsedArchive {
     if (cached) return cached.elements?.find((e) => e.type === "element");
 
     // Parse and cache
-    const wrapper = parse(strFromU8(data), opts) as Element;
+    const wrapper = parse(decodeXmlBytes(data), opts) as Element;
     this.wrapperCache.set(path, wrapper);
     return wrapper.elements?.find((e) => e.type === "element");
   }

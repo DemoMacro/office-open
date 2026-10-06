@@ -52,18 +52,10 @@ function layoutDecimal(value: string): string {
 }
 
 export function preserveChartDecimalAttributes(xml: string): string {
-  return xml
-    .replace(/<c:pageMargins([^>]*)\/>/g, (_, attributes: string) => {
-      const normalized = attributes.replace(
-        /\b(l|r|t|b|header|footer)="([^"]+)"/g,
-        (_match, name: string, value: string) => `${name}="${decimalAttr(value)}"`,
-      );
-      return `<c:pageMargins${normalized}/>`;
-    })
-    .replace(
-      /<c:(x|y|w|h) val="([^"]+)"\/>/g,
-      (_match, name: string, value: string) => `<c:${name} val="${layoutDecimal(value)}"/>`,
-    );
+  return xml.replace(
+    /<c:(x|y|w|h) val="([^"]+)"\/>/g,
+    (_match, name: string, value: string) => `<c:${name} val="${layoutDecimal(value)}"/>`,
+  );
 }
 
 /**
@@ -250,7 +242,12 @@ export function compileSheetDrawing(
       : `xl/charts/chart${state.globalChartIdx + 1}.xml`;
     state.chartPaths.set(chartKey, chartPath);
     ctx.chartOptions.set(chartKey, chart);
-    const userShapes = chart.userShapes ? buildUserShapesData(chart.userShapes) : undefined;
+    const userShapes = chart.userShapes
+      ? {
+          ...buildUserShapesData(chart.userShapes),
+          ...(chart.userShapes.path ? { path: chart.userShapes.path } : {}),
+        }
+      : undefined;
     ctx.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: preserveChartDecimalAttributes(chartSpaceDesc.stringify(chart, ctx) ?? ""),

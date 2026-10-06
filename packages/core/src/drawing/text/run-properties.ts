@@ -93,21 +93,25 @@ export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOp
   const rId = el.attributes?.["r:id"];
   const action =
     el.attributes?.["action"] !== undefined ? String(el.attributes["action"]) : undefined;
-  if (rId) {
+  if (rId !== undefined) {
     const ridStr = String(rId);
-    const target = ctx.resolveRelationship(ridStr);
-    if (target) {
-      // Internal slide jump: r:id resolves to slides/slideN.xml.
-      const slideMatch = target.match(/slide(\d+)\.xml$/);
-      if (slideMatch && action === "ppaction://hlinksldjump") {
-        hl.slide = Number(slideMatch[1]);
-      } else {
-        hl.url = target;
+    if (ridStr === "") {
+      hl.referenceId = ridStr;
+    } else {
+      const target = ctx.resolveRelationship(ridStr);
+      if (target) {
+        // Internal slide jump: r:id resolves to slides/slideN.xml.
+        const slideMatch = target.match(/slide(\d+)\.xml$/);
+        if (slideMatch && action === "ppaction://hlinksldjump") {
+          hl.slide = Number(slideMatch[1]);
+        } else {
+          hl.url = target;
+        }
       }
+      const m = ridStr.match(/^\{hlink:(.+)\}$/);
+      if (m) hl.referenceId = m[1];
+      else if (!target) hl.referenceId = ridStr;
     }
-    const m = ridStr.match(/^\{hlink:(.+)\}$/);
-    if (m) hl.referenceId = m[1];
-    else if (!target) hl.referenceId = ridStr;
   }
   if (el.attributes?.["tooltip"] !== undefined) hl.tooltip = String(el.attributes["tooltip"]);
   if (el.attributes?.["tgtFrame"] !== undefined) hl.targetFrame = String(el.attributes["tgtFrame"]);

@@ -6,7 +6,12 @@
  *
  * @module
  */
-import { convertToInch, convertToPt, derivePasswordHash } from "@office-open/core";
+import {
+  convertToInch,
+  convertToPt,
+  derivePasswordHash,
+  type UniversalMeasure,
+} from "@office-open/core";
 import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
@@ -386,8 +391,24 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (dc.leftLabels) dcAttrs.leftLabels = 1;
     if (dc.startLabels) dcAttrs.startLabels = 1;
     if (dc.link) dcAttrs.link = 1;
-    const refsInner = dc.refs?.map((r) => `<dataRef ref="${escapeXml(r)}"/>`).join("") ?? "";
-    const refsXml = refsInner ? `<dataRefs>${refsInner}</dataRefs>` : "";
+    const refsAttrs: Record<string, string | number> = {};
+    if (dc.count !== undefined) refsAttrs.count = dc.count;
+    const refsInner =
+      dc.refs
+        ?.map((input) => {
+          const ref = typeof input === "string" ? { ref: input } : input;
+          return selfCloseElement(
+            "dataRef",
+            attrs({
+              ...(ref.ref !== undefined ? { ref: ref.ref } : {}),
+              ...(ref.sheet !== undefined ? { sheet: ref.sheet } : {}),
+              ...(ref.name !== undefined ? { name: ref.name } : {}),
+              ...(ref.rId !== undefined ? { "r:id": ref.rId } : {}),
+            }),
+          );
+        })
+        .join("") ?? "";
+    const refsXml = refsInner ? `<dataRefs${attrs(refsAttrs)}>${refsInner}</dataRefs>` : "";
     if (refsXml || Object.keys(dcAttrs).length > 0) {
       p.push(`<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`);
     }
@@ -617,6 +638,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       }
       if (hl.tooltip) hlAttrs.tooltip = hl.tooltip;
       if (hl.display) hlAttrs.display = hl.display;
+      if (hl.uid) hlAttrs["xr:uid"] = hl.uid;
       p.push(selfCloseElement("hyperlink", attrs(hlAttrs)));
     }
     p.push("</hyperlinks>");
@@ -629,14 +651,26 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   if (opts.pageMargins) {
     const pm = opts.pageMargins;
+    const raw = (value: number | UniversalMeasure | undefined, rawValue?: string) =>
+      rawValue ?? (value === undefined ? "" : convertToInch(value));
     p.push(
       `<pageMargins${attrs({
-        ...(pm.left !== undefined ? { left: convertToInch(pm.left) } : {}),
-        ...(pm.right !== undefined ? { right: convertToInch(pm.right) } : {}),
-        ...(pm.top !== undefined ? { top: convertToInch(pm.top) } : {}),
-        ...(pm.bottom !== undefined ? { bottom: convertToInch(pm.bottom) } : {}),
-        ...(pm.header !== undefined ? { header: convertToInch(pm.header) } : {}),
-        ...(pm.footer !== undefined ? { footer: convertToInch(pm.footer) } : {}),
+        ...(pm.left !== undefined || pm.leftRaw !== undefined
+          ? { left: raw(pm.left, pm.leftRaw) }
+          : {}),
+        ...(pm.right !== undefined || pm.rightRaw !== undefined
+          ? { right: raw(pm.right, pm.rightRaw) }
+          : {}),
+        ...(pm.top !== undefined || pm.topRaw !== undefined ? { top: raw(pm.top, pm.topRaw) } : {}),
+        ...(pm.bottom !== undefined || pm.bottomRaw !== undefined
+          ? { bottom: raw(pm.bottom, pm.bottomRaw) }
+          : {}),
+        ...(pm.header !== undefined || pm.headerRaw !== undefined
+          ? { header: raw(pm.header, pm.headerRaw) }
+          : {}),
+        ...(pm.footer !== undefined || pm.footerRaw !== undefined
+          ? { footer: raw(pm.footer, pm.footerRaw) }
+          : {}),
       })}/>`,
     );
   } else {

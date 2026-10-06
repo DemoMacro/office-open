@@ -108,6 +108,32 @@ describe("oleDesc round-trip", () => {
     expect(parsed.iconImage!.type).toBe("png");
   });
 
+  it("reads the canonical embedded branch without its fallback picture", () => {
+    const xml =
+      `<p:graphicFrame xmlns:a="urn:a" xmlns:r="urn:r" xmlns:p="urn:p" xmlns:mc="urn:mc">` +
+      `<a:graphic><a:graphicData><mc:AlternateContent>` +
+      `<mc:Choice Requires="v"><p:oleObj name="Canonical" r:id="rId1" progId="Test.Object"><p:embed/></p:oleObj></mc:Choice>` +
+      `<mc:Fallback><p:oleObj name="Fallback" r:id="rId1" progId="Test.Object"><p:embed/>` +
+      `<p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>` +
+      `<p:blipFill><a:blip r:embed="rId2"/></p:blipFill><p:spPr/></p:pic></p:oleObj></mc:Fallback>` +
+      `</mc:AlternateContent></a:graphicData></a:graphic></p:graphicFrame>`;
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+
+    const readCtxWithSourceEmbedding = {
+      resolveRelationship: (rId: string) =>
+        rId === "rId1" ? "../embeddings/canonical.bin" : undefined,
+      getPart: () => undefined,
+      getRaw: (path: string) => (path === "../embeddings/canonical.bin" ? OLE_BYTES : undefined),
+    } as unknown as ReadContext;
+
+    const parsed = oleDesc.parse(root, readCtxWithSourceEmbedding);
+
+    expect(parsed.embed).toBeDefined();
+    expect(parsed.objectName).toBe("Canonical");
+    expect(parsed.iconImage).toBeUndefined();
+  });
+
   it("round-trips linked OLE object", () => {
     // Descriptor parse sees the {ole-link:…} placeholder as the raw r:id — map
     // it the way the compiler would map the rewritten External relationship.

@@ -6,6 +6,7 @@ import { parseDocument } from "../../packages/docx/dist/index.mjs";
 import { parsePresentation } from "../../packages/pptx/dist/index.mjs";
 import { parseWorkbook } from "../../packages/xlsx/dist/index.mjs";
 import {
+  assertEncryptedContainerRoundTrip,
   archiveSemanticDiffDetails,
   archiveTagDiffs,
   classifyPackageFailure,
@@ -87,6 +88,23 @@ export interface LibraryRunResult {
   diagnostics: FileDiagnostic[];
   rawAudit: Record<Format, { files: number; xmlParts: number; binaryParts: number }>;
   rawBlockers: Record<Format, [string, number][]>;
+}
+
+/**
+ * Encrypted OOXML containers are opaque CFB payloads. Compare them bytewise;
+ * unwrapping one as a ZIP is a comparator bug, not a parse failure.
+ */
+export function isEncryptedPassthrough(options: unknown): boolean {
+  return (
+    typeof options === "object" &&
+    options !== null &&
+    "encrypted" in options &&
+    (options as { encrypted?: unknown }).encrypted !== undefined
+  );
+}
+
+export function encryptedPassthroughMatches(source: Uint8Array, output: Uint8Array): boolean {
+  return source.length === output.length && source.every((byte, index) => byte === output[index]);
 }
 
 function walk(
@@ -185,6 +203,31 @@ export async function runLibrary(
       continue;
     }
 
+    if (isEncryptedPassthrough(options)) {
+      const source = new Uint8Array(fs.readFileSync(file));
+      if (encryptedPassthroughMatches(source, output)) {
+        current.clean++;
+      } else {
+        current.diff++;
+        diagnostics.push({
+          file: path.relative(root, file),
+          format,
+          outcome: "valid",
+          package: libraryId,
+          diffCategories: { binary: 1 },
+          sampleParts: [
+            {
+              path: path.relative(root, file),
+              kind: "binary",
+              category: "binary",
+              detail: "encrypted container bytes differ",
+            },
+          ],
+        });
+      }
+      continue;
+    }
+
     const rawParts = (options as { rawParts?: { path: string }[] }).rawParts;
     if (rawParts?.length) {
       rawAudit[format].files++;
@@ -203,6 +246,7 @@ export async function runLibrary(
     let semanticDiffs: SemanticPartDiff[] = [];
     try {
       const source = new Uint8Array(fs.readFileSync(file));
+      assertEncryptedContainerRoundTrip(source, output);
       if (strictSemantic) {
         semanticDiffs = archiveSemanticDiffDetails(source, output);
         parts = semanticDiffs.map((diff) => diff.path);

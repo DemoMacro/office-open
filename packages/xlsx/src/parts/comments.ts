@@ -25,7 +25,7 @@ import type {
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import type { WriteContext } from "@office-open/core/descriptor";
-import { findChild, attr, textOf } from "@office-open/xml";
+import { attr, attrNum, findChild, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
@@ -79,8 +79,9 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
       // third-party file carrying commentPr beside the VML note drawing this
       // compiler always writes (rival property systems — it reads the VML
       // shape's x:ClientData instead).
+      const shapeId = entry.shapeId !== undefined ? ` shapeId="${entry.shapeId}"` : "";
       p.push(
-        `<comment ref="${entry.cell}" authorId="${authorId}"><text>${textXml}</text></comment>`,
+        `<comment ref="${entry.cell}"${shapeId} authorId="${authorId}"><text>${textXml}</text></comment>`,
       );
     }
 
@@ -104,12 +105,14 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
       for (const c of listEl.elements ?? []) {
         if (c.name !== "comment") continue;
         const ref = attr(c, "ref") ?? "";
+        const shapeId = attrNum(c, "shapeId");
         const authorId = Number(attr(c, "authorId") ?? 0);
         const textEl = findChild(c, "text");
         const text = textEl ? parseRst(textEl) : "";
         const commentPrEl = findChild(c, "commentPr");
         const comment: CommentOptions = {
           cell: ref,
+          ...(shapeId !== undefined ? { shapeId } : {}),
           author: authors[authorId] ?? "",
           text,
         };

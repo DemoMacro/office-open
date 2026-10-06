@@ -615,6 +615,15 @@ export function archiveSemanticDiffDetails(
   return diffs;
 }
 
+export function assertEncryptedContainerRoundTrip(source: Uint8Array, output: Uint8Array): void {
+  const encrypted = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
+  if (source.length < encrypted.length) return;
+  const isEncrypted = encrypted.every((byte, index) => source[index] === byte);
+  if (!isEncrypted) return;
+  if (source.length !== output.length || !source.every((byte, index) => output[index] === byte))
+    throw new Error("encrypted DOCX container was not re-emitted verbatim");
+}
+
 export function archiveSemanticDiffs(source: Uint8Array, output: Uint8Array): SemanticPartDiff[] {
   const sourceArchive = unzipSync(source);
   const outputArchive = unzipSync(output);

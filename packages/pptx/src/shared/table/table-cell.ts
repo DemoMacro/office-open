@@ -5,6 +5,7 @@ import type {
   TextHorzOverflow,
   TextVertical,
   VerticalAnchor,
+  TextListStyleOptions,
 } from "@office-open/core/drawing";
 
 import type { FillOptions } from "../drawing/fill";
@@ -29,6 +30,8 @@ export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAl
   horizontalOverflow?: TextHorzOverflow;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
+  /** Cell text-body list style (`a:lstStyle`), including its extension list. */
+  listStyle?: TextListStyleOptions;
   fill?: FillOptions;
   /** Cell bevel (a:cell3D in a:tcPr). */
   cell3D?: Cell3DOptions;

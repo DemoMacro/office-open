@@ -437,7 +437,7 @@ export function parseSheetDataRows(
           } else if (vNum !== undefined) {
             cell.value = vNum;
           } else if (vText !== undefined) {
-            const num = Number(vText);
+            const num = vText === "" ? Number.NaN : Number(vText);
             cell.value = isNaN(num) ? vText : num;
           }
           if (formula !== undefined) cell.formula = formula;

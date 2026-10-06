@@ -502,6 +502,18 @@ describe("office shape elements (o:)", () => {
       ext: "edit",
       idmap: { ext: "edit", data: "1" },
       regrouptable: { entries: [{ new: 1, old: 2 }] },
+      childOrder: ["idmap", "regrouptable"],
+    };
+    expect(roundTrip(stringifyVmlShapeLayout, parseVmlShapeLayout, opts)).toEqual(opts);
+  });
+
+  it("round-trips o:shapelayout child order", () => {
+    const opts: VmlShapeLayoutOptions = {
+      ext: "edit",
+      idmap: { ext: "edit", data: "1" },
+      regrouptable: { entries: [{ new: 1, old: 2 }] },
+      rules: { ext: "edit" },
+      childOrder: ["idmap", "rules", "regrouptable"],
     };
     expect(roundTrip(stringifyVmlShapeLayout, parseVmlShapeLayout, opts)).toEqual(opts);
   });

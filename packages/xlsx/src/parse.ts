@@ -123,7 +123,9 @@ function sortByNumber(paths: string[]): string[] {
  */
 function readChartUserShapes(
   chartPath: string | undefined,
-  chart: { userShapes?: { relationshipId?: string; anchors: unknown[] } },
+  chart: {
+    userShapes?: { relationshipId?: string; anchors: unknown[]; path?: string };
+  },
   readContext: XlsxReadContext,
   doc: XlsxDocument["doc"],
 ): void {
@@ -135,7 +137,11 @@ function readChartUserShapes(
   const bodyEl = rel ? doc.get(rel.target) : undefined;
   if (!bodyEl) return;
   const body = userShapesDesc.parse(bodyEl, readContext);
-  chart.userShapes = { ...chart.userShapes, anchors: body.anchors };
+  chart.userShapes = {
+    ...chart.userShapes,
+    anchors: body.anchors,
+    ...(rel ? { path: rel.target } : {}),
+  };
 }
 
 function readChartExternalLink(
@@ -379,6 +385,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // the definition part's own relationship.
   const pivotCaches: DefinitionPivotCacheOptions[] = [];
   const pivotCacheIdByPath = new Map<string, number>();
+  const definitionCachesByPath = new Map<string, DefinitionPivotCacheOptions>();
   const wbPivotCaches = (xlsx.workbook?.elements ?? []).find(
     (element) => element.name?.replace(/^.*:/, "") === "pivotCaches",
   );
@@ -437,7 +444,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       String(rel.attributes?.["Id"]),
     );
     if (externalRelationships.length > 0) definition.externalRelationships = externalRelationships;
-    pivotCaches.push({
+    definitionCachesByPath.set(definitionPath, {
       mode: "definition",
       cacheId,
       definitionPath,
@@ -445,6 +452,23 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       definition,
       ...(records ? { records } : {}),
     });
+  }
+  const sourceOrderedCachePaths = new Set<string>();
+  for (const pc of wbPivotCaches?.elements ?? []) {
+    if (pc.name?.replace(/^.*:/, "") !== "pivotCache") continue;
+    const cacheId = attr(pc, "cacheId");
+    const rId = Object.entries(pc.attributes ?? {}).find(
+      ([name]) => name.replace(/^.*:/, "") === "id" && name.includes(":"),
+    )?.[1];
+    if (cacheId === undefined || rId === undefined) continue;
+    const definitionPath = readContext.resolveWorksheetRel("xl/workbook.xml", String(rId));
+    const cache = definitionPath ? definitionCachesByPath.get(definitionPath) : undefined;
+    if (!cache || sourceOrderedCachePaths.has(definitionPath!)) continue;
+    pivotCaches.push(cache);
+    sourceOrderedCachePaths.add(definitionPath!);
+  }
+  for (const [definitionPath, cache] of definitionCachesByPath) {
+    if (!sourceOrderedCachePaths.has(definitionPath)) pivotCaches.push(cache);
   }
   if (pivotCaches.length > 0) opts.pivotCaches = pivotCaches;
 
@@ -533,7 +557,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
 
-    const wsOpts = worksheetDesc.parse(wsEl, readContext);
+    const wsOpts = readContext.withPart(wsPath, () => worksheetDesc.parse(wsEl, readContext));
     const sheetInfo = sheetInfoByPath.get(wsPath);
     if (sheetInfo) {
       wsOpts.name = sheetInfo.name;

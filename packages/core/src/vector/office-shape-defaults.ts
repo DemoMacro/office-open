@@ -253,6 +253,8 @@ export interface VmlShapeLayoutOptions extends VmlExtAttribute {
   idmap?: VmlIdMapOptions;
   regrouptable?: VmlRegroupTableOptions;
   rules?: VmlRulesOptions;
+  /** Recognized child order; omitted uses idmap, regrouptable, then rules. */
+  childOrder?: ("idmap" | "regrouptable" | "rules")[];
 }
 
 /** Serialize an o:idmap. */
@@ -374,10 +376,22 @@ function parseVmlRulesBlock(el: XmlElement): VmlRulesOptions {
 
 /** Serialize o:shapelayout. */
 export function stringifyVmlShapeLayout(opts: VmlShapeLayoutOptions): string {
+  const serializers = {
+    idmap: stringifyVmlIdMap,
+    regrouptable: stringifyVmlRegroupTable,
+    rules: stringifyVmlRulesBlock,
+  } as const;
+  const emitted = new Set<string>();
   const children: string[] = [];
-  if (opts.idmap !== undefined) children.push(stringifyVmlIdMap(opts.idmap));
-  if (opts.regrouptable !== undefined) children.push(stringifyVmlRegroupTable(opts.regrouptable));
-  if (opts.rules !== undefined) children.push(stringifyVmlRulesBlock(opts.rules));
+  for (const key of opts.childOrder ?? []) {
+    if (opts[key] === undefined || emitted.has(key)) continue;
+    children.push(serializers[key](opts[key]));
+    emitted.add(key);
+  }
+  for (const key of ["idmap", "regrouptable", "rules"] as const) {
+    if (opts[key] === undefined || emitted.has(key)) continue;
+    children.push(serializers[key](opts[key]));
+  }
   const attrStr = stringifyVmlAttributes(opts as Record<string, unknown>, EXT_ATTR);
   return children.length > 0
     ? `<o:shapelayout${attrStr}>${children.join("")}</o:shapelayout>`
@@ -388,11 +402,20 @@ export function stringifyVmlShapeLayout(opts: VmlShapeLayoutOptions): string {
 export function parseVmlShapeLayout(el: XmlElement): VmlShapeLayoutOptions {
   const out: Record<string, unknown> = {};
   parseVmlAttributes(el, EXT_ATTR, out);
+  const childOrder: NonNullable<VmlShapeLayoutOptions["childOrder"]> = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element") continue;
-    if (child.name === "o:idmap") out.idmap = parseVmlIdMap(child);
-    else if (child.name === "o:regrouptable") out.regrouptable = parseVmlRegroupTable(child);
-    else if (child.name === "o:rules") out.rules = parseVmlRulesBlock(child);
+    if (child.name === "o:idmap") {
+      out.idmap = parseVmlIdMap(child);
+      childOrder.push("idmap");
+    } else if (child.name === "o:regrouptable") {
+      out.regrouptable = parseVmlRegroupTable(child);
+      childOrder.push("regrouptable");
+    } else if (child.name === "o:rules") {
+      out.rules = parseVmlRulesBlock(child);
+      childOrder.push("rules");
+    }
   }
+  if (childOrder.length > 1) out.childOrder = childOrder;
   return out as VmlShapeLayoutOptions;
 }

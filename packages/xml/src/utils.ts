@@ -95,6 +95,8 @@ function collectTextRecursive(element: Element | undefined, parts: string[]): vo
  * Get an attribute value as a string.
  */
 export function attr(element: Element | undefined, name: string): string | undefined {
+  const raw = element?.attributeRawValues?.[name];
+  if (raw !== undefined) return raw;
   const v = element?.attributes?.[name];
   return v !== undefined ? String(v) : undefined;
 }

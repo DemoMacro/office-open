@@ -8,15 +8,7 @@
 
 import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import {
-  attr,
-  attrBool,
-  attrNum,
-  escapeXml,
-  findChild,
-  findDeep,
-  findFirst,
-} from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
@@ -146,7 +138,20 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     // Navigate to a:graphic/a:graphicData/p:oleObj
     const graphic = findChild(el, "a:graphic");
     const graphicData = graphic ? findChild(graphic, "a:graphicData") : undefined;
-    for (const oleObj of graphicData ? findDeep(graphicData, "p:oleObj") : []) {
+    // Model the canonical markup-compatibility branch, not every branch. The
+    // fallback p:pic is presentation-specific recovery markup, while the
+    // canonical branch intentionally omits it; reading both would turn it into
+    // output-only content on regeneration.
+    const alternateContent = graphicData
+      ? findChild(graphicData, "mc:AlternateContent")
+      : undefined;
+    const canonicalBranch = alternateContent ? findChild(alternateContent, "mc:Choice") : undefined;
+    const canonicalOleObj = canonicalBranch
+      ? findChild(canonicalBranch, "p:oleObj")
+      : graphicData
+        ? findChild(graphicData, "p:oleObj")
+        : undefined;
+    for (const oleObj of canonicalOleObj ? [canonicalOleObj] : []) {
       const progId = attr(oleObj, "progId");
       if (progId !== undefined && result.progId === undefined) result.progId = progId;
       const objectName = attr(oleObj, "name");

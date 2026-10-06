@@ -35,6 +35,7 @@ import type {
   CustomSheetPropertyOptions,
   CustomSheetViewOptions,
   DataConsolidateOptions,
+  DataReferenceOptions,
   DataValidationOperator,
   DataValidationOptions,
   DataValidationType,
@@ -334,16 +335,28 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const pm: PageMarginsOptions = {};
       const pmL = attrNum(pageMarginsEl, "left");
       if (pmL !== undefined) pm.left = pmL;
+      const pmLRaw = attr(pageMarginsEl, "left");
+      if (pmLRaw !== undefined) pm.leftRaw = pmLRaw;
       const pmR = attrNum(pageMarginsEl, "right");
       if (pmR !== undefined) pm.right = pmR;
+      const pmRRaw = attr(pageMarginsEl, "right");
+      if (pmRRaw !== undefined) pm.rightRaw = pmRRaw;
       const pmT = attrNum(pageMarginsEl, "top");
       if (pmT !== undefined) pm.top = pmT;
+      const pmTRaw = attr(pageMarginsEl, "top");
+      if (pmTRaw !== undefined) pm.topRaw = pmTRaw;
       const pmB = attrNum(pageMarginsEl, "bottom");
       if (pmB !== undefined) pm.bottom = pmB;
+      const pmBRaw = attr(pageMarginsEl, "bottom");
+      if (pmBRaw !== undefined) pm.bottomRaw = pmBRaw;
       const pmH = attrNum(pageMarginsEl, "header");
       if (pmH !== undefined) pm.header = pmH;
+      const pmHRaw = attr(pageMarginsEl, "header");
+      if (pmHRaw !== undefined) pm.headerRaw = pmHRaw;
       const pmF = attrNum(pageMarginsEl, "footer");
       if (pmF !== undefined) pm.footer = pmF;
+      const pmFRaw = attr(pageMarginsEl, "footer");
+      if (pmFRaw !== undefined) pm.footerRaw = pmFRaw;
       result.pageMargins = pm;
     }
 
@@ -490,6 +503,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
               cfvo: cfvo as [CfvoOptions, CfvoOptions],
               color: color ?? { indexed: 0 },
             };
+            if (String(attr(dbEl, "showValue")) === "0") rule.dataBar.showValue = false;
           }
 
           // Icon set
@@ -573,6 +587,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (location) hl.location = location;
         if (attr(hEl, "tooltip")) hl.tooltip = attr(hEl, "tooltip");
         if (attr(hEl, "display")) hl.display = attr(hEl, "display");
+        if (attr(hEl, "xr:uid")) hl.uid = attr(hEl, "xr:uid");
         hyperlinks.push(hl);
       }
       result.hyperlinks = hyperlinks;
@@ -754,11 +769,24 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (parseOnOff(attr(dcEl, "link"))) dc.link = true;
       const refsEl = findChild(dcEl, "dataRefs");
       if (refsEl) {
-        const refs: string[] = [];
+        const refCount = attrNum(refsEl, "count");
+        if (refCount !== undefined) dc.count = refCount;
+        const refs: (string | DataReferenceOptions)[] = [];
         for (const refEl of refsEl.elements ?? []) {
           if (refEl.name !== "dataRef") continue;
+          const ref: DataReferenceOptions = {};
           const r = attr(refEl, "ref");
-          if (r) refs.push(r);
+          if (r) ref.ref = r;
+          const sheet = attr(refEl, "sheet");
+          if (sheet) ref.sheet = sheet;
+          const name = attr(refEl, "name");
+          if (name) ref.name = name;
+          const rId = attr(refEl, "r:id");
+          if (rId) {
+            ref.rId = rId;
+            ref.target = ctx.resolveExternalImage?.(rId);
+          }
+          if (Object.keys(ref).length > 0) refs.push(ref);
         }
         if (refs.length > 0) dc.refs = refs;
       }

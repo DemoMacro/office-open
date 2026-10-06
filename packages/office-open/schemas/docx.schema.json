@@ -1695,6 +1695,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -2537,7 +2540,14 @@
           "description": "Multi-level (hierarchical) category labels (c:cat > c:multiLvlStrRef).",
           "items": {
             "items": {
-              "type": "string"
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/MultiLevelCategoryPoint"
+                },
+                {
+                  "type": "null"
+                }
+              ]
             },
             "type": "array"
           },
@@ -2755,20 +2765,44 @@
         "bottom": {
           "type": "number"
         },
+        "bottomRaw": {
+          "description": "Source lexical form of `bottom`; round-trip only.",
+          "type": "string"
+        },
         "footer": {
           "type": "number"
+        },
+        "footerRaw": {
+          "description": "Source lexical form of `footer`; round-trip only.",
+          "type": "string"
         },
         "header": {
           "type": "number"
         },
+        "headerRaw": {
+          "description": "Source lexical form of `header`; round-trip only.",
+          "type": "string"
+        },
         "left": {
           "type": "number"
+        },
+        "leftRaw": {
+          "description": "Source lexical form of `left`; round-trip only.",
+          "type": "string"
         },
         "right": {
           "type": "number"
         },
+        "rightRaw": {
+          "description": "Source lexical form of `right`; round-trip only.",
+          "type": "string"
+        },
         "top": {
           "type": "number"
+        },
+        "topRaw": {
+          "description": "Source lexical form of `top`; round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -2933,6 +2967,10 @@
             "$ref": "#/definitions/TrendlineOptions"
           },
           "type": "array"
+        },
+        "valueCache": {
+          "description": "Source `c:numCache` presence (round-trip); `false` emits the numRef without a cache.",
+          "type": "boolean"
         },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
@@ -3328,6 +3366,10 @@
             ]
           },
           "type": "array"
+        },
+        "path": {
+          "description": "Source companion part path; round-trip only. Fresh authoring omits it.",
+          "type": "string"
         },
         "relationshipId": {
           "description": "Chart-part relationship id of the shapes part. Round-trips verbatim; fresh authoring omits it and the reference defaults to rId1 — set an unused id when the same chart also carries externalData.",
@@ -11769,6 +11811,35 @@
       "required": ["id"],
       "type": "object"
     },
+    "MultiLevelCategoryPoint": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/MultiLevelCategoryPointOptions"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Multi-level category label: a dense positional string or sparse point."
+    },
+    "MultiLevelCategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "One sparse point in a multi-level string cache.",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "NonVisualContentPartPropertiesOptions": {
       "additionalProperties": false,
       "properties": {
@@ -17594,6 +17665,9 @@
           },
           "type": "array"
         },
+        "valueCache": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valueCache"
+        },
         "valueFormula": {
           "description": "Values reference formula (c:val > c:numRef > c:f) — round-trip.",
           "type": "string"
@@ -20798,6 +20872,10 @@
       "additionalProperties": false,
       "description": "Simple field types for WordprocessingML documents.",
       "properties": {
+        "cachedInstructionRPrXml": {
+          "description": "Verbatim run properties on `cachedInstructionText` (round-trip only).",
+          "type": "string"
+        },
         "cachedInstructionText": {
           "description": "Cached result expressed as instruction text (round-trip; rare nested-field form).",
           "type": "string"
@@ -28978,6 +29056,14 @@
       "additionalProperties": false,
       "description": "o:shapelayout options.",
       "properties": {
+        "childOrder": {
+          "description": "Recognized child order; omitted uses idmap, regrouptable, then rules.",
+          "items": {
+            "enum": ["idmap", "regrouptable", "rules"],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "ext": {
           "$ref": "#/definitions/VmlExtensionMode"
         },

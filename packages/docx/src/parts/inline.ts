@@ -70,6 +70,11 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   // result had none, matching Word's uniform behavior).
   const ctrl = cf.rPrXml ?? "";
   const res = cf.resultRPrXml ?? ctrl;
+  const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid]);
+  const resultAttrs = [
+    cf.resultAdditionRsid ? ` w:rsidR="${cf.resultAdditionRsid}"` : "",
+    cf.resultRunPropertiesRsid ? ` w:rsidRPr="${cf.resultRunPropertiesRsid}"` : "",
+  ].join("");
   // Instruction: verbatim when the source split it across non-plain runs;
   // plain template otherwise; no instruction run at all for an empty
   // instruction (a bare begin→end field round-trips without one).
@@ -81,30 +86,22 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   // `separate` + the result run are emitted only when there is a cached
   // result; a result-less field round-trips as begin/instrText/end. Result
   // runs go verbatim when the source split them beyond the plain template.
+  const separatorXml =
+    cf.resultRunsXml !== undefined || cf.result !== undefined
+      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
+      : "";
   const resultXml =
     cf.resultRunsXml !== undefined
-      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-        cf.resultRunsXml
+      ? cf.resultRunsXml
       : cf.result !== undefined
-        ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-          `<w:r>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
+        ? `<w:r${resultAttrs}>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
         : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
-  const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid]);
-  const resultAttrs = [
-    cf.resultAdditionRsid ? ` w:rsidR="${cf.resultAdditionRsid}"` : "",
-    cf.resultRunPropertiesRsid ? ` w:rsidRPr="${cf.resultRunPropertiesRsid}"` : "",
-  ].join("");
-  const resultRunWithAttrs = resultXml
-    .replace(`<w:r>${res}<`, `<w:r${resultAttrs}>${res}<`)
-    .replace(
-      `${textTag} xml:space="preserve">`,
-      `${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>`,
-    );
   return (
     `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
     instrXml +
-    resultRunWithAttrs +
+    separatorXml +
+    resultXml +
     `<w:r${runAttrs([cf.endAdditionRsid, cf.endRunPropertiesRsid])}>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
   );
 }
@@ -971,12 +968,12 @@ export function stringifyChildDispatch(
     const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
     if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
     if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
-    if (sf.cachedRuns !== undefined) {
-      return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
-    }
     if (sf.cachedInstructionText !== undefined) {
       const space = sf.cachedInstructionTextPreserveSpace ? ' xml:space="preserve"' : "";
-      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:instrText${space}>${escapeXml(sf.cachedInstructionText)}</w:instrText></w:r></w:fldSimple>`;
+      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r>${sf.cachedInstructionRPrXml ?? ""}<w:instrText${space}>${escapeXml(sf.cachedInstructionText)}</w:instrText></w:r></w:fldSimple>`;
+    }
+    if (sf.cachedRuns !== undefined) {
+      return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
     }
     if (sf.cachedValue !== undefined) {
       const space = sf.cachedValuePreserveSpace ? ' xml:space="preserve"' : "";

@@ -25,6 +25,7 @@ import {
   parseTableStyle,
   outlineDesc,
   stringifyLineProperties,
+  textListStyleDesc,
 } from "@office-open/core/drawing";
 import {
   attr,
@@ -326,7 +327,11 @@ function stringifyTxBody(cell: TableCellOptions, ctx: PptxWriteContext): string 
   const txParts: string[] = [];
 
   txParts.push(createBodyProperties({}));
-  txParts.push("<a:lstStyle/>");
+  txParts.push(
+    cell.listStyle
+      ? `<a:lstStyle>${textListStyleDesc.stringify(cell.listStyle, ctx) ?? ""}</a:lstStyle>`
+      : "<a:lstStyle/>",
+  );
 
   // Paragraphs — a:txBody requires at least one a:p, so an empty children
   // array (or paragraphs that stringify to nothing) falls back to a bare one
@@ -461,6 +466,16 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
   const txBody = findChild(tc, "a:txBody");
   if (txBody) {
     const paragraphs: ParagraphDescriptorOptions[] = [];
+    const listStyleEl = findChild(txBody, "a:lstStyle");
+    if (listStyleEl) {
+      const listStyle = textListStyleDesc.parse(listStyleEl, ctx);
+      if (
+        listStyle.defaultParagraph ||
+        listStyle.ext !== undefined ||
+        (listStyle.levels?.length ?? 0) > 0
+      )
+        result.listStyle = listStyle;
+    }
     for (const pEl of txBody.elements ?? []) {
       if (pEl.name !== "a:p") continue;
       const para = paragraphDesc.parse(pEl, ctx);

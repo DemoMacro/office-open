@@ -15,6 +15,8 @@ export interface SimpleFieldOptions {
   cachedInstructionText?: string;
   /** Source `xml:space="preserve"` marker on `cachedInstructionText`. */
   cachedInstructionTextPreserveSpace?: boolean;
+  /** Verbatim run properties on `cachedInstructionText` (round-trip only). */
+  cachedInstructionRPrXml?: string;
   /** Cached-value runs when the plain single-text-run template cannot express
    *  their run properties, identity attributes, or child sequence. */
   cachedRuns?: ParagraphChild[];

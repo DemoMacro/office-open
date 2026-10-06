@@ -14,7 +14,7 @@ const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/m
 const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
 function parseParagraphXml(inner: string, context: DocxReadContext = readCtx): ParagraphOptions {
-  const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
+  const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`, { nativeTypeAttributes: true });
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
   return parseParagraph(el, context);
@@ -94,6 +94,19 @@ describe("inline metadata parse", () => {
     const xml = stringifyParagraph(opts, writeCtx);
     expect(xml).toContain('<w:attr w:name="empty" w:val=""/>');
     expect(xml).toContain('<w:attr w:name="quoted" w:val="a&quot;b"/>');
+  });
+
+  it("preserves boolean lexical casing in smartTag attribute values", () => {
+    const opts = parseParagraphXml(
+      `<w:smartTag w:element="Date"><w:smartTagPr>` +
+        `<w:attr w:name="IsLunarDate" w:val="False"/>` +
+        `</w:smartTagPr><w:r><w:t>x</w:t></w:r></w:smartTag>`,
+    );
+    const st = findChildByKey(opts, "smartTag")!.smartTag as Record<string, unknown>;
+    expect(st.properties).toEqual([{ name: "IsLunarDate", val: "False" }]);
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:attr w:name="IsLunarDate" w:val="False"/>',
+    );
   });
 
   it("parses an inline customXml with element, uri, customXmlPr and children", () => {

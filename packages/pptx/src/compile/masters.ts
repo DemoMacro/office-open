@@ -16,6 +16,7 @@ import {
   replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
   replaceOleLinkPlaceholders,
+  replacePlaceholders,
   themeOverrideDesc,
 } from "@office-open/core";
 import type { PresentationPartOptions } from "@parts/presentation";
@@ -85,6 +86,33 @@ function bindThemeMedia(
     );
   }
   return { xml: replaceImagePlaceholders(themeXml, mediaData, imageOffset), relationships };
+}
+
+/** Wire embedded-OLE placeholders against the owning master/layout rels.
+ * Source ids stay verbatim when the same kind+target was captured, while new
+ * objects get the next available relationship id. */
+function wireEmbeddedOle(
+  xml: string,
+  rels: Relationships,
+  source: string,
+  passthroughRelationships: PresentationOptions["passthroughRelationships"],
+): string {
+  const fileNames = collectPlaceholderKeys(xml, "ole:");
+  if (fileNames.length === 0) return xml;
+  const replacements = new Map<string, string>();
+  for (const fileName of fileNames) {
+    const target = `../embeddings/${fileName}`;
+    const sourceRel = passthroughRelationships?.find(
+      (rel) =>
+        rel.source === source &&
+        rel.relationshipType === RELATIONSHIP_TYPES.oleObject &&
+        rel.target === target,
+    );
+    if (sourceRel) rels.claimSourceRel(sourceRel);
+    const referenceId = rels.idOf(RELATIONSHIP_TYPES.oleObject, target);
+    if (referenceId) replacements.set(`ole:${fileName}`, referenceId);
+  }
+  return replacements.size > 0 ? replacePlaceholders(xml, replacements) : xml;
 }
 
 /**
@@ -329,6 +357,12 @@ export function buildMasterMap(
       if (MEDIA_REL_KINDS.has(kind) && masterRels.hasRelationshipKind(kind)) continue;
       masterRels.claimSourceRel(rel);
     }
+    masterXml = wireEmbeddedOle(
+      masterXml,
+      masterRels,
+      `ppt/slideMasters/slideMaster${mi + 1}.xml`,
+      passthroughRelationships,
+    );
 
     masters.push({
       masterId: def.masterId,
@@ -556,6 +590,12 @@ export function mapMasterAndLayoutParts(
       if (layoutRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
       layoutRels.claimSourceRel(rel);
     }
+    replacedLayoutXml = wireEmbeddedOle(
+      replacedLayoutXml,
+      layoutRels,
+      `ppt/slideLayouts/slideLayout${li + 1}.xml`,
+      passthroughRelationships,
+    );
     if (layoutInfo.sourceOwnRels || layoutRels.relationshipCount > 0) {
       mapping[`SlideLayoutRels${li}`] = {
         data: XML_DECL + layoutRels.serialize(),

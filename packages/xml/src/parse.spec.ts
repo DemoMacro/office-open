@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { parse } from "../src/parse";
+import { attr } from "../src/utils";
 
 describe("parse", () => {
   it("parses a simple element", () => {
@@ -112,6 +113,14 @@ describe("parse", () => {
       { ignoreDeclaration: true, ignoreDoctype: true },
     );
     expect(document.elements?.[0]).toMatchObject({ name: "root" });
+  });
+});
+
+describe("native attribute parsing", () => {
+  it("preserves the source spelling of boolean attributes", () => {
+    const parsed = parse('<root flag="False"/>', { nativeTypeAttributes: true }).elements![0]!;
+    expect(parsed.attributes!.flag).toBe(false);
+    expect(attr(parsed, "flag")).toBe("False");
   });
 });
 

@@ -107,6 +107,25 @@ describe("run rsid round-trip", () => {
     );
   });
 
+  it("does not copy result-run rsids onto the field separator", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:hyperlink w:anchor="target">` +
+        '<w:r><w:rPr><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r w:rsidR="00112233"><w:rPr><w:webHidden/></w:rPr><w:instrText> PAGEREF </w:instrText></w:r>' +
+        '<w:r><w:rPr><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r w:rsidR="00445566"><w:rPr><w:webHidden/></w:rPr><w:t>7</w:t></w:r>' +
+        '<w:r><w:rPr><w:webHidden/></w:rPr><w:fldChar w:fldCharType="end"/></w:r>' +
+        "</w:hyperlink></w:p>",
+    );
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain(
+      '<w:r><w:rPr><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r>',
+    );
+    expect(xml).toContain(
+      '<w:r w:rsidR="00445566"><w:rPr><w:webHidden/></w:rPr><w:t>7</w:t></w:r>',
+    );
+  });
+
   it("preserves run identity on pure reference runs", () => {
     const opts = parseParagraphXml(
       `<w:p ${NS}><w:commentRangeStart w:id="7"/>` +
@@ -193,6 +212,21 @@ describe("run rsid round-trip", () => {
     });
     expect(stringifyParagraph(opts, writeCtx)).toContain(
       '<w:r><w:instrText xml:space="preserve">A</w:instrText></w:r>',
+    );
+  });
+
+  it("preserves run properties on a simple-field instruction-text result", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:fldSimple w:instr=" SEQ Appendix ">` +
+        "<w:r><w:rPr><w:noProof/></w:rPr><w:instrText>A</w:instrText></w:r>" +
+        "</w:fldSimple></w:p>",
+    );
+    expect(firstChild(opts).simpleField).toMatchObject({
+      cachedInstructionText: "A",
+      cachedInstructionRPrXml: "<w:rPr><w:noProof/></w:rPr>",
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      "<w:r><w:rPr><w:noProof/></w:rPr><w:instrText>A</w:instrText></w:r>",
     );
   });
 

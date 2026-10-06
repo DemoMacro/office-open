@@ -43,6 +43,10 @@ describe("bevelDesc", () => {
 });
 
 describe("shape3DDesc", () => {
+  it("round-trips an empty shape 3D element", () => {
+    expect(roundTrip(shape3DDesc, {})).toEqual({});
+  });
+
   it("round-trips basic 3D shape with bevels", () => {
     const opts: Shape3DOptions = {
       bevelT: { w: 76200, h: 76200, prst: "circle" },

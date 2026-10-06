@@ -25,6 +25,21 @@ function roundTrip(opts: ViewPropertiesOptions) {
 }
 
 describe("viewPropsDesc round-trip", () => {
+  it("round-trips explicit slide view toggles", () => {
+    const result = roundTrip({
+      slideView: {
+        snapToGrid: true,
+        snapToObjects: false,
+        showGuides: false,
+      },
+    });
+    expect(result.slideView).toMatchObject({
+      snapToGrid: true,
+      snapToObjects: false,
+      showGuides: false,
+    });
+  });
+
   it("round-trips lastView", () => {
     const opts: ViewPropertiesOptions = {
       lastView: "slideView",

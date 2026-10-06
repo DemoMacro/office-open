@@ -558,11 +558,15 @@ export function compileWorkbook(
     // plus the body part (chartUserShapes relationship, same directory).
     if (chartData.userShapes) {
       const rid = chartData.userShapes.relationshipId;
+      const userShapesPath = chartData.userShapes.path ?? `xl/charts/userShapes${i + 1}.xml`;
+      const userShapesTarget = userShapesPath.startsWith("xl/charts/")
+        ? userShapesPath.slice("xl/charts/".length)
+        : `../${userShapesPath.replace(/^xl\//, "")}`;
       mapping[`ChartUserShapes${i}`] = {
         data: XML_DECL + chartData.userShapes.xml,
-        path: `xl/charts/userShapes${i + 1}.xml`,
+        path: userShapesPath,
       };
-      chartRels.addRelationship(rid, CHART_USER_SHAPES_REL, `userShapes${i + 1}.xml`);
+      chartRels.addRelationship(rid, CHART_USER_SHAPES_REL, userShapesTarget);
     }
     if (chartOptions?.externalLink && chartOptions.externalLinkPath) {
       const externalLinkPath = chartOptions.externalLinkPath;
@@ -699,7 +703,11 @@ export function compileWorkbook(
   );
   // Guard: drop passthrough rels whose target part never made it into the
   // package (hand-authored input) — Office refuses to open dangling rels.
-  dropDanglingPassthroughRels(files, options.passthroughRelationships);
+  dropDanglingPassthroughRels(
+    files,
+    options.passthroughRelationships,
+    (rel) => rel.source === "xl/workbook.xml" && rel.relationshipType.endsWith("/calcChain"),
+  );
   return files;
 }
 
@@ -780,6 +788,9 @@ function compileWorksheetPart(
     groupOpts.length > 0 ||
     contentPartOpts.length > 0;
   const hasExternalHyperlinks = hlOpts.some((h) => h.url !== undefined);
+  const hasDataConsolidateRelationships = wsOpts.dataConsolidate?.refs?.some(
+    (ref) => typeof ref !== "string" && (ref.rId !== undefined || ref.target !== undefined),
+  );
   const commentOpts = wsOpts.comments ?? [];
   const hasComments = commentOpts.length > 0;
   const pivotOpts = wsOpts.pivotTables ?? [];
@@ -807,10 +818,14 @@ function compileWorksheetPart(
     hasQueryTables ||
     singleXmlCellOpts.length > 0 ||
     bgImg ||
+    hasDataConsolidateRelationships ||
     sourceWorksheetRels.length > 0
   ) {
     wsRels = new Relationships();
-    for (const rel of sourceWorksheetRels) wsRels.claimSourceRel(rel);
+    for (const rel of sourceWorksheetRels) {
+      if (rel.relationshipType.endsWith("/externalLinkPath")) continue;
+      wsRels.claimSourceRel(rel);
+    }
   }
 
   const addWorksheetRelationship = (
@@ -884,6 +899,36 @@ function compileWorksheetPart(
       ),
     };
   }
+  if (hasDataConsolidateRelationships && wsRels) {
+    const dataConsolidate = {
+      ...wsOpts.dataConsolidate!,
+      refs: wsOpts.dataConsolidate!.refs?.map((input) => {
+        if (typeof input === "string") return input;
+        if (input.target === undefined || input.rId === undefined) return input;
+        let rId = wsRels.idOf(RELATIONSHIP_TYPES.externalLinkPath, input.target);
+        if (rId === undefined) {
+          const preferred = /^rId(\d+)$/.exec(input.rId)?.[1];
+          if (preferred && !wsRels.hasId(input.rId)) {
+            wsRels.addRelationship(
+              Number(preferred),
+              RELATIONSHIP_TYPES.externalLinkPath,
+              input.target,
+              TargetModeType.EXTERNAL,
+            );
+            rId = input.rId;
+          } else {
+            rId = `rId${wsRels.add(
+              RELATIONSHIP_TYPES.externalLinkPath,
+              input.target,
+              TargetModeType.EXTERNAL,
+            )}`;
+          }
+        }
+        return { ...input, rId };
+      }),
+    };
+    xmlOpts = { ...wsOpts, dataConsolidate };
+  }
   if (wsRels && (passthroughRelationships?.length ?? 0) > 0) {
     const oleObjects = wsOpts.oleObjects?.map((ole) => ({
       ...ole,
@@ -924,7 +969,7 @@ function compileWorksheetPart(
       rId: resolvePassthroughRid("/customXml", cp.rId),
     }));
     xmlOpts = {
-      ...wsOpts,
+      ...xmlOpts,
       ...(oleObjects ? { oleObjects } : {}),
       ...(controls ? { controls } : {}),
       ...(pageSetup !== wsOpts.pageSetup ? { pageSetup } : {}),
@@ -1244,7 +1289,12 @@ function compileChartsheets(
       ctx.media,
       csChartRels,
     );
-    const csUserShapes = chartDef.userShapes ? buildUserShapesData(chartDef.userShapes) : undefined;
+    const csUserShapes = chartDef.userShapes
+      ? {
+          ...buildUserShapesData(chartDef.userShapes),
+          ...(chartDef.userShapes.path ? { path: chartDef.userShapes.path } : {}),
+        }
+      : undefined;
     ctx.charts.addChart(csChartKey, {
       key: csChartKey,
       chartSpaceXml: csChartXml,

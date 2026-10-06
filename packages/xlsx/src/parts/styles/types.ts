@@ -10,10 +10,12 @@ import type { ArgbHexColor, HexColor } from "@office-open/core";
 
 // ── Sub-style option interfaces ──
 
+export type FontUnderline = boolean | "single" | "double" | "singleAccounting" | "doubleAccounting";
+
 export interface FontOptions {
   bold?: boolean;
   italic?: boolean;
-  underline?: boolean;
+  underline?: FontUnderline;
   strike?: boolean;
   size?: number;
   color?: HexColor;
