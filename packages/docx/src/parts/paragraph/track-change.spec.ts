@@ -128,4 +128,14 @@ describe("track-change round-trip", () => {
     expect(xml).toContain("<w:t");
     expect(xml).not.toContain("delText");
   });
+
+  it("keeps run identity attributes on tracked comment references", () => {
+    const xml = roundTrip(
+      '<w:del w:id="1" w:author="Alice" w:date="2020-01-01T00:00:00Z">' +
+        '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD" w:rsidDel="DDEEFF00">' +
+        '<w:rPr><w:rStyle w:val="CommentReference"/></w:rPr>' +
+        '<w:commentReference w:id="7"/></w:r></w:del>',
+    );
+    expect(xml).toContain('<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD" w:rsidDel="DDEEFF00">');
+  });
 });

@@ -13,7 +13,7 @@ import { stripColorHashPrefix } from "../../util/values";
  *
  * @module
  */
-import type { UniversalMeasure } from "../../util/values";
+import type { Percentage, UniversalMeasure } from "../../util/values";
 import { createSolidFill } from "../color/solid-fill";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createGradientFill } from "../fill/gradient-fill";
@@ -151,7 +151,8 @@ export interface OutlineProperties {
   /** Line join style */
   join?: LineJoin;
   /** Miter limit (only when join is MITER) */
-  miterLimit?: number;
+  /** Miter limit as integer percent (`800` = 800%) or verbatim `"800%"`. */
+  miterLimit?: number | Percentage;
   /** Line start arrow/head */
   headEnd?: LineEndOptions;
   /** Line end arrow/tail */
@@ -266,7 +267,9 @@ export const createOutline = (options: OutlineOptions): string => {
   // Join
   if (options.join !== undefined) {
     if (options.join === "miter" && options.miterLimit !== undefined) {
-      children.push(`<a:miter lim="${options.miterLimit}"/>`);
+      const limit =
+        typeof options.miterLimit === "string" ? options.miterLimit : `${options.miterLimit}%`;
+      children.push(`<a:miter lim="${limit}"/>`);
     } else {
       children.push(`<a:${options.join}/>`);
     }

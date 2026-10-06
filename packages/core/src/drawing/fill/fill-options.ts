@@ -1,7 +1,7 @@
 import { toUint8Array } from "../../util/data-type";
 import type { DataType } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
-import type { HexColor } from "../../util/values";
+import type { HexColor, Percentage } from "../../util/values";
 import type { BlipCompression } from "../blip/blip";
 import type { BlipEffectsOptions } from "../blip/blip-effects";
 import type { SourceRectangleOptions } from "../blip/source-rectangle";
@@ -16,7 +16,8 @@ import type { PresetPattern } from "./pattern-fill";
  * Position is 0-100 (percentage), color is a hex string or SolidFillOptions.
  */
 export interface GradientStopOptions {
-  position: number;
+  /** Stop position as integer percent (`50` = 50%) or verbatim `"50%"`. */
+  position: number | Percentage;
   color: HexColor | SolidFillOptions;
 }
 

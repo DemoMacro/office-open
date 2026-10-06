@@ -30,6 +30,15 @@ const readCtx = (
   }) as unknown as ReadContext;
 
 describe("objectDesc.parse", () => {
+  it("captures the Word 2010 anchor extension id", () => {
+    const doc = parseXml(
+      `<w:object ${NS} xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" ` +
+        `w14:anchorId="291A48E0"><v:shape/></w:object>`,
+    );
+    const opts = objectDesc.parse(doc.elements![0]!, readCtx({}));
+    expect(opts.w14AnchorId).toBe("291A48E0");
+  });
+
   it("captures the v:shapetype preamble structurally", () => {
     const el = parseObjectXml(
       `<v:shapetype id="_x0000_t75" coordsize="21600,21600" o:spt="75" path="m@4@5l@4@11@9@11@9@5xe">` +
@@ -126,6 +135,11 @@ describe("objectDesc.stringify", () => {
     expect(stIdx).toBeGreaterThanOrEqual(0);
     expect(stIdx).toBeLessThan(shapeIdx);
     expect(xml).toContain('o:spt="75"');
+  });
+
+  it("emits the Word 2010 anchor extension id", () => {
+    const xml = objectDesc.stringify({ w14AnchorId: "291A48E0" }, writeCtx)!;
+    expect(xml).toContain('w14:anchorId="291A48E0"');
   });
 });
 

@@ -69,6 +69,7 @@ import {
   commentsExtendedDesc,
   commentsExtensibleDesc,
 } from "./parts";
+import { Numbering } from "./parts/numbering";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -90,6 +91,15 @@ function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships)
     ids.set(fileName, id);
     return id;
   });
+}
+
+function glossarySourceMediaRids(ctx: DocxWriteContext, partPath: string): Map<string, string> {
+  const sourceRids = new Map<string, string>();
+  for (const rel of ctx._options.passthroughRelationships ?? []) {
+    if (rel.source !== partPath || !rel.target.startsWith("../media/")) continue;
+    sourceRids.set(rel.target.slice("../media/".length), rel.rId);
+  }
+  return sourceRids;
 }
 
 function withThemeRelationships(ctx: DocxWriteContext, rels: Relationships): WriteContext {
@@ -263,6 +273,15 @@ export function compileDocument(
                   contentType:
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
                 },
+                ...(ctx.glossaryOptions.numberingPartName
+                  ? [
+                      {
+                        path: `word/${ctx.glossaryOptions.numberingPartName}`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
+                      },
+                    ]
+                  : []),
               ]
             : []),
         ],
@@ -273,7 +292,14 @@ export function compileDocument(
 
   // Guard: drop passthrough rels whose target part never made it into the
   // package (hand-authored input) — Office refuses to open dangling rels.
-  dropDanglingPassthroughRels(files, ctx._options.passthroughRelationships);
+  dropDanglingPassthroughRels(
+    files,
+    ctx._options.passthroughRelationships,
+    (relationship) =>
+      relationship.source === "" &&
+      (relationship.relationshipType.includes("/core-properties") ||
+        relationship.relationshipType.includes("/extended-properties")),
+  );
   useStrictRelationshipTypes(files, documentNamespaceDialect(ctx));
 
   return files;
@@ -509,7 +535,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       ? {
           MailMergeRecipients: mailMergeRecipients.map((part, index) => ({
             data: XML_DECL + (mailMergeRecipientsDesc.stringify(part, ctx) ?? ""),
-            path: `word/recipients${index + 1}.xml`,
+            path: `word/${part.partName ?? `recipients${index + 1}.xml`}`,
           })),
         }
       : {}),
@@ -536,7 +562,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   rels.addRelationship(
                     Number(id),
                     RELATIONSHIP_TYPES.recipientData,
-                    `recipients${index + 1}.xml`,
+                    mailMergeRecipients[index]?.partName ?? `recipients${index + 1}.xml`,
                   );
                 }
               });
@@ -558,6 +584,17 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
               return replaceNumberingPlaceholders(xmlStyles, ctx.numbering.concreteNumbering);
             })(),
             path: "word/styles.xml",
+          },
+        }
+      : {}),
+    ...(ctx._options.stylesWithEffects
+      ? {
+          StylesWithEffects: {
+            data: (() => {
+              const xmlStyles = ctx.stylesWithEffects!.serialize(documentNamespaceDialect(ctx));
+              return replaceNumberingPlaceholders(xmlStyles, ctx.numbering.concreteNumbering);
+            })(),
+            path: "word/stylesWithEffects.xml",
           },
         }
       : {}),
@@ -591,11 +628,50 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       ? {
           Glossary: {
             data: (() => {
-              const glossaryCtx = mkCtx(undefined);
-              return XML_DECL + (glossaryDesc.stringify(ctx.glossaryOptions!, glossaryCtx) ?? "");
+              const previousNumbering = ctx.numbering;
+              const glossaryNumbering = ctx.glossaryOptions!.numbering
+                ? new Numbering(ctx.glossaryOptions!.numbering, false)
+                : undefined;
+              if (glossaryNumbering) ctx.numbering = glossaryNumbering;
+              try {
+                const glossaryCtx = mkCtx(undefined);
+                const glossaryXml = glossaryDesc.stringify(ctx.glossaryOptions!, glossaryCtx) ?? "";
+                const glossaryPartPath = `word/${
+                  ctx.glossaryOptions!.partName ?? "glossary/document.xml"
+                }`;
+                const resolvedGlossary = findAndReplaceImagePlaceholders(
+                  glossaryXml,
+                  ctx.media.array,
+                  1,
+                  "rId",
+                  glossarySourceMediaRids(ctx, glossaryPartPath),
+                );
+                return (
+                  XML_DECL +
+                  (glossaryNumbering
+                    ? replaceNumberingPlaceholders(
+                        resolvedGlossary.xml,
+                        glossaryNumbering.concreteNumbering,
+                      )
+                    : resolvedGlossary.xml)
+                );
+              } finally {
+                ctx.numbering = previousNumbering;
+              }
             })(),
             path: `word/${ctx.glossaryOptions!.partName ?? "glossary/document.xml"}`,
           },
+          ...(ctx.glossaryOptions!.numbering && ctx.glossaryOptions!.numberingPartName
+            ? {
+                GlossaryNumbering: {
+                  data: (() => {
+                    const glossaryNumbering = new Numbering(ctx.glossaryOptions!.numbering!, false);
+                    return XML_DECL + glossaryNumbering.serialize(ctx);
+                  })(),
+                  path: `word/${ctx.glossaryOptions!.numberingPartName}`,
+                },
+              }
+            : {}),
         }
       : {}),
     ...(ctx.webSettings

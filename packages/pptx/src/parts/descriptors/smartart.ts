@@ -165,7 +165,12 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           if (dataEl) {
             parseSmartArtDataXml(dataEl, result);
           }
-          const raw = readRawParts(dataPath, _ctx);
+          const slideRels = (_ctx as { slideRelationships?: ReadonlyMap<string, string> })
+            .slideRelationships;
+          const drawingPaths = [...(slideRels?.values() ?? [])].filter((path) =>
+            path.startsWith("ppt/diagrams/drawing"),
+          );
+          const raw = readRawParts(dataPath, _ctx, drawingPaths);
           if (raw) result.raw = raw;
         }
       }
@@ -231,6 +236,7 @@ function readRawParts(
     getPart(path: string): Element | undefined;
     getRaw(path: string): Uint8Array | undefined;
   },
+  drawingPaths: readonly string[],
 ): SmartArtRawParts | undefined {
   const data = ctx.getRaw(dataPath);
   if (!data) return undefined;
@@ -254,9 +260,20 @@ function readRawParts(
     }
     if (media.size > 0) raw.media = [...media.values()];
   }
-  const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
-  if (raw.drawing === undefined && index !== undefined) {
-    raw.drawing = ctx.getRaw(`ppt/diagrams/drawing${index}.xml`);
+  const directDrawingPath = drawingPaths.find((path) => ctx.getRaw(path) !== undefined);
+  const dataRelsDrawingPath = (relsEl?.elements ?? [])
+    .filter(
+      (rel) => rel.name === "Relationship" && (attr(rel, "Type") ?? "").endsWith("/diagramDrawing"),
+    )
+    .map((rel) => resolveRelationshipTarget(dataPath, attr(rel, "Target") ?? ""))
+    .find((path) => ctx.getRaw(path) !== undefined);
+  const drawingPath = directDrawingPath ?? dataRelsDrawingPath;
+  if (drawingPath) {
+    raw.drawing = ctx.getRaw(drawingPath);
+    raw.drawingFileName = drawingPath.split("/").pop();
+  } else {
+    const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
+    if (index !== undefined) raw.drawing = ctx.getRaw(`ppt/diagrams/drawing${index}.xml`);
   }
   return raw;
 }

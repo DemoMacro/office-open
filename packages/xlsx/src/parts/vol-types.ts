@@ -21,7 +21,6 @@ const SML_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main";
 
 /** Emit the complete `<volTypes>` root element for xl/volTypes.xml. */
 export function buildVolTypesXml(volTypes: readonly VolTypeOptions[], count?: number): string {
-  if (volTypes.length === 0) return "";
   const parts: string[] = [
     `<volTypes xmlns="${SML_NS}"${count !== undefined ? ` count="${count}"` : ""}>`,
   ];

@@ -63,6 +63,8 @@ export interface PptxPartRefs {
   commentAuthors?: string;
   /** ppt/tags/tagsN.xml */
   tags: string[];
+  /** ppt/customXml/itemN.xml (from presentation rels) */
+  customXml: string[];
   /** ppt/comments/commentN.xml (from slide rels) */
   comments: string[];
   /** ppt/charts/chartN.xml (from slide rels) */
@@ -112,6 +114,11 @@ function sortByNumber(paths: string[]): string[] {
 
 function xmlKeys(keys: string[]): string[] {
   return keys.filter((k) => k.endsWith(".xml"));
+}
+
+function xmlBody(data: Uint8Array | undefined): string {
+  if (!data) return "";
+  return new TextDecoder().decode(data).replace(/<\?xml[^?]*\?>\s*/u, "");
 }
 
 function parseRootRels(doc: ParsedArchive): {
@@ -223,6 +230,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   let tableStyles: string | undefined;
   let commentAuthors: string | undefined;
   const tags: string[] = [];
+  const customXml: string[] = [];
   const slidePathsByRId = new Map<string, string>();
   const slideMasterPathsByRId = new Map<string, string>();
 
@@ -260,6 +268,8 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
         commentAuthors = path;
       } else if (relationshipKind === "tags") {
         tags.push(path);
+      } else if (relationshipKind === "customXml") {
+        customXml.push(path);
       }
     }
   }
@@ -299,6 +309,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   sortByNumber(themes);
   sortByNumber(notesMasters);
   sortByNumber(handoutMasters);
+  sortByNumber(customXml);
 
   const slideLayouts = sortByNumber(xmlKeys(doc.keys("ppt/slideLayouts/")));
   const notesSlides = sortByNumber(xmlKeys(doc.keys("ppt/notesSlides/")));
@@ -310,6 +321,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     handoutMaster: handoutMasters.length > 0,
     commentAuthors,
     tags,
+    customXml,
     comments: [],
     charts: [],
     diagramData: [],
@@ -623,11 +635,35 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (presPart.ext) opts.ext = presPart.ext;
   }
 
+  if (pptx.partRefs.customXml.length > 0) {
+    const items: NonNullable<PresentationOptions["customXml"]> = [];
+    for (const contentPath of pptx.partRefs.customXml) {
+      const contentEl = pptx.doc.get(contentPath);
+      if (!contentEl) continue;
+      const relsEl = pptx.doc.get(partPathToRelsPath(contentPath));
+      const propertiesRel = relsEl?.elements?.find(
+        (rel) =>
+          rel.name === "Relationship" && (attr(rel, "Type") ?? "").endsWith("/customXmlProps"),
+      );
+      const propertiesPath = propertiesRel
+        ? resolveRelationshipTarget(contentPath, attr(propertiesRel, "Target") ?? "")
+        : undefined;
+      const propertiesEl = propertiesPath ? pptx.doc.get(propertiesPath) : undefined;
+      items.push({
+        content: xmlBody(pptx.doc.getRaw(contentPath)),
+        contentPath,
+        ...(propertiesEl && propertiesPath
+          ? { properties: xmlBody(pptx.doc.getRaw(propertiesPath)), propertiesPath }
+          : {}),
+      });
+    }
+    if (items.length > 0) opts.customXml = items;
+  }
+
   if (pptx.partRefs.tags[0]) {
     const tagsEl = pptx.doc.get(pptx.partRefs.tags[0]);
     if (tagsEl) {
-      const parsedTags = tagListDesc.parse(tagsEl, bareReadCtx);
-      if (parsedTags.length > 0) opts.tags = parsedTags;
+      opts.tags = tagListDesc.parse(tagsEl, bareReadCtx);
     }
   }
 
@@ -994,6 +1030,41 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   for (const overridePath of layoutThemeOverridePaths.values()) {
     rebuilt.push(overridePath);
     rebuilt.push(partPathToRelsPath(overridePath));
+  }
+  for (const themePath of notesMasterThemePaths.values()) {
+    rebuilt.push(themePath);
+    rebuilt.push(partPathToRelsPath(themePath));
+  }
+  for (const themePath of handoutMasterThemePaths.values()) {
+    rebuilt.push(themePath);
+    rebuilt.push(partPathToRelsPath(themePath));
+  }
+  for (const notesMasterPath of pptx.partRefs.notesMasters) {
+    rebuilt.push(notesMasterPath);
+    rebuilt.push(partPathToRelsPath(notesMasterPath));
+  }
+  for (const handoutMasterPath of pptx.partRefs.handoutMasters) {
+    rebuilt.push(handoutMasterPath);
+    rebuilt.push(partPathToRelsPath(handoutMasterPath));
+  }
+  for (const notesSlidePath of pptx.notesSlides) {
+    rebuilt.push(notesSlidePath);
+    rebuilt.push(partPathToRelsPath(notesSlidePath));
+  }
+  for (const item of opts.customXml ?? []) {
+    if (item.contentPath) rebuilt.push(item.contentPath);
+    if (item.contentPath) rebuilt.push(partPathToRelsPath(item.contentPath));
+    if (item.propertiesPath) {
+      rebuilt.push(item.propertiesPath);
+      rebuilt.push(partPathToRelsPath(item.propertiesPath));
+    }
+  }
+  if (pptx.partRefs.diagramData.length > 0) {
+    for (const diagramPath of xmlKeys(pptx.doc.keys("ppt/diagrams/"))) {
+      if (diagramPath.includes("/drawing")) continue;
+      rebuilt.push(diagramPath);
+      rebuilt.push(partPathToRelsPath(diagramPath));
+    }
   }
   if (pptx.presProps) rebuilt.push(pptx.presProps);
   if (pptx.viewProps) rebuilt.push(pptx.viewProps);

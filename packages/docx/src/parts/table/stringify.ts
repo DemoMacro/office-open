@@ -16,7 +16,6 @@ import {
 } from "@office-open/core";
 import { xsdJcAlignment } from "@office-open/core";
 import { xsdTableWidthType } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
 import { attrsRaw, escapeXml } from "@office-open/xml";
 import type { TableCellSpacingProperties } from "@parts/table/table-cell-spacing";
 import type { TableCellBordersOptions } from "@parts/table/table-cell/table-cell-components";
@@ -49,19 +48,15 @@ import { borderStr, onOff, shadingStr } from "../paragraph/stringify";
 
 // ── Table width string ──
 
-// Normalize a CT_TblWidth @w value to a bare integer: pct percentage (50 / "50%") →
-// fiftieths, dxa length (twip number | UniversalMeasure) → twips. The emitted @w is
-// always an integer — never "N%" or a measure string, which are different XSD branches
-// (ST_Percentage / ST_UniversalMeasure) that Word treats as auto on tblW. A stray "%"
-// under dxa is a meaningless cross-branch value, passed through verbatim for parity.
+// Percentages normalize to fiftieths; dxa twips pass through numbers, while a
+// source UniversalMeasure literal is valid ST_TwipsMeasure and round-trips verbatim.
 function tableWidthValue(
   size: TableWidthProperties["size"],
   type: string | undefined,
 ): number | string {
   if (type === WidthType.PERCENTAGE) return widthPctToFiftieths(size);
   if (typeof size === "number") return size;
-  if (size.endsWith("%")) return size;
-  return convertToTwip(size as UniversalMeasure);
+  return size;
 }
 
 function tableWidthStr(name: string, opts: TableWidthProperties): string {
@@ -402,16 +397,16 @@ function stringifyTableRowPropertiesInner(
     parts.push(onOff("w:cantSplit", options.cantSplit));
   }
 
-  if (options.tableHeader !== undefined) {
-    parts.push(onOff("w:tblHeader", options.tableHeader));
-  }
-
   if (options.height) {
     const a = attrsRaw({
       "w:val": convertToTwip(options.height.value),
       "w:hRule": options.height.rule,
     });
     parts.push(`<w:trHeight${a}/>`);
+  }
+
+  if (options.tableHeader !== undefined) {
+    parts.push(onOff("w:tblHeader", options.tableHeader));
   }
 
   if (options.cellSpacing) {

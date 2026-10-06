@@ -454,11 +454,11 @@ export const sdtBlockDesc: CustomDescriptor<SdtBlockOptions, BodyContext> = {
     }
 
     // sdtContent — checkbox renders its current state symbol; otherwise serialize children
-    if (opts.properties.checkbox) {
+    if (opts.properties.checkbox && !opts.children?.length) {
       parts.push(
         `<w:sdtContent><w:p>${checkboxSymbolRunInner(opts.properties.checkbox)}</w:p></w:sdtContent>`,
       );
-    } else if (opts.children && opts.children.length > 0) {
+    } else if (opts.children?.length) {
       const contentParts: string[] = [];
       for (const child of opts.children) {
         contentParts.push(ctx.stringifyChild(child));

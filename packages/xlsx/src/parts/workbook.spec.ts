@@ -66,7 +66,9 @@ describe("workbookDesc round-trip", () => {
       '<workbook><fileVersion/><bookViews/><sheets><sheet name="A" tabId="1" r:id="rId1"/></sheets>' +
       '<workbookPr/><webPublishing codePage="1252"/><fileRecoveryPr autoRecover="1"/><calcPr calcId="1"/></workbook>';
     const doc = parseXml(xml);
-    const result = workbookDesc.parse(doc.elements?.[0]!, readCtx);
+    const workbook = doc.elements?.[0];
+    if (!workbook) throw new Error("missing workbook root");
+    const result = workbookDesc.parse(workbook, readCtx);
     expect(result.legacyChildOrder).toBe(true);
     const output = workbookDesc.stringify(result, writeCtx)!;
     expect(output.indexOf("<bookViews")).toBeLessThan(output.indexOf("<workbookPr"));

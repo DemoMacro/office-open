@@ -5,6 +5,7 @@ import {
   decodeUriPath,
   isEncryptedContainer,
   opaquePassthroughPolicy,
+  partPathToRelsPath,
   resolveRelationshipTarget,
   toUint8Array,
   toUint8ArrayAsync,
@@ -146,6 +147,8 @@ export interface DocxDocument {
   background?: Element;
   /** word/styles.xml */
   styles?: Element;
+  /** word/stylesWithEffects.xml */
+  stylesWithEffects?: Element;
   /** word/numbering.xml */
   numbering?: Element;
   /** word/settings.xml */
@@ -161,6 +164,12 @@ export interface DocxDocument {
   appProps?: string;
   /** docProps/custom.xml */
   customProps?: string;
+  rootRelationships: {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }[];
   /** [Content_Types].xml */
   contentTypes?: Element;
 }
@@ -355,13 +364,25 @@ function parseRootRels(doc: ParsedArchive): {
   coreProps?: string;
   appProps?: string;
   customProps?: string;
+  relationships: {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }[];
 } {
   const relsEl = doc.get("_rels/.rels");
-  if (!relsEl) return {};
+  if (!relsEl) return { relationships: [] };
 
   let coreProps: string | undefined;
   let appProps: string | undefined;
   let customProps: string | undefined;
+  const capturedRelationships: {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }[] = [];
 
   const relationships = (relsEl.elements ?? []).filter((child) => {
     if (child.name !== "Relationship") return true;
@@ -375,22 +396,26 @@ function parseRootRels(doc: ParsedArchive): {
     const isCustom = relType.includes("/customproperties");
     if (!isCore && !isApp && !isCustom) return true;
 
-    if (attr(child, "TargetMode")?.toLowerCase() === "external") return true;
+    const targetMode =
+      attr(child, "TargetMode")?.toLowerCase() === "external" ? "External" : undefined;
+    if (targetMode) return true;
     if (isCustom) {
       customProps = path;
       return true;
     }
-    const decodedPath = decodeUriPath(path);
-    // Match the Content Types cleanup: metadata declarations without their
-    // metadata part describe a damaged source, not retained package state.
-    if (!(doc.get(path) ?? doc.get(decodedPath))) return false;
     if (isCore) coreProps = path;
     else appProps = path;
+    capturedRelationships.push({
+      relationshipType: type,
+      target,
+      rId: attr(child, "Id") ?? "",
+      targetMode,
+    });
     return true;
   });
   relsEl.elements = relationships;
 
-  return { coreProps, appProps, customProps };
+  return { coreProps, appProps, customProps, relationships: capturedRelationships };
 }
 
 /**
@@ -538,13 +563,19 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
           .map((e) => [attr(e, "Id"), e]),
       );
       const recipients = recipientRids
-        .map((rid) => {
+        .map((rid, index) => {
           const rel = relByRid.get(rid);
           const target = rel ? attr(rel, "Target") : undefined;
           if (!target) return undefined;
           const path = resolveRelationshipTarget("word/settings.xml", target);
           const root = docx.doc.get(path);
-          return root ? mailMergeRecipientsDesc.parse(root, ctx) : undefined;
+          if (!root) return undefined;
+          const parsed = mailMergeRecipientsDesc.parse(root, ctx);
+          const relativePath = path.startsWith("word/") ? path.slice("word/".length) : undefined;
+          if (relativePath && relativePath !== `recipients${index + 1}.xml`) {
+            parsed.partName = relativePath;
+          }
+          return parsed;
         })
         .filter((part) => part !== undefined);
       if (recipients.length > 0) opts.mailMergeRecipients = recipients;
@@ -677,6 +708,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     if (styleOpts) opts.styles = styleOpts;
   }
 
+  if (docx.stylesWithEffects) {
+    const styleOpts = parseStyleDefinitions(docx.stylesWithEffects, parseParagraphProperties, ctx);
+    if (styleOpts) opts.stylesWithEffects = styleOpts;
+  }
+
   // Numbering definitions
   if (docx.numbering) {
     // withPart so picture bullets resolve their imagedata r:id against
@@ -713,10 +749,38 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.partRefs.glossary) {
     const glossaryEl = docx.doc.get(docx.partRefs.glossary);
     if (glossaryEl) {
-      const glossaryResult = ctx.withPart(docx.partRefs.glossary, () =>
-        glossaryDesc.parse(glossaryEl, ctx),
+      const glossaryRels = docx.doc.get(partPathToRelsPath(docx.partRefs.glossary));
+      const numberingRel = glossaryRels?.elements?.find(
+        (child) =>
+          child.name === "Relationship" && (attr(child, "Type") ?? "").includes("/numbering"),
       );
+      const numberingTarget = numberingRel ? attr(numberingRel, "Target") : undefined;
+      const numberingPath = numberingTarget
+        ? resolveRelationshipTarget(docx.partRefs.glossary, numberingTarget)
+        : undefined;
+      const numberingEl = numberingPath ? docx.doc.get(numberingPath) : undefined;
+      const previousNumberingCache = ctx.numberingCache;
+      const previousNumIdCache = ctx.numIdCache;
+      if (numberingEl) {
+        ctx.numberingCache = buildNumberingCache(numberingEl);
+        ctx.numIdCache = buildNumIdCache(numberingEl);
+      }
+      let glossaryResult;
+      try {
+        glossaryResult = ctx.withPart(docx.partRefs.glossary, () =>
+          glossaryDesc.parse(glossaryEl, ctx),
+        );
+      } finally {
+        ctx.numberingCache = previousNumberingCache;
+        ctx.numIdCache = previousNumIdCache;
+      }
       opts.glossary = glossaryResult;
+      if (opts.glossary && numberingEl && numberingPath?.startsWith("word/")) {
+        opts.glossary.numbering = ctx.withPart(numberingPath, () =>
+          parseNumberingDefinitions(numberingEl, parseParagraphProperties, ctx),
+        ) ?? { abstractNumberings: [] };
+        opts.glossary.numberingPartName = numberingPath.slice("word/".length);
+      }
       if (opts.glossary && docx.partRefs.glossary.startsWith("word/")) {
         opts.glossary.partName = docx.partRefs.glossary.slice("word/".length);
       }
@@ -760,6 +824,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.customProps) rebuilt.push(docx.customProps);
   if (docx.settings) rebuilt.push("word/settings.xml");
   if (docx.styles) rebuilt.push("word/styles.xml");
+  if (docx.stylesWithEffects) rebuilt.push("word/stylesWithEffects.xml");
   if (docx.numbering) rebuilt.push("word/numbering.xml");
   if (docx.fontTable) rebuilt.push("word/fontTable.xml");
   if (docx.webSettings) rebuilt.push("word/webSettings.xml");
@@ -769,8 +834,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   }
   if (opts.mailMergeRecipients?.length) {
     rebuilt.push("word/_rels/settings.xml.rels");
-    for (let i = 0; i < opts.mailMergeRecipients.length; i++) {
-      rebuilt.push(`word/recipients${i + 1}.xml`);
+    for (const [i, recipient] of opts.mailMergeRecipients.entries()) {
+      rebuilt.push(`word/${recipient.partName ?? `recipients${i + 1}.xml`}`);
     }
   }
   for (const section of opts.sections ?? []) {
@@ -864,6 +929,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   }
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
+  if (docx.rootRelationships.length > 0)
+    opts.passthroughRelationships = [
+      ...(opts.passthroughRelationships ?? []),
+      ...docx.rootRelationships.map((relationship) => ({ source: "", ...relationship })),
+    ];
 
   return opts as DocumentOptions;
 }
@@ -881,13 +951,14 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
   const background = documentEl.elements?.find((e) => e.name === "w:background");
 
   const styles = doc.get("word/styles.xml");
+  const stylesWithEffects = doc.get("word/stylesWithEffects.xml");
   const numbering = doc.get("word/numbering.xml");
   const settings = doc.get("word/settings.xml");
   const fontTable = doc.get("word/fontTable.xml");
   const webSettings = doc.get("word/webSettings.xml");
 
   const partRefs = parseDocPartRefs(doc);
-  const { coreProps, appProps, customProps } = parseRootRels(doc);
+  const { coreProps, appProps, customProps, relationships: rootRelationships } = parseRootRels(doc);
 
   const contentTypes = doc.get("[Content_Types].xml");
 
@@ -897,6 +968,7 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
     body,
     background,
     styles,
+    stylesWithEffects,
     numbering,
     settings,
     fontTable,
@@ -905,6 +977,7 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
     coreProps,
     appProps,
     customProps,
+    rootRelationships,
     contentTypes,
   };
 }

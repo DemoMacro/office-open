@@ -49,7 +49,9 @@ describe("volTypes part", () => {
     expect(result[0]?.mains?.[0]?.topics?.[0]?.valueType).toBeUndefined();
   });
 
-  it("returns empty for an empty collection", () => {
-    expect(buildVolTypesXml([])).toBe("");
+  it("returns an empty container for an empty collection", () => {
+    expect(buildVolTypesXml([])).toBe(
+      '<volTypes xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"></volTypes>',
+    );
   });
 });

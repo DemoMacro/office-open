@@ -10,17 +10,26 @@
  */
 
 import { emitAngle, emitPercent } from "../../util/converters";
+import type { Percentage } from "../../util/values";
 
 /**
  * Options for color transforms. Percent fields take integer percent (`40` =
  * 40%), angle fields (`hue`/`hueOff`) take degrees; the library applies the
  * XSD scaling. Booleans emit value-less switch elements.
  */
+/** Integer percent (`50` = 50%) or a source ST_Percentage literal (`"50%"`). */
+type TransformPercent = number | Percentage;
+
+/**
+ * Options for color transforms. Percent fields accept integer percent (`40` =
+ * 40%) or a verbatim percent literal; angle fields take degrees. Booleans emit
+ * value-less switch elements.
+ */
 export interface ColorTransformOptions {
   /** Tint: moves color toward white (0-100, where 100 = full white) */
-  tint?: number;
+  tint?: TransformPercent;
   /** Shade: moves color toward black (0-100, where 100 = full black) */
-  shade?: number;
+  shade?: TransformPercent;
   /** Complement: inverts the color (no value) */
   comp?: boolean;
   /** Inverse: inverts the color (no value) */
@@ -28,47 +37,47 @@ export interface ColorTransformOptions {
   /** Grayscale: converts to grayscale (no value) */
   gray?: boolean;
   /** Alpha: sets transparency (0-100, where 0 = transparent) */
-  alpha?: number;
+  alpha?: TransformPercent;
   /** Alpha offset: adjusts alpha by fixed percent (-100 to 100) */
-  alphaOff?: number;
+  alphaOff?: TransformPercent;
   /** Alpha modulation: scales alpha by percent (0-100) */
-  alphaMod?: number;
+  alphaMod?: TransformPercent;
   /** Hue: sets hue angle in degrees (0-360). */
   hue?: number;
   /** Hue offset: adjusts hue angle in degrees (-90 to 90). */
   hueOff?: number;
   /** Hue modulation: scales hue by percent (0-100) */
-  hueMod?: number;
+  hueMod?: TransformPercent;
   /** Saturation: sets saturation (-100 to 100) */
-  sat?: number;
+  sat?: TransformPercent;
   /** Saturation offset: adjusts saturation (-100 to 100) */
-  satOff?: number;
+  satOff?: TransformPercent;
   /** Saturation modulation: scales saturation (0-100) */
-  satMod?: number;
+  satMod?: TransformPercent;
   /** Luminance: sets luminance (-100 to 100) */
-  lum?: number;
+  lum?: TransformPercent;
   /** Luminance offset: adjusts luminance (-100 to 100) */
-  lumOff?: number;
+  lumOff?: TransformPercent;
   /** Luminance modulation: scales luminance (0-100) */
-  lumMod?: number;
+  lumMod?: TransformPercent;
   /** Red: sets red channel (-100 to 100) */
-  red?: number;
+  red?: TransformPercent;
   /** Red offset: adjusts red channel (-100 to 100) */
-  redOff?: number;
+  redOff?: TransformPercent;
   /** Red modulation: scales red channel (0-100) */
-  redMod?: number;
+  redMod?: TransformPercent;
   /** Green: sets green channel (-100 to 100) */
-  green?: number;
+  green?: TransformPercent;
   /** Green offset: adjusts green channel (-100 to 100) */
-  greenOff?: number;
+  greenOff?: TransformPercent;
   /** Green modulation: scales green channel (0-100) */
-  greenMod?: number;
+  greenMod?: TransformPercent;
   /** Blue: sets blue channel (-100 to 100) */
-  blue?: number;
+  blue?: TransformPercent;
   /** Blue offset: adjusts blue channel (-100 to 100) */
-  blueOff?: number;
+  blueOff?: TransformPercent;
   /** Blue modulation: scales blue channel (0-100) */
-  blueMod?: number;
+  blueMod?: TransformPercent;
   /** Gamma correction (no value) */
   gamma?: boolean;
   /** Inverse gamma correction (no value) */
@@ -119,7 +128,8 @@ export const BOOLEAN_TRANSFORMS: ReadonlySet<TransformKey> = new Set<TransformKe
 ]);
 
 /** Scale a transform value to its XSD unit; non-percent/angle keys pass through. */
-function emitTransformValue(key: TransformKey, value: number): number {
+function emitTransformValue(key: TransformKey, value: number | Percentage): number | Percentage {
+  if (typeof value === "string") return value;
   if (PERCENT_TRANSFORMS.has(key)) return emitPercent(value);
   if (ANGLE_TRANSFORMS.has(key)) return emitAngle(value);
   return value;

@@ -25,4 +25,11 @@ describe("user-defined tags part", () => {
 
     expect(parsePresentationSync(output).tags).toEqual(options.tags);
   });
+
+  it("round-trips an explicitly empty tag list", () => {
+    const output = generatePresentationSync({ slides: [], tags: [] }, { type: "uint8array" });
+    const files = unzipSync(output);
+    expect(decoder.decode(files["ppt/tags/tags1.xml"]!)).toContain("<p:tagLst");
+    expect(parsePresentationSync(output).tags).toEqual([]);
+  });
 });

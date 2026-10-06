@@ -90,6 +90,27 @@ const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;
 const VOLATILE_DEPENDENCIES_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volatileDependencies" as RelationshipType;
+const LEGACY_RELATIONSHIPS_NAMESPACE = "http://schemas.microsoft.com/package/2005/06/relationships";
+const LEGACY_WORKBOOK_RELATIONSHIP_TYPES = new Map<string, string>([
+  [
+    "http://schemas.microsoft.com/office/2006/relationships/xlWorksheet",
+    RELATIONSHIP_TYPES.worksheet,
+  ],
+  [
+    "http://schemas.microsoft.com/office/2006/relationships/xlSharedStrings",
+    RELATIONSHIP_TYPES.sharedStrings,
+  ],
+  ["http://schemas.microsoft.com/office/2006/relationships/xlStyles", RELATIONSHIP_TYPES.styles],
+  [
+    "http://schemas.microsoft.com/office/2006/relationships/xlCalcChain",
+    RELATIONSHIP_TYPES.calcChain,
+  ],
+  ["http://schemas.microsoft.com/office/2006/relationships/theme", RELATIONSHIP_TYPES.theme],
+  [
+    "http://schemas.microsoft.com/office/2006/relationships/xlVolatileDependencies",
+    VOLATILE_DEPENDENCIES_REL,
+  ],
+]);
 
 function withPartRelationships(
   ctx: XlsxWriteContext,
@@ -143,9 +164,16 @@ export function compileWorkbook(
 ): Zippable {
   const ctx = new XlsxWriteContext();
   ctx.reproducible = reproducible;
+  const relationshipNamespace =
+    options.relationshipNamespace === "microsoft2005" ? LEGACY_RELATIONSHIPS_NAMESPACE : undefined;
+  if (relationshipNamespace)
+    ctx.workbookRels = new Relationships("xl/workbook.xml", relationshipNamespace);
   const mapping: Record<string, { data: string; path: string }> = {};
   for (const rel of options.passthroughRelationships ?? []) {
     if (rel.source === "xl/workbook.xml") ctx.workbookRels.claimSourceRel(rel);
+    const canonicalType = LEGACY_WORKBOOK_RELATIONSHIP_TYPES.get(rel.relationshipType);
+    if (canonicalType && ctx.workbookRels.hasId(rel.rId))
+      ctx.workbookRels.retypeRelationship(rel.rId, canonicalType);
   }
   const addWorkbookRelationship = (
     type: RelationshipType,
@@ -181,7 +209,8 @@ export function compileWorkbook(
       (entry) => entry.partName.toLowerCase() === partName.toLowerCase(),
     ) === true;
   const includeCoreProperties = !isRoundTrip || hasMetadataOverride("/docProps/core.xml");
-  const includeAppProperties = !isRoundTrip || hasMetadataOverride("/docProps/app.xml");
+  const includeAppProperties =
+    !isRoundTrip || hasMetadataOverride("/docProps/app.xml") || options.appProperties !== undefined;
 
   if (includeCoreProperties) {
     mapping["Properties"] = {
@@ -212,7 +241,11 @@ export function compileWorkbook(
     "xl/workbook.xml",
     hasCustomProperties,
     options.passthroughRelationships,
-    { includeCoreProperties, includeAppProperties },
+    {
+      includeCoreProperties,
+      includeAppProperties,
+      namespace: relationshipNamespace,
+    },
   );
   mapping["FileRelationships"] = {
     data: XML_DECL + fileRels.serialize(),
@@ -317,7 +350,13 @@ export function compileWorkbook(
       if (!passthrough) continue;
       const numericId = /^rId(\d+)$/.exec(definition.rId)?.[1];
       if (numericId === undefined) continue;
-      if (!ctx.workbookRels.hasRelationship(passthrough.relationshipType, passthrough.target)) {
+      const canonicalType = LEGACY_WORKBOOK_RELATIONSHIP_TYPES.get(passthrough.relationshipType);
+      if (
+        !ctx.workbookRels.hasRelationship(
+          canonicalType ?? passthrough.relationshipType,
+          passthrough.target,
+        )
+      ) {
         ctx.workbookRels.addRelationship(
           Number(numericId),
           passthrough.relationshipType as RelationshipType,
@@ -435,7 +474,7 @@ export function compileWorkbook(
 
   // Volatile function types — xl/volTypes.xml (single part, workbook-level
   // relationship; sml.xsd declares volTypes as a part root, never a workbook child)
-  if (options.volTypes && options.volTypes.length > 0) {
+  if (options.volTypes !== undefined) {
     const volTypesPath = options.volTypesPath ?? "volTypes.xml";
     addWorkbookRelationship(
       volTypesPath === "volatileDependencies.xml"
@@ -658,8 +697,13 @@ export function compileWorkbook(
   // Re-emitted as written — targets are passthrough paths that never move.
   for (const rel of options.passthroughRelationships ?? []) {
     if (rel.source !== "xl/workbook.xml") continue;
+    if (relationshipNamespace) continue;
     if (ctx.workbookRels.hasRelationship(rel.relationshipType, rel.target)) continue;
     ctx.workbookRels.add(rel.relationshipType as RelationshipType, rel.target);
+  }
+  for (const rel of options.passthroughRelationships ?? []) {
+    if (rel.source === "xl/workbook.xml" && ctx.workbookRels.hasId(rel.rId))
+      ctx.workbookRels.retypeRelationship(rel.rId, rel.relationshipType);
   }
   mapping["WorkbookRelationships"] = {
     data: XML_DECL + ctx.workbookRels.serialize(),
@@ -689,6 +733,7 @@ export function compileWorkbook(
         // only fill what surviving source entries leave uncovered or mistyped.
         source: options.contentTypes,
         rawParts: options.rawParts,
+        omitDerivedOverrides: options.contentTypes ? ["docProps/app.xml"] : undefined,
         forcedOverrides: [
           ...(options.contentTypes?.overrides ?? [])
             .filter(
@@ -702,7 +747,11 @@ export function compileWorkbook(
             })),
           {
             path: "xl/workbook.xml",
-            contentType: ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType,
+            contentType:
+              options.contentTypes?.overrides.find(
+                (override) => override.partName.toLowerCase() === "/xl/workbook.xml",
+              )?.contentType ??
+              ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType,
           },
         ],
       },

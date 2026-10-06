@@ -29,6 +29,8 @@ export interface SmartArtRawParts {
    * Falls back to an empty spTree shell when absent.
    */
   drawing?: DataType;
+  /** Source drawing part file name (for sparse packages such as drawing10.xml). */
+  drawingFileName?: string;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
   media?: { fileName: string; data: DataType }[];
   /** Verbatim rels XML of the data part (its targets resolve beside the data part). */

@@ -40,7 +40,7 @@
  * @module
  */
 
-import { convertToTwip, stripColorHashPrefix } from "@office-open/core";
+import { convertToTwip, parsePercentAttr, stripColorHashPrefix } from "@office-open/core";
 import type {
   FillOptions,
   ParagraphDescriptorOptions,
@@ -207,7 +207,7 @@ function drawingRunPropertiesToDocx(run: DrawingRunProperties): Partial<RunOptio
   if (run.strike === "singleStrike") out.strike = true;
   else if (run.strike === "doubleStrike") out.doubleStrike = true;
   if (run.baseline !== undefined && run.baseline !== 0) {
-    out.verticalAlign = run.baseline > 0 ? "superscript" : "subscript";
+    out.verticalAlign = (parsePercentAttr(run.baseline) ?? 0) > 0 ? "superscript" : "subscript";
   }
   if (run.spacing !== undefined) out.characterSpacing = round(run.spacing * TWIPS_PER_HUNDREDTH);
   if (run.capitalization === "all") out.allCaps = true;

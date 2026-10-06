@@ -35,6 +35,7 @@ import { createTransformation } from "@shared/media";
 
 import type { BodyContext } from "../context";
 import { drawingDesc } from "./drawing";
+import { takeChartSourceRelationships } from "./drawing/drawing-parse";
 import { stringifyRunProperties } from "./paragraph/stringify";
 
 let nextChartId = 1;
@@ -354,6 +355,9 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
     ctx.file.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: chartXml ?? "",
+      ...(takeChartSourceRelationships(opts)
+        ? { sourceRelationships: takeChartSourceRelationships(opts) }
+        : {}),
       ...(externalData?.data !== undefined && externalData.fileName
         ? {
             embedding: {
@@ -552,6 +556,9 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
             ctx.file.charts.addChart(c.chartKey, {
               key: c.chartKey,
               chartSpaceXml: chartSpaceDesc.stringify(c.chartOptions, ctx.file) ?? "",
+              ...(takeChartSourceRelationships(c.chartOptions)
+                ? { sourceRelationships: takeChartSourceRelationships(c.chartOptions) }
+                : {}),
               ...(externalData?.data !== undefined && externalData.fileName
                 ? {
                     embedding: {

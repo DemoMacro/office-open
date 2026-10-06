@@ -130,7 +130,7 @@ function docGridXml(linePitch: number, charSpace?: number, type?: string): strin
 
 function columnsXml(opts: NonNullable<SectionPropertiesOptions["columns"]>): string {
   const attrs: string[] = [];
-  if (opts.space !== undefined) attrs.push(`w:space="${convertToTwip(opts.space)}"`);
+  if (opts.space !== undefined) attrs.push(`w:space="${opts.space}"`);
   if (opts.count !== undefined) attrs.push(`w:num="${opts.count}"`);
   if (opts.separate !== undefined) attrs.push(`w:sep="${opts.separate ? 1 : 0}"`);
   if (opts.equalWidth !== undefined) attrs.push(`w:equalWidth="${opts.equalWidth ? 1 : 0}"`);
@@ -141,8 +141,8 @@ function columnsXml(opts: NonNullable<SectionPropertiesOptions["columns"]>): str
   if (!opts.equalWidth && opts.children) {
     const colParts: string[] = [];
     for (const col of opts.children as readonly ColumnProperties[]) {
-      const colAttrs: string[] = [`w:w="${convertToTwip(col.width)}"`];
-      if (col.space !== undefined) colAttrs.push(`w:space="${convertToTwip(col.space)}"`);
+      const colAttrs: string[] = [`w:w="${col.width}"`];
+      if (col.space !== undefined) colAttrs.push(`w:space="${col.space}"`);
       colParts.push(`<w:col ${colAttrs.join(" ")}/>`);
     }
     return `<w:cols ${attrStr}>${colParts.join("")}</w:cols>`;

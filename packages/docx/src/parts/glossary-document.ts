@@ -123,6 +123,18 @@ export interface GlossaryDocumentOptions {
    * "glossary/document.xml"). Fresh generation uses glossary/document.xml.
    */
   partName?: string;
+  /**
+   * Whether source carried w:docParts (round-trip only — do not hand-author).
+   * Distinguishes an empty container from the XSD-optional container's absence.
+   */
+  hasDocParts?: boolean;
+  /**
+   * Independent numbering part owned by the glossary. Glossary bodies resolve
+   * w:numId against this part, not the main document numbering part.
+   */
+  numbering?: NumberingOptions;
+  /** Glossary numbering path relative to word/ (round-trip only). */
+  numberingPartName?: string;
   /** Building blocks */
   parts: DocPartOptions[];
 }
@@ -136,6 +148,7 @@ import type { Element } from "@office-open/xml";
 import { stringifyBodyChild } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
 import { parseSectionChild } from "../parse/body";
+import type { NumberingOptions } from "../parts/numbering/numbering";
 
 const GLOSSARY_NS = documentNamespaceAttributes([
   "wpc",
@@ -263,6 +276,9 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
   kind: "custom",
 
   stringify(opts, ctx) {
+    if (opts.hasDocParts === false) {
+      return `<w:glossaryDocument ${GLOSSARY_NS}></w:glossaryDocument>`;
+    }
     const partsXml = opts.parts
       .map(
         (part) =>
@@ -276,9 +292,8 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
   parse(el, ctx) {
     const dctx = ctx as DocxReadContext;
     const parts: DocPartOptions[] = [];
-
     const docPartsEl = findChild(el, "w:docParts");
-    if (!docPartsEl) return { parts };
+    if (!docPartsEl) return { hasDocParts: false, parts };
 
     for (const docPart of docPartsEl.elements ?? []) {
       if (docPart.name !== "w:docPart") continue;
@@ -360,6 +375,6 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
       parts.push(part as DocPartOptions);
     }
 
-    return { parts };
+    return { hasDocParts: true, parts };
   },
 };

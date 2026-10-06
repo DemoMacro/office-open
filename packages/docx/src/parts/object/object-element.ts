@@ -94,6 +94,8 @@ export interface ObjectIconImageOptions {
 }
 
 export interface ObjectElementOptions {
+  /** Word 2010 drawing anchor id (w:object/`@w14:anchorId`). */
+  w14AnchorId?: string;
   /** Original width in twips (w:object/`@w:dxaOrig`). */
   dxaOrig?: number;
   /** Original height in twips (w:object/`@w:dyaOrig`). */
@@ -230,6 +232,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
 
     // w:object root attributes
     const objAttrs: string[] = [];
+    if (opts.w14AnchorId) objAttrs.push(` w14:anchorId="${escapeXml(opts.w14AnchorId)}"`);
     if (opts.dxaOrig !== undefined) objAttrs.push(` w:dxaOrig="${opts.dxaOrig}"`);
     if (opts.dyaOrig !== undefined) objAttrs.push(` w:dyaOrig="${opts.dyaOrig}"`);
 
@@ -238,6 +241,8 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
 
   parse(el, ctx) {
     const result: Partial<ObjectElementOptions> = {};
+    const w14AnchorId = attr(el, "w14:anchorId");
+    if (w14AnchorId) result.w14AnchorId = w14AnchorId;
 
     const dxaOrig = attrNum(el, "w:dxaOrig");
     if (dxaOrig !== undefined) result.dxaOrig = dxaOrig;

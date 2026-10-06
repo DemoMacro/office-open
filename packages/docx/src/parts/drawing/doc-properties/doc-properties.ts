@@ -17,10 +17,18 @@ import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 export interface HyperlinkOptions {
   /** URL for click hyperlink */
   click?: string;
+  /** Source click relationship ID (round-trip only — do not hand-author). */
+  clickRelationshipId?: string;
+  /** Source click target mode (round-trip only — do not hand-author). */
+  clickTargetMode?: "External";
   /** Click hyperlink tooltip (a:hlinkClick attribute tooltip) */
   clickTooltip?: string;
   /** URL for hover hyperlink */
   hover?: string;
+  /** Source hover relationship ID (round-trip only — do not hand-author). */
+  hoverRelationshipId?: string;
+  /** Source hover target mode (round-trip only — do not hand-author). */
+  hoverTargetMode?: "External";
   /** Hover hyperlink tooltip (a:hlinkHover attribute tooltip) */
   hoverTooltip?: string;
 }

@@ -106,30 +106,17 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const cstheme = attr(child, "w:cstheme");
           const hint = attr(child, "w:hint");
 
-          if (
-            ascii &&
-            !eastAsia &&
-            !hAnsi &&
-            !complexScript &&
-            !asciiTheme &&
-            !eastAsiaTheme &&
-            !hAnsiTheme &&
-            !cstheme
-          ) {
-            opts.font = hint ? { name: ascii, hint } : ascii;
-          } else {
-            const fontObj: Record<string, string | undefined> = {};
-            if (ascii) fontObj.ascii = ascii;
-            if (eastAsia) fontObj.eastAsia = eastAsia;
-            if (hAnsi) fontObj.hAnsi = hAnsi;
-            if (complexScript) fontObj.complexScript = complexScript;
-            if (asciiTheme) fontObj.asciiTheme = asciiTheme;
-            if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
-            if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
-            if (cstheme) fontObj.complexScriptTheme = cstheme;
-            if (hint) fontObj.hint = hint;
-            opts.font = fontObj;
-          }
+          const fontObj: Record<string, string | undefined> = {};
+          if (ascii) fontObj.ascii = ascii;
+          if (eastAsia) fontObj.eastAsia = eastAsia;
+          if (hAnsi) fontObj.hAnsi = hAnsi;
+          if (complexScript) fontObj.complexScript = complexScript;
+          if (asciiTheme) fontObj.asciiTheme = asciiTheme;
+          if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
+          if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
+          if (cstheme) fontObj.complexScriptTheme = cstheme;
+          if (hint) fontObj.hint = hint;
+          opts.font = fontObj;
           break;
         }
         case "w:b":

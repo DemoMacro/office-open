@@ -170,6 +170,12 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("word/example.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes equivalent OOXML bullet percentage lexemes", () => {
+    const source = new TextEncoder().encode('<root><a:buSzPct val="75000"/></root>');
+    const output = new TextEncoder().encode('<root><a:buSzPct val="75%"/></root>');
+    expect(explainSemanticPartDiff("ppt/example.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes relationship references by their part targets", () => {
     const files = {
       "ppt/slides/slide1.xml":

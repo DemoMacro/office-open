@@ -15,6 +15,7 @@ import {
   parsePercent,
   parsePercentAttr,
 } from "../../util/converters";
+import type { Percentage } from "../../util/values";
 import {
   ANGLE_TRANSFORMS,
   BOOLEAN_TRANSFORMS,
@@ -73,7 +74,9 @@ function readTransforms(el: XmlElement): ColorTransformOptions | undefined {
       // Number() yields NaN on the literal form. Angles are always plain
       // integers (÷60000).
       (result as Record<string, unknown>)[key] = PERCENT_TRANSFORMS.has(key)
-        ? (parsePercentAttr(val) ?? 0)
+        ? typeof val === "string" && val.endsWith("%")
+          ? (val as Percentage)
+          : (parsePercentAttr(val) ?? 0)
         : ANGLE_TRANSFORMS.has(key)
           ? parseAngle(Number(val))
           : Number(val);

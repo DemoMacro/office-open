@@ -17,12 +17,22 @@ import { uniqueId } from "../../util/generators";
 import { imageTypeFromPath } from "../../util/image-type";
 import { xsdPattern } from "../../util/mappings";
 import type { ReproducibleScope } from "../../util/reproducible";
+import type { Percentage } from "../../util/values";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
 import { blipFillDesc, stretchDesc } from "../blip/blip-descriptors";
 import { createBlipEffects } from "../blip/blip-effects";
 import { createSourceRectangle } from "../blip/source-rectangle";
 import { createTileInfo } from "../blip/tile";
 import { solidFillDesc, parseColorChoice, emitColorChoice } from "../color/color-descriptors";
+
+function parseGradientPosition(raw: string | number | undefined): number | Percentage {
+  if (typeof raw === "string" && raw.endsWith("%")) return raw as Percentage;
+  return parsePercent(Number(raw ?? 0));
+}
+
+function emitGradientPosition(position: number | Percentage): number | Percentage {
+  return typeof position === "string" ? position : emitPercent(position);
+}
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { BlipFillConfigOptions, FillOptions } from "./fill-options";
 import { toSolidColor } from "./gradient-fill";
@@ -90,9 +100,8 @@ export const gradientFillDesc: CustomDescriptor<GradientFillOptions> = {
       result.stops = gsLst.elements
         .filter((c) => c.name === "a:gs")
         .map((gs) => {
-          const pos = Number(gs.attributes?.["pos"] ?? 0);
           const color = readDirectColor(gs, ctx);
-          return { position: parsePercent(pos), color };
+          return { position: parseGradientPosition(gs.attributes?.["pos"]), color };
         });
     }
 
@@ -243,8 +252,9 @@ function emitGradientFillXml(opts: GradientFillOptions): string | undefined {
   const stopsXml = opts.stops
     .map((stop) => {
       const colorXml = emitColorChoice(toSolidColor(stop.color));
-      if (!colorXml) return `<a:gs pos="${emitPercent(stop.position)}"/>`;
-      return `<a:gs pos="${emitPercent(stop.position)}">${colorXml}</a:gs>`;
+      const pos = emitGradientPosition(stop.position);
+      if (!colorXml) return `<a:gs pos="${pos}"/>`;
+      return `<a:gs pos="${pos}">${colorXml}</a:gs>`;
     })
     .join("");
   parts.push(`<a:gsLst>${stopsXml}</a:gsLst>`);

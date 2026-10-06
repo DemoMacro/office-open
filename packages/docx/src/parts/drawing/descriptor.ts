@@ -227,20 +227,67 @@ function registerHyperlinks(
 ): HyperlinkIds {
   if (!hyperlink) return {};
   const result: HyperlinkIds = {};
+  const restoreHyperlink = (
+    url: string,
+    relationshipId: string | undefined,
+    targetMode: "External" | undefined,
+  ) => {
+    if (relationshipId && /^rId\d+$/.test(relationshipId)) {
+      if (!ctx.viewWrapper.relationships.hasId(relationshipId)) {
+        ctx.viewWrapper.relationships.addRelationship(
+          relationshipId,
+          HYPERLINK_REL,
+          url,
+          targetMode,
+        );
+      }
+      return relationshipId;
+    }
+    const sourceRel = (ctx.fileData._options?.passthroughRelationships ?? []).find(
+      (rel) =>
+        rel.source === "word/document.xml" &&
+        rel.relationshipType.split("/").pop() === "hyperlink" &&
+        rel.target === url,
+    );
+    const existingId = ctx.viewWrapper.relationships.idOf(HYPERLINK_REL, url);
+    if (existingId) return existingId;
+    if (sourceRel) return sourceRel.rId;
+    return `rId${ctx.viewWrapper.relationships.add(HYPERLINK_REL, url, targetMode)}`;
+  };
   if (hyperlink.click) {
-    result.clickId = `rId${ctx.viewWrapper.relationships.add(HYPERLINK_REL, hyperlink.click, TargetModeType.EXTERNAL)}`;
+    result.clickId = restoreHyperlink(
+      hyperlink.click,
+      hyperlink.clickRelationshipId,
+      hyperlink.clickTargetMode,
+    );
   }
   if (hyperlink.hover) {
-    result.hoverId = `rId${ctx.viewWrapper.relationships.add(HYPERLINK_REL, hyperlink.hover, TargetModeType.EXTERNAL)}`;
+    result.hoverId = restoreHyperlink(
+      hyperlink.hover,
+      hyperlink.hoverRelationshipId,
+      hyperlink.hoverTargetMode,
+    );
   }
   return result;
 }
 
-function buildHyperlinkChildren(ids: HyperlinkIds, dialect?: DocumentNamespaceDialect): string {
+function buildHyperlinkChildren(
+  ids: HyperlinkIds,
+  hyperlink: HyperlinkOptions | undefined,
+  dialect?: DocumentNamespaceDialect,
+): string {
   const parts: string[] = [];
   const aNs = `xmlns:a="${drawingmlUri(dialect, "main")}"`;
-  if (ids.clickId) parts.push(`<a:hlinkClick r:id="${ids.clickId}" ${aNs}/>`);
-  if (ids.hoverId) parts.push(`<a:hlinkHover r:id="${ids.hoverId}" ${aNs}/>`);
+  if (ids.clickId) {
+    parts.push(
+      `<a:hlinkClick r:id="${ids.clickId}"${hyperlinkAttribute(hyperlink?.clickTooltip)} ${aNs}/>`,
+    );
+  }
+  if (ids.hoverId) {
+    parts.push(
+      `<a:hlinkHover r:id="${ids.hoverId}"${hyperlinkAttribute(hyperlink?.hoverTooltip)} ${aNs}/>`,
+    );
+  }
   return parts.join("");
 }
 
@@ -263,9 +310,7 @@ function stringifyDocPr(
     id,
     opts,
     "",
-    buildHyperlinkChildren(hlIds, dialect) +
-      (hlIds.clickId ? hyperlinkAttribute(hyperlink?.clickTooltip) : "") +
-      (hlIds.hoverId ? hyperlinkAttribute(hyperlink?.hoverTooltip) : ""),
+    buildHyperlinkChildren(hlIds, hyperlink, dialect),
   );
 }
 
@@ -397,14 +442,19 @@ function stringifyShapeProps(
 
 // ── Non-visual picture properties (pic:nvPicPr) ──
 
-function stringifyNvPicPr(hlIds: HyperlinkIds, cNvPr?: NonVisualPropertiesOptions): string {
+function stringifyNvPicPr(
+  cNvPr: NonVisualPropertiesOptions | undefined,
+  ctx: BodyContext,
+  dialect?: DocumentNamespaceDialect,
+): string {
   const id = cNvPr?.id ?? 0;
+  const hyperlinkIds = registerHyperlinks(cNvPr?.hyperlink, ctx);
   const cNvPrXml = stringifyNonVisualDrawingProperties(
     "pic:cNvPr",
     id,
     cNvPr,
     "",
-    buildHyperlinkChildren(hlIds),
+    buildHyperlinkChildren(hyperlinkIds, cNvPr?.hyperlink, dialect),
   );
   // preferRelativeResize defaults to true; only an explicit false is written.
   const cNvPicPrAttr = cNvPr?.preferRelativeResize === false ? ' preferRelativeResize="0"' : "";
@@ -679,7 +729,7 @@ function stringifyGroupChild(
   // viewers render); the vector SVG lives in the svgBlip extension below.
   const blipTarget = isSvg && "fallback" in picData ? picData.fallback.fileName : picData.fileName;
   const picParts: string[] = [];
-  picParts.push(stringifyNvPicPr({}, picData.nonVisualProperties));
+  picParts.push(stringifyNvPicPr(picData.nonVisualProperties, ctx, dialect));
   const groupBlipParts: string[] = [];
   const extParts: string[] = [];
   const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi);
@@ -838,7 +888,6 @@ function stringifyNestedGroup(
 function stringifyGraphicDataContent(
   mediaData: ExtendedMediaData,
   opts: DrawingDescriptorOptions,
-  hlIds: HyperlinkIds,
   ctx: BodyContext,
 ): string {
   const { outline, fill, effects, scene3d, shape3d, blipEffects, tile } = opts;
@@ -902,7 +951,7 @@ function stringifyGraphicDataContent(
   return (
     `<a:graphicData uri="${drawingmlUri(dialect, "picture")}">` +
     `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">` +
-    stringifyNvPicPr(hlIds, md.nonVisualProperties) +
+    stringifyNvPicPr(md.nonVisualProperties, ctx, dialect) +
     stringifyBlipFill(md, blipEffects, tile, ctx) +
     stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d, md.blackWhiteMode) +
     `</pic:pic></a:graphicData>`
@@ -1106,7 +1155,7 @@ function stringifyInline(
   const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
     opts.dialect,
     "main",
-  )}">${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  )}">${stringifyGraphicDataContent(mediaData, opts, ctx)}</a:graphic>`;
 
   return (
     `<w:drawing><wp:inline ${[
@@ -1179,7 +1228,9 @@ function stringifyAnchor(
   } else if (rawWrap?.type === TextWrappingType.THROUGH) {
     wrapXml = wrapThroughStr(rawWrap, floating.margins ?? {}, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.TOP_AND_BOTTOM) {
-    wrapXml = wrapTopAndBottomStr(floating.margins);
+    wrapXml = wrapTopAndBottomStr(
+      rawWrap.margins ? { top: rawWrap.margins.distT, bottom: rawWrap.margins.distB } : undefined,
+    );
   } else {
     wrapXml = "<wp:wrapNone/>";
   }
@@ -1189,7 +1240,7 @@ function stringifyAnchor(
   const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
     opts.dialect,
     "main",
-  )}">${stringifyGraphicDataContent(mediaData, opts, hlIds, ctx)}</a:graphic>`;
+  )}">${stringifyGraphicDataContent(mediaData, opts, ctx)}</a:graphic>`;
 
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;

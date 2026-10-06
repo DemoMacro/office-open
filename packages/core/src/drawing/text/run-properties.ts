@@ -16,6 +16,7 @@ import { parse, stringify } from "../../descriptor";
 import { emitPercent, parsePercentAttr } from "../../util/converters";
 import { xsdStrikeStyle, xsdTextCaps, xsdUnderlineStyle } from "../../util/mappings";
 import { parseOnOff } from "../../util/values";
+import type { Percentage } from "../../util/values";
 import { parseColorChoice, stringifyColorChoice } from "../color/color-descriptors";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { effectListDesc } from "../effects/effect-descriptors";
@@ -187,7 +188,10 @@ export function stringifyRunProperties(
   if (opts.underline) attrParts.push(`u="${xsdUnderlineStyle.to(opts.underline)}"`);
   if (opts.lang) attrParts.push(`lang="${opts.lang}"`);
   if (opts.strike) attrParts.push(`strike="${xsdStrikeStyle.to(opts.strike)}"`);
-  if (opts.baseline !== undefined) attrParts.push(`baseline="${emitPercent(opts.baseline)}"`);
+  if (opts.baseline !== undefined)
+    attrParts.push(
+      `baseline="${typeof opts.baseline === "string" ? opts.baseline : emitPercent(opts.baseline)}"`,
+    );
   if (opts.capitalization) attrParts.push(`cap="${xsdTextCaps.to(opts.capitalization)}"`);
   if (opts.spacing !== undefined) attrParts.push(`spc="${Math.round(opts.spacing * 100)}"`);
   if (opts.kern !== undefined) attrParts.push(`kern="${Math.round(opts.kern * 100)}"`);
@@ -322,7 +326,10 @@ export const runPropertiesDesc: CustomDescriptor<TextCharacterPropertiesOptions>
           String(el.attributes["strike"]),
         ) as TextCharacterPropertiesOptions["strike"];
       if (el.attributes["baseline"] !== undefined) {
-        result.baseline = parsePercentAttr(el.attributes["baseline"])!;
+        const baseline = String(el.attributes["baseline"]);
+        result.baseline = baseline.endsWith("%")
+          ? (baseline as Percentage)
+          : parsePercentAttr(baseline)!;
       }
       if (el.attributes["cap"] !== undefined)
         result.capitalization = xsdTextCaps.from(

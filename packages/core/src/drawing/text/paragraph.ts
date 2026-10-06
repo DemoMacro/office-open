@@ -177,9 +177,7 @@ function stringifyBullet(
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    // The XSD union accepts either "N%" or ST_TextBulletSizeDecimal; Office
-    // writes the decimal per-mille form (60000 = 100%).
-    parts.push(`<a:buSzPct val="${Math.round(options.size * 1000)}"/>`);
+    parts.push(`<a:buSzPct val="${Math.round(options.size)}%"/>`);
   }
 
   // Font: buFontTx | buFont. No fresh default — Office files omit buFont when

@@ -65,6 +65,12 @@ describe("outlineDesc", () => {
     expect(result.alignment).toBe("center");
   });
 
+  it("round-trips miter limit percent literal", () => {
+    const result = roundTrip({ type: "noFill", join: "miter", miterLimit: "800%" });
+    expect(result.join).toBe("miter");
+    expect(result.miterLimit).toBe("800%");
+  });
+
   it("emits XSD tokens (rnd/sng/ctr), not full words, for cap/compoundLine/alignment", () => {
     const xml = stringify(
       outlineDesc,

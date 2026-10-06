@@ -14,6 +14,17 @@ import { parseStyleDefinitions, Styles } from "./styles";
 const ctx = {} as unknown as DocxReadContext;
 
 describe("parseStyleDefinitions (round-trip)", () => {
+  it("reads universal-measure tab positions as twips", () => {
+    const el = parseXml(
+      '<w:pPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:tabs><w:tab w:val="center" w:pos="234pt"/></w:tabs></w:pPr>',
+    ).elements?.[0];
+    if (!el) throw new Error("parsed pPr has no root element");
+    expect(parseParagraphProperties(el, ctx).tabStops).toEqual([
+      { type: "center", position: "234pt" },
+    ]);
+  });
+
   it("reads back custom paragraph style fields", () => {
     const styles = new Styles({
       paragraphStyles: [

@@ -20,6 +20,7 @@ import {
   dropDanglingPassthroughRels,
   finalizeContentTypes,
   getReferencedMedia,
+  partPathToRelsPath,
   resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
   replaceImagePlaceholders,
@@ -37,7 +38,11 @@ import {
 } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import { SmartArtCollection } from "@office-open/core/smartart";
-import type { PresentationPartOptions, PresentationSectionGroup } from "@parts/presentation";
+import type {
+  CustomXmlItemOptions,
+  PresentationPartOptions,
+  PresentationSectionGroup,
+} from "@parts/presentation";
 import type { PresentationOptions } from "@shared/file";
 
 import {
@@ -158,6 +163,15 @@ function sourceTagsRel(options: PresentationOptions) {
   );
 }
 
+function sourceCustomXmlRel(options: PresentationOptions, item: CustomXmlItemOptions) {
+  return options.passthroughRelationships?.find(
+    (rel) =>
+      rel.source === "ppt/presentation.xml" &&
+      rel.relationshipType === RELATIONSHIP_TYPES.customXml &&
+      resolveRelationshipTarget(rel.source, rel.target) === item.contentPath,
+  );
+}
+
 // ── Main compiler entry ──
 
 export function compilePresentation(
@@ -217,6 +231,7 @@ export function compilePresentation(
       "notesMaster",
       "handoutMaster",
       "tags",
+      "customXml",
     ]),
   );
   // Group slides into p14:sections by name (first-occurrence order); slides
@@ -239,6 +254,16 @@ export function compilePresentation(
     slideIndices: sectionIndices.get(name)!,
   }));
 
+  const customXmlRIds = new Map<string, string>();
+  for (const [index, item] of (options.customXml ?? []).entries()) {
+    const sourceRel = sourceCustomXmlRel(options, item);
+    const target = sourceRel?.target ?? `../customXml/item${index + 1}.xml`;
+    const rId = presRels.add(RELATIONSHIP_TYPES.customXml, target);
+    const rIdText = `rId${rId}`;
+    customXmlRIds.set(item.contentPath ?? target, rIdText);
+    if (sourceRel?.rId) customXmlRIds.set(sourceRel.rId, rIdText);
+  }
+
   const presOptions: PresentationPartOptions = {
     slideWidth: sz.width,
     slideHeight: sz.height,
@@ -250,7 +275,15 @@ export function compilePresentation(
     ...buildPresAttrOpts(options),
     ...(options.ext !== undefined ? { ext: options.ext } : {}),
   };
-  if (options.tags?.length) {
+  if (options.customerData?.data && customXmlRIds.size > 0) {
+    presOptions.customerData = {
+      ...presOptions.customerData,
+      data: options.customerData.data.map((entry) => ({
+        rId: customXmlRIds.get(entry.rId) ?? entry.rId,
+      })),
+    };
+  }
+  if (options.tags !== undefined) {
     const sourceTags = sourceTagsRel(options);
     const tagsTarget = sourceTags?.target ?? "tags/tags1.xml";
     const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, tagsTarget);
@@ -317,6 +350,29 @@ export function compilePresentation(
       path: "_rels/.rels",
     },
   };
+
+  for (const [index, item] of (options.customXml ?? []).entries()) {
+    const contentPath = item.contentPath ?? `customXml/item${index + 1}.xml`;
+    mapping[`CustomXml${index}`] = {
+      data: XML_DECL + item.content,
+      path: contentPath,
+    };
+    if (item.properties !== undefined) {
+      const propertiesPath = item.propertiesPath ?? `customXml/itemProps${index + 1}.xml`;
+      mapping[`CustomXmlProperties${index}`] = {
+        data: XML_DECL + item.properties,
+        path: propertiesPath,
+      };
+      mapping[`CustomXmlRelationships${index}`] = {
+        data:
+          XML_DECL +
+          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+          `<Relationship Id="rId1" Type="${RELATIONSHIP_TYPES.customXmlProperties}" Target="${propertiesPath.split("/").pop()}"/>` +
+          `</Relationships>`,
+        path: partPathToRelsPath(contentPath),
+      };
+    }
+  }
 
   for (let ti = 0; ti < themes.length; ti++) {
     mapping[`Theme${ti}`] = {
@@ -400,7 +456,7 @@ export function compilePresentation(
     data: replacedPresentationXml,
     path: "ppt/presentation.xml",
   };
-  if (options.tags?.length) {
+  if (options.tags !== undefined) {
     const sourceTags = sourceTagsRel(options);
     mapping["Tags"] = {
       data: XML_DECL + (tagListDesc.stringify(options.tags, descCtx) ?? ""),

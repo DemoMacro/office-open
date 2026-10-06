@@ -190,6 +190,11 @@ export interface WorkbookOptions extends CorePropertiesOptions {
    */
   contentTypes?: ContentTypesInput;
   /**
+   * OPC relationship/content-type namespace flavor. `microsoft2005` preserves
+   * legacy Microsoft package manifests; round-trip only.
+   */
+  relationshipNamespace?: "standard" | "microsoft2005";
+  /**
    * Parts carried verbatim from the source that generate() does not rebuild
    * (drawings, VML, external links, unknown parts) — bytes and content type
    * intact; compiler-rebuilt parts under the same path win. Round-trip channel:

@@ -205,7 +205,19 @@ describe("glossaryDesc round-trip", () => {
 
   it("round-trips empty parts", () => {
     const result = roundTrip({ parts: [] });
+    expect(result.hasDocParts).toBe(true);
     expect(result.parts).toHaveLength(0);
+  });
+
+  it("round-trips an absent doc-parts container", () => {
+    const doc = parseXml(
+      '<w:glossaryDocument xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"></w:glossaryDocument>',
+    );
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const result = glossaryDesc.parse(root, readCtx);
+    expect(result.hasDocParts).toBe(false);
+    expect(glossaryDesc.stringify(result, writeCtx)).not.toContain("<w:docParts");
   });
 
   it("preserves paragraph-hosted and terminal section properties", () => {

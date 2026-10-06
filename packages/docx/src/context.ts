@@ -106,6 +106,12 @@ function isNumericIdMarker(value: unknown): value is { id: number } {
   );
 }
 
+function sameDocumentRelationshipTarget(sourceTarget: string, target: string): boolean {
+  if (sourceTarget === target) return true;
+  const normalized = sourceTarget.startsWith("/") ? sourceTarget.slice(1) : undefined;
+  return normalized === `word/${target}`;
+}
+
 /**
  * Single preflight scan of the full Options tree. Collects everything that
  * must be known before stringify starts: the max explicit markup ids (seeding
@@ -174,6 +180,9 @@ export interface BodyContext extends WriteContext {
 
 // ── DocxWriteContext ──
 
+const STYLES_WITH_EFFECTS_RELATIONSHIP =
+  "http://schemas.microsoft.com/office/2007/relationships/stylesWithEffects" as RelationshipType;
+
 export class DocxWriteContext implements WriteContext {
   // --- Accessed by XmlComponent via context.file.* during toXml() ---
   declare public document: ViewWrapper;
@@ -216,6 +225,7 @@ export class DocxWriteContext implements WriteContext {
   declare public fileRelationships: Relationships;
   declare public _settingsOptions: SettingsOptions;
   declare public styles: Styles;
+  declare public stylesWithEffects: Styles | undefined;
   declare public fontTable: FontWrapper;
   declare public glossaryOptions: GlossaryDocumentOptions | undefined;
   declare public webSettings: WebSettingsOptions | undefined;
@@ -323,9 +333,35 @@ export class DocxWriteContext implements WriteContext {
       options.customProperties !== undefined,
       options.passthroughRelationships,
       {
-        includeCoreProperties: this.hasSourcePart("docProps/core.xml"),
+        includeCoreProperties:
+          !options.contentTypes ||
+          (options.passthroughRelationships?.length
+            ? options.passthroughRelationships.some(
+                (rel) =>
+                  rel.source === "" &&
+                  rel.relationshipType
+                    .toLowerCase()
+                    .replaceAll("-", "")
+                    .includes("/coreproperties"),
+              )
+            : this.hasSourcePart("docProps/core.xml")),
         includeAppProperties:
-          this.hasSourcePart("docProps/app.xml") || this._options.appProperties !== undefined,
+          this._options.appProperties !== undefined ||
+          !options.contentTypes ||
+          (options.passthroughRelationships?.length
+            ? options.passthroughRelationships.some(
+                (rel) =>
+                  rel.source === "" &&
+                  (rel.relationshipType
+                    .toLowerCase()
+                    .replaceAll("-", "")
+                    .includes("/extendedproperties") ||
+                    rel.relationshipType
+                      .toLowerCase()
+                      .replaceAll("-", "")
+                      .endsWith("/docpropsapp")),
+              )
+            : this.hasSourcePart("docProps/app.xml")),
       },
     );
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
@@ -419,6 +455,26 @@ export class DocxWriteContext implements WriteContext {
     } else {
       const stylesFactory = new DefaultStylesFactory();
       this.styles = new Styles(stylesFactory.newInstance());
+    }
+
+    if (options.stylesWithEffects) {
+      const s = options.stylesWithEffects;
+      const f = new DefaultStylesFactory().newInstance({});
+      const docDefaults =
+        s.default?.document !== undefined
+          ? stringifyDocDefaults(s.default.document, false)
+          : (s.docDefaultsXml ?? f.importedStyles?.[0] ?? "");
+      this.stylesWithEffects = new Styles({
+        importedStyles: [docDefaults, s.latentStylesXml ?? ""],
+        initialAttributes: s.initialAttributes ?? f.initialAttributes,
+        paragraphStyles: s.paragraphStyles,
+        characterStyles: s.characterStyles,
+        tableStyles: s.tableStyles,
+        numberingStyles: s.numberingStyles,
+        styleOrder: s.styleOrder,
+      });
+    } else {
+      this.stylesWithEffects = undefined;
     }
 
     // Register numbering references from custom paragraph/character styles.
@@ -658,8 +714,15 @@ export class DocxWriteContext implements WriteContext {
   }
 
   private addDefaultRelationships(): void {
-    if (this.hasSourcePart("word/styles.xml")) {
+    if (this.hasSourcePart("word/styles.xml") && this.hasSourceDocumentRelationship("styles")) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.styles, "styles.xml");
+    }
+    if (
+      this._options.stylesWithEffects &&
+      this.hasSourcePart("word/stylesWithEffects.xml") &&
+      this.hasSourceDocumentRelationship("stylesWithEffects")
+    ) {
+      this.registerDocumentRel(STYLES_WITH_EFFECTS_RELATIONSHIP, "stylesWithEffects.xml");
     }
     if (this._hasNumbering) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.numbering, "numbering.xml");
@@ -670,7 +733,7 @@ export class DocxWriteContext implements WriteContext {
     if (this._hasEndnotes) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.endnotes, "endnotes.xml");
     }
-    if (this.hasSourcePart("word/settings.xml")) {
+    if (this.hasSourcePart("word/settings.xml") && this.hasSourceDocumentRelationship("settings")) {
       this.registerDocumentRel(RELATIONSHIP_TYPES.settings, "settings.xml");
     }
     // Comments is an optional part — only wire the document→comments relationship
@@ -709,6 +772,22 @@ export class DocxWriteContext implements WriteContext {
       RELATIONSHIP_TYPES.theme,
       themeRel ? themeRel.target : "theme/theme1.xml",
     );
+    if (
+      this.hasSourcePart("word/fontTable.xml") &&
+      this.hasSourceDocumentRelationship("fontTable")
+    ) {
+      this.registerDocumentRel(RELATIONSHIP_TYPES.fontTable, "fontTable.xml");
+    }
+  }
+
+  private hasSourceDocumentRelationship(kind: string): boolean {
+    return (
+      !this._options.contentTypes ||
+      (this._options.passthroughRelationships ?? []).some(
+        (rel) =>
+          rel.source === "word/document.xml" && rel.relationshipType.split("/").pop() === kind,
+      )
+    );
   }
 
   /**
@@ -719,20 +798,20 @@ export class DocxWriteContext implements WriteContext {
    * compile (no passthrough rels) this allocates sequentially from 1.
    */
   private registerDocumentRel(type: RelationshipType, target: string): void {
-    if (this.document.relationships.hasRelationship(type, target)) return;
     const kind = type.split("/").pop();
     const preclaimed = (this._options.passthroughRelationships ?? []).find(
       (r) =>
         r.source === "word/document.xml" &&
         r.relationshipType.split("/").pop() === kind &&
-        r.target === target,
+        sameDocumentRelationshipTarget(r.target, target),
     );
+    if (this.document.relationships.hasRelationship(type, preclaimed?.target ?? target)) return;
     const m = preclaimed ? /^rId(\d+)$/.exec(preclaimed.rId) : undefined;
     const id =
       m && !this.document.relationships.hasId(m[0])
         ? Number(m[1])
         : this.document.relationships.nextRelationshipId;
-    this.document.relationships.addRelationship(id, type, target);
+    this.document.relationships.addRelationship(id, type, preclaimed?.target ?? target);
   }
 
   private registerPrinterSettingsRelationship(partPath: string): string {
@@ -758,6 +837,11 @@ export class DocxWriteContext implements WriteContext {
       if (rel.source !== "word/document.xml" || rel.relationshipType.endsWith("/theme")) continue;
       this.document.relationships.claimSourceRel(rel);
     }
+  }
+
+  public registerFontTableRelationship(): void {
+    if (this.hasSourcePart("word/fontTable.xml") && this.hasSourceDocumentRelationship("fontTable"))
+      this.registerDocumentRel(RELATIONSHIP_TYPES.fontTable, "fontTable.xml");
   }
 }
 

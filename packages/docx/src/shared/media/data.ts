@@ -11,6 +11,7 @@ import type {
   SourceRectangleOptions,
 } from "@office-open/core/drawing";
 import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "@parts/drawing/descriptor";
+import type { HyperlinkOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
 
 export interface MediaDataTransformation {
@@ -66,6 +67,8 @@ export interface MediaDataTransformation {
  */
 export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOptions {
   id?: number;
+  /** Hyperlinks carried by pic:cNvPr; relationship wiring is DOCX-specific. */
+  hyperlink?: HyperlinkOptions;
   /**
    * From the sibling pic:cNvPicPr. Omitted = Word's default (true); only
    * `false` is emitted as preferRelativeResize="0" because Word never writes

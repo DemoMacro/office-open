@@ -56,6 +56,12 @@ describe("settingsDesc round-trip", () => {
     expect(result.defaultTabStop).toBe(720);
   });
 
+  it("round-trips defaultTabStop measure literal", () => {
+    const result = roundTrip({ defaultTabStop: "36pt" });
+    expect(result.defaultTabStop).toBe("36pt");
+    expect(roundTripXml({ defaultTabStop: "36pt" })).toContain('<w:defaultTabStop w:val="36pt"/>');
+  });
+
   it("round-trips characterSpacingControl", () => {
     const result = roundTrip({ characterSpacingControl: "doNotCompress" });
     expect(result.characterSpacingControl).toBe("doNotCompress");

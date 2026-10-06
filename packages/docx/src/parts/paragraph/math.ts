@@ -183,6 +183,8 @@ export type MathInput =
   | string
   | {
       text: string;
+      /** Source `xml:space="preserve"` marker on m:t; round-trip only. */
+      preserveSpace?: boolean;
       properties?: MathRunPropertiesOptions;
       /** Run text formatting (w:rPr inside m:r). */
       runProperties?: RunPropertiesOptions;

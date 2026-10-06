@@ -60,9 +60,13 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
   "wordprocessingml/",
 ] as const;
 
-function canonicalAttributeValue(name: string, value: string): string {
+function canonicalAttributeValue(name: string, value: string, elementName?: string): string {
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
+  if (elementName === "a:buSzPct" && name === "val") {
+    const percent = value.endsWith("%") ? value.slice(0, -1) : String(Number(value) / 1000);
+    return Number.isFinite(Number(percent)) ? String(Number(percent)) : value;
+  }
   if (name === "ht" && Number.isFinite(Number(value))) return String(Number(value));
   if (name === "Type" || name === "uri" || name === "Namespace") {
     if (value.startsWith(STRICT_URI_PREFIX)) {
@@ -174,12 +178,12 @@ function canonicalNode(
           attributeName,
           references && attributeName.startsWith("r:")
             ? (references.get(String(value ?? "")) ??
-              canonicalAttributeValue(attributeName, String(value ?? "")))
+              canonicalAttributeValue(attributeName, String(value ?? ""), name))
             : isRelationship &&
                 attributeName === "Target" &&
                 element.attributes?.TargetMode !== "External"
               ? resolveRelationshipTarget(ownerPath, String(value ?? ""))
-              : canonicalAttributeValue(attributeName, String(value ?? "")),
+              : canonicalAttributeValue(attributeName, String(value ?? ""), name),
         ] as const;
       })
       .sort(([left], [right]) => left.localeCompare(right)),

@@ -1239,8 +1239,12 @@ describe("Worksheet", () => {
       expect(result.pageMargins).toEqual({
         top: 1,
         bottom: 1,
+        header: 0.5,
+        footer: 0.5,
         topRaw: "1",
         bottomRaw: "1",
+        headerRaw: "0.5",
+        footerRaw: "0.5",
       });
     });
 

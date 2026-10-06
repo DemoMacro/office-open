@@ -233,7 +233,8 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       if (
         isCrossParagraphFieldStart(el) ||
         isFieldContinuation(el) ||
-        isFieldSeparatorContinuation(el)
+        isFieldSeparatorContinuation(el) ||
+        isFieldEndContinuation(el)
       ) {
         return { rawXml: stringifyElement(el) };
       }
@@ -249,13 +250,24 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
       // would see a begin+instrText inside the first entry and fold the whole
       // span into a nested TOC — re-parsing output would nest one sdt level
       // deeper on every round-trip.
-      const parseTocEntries = (els: Element[], entryCtx: DocxReadContext): SectionChild[] =>
-        els.map((entryEl) =>
-          entryEl.name === "w:p"
+      let tocResult: ReturnType<typeof parseToc>;
+      let hasPendingRawFieldEnd = false;
+      const parseTocEntries = (els: Element[], entryCtx: DocxReadContext): SectionChild[] => {
+        let hasRawFieldEnd = false;
+        const entries = els.map((entryEl) => {
+          if (entryEl.name === "w:p" && isFieldEndContinuation(entryEl)) {
+            hasRawFieldEnd = true;
+            return { rawXml: stringifyElement(entryEl) };
+          }
+          return entryEl.name === "w:p"
             ? { paragraph: parseParagraph(entryEl, entryCtx) }
-            : parseSectionChild(entryEl, entryCtx),
-        );
-      const tocResult = parseToc(el, ctx, parseTocEntries);
+            : parseSectionChild(entryEl, entryCtx);
+        });
+        if (hasRawFieldEnd) hasPendingRawFieldEnd = true;
+        return entries;
+      };
+      tocResult = parseToc(el, ctx, parseTocEntries);
+      if (tocResult && hasPendingRawFieldEnd) tocResult.endInBody = true;
       if (tocResult) {
         return { toc: tocResult };
       }
@@ -493,6 +505,29 @@ function isFieldSeparatorContinuation(el: Element): boolean {
   };
   walk(el);
   return hasSeparate && !hasBegin;
+}
+
+/**
+ * True when a w:p closes a field opened in an earlier sibling. The
+ * per-paragraph accumulator has no open field to attach it to and would
+ * re-create the end marker elsewhere, so the whole source paragraph stays
+ * verbatim to preserve its run properties and surrounding order.
+ */
+export function isFieldEndContinuation(el: Element): boolean {
+  let hasBegin = false;
+  let hasEnd = false;
+  const walk = (node: Element): void => {
+    if (node.name === "w:fldChar") {
+      const type = attr(node, "w:fldCharType");
+      if (type === "begin") hasBegin = true;
+      else if (type === "end") hasEnd = true;
+    }
+    for (const c of node.elements ?? []) {
+      if (c.type === "element") walk(c);
+    }
+  };
+  walk(el);
+  return hasEnd && !hasBegin;
 }
 
 /**

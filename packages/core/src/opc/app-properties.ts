@@ -89,6 +89,8 @@ export interface AppPropertiesOptions {
    * using the namespace as the default. Round-trip only.
    */
   apPrefix?: true;
+  /** Legacy Microsoft extended-properties namespace; round-trip only. */
+  legacyMicrosoft?: true;
 }
 
 /** One HeadingPairs entry: a group name plus the number of parts it covers. */
@@ -110,15 +112,20 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     // ap-prefixed form (ISO strict round-trip) binds xmlns:ap explicitly;
     // vt: children keep their own prefix either way.
     const t = (name: string): string => (opts.apPrefix ? `ap:${name}` : name);
-    const p: string[] = opts.apPrefix
+    const p: string[] = opts.legacyMicrosoft
       ? [
-          '<ap:Properties xmlns:ap="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
-            ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
+          '<Properties xmlns="http://schemas.microsoft.com/office/2006/docPropsApp"' +
+            ' xmlns:vt="http://schemas.microsoft.com/office/2006/docPropsVTypes">',
         ]
-      : [
-          '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
-            ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
-        ];
+      : opts.apPrefix
+        ? [
+            '<ap:Properties xmlns:ap="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
+              ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
+          ]
+        : [
+            '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"' +
+              ' xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">',
+          ];
 
     // Schema order: Template, Manager, Company, Pages, Words, Characters,
     // PresentationFormat, Lines, Paragraphs, Slides, Notes, TotalTime,
@@ -200,6 +207,8 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
 
   parse(el, _ctx) {
     const result: AppPropertiesOptions = {};
+    if (el.attributes?.xmlns === "http://schemas.microsoft.com/office/2006/docPropsApp")
+      result.legacyMicrosoft = true;
     // ISO strict binds the vocabulary under an explicit ap: prefix — strip
     // any prefix so ap:Template matches the local-name cases, and remember
     // the binding so stringify re-emits the same form.

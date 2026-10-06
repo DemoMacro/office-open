@@ -11,6 +11,7 @@ import type { CustomDescriptor } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
 import { convertToEmu } from "../../util/converters";
 import { xsdCompoundLine, xsdLineCap, xsdLineEndSize, xsdPenAlignment } from "../../util/mappings";
+import type { Percentage } from "../../util/values";
 import { stripColorHashPrefix } from "../../util/values";
 import { solidFillDesc } from "../color/color-descriptors";
 import { gradientFillDesc, patternFillDesc } from "../fill/fill-descriptors";
@@ -190,7 +191,8 @@ export const outlineDesc: CustomDescriptor<OutlineOptions> = {
       const miter = findChild(el, "a:miter");
       if (miter) {
         result.join = "miter";
-        if (miter.attributes?.["lim"]) result.miterLimit = Number(miter.attributes["lim"]);
+        const limit = String(miter.attributes?.["lim"] ?? "");
+        if (limit) result.miterLimit = limit.endsWith("%") ? (limit as Percentage) : Number(limit);
       }
     }
 

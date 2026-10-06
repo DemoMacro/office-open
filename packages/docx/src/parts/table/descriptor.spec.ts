@@ -186,12 +186,12 @@ describe("tableDesc round-trip", () => {
     expect(result.columnWidths).toEqual([3000, 3000]);
   });
 
-  it("normalizes table width UniversalMeasure (mm) to twips", () => {
+  it("round-trips table width UniversalMeasure (mm)", () => {
     const result = roundTrip({
       width: { size: "50mm", type: "twips" },
       rows: [{ cells: [{ children: [] }] }],
     });
-    expect(result.width?.size).toBe(2834);
+    expect(result.width?.size).toBe("50mm");
     expect(result.width?.type).toBe("twips");
   });
 
@@ -266,6 +266,18 @@ describe("tableDesc round-trip", () => {
     expect(result.indent).toEqual({ size: 50, type: "percent" });
   });
 
+  it("round-trips indent dxa measure literal", () => {
+    const xml = tableDesc.stringify(
+      { indent: { size: "0pt", type: "twips" }, rows: [{ cells: [{ children: [] }] }] },
+      writeCtx,
+    )!;
+    expect(xml).toContain('w:tblInd w:w="0pt" w:type="dxa"');
+    const parsedEl = parseXml(xml).elements?.[0];
+    if (!parsedEl) throw new Error("parsed document has no root element");
+    const result = tableDesc.parse(parsedEl, readCtx);
+    expect(result.indent).toEqual({ size: "0pt", type: "twips" });
+  });
+
   it("round-trips description", () => {
     const result = roundTrip({
       description: "Test table description",
@@ -297,6 +309,17 @@ describe("tableDesc round-trip", () => {
     const row = result.rows[0] as TableRowOptions;
     expect(row.height).toBeDefined();
     expect(row.height!.value).toBe(500);
+  });
+
+  it("emits row height before header repeat", () => {
+    const xml = tableDesc.stringify(
+      {
+        rows: [{ height: { value: 720 }, tableHeader: true, cells: [{ children: [] }] }],
+      },
+      writeCtx,
+    )!;
+    expect(xml.indexOf("<w:trHeight")).toBeGreaterThan(xml.indexOf("<w:cnfStyle"));
+    expect(xml.indexOf("<w:trHeight")).toBeLessThan(xml.indexOf("<w:tblHeader"));
   });
 
   it("round-trips cell with column span", () => {

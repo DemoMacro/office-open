@@ -10,6 +10,13 @@ export interface ChartData {
   chartSpaceXml: string;
   /** Chart-part relationships for media, user shapes and external data. */
   relsXml?: string;
+  /** Source chart-part relationships preserved with their original rIds. */
+  sourceRelationships?: {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }[];
   /**
    * Embedded workbook for c:externalData (round-trip). The compiler emits the
    * chart part's own rels plus the word/embeddings part so the rId resolves.

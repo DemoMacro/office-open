@@ -79,6 +79,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
    */
   encrypted?: EncryptedContainerOptions;
   styles?: StylesOptions;
+  /** Legacy Word 2010 style effects companion (word/stylesWithEffects.xml). */
+  stylesWithEffects?: StylesOptions;
   numbering?: NumberingOptions;
   comments?: CommentOptions[];
   /**

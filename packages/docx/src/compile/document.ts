@@ -225,16 +225,7 @@ export function compileDocumentEntries(
           },
         );
 
-        ctx.document.relationships.addRelationship(
-          sourceRidFor(
-            ctx._options.passthroughRelationships,
-            "word/document.xml",
-            RELATIONSHIP_TYPES.fontTable,
-            "fontTable.xml",
-          ) ?? ctx.document.relationships.nextRelationshipId,
-          RELATIONSHIP_TYPES.fontTable,
-          "fontTable.xml",
-        );
+        ctx.registerFontTableRelationship();
         ctx.addPassthroughDocumentRelationships();
 
         return XML_DECL + ctx.document.relationships.serialize();

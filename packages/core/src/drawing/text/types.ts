@@ -9,7 +9,7 @@
  * @module
  */
 
-import type { Panose } from "../../util/values";
+import type { Panose, Percentage } from "../../util/values";
 import type { SolidFillOptions } from "../color/solid-fill";
 import type { EffectListOptions } from "../effects/effect-list";
 import type { FillOptions } from "../fill/fill-options";
@@ -112,7 +112,8 @@ export interface TextCharacterPropertiesOptions {
   mouseoverHyperlink?: TextHyperlinkOptions;
   strike?: StrikeStyle;
   /** Baseline offset as integer percent (positive = superscript, negative = subscript). */
-  baseline?: number;
+  /** Character baseline as integer percent (`30` = 30%) or verbatim `"30%"`. */
+  baseline?: number | Percentage;
   /** Character spacing in points (a:spc). */
   spacing?: number;
   capitalization?: TextCapitalization;

@@ -93,6 +93,22 @@ import { stringifyElement } from "./util/stringify-element";
 
 export type { BodyContext } from "./context";
 
+type TrackedCommentReferenceRun = {
+  commentReference: number;
+  properties?: RunPropertiesOptions;
+  additionRsid?: RunOptions["additionRsid"];
+  runPropertiesRsid?: RunOptions["runPropertiesRsid"];
+  deletionRsid?: RunOptions["deletionRsid"];
+};
+
+function isTrackedCommentReferenceRun(value: object): value is TrackedCommentReferenceRun {
+  return "commentReference" in value && typeof value.commentReference === "number";
+}
+
+function isUntrackedRun(value: RunOptions | TrackedCommentReferenceRun): value is RunOptions {
+  return !isTrackedCommentReferenceRun(value);
+}
+
 // ── Run ──
 
 /**
@@ -774,8 +790,8 @@ export function parseParagraphProperties(
     for (const tab of tabs.elements ?? []) {
       if (tab.name !== "w:tab") continue;
       const tabObj: Partial<TabStopDefinition> = {};
-      const pos = attrNum(tab, "w:pos");
-      if (pos !== undefined) tabObj.position = pos;
+      const pos = attrMeasure(tab, "w:pos");
+      if (pos !== undefined) tabObj.position = pos as TabStopDefinition["position"];
       const val = attr(tab, "w:val");
       if (val) tabObj.type = val as TabStopDefinition["type"];
       const leader = attr(tab, "w:leader");
@@ -1412,15 +1428,18 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
       }
       const parsed = parseRun(sub, ctx);
       const runOpts = parsedRunToOptions(parsed);
-      if (typeof runOpts === "object" && "commentReference" in runOpts) {
-        const { commentReference, properties } = runOpts as {
-          commentReference: number;
-          properties?: RunPropertiesOptions;
-        };
-        out.push({ ...properties, children: [{ commentReference }] });
+      if (typeof runOpts === "object" && isTrackedCommentReferenceRun(runOpts)) {
+        const { commentReference, properties, additionRsid, runPropertiesRsid, deletionRsid } =
+          runOpts;
+        out.push({
+          ...properties,
+          ...(additionRsid ? { additionRsid } : {}),
+          ...(runPropertiesRsid ? { runPropertiesRsid } : {}),
+          ...(deletionRsid ? { deletionRsid } : {}),
+          children: [{ commentReference }],
+        });
         continue;
-      }
-      out.push(runOpts);
+      } else if (isUntrackedRun(runOpts)) out.push(runOpts);
     } else if (sub.name === "w:commentRangeStart") {
       const m = parseMarkupRangeOptions(sub);
       if (m) out.push({ commentRangeStart: m });

@@ -55,4 +55,36 @@ describe("mail merge recipients part", () => {
     expect(rels).toContain('Target="https://example.invalid/data.mdb" TargetMode="External"');
     expect(Object.keys(output)).not.toContain("word/recipients1.xml");
   });
+
+  it("preserves source recipient part names", () => {
+    const source = zipSync({
+      "word/document.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+      "word/settings.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+          'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+          '<w:mailMerge><w:mainDocumentType w:val="letters"/><w:dataType w:val="database"/>' +
+          '<w:odso><w:recipientData r:id="rId3"/></w:odso></w:mailMerge></w:settings>',
+      ),
+      "word/_rels/settings.xml.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/recipientData" ' +
+          'Target="recipientData.xml"/></Relationships>',
+      ),
+      "word/recipientData.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:recipients xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          '<w:recipientData><w:active w:val="0"/><w:column w:val="0"/>' +
+          '<w:uniqueTag w:val="AA=="/></w:recipientData></w:recipients>',
+      ),
+    });
+
+    const parsed = parseDocumentSync(source);
+    expect(parsed.mailMergeRecipients?.[0]?.partName).toBe("recipientData.xml");
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    expect(output["word/recipientData.xml"]).toBeDefined();
+    const rels = new TextDecoder().decode(output["word/_rels/settings.xml.rels"]!);
+    expect(rels).toContain('Id="rId3"');
+    expect(rels).toContain('Target="recipientData.xml"');
+  });
 });

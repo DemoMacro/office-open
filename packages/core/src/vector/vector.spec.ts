@@ -339,6 +339,14 @@ describe("shape elements", () => {
     expect(roundTrip(stringifyVmlTextbox, parseVmlTextbox, opts)).toEqual(opts);
   });
 
+  it("round-trips raw v:textbox styles", () => {
+    const opts: VmlTextboxOptions = {
+      style: "mso-next-textbox:#_x0000_s2056",
+      txbxContent: "<w:p><w:r><w:t>Hi</w:t></w:r></w:p>",
+    };
+    expect(roundTrip(stringifyVmlTextbox, parseVmlTextbox, opts)).toEqual(opts);
+  });
+
   it("round-trips v:imagedata", () => {
     const opts: VmlImageDataOptions = {
       src: "pic.png",

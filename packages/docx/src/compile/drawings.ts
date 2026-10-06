@@ -71,6 +71,9 @@ export function compileChartParts(ctx: DocxWriteContext): {
       for (const rel of ctx._options.passthroughRelationships ?? []) {
         if (rel.source === chartPath) relationships.claimSourceRel(rel);
       }
+      for (const rel of chartData.sourceRelationships ?? []) {
+        relationships.claimSourceRel(rel);
+      }
       if (relationships.relationshipCount > 0) {
         parts.push({
           data: XML_DECL + relationships.serialize(),

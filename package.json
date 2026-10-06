@@ -31,7 +31,7 @@
   "scripts": {
     "dev": "pnpm --filter \"./packages/**\" -r dev",
     "build": "pnpm --filter \"./packages/**\" -r build",
-    "check": "vp check --fix",
+    "check": "pnpm --filter @office-open/docs exec nuxt prepare && vp check --fix",
     "test": "pnpm --filter \"./packages/**\" -r test",
     "postinstall": "pnpm build && vp config && basis git setup",
     "corpus:setup": "tsx scripts/corpus/check.ts --setup",

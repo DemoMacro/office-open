@@ -41,6 +41,8 @@ export interface ContentTypeOverride {
  * the parts actually written; supply it only to override the derivation.
  */
 export interface ContentTypesInput {
+  /** Legacy Microsoft OPC namespace flavor; omitted for standard OPC. */
+  namespace?: "microsoft2005";
   defaults: ContentTypeDefault[];
   overrides: ContentTypeOverride[];
 }
@@ -52,7 +54,9 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
 
   stringify(opts, _ctx) {
     const p: string[] = [
-      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
+      opts.namespace === "microsoft2005"
+        ? '<Types xmlns="http://schemas.microsoft.com/package/2005/06/content-types">'
+        : '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">',
     ];
     // OPC Default Extension and Override PartName matching are case-insensitive
     // (ECMA-376-2 §10.1.2/§10.1.4): a duplicate differing only in case makes
@@ -90,7 +94,13 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
         if (pn && ct) overrides.push({ partName: String(pn), contentType: String(ct) });
       }
     }
-    return { defaults, overrides };
+    return {
+      ...(el.attributes?.xmlns === "http://schemas.microsoft.com/package/2005/06/content-types"
+        ? { namespace: "microsoft2005" as const }
+        : {}),
+      defaults,
+      overrides,
+    };
   },
 };
 
@@ -214,9 +224,12 @@ export function deriveContentTypes(
     overrideMap.set(partName.toLowerCase(), { partName, contentType: extra.contentType });
   }
   if (!options.source) return { defaults, overrides: [...overrideMap.values()] };
-  return mergeSourceContentTypes(options.source, files, defaults, overrideMap, partTypes, {
-    verbatim: options.verbatimPaths,
-  });
+  return {
+    ...(options.source.namespace ? { namespace: options.source.namespace } : {}),
+    ...mergeSourceContentTypes(options.source, files, defaults, overrideMap, partTypes, {
+      verbatim: options.verbatimPaths,
+    }),
+  };
 }
 
 /**
@@ -373,6 +386,9 @@ export interface FinalizeContentTypesOptions {
   overrides?: ReadonlyArray<{ path: string; contentType: string }>;
   /** Output-dialect declarations that win over source and derived entries. */
   forcedOverrides?: ReadonlyArray<{ path: string; contentType: string }>;
+  /** Derived Overrides to omit when the source table deliberately left the
+   * part covered by a Default or undeclared. */
+  omitDerivedOverrides?: readonly string[];
 }
 
 /**
@@ -433,6 +449,16 @@ export function finalizeContentTypes(
       : undefined;
     if (coveredType !== override.contentType)
       input.overrides.push({ partName, contentType: override.contentType });
+  }
+  for (const path of options.omitDerivedOverrides ?? []) {
+    const partName = `/${path.replace(/^\//, "")}`;
+    const hasSourceOverride = options.source?.overrides.some(
+      (override) => override.partName.toLowerCase() === partName.toLowerCase(),
+    );
+    if (hasSourceOverride) continue;
+    input.overrides = input.overrides.filter(
+      (override) => override.partName.toLowerCase() !== partName.toLowerCase(),
+    );
   }
   return OOXML_XML_DECLARATION + (contentTypesDesc.stringify(input, ctx) ?? "");
 }

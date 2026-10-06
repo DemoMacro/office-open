@@ -128,9 +128,13 @@ export interface GradientFillOptions {
  * ```
  */
 export const createGradientStop = (stop: GradientStopOptions): string =>
-  element("a:gs", { pos: Math.round(stop.position * 1000) }, [
-    createColorElement(toSolidColor(stop.color)),
-  ]);
+  element(
+    "a:gs",
+    {
+      pos: typeof stop.position === "string" ? stop.position : Math.round(stop.position * 1000),
+    },
+    [createColorElement(toSolidColor(stop.color))],
+  );
 
 /**
  * Creates a relative rect element.

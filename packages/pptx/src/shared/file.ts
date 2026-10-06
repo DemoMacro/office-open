@@ -28,6 +28,7 @@ import type {
   KinsokuOptions,
   CustomerDataOptions,
   TagListOptions,
+  CustomXmlItemOptions,
 } from "@parts/presentation";
 import type {
   WebPropertiesOptions,
@@ -237,6 +238,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   modifyVerifier?: ModifyVerifierOptions;
   embeddedFonts?: EmbeddedFontOptions[];
   customShows?: CustomShowOptions[];
+  /** OPC custom-XML items (customXml/itemN.xml plus optional itemPropsN.xml). */
+  customXml?: CustomXmlItemOptions[];
   /**
    * Default text style (p:defaultTextStyle) as raw inner XML. Fresh emits
    * PowerPoint's default 9-level style; a parsed source preserves its value;

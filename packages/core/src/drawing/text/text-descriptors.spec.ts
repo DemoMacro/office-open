@@ -56,6 +56,11 @@ describe("runPropertiesDesc round-trip", () => {
     expect(r.baseline).toBe(30000);
   });
 
+  it("round-trips baseline percent literal", () => {
+    const r = roundTrip({ baseline: "10%" });
+    expect(r.baseline).toBe("10%");
+  });
+
   it("round-trips strike/capitalization", () => {
     const r = roundTrip({ strike: "singleStrike", capitalization: "all" });
     expect(r.strike).toBe("singleStrike");

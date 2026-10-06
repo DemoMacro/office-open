@@ -24,6 +24,7 @@ import {
 } from "@office-open/core";
 import { chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
 import {
+  tileDesc,
   connectorLockingDesc,
   scene3DDesc,
   shape3DDesc,
@@ -52,6 +53,40 @@ import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
+
+const chartSourceRelationships = new WeakMap<
+  object,
+  {
+    relationshipType: string;
+    target: string;
+    rId: string;
+    targetMode?: "External";
+  }[]
+>();
+
+export function takeChartSourceRelationships(options: object) {
+  return chartSourceRelationships.get(options);
+}
+
+function readChartSourceRelationships(chartPath: string, ctx: DocxReadContext) {
+  const relsEl = ctx.docx.doc.get(partPathToRelsPath(chartPath));
+  return (relsEl?.elements ?? [])
+    .filter((rel) => rel.name === "Relationship")
+    .flatMap((rel) => {
+      const relationshipType = attr(rel, "Type");
+      const target = attr(rel, "Target");
+      const rId = attr(rel, "Id");
+      if (!relationshipType || !target || !rId) return [];
+      return [
+        {
+          relationshipType,
+          target,
+          rId,
+          ...(attr(rel, "TargetMode") === "External" ? { targetMode: "External" as const } : {}),
+        },
+      ];
+    });
+}
 import type {
   ChartMediaData,
   ContentPartMediaData,
@@ -71,7 +106,7 @@ import type {
   GraphicFrameLocksOptions,
   GroupShapeLocksOptions,
 } from "./descriptor";
-import type { DocPropertiesOptions } from "./doc-properties/doc-properties";
+import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
 import type {
   Floating,
   HorizontalPositionOptions,
@@ -241,30 +276,16 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     const id = attr(docPr, "id");
     // CT_NonVisualDrawingProps children: click/hover hyperlinks resolve to
     // their external targets, re-registered on stringify.
-    const hyperlink: NonNullable<DocPropertiesOptions["hyperlink"]> = {};
-    const clickEl = findChild(docPr, "a:hlinkClick");
-    const clickRid = attr(clickEl, "r:id");
-    if (clickRid) {
-      hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
-      const tooltip = attr(clickEl, "tooltip");
-      if (tooltip) hyperlink.clickTooltip = tooltip;
-    }
-    const hoverEl = findChild(docPr, "a:hlinkHover");
-    const hoverRid = attr(hoverEl, "r:id");
-    if (hoverRid) {
-      hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
-      const tooltip = attr(hoverEl, "tooltip");
-      if (tooltip) hyperlink.hoverTooltip = tooltip;
-    }
+    const hyperlink = readCnvPrHyperlink(docPr, ctx);
     if (
       id !== undefined ||
       Object.keys(cNvPrOpts).length > 0 ||
-      hyperlink.click !== undefined ||
-      hyperlink.hover !== undefined
+      hyperlink?.click !== undefined ||
+      hyperlink?.hover !== undefined
     ) {
       const alt: Partial<DocPropertiesOptions> = { ...cNvPrOpts };
       if (id !== undefined) alt.id = id;
-      if (hyperlink.click !== undefined || hyperlink.hover !== undefined) {
+      if (hyperlink) {
         alt.hyperlink = hyperlink;
       }
       info.altText = alt as DocPropertiesOptions;
@@ -455,6 +476,8 @@ export function parsePictureRun(
   if (blipFill) {
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) imageOpts.sourceRectangle = srcRect;
+    const tile = findChild(blipFill, "a:tile");
+    if (tile) imageOpts.tile = tileDesc.parse(tile, ctx);
   }
 
   // Picture non-visual properties (pic:nvPicPr/pic:cNvPr)
@@ -632,6 +655,8 @@ function readPicCnvPr(el: Element, ctx: DocxReadContext): NonVisualPropertiesOpt
   if (cNvPr) {
     const id = attrNum(cNvPr, "id");
     if (id !== undefined) result.id = id;
+    const hyperlink = readCnvPrHyperlink(cNvPr, ctx);
+    if (hyperlink) result.hyperlink = hyperlink;
   }
   // pic:cNvPicPr sibling — preferRelativeResize (Word omits the default true;
   // an explicit false round-trips as "0") and the a:picLocks tri-state: null
@@ -768,7 +793,7 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   const txBox = cNvSpPr ? attr(cNvSpPr, "txBox") : undefined;
   const spLocks = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
   const cxnSpLocks = cNvCnPr ? findChild(cNvCnPr, "a:cxnSpLocks") : undefined;
-  if (cNvPr || txBox !== undefined || cNvCnPr || spLocks) {
+  if (cNvPr || cNvSpPr || cNvCnPr || spLocks) {
     const nvp: NonVisualShapePropertiesOptions = {};
     if (cNvPr) {
       const id = attrNum(cNvPr, "id");
@@ -986,6 +1011,8 @@ function parseWpsShapeDrawing(
 
   const info = parseAnchorOrInline(el, ctx) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
+  const shapeXfrm = findChild(findChild(wsp, "wps:spPr"), "a:xfrm");
+  const shapeFlipVertical = attrBool(shapeXfrm, "flipV");
 
   const shape: ShapeOptions = {
     ...data,
@@ -995,6 +1022,7 @@ function parseWpsShapeDrawing(
       ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
+  if (shapeFlipVertical !== undefined) shape.transformation.flipVertical = shapeFlipVertical;
   if (info.floating) shape.floating = info.floating;
   if (info.altText) shape.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) shape.graphicFrameLocks = info.graphicFrameLocks;
@@ -1158,6 +1186,40 @@ function bridgeChartUserShapes(
   us.anchors = userShapesDesc.parse(bodyEl, ctx).anchors;
 }
 
+function relationshipTargetMode(rId: string, ctx: DocxReadContext): "External" | undefined {
+  const relsEl = ctx.docx.doc.get(partPathToRelsPath(ctx.currentPart ?? "word/document.xml"));
+  const rel = relsEl?.elements?.find(
+    (element) => element.name === "Relationship" && attr(element, "Id") === rId,
+  );
+  return attr(rel, "TargetMode") === "External" ? "External" : undefined;
+}
+
+function readCnvPrHyperlink(
+  el: Element | undefined,
+  ctx: DocxReadContext,
+): HyperlinkOptions | undefined {
+  const hyperlink: HyperlinkOptions = {};
+  const clickEl = findChild(el, "a:hlinkClick");
+  const clickRid = attr(clickEl, "r:id");
+  if (clickRid) {
+    hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
+    hyperlink.clickRelationshipId = clickRid;
+    hyperlink.clickTargetMode = relationshipTargetMode(clickRid, ctx);
+    const tooltip = attr(clickEl, "tooltip");
+    if (tooltip) hyperlink.clickTooltip = tooltip;
+  }
+  const hoverEl = findChild(el, "a:hlinkHover");
+  const hoverRid = attr(hoverEl, "r:id");
+  if (hoverRid) {
+    hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
+    hyperlink.hoverRelationshipId = hoverRid;
+    hyperlink.hoverTargetMode = relationshipTargetMode(hoverRid, ctx);
+    const tooltip = attr(hoverEl, "tooltip");
+    if (tooltip) hyperlink.hoverTooltip = tooltip;
+  }
+  return hyperlink.click !== undefined || hyperlink.hover !== undefined ? hyperlink : undefined;
+}
+
 /**
  * Parse a wpg:graphicFrame group child (CT_GraphicFrame). Charts are the
  * payload Word produces in groups; the chart part is re-registered on
@@ -1178,6 +1240,8 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   if (!chartOpts.type) return undefined;
   bridgeChartExternalData(chartPath, chartOpts as ChartSpaceOptions, ctx);
   bridgeChartUserShapes(chartPath, chartOpts as ChartSpaceOptions, ctx);
+  const sourceRelationships = readChartSourceRelationships(chartPath, ctx);
+  if (sourceRelationships.length > 0) chartSourceRelationships.set(chartOpts, sourceRelationships);
 
   const md: ChartMediaData = {
     type: "chart",
@@ -1358,6 +1422,14 @@ function readWrap(anchor: Element): TextWrapping | undefined {
       if (distR !== undefined) margins.distR = distR;
       if (Object.keys(margins).length > 0) wrap.margins = margins;
     }
+    if (name === "wrapTopAndBottom") {
+      const margins: NonNullable<TextWrapping["margins"]> = {};
+      const distT = attrNum(el, "distT");
+      if (distT !== undefined) margins.distT = distT;
+      const distB = attrNum(el, "distB");
+      if (distB !== undefined) margins.distB = distB;
+      if (Object.keys(margins).length > 0) wrap.margins = margins;
+    }
     // wrapTight/wrapThrough carry a contour polygon; preserve it verbatim.
     if (name === "wrapTight" || name === "wrapThrough") {
       const polygon = readWrapPolygon(el);
@@ -1433,6 +1505,8 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
       ...(info?.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
+  const sourceRelationships = readChartSourceRelationships(chartPath, ctx);
+  if (sourceRelationships.length > 0) chartSourceRelationships.set(opts, sourceRelationships);
   if (info?.graphicFrameLocks !== undefined) {
     opts.graphicFrameLocks = info.graphicFrameLocks;
   }
@@ -1506,6 +1580,7 @@ function parseSmartArtDrawing(
   // survive so stringify does not inject the authoring default.
   const info = parseAnchorOrInline(el, ctx);
   if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
+  if (info?.altText) opts.altText = info.altText;
   if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
   const ext = getDrawingExtent(el);

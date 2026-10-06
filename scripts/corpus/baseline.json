@@ -9,8 +9,8 @@
     },
     "xlsx": {
       "total": 155,
-      "clean": 138,
-      "diff": 17,
+      "clean": 155,
+      "diff": 0,
       "parseFail": 0,
       "genFail": 0
     },

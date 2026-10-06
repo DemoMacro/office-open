@@ -47,6 +47,8 @@ export interface CorePropertiesOptions {
    * prefixes). Round-trip only.
    */
   defaultNamespace?: true;
+  /** Legacy Microsoft core-property root/element spelling; round-trip only. */
+  legacyMicrosoft?: true;
 }
 
 const FIELD_MAP: Array<{ name: string; key: keyof CorePropertiesOptions }> = [
@@ -79,6 +81,7 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
   // ISO/strict binds the core-properties namespace as the default — a
   // prefix-less root means stringify must re-emit that form.
   if (el.name === "coreProperties") props.defaultNamespace = true;
+  if (el.name === "CoreProperties") props.legacyMicrosoft = true;
 
   for (const field of FIELD_MAP) {
     // ISO/strict files bind the core-properties namespace as the DEFAULT
@@ -143,35 +146,86 @@ export function buildCorePropertiesXmlString(
   // ISO/strict round-trip: the core-properties namespace is the default, so
   // its children carry no prefix (dc:/dcterms: keep theirs).
   const cp = (name: string): string => (opts.defaultNamespace ? name : `cp:${name}`);
-  const p: string[] = opts.defaultNamespace
+  const legacy = opts.legacyMicrosoft === true;
+  const legacyName = (name: string): string => {
+    switch (name) {
+      case "keywords":
+        return "Keywords";
+      case "title":
+        return "Title";
+      case "subject":
+        return "Subject";
+      case "creator":
+        return "Creator";
+      case "description":
+        return "Description";
+      case "identifier":
+        return "Identifier";
+      case "language":
+        return "Language";
+      case "lastPrinted":
+        return "LastPrinted";
+      case "lastModifiedBy":
+        return "LastModifiedBy";
+      case "category":
+        return "Category";
+      case "contentStatus":
+        return "ContentStatus";
+      case "contentType":
+        return "ContentType";
+      case "version":
+        return "Version";
+      default:
+        return name;
+    }
+  };
+  const elementName = (name: string): string => (legacy ? legacyName(name) : name);
+  const p: string[] = legacy
     ? [
-        '<coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">',
+        '<CoreProperties xmlns="http://schemas.microsoft.com/package/2005/06/metadata/core-properties">',
       ]
-    : [
-        '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
-      ];
+    : opts.defaultNamespace
+      ? [
+          '<coreProperties xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://schemas.openxmlformats.org/package/2006/metadata/core-properties">',
+        ]
+      : [
+          '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
+        ];
   // Empty-string values are meaningful (element present, text empty) — only
   // undefined omits the element.
-  if (opts.title !== undefined) p.push(`<dc:title>${escapeXml(opts.title)}</dc:title>`);
-  if (opts.subject !== undefined) p.push(`<dc:subject>${escapeXml(opts.subject)}</dc:subject>`);
-  if (opts.creator !== undefined) p.push(`<dc:creator>${escapeXml(opts.creator)}</dc:creator>`);
+  if (opts.title !== undefined)
+    p.push(`<${elementName("title")}>${escapeXml(opts.title)}</${elementName("title")}>`);
+  if (opts.subject !== undefined)
+    p.push(`<${elementName("subject")}>${escapeXml(opts.subject)}</${elementName("subject")}>`);
+  if (opts.creator !== undefined)
+    p.push(`<${elementName("creator")}>${escapeXml(opts.creator)}</${elementName("creator")}>`);
   if (opts.keywords !== undefined)
     p.push(`<${cp("keywords")}>${escapeXml(opts.keywords)}</${cp("keywords")}>`);
   if (opts.description !== undefined)
     p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
   if (opts.lastPrinted !== undefined)
-    p.push(`<${cp("lastPrinted")}>${escapeXml(opts.lastPrinted)}</${cp("lastPrinted")}>`);
+    p.push(
+      `<${elementName("lastPrinted")}>${escapeXml(opts.lastPrinted)}</${elementName("lastPrinted")}>`,
+    );
   if (opts.lastModifiedBy !== undefined)
-    p.push(`<${cp("lastModifiedBy")}>${escapeXml(opts.lastModifiedBy)}</${cp("lastModifiedBy")}>`);
+    p.push(
+      `<${elementName("lastModifiedBy")}>${escapeXml(opts.lastModifiedBy)}</${elementName("lastModifiedBy")}>`,
+    );
   if (opts.revision !== undefined)
     p.push(`<${cp("revision")}>${opts.revision}</${cp("revision")}>`);
 
   const now = reproducible?.date ?? new Date().toISOString();
   if (opts.created !== null)
-    p.push(`<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`);
+    p.push(
+      legacy
+        ? `<DateCreated>${opts.created ?? now}</DateCreated>`
+        : `<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`,
+    );
   if (opts.modified !== null)
     p.push(
-      `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
+      legacy
+        ? `<DateModified>${opts.modified ?? now}</DateModified>`
+        : `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
     );
   // Trailing slots mirror Word's emission order (category last in real files).
   if (opts.category !== undefined)
@@ -185,6 +239,6 @@ export function buildCorePropertiesXmlString(
   if (opts.language !== undefined) p.push(`<dc:language>${escapeXml(opts.language)}</dc:language>`);
   if (opts.version !== undefined)
     p.push(`<${cp("version")}>${escapeXml(opts.version)}</${cp("version")}>`);
-  p.push(`</${cp("coreProperties")}>`);
+  p.push(legacy ? "</CoreProperties>" : `</${cp("coreProperties")}>`);
   return p.join("");
 }

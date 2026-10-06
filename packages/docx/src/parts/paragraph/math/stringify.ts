@@ -322,7 +322,8 @@ export function stringifyMathInput(value: MathInput): string {
   if ("text" in value) {
     const props = value.properties ? mathRunPropsStr(value.properties) : "";
     const rPr = wRPrXml(value.runProperties);
-    return `<m:r>${props}${rPr}<m:t>${escapeXml(value.text)}</m:t></m:r>`;
+    const space = value.preserveSpace ? ` xml:space="preserve"` : "";
+    return `<m:r>${props}${rPr}<m:t${space}>${escapeXml(value.text)}</m:t></m:r>`;
   }
 
   return "";
@@ -518,16 +519,21 @@ function parseMathElement(el: Element): MathInput | undefined {
 }
 
 function parseMathRun(el: Element): MathInput {
-  const text = textOf(findChild(el, "m:t"));
+  const textEl = findChild(el, "m:t");
+  const text = textOf(textEl);
+  const preserveSpace = attr(textEl, "xml:space") === "preserve";
   const rPrEl = findChild(el, "m:rPr");
   const wRPrEl = findChild(el, "w:rPr");
-  if (!rPrEl && !wRPrEl) return text ?? "";
+  if (!rPrEl && !wRPrEl) {
+    return preserveSpace ? { text: text ?? "", preserveSpace: true } : (text ?? "");
+  }
   const run: {
     text: string;
     properties?: MathRunPropertiesOptions;
     runProperties?: RunPropertiesOptions;
   } = {
     text: text ?? "",
+    ...(preserveSpace ? { preserveSpace: true } : {}),
   };
   if (rPrEl) {
     const props = readMathRunProperties(rPrEl);

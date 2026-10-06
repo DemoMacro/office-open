@@ -54,9 +54,9 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
     optionsInterface: "CorePropertiesOptions",
     // 16 content fields — created/modified + the six CT_CoreProperties
     // string fields (category/contentStatus/identifier/language/version).
-    // defaultNamespace is a round-trip form flag (prefix vs default-ns
-    // binding), not a serialized content field.
-    excludeFields: ["defaultNamespace"],
+    // defaultNamespace/legacyMicrosoft are round-trip form flags (prefix vs
+    // default-ns binding and the legacy Microsoft spelling), not content.
+    excludeFields: ["defaultNamespace", "legacyMicrosoft"],
     interfaceFields: [
       "title",
       "subject",

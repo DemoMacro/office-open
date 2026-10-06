@@ -33,7 +33,7 @@ describe("package variants", () => {
     },
     {
       variant: "macroTemplate",
-      mainContentType: "application/vnd.ms-word.template.macroEnabled.main+xml",
+      mainContentType: "application/vnd.ms-word.template.macroEnabledTemplate.main+xml",
       mimeType: "application/vnd.ms-word.template.macroEnabled.12",
     },
   ] as const;
@@ -230,8 +230,8 @@ describe("package metadata presence", () => {
     const output = generateDocumentSync(parsed, { type: "uint8array" });
     const rootRelsXml = new TextDecoder().decode(unzipSync(output)["_rels/.rels"]!);
     expect(rootRelsXml).toContain("/relationships/officeDocument");
-    expect(rootRelsXml).not.toContain("docProps/core.xml");
-    expect(rootRelsXml).not.toContain("docProps/app.xml");
+    expect(rootRelsXml).toContain("docProps/core.xml");
+    expect(rootRelsXml).toContain("docProps/app.xml");
     const contentTypesXml = new TextDecoder().decode(unzipSync(output)["[Content_Types].xml"]!);
     expect(contentTypesXml).not.toContain("/docProps/core.xml");
     expect(contentTypesXml).not.toContain("/docProps/app.xml");

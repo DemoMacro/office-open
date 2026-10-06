@@ -9,6 +9,8 @@
  */
 
 import { derivePasswordHash, parseOnOff } from "@office-open/core";
+import type { Percentage, PositiveUniversalMeasure } from "@office-open/core";
+import { twipsMeasureValue } from "@office-open/core";
 import {
   parseVmlShapeDefaults,
   parseVmlShapeLayout,
@@ -16,7 +18,7 @@ import {
   stringifyVmlShapeLayout,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrMeasure, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import {
@@ -59,6 +61,10 @@ function onOff(tag: string, val: boolean | undefined): string {
 
 function numVal(tag: string, val: number | undefined): string {
   return val !== undefined ? `<${tag} ${valAttr(tag)}="${val}"/>` : "";
+}
+
+function measureVal(tag: string, val: number | PositiveUniversalMeasure | undefined): string {
+  return val !== undefined ? `<${tag} ${valAttr(tag)}="${twipsMeasureValue(val)}"/>` : "";
 }
 
 function strVal(tag: string, val: string | undefined): string {
@@ -939,7 +945,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     p.push(onOff("w:styleLockQFSet", opts.styleLockQFSet));
 
     // defaultTabStop — optional (CT_Settings minOccurs=0); emit only when set
-    p.push(numVal("w:defaultTabStop", opts.defaultTabStop));
+    p.push(measureVal("w:defaultTabStop", opts.defaultTabStop));
 
     // hyphenation — sibling CT_Settings elements, flattened onto the root
     p.push(onOff("w:autoHyphenation", opts.autoHyphenation));
@@ -1126,8 +1132,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const zoomEl = findChild(el, "w:zoom");
     if (zoomEl) {
       const zoom: Record<string, unknown> = {};
-      const percent = attr(zoomEl, "w:percent");
-      if (percent) zoom.percent = parseInt(percent, 10);
+      const percent = attrMeasure(zoomEl, "w:percent");
+      if (percent !== undefined) zoom.percent = percent as number | Percentage;
       const zval = attr(zoomEl, "w:val");
       if (zval) zoom.val = zval;
       if (Object.keys(zoom).length > 0) opts.zoom = zoom;
@@ -1316,7 +1322,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     }
 
     // defaultTabStop → w:defaultTabStop/@w:val
-    const defaultTabStop = readNum(findChild(el, "w:defaultTabStop"), "w:val");
+    const defaultTabStop = attrMeasure(findChild(el, "w:defaultTabStop"), "w:val");
     if (defaultTabStop !== undefined) opts.defaultTabStop = defaultTabStop;
 
     // hyphenation — sibling CT_Settings elements, flattened onto the root

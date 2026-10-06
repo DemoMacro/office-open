@@ -60,7 +60,7 @@ export const OOXML_PACKAGE_FORMATS: Record<OoxmlPackageFormat, OoxmlPackageForma
     variant: "macroTemplate",
     mimeType: "application/vnd.ms-word.template.macroEnabled.12",
     mainPartPath: WORD_MAIN_PART,
-    mainContentType: "application/vnd.ms-word.template.macroEnabled.main+xml",
+    mainContentType: "application/vnd.ms-word.template.macroEnabledTemplate.main+xml",
   },
   xlsx: {
     family: "spreadsheet",

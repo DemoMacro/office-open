@@ -9,7 +9,7 @@ export interface RawAuditBlocker {
   reason: string;
 }
 
-const XML_PART = /\.(?:xml|rels)$/i;
+const XML_PART = /\.(?:xml|rels|vml)$/i;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && Object.getPrototypeOf(value) === null;

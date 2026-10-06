@@ -24,7 +24,11 @@ const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
   stringifyChild: (child: unknown) =>
-    typeof child === "string" ? `<w:p><w:r><w:t>${child}</w:t></w:r></w:p>` : "<w:p/>",
+    typeof child === "string"
+      ? `<w:p><w:r><w:t>${child}</w:t></w:r></w:p>`
+      : typeof child === "object" && child !== null && "paragraph" in child
+        ? `<w:p><w:r><w:t>explicit</w:t></w:r></w:p>`
+        : "<w:p/>",
   fileData: {
     document: {
       relationships: { addRelationship: () => {} },
@@ -255,6 +259,17 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.checkbox?.checked).toBe(false);
     expect(result.properties.checkbox?.checkedState?.val).toBe("2714");
     expect(result.properties.checkbox?.uncheckedState?.val).toBe("2715");
+  });
+
+  it("preserves explicit checkbox SDT content", () => {
+    const xml = sdtBlockDesc.stringify(
+      {
+        properties: { checkbox: { checked: false } },
+        children: [{ paragraph: { children: [{ text: "explicit" }] } }],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<w:t>explicit</w:t>");
   });
 
   it("round-trips SDT sdtEndPr run properties", () => {

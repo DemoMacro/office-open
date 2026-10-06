@@ -37,6 +37,8 @@ export const RELATIONSHIP_TYPES = {
   customProperties:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
   customXml: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",
+  customXmlProperties:
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps",
   diagramColors:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramColors",
   diagramData: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/diagramData",
@@ -94,6 +96,7 @@ export const RELATIONSHIP_TYPES = {
   slideSyncProperties:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideSyncProperties",
   styles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles",
+  stylesWithEffects: "http://schemas.microsoft.com/office/2007/relationships/stylesWithEffects",
   subDocument: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/subDocument",
   table: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/table",
   tableSingleCells:
@@ -129,6 +132,16 @@ interface RelationshipEntry {
   targetMode?: string;
 }
 
+const STANDARD_RELATIONSHIPS_NAMESPACE =
+  "http://schemas.openxmlformats.org/package/2006/relationships";
+const LEGACY_RELATIONSHIPS_NAMESPACE = "http://schemas.microsoft.com/package/2005/06/relationships";
+const LEGACY_OFFICE_DOCUMENT_TYPE =
+  "http://schemas.microsoft.com/office/2006/relationships/officeDocument";
+const LEGACY_CORE_PROPERTIES_TYPE =
+  "http://schemas.microsoft.com/package/2005/06/relationships/metadata/core-properties";
+const LEGACY_APP_PROPERTIES_TYPE =
+  "http://schemas.microsoft.com/office/2006/relationships/docPropsApp";
+
 /**
  * Manages OOXML relationship entries and serializes to XML.
  *
@@ -141,9 +154,11 @@ export class Relationships {
   // free id is O(1) instead of a full scan per read.
   private maxId = 0;
   private readonly ownerPath: string;
+  private readonly namespace: string;
 
-  constructor(ownerPath = "") {
+  constructor(ownerPath = "", namespace = STANDARD_RELATIONSHIPS_NAMESPACE) {
     this.ownerPath = ownerPath;
+    this.namespace = namespace;
   }
 
   private trackId(rid: string): void {
@@ -236,6 +251,13 @@ export class Relationships {
     }
   }
 
+  /** Replace one relationship URI after canonical model wiring; used to
+   * restore a source namespace spelling before serialization. */
+  public retypeRelationship(id: string, type: string): void {
+    const entry = this.entries.find((candidate) => candidate.id === id);
+    if (entry) entry.type = type;
+  }
+
   /** Numeric id of the first entry matching `kind` (last segment of the type
    * URI), or undefined when none is registered. */
   public idByKind(kind: string): number | undefined {
@@ -296,10 +318,10 @@ export class Relationships {
    * package for Office applications).
    */
   public hasRelationship(type: string, target: string): boolean {
-    const kind = type.split("/").pop();
+    const kind = type.split("/").pop()?.toLowerCase().replaceAll("-", "");
     return this.entries.some(
       (e) =>
-        e.type.split("/").pop() === kind &&
+        e.type.split("/").pop()?.toLowerCase().replaceAll("-", "") === kind &&
         this.semanticTarget(e) === this.semanticTarget({ target }),
     );
   }
@@ -341,9 +363,7 @@ export class Relationships {
 
   /** Directly builds XML string — zero intermediate tree allocation. */
   public serialize(): string {
-    const p: string[] = [
-      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">',
-    ];
+    const p: string[] = [`<Relationships xmlns="${this.namespace}">`];
     for (const e of this.entries) {
       const tm = e.targetMode ? ` TargetMode="${escapeXml(e.targetMode)}"` : "";
       p.push(
@@ -388,18 +408,24 @@ export function buildRootRelationships(
     includeCoreProperties?: boolean;
     includeAppProperties?: boolean;
     appPropertiesType?: string;
+    namespace?: string;
   },
 ): Relationships {
-  const rels = new Relationships();
+  const rels = new Relationships("", options?.namespace);
+  const legacy = options?.namespace === LEGACY_RELATIONSHIPS_NAMESPACE;
   rels.addRelationship(
     1,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
+    legacy
+      ? LEGACY_OFFICE_DOCUMENT_TYPE
+      : "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
     mainPartTarget,
   );
   if (options?.includeCoreProperties !== false) {
     rels.addRelationship(
       2,
-      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+      legacy
+        ? LEGACY_CORE_PROPERTIES_TYPE
+        : "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
       "docProps/core.xml",
     );
   }
@@ -407,7 +433,9 @@ export function buildRootRelationships(
     rels.addRelationship(
       3,
       options?.appPropertiesType ??
-        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+        (legacy
+          ? LEGACY_APP_PROPERTIES_TYPE
+          : "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"),
       "docProps/app.xml",
     );
   }

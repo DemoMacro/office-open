@@ -43,6 +43,7 @@ function docWithRawSmartArt() {
               children: [
                 {
                   smartArt: {
+                    altText: { id: "1", name: "Diagram" },
                     nodes: [{ text: "Item" }],
                     transformation: { width: 100, height: 100 },
                     raw: {
@@ -82,6 +83,7 @@ describe("SmartArt raw round-trip", () => {
       paragraph: { children: { smartArt: Record<string, unknown> }[] };
     };
     const smartArt = para.paragraph.children[0]!.smartArt;
+    expect(smartArt.altText).toEqual({ id: "1", name: "Diagram" });
     const raw = smartArt.raw as {
       data: Uint8Array;
       layout: Uint8Array;

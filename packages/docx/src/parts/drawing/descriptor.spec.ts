@@ -24,7 +24,10 @@ const writeCtx = {
   fileData: {} as never,
   viewWrapper: {
     relationships: {
-      addRelationship: () => {},
+      addRelationship: () => 1,
+      add: () => 1,
+      hasId: () => false,
+      idOf: () => undefined,
     },
   },
 } as unknown as BodyContext;
@@ -64,6 +67,7 @@ function makeImageMediaData() {
 // readCtx with media wired so parsePictureRun can resolve the blip embed
 // ({fileName} placeholder) and read image bytes.
 const mediaMap = new Map([["{image1.png}", "word/media/image1.png"]]);
+const hyperlinkMap = new Map([["rId1", "https://example.com/"]]);
 const mediaReadCtx = {
   // parsePictureRun resolves the blip embed via resolveRelationship (per-part
   // rels, falling back to partRefs.media) — mirror that here.
@@ -73,6 +77,7 @@ const mediaReadCtx = {
   docx: {
     partRefs: {
       media: mediaMap,
+      hyperlinks: hyperlinkMap,
       charts: new Map(),
       diagramData: new Map(),
     },
@@ -97,6 +102,34 @@ function roundTrip(opts: DrawingDescriptorOptions) {
 }
 
 describe("drawingDesc round-trip", () => {
+  it("writes docPr hyperlink tooltips on their child elements", () => {
+    const relationships = new Relationships("word/document.xml");
+    const ctx = {
+      ...writeCtx,
+      viewWrapper: { relationships },
+    } as typeof writeCtx;
+    const xml = drawingDesc.stringify(
+      {
+        mediaData: makeImageMediaData(),
+        docProperties: {
+          name: "Linked image",
+          hyperlink: {
+            click: "https://example.invalid/open",
+            clickTooltip: "Open image",
+          },
+        },
+      },
+      ctx,
+    )!;
+    expect(xml).toContain('r:id="rId1" tooltip="Open image"');
+    expect(
+      relationships.idOf(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        "https://example.invalid/open",
+      ),
+    ).toBe("rId1");
+  });
+
   it("stringifies inline image with w:drawing root", () => {
     const xml = stringify({
       mediaData: makeImageMediaData(),
@@ -660,6 +693,16 @@ describe("drawingDesc round-trip", () => {
     expect(output).toContain('<a:ext cx="300" cy="400"/>');
   });
 
+  it("parses picture tile fills without substituting stretch", () => {
+    const xml = `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Image"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="Image"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="{image1.png}"/><a:tile sx="50000" sy="50000"/></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="300" cy="400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: { tile?: { sx?: number; sy?: number } };
+    };
+    expect(result.picture?.tile).toEqual({ sx: 50, sy: 50 });
+  });
+
   it("round-trips wps style fontReference collection and lineReference index", () => {
     const xml = stringify({
       mediaData: {
@@ -691,6 +734,26 @@ describe("drawingDesc round-trip", () => {
     expect(result.wpsShape?.style?.lineReference?.index).toBe(2);
     // fontReference @idx is ST_FontCollectionIndex, not a matrix index.
     expect(result.wpsShape?.style?.fontReference?.collection).toBe("minor");
+  });
+
+  it("round-trips pic:cNvPr hyperlinks", () => {
+    const mediaData = {
+      ...makeImageMediaData(),
+      nonVisualProperties: {
+        id: 1,
+        name: "Linked image",
+        hyperlink: { click: "https://example.com/" },
+      },
+    };
+    const xml = stringify({ mediaData });
+    expect(xml).toContain('<a:hlinkClick r:id="rId1"');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: { nonVisualProperties?: { hyperlink?: { click?: string } } };
+    };
+    expect(result.picture?.nonVisualProperties?.hyperlink?.click).toBe("https://example.com/");
   });
 
   it("round-trips wp14 percentage positioning", () => {
@@ -842,6 +905,21 @@ describe("drawingDesc round-trip", () => {
     if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
     expect(result.picture?.floating?.simplePos).toEqual({ x: 11111, y: 22222 });
+  });
+
+  it("does not inherit wp:anchor distances in wrapTopAndBottom", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "column", align: "center" },
+        verticalPosition: { relative: "page", offset: 100000 },
+        margins: { top: 10000, bottom: 20000 },
+        wrap: { type: TextWrappingType.TOP_AND_BOTTOM },
+      },
+    });
+    expect(xml).toContain('<wp:anchor distT="10000"');
+    expect(xml).toContain('distB="20000"');
+    expect(xml).toContain("<wp:wrapTopAndBottom/>");
   });
 
   it("omits absent wrapSquare distances on round-trip", () => {

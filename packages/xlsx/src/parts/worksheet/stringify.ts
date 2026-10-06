@@ -667,10 +667,10 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           : {}),
         ...(pm.header !== undefined || pm.headerRaw !== undefined
           ? { header: raw(pm.header, pm.headerRaw) }
-          : {}),
+          : { header: 0.5 }),
         ...(pm.footer !== undefined || pm.footerRaw !== undefined
           ? { footer: raw(pm.footer, pm.footerRaw) }
-          : {}),
+          : { footer: 0.5 }),
       })}/>`,
     );
   } else {

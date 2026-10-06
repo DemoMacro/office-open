@@ -14,13 +14,14 @@ import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml, stringifyElement } from "@office-open/xml";
 
 import { stringifyVmlTrueFalse, parseVmlTrueFalse } from "../attributes";
-import { parseVmlShapeStyle, parseVmlStyle, stringifyVmlStyle, type VmlShapeStyle } from "../style";
+import { stringifyVmlStyle, type VmlShapeStyle } from "../style";
 import type { VmlInsetMode } from "./office-elements";
 
 /** v:textbox options (CT_Textbox). */
 export interface VmlTextboxOptions {
   id?: string;
-  style?: VmlShapeStyle;
+  /** Structured VML style properties, or a raw attribute string for round-trip fidelity. */
+  style?: VmlShapeStyle | string;
   /** Inner inset, e.g. "auto" or "10pt,10pt,10pt,10pt". */
   inset?: string;
   /** o:singleclick — the whole shape is the click target. */
@@ -40,7 +41,10 @@ export interface VmlTextboxOptions {
 export function stringifyVmlTextbox(opts: VmlTextboxOptions): string {
   const attrs: string[] = [];
   if (opts.id !== undefined) attrs.push(`id="${escapeXml(opts.id)}"`);
-  if (opts.style !== undefined) attrs.push(`style="${escapeXml(stringifyVmlStyle(opts.style))}"`);
+  if (opts.style !== undefined) {
+    const style = typeof opts.style === "string" ? opts.style : stringifyVmlStyle(opts.style);
+    attrs.push(`style="${escapeXml(style)}"`);
+  }
   if (opts.inset !== undefined) attrs.push(`inset="${escapeXml(opts.inset)}"`);
   if (opts.singleclick !== undefined) {
     attrs.push(`o:singleclick="${stringifyVmlTrueFalse(opts.singleclick)}"`);
@@ -63,7 +67,7 @@ export function parseVmlTextbox(el: XmlElement): VmlTextboxOptions {
   const attrs = el.attributes ?? {};
   if (attrs.id !== undefined) out.id = String(attrs.id);
   if (attrs.style !== undefined) {
-    out.style = parseVmlShapeStyle(parseVmlStyle(String(attrs.style)));
+    out.style = String(attrs.style);
   }
   if (attrs.inset !== undefined) out.inset = String(attrs.inset);
   if (attrs["o:singleclick"] !== undefined) {

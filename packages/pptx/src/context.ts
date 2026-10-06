@@ -336,6 +336,10 @@ export class PptxWriteContext implements WriteContext {
 export class PptxReadContext implements ReadContext {
   constructor(private _parseCtx: ParseContext) {}
 
+  public get slideRelationships(): ReadonlyMap<string, string> {
+    return this._parseCtx.slideRels;
+  }
+
   public resolveRelationship(rId: string): string | undefined {
     return this._parseCtx.slideRels.get(rId);
   }

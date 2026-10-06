@@ -93,6 +93,18 @@ export interface StringTagOptions {
 /** User-defined tags part (ppt/tags/tagsN.xml — p:tagLst). */
 export type TagListOptions = StringTagOptions[];
 
+/** One OPC custom-XML item and its optional properties companion. */
+export interface CustomXmlItemOptions {
+  /** Complete custom-XML item document, excluding the XML declaration. */
+  content: string;
+  /** Source item path; round-trip only — do not hand-author. */
+  contentPath?: string;
+  /** Complete custom-XML properties document, excluding the XML declaration. */
+  properties?: string;
+  /** Source properties path; round-trip only — do not hand-author. */
+  propertiesPath?: string;
+}
+
 export type SlideSizeType =
   | "screen4x3"
   | "letter"

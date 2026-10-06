@@ -104,6 +104,8 @@ export interface XlsxDocument {
   appProps?: string;
   /** docProps/custom.xml path */
   customProps?: string;
+  /** Legacy Microsoft OPC relationship namespace flavor detected in manifests. */
+  packageRelationshipNamespace?: "microsoft2005";
 }
 
 const LEADING_PATH_NUMBER = /(\d+)/;
@@ -114,6 +116,25 @@ function sortByNumber(paths: string[]): string[] {
     .map((p) => ({ p, n: parseInt(p.match(LEADING_PATH_NUMBER)?.[1] ?? "0", 10) }))
     .sort((a, b) => a.n - b.n)
     .map(({ p }) => p);
+}
+
+function graphicDataUris(element: Element, uris: string[] = []): string[] {
+  if (element.name === "a:graphicData") {
+    const uri = attr(element, "uri");
+    if (uri !== undefined) uris.push(uri);
+  }
+  for (const child of element.elements ?? []) graphicDataUris(child, uris);
+  return uris;
+}
+
+function isLegacyChartDrawing(element: Element | undefined): boolean {
+  if (!element) return false;
+  const uris = graphicDataUris(element);
+  return (
+    uris.some((uri) =>
+      uri.startsWith("http://schemas.microsoft.com/office/excel/2005/8/ChartML"),
+    ) && !uris.some((uri) => uri.includes("openxmlformats.org/drawingml/2006/chart"))
+  );
 }
 
 /**
@@ -250,11 +271,18 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   charts.push(
     ...doc.keys("xl/charts/").filter((k) => {
       if (!k.endsWith(".xml")) return false;
-      const name = doc.get(k)?.name ?? "";
-      return name === "chartSpace" || name === "c:chartSpace" || name.endsWith(":chartSpace");
+      const chart = doc.get(k);
+      const name = chart?.name ?? "";
+      const chartNamespace = attr(chart, "xmlns:c") ?? attr(chart, "xmlns");
+      return (
+        (name === "chartSpace" || name === "c:chartSpace" || name.endsWith(":chartSpace")) &&
+        (chartNamespace === undefined ||
+          chartNamespace.includes("openxmlformats.org/drawingml/2006/chart"))
+      );
     }),
   );
   media.push(...doc.keys("xl/media/"));
+  drawings = drawings.filter((path) => !isLegacyChartDrawing(doc.get(path)));
   drawings = sortByNumber(drawings);
   charts = sortByNumber(charts);
 
@@ -263,6 +291,10 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   let appProps: string | undefined;
   let customProps: string | undefined;
   const rootRels = doc.get("_rels/.rels");
+  const workbookRels = doc.get("xl/_rels/workbook.xml.rels");
+  const isLegacyRelationshipNamespace =
+    attr(rootRels, "xmlns") === "http://schemas.microsoft.com/package/2005/06/relationships" ||
+    attr(workbookRels, "xmlns") === "http://schemas.microsoft.com/package/2005/06/relationships";
   if (rootRels) {
     for (const child of rootRels.elements ?? []) {
       if (child.name !== "Relationship") continue;
@@ -291,6 +323,9 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
     coreProps,
     appProps,
     customProps,
+    ...(isLegacyRelationshipNamespace
+      ? { packageRelationshipNamespace: "microsoft2005" as const }
+      : {}),
   };
 }
 
@@ -1073,9 +1108,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const volTypesEl = volTypesPath ? xlsx.doc.get(`xl/${volTypesPath}`) : undefined;
   if (volTypesEl) {
     const volTypes = parseVolTypesEl(volTypesEl);
+    opts.volTypes = volTypes;
+    opts.volTypesPath = volTypesPath;
     if (volTypes.length > 0) {
-      opts.volTypes = volTypes;
-      opts.volTypesPath = volTypesPath;
       opts.volTypesCount = attrNum(volTypesEl, "count");
     }
   }
@@ -1248,6 +1283,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
+  if (xlsx.packageRelationshipNamespace)
+    opts.relationshipNamespace = xlsx.packageRelationshipNamespace;
 
   // Source content-type declarations — the compiler keeps them as the base
   // table so round-trip preserves the Default/Override split as written.

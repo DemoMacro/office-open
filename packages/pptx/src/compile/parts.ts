@@ -147,14 +147,17 @@ export function compileTailParts(
               ? getColorXml(sa.color)
               : stringifyColorDefinitionPart(sa.color),
           );
+    const drawingFileName = sa.raw?.drawingFileName ?? `drawing${i + 1}.xml`;
     if (sa.raw?.drawing !== undefined) {
-      files[`ppt/diagrams/drawing${i + 1}.xml`] = toUint8Array(sa.raw.drawing);
+      files[`ppt/diagrams/${drawingFileName}`] = toUint8Array(sa.raw.drawing);
     } else if (sa.raw === undefined) {
       files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
     }
     if (sa.raw?.dataRels !== undefined) {
       files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(
-        remapSmartArtDrawingTarget(sa.raw.dataRels, `drawing${i + 1}.xml`),
+        drawingFileName === `drawing${i + 1}.xml`
+          ? remapSmartArtDrawingTarget(sa.raw.dataRels, `drawing${i + 1}.xml`)
+          : sa.raw.dataRels,
       );
     }
   }

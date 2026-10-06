@@ -211,23 +211,23 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(result.columns!.space).toBe(720);
   });
 
-  it("normalizes column space UniversalMeasure (mm) to twips", () => {
+  it("preserves column space UniversalMeasure (mm)", () => {
     const result = roundTrip({
       columns: { count: 2, space: "5mm" },
     });
-    expect(result.columns!.space).toBe(283);
+    expect(result.columns!.space).toBe("5mm");
   });
 
-  it("normalizes custom column width/space UniversalMeasure (mm) to twips", () => {
+  it("preserves custom column width/space UniversalMeasure (mm)", () => {
     const result = roundTrip({
       columns: {
         children: [{ width: "30mm", space: "2.5mm" }, { width: "40mm" }],
       },
     });
     const children = result.columns!.children!;
-    expect(children[0]?.width).toBe(1700);
-    expect(children[0]?.space).toBe(141);
-    expect(children[1]?.width).toBe(2267);
+    expect(children[0]?.width).toBe("30mm");
+    expect(children[0]?.space).toBe("2.5mm");
+    expect(children[1]?.width).toBe("40mm");
   });
 
   it("round-trips line numbers", () => {

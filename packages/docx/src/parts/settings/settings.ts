@@ -9,7 +9,14 @@
  * @module
  */
 import type { VmlShapeDefaultsOptions, VmlShapeLayoutOptions } from "@office-open/core";
-import type { Base64, ColorSchemeIndex, LongHexNumber, ShortHexNumber } from "@office-open/core";
+import type {
+  Base64,
+  ColorSchemeIndex,
+  LongHexNumber,
+  Percentage,
+  ShortHexNumber,
+  PositiveUniversalMeasure,
+} from "@office-open/core";
 import { NumberRestartType } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 import type { NumberFormat } from "@shared/constants";
 
@@ -55,8 +62,8 @@ export interface SettingsOptions {
    * omit `<w:compat>` entirely.
    */
   compatibility?: CompatibilityOptions | false;
-  /** Default distance between tab stops in twips */
-  defaultTabStop?: number;
+  /** Default distance between tab stops in twips (`720`) or verbatim `"36pt"` */
+  defaultTabStop?: number | PositiveUniversalMeasure;
   /** Automatically hyphenate words as they are typed (w:autoHyphenation) */
   autoHyphenation?: boolean;
   /** Maximum number of consecutive lines ending with a hyphenated word (w:consecutiveHyphenLimit) */
@@ -74,9 +81,9 @@ export interface SettingsOptions {
   documentProtection?: DocumentProtectionOptions;
   /** Default document view mode */
   view?: "none" | "print" | "outline" | "masterPages" | "normal" | "web";
-  /** Default zoom level (percentage) and type */
+  /** Zoom percentage as a number (`120` = 120%) or verbatim `"120%"`; plus zoom type */
   zoom?: {
-    percent?: number;
+    percent?: number | Percentage;
     val?: "none" | "fullPage" | "bestFit" | "textFit";
   };
   /** Write protection recommendation (not enforcement) */
@@ -495,6 +502,12 @@ export interface RecipientDataOptions {
 
 /** One word/recipients.xml part (w:recipients). */
 export interface MailMergeRecipientsOptions {
+  /**
+   * Part path relative to word/ (round-trip only — do not hand-author).
+   * Fresh generation uses recipientsN.xml and preserves source filenames
+   * such as recipientData.xml.
+   */
+  partName?: string;
   recipients: RecipientDataOptions[];
 }
 
