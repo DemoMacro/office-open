@@ -35,8 +35,13 @@ export interface HandoutMasterOptions {
 }
 
 export function buildHfAttrs(opts?: HeaderFooterOptions): string {
-  if (!opts) return 'dt="0" hdr="0" ftr="0" sldNum="0"';
-  return `dt="${opts.date ? 1 : 0}" hdr="${opts.header ? 1 : 0}" ftr="${opts.footer ? 1 : 0}" sldNum="${opts.slideNumber ? 1 : 0}"`;
+  if (!opts) return "";
+  const attrs: string[] = [];
+  if (opts.date !== undefined) attrs.push(`dt="${opts.date ? 1 : 0}"`);
+  if (opts.header !== undefined) attrs.push(`hdr="${opts.header ? 1 : 0}"`);
+  if (opts.footer !== undefined) attrs.push(`ftr="${opts.footer ? 1 : 0}"`);
+  if (opts.slideNumber !== undefined) attrs.push(`sldNum="${opts.slideNumber ? 1 : 0}"`);
+  return attrs.join(" ");
 }
 
 /** Parse a p:hf element into HeaderFooterOptions (undefined when empty/absent). */
@@ -64,7 +69,9 @@ export function parseHeaderFooter(el: Element | undefined): HeaderFooterOptions 
  */
 export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {
   const colorMapping = stringifyColorMapping(options?.colorMapping, "p:clrMap");
-  const hf = buildHfAttrs(options?.headerFooter);
+  const hfAttrs = buildHfAttrs(
+    options?.headerFooter ?? { date: false, header: false, footer: false, slideNumber: false },
+  );
   return (
     '<p:handoutMaster xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
@@ -72,7 +79,7 @@ export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {
     '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
     `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
     colorMapping +
-    `<p:hf ${hf}/>` +
+    `<p:hf${hfAttrs ? ` ${hfAttrs}` : ""}/>` +
     "</p:handoutMaster>"
   );
 }

@@ -43,6 +43,7 @@ import type {
   GroupOptions,
   DrawingPictureOptions,
   DrawingChartOptions,
+  DrawingWebExtensionOptions,
   DrawingSmartArtOptions,
   ShapeOptions,
 } from "./types";
@@ -56,6 +57,9 @@ export const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relat
 export const C_URI = "http://schemas.openxmlformats.org/drawingml/2006/chart";
 /** graphicData uri for the diagram (SmartArt) payload. */
 export const DGM_URI = "http://schemas.openxmlformats.org/drawingml/2006/diagram";
+export const WE_URI = "http://schemas.microsoft.com/office/webextensions/webextension/2010/11";
+const WE_NS = WE_URI;
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
 
 export const DEFAULT_EXTENT_CX = 400000;
 export const DEFAULT_EXTENT_CY = 300000;
@@ -244,6 +248,41 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
     fPublished: chart.fPublished,
   });
   return wrapAnchor(anchor, `${frame}${clientData}`);
+}
+
+export function stringifyWebExtension(
+  webExtension: DrawingWebExtensionOptions,
+  id: number,
+  ctx?: WriteContext,
+): string {
+  const locks = webExtension.frameLocks
+    ? (graphicFrameLockingDesc.stringify(webExtension.frameLocks, ctx as WriteContext) ?? "")
+    : "";
+  const cNvGraphicFramePr = locks
+    ? `<xdr:cNvGraphicFramePr>${locks}</xdr:cNvGraphicFramePr>`
+    : "<xdr:cNvGraphicFramePr/>";
+  const objectAttrs = `${macroAttr(webExtension.macro)}${publishedObjectAttrs(webExtension)}`;
+  const frame =
+    `<xdr:graphicFrame${objectAttrs}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, webExtension, `WebExtension ${id}`)}` +
+    `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
+    `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm>` +
+    `<a:graphic><a:graphicData uri="${WE_URI}">` +
+    `<we:webextensionref xmlns:we="${WE_NS}" r:id="${webExtension.rId}"/>` +
+    `</a:graphicData></a:graphic></xdr:graphicFrame>`;
+  const fallback = webExtension.fallback
+    ? `<mc:Fallback>${picXml(
+        { col: 1, row: 1, ...webExtension.fallback },
+        id,
+        convertToEmu(webExtension.extentCx ?? DEFAULT_EXTENT_CX),
+        convertToEmu(webExtension.extentCy ?? DEFAULT_EXTENT_CY),
+        ctx as WriteContext,
+      )}</mc:Fallback>`
+    : "";
+  const content =
+    `<mc:AlternateContent xmlns:mc="${MC_NS}">` +
+    `<mc:Choice xmlns:we="${WE_NS}" Requires="we">${frame}</mc:Choice>` +
+    `${fallback}</mc:AlternateContent>`;
+  return wrapAnchor(webExtension, `${content}${clientDataXml(webExtension)}`);
 }
 
 /** Anchored SmartArt: a graphicFrame whose graphicData points at the four

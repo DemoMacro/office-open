@@ -28,7 +28,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
-import { attr, attrNum } from "@office-open/xml";
+import { attr, attrNum, findChild } from "@office-open/xml";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
@@ -63,8 +63,10 @@ import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type {
   WorksheetChartOptions,
+  WorksheetWebExtensionOptions,
   WorksheetSmartArtOptions,
   PictureOptions,
+  WorksheetContentPartOptions,
   WorksheetOptions,
 } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
@@ -304,12 +306,16 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // the write context from opts.sharedStrings to preserve si indices.
   let sstEntries: (string | RichTextOptions)[] = [];
   let sharedStringsCount: number | undefined;
+  let sharedStringsUniqueCount: number | undefined;
   if (xlsx.sharedStrings) {
     sstEntries = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never).entries;
     sharedStringsCount = attrNum(xlsx.sharedStrings, "count");
+    sharedStringsUniqueCount = attrNum(xlsx.sharedStrings, "uniqueCount");
   }
   if (sstEntries.length > 0) opts.sharedStrings = sstEntries;
   if (sharedStringsCount !== undefined) opts.sharedStringsCount = sharedStringsCount;
+  if (sharedStringsUniqueCount !== undefined)
+    opts.sharedStringsUniqueCount = sharedStringsUniqueCount;
 
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, sstEntries);
@@ -499,7 +505,12 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     for (const vr of vmlRels) {
       const vmlEl = xlsx.doc.get(vr.target);
       if (!vmlEl) continue;
-      mergeNoteAnchors(wsOpts.comments, vmlNotesDesc.parse(vmlEl, readContext));
+      const vml = vmlNotesDesc.parse(vmlEl, readContext);
+      mergeNoteAnchors(wsOpts.comments, vml.anchors);
+      if (vml.layout) wsOpts.commentsVmlLayout = vml.layout;
+      if (vml.shapeType) wsOpts.commentsVmlShapeType = vml.shapeType;
+      const source = xlsx.doc.getRaw(vr.target);
+      if (source) wsOpts.commentsVmlSource = new TextDecoder().decode(source);
       break; // one vmlDrawing per worksheet
     }
 
@@ -511,7 +522,10 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       // cNvPr hyperlinks (a:hlinkClick) resolve through the drawing part's own
       // rels: internal targets resolve against the part path, External ones
       // (absolute URLs) stay verbatim. Fall back to the workbook context.
-      const drawingRelById = new Map<string, { target: string; mode?: string }>();
+      const drawingRelById = new Map<
+        string,
+        { target: string; mode?: string; relationshipType: string }
+      >();
       const drawingRelsEl = xlsx.doc.get(partPathToRelsPath(dr.target));
       for (const rel of drawingRelsEl?.elements ?? []) {
         if (rel.name !== "Relationship") continue;
@@ -522,7 +536,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           rel.attributes?.["TargetMode"] !== undefined
             ? String(rel.attributes["TargetMode"])
             : undefined;
-        drawingRelById.set(String(id), { target: String(target), mode });
+        const relationshipType = rel.attributes?.["Type"];
+        if (relationshipType === undefined) continue;
+        drawingRelById.set(String(id), {
+          target: String(target),
+          mode,
+          relationshipType: String(relationshipType),
+        });
       }
       const drawingCtx: ReadContext = {
         resolveRelationship: (rid) => {
@@ -644,6 +664,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...chartSpace,
             ...pickAnchorOptions(anchor),
             ...chartCnvPr,
+            ...(chartPath ? { sourcePath: chartPath } : {}),
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.hyperlink ? { hyperlink: anchor.hyperlink } : {}),
@@ -678,10 +699,46 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         }
         if (smartArts.length > 0) wsOpts.smartArts = smartArts;
       }
+      if (drawingData.webExtensions) {
+        const webExtensions: WorksheetWebExtensionOptions[] = [];
+        for (const anchor of drawingData.webExtensions) {
+          const sourcePath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
+          if (!sourcePath) continue;
+          const snapshotSourcePath = anchor.fallback?.rId
+            ? readContext.resolveWorksheetRel(dr.target, anchor.fallback.rId)
+            : undefined;
+          webExtensions.push({
+            ...pickAnchorOptions(anchor),
+            ...pickNonVisualDrawingProperties(anchor),
+            sourcePath,
+            ...(snapshotSourcePath ? { snapshotSourcePath } : {}),
+            ...(anchor.fallback ? { fallback: anchor.fallback } : {}),
+            ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
+            ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
+            ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
+            ...(anchor.shapeId !== undefined ? { shapeId: anchor.shapeId } : {}),
+          });
+        }
+        if (webExtensions.length > 0) wsOpts.webExtensions = webExtensions;
+      }
       // Shapes/connectors/groups pass through unchanged (no media bridge).
       if (drawingData.shapes) wsOpts.shapes = drawingData.shapes;
       if (drawingData.connectors) wsOpts.connectors = drawingData.connectors;
       if (drawingData.groups) wsOpts.groups = drawingData.groups;
+      if (drawingData.contentParts) {
+        const contentParts: WorksheetContentPartOptions[] = [];
+        for (const contentPart of drawingData.contentParts) {
+          const relationship = drawingRelById.get(contentPart.rId);
+          if (!relationship) continue;
+          contentParts.push({
+            ...contentPart,
+            relationshipType: relationship.relationshipType,
+            relationshipTarget: relationship.target,
+            sourcePath: resolveRelationshipTarget(dr.target, relationship.target),
+          });
+        }
+        if (contentParts.length > 0) wsOpts.contentParts = contentParts;
+      }
       break;
     }
 
@@ -712,6 +769,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         tables.push(tableData);
       }
       if (tables.length > 0) wsOpts.tables = tables;
+    }
+    if (!wsOpts.tables?.length && findChild(wsEl, "tableParts")) {
+      wsOpts.preserveEmptyTableParts = true;
     }
 
     // Query tables
@@ -946,29 +1006,45 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     }
   }
   if (revHeadersTarget) {
-    const headersPath = revHeadersTarget.startsWith("/")
-      ? revHeadersTarget.slice(1)
-      : `xl/${revHeadersTarget}`;
+    const workbookPath = (target: string): string => {
+      const resolved = resolveRelationshipTarget("xl/workbook.xml", target);
+      return resolved.startsWith("xl/") ? resolved.slice(3) : resolved;
+    };
+    const headersRelativePath = workbookPath(revHeadersTarget);
+    const headersPath = `xl/${headersRelativePath}`;
     const headersEl = xlsx.doc.get(headersPath);
     if (headersEl) {
       const headers = revisionHeadersDesc.parse(headersEl, readContext);
-      const logs: RevisionLogOptions[] = [];
+      const logsByRid = new Map<string, RevisionLogOptions>();
       const revHeadersRelsEl = xlsx.doc.get(partPathToRelsPath(headersPath));
       if (revHeadersRelsEl) {
         for (const child of revHeadersRelsEl.elements ?? []) {
           if (child.name !== "Relationship") continue;
           if (!(attr(child, "Type") ?? "").includes("/revisionLog")) continue;
           const t = attr(child, "Target");
-          if (!t) continue;
-          const logEl = xlsx.doc.get(t.startsWith("/") ? t.slice(1) : `xl/${t}`);
-          if (logEl) logs.push(revisionLogDesc.parse(logEl, readContext));
+          const rId = attr(child, "Id");
+          if (!t || !rId) continue;
+          const logPath = resolveRelationshipTarget(headersPath, t);
+          const logEl = xlsx.doc.get(logPath);
+          if (!logEl) continue;
+          logsByRid.set(rId, {
+            ...revisionLogDesc.parse(logEl, readContext),
+            path: logPath.startsWith("xl/") ? logPath.slice(3) : logPath,
+            relationshipTarget: t,
+          });
         }
       }
-      const revisionLog: SharedWorkbookOptions = { headers, logs };
+      const logs = headers.headers
+        .map((header) => logsByRid.get(header.rId))
+        .filter((log): log is RevisionLogOptions => log !== undefined);
+      const revisionLog: SharedWorkbookOptions = {
+        headers,
+        logs,
+        headersPath: headersRelativePath,
+        ...(usersTarget ? { usersPath: workbookPath(usersTarget) } : {}),
+      };
       if (usersTarget) {
-        const usersEl = xlsx.doc.get(
-          usersTarget.startsWith("/") ? usersTarget.slice(1) : `xl/${usersTarget}`,
-        );
+        const usersEl = xlsx.doc.get(`xl/${revisionLog.usersPath}`);
         if (usersEl) {
           const users = usersDesc.parse(usersEl, readContext);
           if (users.users) revisionLog.users = users;
@@ -1004,6 +1080,12 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...sortByNumber(
       xlsx.doc.keys("xl/comments").filter((path) => /^xl\/comments\d+\.xml$/i.test(path)),
     ).flatMap((path) => [path, partPathToRelsPath(path)]),
+    ...xlsx.worksheets.flatMap((worksheetPath) => {
+      if (readContext.getWorksheetRelsByType(worksheetPath, "/comments").length === 0) return [];
+      return readContext
+        .getWorksheetRelsByType(worksheetPath, "/vmlDrawing")
+        .map((relationship) => relationship.target);
+    }),
     ...(metadataEl ? ["xl/metadata.xml"] : []),
     ...chartsheetPaths.map((path) => partPathToRelsPath(path)),
     ...xlsx.doc
@@ -1017,6 +1099,14 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ]),
     ...pivotTablePaths,
     ...pivotTablePaths.map((pivotTablePath) => partPathToRelsPath(pivotTablePath)),
+    ...(opts.revisionLog
+      ? [
+          `xl/${opts.revisionLog.headersPath}`,
+          partPathToRelsPath(`xl/${opts.revisionLog.headersPath}`),
+          ...opts.revisionLog.logs.flatMap((log) => (log.path ? [`xl/${log.path}`] : [])),
+          ...(opts.revisionLog.users ? [`xl/${opts.revisionLog.usersPath}`] : []),
+        ]
+      : []),
   ];
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     xlsx.doc,

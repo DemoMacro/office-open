@@ -24,6 +24,10 @@ function roundTrip(opts: SettingsOptions): SettingsOptions {
   return settingsDesc.parse(el, readCtx);
 }
 
+function roundTripXml(opts: SettingsOptions): string {
+  return settingsDesc.stringify(roundTrip(opts), writeCtx)!;
+}
+
 describe("settingsDesc round-trip", () => {
   it("round-trips w14:conflictMode", () => {
     const result = roundTrip({ w14ConflictMode: true });
@@ -251,9 +255,31 @@ describe("settingsDesc round-trip", () => {
     });
     expect(result.hdrShapeDefaults).toEqual({ shapedefaults: { ext: "edit", spidmax: 2050 } });
     expect(result.shapeDefaults).toEqual({
+      childOrder: ["shapedefaults", "shapelayout"],
       shapedefaults: { ext: "edit", spidmax: 3074, colormru: { ext: "edit", colors: "212121" } },
       shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
     });
+  });
+
+  it("preserves shapeDefaults o: child order", () => {
+    const opts: SettingsOptions = {
+      shapeDefaults: {
+        childOrder: ["shapelayout", "shapedefaults"],
+        shapelayout: { ext: "edit", idmap: { ext: "edit", data: "1" } },
+        shapedefaults: { ext: "edit", spidmax: 3074 },
+      },
+    };
+    const xml = settingsDesc.stringify(opts, writeCtx)!;
+    const layoutStart = xml.indexOf("<o:shapelayout");
+    const defaultsStart = xml.indexOf("<o:shapedefaults");
+    expect(layoutStart).toBeGreaterThan(0);
+    expect(defaultsStart).toBeGreaterThan(layoutStart);
+
+    const roundTripped = roundTripXml(opts);
+    expect(roundTripped.indexOf("<o:shapelayout")).toBeGreaterThan(0);
+    expect(roundTripped.indexOf("<o:shapedefaults")).toBeGreaterThan(
+      roundTripped.indexOf("<o:shapelayout"),
+    );
   });
 });
 

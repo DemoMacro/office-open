@@ -36,6 +36,8 @@ import type {
   DrawingAnchorOptions,
   DrawingChartOptions,
   DrawingContentPartOptions,
+  DrawingWebExtensionOptions,
+  DrawingWebExtensionFallbackOptions,
   DrawingSmartArtOptions,
   ConnectorOptions,
   GroupOptions,
@@ -322,6 +324,74 @@ export function parseSmartArtAnchor(
 
   readAnchorFields(anchor, name, result);
   return result;
+}
+
+export function parseWebExtensionAnchor(
+  anchor: XmlElement,
+  graphicFrame: XmlElement,
+  fallbackPic: XmlElement | undefined,
+  name: string,
+  ctx: ReadContext,
+): DrawingWebExtensionOptions | undefined {
+  const graphicData = findChild(
+    findChild(graphicFrame, "a:graphic") ?? graphicFrame,
+    "a:graphicData",
+  );
+  const reference = graphicData?.elements?.find((child) => child.name === "we:webextensionref");
+  const rId = reference?.attributes?.["r:id"] as string | undefined;
+  if (!rId) return undefined;
+
+  const result = { col: 1, row: 1, rId } as DrawingWebExtensionOptions;
+  Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
+  const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
+  const cNvGraphicFramePr = nvGraphicFramePr
+    ? findXdr(nvGraphicFramePr, "cNvGraphicFramePr")
+    : undefined;
+  if (cNvGraphicFramePr) {
+    const locks = findChild(cNvGraphicFramePr, "a:graphicFrameLocks");
+    if (locks) result.frameLocks = graphicFrameLockingDesc.parse(locks, ctx);
+  }
+  if (graphicFrame.attributes?.["macro"] !== undefined)
+    result.macro = String(graphicFrame.attributes["macro"]);
+  result.fPublished = readPublishedFlag(graphicFrame);
+  if (fallbackPic) result.fallback = parseWebExtensionFallback(fallbackPic, anchor, name, ctx);
+
+  readAnchorFields(anchor, name, result);
+  return result;
+}
+
+function parseWebExtensionFallback(
+  pic: XmlElement,
+  anchor: XmlElement,
+  name: string,
+  ctx: ReadContext,
+): DrawingWebExtensionFallbackOptions {
+  const image = parseImageAnchor(anchor, pic, name, ctx);
+  const fallback: DrawingWebExtensionFallbackOptions = { rId: image.rId };
+  const keys = [
+    "name",
+    "description",
+    "title",
+    "hidden",
+    "ext",
+    "properties",
+    "blackWhiteMode",
+    "compression",
+    "sourceRectangle",
+    "blipEffects",
+    "useLocalDpi",
+    "blipExt",
+    "locking",
+    "preferRelativeResize",
+    "fPublished",
+  ] as const;
+  Object.assign(
+    fallback,
+    Object.fromEntries(
+      keys.filter((key) => image[key] !== undefined).map((key) => [key, image[key]]),
+    ),
+  );
+  return fallback;
 }
 
 export function parseShapeAnchor(

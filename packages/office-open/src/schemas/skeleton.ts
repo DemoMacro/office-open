@@ -52,7 +52,7 @@ function isWrapperUnion(def: Node | undefined): boolean {
 
 function buildStub(name: string): Node {
   return {
-    description: `"${name}" stub — fetch its fields with the office-open-schema-lookup tool.`,
+    description: `${name} — use office-open-schema-lookup.`,
     $comment: `office-open-stub:${name}`,
   };
 }

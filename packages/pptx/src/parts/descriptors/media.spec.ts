@@ -85,6 +85,21 @@ describe("videoDesc round-trip", () => {
     expect(result.contentType).toBe("video/mp4");
   });
 
+  it("round-trips video picture locks", () => {
+    const result = roundTripVideo({
+      id: 104,
+      data: "dummy",
+      type: "mp4",
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      locking: { noChangeAspect: true, noRot: true },
+    });
+
+    expect(result.locking).toEqual({ noChangeAspect: true, noRot: true });
+  });
+
   it("parses a:quickTimeFile as mov video", () => {
     const el = parseRoot(
       `<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
@@ -170,6 +185,21 @@ describe("audioDesc round-trip", () => {
       start: { track: 1, time: 30 },
       end: { track: 3, time: 245 },
     });
+  });
+
+  it("round-trips audio picture locks", () => {
+    const result = roundTripAudio({
+      id: 206,
+      data: "dummy",
+      type: "mp3",
+      x: 0,
+      y: 0,
+      width: 10,
+      height: 10,
+      locking: { noChangeAspect: true, noRot: true },
+    });
+
+    expect(result.locking).toEqual({ noChangeAspect: true, noRot: true });
   });
 
   // Note: data is not round-tripped because the read context

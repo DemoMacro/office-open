@@ -77,6 +77,24 @@ describe("chartSpaceDesc", () => {
     expect(result.type).toBe("scatter");
   });
 
+  it.each([
+    ["none", "none"],
+    ["line", "line"],
+    ["lineWithMarkers", "lineMarker"],
+    ["markers", "marker"],
+    ["smooth", "smooth"],
+    ["smoothWithMarkers", "smoothMarker"],
+  ] as const)("round-trips scatter style %s", (scatterStyle, xmlValue) => {
+    const opts: ChartSpaceOptions = {
+      type: "scatter",
+      scatterStyle,
+      series: [{ name: "Points", values: [1, 2] }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain(`val="${xmlValue}"`);
+    expect(roundTrip(opts).scatterStyle).toBe(scatterStyle);
+  });
+
   it("round-trips numeric-axis scatter series (c:xVal/c:yVal)", () => {
     const opts: ChartSpaceOptions = {
       type: "scatter",
@@ -1241,6 +1259,25 @@ describe("chartSpaceDesc", () => {
     const result = roundTrip(opts);
     expect(result.legendPosition).toBe("top");
     expect(result.legendEntries).toEqual([{ index: 1, delete: true }]);
+  });
+
+  it("round-trips explicit undeleted legend entries and extensions", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A", "B"],
+      series: [
+        { name: "Visible", values: [1, 2] },
+        { name: "Undeleted", values: [3, 4] },
+      ],
+      legendEntries: [{ index: 1, delete: false, ext: '<c:ext uri="{synthetic-uri}"/>' }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain(
+      '<c:legendEntry><c:idx val="1"/><c:delete val="0"/><c:extLst><c:ext uri="{synthetic-uri}"/></c:extLst></c:legendEntry>',
+    );
+
+    const result = roundTrip(opts);
+    expect(result.legendEntries).toEqual(opts.legendEntries);
   });
 
   it("omits optional header elements when unset and round-trips them when set", () => {

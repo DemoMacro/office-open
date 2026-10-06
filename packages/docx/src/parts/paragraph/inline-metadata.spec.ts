@@ -12,11 +12,14 @@ const writeCtx = {} as never;
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
-function parseParagraphXml(inner: string): { children?: unknown[] } {
+function parseParagraphXml(
+  inner: string,
+  context: DocxReadContext = readCtx,
+): { children?: unknown[] } {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parseParagraph(el, readCtx) as { children?: unknown[] };
+  return parseParagraph(el, context) as { children?: unknown[] };
 }
 
 function findChildByKey(
@@ -207,6 +210,11 @@ describe("hyperlink relationships", () => {
   const hlWriteCtx = {
     viewWrapper: {
       relationships: {
+        hasId: (id: string) => id === "rId1",
+        idOf: () => 1,
+        addRelationship: (_id: number, type: string, target: string, mode: string) => {
+          relationships.push({ type, target, mode });
+        },
         add: (type: string, target: string, mode: string) => {
           relationships.push({ type, target, mode });
           return relationships.length;
@@ -239,5 +247,38 @@ describe("hyperlink relationships", () => {
     ).toBe(true);
     expect(xml).toContain('r:id="rId1"');
     expect(xml).toContain('r:id="rId2"');
+  });
+
+  it("preserves an anchor alongside an external hyperlink relationship", () => {
+    relationships = [];
+    const hyperlinkReadCtx = {
+      currentPart: "word/document.xml",
+      docx: {
+        partRefs: {
+          partHyperlinks: new Map([
+            ["word/document.xml", new Map([["rId1", "https://example.com/a"]])],
+          ]),
+          hyperlinks: new Map([["rId1", "https://example.com/a"]]),
+        },
+      },
+    } as unknown as DocxReadContext;
+    const opts = parseParagraphXml(
+      `<w:hyperlink r:id="rId1" w:anchor="section" w:history="1">` +
+        `<w:r><w:t>Link</w:t></w:r></w:hyperlink>`,
+      hyperlinkReadCtx,
+    );
+
+    const hyperlink = findChildByKey(opts, "hyperlink");
+    expect(hyperlink).toBeDefined();
+    expect(hyperlink!.hyperlink).toMatchObject({
+      sourceRelationshipId: 1,
+      anchor: "section",
+      history: true,
+      children: [{ text: "Link" }],
+    });
+
+    const xml = stringifyParagraph(opts as never, hlWriteCtx);
+    expect(xml).toContain('<w:hyperlink r:id="rId1" w:history="1" w:anchor="section">');
+    expect(relationships).toHaveLength(0);
   });
 });

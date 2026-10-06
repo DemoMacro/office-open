@@ -303,6 +303,15 @@ export interface ChartLinesOptions {
 /** Series grouping mode (c:grouping val) — bar/column/line/area groups. */
 export type ChartGrouping = "clustered" | "standard" | "stacked" | "percentStacked";
 
+/** Scatter plot style (c:scatterStyle val) — scatter chart groups. */
+export type ScatterStyle =
+  | "none"
+  | "line"
+  | "lineWithMarkers"
+  | "markers"
+  | "smooth"
+  | "smoothWithMarkers";
+
 /**
  * Additional chart groups in a combo chart (CT_PlotArea may carry several
  * *Chart groups; each secondary one shares the category source and the axes
@@ -315,6 +324,8 @@ export interface SecondaryChartGroupOptions {
   series: readonly ChartSeriesData[];
   /** Series grouping (c:grouping); defaults per type like the main group. */
   grouping?: ChartGrouping;
+  /** Scatter plot style (c:scatterStyle, scatter group); defaults to `line`. */
+  scatterStyle?: ScatterStyle;
   /** Vary data-point colors (group-level c:varyColors). */
   varyColors?: boolean;
   /** Show line-chart markers (group-level c:marker, line 2D). */
@@ -403,6 +414,8 @@ export interface ChartSpaceOptions {
    * header always wrote (clustered for bar/column, standard for line/area).
    */
   grouping?: ChartGrouping;
+  /** Scatter plot style (c:scatterStyle, scatter group); defaults to `line`. */
+  scatterStyle?: ScatterStyle;
   /**
    * Show line-chart markers (c:marker CT_Boolean on c:lineChart, 2D only).
    * Emitted only when set.
@@ -921,8 +934,10 @@ export type LegendPosition = "bottom" | "topRight" | "left" | "right" | "top";
 /** Legend entry override (CT_LegendEntry: idx + delete | txPr). */
 export interface LegendEntryOptions {
   index: number;
-  /** Hide this legend entry (c:delete). */
+  /** Hide this legend entry (c:delete); false preserves an explicit val="0". */
   delete?: boolean;
   /** Per-entry text properties (c:legendEntry/c:txPr) — the non-delete form. */
   textProperties?: TextBodyOptions;
+  /** Raw inner XML of the legend entry trailing c:extLst — round-trip only. */
+  ext?: string;
 }

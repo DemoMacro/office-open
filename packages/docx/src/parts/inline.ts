@@ -116,6 +116,11 @@ function runAttrs(ids: readonly [string | undefined, string | undefined]): strin
   return attrs;
 }
 
+function runIdentityAttrs(child: ParagraphChild): string {
+  const attrs = child as { additionRsid?: string; runPropertiesRsid?: string };
+  return runAttrs([attrs.additionRsid, attrs.runPropertiesRsid]);
+}
+
 /** Serialize a deleted run: rPr + delText (or field delInstrText). */
 function stringifyDeletedRun(c: RunOptions | string): string {
   const opts = typeof c === "string" ? { text: c } : c;
@@ -614,7 +619,7 @@ export function stringifyChildDispatch(
     const rPr = props
       ? (stringifyRunProperties(props) ?? "")
       : '<w:rPr><w:rStyle w:val="FootnoteReference"/></w:rPr>';
-    return `<w:r>${rPr}<w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${rPr}<w:footnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
   const enRefChild = (child as RunOptions).endnoteReference;
   if (enRefChild !== undefined) {
@@ -627,7 +632,7 @@ export function stringifyChildDispatch(
     const rPr = props
       ? (stringifyRunProperties(props) ?? "")
       : '<w:rPr><w:rStyle w:val="EndnoteReference"/></w:rPr>';
-    return `<w:r>${rPr}<w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${rPr}<w:endnoteReference w:id="${id}"${cmf}/></w:r>`;
   }
 
   // Comment sugar — library allocates the id, emits the range markers +
@@ -643,7 +648,7 @@ export function stringifyChildDispatch(
     // Run properties parsed with the reference survive verbatim — Word does
     // not always style comment references, so nothing is injected.
     const rPr = child.properties ? (stringifyRunProperties(child.properties) ?? "") : "";
-    return `<w:r>${rPr}<w:commentReference w:id="${child.commentReference}"/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${rPr}<w:commentReference w:id="${child.commentReference}"/></w:r>`;
   }
 
   // Bookmark markers — pure XML
@@ -782,6 +787,7 @@ export function stringifyChildDispatch(
       // form (injecting "1" here would oscillate across re-generations —
       // absent parses back as undefined, which would then inject "1").
       if (hl.history !== undefined) attrs.push(`w:history="${hl.history ? "1" : "0"}"`);
+      if (hl.anchor) attrs.push(`w:anchor="${escapeXml(hl.anchor)}"`);
       if (hl.tooltip) attrs.push(`w:tooltip="${escapeXml(hl.tooltip)}"`);
       if (hl.targetFrame) attrs.push(`w:tgtFrame="${escapeXml(hl.targetFrame)}"`);
       if (hl.docLocation) attrs.push(`w:docLocation="${escapeXml(hl.docLocation)}"`);
@@ -796,10 +802,17 @@ export function stringifyChildDispatch(
       // source's per-reference entries on round-trip).
       const relType = RELATIONSHIP_TYPES.hyperlink;
       let relationshipId: number;
-      if (
-        hl.sourceRelationshipId !== undefined &&
-        !ctx.viewWrapper.relationships.hasId(`rId${hl.sourceRelationshipId}`)
-      ) {
+      if (hl.sourceRelationshipId === undefined) {
+        // Fresh authoring: one relationship per hyperlink element — Word emits
+        // a distinct rel per reference even when the URL repeats.
+        relationshipId = ctx.viewWrapper.relationships.add(
+          relType,
+          hl.url,
+          TargetModeType.EXTERNAL,
+        );
+      } else if (!ctx.viewWrapper.relationships.hasId(`rId${hl.sourceRelationshipId}`)) {
+        // Round-trip: the source id slot is free — re-emit at that exact id so
+        // per-reference entries keep the source topology.
         ctx.viewWrapper.relationships.addRelationship(
           hl.sourceRelationshipId,
           relType,
@@ -808,11 +821,14 @@ export function stringifyChildDispatch(
         );
         relationshipId = hl.sourceRelationshipId;
       } else {
-        relationshipId = ctx.viewWrapper.relationships.add(
-          relType,
-          hl.url,
-          TargetModeType.EXTERNAL,
-        );
+        // The slot is taken. When the occupant is the same kind+target the
+        // source shared one rel across references — reuse it. Otherwise the id
+        // was reassigned and this reference allocates a fresh rel.
+        const shared = ctx.viewWrapper.relationships.idOf(relType, hl.url);
+        relationshipId =
+          typeof shared === "number"
+            ? shared
+            : ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL);
       }
       const linkId = `rId${relationshipId}`;
       const attrs = [`r:id="${linkId}"`];
@@ -933,8 +949,8 @@ export function stringifyChildDispatch(
     const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
     if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
     if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
-    if (sf.cachedRunsXml !== undefined) {
-      return `<w:fldSimple ${sfAttrs.join(" ")}>${sf.cachedRunsXml}</w:fldSimple>`;
+    if (sf.cachedRuns !== undefined) {
+      return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
     }
     if (sf.cachedValue !== undefined) {
       return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;

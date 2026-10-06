@@ -19,6 +19,7 @@ export const RELATIONSHIP_TYPES = {
   commentsIdsMs: "http://schemas.microsoft.com/office/2016/09/relationships/commentsIds",
   commentsExtensibleMs:
     "http://schemas.microsoft.com/office/2018/08/relationships/commentsExtensible",
+  webExtensionMs: "http://schemas.microsoft.com/office/2011/relationships/webextension",
   aFChunk: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk",
   attachedTemplate:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate",
@@ -123,7 +124,7 @@ export const TargetModeType = {
 
 interface RelationshipEntry {
   id: string;
-  type: RelationshipType;
+  type: string;
   target: string;
   targetMode?: string;
 }
@@ -139,6 +140,11 @@ export class Relationships {
   // Max numeric id across entries, maintained on every mutation so the next
   // free id is O(1) instead of a full scan per read.
   private maxId = 0;
+  private readonly ownerPath: string;
+
+  constructor(ownerPath = "") {
+    this.ownerPath = ownerPath;
+  }
 
   private trackId(rid: string): void {
     const n = /^rId(\d+)$/.exec(rid);
@@ -147,7 +153,7 @@ export class Relationships {
 
   public addRelationship(
     id: number | string,
-    type: RelationshipType,
+    type: string,
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): void {
@@ -171,7 +177,7 @@ export class Relationships {
    * corrupt the package for Office applications).
    */
   public add(
-    type: RelationshipType,
+    type: string,
     target: string,
     targetMode?: (typeof TargetModeType)[keyof typeof TargetModeType],
   ): number {
@@ -278,7 +284,11 @@ export class Relationships {
    */
   public hasRelationship(type: string, target: string): boolean {
     const kind = type.split("/").pop();
-    return this.entries.some((e) => e.type.split("/").pop() === kind && e.target === target);
+    return this.entries.some(
+      (e) =>
+        e.type.split("/").pop() === kind &&
+        this.semanticTarget(e) === this.semanticTarget({ target }),
+    );
   }
 
   /**
@@ -304,7 +314,16 @@ export class Relationships {
    */
   public idOf(type: string, target: string): string | undefined {
     const kind = type.split("/").pop();
-    return this.entries.find((e) => e.type.split("/").pop() === kind && e.target === target)?.id;
+    return this.entries.find(
+      (e) =>
+        e.type.split("/").pop() === kind &&
+        this.semanticTarget(e) === this.semanticTarget({ target }),
+    )?.id;
+  }
+
+  private semanticTarget(entry: { target: string; targetMode?: string }): string {
+    if (entry.targetMode === "External" || /^[a-z]+:\/\//i.test(entry.target)) return entry.target;
+    return resolveRelationshipTarget(this.ownerPath, entry.target);
   }
 
   /** Directly builds XML string — zero intermediate tree allocation. */
@@ -352,6 +371,11 @@ export function buildRootRelationships(
     target: string;
     targetMode?: "External";
   }[],
+  options?: {
+    includeCoreProperties?: boolean;
+    includeAppProperties?: boolean;
+    appPropertiesType?: string;
+  },
 ): Relationships {
   const rels = new Relationships();
   rels.addRelationship(
@@ -359,16 +383,21 @@ export function buildRootRelationships(
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument",
     mainPartTarget,
   );
-  rels.addRelationship(
-    2,
-    "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-    "docProps/core.xml",
-  );
-  rels.addRelationship(
-    3,
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
-    "docProps/app.xml",
-  );
+  if (options?.includeCoreProperties !== false) {
+    rels.addRelationship(
+      2,
+      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+      "docProps/core.xml",
+    );
+  }
+  if (options?.includeAppProperties !== false) {
+    rels.addRelationship(
+      3,
+      options?.appPropertiesType ??
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+      "docProps/app.xml",
+    );
+  }
   if (includeCustomProperties) {
     rels.addRelationship(
       4,

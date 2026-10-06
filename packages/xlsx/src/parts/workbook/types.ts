@@ -188,7 +188,7 @@ export interface FileSharingOptions {
 
 /** Workbook properties (CT_WorkbookPr) */
 export interface WorkbookPropertiesOptions {
-  /** Use 1904 date system (default false) */
+  /** Use 1904 date system (default false); explicit defaults are round-trip significant. */
   date1904?: boolean;
   defaultThemeVersion?: number;
   /** Object display mode (CT_WorkbookPr `@showObjects`, ST_Objects) */
@@ -199,7 +199,7 @@ export interface WorkbookPropertiesOptions {
   allowRefreshQuery?: boolean;
   /** Filter privacy (default false) */
   filterPrivacy?: boolean;
-  /** Backup file (default false) */
+  /** Backup file (default false); explicit defaults are round-trip significant. */
   backupFile?: boolean;
   codeName?: string;
   /** Show border unselected tables (CT_WorkbookPr `@showBorderUnselectedTables`) */
@@ -333,7 +333,15 @@ export interface WorkbookViewOptions {
   /** Tab ratio (default 600) */
   tabRatio?: number;
   /** Workbook visibility: "visible" | "hidden" | "veryHidden" (default "visible") */
+  /** Workbook window minimized (CT_BookView `@minimized`; XSD default false). */
+  minimized?: boolean;
   visibility?: "visible" | "hidden" | "veryHidden";
+  /**
+   * Coauthoring identity (workbookView `@xr2:uid`). Round-trip only: the
+   * attribute rides in the xr2 revision namespace that the workbook root
+   * declares as mc:Ignorable.
+   */
+  uid?: string;
   /** Window width in twips */
   windowWidth?: number;
   /** Window height in twips */
@@ -389,6 +397,8 @@ export interface DefinedNameOptions {
 
 export interface FileVersionOptions {
   appName?: string;
+  /** VBA code name (CT_FileVersion `@codeName`). */
+  codeName?: string;
   lastEdited?: number;
   lowestEdited?: number;
   rupBuild?: number;

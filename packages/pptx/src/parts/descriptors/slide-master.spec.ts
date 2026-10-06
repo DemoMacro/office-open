@@ -31,7 +31,8 @@ function roundTrip(opts: SlideMasterDescriptorOptions): SlideMasterDescriptorOpt
   const xml = freshXml(opts);
   const el = parseXml(xml).elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return slideMasterDesc.parse(el, readCtx);
+  const result = slideMasterDesc.parse(el, readCtx);
+  return result;
 }
 
 describe("slideMasterDesc fresh emit", () => {
@@ -176,6 +177,22 @@ describe("slideMasterDesc round-trip", () => {
 });
 
 describe("slide-master placeholder facets round-trip", () => {
+  it("round-trips shape locking", () => {
+    const result = roundTrip({
+      placeholders: {
+        title: {
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          locking: { noGrp: true, noChangeArrowheads: true },
+        },
+      },
+    });
+    const title = result.placeholders?.title as { locking?: Record<string, boolean> };
+    expect(title.locking).toEqual({ noGrp: true, noChangeArrowheads: true });
+  });
+
   it("round-trips a non-rect geometry facet", () => {
     const result = roundTrip({
       placeholders: {
@@ -241,8 +258,8 @@ describe("slide-master colorMapping/headerFooter round-trip", () => {
     const hf = parseHeaderFooter(findChild(el, "p:hf"));
     expect(hf?.date).toBe(true);
     expect(hf?.footer).toBe(true);
-    expect(hf?.header).toBe(false);
-    expect(hf?.slideNumber).toBe(false);
+    expect(hf?.header).toBeUndefined();
+    expect(hf?.slideNumber).toBeUndefined();
   });
 
   it("emits standard defaults when colorMapping/headerFooter are undefined", () => {
@@ -255,6 +272,14 @@ describe("slide-master colorMapping/headerFooter round-trip", () => {
 
     // No headerFooter → no p:hf at all (MS Office masters carry none).
     expect(findChild(el, "p:hf")).toBeUndefined();
+  });
+
+  it("emits only explicit header-footer attributes", () => {
+    const xml = freshXml({ headerFooter: { footer: true } });
+    expect(xml).toContain('<p:hf ftr="1"/>');
+    expect(xml).not.toContain('dt="0"');
+    expect(xml).not.toContain('hdr="0"');
+    expect(xml).not.toContain('sldNum="0"');
   });
 });
 

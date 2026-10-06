@@ -23,6 +23,8 @@ describe("opaque part policy", () => {
   it("keeps policy prefixes in one registry per package", () => {
     expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("word/printerSettings/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/embeddings/");
+    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/media/");
+    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PART_REGISTRIES.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
   });
 });

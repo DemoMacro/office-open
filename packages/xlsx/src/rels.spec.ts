@@ -180,3 +180,31 @@ describe("worksheet rels with passthrough source ids and rebuilt parts", () => {
     expect(sheet).toMatch(/<customPr name="prop" r:id="rId10"\/>/);
   });
 });
+
+describe("optional workbook parts", () => {
+  it("adds default styles and theme only for fresh workbooks", async () => {
+    const worksheet = { name: "Sheet1", rows: [] };
+    const fresh = await generateWorkbook({ worksheets: [worksheet] });
+    const freshArchive = unzipSync(fresh);
+    expect(freshArchive["xl/styles.xml"]).toBeDefined();
+    expect(freshArchive["xl/theme/theme1.xml"]).toBeDefined();
+    expect(decodeEntry(fresh, "xl/_rels/workbook.xml.rels")).toContain("styles.xml");
+    expect(decodeEntry(fresh, "xl/_rels/workbook.xml.rels")).toContain("theme/theme1.xml");
+
+    const roundTrip = await generateWorkbook({
+      worksheets: [worksheet],
+      contentTypes: { defaults: [], overrides: [] },
+    });
+    const roundTripArchive = unzipSync(roundTrip);
+    expect(roundTripArchive["docProps/core.xml"]).toBeUndefined();
+    expect(roundTripArchive["docProps/app.xml"]).toBeUndefined();
+    expect(roundTripArchive["xl/styles.xml"]).toBeUndefined();
+    expect(roundTripArchive["xl/theme/theme1.xml"]).toBeUndefined();
+    const rels = decodeEntry(roundTrip, "xl/_rels/workbook.xml.rels");
+    const rootRels = decodeEntry(roundTrip, "_rels/.rels");
+    expect(rootRels).not.toContain("docProps/core.xml");
+    expect(rootRels).not.toContain("docProps/app.xml");
+    expect(rels).not.toContain("styles.xml");
+    expect(rels).not.toContain("theme/theme1.xml");
+  });
+});

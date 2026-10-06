@@ -148,6 +148,7 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
     result.diagonalUp = parseOnOff(attr(el, "diagonalUp")) ?? true;
   if (attr(el, "diagonalDown") !== undefined)
     result.diagonalDown = parseOnOff(attr(el, "diagonalDown")) ?? true;
+  if (attr(el, "outline") !== undefined) result.outline = parseOnOff(attr(el, "outline")) ?? true;
 
   for (const side of [
     "left",

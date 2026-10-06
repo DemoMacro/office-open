@@ -207,6 +207,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
             nonVisualProperties: opts.nonVisualProperties,
             useLocalDpi: opts.useLocalDpi,
             compression: opts.compression,
+            blackWhiteMode: opts.blackWhiteMode,
           },
           docProperties: opts.altText,
           floating: opts.floating,
@@ -275,6 +276,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         nonVisualProperties: opts.nonVisualProperties,
         useLocalDpi: opts.useLocalDpi,
         compression: opts.compression,
+        blackWhiteMode: opts.blackWhiteMode,
       };
     } else {
       const type = opts.type;
@@ -296,6 +298,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         nonVisualProperties: opts.nonVisualProperties,
         useLocalDpi: opts.useLocalDpi,
         compression: opts.compression,
+        blackWhiteMode: opts.blackWhiteMode,
         sourceUrl: opts.sourceUrl,
       };
     }

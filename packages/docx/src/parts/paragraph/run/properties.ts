@@ -10,7 +10,7 @@
  * @module
  */
 import type { UniversalMeasure } from "@office-open/core";
-import type { HexColorOrAuto } from "@office-open/core";
+import type { HexColorOrAuto, ThemeColor, UcharHexNumber } from "@office-open/core";
 import type { BorderOptions } from "@shared/border";
 import type { ShadingProperties } from "@shared/shading";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
@@ -137,6 +137,12 @@ export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
   underline?: {
     color?: HexColorOrAuto;
     type?: (typeof UnderlineType)[keyof typeof UnderlineType];
+    /** Theme color slot referenced by w:themeColor. */
+    themeColor?: ThemeColor;
+    /** Theme tint (2-char hex, e.g. "99"). */
+    themeTint?: UcharHexNumber;
+    /** Theme shade (2-char hex, e.g. "BF"). */
+    themeShade?: UcharHexNumber;
   };
   /** Animated text effect: "antsBlack"/"antsRed" marching ants, "blinkBackground" flashing background, "shimmer"/"sparkle", "lights", "none". */
   effect?: (typeof TextEffect)[keyof typeof TextEffect];

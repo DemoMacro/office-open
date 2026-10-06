@@ -26,7 +26,7 @@ function stringifyDefaultShapeDefinition(
   // are added here.
   const spPr =
     opts.shapeProperties !== undefined
-      ? `<a:spPr>${shapePropertiesDesc.stringify(opts.shapeProperties, ctx) ?? ""}</a:spPr>`
+      ? `<a:spPr${opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : ""}>${shapePropertiesDesc.stringify(opts.shapeProperties, ctx) ?? ""}</a:spPr>`
       : "";
   const bodyPr =
     opts.bodyProperties !== undefined
@@ -50,6 +50,10 @@ function parseDefaultShapeDefinition(
   // re-emits the empty marker), so `?? {}` — never drop on empty.
   const spPr = findChild(el, "a:spPr");
   if (spPr) result.shapeProperties = shapePropertiesDesc.parse(spPr, ctx) ?? {};
+  const blackWhiteMode = spPr?.attributes?.["bwMode"];
+  if (blackWhiteMode !== undefined) {
+    result.blackWhiteMode = blackWhiteMode as DefaultShapeDefinitionOptions["blackWhiteMode"];
+  }
   const bodyPr = findChild(el, "a:bodyPr");
   if (bodyPr) result.bodyProperties = bodyPropertiesDesc.parse(bodyPr, ctx) ?? {};
   const lstStyle = findChild(el, "a:lstStyle");

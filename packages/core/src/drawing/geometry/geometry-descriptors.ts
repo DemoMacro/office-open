@@ -351,7 +351,7 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
     }
 
     // a:cxnLst
-    if (opts.connectionSites && opts.connectionSites.length > 0) {
+    if (opts.connectionSites) {
       const inner = opts.connectionSites.map(stringifyConnectionSite).join("");
       parts.push(`<a:cxnLst>${inner}</a:cxnLst>`);
     }
@@ -402,15 +402,15 @@ export const customGeometryDesc: CustomDescriptor<CustomGeometryOptions> = {
 
     // a:cxnLst
     const cxnLst = findChild(el, "a:cxnLst");
-    if (cxnLst?.elements) {
+    if (cxnLst) {
       const sites: ConnectionSite[] = [];
-      for (const child of cxnLst.elements) {
+      for (const child of cxnLst.elements ?? []) {
         if (child.name === "a:cxn") {
           const site = readConnectionSite(child);
           if (site) sites.push(site);
         }
       }
-      if (sites.length > 0) result.connectionSites = sites;
+      result.connectionSites = sites;
     }
 
     // a:rect

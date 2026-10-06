@@ -788,6 +788,56 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     rebuilt,
     opaquePassthroughPolicy("docx"),
   );
+  // Sub-part .rels (footnotes, endnotes, headers, footers) may reference
+  // external targets no model field represents (orphaned hyperlinks). The
+  // shared passthrough collector only keeps package-root externals, so scan
+  // these parts here; the compiler claims them back into the owning rels.
+  const walkNodes = function* (el: Element): Generator<Element> {
+    yield el;
+    for (const child of el.elements ?? []) yield* walkNodes(child);
+  };
+  const referencedIds = (partPath: string): Set<string> => {
+    const ids = new Set<string>();
+    const el = docx.doc.get(partPath);
+    for (const node of el ? walkNodes(el) : []) {
+      for (const [name, value] of Object.entries(node.attributes ?? {})) {
+        if (name.startsWith("r:") && typeof value === "string") ids.add(value);
+      }
+    }
+    return ids;
+  };
+  for (const partPath of [
+    "word/footnotes.xml",
+    "word/endnotes.xml",
+    ...(opts.sections ?? [])
+      .flatMap((section) => [
+        ...Object.values(section.headers?.partNames ?? {}),
+        ...Object.values(section.footers?.partNames ?? {}),
+      ])
+      .filter((slot): slot is string => Boolean(slot))
+      .map((slot) => `word/${slot}`),
+  ]) {
+    const relsEl = docx.doc.get(`word/_rels/${partPath.slice("word/".length)}.rels`);
+    if (!relsEl) continue;
+    const referenced = referencedIds(partPath);
+    for (const rel of relsEl.elements ?? []) {
+      if (rel.name !== "Relationship") continue;
+      const rId = attr(rel, "Id");
+      const type = attr(rel, "Type");
+      const target = attr(rel, "Target");
+      if (!rId || !type || !target || referenced.has(rId)) continue;
+      if (attr(rel, "TargetMode") !== "External") continue;
+      if (passthroughRels.some((existing) => existing.source === partPath && existing.rId === rId))
+        continue;
+      passthroughRels.push({
+        source: partPath,
+        relationshipType: type,
+        target,
+        rId,
+        targetMode: "External",
+      });
+    }
+  }
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
 

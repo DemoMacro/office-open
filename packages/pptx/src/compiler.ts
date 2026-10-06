@@ -263,6 +263,9 @@ export function compilePresentation(
     "ppt/presentation.xml",
     hasCustomProperties,
     options.passthroughRelationships,
+    options.appPropertiesRelationshipType
+      ? { appPropertiesType: options.appPropertiesRelationshipType }
+      : {},
   );
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();

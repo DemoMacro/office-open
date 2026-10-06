@@ -68,6 +68,11 @@ describe("themeDesc", () => {
     expect(roundTrip(opts).colorScheme?.name).toBe("Scheme Name");
   });
 
+  it("round-trips an empty color-scheme name", () => {
+    const result = roundTrip({ colorScheme: { name: "", accent1: "FF0000" } });
+    expect(result.colorScheme?.name).toBe("");
+  });
+
   it("round-trips extra color-scheme mappings with full-word API values", () => {
     const opts: ThemeOptions = {
       extraColorSchemes: [
@@ -156,6 +161,59 @@ describe("themeDesc", () => {
 });
 
 describe("custom colors", () => {
+  it("round-trips transform references on theme blip duotone", () => {
+    const opts: ThemeOptions = {
+      formatScheme: {
+        fillStyles: [],
+        lineStyles: [],
+        effectStyles: [],
+        backgroundFillStyles: [
+          {
+            type: "blip",
+            noEmbed: true,
+            blipEffects: {
+              duotone: {
+                color1: { value: "000000" },
+                color2: { value: "FFFFFF" },
+                transformReference1: "tint1",
+                transformReference2: "tint2",
+              },
+            },
+          },
+        ],
+      },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('xfr1="tint1"');
+    expect(xml).toContain('xfr2="tint2"');
+    expect(roundTrip(opts).formatScheme?.backgroundFillStyles?.[0]).toMatchObject({
+      type: "blip",
+      noEmbed: true,
+      blipEffects: {
+        duotone: {
+          transformReference1: "tint1",
+          transformReference2: "tint2",
+        },
+      },
+    });
+  });
+
+  it("round-trips default shape black-white mode", () => {
+    const opts: ThemeOptions = {
+      objectDefaults: {
+        shapeDefault: {
+          blackWhiteMode: "gray",
+          shapeProperties: {},
+          bodyProperties: {},
+          listStyle: {},
+        },
+      },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:spPr bwMode="gray">');
+    expect(roundTrip(opts).objectDefaults?.shapeDefault?.blackWhiteMode).toBe("gray");
+  });
+
   it("round-trips object default extensions", () => {
     const opts: ThemeOptions = {
       objectDefaults: {

@@ -165,23 +165,37 @@ export function compileWorkbook(
   if (options.sharedStrings) ctx.sharedStrings.loadEntries(options.sharedStrings);
   if (options.sharedStringsCount !== undefined)
     ctx.sharedStrings.setSourceCount(options.sharedStringsCount);
+  if (options.sharedStringsUniqueCount !== undefined)
+    ctx.sharedStrings.setSourceUniqueCount(options.sharedStringsUniqueCount);
 
   const worksheetConfigs = options.worksheets ?? [];
   const chartsheetConfigs = options.chartsheets ?? [];
   const dialogsheetConfigs = options.dialogsheets ?? [];
   const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
+  const isRoundTrip = options.contentTypes !== undefined;
 
-  // Core properties
-  mapping["Properties"] = {
-    data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
-    path: "docProps/core.xml",
-  };
+  // Core/app properties are required in fresh packages, but preserve source
+  // packages that omit these optional OPC metadata parts.
+  const hasMetadataOverride = (partName: string): boolean =>
+    options.contentTypes?.overrides.some(
+      (entry) => entry.partName.toLowerCase() === partName.toLowerCase(),
+    ) === true;
+  const includeCoreProperties = !isRoundTrip || hasMetadataOverride("/docProps/core.xml");
+  const includeAppProperties = !isRoundTrip || hasMetadataOverride("/docProps/app.xml");
 
-  // App properties
-  mapping["AppProperties"] = {
-    data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, ctx) ?? ""),
-    path: "docProps/app.xml",
-  };
+  if (includeCoreProperties) {
+    mapping["Properties"] = {
+      data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
+      path: "docProps/core.xml",
+    };
+  }
+
+  if (includeAppProperties) {
+    mapping["AppProperties"] = {
+      data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, ctx) ?? ""),
+      path: "docProps/app.xml",
+    };
+  }
 
   // Custom properties (optional part; only emitted when present)
   if (hasCustomProperties) {
@@ -198,6 +212,7 @@ export function compileWorkbook(
     "xl/workbook.xml",
     hasCustomProperties,
     options.passthroughRelationships,
+    { includeCoreProperties, includeAppProperties },
   );
   mapping["FileRelationships"] = {
     data: XML_DECL + fileRels.serialize(),
@@ -233,11 +248,15 @@ export function compileWorkbook(
   if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
 
   // Build workbook relationships
+  const includeStyles = !isRoundTrip || options.fonts !== undefined;
+  const includeTheme = !isRoundTrip || options.theme !== undefined;
   const sheetRelationshipIds = buildWorkbookRelationships(
     ctx.workbookRels,
     worksheetConfigs.length,
     chartsheetConfigs.length,
     dialogsheetConfigs.length,
+    includeStyles,
+    includeTheme,
   );
 
   // Build sheet definitions for workbook XML. An explicit sheetId wins; the
@@ -281,6 +300,43 @@ export function compileWorkbook(
       .map((sheet) => sheetsById.get(sheet.sheetId))
       .filter((sheet): sheet is SheetDefinition => sheet !== undefined);
     if (sourceOrder.length === sheets.length) sheets = sourceOrder;
+  }
+  // Sheets whose parts the model does not rebuild (Excel 4 macro sheets, …)
+  // still need their <sheet> entry: the part travels as passthrough at its
+  // source path, so re-emit the entry wired to the source relationship id.
+  const unmatchedDefinitions = (options.sheetDefinitions ?? []).filter(
+    (definition) => !sheets.some((sheet) => sheet.sheetId === definition.sheetId),
+  );
+  if (unmatchedDefinitions.length > 0) {
+    for (const definition of unmatchedDefinitions) {
+      const passthrough = (options.passthroughRelationships ?? []).find(
+        (rel) => rel.source === "xl/workbook.xml" && rel.rId === definition.rId,
+      );
+      if (!passthrough) continue;
+      const numericId = /^rId(\d+)$/.exec(definition.rId)?.[1];
+      if (numericId === undefined) continue;
+      if (!ctx.workbookRels.hasRelationship(passthrough.relationshipType, passthrough.target)) {
+        ctx.workbookRels.addRelationship(
+          Number(numericId),
+          passthrough.relationshipType as RelationshipType,
+          passthrough.target,
+        );
+      }
+      sheets.push({
+        name: definition.name,
+        sheetId: definition.sheetId,
+        state: definition.state,
+        rId: definition.rId,
+      });
+    }
+    const definitionOrder = new Map(
+      (options.sheetDefinitions ?? []).map((definition, index) => [definition.sheetId, index]),
+    );
+    sheets.sort(
+      (left, right) =>
+        (definitionOrder.get(left.sheetId) ?? Number.POSITIVE_INFINITY) -
+        (definitionOrder.get(right.sheetId) ?? Number.POSITIVE_INFINITY),
+    );
   }
 
   const wsContext: WorksheetContext = { sharedStrings: ctx.sharedStrings, styles: ctx.styles };
@@ -445,33 +501,38 @@ export function compileWorkbook(
     };
   }
 
-  // Styles (via descriptor — delegates to Styles.toXml internally)
-  const stylesXml = stylesDesc.stringify({ styles: ctx.styles }, ctx);
-  mapping["Styles"] = {
-    data: XML_DECL + stylesXml,
-    path: "xl/styles.xml",
-  };
-
-  // Theme — a parsed source theme round-trips structurally; fresh output
-  // keeps the Office default. Blip fills inside the format scheme register
-  // media placeholders; bind them to a theme-part image relationship.
-  const themeRels = new Relationships();
-  const themeXml = options.theme
-    ? bindMediaPlaceholders(
-        buildThemeXml(options.theme, withPartRelationships(ctx, themeRels, "xl/theme/theme1.xml")),
-        ctx.media,
-        themeRels,
-      )
-    : createThemeXml();
-  mapping["Theme"] = {
-    data: XML_DECL + themeXml,
-    path: "xl/theme/theme1.xml",
-  };
-  if (themeRels.relationshipCount > 0) {
-    mapping["ThemeRels"] = {
-      data: XML_DECL + themeRels.serialize(),
-      path: "xl/theme/_rels/theme1.xml.rels",
+  // Styles and theme are optional OPC parts. Fresh documents get Office's
+  // defaults; a parsed round-trip follows the source and omits absent parts.
+  if (includeStyles) {
+    const stylesXml = stylesDesc.stringify({ styles: ctx.styles }, ctx);
+    mapping["Styles"] = {
+      data: XML_DECL + stylesXml,
+      path: "xl/styles.xml",
     };
+  }
+
+  if (includeTheme) {
+    const themeRels = new Relationships();
+    const themeXml = options.theme
+      ? bindMediaPlaceholders(
+          buildThemeXml(
+            options.theme,
+            withPartRelationships(ctx, themeRels, "xl/theme/theme1.xml"),
+          ),
+          ctx.media,
+          themeRels,
+        )
+      : createThemeXml();
+    mapping["Theme"] = {
+      data: XML_DECL + themeXml,
+      path: "xl/theme/theme1.xml",
+    };
+    if (themeRels.relationshipCount > 0) {
+      mapping["ThemeRels"] = {
+        data: XML_DECL + themeRels.serialize(),
+        path: "xl/theme/_rels/theme1.xml.rels",
+      };
+    }
   }
 
   // Charts — AFTER worksheets so charts are registered
@@ -615,9 +676,11 @@ function compileWorksheetPart(
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
   const smartArtOpts = wsOpts.smartArts ?? [];
+  const webExtensionOpts = wsOpts.webExtensions ?? [];
   const shapeOpts = wsOpts.shapes ?? [];
   const connectorOpts = wsOpts.connectors ?? [];
   const groupOpts = wsOpts.groups ?? [];
+  const contentPartOpts = wsOpts.contentParts ?? [];
   const hlOpts = wsOpts.hyperlinks ?? [];
   const sheetName = wsOpts.name ?? `Sheet${i + 1}`;
 
@@ -647,9 +710,11 @@ function compileWorksheetPart(
     imgOpts.length > 0 ||
     chartOpts.length > 0 ||
     smartArtOpts.length > 0 ||
+    webExtensionOpts.length > 0 ||
     shapeOpts.length > 0 ||
     connectorOpts.length > 0 ||
-    groupOpts.length > 0;
+    groupOpts.length > 0 ||
+    contentPartOpts.length > 0;
   const hasExternalHyperlinks = hlOpts.some((h) => h.url !== undefined);
   const commentOpts = wsOpts.comments ?? [];
   const hasComments = commentOpts.length > 0;
@@ -693,6 +758,22 @@ function compileWorksheetPart(
     if (existing !== undefined) return existing;
     return `rId${wsRels!.add(type, target, targetMode)}`;
   };
+  const registerHyperlinkRelationship = (hl: { url?: string; relationshipId?: string }): string => {
+    if (hl.url === undefined) throw new Error("internal hyperlink has no relationship");
+    const existing = wsRels!.idOf(RELATIONSHIP_TYPES.hyperlink, hl.url);
+    if (existing !== undefined) return existing;
+    const preferred = /^rId\d+$/.exec(hl.relationshipId ?? "")?.[0];
+    if (preferred && !wsRels!.hasId(preferred)) {
+      wsRels!.addRelationship(
+        preferred,
+        RELATIONSHIP_TYPES.hyperlink,
+        hl.url,
+        TargetModeType.EXTERNAL,
+      );
+      return preferred;
+    }
+    return `rId${wsRels!.add(RELATIONSHIP_TYPES.hyperlink, hl.url, TargetModeType.EXTERNAL)}`;
+  };
   const sourceRelationshipPath = (rel: { target: string } | undefined, fallback: string): string =>
     rel ? resolveRelationshipTarget(wsPath, rel.target) : fallback;
 
@@ -731,6 +812,14 @@ function compileWorksheetPart(
   // stringify, so the emitted id is final and no post-stringify patching is
   // needed. The shallow copies keep the caller's options tree untouched.
   let xmlOpts = wsOpts;
+  if (hasExternalHyperlinks) {
+    xmlOpts = {
+      ...xmlOpts,
+      hyperlinks: hlOpts.map((hl) =>
+        hl.url === undefined ? hl : { ...hl, relationshipId: registerHyperlinkRelationship(hl) },
+      ),
+    };
+  }
   if (wsRels && (passthroughRelationships?.length ?? 0) > 0) {
     const oleObjects = wsOpts.oleObjects?.map((ole) => ({
       ...ole,
@@ -784,13 +873,6 @@ function compileWorksheetPart(
   // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
   let sheetXml = buildWorksheetXml(xmlOpts, wsContext);
 
-  if (hasExternalHyperlinks) {
-    for (const hl of hlOpts) {
-      if (hl.url === undefined) continue;
-      addWorksheetRelationship(RELATIONSHIP_TYPES.hyperlink, hl.url, TargetModeType.EXTERNAL);
-    }
-  }
-
   if (hasMedia) {
     sheetXml = compileSheetDrawing(
       wsOpts,
@@ -823,9 +905,16 @@ function compileWorksheetPart(
     };
 
     // VML drawing (via descriptor)
-    const vmlXml = vmlNotesDesc.stringify({ comments: commentOpts }, ctx);
+    const vmlXml = vmlNotesDesc.stringify(
+      {
+        comments: commentOpts,
+        ...(wsOpts.commentsVmlLayout ? { layout: wsOpts.commentsVmlLayout } : {}),
+        ...(wsOpts.commentsVmlShapeType ? { shapeType: wsOpts.commentsVmlShapeType } : {}),
+      },
+      ctx,
+    );
     mapping[`VmlDrawing${i}`] = {
-      data: XML_DECL + vmlXml,
+      data: wsOpts.commentsVmlSource ?? XML_DECL + vmlXml,
       path: vmlPath,
     };
 
@@ -1010,6 +1099,8 @@ function compileWorksheetPart(
       "<!--TABLE_PARTS-->",
       buildTablePartsXml(wsTableParts),
     );
+  } else if (wsOpts.preserveEmptyTableParts) {
+    sheetXml = editSheetTailMarker(sheetXml, "<!--TABLE_PARTS-->", '<tableParts count="0"/>');
   }
   // Strip placeholders the compiler did not replace (drawing, legacyDrawing,
   // tableParts) — their existence depends on relationships owned here.
@@ -1200,38 +1291,71 @@ function compileRevisionLogs(
   const REV_HEADERS_REL = RELATIONSHIP_TYPES.revisionHeaders;
   const REV_LOG_REL = RELATIONSHIP_TYPES.revisionLog;
   const USERS_REL = RELATIONSHIP_TYPES.users;
+  const relativeTarget = (from: string, to: string): string => {
+    const fromDirs = from.split("/").slice(0, -1);
+    const toDirs = to.split("/");
+    let common = 0;
+    while (
+      common < fromDirs.length &&
+      common < toDirs.length &&
+      fromDirs[common] === toDirs[common]
+    ) {
+      common++;
+    }
+    return "../".repeat(fromDirs.length - common) + toDirs.slice(common).join("/");
+  };
 
   // xl/revisionHeaders.xml — target of an implicit relationship from the workbook.
+  // Round-trip writes the part at its source path; fresh authoring uses the
+  // conventional xl/revisionHeaders.xml.
+  const revHeadersPath = rl.headersPath ?? "revisionHeaders.xml";
   mapping["RevisionHeaders"] = {
     data: XML_DECL + (revisionHeadersDesc.stringify(rl.headers, ctx) ?? ""),
-    path: "xl/revisionHeaders.xml",
+    path: `xl/${revHeadersPath}`,
   };
-  ctx.workbookRels.addRelationship(
-    ctx.workbookRels.nextRelationshipId,
-    REV_HEADERS_REL,
-    "revisionHeaders.xml",
-  );
+  // The passthrough rel capture may have claimed the source relationship
+  // already — dedupe so the rebuilt rels keeps one entry.
+  if (ctx.workbookRels.idOf(REV_HEADERS_REL, revHeadersPath) === undefined) {
+    ctx.workbookRels.addRelationship(
+      ctx.workbookRels.nextRelationshipId,
+      REV_HEADERS_REL,
+      revHeadersPath,
+    );
+  }
 
   // One revision log per header entry, plus revisionHeaders.xml.rels pointing to each.
   const revHeadersRels = new Relationships();
   for (const [i, log] of rl.logs.entries()) {
+    const logPath = log.path ?? `revisions/revision${i + 1}.xml`;
     mapping[`RevisionLog${i}`] = {
       data: XML_DECL + (revisionLogDesc.stringify(log, ctx) ?? ""),
-      path: `xl/revisions/revision${i + 1}.xml`,
+      path: `xl/${logPath}`,
     };
-    revHeadersRels.addRelationship(i + 1, REV_LOG_REL, `revisions/revision${i + 1}.xml`);
+    const preferredRid = /^rId(\d+)$/.exec(rl.headers.headers[i]?.rId ?? "")?.[1];
+    const rid =
+      preferredRid && !revHeadersRels.hasId(`rId${preferredRid}`)
+        ? Number(preferredRid)
+        : revHeadersRels.nextRelationshipId;
+    revHeadersRels.addRelationship(
+      rid,
+      REV_LOG_REL,
+      log.relationshipTarget ?? relativeTarget(revHeadersPath, logPath),
+    );
   }
   mapping["RevisionHeadersRels"] = {
     data: XML_DECL + revHeadersRels.serialize(),
-    path: "xl/_rels/revisionHeaders.xml.rels",
+    path: partPathToRelsPath(`xl/${revHeadersPath}`),
   };
 
-  // xl/users.xml (optional)
+  // xl/users.xml (optional) — honors the source path on round-trip.
   if (rl.users) {
     const usersXml = usersDesc.stringify(rl.users, ctx);
     if (usersXml) {
-      mapping["Users"] = { data: XML_DECL + usersXml, path: "xl/users.xml" };
-      ctx.workbookRels.addRelationship(ctx.workbookRels.nextRelationshipId, USERS_REL, "users.xml");
+      const usersPath = rl.usersPath ?? "users.xml";
+      mapping["Users"] = { data: XML_DECL + usersXml, path: `xl/${usersPath}` };
+      if (ctx.workbookRels.idOf(USERS_REL, usersPath) === undefined) {
+        ctx.workbookRels.addRelationship(ctx.workbookRels.nextRelationshipId, USERS_REL, usersPath);
+      }
     }
   }
 }
@@ -1243,6 +1367,8 @@ function buildWorkbookRelationships(
   wsCount: number,
   csCount: number,
   dsCount: number = 0,
+  includeStyles = true,
+  includeTheme = true,
 ): string[] {
   const add = (type: RelationshipType, target: string): string => {
     const existing = rels.idOf(type, target);
@@ -1261,8 +1387,8 @@ function buildWorkbookRelationships(
   for (let i = 0; i < dsCount; i++) {
     ids.push(add(RELATIONSHIP_TYPES.dialogsheet, `dialogSheets/sheet${i + 1}.xml`));
   }
-  add(RELATIONSHIP_TYPES.styles, "styles.xml");
-  add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
+  if (includeStyles) add(RELATIONSHIP_TYPES.styles, "styles.xml");
+  if (includeTheme) add(RELATIONSHIP_TYPES.theme, "theme/theme1.xml");
   return ids;
 }
 

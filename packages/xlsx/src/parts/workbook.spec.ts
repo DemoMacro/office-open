@@ -138,6 +138,15 @@ describe("workbookDesc round-trip", () => {
     expect(result.sheets[0]?.state).toBe("hidden");
   });
 
+  it("round-trips explicit visible sheet state", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1", state: "visible" }],
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('state="visible"');
+    expect(roundTrip(opts).sheets[0]?.state).toBe("visible");
+  });
+
   it("round-trips workbook protection", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
@@ -183,6 +192,18 @@ describe("workbookDesc round-trip", () => {
     expect(xml).toContain('windowWidth="28800"');
   });
 
+  it("preserves an explicitly empty workbook view", () => {
+    const xml = workbookDesc.stringify(
+      {
+        sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+        bookView: {},
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<workbookView />");
+    expect(xml).not.toContain("windowWidth");
+  });
+
   it("round-trips calc properties", () => {
     const opts: WorkbookDescriptorOptions = {
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
@@ -204,6 +225,41 @@ describe("workbookDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.properties?.date1904).toBe(true);
+  });
+
+  it("round-trips explicit workbookPr defaults", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      properties: { date1904: false, backupFile: false },
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('date1904="0"');
+    expect(xml).toContain('backupFile="0"');
+    const result = roundTrip(opts);
+    expect(result.properties?.date1904).toBe(false);
+    expect(result.properties?.backupFile).toBe(false);
+  });
+
+  it("round-trips file version code name", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      fileVersion: { appName: "xl", codeName: "{Workbook}", lastEdited: 7 },
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('codeName="{Workbook}"');
+    const roundTripped = roundTrip(opts).fileVersion;
+    expect(roundTripped === false ? undefined : roundTripped?.codeName).toBe("{Workbook}");
+  });
+
+  it("round-trips an empty definedNames container", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      definedNames: [],
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain("<definedNames></definedNames>");
+    const result = roundTrip(opts);
+    expect(result.definedNames).toEqual([]);
   });
 
   it("round-trips pivot caches", () => {

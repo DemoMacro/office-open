@@ -12,10 +12,12 @@
 
 import { toUint8Array } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
+import type { PictureLockingOptions } from "@office-open/core";
+import type { CustomDescriptor, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import {
   shapePropertiesDesc,
   stringifyNonVisualDrawingProperties,
+  pictureLockingDesc,
 } from "@office-open/core/drawing";
 import { attr, attrNum, escapeXml, findChild, findFirst, stringify } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -40,6 +42,21 @@ let _nextAudioId = 200;
 export const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 
 // ── Shared media element builders (EG_Media) ──
+
+function stringifyMediaLocking(
+  opts: { locking?: PictureLockingOptions } | undefined,
+  ctx: WriteContext,
+): string {
+  return opts?.locking
+    ? (pictureLockingDesc.stringify(opts.locking, ctx) ?? "")
+    : '<a:picLocks noChangeAspect="1"/>';
+}
+
+function readMediaLocking(el: Element, ctx: ReadContext): PictureLockingOptions | undefined {
+  const locks = findChild(findChild(el, "p:nvPicPr") ?? el, "p:cNvPicPr");
+  const picLocks = locks ? findChild(locks, "a:picLocks") : undefined;
+  return picLocks ? (pictureLockingDesc.parse(picLocks, ctx) ?? {}) : undefined;
+}
 
 /** a:audioCd — CD track playback, no media file. */
 function stringifyAudioCd(cd: AudioCdOptions): string {
@@ -123,7 +140,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
     const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
-        `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
+        `<p:cNvPicPr>${stringifyMediaLocking(opts, ctx)}</p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
         (mediaFileName ? stringifyP14Media(mediaFileName, opts.trim) : "") +
         `</p:nvPr></p:nvPicPr>`,
@@ -160,6 +177,8 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
+    const locking = readMediaLocking(el, _ctx);
+    if (locking) result.locking = locking;
     readMediaAction(el, result);
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
@@ -249,7 +268,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const hlinkXml = opts.mediaAction ? '<a:hlinkClick r:id="" action="ppaction://media"/>' : "";
     parts.push(
       `<p:nvPicPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml)}` +
-        `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr>` +
+        `<p:cNvPicPr>${stringifyMediaLocking(opts, ctx)}</p:cNvPicPr>` +
         `<p:nvPr>${mediaEl}` +
         (emitExt ? stringifyP14Media(mediaFileName!, opts.trim) : "") +
         `</p:nvPr></p:nvPicPr>`,
@@ -286,6 +305,8 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     // id + name from p:nvPicPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
+    const locking = readMediaLocking(el, _ctx);
+    if (locking) result.locking = locking;
     readMediaAction(el, result);
 
     // CD audio (a:audioCd) — track/time, no media file

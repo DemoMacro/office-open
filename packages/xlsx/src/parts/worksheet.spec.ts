@@ -2,6 +2,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { SharedStrings } from "./shared-strings";
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
@@ -30,6 +31,16 @@ describe("Worksheet", () => {
       );
       expect(xml).toContain('<c r="B5"/>');
       expect(xml).toContain('<c r="C5"/>');
+    });
+
+    it("emits an empty shared-string cell without registering an item", () => {
+      const sharedStrings = new SharedStrings();
+      const xml = buildWorksheetXml(
+        { rows: [{ cells: [{ reference: "A1", value: "" }] }] },
+        { sharedStrings },
+      );
+      expect(xml).toContain('<c r="A1" t="s"><v/></c>');
+      expect(sharedStrings.count).toBe(0);
     });
 
     it("omits an empty generated placeholder cell", () => {
@@ -92,6 +103,20 @@ describe("Worksheet", () => {
       expect(buildWorksheetXml(result, {})).toContain('<tabColor theme="2" tint="-0.25"/>');
     });
 
+    it("round-trips revision uid and explicit filter mode", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+          `xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" ` +
+          `xr:uid="{A1000000-0000-0000-0000-000000000000}">` +
+          `<sheetPr filterMode="0"/><sheetData/></worksheet>`,
+      );
+      expect(result.uid).toBe("{A1000000-0000-0000-0000-000000000000}");
+      expect(result.properties?.filterMode).toBe(false);
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('xr:uid="{A1000000-0000-0000-0000-000000000000}"');
+      expect(xml).toContain('<sheetPr filterMode="0"/>');
+    });
+
     it("round-trips sheetFormatPr and row dyDescent", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
@@ -103,6 +128,33 @@ describe("Worksheet", () => {
       const xml = buildWorksheetXml(result, {});
       expect(xml).toContain('x14ac:dyDescent="0.25"');
       expect(xml).toContain('<row r="1" x14ac:dyDescent="0.25"');
+    });
+
+    it("round-trips explicit sheetView defaults", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetViews><sheetView showGridLines="1" showRowColHeaders="0" showZeros="1" ` +
+          `rightToLeft="0" windowProtection="0" showFormulas="0" showRuler="1" ` +
+          `showOutlineSymbols="0" defaultGridColor="1" showWhiteSpace="0" workbookViewId="0"/>` +
+          `</sheetViews><sheetData/></worksheet>`,
+      );
+      expect(result.sheetView).toMatchObject({
+        showGridLines: true,
+        showRowColHeaders: false,
+        showZeros: true,
+        rightToLeft: false,
+        windowProtection: false,
+        showFormulas: false,
+        showRuler: true,
+        showOutlineSymbols: false,
+        defaultGridColor: true,
+        showWhiteSpace: false,
+      });
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('showGridLines="1"');
+      expect(xml).toContain('showRowColHeaders="0"');
+      expect(xml).toContain('rightToLeft="0"');
+      expect(xml).toContain('showWhiteSpace="0"');
     });
 
     it("keeps empty sheetPr and headerFooter elements", () => {
@@ -887,6 +939,83 @@ describe("Worksheet", () => {
 
       expect(sp.outlineSummaryBelow).toBe(false);
       expect(sp.outlineSummaryRight).toBe(false);
+    });
+
+    it("round-trips explicit outlinePr defaults", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        properties: { outlineSummaryBelow: true, outlineSummaryRight: true },
+      });
+
+      expect(result.properties?.outlineSummaryBelow).toBe(true);
+      expect(result.properties?.outlineSummaryRight).toBe(true);
+    });
+
+    it("round-trips explicit printOptions defaults", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        printOptions: {
+          gridLines: true,
+          headings: false,
+          horizontalCentered: true,
+          verticalCentered: false,
+        },
+      });
+
+      expect(result.printOptions).toEqual({
+        gridLines: true,
+        headings: false,
+        horizontalCentered: true,
+        verticalCentered: false,
+      });
+    });
+
+    it("round-trips explicit pageSetup defaults", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        pageSetup: {
+          orientation: "default",
+          pageOrder: "downThenOver",
+          useFirstPageNumber: false,
+          usePrinterDefaults: true,
+          blackAndWhite: false,
+          draft: false,
+          cellComments: "none",
+          errors: "displayed",
+        },
+      });
+
+      expect(result.pageSetup).toEqual({
+        orientation: "default",
+        pageOrder: "downThenOver",
+        useFirstPageNumber: false,
+        usePrinterDefaults: true,
+        blackAndWhite: false,
+        draft: false,
+        cellComments: "none",
+        errors: "displayed",
+      });
+    });
+
+    it("round-trips explicit sheetFormat defaults and sparse pageMargins", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        sheetFormat: {
+          defaultRowHeight: 15,
+          customHeight: false,
+          zeroHeight: false,
+          dyDescent: 0.25,
+        },
+        pageMargins: { top: 1, bottom: 1 },
+      });
+
+      expect(result.sheetFormat).toEqual({
+        defaultRowHeight: 15,
+        customHeight: false,
+        zeroHeight: false,
+        dyDescent: 0.25,
+      });
+      expect(result.pageMargins).toEqual({ top: 1, bottom: 1 });
     });
 
     it("round-trips pageSetUpPr fitToPage", () => {

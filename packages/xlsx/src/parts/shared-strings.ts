@@ -59,16 +59,19 @@ export function buildRPrXml(
     // Longer digit strings are hex colors ("008000" is green, not index
     // 8000). They must go back to their own attributes — rgb accepts only 8
     // hex chars (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
+    const colorAttrs: string[] = [];
     if (/^\d{1,3}$/.test(pr.color)) {
-      parts.push(`<color indexed="${Number(pr.color)}"/>`);
+      colorAttrs.push(`indexed="${Number(pr.color)}"`);
     } else if (pr.color.startsWith("theme:")) {
-      parts.push(`<color theme="${escapeXml(pr.color.slice(6))}"/>`);
+      colorAttrs.push(`theme="${escapeXml(pr.color.slice(6))}"`);
     } else {
       // ST_UnsignedIntHex requires 8 hex chars (AARRGGBB).
       // Auto-prefix FF (fully opaque) when user provides 6-char RGB.
       const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
-      parts.push(`<color rgb="${escapeXml(rgb)}"/>`);
+      colorAttrs.push(`rgb="${escapeXml(rgb)}"`);
     }
+    if (pr.colorTint !== undefined) colorAttrs.push(`tint="${pr.colorTint}"`);
+    parts.push(`<color ${colorAttrs.join(" ")}/>`);
   }
   if (pr.font) parts.push(`<rFont val="${escapeXml(pr.font)}"/>`);
   if (pr.charset !== undefined) parts.push(`<charset val="${pr.charset}"/>`);
@@ -116,6 +119,7 @@ export class SharedStrings {
    */
   private richIndexMap = new Map<RichTextOptions, number>();
   private sourceCount?: number;
+  private sourceUniqueCount?: number;
 
   /**
    * Register a plain string and return its index.
@@ -174,25 +178,44 @@ export class SharedStrings {
     this.sourceCount = value;
   }
 
+  public setSourceUniqueCount(value: number): void {
+    this.sourceUniqueCount = value;
+  }
+
   /** Return a serializable snapshot for the descriptor. */
-  public toDescriptorOptions(): { entries: SstEntry[]; count?: number } {
+  public toDescriptorOptions(): {
+    entries: SstEntry[];
+    count?: number;
+    uniqueCount?: number;
+  } {
     return {
       entries: this.entries,
       ...(this.sourceCount !== undefined ? { count: this.sourceCount } : {}),
+      ...(this.sourceUniqueCount !== undefined ? { uniqueCount: this.sourceUniqueCount } : {}),
     };
   }
 
   /** Serialize to xl/sharedStrings.xml content (without XML declaration). */
   public serialize(): string {
-    return serializeSst(this.entries, this.sourceCount ?? this.entries.length);
+    return serializeSst(
+      this.entries,
+      this.sourceCount ?? this.entries.length,
+      this.sourceUniqueCount ?? this.entries.length,
+    );
   }
 }
 
-function serializeSst(entries: (string | RichTextOptions)[], referenceCount: number): string {
+function serializeSst(
+  entries: (string | RichTextOptions)[],
+  referenceCount?: number,
+  uniqueCount?: number,
+): string {
   const p: string[] = [
     '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"',
-    ` count="${referenceCount}" uniqueCount="${entries.length}">`,
+    referenceCount === undefined ? "" : ` count="${referenceCount}"`,
+    uniqueCount === undefined ? "" : ` uniqueCount="${uniqueCount}"`,
   ];
+  p.push(">");
   for (const entry of entries) {
     if (typeof entry === "string") {
       p.push(`<si>${tElement(entry)}</si>`);
@@ -214,6 +237,8 @@ export interface SharedStringsDocOptions {
   entries: (string | RichTextOptions)[];
   /** Total string-cell references (<sst/@count>); defaults to entries.length. */
   count?: number;
+  /** Unique string entries (<sst/@uniqueCount>); defaults to entries.length. */
+  uniqueCount?: number;
 }
 
 // ── Descriptor ──
@@ -223,7 +248,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
 
   stringify(opts, _ctx) {
     if (opts.entries.length === 0) return undefined;
-    return serializeSst(opts.entries, opts.count ?? opts.entries.length);
+    return serializeSst(opts.entries, opts.count, opts.uniqueCount);
   },
 
   parse(el, _ctx) {
@@ -293,6 +318,8 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
         if (phonetics.length > 0) entry.phonetics = phonetics;
         if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
         entries.push(entry);
+      } else if (!hasPhonetic) {
+        entries.push({});
       }
     }
 
@@ -347,6 +374,8 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
             if (theme !== undefined) result.color = `theme:${theme}`;
           }
         }
+        const tint = attr(child, "tint");
+        if (tint !== undefined && Number.isFinite(Number(tint))) result.colorTint = Number(tint);
         break;
       }
       case "sz":

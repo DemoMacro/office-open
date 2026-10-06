@@ -85,6 +85,12 @@ export interface DrawingAnchorOptions {
   extentCy?: number | UniversalMeasure;
   /** Lock anchor with sheet (default true) */
   locksWithSheet?: boolean;
+  /**
+   * Source wrapped the anchor in mc:AlternateContent (Excel 2010+ form:
+   * Choice carries the full anchor, Fallback empty). Re-emit the wrapper
+   * only when the source had it.
+   */
+  alternateContent?: boolean;
   /** Print with sheet (default true) */
   printsWithSheet?: boolean;
   /**
@@ -191,6 +197,45 @@ export interface DrawingChartOptions
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
   /** Published-object flag (graphicFrame/@fPublished); explicit true/false round-trips. */
+  fPublished?: boolean;
+}
+
+export interface DrawingWebExtensionFallbackOptions {
+  /** Relationship ID of the fallback snapshot image. */
+  rId: string;
+  /** Snapshot picture properties (spPr). */
+  properties?: ShapePropertiesOptions;
+  /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
+  /** Compression state (a:blip/@cstate); absent = attribute omitted. */
+  compression?: BlipCompression;
+  /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
+  sourceRectangle?: SourceRectangleOptions;
+  /** Image adjustment effects carried inside a:blip. */
+  blipEffects?: BlipEffectsOptions;
+  /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
+  useLocalDpi?: boolean;
+  /** Verbatim a:blip a:extLst inner XML for unmodeled extensions. */
+  blipExt?: string;
+  /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
+  locking?: PictureLockingOptions;
+  /** Relative-resize hint (cNvPicPr/@preferRelativeResize). */
+  preferRelativeResize?: boolean;
+  /** Published-object flag (pic/@fPublished). */
+  fPublished?: boolean;
+}
+
+export interface DrawingWebExtensionOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Relationship ID for the WebExtension part (we:webextensionref/@r:id). */
+  rId: string;
+  /** Snapshot picture used by the mc:Fallback branch. */
+  fallback?: DrawingWebExtensionFallbackOptions;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+  /** Published-object flag (graphicFrame/@fPublished). */
   fPublished?: boolean;
 }
 
@@ -315,6 +360,8 @@ export interface DrawingContentPartOptions extends DrawingAnchorOptions {
 export interface DrawingOptions {
   images?: DrawingPictureOptions[];
   charts?: DrawingChartOptions[];
+  /** Anchored WebExtension frames (we:webextensionref inside mc:AlternateContent). */
+  webExtensions?: DrawingWebExtensionOptions[];
   smartArts?: DrawingSmartArtOptions[];
   shapes?: ShapeOptions[];
   connectors?: ConnectorOptions[];

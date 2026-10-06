@@ -472,6 +472,7 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
           if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+          if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           return blip;

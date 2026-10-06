@@ -47,7 +47,7 @@ function borderKey(b: BorderSideOptions): string {
   // border without that side — adopted tables rebuild keys from raw entries.
   const sk = (o?: BorderOptions) =>
     `${o ? 1 : 0}_${o?.style ?? ""}_${o?.color ?? ""}_${o?.themeColor ?? ""}_${o?.tint ?? ""}_${o?.colorIndexed ?? ""}_${o?.autoColor ? 1 : 0}`;
-  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
+  return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}ol${b.outline === undefined ? "" : b.outline ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
 }
 
 function decimalAttr(value: number): string {
@@ -578,6 +578,7 @@ export class Styles {
         const bAttrs: string[] = [];
         if (b.diagonalUp !== undefined) bAttrs.push(`diagonalUp="${b.diagonalUp ? 1 : 0}"`);
         if (b.diagonalDown !== undefined) bAttrs.push(`diagonalDown="${b.diagonalDown ? 1 : 0}"`);
+        if (b.outline !== undefined) bAttrs.push(`outline="${b.outline ? 1 : 0}"`);
         const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
         p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
       }
@@ -752,6 +753,9 @@ export class Styles {
               : []),
             ...(dxf.border.diagonalDown !== undefined
               ? [`diagonalDown="${dxf.border.diagonalDown ? 1 : 0}"`]
+              : []),
+            ...(dxf.border.outline !== undefined
+              ? [`outline="${dxf.border.outline ? 1 : 0}"`]
               : []),
           ].join(" ");
           dParts.push(

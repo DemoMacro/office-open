@@ -30,6 +30,14 @@ describe("Relationships", () => {
     expect(rels.serialize()).toContain('TargetMode="External"');
   });
 
+  it("compares absolute and relative internal targets against the owner part", () => {
+    const rels = new Relationships("xl/workbook.xml");
+    const theme = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
+    rels.claimSourceRel({ relationshipType: theme, target: "/xl/theme/theme1.xml", rId: "rId9" });
+    expect(rels.idOf(theme, "theme/theme1.xml")).toBe("rId9");
+    expect(rels.serialize()).toContain('Target="/xl/theme/theme1.xml"');
+  });
+
   it("addRelationship() takes an explicit id (fixed rId1, offset batches)", () => {
     const rels = new Relationships();
     rels.addRelationship(

@@ -256,6 +256,9 @@ export function dropDanglingPassthroughRels(
     const match = targetAttr.exec(xml);
     if (!match) continue;
     const resolved = resolveRelationshipTarget(rel.source, rel.target);
+    // Legacy Office theme blips use Target="NULL" as an explicit unresolved
+    // placeholder; preserve the relationship and its r:embed verbatim.
+    if (rel.target.toUpperCase() === "NULL") continue;
     if (paths.has(resolved.toLowerCase())) continue;
     // A Target is a URI: a part whose name carries spaces/non-ASCII is
     // referenced percent-encoded, so compare the decoded form too before

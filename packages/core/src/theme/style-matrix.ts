@@ -164,14 +164,14 @@ export function parseFormatScheme(
 
   const fillStyleLst = findChild(el, "a:fillStyleLst");
   if (fillStyleLst) {
-    for (const child of fillStyleLst.elements ?? []) {
+    for (const child of (fillStyleLst.elements ?? []).filter((node) => node.type === "element")) {
       const fill = fillDesc.parse(child, ctx);
       if (fill) result.fillStyles.push(fill);
     }
   }
   const lnStyleLst = findChild(el, "a:lnStyleLst");
   if (lnStyleLst) {
-    for (const child of lnStyleLst.elements ?? []) {
+    for (const child of (lnStyleLst.elements ?? []).filter((node) => node.type === "element")) {
       if (child.name !== "a:ln") continue;
       const line = outlineDesc.parse(child, ctx);
       if (line) result.lineStyles.push(line);
@@ -179,7 +179,7 @@ export function parseFormatScheme(
   }
   const effectStyleLst = findChild(el, "a:effectStyleLst");
   if (effectStyleLst) {
-    for (const child of effectStyleLst.elements ?? []) {
+    for (const child of (effectStyleLst.elements ?? []).filter((node) => node.type === "element")) {
       if (child.name !== "a:effectStyle") continue;
       const effect = parseEffectStyle(child, ctx);
       if (effect) result.effectStyles.push(effect);
@@ -187,7 +187,7 @@ export function parseFormatScheme(
   }
   const bgFillStyleLst = findChild(el, "a:bgFillStyleLst");
   if (bgFillStyleLst) {
-    for (const child of bgFillStyleLst.elements ?? []) {
+    for (const child of (bgFillStyleLst.elements ?? []).filter((node) => node.type === "element")) {
       const fill = fillDesc.parse(child, ctx);
       if (fill) result.backgroundFillStyles.push(fill);
     }

@@ -28,7 +28,12 @@ export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
     /^xl\/activeX\/activeX/i,
     /^docProps\/thumbnail\./i,
   ],
-  pptx: [/^ppt\/vbaProject\.bin$/i, /^ppt\/embeddings\//i],
+  pptx: [
+    /^ppt\/vbaProject\.bin$/i,
+    /^ppt\/embeddings\//i,
+    /^ppt\/media\//i,
+    /^docProps\/thumbnail\./i,
+  ],
 };
 
 export type Format = "docx" | "xlsx" | "pptx";

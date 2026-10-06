@@ -87,6 +87,50 @@ describe("run rsid round-trip", () => {
     );
   });
 
+  it("preserves run identity on pure reference runs", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:commentRangeStart w:id="7"/>` +
+        '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">' +
+        '<w:rPr><w:rStyle w:val="CommentReference"/></w:rPr>' +
+        '<w:commentReference w:id="7"/></w:r>' +
+        "</w:p>",
+    );
+    const reference = opts.children?.find(
+      (child) => child !== null && typeof child === "object" && "commentReference" in child,
+    ) as Record<string, unknown>;
+    expect(reference).toMatchObject({
+      commentReference: 7,
+      additionRsid: "00112233",
+      runPropertiesRsid: "AABBCCDD",
+      properties: { style: "CommentReference" },
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">',
+    );
+  });
+
+  it("preserves non-plain simple-field result runs structurally", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:fldSimple w:instr=" PAGE ">` +
+        '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">' +
+        "<w:rPr><w:noProof/></w:rPr><w:t>1</w:t></w:r>" +
+        "</w:fldSimple></w:p>",
+    );
+    const field = firstChild(opts).simpleField;
+    expect(field.cachedValue).toBe("1");
+    expect(field.cachedRuns).toMatchObject([
+      {
+        text: "1",
+        additionRsid: "00112233",
+        runPropertiesRsid: "AABBCCDD",
+        noProof: true,
+      },
+    ]);
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('<w:fldSimple w:instr=" PAGE ">');
+    expect(xml).toContain('<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD"><w:rPr>');
+  });
+
   it("preserves w:rsidR and w:rsidRPr on drawing runs", () => {
     const chartElement = parseXml(
       `<root ${NS}><c:chartSpace><c:chart><c:plotArea><c:barChart>` +

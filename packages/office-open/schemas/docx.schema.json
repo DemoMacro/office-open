@@ -2588,6 +2588,10 @@
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
         },
+        "scatterStyle": {
+          "$ref": "#/definitions/ScatterStyle",
+          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
+        },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
           "type": ["number", "string"]
@@ -3108,6 +3112,10 @@
         },
         "roundedCorners": {
           "$ref": "#/definitions/ChartOptions/properties/roundedCorners"
+        },
+        "scatterStyle": {
+          "$ref": "#/definitions/ScatterStyle",
+          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
         },
         "secondPieSize": {
           "$ref": "#/definitions/ChartOptions/properties/secondPieSize"
@@ -5304,6 +5312,10 @@
       "additionalProperties": false,
       "description": "Default shape/line/text definition.",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` on a:spPr — black-and-white rendering mode."
+        },
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
@@ -6574,6 +6586,14 @@
         "color2": {
           "$ref": "#/definitions/SolidFillOptions",
           "description": "Second color (light)."
+        },
+        "transformReference1": {
+          "description": "Office transform reference for the first color (`xfr1`).",
+          "type": "string"
+        },
+        "transformReference2": {
+          "description": "Office transform reference for the second color (`xfr2`).",
+          "type": "string"
         }
       },
       "required": ["color1", "color2"],
@@ -9283,8 +9303,12 @@
       "description": "Legend entry override.",
       "properties": {
         "delete": {
-          "description": "Hide this legend entry (c:delete).",
+          "description": "Hide this legend entry (c:delete); false preserves an explicit val=\"0\".",
           "type": "boolean"
+        },
+        "ext": {
+          "description": "Raw inner XML of the legend entry trailing c:extLst — round-trip only.",
+          "type": "string"
         },
         "index": {
           "type": "number"
@@ -12793,6 +12817,12 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
+            "deletionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
             "footnoteReference": {
               "anyOf": [
                 {
@@ -12805,6 +12835,9 @@
             },
             "properties": {
               "$ref": "#/definitions/RunPropertiesOptions"
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber"
             }
           },
           "required": ["footnoteReference"],
@@ -12814,6 +12847,12 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
+            "deletionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
             "endnoteReference": {
               "anyOf": [
                 {
@@ -12826,6 +12865,9 @@
             },
             "properties": {
               "$ref": "#/definitions/RunPropertiesOptions"
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber"
             }
           },
           "required": ["endnoteReference"],
@@ -12881,11 +12923,20 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
             "commentReference": {
               "type": "number"
             },
+            "deletionRsid": {
+              "$ref": "#/definitions/LongHexNumber"
+            },
             "properties": {
               "$ref": "#/definitions/RunPropertiesOptions"
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber"
             }
           },
           "required": ["commentReference"],
@@ -14613,6 +14664,18 @@
           "properties": {
             "color": {
               "$ref": "#/definitions/HexColorOrAuto"
+            },
+            "themeColor": {
+              "$ref": "#/definitions/ThemeColor",
+              "description": "Theme color slot referenced by w:themeColor."
+            },
+            "themeShade": {
+              "$ref": "#/definitions/UcharHexNumber",
+              "description": "Theme shade (2-char hex, e.g. \"BF\")."
+            },
+            "themeTint": {
+              "$ref": "#/definitions/UcharHexNumber",
+              "description": "Theme tint (2-char hex, e.g. \"99\")."
             },
             "type": {
               "enum": [
@@ -17391,6 +17454,11 @@
       "required": ["xValues", "yValues"],
       "type": "object"
     },
+    "ScatterStyle": {
+      "description": "Scatter plot style (c:scatterStyle val) — scatter chart groups.",
+      "enum": ["none", "line", "lineWithMarkers", "markers", "smooth", "smoothWithMarkers"],
+      "type": "string"
+    },
     "Scene3DOptions": {
       "additionalProperties": false,
       "description": "Options for a 3D scene. Both `camera` and `lightRig` are required. `backdrop` is optional.",
@@ -17904,6 +17972,10 @@
         "overlap": {
           "description": "Bar/column overlap as percent (c:overlap, 2D bar group).",
           "type": "number"
+        },
+        "scatterStyle": {
+          "$ref": "#/definitions/ScatterStyle",
+          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
         },
         "series": {
           "description": "This group's series; categories come from the chart-level source.",
@@ -19962,6 +20034,14 @@
       "additionalProperties": false,
       "description": "Shape defaults content — the o: element sequence hosted by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.",
       "properties": {
+        "childOrder": {
+          "description": "Recognized o: child order; omitted uses shapedefaults then shapelayout.",
+          "items": {
+            "enum": ["shapedefaults", "shapelayout"],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "shapedefaults": {
           "$ref": "#/definitions/VmlShapeDefaultsOptions",
           "description": "o:shapedefaults — VML shape defaults (fill/stroke/textbox/colormru/…)."
@@ -20548,9 +20628,12 @@
       "additionalProperties": false,
       "description": "Simple field types for WordprocessingML documents.",
       "properties": {
-        "cachedRunsXml": {
-          "description": "Verbatim XML of the cached-value runs when they carry run properties (Word marks field results with w:noProof/rFonts) or split across runs — shapes the plain single-text-run template cannot reproduce.",
-          "type": "string"
+        "cachedRuns": {
+          "description": "Cached-value runs when the plain single-text-run template cannot express their run properties, identity attributes, or child sequence.",
+          "items": {
+            "$ref": "#/definitions/ParagraphChild"
+          },
+          "type": "array"
         },
         "cachedValue": {
           "description": "Optional cached field value",
@@ -23888,7 +23971,8 @@
       "description": "Options for configuring text wrapping around a drawing.",
       "properties": {
         "margins": {
-          "$ref": "#/definitions/Distance"
+          "$ref": "#/definitions/Distance",
+          "description": "Wrap-element distances in EMUs; separate from Floating.margins on wp:anchor."
         },
         "polygon": {
           "$ref": "#/definitions/WrapPolygon",

@@ -1578,19 +1578,38 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
 
 /** Serialize the o: element sequence hosted by w:hdrShapeDefaults/w:shapeDefaults. */
 function stringifyShapeDefaultsInner(opts: ShapeDefaultsOptions): string {
-  let s = "";
-  if (opts.shapedefaults !== undefined) s += stringifyVmlShapeDefaults(opts.shapedefaults);
-  if (opts.shapelayout !== undefined) s += stringifyVmlShapeLayout(opts.shapelayout);
-  return s;
+  const serializers = {
+    shapedefaults: stringifyVmlShapeDefaults,
+    shapelayout: stringifyVmlShapeLayout,
+  } as const;
+  const emitted = new Set<string>();
+  const parts: string[] = [];
+  for (const key of opts.childOrder ?? []) {
+    if (opts[key] === undefined || emitted.has(key)) continue;
+    parts.push(serializers[key](opts[key]));
+    emitted.add(key);
+  }
+  for (const key of ["shapedefaults", "shapelayout"] as const) {
+    if (opts[key] === undefined || emitted.has(key)) continue;
+    parts.push(serializers[key](opts[key]));
+  }
+  return parts.join("");
 }
 
 /** Parse the o: element sequence hosted by w:hdrShapeDefaults/w:shapeDefaults. */
 function parseShapeDefaultsInner(el: Element): ShapeDefaultsOptions {
   const out: Partial<ShapeDefaultsOptions> = {};
-  const sd = findChild(el, "o:shapedefaults");
-  if (sd) out.shapedefaults = parseVmlShapeDefaults(sd);
-  const sl = findChild(el, "o:shapelayout");
-  if (sl) out.shapelayout = parseVmlShapeLayout(sl);
+  const childOrder: NonNullable<ShapeDefaultsOptions["childOrder"]> = [];
+  for (const child of el.elements ?? []) {
+    if (child.name === "o:shapedefaults") {
+      out.shapedefaults = parseVmlShapeDefaults(child);
+      childOrder.push("shapedefaults");
+    } else if (child.name === "o:shapelayout") {
+      out.shapelayout = parseVmlShapeLayout(child);
+      childOrder.push("shapelayout");
+    }
+  }
+  if (childOrder.length > 1) out.childOrder = childOrder;
   return out as ShapeDefaultsOptions;
 }
 

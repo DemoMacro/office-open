@@ -129,6 +129,8 @@ export interface LinkedPictureMediaData {
   type: RegularMediaData["type"];
   sourceUrl: string;
   transformation: MediaDataTransformation;
+  /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
+  blackWhiteMode?: BlackWhiteMode;
   /** Blip crop (a:srcRect). */
   sourceRectangle?: SourceRectangleOptions;
   /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity. */

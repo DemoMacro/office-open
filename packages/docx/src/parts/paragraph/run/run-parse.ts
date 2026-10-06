@@ -75,6 +75,23 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
       const child = children[i];
       if (child === undefined || child.type !== "element") continue;
       switch (child.name) {
+        case "mc:AlternateContent": {
+          const branches = child.elements ?? [];
+          const branch =
+            branches.find(
+              (candidate) =>
+                candidate.name === "mc:Choice" &&
+                (candidate.elements ?? []).some((content) => content.type === "element"),
+            ) ??
+            branches.find(
+              (candidate) =>
+                candidate.name === "mc:Fallback" &&
+                (candidate.elements ?? []).some((content) => content.type === "element"),
+            );
+          const content = branch?.elements?.find((candidate) => candidate.type === "element");
+          if (content) Object.assign(opts, parseRunProperties({ ...el, elements: [content] }));
+          break;
+        }
         case "w:rStyle":
           opts.style = attr(child, "w:val");
           break;
@@ -133,6 +150,12 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           if (uType) ul.type = uType;
           const uColor = colorAttr(child, "w:color");
           if (uColor) ul.color = uColor;
+          const uThemeColor = attr(child, "w:themeColor");
+          if (uThemeColor) ul.themeColor = uThemeColor;
+          const uThemeTint = attr(child, "w:themeTint");
+          if (uThemeTint) ul.themeTint = uThemeTint;
+          const uThemeShade = attr(child, "w:themeShade");
+          if (uThemeShade) ul.themeShade = uThemeShade;
           opts.underline = ul;
           break;
         }
@@ -304,6 +327,12 @@ export function parseBorder(el: Element): Record<string, unknown> {
   if (style) opts.style = style;
   const color = colorAttr(el, "w:color");
   if (color) opts.color = color;
+  const themeColor = attr(el, "w:themeColor");
+  if (themeColor) opts.themeColor = themeColor;
+  const themeTint = attr(el, "w:themeTint");
+  if (themeTint) opts.themeTint = themeTint;
+  const themeShade = attr(el, "w:themeShade");
+  if (themeShade) opts.themeShade = themeShade;
   const size = attrNum(el, "w:sz");
   if (size !== undefined) opts.size = size;
   const space = attrNum(el, "w:space");
@@ -552,7 +581,25 @@ export function parseRun(
       case "mc:AlternateContent": {
         const choice = findChild(child, "mc:Choice");
         const pictEl = choice ? findChild(choice, "w:pict") : undefined;
-        if (!pictEl) break;
+        if (!pictEl) {
+          const symbolEl = choice
+            ? (findChild(choice, "w16se:sym") ?? findChild(choice, "w16se:symEx"))
+            : undefined;
+          if (symbolEl) {
+            const charVal = attr(symbolEl, "w:char") ?? attr(symbolEl, "w16se:char");
+            if (charVal) {
+              children.push({
+                symbolRun: {
+                  char: charVal,
+                  symbolFont:
+                    attr(symbolEl, "w:font") ?? attr(symbolEl, "w16se:font") ?? "Wingdings",
+                  kind: "office2016" as const,
+                },
+              } as unknown as ParsedRunChild);
+            }
+          }
+          break;
+        }
         const pict = parsePict(pictEl, _ctx);
         const requires = attr(choice, "Requires");
         if (requires) pict.mcChoiceRequires = requires;
@@ -775,12 +822,18 @@ export function parsedRunToOptions(
   const mixedRefs = refChildren.length > 0 && nonRefChildren.length > 0;
 
   // If the run is a pure reference run (no text), return it directly, keeping
-  // the run properties so the reference round-trips byte-faithfully.
+  // run properties and run-level identity attributes separate: the former
+  // serializes as w:rPr, the latter as attributes on w:r.
   if (refChildren.length > 0 && nonRefChildren.length === 0) {
     const ref = refChildren[0] as { commentReference?: number };
-    return Object.keys(opts).length > 0
-      ? ({ ...ref, properties: opts } as RunOptions | { commentReference: number })
-      : (ref as RunOptions | { commentReference: number });
+    const { additionRsid, runPropertiesRsid, deletionRsid, ...properties } = opts;
+    return {
+      ...ref,
+      ...(Object.keys(properties).length > 0 ? { properties } : {}),
+      ...(additionRsid ? { additionRsid } : {}),
+      ...(runPropertiesRsid ? { runPropertiesRsid } : {}),
+      ...(deletionRsid ? { deletionRsid } : {}),
+    } as RunOptions | { commentReference: number };
   }
 
   // If the run only contains a symbolRun, return it directly. SymbolRunOptions

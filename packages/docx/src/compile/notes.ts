@@ -112,6 +112,13 @@ export function compileNotesParts(
       data: replaceNumberingPlaceholders(footnoteXml, ctx.numbering.concreteNumbering),
       path: "word/footnotes.xml",
     };
+    // Orphaned externals (rel entries no footnote content references) have no
+    // model field; claim them so the rebuilt rels keeps the source entries.
+    for (const rel of ctx._options.passthroughRelationships ?? []) {
+      if (rel.source !== "word/footnotes.xml") continue;
+      ctx.footNotes.relationships.claimSourceRel(rel);
+      ctx.footNotes.relationships.claimSourceRel(rel);
+    }
     if (ctx.footNotes.relationships.relationshipCount > 0) {
       result.FootNotesRelationships = {
         data: XML_DECL + ctx.footNotes.relationships.serialize(),
@@ -149,6 +156,10 @@ export function compileNotesParts(
       data: replaceNumberingPlaceholders(endnoteXml, ctx.numbering.concreteNumbering),
       path: "word/endnotes.xml",
     };
+    for (const rel of ctx._options.passthroughRelationships ?? []) {
+      if (rel.source !== "word/endnotes.xml") continue;
+      ctx.endnotes.relationships.claimSourceRel(rel);
+    }
     if (ctx.endnotes.relationships.relationshipCount > 0) {
       result.EndnotesRelationships = {
         data: XML_DECL + ctx.endnotes.relationships.serialize(),

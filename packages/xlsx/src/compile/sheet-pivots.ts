@@ -6,7 +6,12 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, Relationships, type PassthroughRelationship } from "@office-open/core";
+import {
+  RELATIONSHIP_TYPES,
+  Relationships,
+  resolveRelationshipTarget,
+  type PassthroughRelationship,
+} from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { WorkbookOptions } from "@parts/file";
 import type { PivotSourceData, SourcePivotTableOptions } from "@parts/pivot";
@@ -39,11 +44,12 @@ export function compileSheetPivots(
 ): void {
   const pivotOpts = wsOpts.pivotTables ?? [];
   const addWorksheetPivotRelationship = (target: string): void => {
+    const semanticTarget = resolveRelationshipTarget(wsPath, target);
     const sourceRel = (passthroughRelationships ?? []).find(
       (rel) =>
         rel.source === wsPath &&
         rel.relationshipType.endsWith("/pivotTable") &&
-        rel.target === target,
+        resolveRelationshipTarget(wsPath, rel.target) === semanticTarget,
     );
     if (sourceRel) {
       wsRels.claimSourceRel(sourceRel);

@@ -12,6 +12,9 @@ import type {
   NonVisualDrawingPropertiesOptions,
   PositiveUniversalMeasure,
   UniversalMeasure,
+  VmlShapeLayoutOptions,
+  VmlShapeOptions,
+  VmlShapetypeOptions,
 } from "@office-open/core";
 import type { ArgbHexColor, Base64, HexColor } from "@office-open/core";
 import type {
@@ -27,7 +30,9 @@ import type {
 
 import type {
   ConnectorOptions,
+  DrawingContentPartOptions,
   DrawingAnchorOptions,
+  DrawingWebExtensionFallbackOptions,
   GroupOptions,
   ShapeOptions,
 } from "../drawing";
@@ -116,6 +121,8 @@ export interface RichTextRunPropertiesOptions {
    * "theme:N" — the same string parse produces.
    */
   color?: RichTextColor;
+  /** Color tint (CT_Color `@tint`, -1.0–1.0); round-trips the source value. */
+  colorTint?: number;
   /** Font size in points */
   size?: number;
   /** Underline type */
@@ -416,6 +423,18 @@ export interface WorksheetChartOptions
   shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+  /** Source chart part path; round-trip only and preserves relationship wiring. */
+  sourcePath?: string;
+}
+
+/** Anchored external content part with its source drawing relationship. */
+export interface WorksheetContentPartOptions extends DrawingContentPartOptions {
+  /** Relationship type URI from the source drawing rels — round-trip only. */
+  relationshipType: string;
+  /** Relationship target from the source drawing rels — round-trip only. */
+  relationshipTarget: string;
+  /** Source companion part path — round-trip only. */
+  sourcePath: string;
 }
 
 /**
@@ -435,6 +454,24 @@ export interface WorksheetSmartArtOptions
   /** Diagram colors part (dgm:relIds @r:cs). */
   colorsPath: string;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
+  frameLocks?: GraphicFrameLockingOptions;
+  /** Document-order position inside the drawing part (round-trip only). */
+  zOrder?: number;
+  /** Original cNvPr id (round-trip only). */
+  shapeId?: number;
+  /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
+  macro?: string;
+}
+
+export interface WorksheetWebExtensionOptions
+  extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** WebExtension part path, e.g. "xl/webextensions/webextension1.xml". */
+  sourcePath: string;
+  /** Fallback snapshot image path; round-trip only. */
+  snapshotSourcePath?: string;
+  /** Snapshot picture used by the mc:Fallback branch. */
+  fallback?: DrawingWebExtensionFallbackOptions;
+  /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks). */
   frameLocks?: GraphicFrameLockingOptions;
   /** Document-order position inside the drawing part (round-trip only). */
   zOrder?: number;
@@ -482,6 +519,8 @@ export interface HyperlinkOptions {
   cell: string;
   /** External target URL (CT_Hyperlink `@r:id`) */
   url?: string;
+  /** Worksheet relationship id for url — round-trip only. */
+  relationshipId?: string;
   /** Internal target, e.g. "Data!A1" (CT_Hyperlink `@location`; independent of url) */
   location?: string;
   /** Tooltip text */
@@ -639,6 +678,11 @@ export interface CommentOptions {
   visible?: boolean;
   /** Note shape size in points. Absent → 108 × 59.25 pt. */
   size?: { width: number; height: number };
+  /**
+   * Full source note shape. Round-trip only; anchor, visible, and size are
+   * writable projections and overwrite their source-shape counterparts.
+   */
+  vmlShape?: VmlShapeOptions;
 }
 
 /**
@@ -1091,6 +1135,8 @@ export interface SheetFormatPropertiesOptions {
   /** Default column width (CT_SheetFormatPr `@defaultColWidth`) */
   defaultColWidth?: number;
   defaultRowHeight?: number;
+  /** Custom height flag (CT_SheetFormatPr `@customHeight`); explicit defaults are round-trip significant. */
+  customHeight?: boolean;
   /** Zero height rows hidden (CT_SheetFormatPr `@zeroHeight`) */
   zeroHeight?: boolean;
   /** Thick top borders (CT_SheetFormatPr `@thickTop`) */
@@ -1408,6 +1454,8 @@ export interface DrawingHfOptions {
 /** One worksheet (xl/worksheets/sheetN.xml) — cells, dimensions, and sheet-level parts. */
 export interface WorksheetOptions {
   name?: string;
+  /** Revision UID (CT_Worksheet `@xr:uid`); preserved when the source emitted it. */
+  uid?: string;
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
   sheetId?: number;
   /** Visibility (CT_Sheet `@state`) */
@@ -1429,18 +1477,28 @@ export interface WorksheetOptions {
   charts?: WorksheetChartOptions[];
   /** Anchored SmartArt frames (xdr:graphicFrame with dgm:relIds). */
   smartArts?: WorksheetSmartArtOptions[];
+  /** Anchored WebExtension frames (we:webextensionref). */
+  webExtensions?: WorksheetWebExtensionOptions[];
   /** Anchored shapes (xdr:sp): geometry + optional text body. */
   shapes?: ShapeOptions[];
   /** Anchored connectors (xdr:cxnSp): line/arrow geometry. */
   connectors?: ConnectorOptions[];
   /** Anchored groups (xdr:grpSp): group transform + nested children. */
   groups?: GroupOptions[];
+  /** Anchored external content references (xdr:contentPart). */
+  contentParts?: WorksheetContentPartOptions[];
   dataValidations?: DataValidationOptions[];
   /** Disable data validation prompts (CT_DataValidations `@disablePrompts`) */
   dataValidationsDisablePrompts?: boolean;
   conditionalFormats?: ConditionalFormatOptions[];
   hyperlinks?: HyperlinkOptions[];
   comments?: CommentOptions[];
+  /** Source comments VML o:shapelayout; round-trip only. */
+  commentsVmlLayout?: VmlShapeLayoutOptions;
+  /** Source comments VML v:shapetype; round-trip only. */
+  commentsVmlShapeType?: VmlShapetypeOptions;
+  /** Exact source comments VML text; round-trip only. */
+  commentsVmlSource?: string;
   headerFooter?: HeaderFooterOptions;
   pageSetup?: PageSetupOptions;
   tabColor?: TabColorOptions;
@@ -1460,6 +1518,11 @@ export interface WorksheetOptions {
   sheetFormat?: SheetFormatPropertiesOptions | false;
   /** Sheet extended properties (CT_SheetPr attributes) */
   properties?: SheetPropertiesOptions;
+  /**
+   * Preserve an empty `<tableParts count="0"/>` container; round-trip only —
+   * do not hand-author.
+   */
+  preserveEmptyTableParts?: boolean;
   /** Row page breaks (CT_PageBreaks) */
   rowBreaks?: PageBreakOptions[];
   /** Column page breaks (CT_PageBreaks) */

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { attr, attrBool, attrNum, children, findChild, textOf } from "@office-open/xml";
+import { attr, attrBool, attrNum, children, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
@@ -108,7 +108,7 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     const dateFormat = findChild(date, "w:dateFormat");
     if (dateFormat) dateOpts.dateFormat = attr(dateFormat, "w:val");
     const lid = findChild(date, "w:lid");
-    if (lid) dateOpts.languageId = textOf(lid);
+    if (lid) dateOpts.languageId = attr(lid, "w:val");
     const storeMapped = findChild(date, "w:storeMappedDataAs");
     if (storeMapped) dateOpts.storeMappedDataAs = attr(storeMapped, "w:val");
     const calendar = findChild(date, "w:calendar");

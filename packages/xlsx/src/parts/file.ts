@@ -170,6 +170,9 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   sharedStrings?: (string | RichTextOptions)[];
   /** Source <sst/@count>: total string-cell references; undefined on fresh authoring. */
   sharedStringsCount?: number;
+
+  /** Declared unique string count (xl/sharedStrings.xml `@uniqueCount`). Round-trip only when absent in source. */
+  sharedStringsUniqueCount?: number;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */
@@ -231,4 +234,15 @@ export interface SharedWorkbookOptions {
   logs: RevisionLogOptions[];
   /** xl/users.xml (CT_Users), optional. */
   users?: UsersOptions;
+  /**
+   * Source path of revisionHeaders.xml relative to xl/ (e.g.
+   * "revisions/revisionHeaders.xml"). Round-trip only: fresh authoring writes
+   * xl/revisionHeaders.xml.
+   */
+  headersPath?: string;
+  /**
+   * Source path of users.xml relative to xl/. Round-trip only: fresh
+   * authoring writes xl/users.xml.
+   */
+  usersPath?: string;
 }

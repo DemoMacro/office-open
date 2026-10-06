@@ -309,11 +309,15 @@ function runFontsStr(nameOrAttrs: string | FontProperties, hint?: string): strin
   return `<w:rFonts${a}/>`;
 }
 
-function underlineStr(type: string | undefined, color?: string): string {
-  // Scalar build — this runs for every underlined run, and the Record +
-  // Object.entries round-trip of attrParts showed up in compile profiles.
-  if (color === undefined) return `<w:u w:val="${type ?? "single"}"/>`;
-  return `<w:u w:val="${type ?? "single"}" w:color="${hexColorValue(color)}"/>`;
+function underlineStr(opts: NonNullable<RunPropertiesOptions["underline"]>): string {
+  const a = attrsRaw({
+    "w:val": opts.type ?? "single",
+    "w:color": opts.color !== undefined ? hexColorValue(opts.color) : undefined,
+    "w:themeColor": opts.themeColor,
+    "w:themeTint": opts.themeTint !== undefined ? uCharHexNumber(opts.themeTint) : undefined,
+    "w:themeShade": opts.themeShade !== undefined ? uCharHexNumber(opts.themeShade) : undefined,
+  });
+  return `<w:u${a}/>`;
 }
 
 function eastAsianLayoutStr(opts: EastAsianLayoutOptions): string {
@@ -679,7 +683,7 @@ export function stringifyRunPropertiesInner(
   if (opts.highlight) s += `<w:highlight w:val="${opts.highlight}"/>`;
 
   // Underline
-  if (opts.underline) s += underlineStr(opts.underline.type, opts.underline.color);
+  if (opts.underline) s += underlineStr(opts.underline);
 
   // Effect
   if (opts.effect) s += `<w:effect w:val="${opts.effect}"/>`;

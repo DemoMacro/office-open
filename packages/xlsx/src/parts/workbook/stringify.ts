@@ -34,6 +34,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   } else if (fv) {
     const fvAttrs: string[] = [];
     if (fv.appName) fvAttrs.push(`appName="${fv.appName}"`);
+    if (fv.codeName) fvAttrs.push(`codeName="${escapeXml(fv.codeName)}"`);
     if (fv.lastEdited !== undefined) fvAttrs.push(`lastEdited="${fv.lastEdited}"`);
     if (fv.lowestEdited !== undefined) fvAttrs.push(`lowestEdited="${fv.lowestEdited}"`);
     if (fv.rupBuild !== undefined) fvAttrs.push(`rupBuild="${fv.rupBuild}"`);
@@ -69,14 +70,14 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.properties) {
     const wbPr = opts.properties;
     const wbPrAttrs: string[] = [];
-    if (wbPr.date1904) wbPrAttrs.push('date1904="1"');
+    if (wbPr.date1904 !== undefined) wbPrAttrs.push(`date1904="${wbPr.date1904 ? 1 : 0}"`);
     if (wbPr.defaultThemeVersion !== undefined)
       wbPrAttrs.push(`defaultThemeVersion="${wbPr.defaultThemeVersion}"`);
     if (wbPr.showObjects) wbPrAttrs.push(`showObjects="${escapeXml(wbPr.showObjects)}"`);
     if (wbPr.hidePivotFieldList) wbPrAttrs.push('hidePivotFieldList="1"');
     if (wbPr.allowRefreshQuery) wbPrAttrs.push('allowRefreshQuery="1"');
     if (wbPr.filterPrivacy) wbPrAttrs.push('filterPrivacy="1"');
-    if (wbPr.backupFile) wbPrAttrs.push('backupFile="1"');
+    if (wbPr.backupFile !== undefined) wbPrAttrs.push(`backupFile="${wbPr.backupFile ? 1 : 0}"`);
     if (wbPr.codeName) wbPrAttrs.push(`codeName="${escapeXml(wbPr.codeName)}"`);
     if (wbPr.showBorderUnselectedTables) wbPrAttrs.push('showBorderUnselectedTables="1"');
     if (wbPr.promptedSolutions) wbPrAttrs.push('promptedSolutions="1"');
@@ -183,27 +184,28 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     const bv = opts.bookView;
     const bvAttrs: string[] = [];
     if (bv.xWindow !== undefined) bvAttrs.push(`xWindow="${bv.xWindow}"`);
-    else bvAttrs.push('xWindow="0"');
     if (bv.yWindow !== undefined) bvAttrs.push(`yWindow="${bv.yWindow}"`);
-    else bvAttrs.push('yWindow="0"');
     if (bv.windowWidth !== undefined) bvAttrs.push(`windowWidth="${bv.windowWidth}"`);
-    else bvAttrs.push('windowWidth="28800"');
     if (bv.windowHeight !== undefined) bvAttrs.push(`windowHeight="${bv.windowHeight}"`);
-    else bvAttrs.push('windowHeight="12300"');
     if (bv.activeTab !== undefined) bvAttrs.push(`activeTab="${bv.activeTab}"`);
-    if (bv.autoFilterDateGrouping === false) bvAttrs.push('autoFilterDateGrouping="0"');
+    if (bv.minimized !== undefined) bvAttrs.push(`minimized="${bv.minimized ? 1 : 0}"`);
+    if (bv.autoFilterDateGrouping !== undefined)
+      bvAttrs.push(`autoFilterDateGrouping="${bv.autoFilterDateGrouping ? 1 : 0}"`);
     if (bv.firstSheet !== undefined) bvAttrs.push(`firstSheet="${bv.firstSheet}"`);
-    if (bv.showHorizontalScroll === false) bvAttrs.push('showHorizontalScroll="0"');
-    if (bv.showSheetTabs === false) bvAttrs.push('showSheetTabs="0"');
-    if (bv.showVerticalScroll === false) bvAttrs.push('showVerticalScroll="0"');
+    if (bv.showHorizontalScroll !== undefined)
+      bvAttrs.push(`showHorizontalScroll="${bv.showHorizontalScroll ? 1 : 0}"`);
+    if (bv.showSheetTabs !== undefined) bvAttrs.push(`showSheetTabs="${bv.showSheetTabs ? 1 : 0}"`);
+    if (bv.showVerticalScroll !== undefined)
+      bvAttrs.push(`showVerticalScroll="${bv.showVerticalScroll ? 1 : 0}"`);
     if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
     if (bv.visibility && bv.visibility !== "visible") bvAttrs.push(`visibility="${bv.visibility}"`);
+    if (bv.uid !== undefined) bvAttrs.push(`xr2:uid="${bv.uid}"`);
     parts.push(`<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`);
   }
 
   parts.push("<sheets>");
   for (const s of opts.sheets) {
-    const stateAttr = s.state && s.state !== "visible" ? ` state="${s.state}"` : "";
+    const stateAttr = s.state ? ` state="${s.state}"` : "";
     parts.push(
       `<sheet name="${escapeXml(s.name)}" sheetId="${s.sheetId}" r:id="${s.rId}"${stateAttr}/>`,
     );
@@ -225,7 +227,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   parts.push("<!--EXTERNAL_REFS-->");
 
   // Defined names (after externalReferences, before calcPr per XSD sequence)
-  if (opts.definedNames && opts.definedNames.length > 0) {
+  if (opts.definedNames !== undefined) {
     const dnParts: string[] = ["<definedNames>"];
     for (const dn of opts.definedNames) {
       const dnAttrs: string[] = [`name="${escapeXml(dn.name)}"`];

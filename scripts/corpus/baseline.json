@@ -9,15 +9,15 @@
     },
     "xlsx": {
       "total": 155,
-      "clean": 90,
-      "diff": 65,
+      "clean": 127,
+      "diff": 28,
       "parseFail": 0,
       "genFail": 0
     },
     "pptx": {
       "total": 226,
-      "clean": 217,
-      "diff": 8,
+      "clean": 218,
+      "diff": 7,
       "parseFail": 1,
       "genFail": 0
     }
@@ -55,8 +55,8 @@
     },
     "xlsx": {
       "total": 385,
-      "clean": 120,
-      "diff": 263,
+      "clean": 133,
+      "diff": 250,
       "parseFail": 2,
       "genFail": 0
     },
@@ -78,8 +78,8 @@
     },
     "xlsx": {
       "total": 15,
-      "clean": 8,
-      "diff": 2,
+      "clean": 10,
+      "diff": 0,
       "parseFail": 5,
       "genFail": 0
     },
@@ -94,8 +94,8 @@
   "pandoc": {
     "docx": {
       "total": 131,
-      "clean": 115,
-      "diff": 15,
+      "clean": 117,
+      "diff": 13,
       "parseFail": 1,
       "genFail": 0
     },
@@ -147,8 +147,8 @@
     },
     "xlsx": {
       "total": 38,
-      "clean": 23,
-      "diff": 11,
+      "clean": 27,
+      "diff": 7,
       "parseFail": 4,
       "genFail": 0
     },

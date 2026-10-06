@@ -83,7 +83,7 @@ export function parseColorScheme(
   if (!el) return undefined;
   const result: Partial<ColorSchemeOptions> = {};
   const name = el.attributes?.["name"];
-  if (name) result.name = String(name);
+  if (name !== undefined) result.name = String(name);
   for (const { tag, key } of COLOR_TAGS) {
     const colorEl = findChild(el, tag);
     if (!colorEl) continue;

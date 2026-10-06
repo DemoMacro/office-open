@@ -260,7 +260,8 @@ export function extractPlaceholderDefinition(
   Object.assign(def, parseNonVisualDrawingProperties(cNvPr));
   const cNvPrId = cNvPr ? attr(cNvPr, "id") : undefined;
   if (cNvPrId !== undefined) def.id = Number(cNvPrId);
-  const lockingEl = nvSpPr ? findChild(nvSpPr, "a:spLocks") : undefined;
+  const cNvSpPr = nvSpPr ? findChild(nvSpPr, "p:cNvSpPr") : undefined;
+  const lockingEl = cNvSpPr ? findChild(cNvSpPr, "a:spLocks") : undefined;
   if (lockingEl) {
     const locking: Partial<ShapeLockingOptions> = {};
     for (const key of [

@@ -63,6 +63,7 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
 function canonicalAttributeValue(name: string, value: string): string {
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
+  if (name === "ht" && Number.isFinite(Number(value))) return String(Number(value));
   if (name === "Type" || name === "uri" || name === "Namespace") {
     if (value.startsWith(STRICT_URI_PREFIX)) {
       const path = value.slice(STRICT_URI_PREFIX.length);
@@ -92,17 +93,37 @@ function canonicalAttributeValue(name: string, value: string): string {
 }
 
 function canonicalElementName(name: string, partPath: string): string {
+  if (name === "w16se:symEx") return "w16se:sym";
   if (!partPath.startsWith("docProps/core.xml") && !partPath.startsWith("docProps/app.xml")) {
     return name;
   }
   const localName = name.includes(":") ? name.slice(name.indexOf(":") + 1) : name;
-  return localName.toLowerCase();
+  const lower = localName.toLowerCase();
+  return LEGACY_CORE_PROPERTY_NAMES.get(lower) ?? lower;
 }
+
+/**
+ * Older producers write created/modified with legacy lowercase element names
+ * in docProps/core.xml; both spellings carry the same semantics.
+ */
+const LEGACY_CORE_PROPERTY_NAMES = new Map([
+  ["datecreated", "created"],
+  ["datemodified", "modified"],
+]);
 
 function relationshipOwnerPath(relsPath: string): string {
   if (relsPath === "_rels/.rels" || relsPath.startsWith("_rels/")) return "";
   const ownerPath = relsPath.replace(/\/_rels\//, "/");
   return ownerPath.endsWith(".rels") ? ownerPath.slice(0, -".rels".length) : ownerPath;
+}
+
+/**
+ * An empty relationships part carries no semantics, so a generator may omit it
+ * (matching Office's normalized output) without losing package information.
+ */
+function isEmptyRelationshipsPart(data: Uint8Array | undefined): boolean {
+  if (!data) return true;
+  return !/<Relationship[\s/>]/.test(new TextDecoder().decode(data));
 }
 
 function canonicalNode(
@@ -112,9 +133,28 @@ function canonicalNode(
 ): CanonicalNode {
   const name = element.name ?? "";
   const childPath = `${path}/${name}`;
+  const canonicalAttributeName = (attributeName: string): string => {
+    if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:char")
+      return "w:char";
+    if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:font")
+      return "w:font";
+    return attributeName;
+  };
   if (name === "mc:AlternateContent") {
-    const choice = (element.elements ?? []).find((child) => child.name === "mc:Choice");
-    if (choice) return canonicalNode(choice, `${childPath}/mc:Choice`, references);
+    const branches = element.elements ?? [];
+    const branch =
+      branches.find(
+        (child) =>
+          child.name === "mc:Choice" &&
+          (child.elements ?? []).some((content) => content.type === "element"),
+      ) ??
+      branches.find(
+        (child) =>
+          child.name === "mc:Fallback" &&
+          (child.elements ?? []).some((content) => content.type === "element"),
+      );
+    const content = branch?.elements?.find((child) => child.type === "element");
+    if (content) return canonicalNode(content, `${childPath}/${branch?.name}`, references);
   }
   if (name === "mc:Choice") {
     const content = (element.elements ?? []).find((child) => child.type === "element");
@@ -128,17 +168,20 @@ function canonicalNode(
       .filter(([attributeName]) => attributeName !== "xmlns" && !attributeName.startsWith("xmlns:"))
       .filter(([attributeName]) => !(isRelationship && attributeName === "Id"))
       .filter(([attributeName]) => !IGNORED_ATTRIBUTES.has(attributeName))
-      .map(([attributeName, value]) => [
-        attributeName,
-        references && attributeName.startsWith("r:")
-          ? (references.get(String(value ?? "")) ??
-            canonicalAttributeValue(attributeName, String(value ?? "")))
-          : isRelationship &&
-              attributeName === "Target" &&
-              element.attributes?.TargetMode !== "External"
-            ? resolveRelationshipTarget(ownerPath, String(value ?? ""))
-            : canonicalAttributeValue(attributeName, String(value ?? "")),
-      ])
+      .map(([rawAttributeName, value]) => {
+        const attributeName = canonicalAttributeName(rawAttributeName);
+        return [
+          attributeName,
+          references && attributeName.startsWith("r:")
+            ? (references.get(String(value ?? "")) ??
+              canonicalAttributeValue(attributeName, String(value ?? "")))
+            : isRelationship &&
+                attributeName === "Target" &&
+                element.attributes?.TargetMode !== "External"
+              ? resolveRelationshipTarget(ownerPath, String(value ?? ""))
+              : canonicalAttributeValue(attributeName, String(value ?? "")),
+        ] as const;
+      })
       .sort(([left], [right]) => left.localeCompare(right)),
   );
   const rawText = (element.elements ?? [])
@@ -170,14 +213,23 @@ function sortUnorderedChildren(
   );
   const unorderedRoot =
     UNORDERED_PART_PATHS.has(path) || path === "[Content_Types].xml" || path.endsWith(".rels");
-  return {
-    ...node,
-    children: unorderedRoot
-      ? [...children].sort((left, right) =>
-          childFingerprint(left).localeCompare(childFingerprint(right)),
-        )
-      : children,
-  };
+  const localName = (node.name.split(":").pop() ?? node.name).toLowerCase();
+  if (
+    unorderedRoot ||
+    localName === "footnotes" ||
+    localName === "endnotes" ||
+    localName === "docparts" ||
+    localName === "docpartpr" ||
+    localName === "sectpr"
+  ) {
+    return {
+      ...node,
+      children: [...children].sort((left, right) =>
+        childFingerprint(left).localeCompare(childFingerprint(right)),
+      ),
+    };
+  }
+  return { ...node, children };
 }
 
 function childFingerprint(node: CanonicalNode): string {
@@ -538,6 +590,12 @@ export function archiveSemanticDiffDetails(
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
     if (path.endsWith("/")) continue;
+    if (
+      path.endsWith(".rels") &&
+      isEmptyRelationshipsPart(sourceArchive[path]) &&
+      isEmptyRelationshipsPart(outputArchive[path])
+    )
+      continue;
     const references =
       /\.xml$/i.test(path) && !path.endsWith(".rels")
         ? {
@@ -564,6 +622,12 @@ export function archiveSemanticDiffs(source: Uint8Array, output: Uint8Array): Se
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
     if (path.endsWith("/")) continue;
+    if (
+      path.endsWith(".rels") &&
+      isEmptyRelationshipsPart(sourceArchive[path]) &&
+      isEmptyRelationshipsPart(outputArchive[path])
+    )
+      continue;
     const diff = semanticPartDiff(
       path,
       sourceArchive[path] ?? new Uint8Array(),
@@ -597,6 +661,12 @@ export function archiveTagDiffs(source: Uint8Array, output: Uint8Array): string[
   for (const path of Object.keys(sourceArchive)) {
     if (!path.endsWith(".xml") && !path.endsWith(".rels")) continue;
     if (path.includes("theme")) continue;
+    if (
+      path.endsWith(".rels") &&
+      isEmptyRelationshipsPart(sourceArchive[path]) &&
+      isEmptyRelationshipsPart(outputArchive[path])
+    )
+      continue;
     const sourceXml = decoder.decode(sourceArchive[path]!);
     const outputXml = decoder.decode(outputArchive[path] ?? new Uint8Array());
     if (sourceXml !== outputXml && differs(sourceXml, outputXml)) diffs.push(path);

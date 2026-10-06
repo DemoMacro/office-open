@@ -361,6 +361,15 @@ export const xsdSizeRepresents = bidi({ width: "w" } as const);
 
 export const xsdSplitType = bidi({ custom: "cust", position: "pos", value: "val" } as const);
 
+export const xsdScatterStyle = bidi({
+  none: "none",
+  line: "line",
+  lineWithMarkers: "lineMarker",
+  markers: "marker",
+  smooth: "smooth",
+  smoothWithMarkers: "smoothMarker",
+} as const);
+
 export const xsdAxisLabelAlignment = bidi({ center: "ctr", left: "l", right: "r" } as const);
 
 export const xsdAxisOrientation = bidi({ ascending: "minMax", descending: "maxMin" } as const);

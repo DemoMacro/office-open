@@ -24,6 +24,7 @@ import {
   xsdErrorValueType,
   xsdLegendPosition,
   xsdSizeRepresents,
+  xsdScatterStyle,
   xsdSplitType,
   xsdTrendlineType,
 } from "../util/mappings";
@@ -34,6 +35,7 @@ import type {
   ChartSeriesData,
   ChartLinesOptions,
   ChartGrouping,
+  ScatterStyle,
   SecondaryChartGroupOptions,
   ChartType,
   DataLabelOptions,
@@ -655,6 +657,7 @@ function stringifyPrintSettings(opts: PrintSettingsOptions): string {
 interface ChartGroupHeaderFields {
   type: ChartType;
   grouping?: ChartGrouping;
+  scatterStyle?: ScatterStyle;
   radarStyle?: RadarStyle;
   ofPieType?: OfPieType;
   wireframe?: boolean;
@@ -678,7 +681,7 @@ function chartTypeHeader(opts: ChartGroupHeaderFields & { threeD?: boolean }): s
       headerParts.push(valEl("c:grouping", opts.grouping ?? "standard"));
       break;
     case "scatter":
-      headerParts.push(valEl("c:scatterStyle", "line"));
+      headerParts.push(valEl("c:scatterStyle", xsdScatterStyle.to(opts.scatterStyle ?? "line")));
       break;
     case "radar":
       headerParts.push(valEl("c:radarStyle", opts.radarStyle ?? "standard"));
@@ -979,6 +982,14 @@ function readSecondaryGroup(
   const g: SecondaryChartGroupOptions = { type: secType, series: [] };
   const grouping = readValStr(secondaryEl, "c:grouping");
   if (grouping) g.grouping = grouping as ChartGrouping;
+  if (secType === "scatter") {
+    const scatterStyle = readValStr(secondaryEl, "c:scatterStyle");
+    if (scatterStyle) {
+      g.scatterStyle = xsdScatterStyle.from(
+        scatterStyle,
+      ) as SecondaryChartGroupOptions["scatterStyle"];
+    }
+  }
   const varyColors = readBoolAttr(secondaryEl, "c:varyColors");
   if (varyColors !== undefined) g.varyColors = varyColors;
   const groupLabels = readDataLabels(secondaryEl, ctx);
@@ -1119,14 +1130,17 @@ function stringifyTitle(title: string | ChartTitleOptions, ctx: WriteContext): s
 
 function stringifyLegendEntry(entry: LegendEntryOptions, ctx: WriteContext): string {
   // CT_LegendEntry: idx → choice(delete | EG_LegendEntryData[txPr]).
-  if (entry.delete) {
-    return `<c:legendEntry><c:idx val="${entry.index}"/><c:delete val="1"/></c:legendEntry>`;
+  const data =
+    entry.delete !== undefined
+      ? `<c:delete${boolVal(entry.delete)}/>`
+      : entry.textProperties
+        ? `<c:txPr>${textBodyDesc.stringify(entry.textProperties, ctx) ?? ""}</c:txPr>`
+        : "";
+  const ext = entry.ext ? `<c:extLst>${entry.ext}</c:extLst>` : "";
+  if (!data) {
+    return "";
   }
-  if (entry.textProperties) {
-    const txPr = textBodyDesc.stringify(entry.textProperties, ctx) ?? "";
-    return `<c:legendEntry><c:idx val="${entry.index}"/><c:txPr>${txPr}</c:txPr></c:legendEntry>`;
-  }
-  return "";
+  return `<c:legendEntry><c:idx val="${entry.index}"/>${data}${ext}</c:legendEntry>`;
 }
 
 function stringifyLegend(opts: ChartSpaceOptions, ctx: WriteContext): string {
@@ -1935,6 +1949,11 @@ function readChartTypeScalars(
   } else if (type === "radar") {
     const radarStyle = readValStr(chartTypeEl, "c:radarStyle");
     if (radarStyle) result.radarStyle = radarStyle as RadarStyle;
+  } else if (type === "scatter") {
+    const scatterStyle = readValStr(chartTypeEl, "c:scatterStyle");
+    if (scatterStyle) {
+      result.scatterStyle = xsdScatterStyle.from(scatterStyle) as ChartSpaceOptions["scatterStyle"];
+    }
   } else if (type === "ofPie") {
     const ofPieType = readValStr(chartTypeEl, "c:ofPieType");
     if (ofPieType) result.ofPieType = ofPieType as OfPieType;
@@ -2122,22 +2141,19 @@ function readLegendEntries(legend: XmlElement, ctx: ReadContext): LegendEntryOpt
   for (const entry of entries) {
     const idxEl = findChild(entry, "c:idx");
     if (!idxEl) continue;
+    const legendEntry: LegendEntryOptions = { index: Number(attr(idxEl, "val")) };
     const deleteEl = findChild(entry, "c:delete");
     if (deleteEl) {
       const v = attr(deleteEl, "val");
-      result.push({
-        index: Number(attr(idxEl, "val")),
-        delete: parseOnOff(v) ?? true,
-      });
-      continue;
+      legendEntry.delete = parseOnOff(v) ?? true;
     }
     const txPrEl = findChild(entry, "c:txPr");
-    if (txPrEl) {
-      result.push({
-        index: Number(attr(idxEl, "val")),
-        textProperties: textBodyDesc.parse(txPrEl, ctx) as TextBodyOptions,
-      });
+    if (txPrEl) legendEntry.textProperties = textBodyDesc.parse(txPrEl, ctx) as TextBodyOptions;
+    const extLst = findChild(entry, "c:extLst");
+    if (extLst) {
+      legendEntry.ext = (extLst.elements ?? []).map((e) => stringifyElement(e)).join("");
     }
+    result.push(legendEntry);
   }
   return result.length ? result : undefined;
 }

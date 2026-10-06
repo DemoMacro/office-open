@@ -81,6 +81,10 @@ export interface DuotoneEffectOptions {
   color1: SolidFillOptions;
   /** Second color (light). */
   color2: SolidFillOptions;
+  /** Office transform reference for the first color (`xfr1`). */
+  transformReference1?: string;
+  /** Office transform reference for the second color (`xfr2`). */
+  transformReference2?: string;
 }
 
 /**
@@ -270,8 +274,13 @@ export const createBlipEffects = (options: BlipEffectsOptions): string[] => {
   }
 
   if (options.duotone) {
+    const attrs: Record<string, string | undefined> = {};
+    if (options.duotone.transformReference1 !== undefined)
+      attrs.xfr1 = options.duotone.transformReference1;
+    if (options.duotone.transformReference2 !== undefined)
+      attrs.xfr2 = options.duotone.transformReference2;
     children.push(
-      element("a:duotone", undefined, [
+      element("a:duotone", attrs, [
         createColorElement(options.duotone.color1),
         createColorElement(options.duotone.color2),
       ]),

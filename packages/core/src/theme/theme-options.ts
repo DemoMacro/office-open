@@ -10,6 +10,7 @@
 
 import type {
   BodyPropertiesOptions,
+  BlackWhiteMode,
   EffectListOptions,
   FillOptions,
   OutlineOptions,
@@ -117,6 +118,8 @@ export interface FormatSchemeOptions {
 
 /** Default shape/line/text definition (CT_DefaultShapeDefinition: spDef/lnDef/txDef). */
 export interface DefaultShapeDefinitionOptions {
+  /** `@bwMode` on a:spPr — black-and-white rendering mode. */
+  blackWhiteMode?: BlackWhiteMode;
   shapeProperties?: ShapePropertiesOptions;
   bodyProperties?: BodyPropertiesOptions;
   listStyle?: TextListStyleOptions;

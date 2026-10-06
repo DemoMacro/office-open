@@ -72,26 +72,41 @@ export class Media<T extends BaseMediaEntry> {
     build: (fileName: string) => T,
     fileName?: string,
   ): T {
+    // Pinned names are round-trip identities, not a dedup hint. Check only the
+    // requested name so byte-identical media from different source paths keep
+    // their physical topology; repeated references to the same pinned name
+    // still share one entry.
+    if (fileName !== undefined) {
+      const existing = this.map.get(fileName);
+      if (existing && existing.type === type && this.byteEqual(existing.data, data)) {
+        return existing;
+      }
+    }
+
     // Hot path: the same buffer object referenced repeatedly resolves instantly.
     // The cached entry must match the requested type — identical bytes registered
     // under a different type (e.g. EMF bytes also carried as WMF in an
     // mc:AlternateContent fallback) are distinct resources with different
     // content-types and must NOT collapse into one part.
-    const verifiedName = this.verified.get(data);
-    if (verifiedName !== undefined) {
-      const existing = this.map.get(verifiedName)!;
-      if (existing.type === type) return existing;
+    if (fileName === undefined) {
+      const verifiedName = this.verified.get(data);
+      if (verifiedName !== undefined) {
+        const existing = this.map.get(verifiedName)!;
+        if (existing.type === type) return existing;
+      }
     }
 
     // Type-scoped content key: same bytes under different types stay separate.
     const key = `${type}:${this.contentKey(data)}`;
-    const existingName = this.byContent.get(key);
-    if (existingName !== undefined) {
-      const existing = this.map.get(existingName)!;
-      // Hash hit — confirm bytes + type match to exclude a collision, then memoize.
-      if (existing.type === type && this.byteEqual(existing.data, data)) {
-        this.verified.set(data, existingName);
-        return existing;
+    if (fileName === undefined) {
+      const existingName = this.byContent.get(key);
+      if (existingName !== undefined) {
+        const existing = this.map.get(existingName)!;
+        // Hash hit — confirm bytes + type match to exclude a collision, then memoize.
+        if (existing.type === type && this.byteEqual(existing.data, data)) {
+          this.verified.set(data, existingName);
+          return existing;
+        }
       }
     }
 
@@ -104,8 +119,10 @@ export class Media<T extends BaseMediaEntry> {
     const entry = build(finalName);
     this.map.set(finalName, entry);
     this.cachedArray = undefined;
-    this.byContent.set(key, finalName);
-    this.verified.set(data, finalName);
+    if (fileName === undefined) {
+      this.byContent.set(key, finalName);
+      this.verified.set(data, finalName);
+    }
     return entry;
   }
 

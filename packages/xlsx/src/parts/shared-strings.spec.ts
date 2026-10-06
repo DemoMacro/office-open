@@ -1,6 +1,7 @@
+import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { SharedStrings } from "./shared-strings";
+import { SharedStrings, sharedStringsDesc } from "./shared-strings";
 
 describe("SharedStrings", () => {
   it("register() returns incrementing indices", () => {
@@ -32,6 +33,37 @@ describe("SharedStrings", () => {
     ss.register("B");
     ss.setSourceCount(7);
     expect(ss.toDescriptorOptions()).toEqual({ entries: ["A", "B"], count: 7 });
+  });
+
+  it("omits an absent source reference count", () => {
+    const ss = new SharedStrings();
+    ss.register("A");
+    const xml = ss.toDescriptorOptions();
+    expect(xml.count).toBeUndefined();
+    expect(sharedStringsDesc.stringify(xml, {} as never)).not.toContain('count="1"');
+    expect(xml.uniqueCount).toBeUndefined();
+    expect(sharedStringsDesc.stringify(xml, {} as never)).not.toContain('uniqueCount="1"');
+  });
+
+  it("round-trips an explicit unique count separately from entries", () => {
+    const ss = new SharedStrings();
+    ss.register("A");
+    ss.setSourceUniqueCount(9);
+    expect(ss.toDescriptorOptions()).toEqual({ entries: ["A"], uniqueCount: 9 });
+  });
+
+  it("preserves the index of an empty shared-string item", () => {
+    const doc = parseXml(
+      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        "<si/><si><t>A</t></si></sst>",
+    );
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const result = sharedStringsDesc.parse(root, {} as never);
+    expect(result.entries).toEqual([{}, "A"]);
+    expect(sharedStringsDesc.stringify(result, {} as never)).toContain(
+      "<si></si><si><t>A</t></si>",
+    );
   });
 
   // ── toXml path ──

@@ -152,16 +152,28 @@ export type ParagraphChild =
   | {
       footnoteReference: number | FootnoteEndnoteReferenceOptions;
       properties?: RunPropertiesOptions;
+      additionRsid?: LongHexNumber;
+      runPropertiesRsid?: LongHexNumber;
+      deletionRsid?: LongHexNumber;
     }
   | {
       endnoteReference: number | FootnoteEndnoteReferenceOptions;
       properties?: RunPropertiesOptions;
+      additionRsid?: LongHexNumber;
+      runPropertiesRsid?: LongHexNumber;
+      deletionRsid?: LongHexNumber;
     }
   | { pageBreak: true }
   | { columnBreak: true }
   | { commentRangeStart: MarkupRangeOptions }
   | { commentRangeEnd: MarkupRangeOptions }
-  | { commentReference: number; properties?: RunPropertiesOptions }
+  | {
+      commentReference: number;
+      properties?: RunPropertiesOptions;
+      additionRsid?: LongHexNumber;
+      runPropertiesRsid?: LongHexNumber;
+      deletionRsid?: LongHexNumber;
+    }
   | { comment: CommentChildOptions }
   | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
   | { deletion: ChangedProperties & { children: TrackChangeChild[] } }

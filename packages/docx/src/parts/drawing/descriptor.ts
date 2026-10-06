@@ -897,7 +897,7 @@ function stringifyGraphicDataContent(
     `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">` +
     stringifyNvPicPr(hlIds, md.nonVisualProperties) +
     stringifyBlipFill(md, blipEffects, tile, ctx) +
-    stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d) +
+    stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d, md.blackWhiteMode) +
     `</pic:pic></a:graphicData>`
   );
 }
@@ -983,15 +983,15 @@ function wrapPolygonStr(cx: number, cy: number, polygon?: WrapPolygon): string {
   );
 }
 
-function wrapSquareStr(textWrapping: TextWrapping, margins?: Margins): string {
+function wrapSquareStr(textWrapping: TextWrapping): string {
   const side = textWrapping.side ?? TextWrappingSide.BOTH_SIDES;
-  const m = margins ?? {};
+  const m = textWrapping.margins ?? {};
   const a = [
     `wrapText="${side}"`,
-    ...(m.top != null ? [`distT="${convertToEmu(m.top)}"`] : []),
-    ...(m.bottom != null ? [`distB="${convertToEmu(m.bottom)}"`] : []),
-    ...(m.left != null ? [`distL="${convertToEmu(m.left)}"`] : []),
-    ...(m.right != null ? [`distR="${convertToEmu(m.right)}"`] : []),
+    ...(m.distT != null ? [`distT="${convertToEmu(m.distT)}"`] : []),
+    ...(m.distB != null ? [`distB="${convertToEmu(m.distB)}"`] : []),
+    ...(m.distL != null ? [`distL="${convertToEmu(m.distL)}"`] : []),
+    ...(m.distR != null ? [`distR="${convertToEmu(m.distR)}"`] : []),
   ].join(" ");
   return `<wp:wrapSquare ${a}/>`;
 }
@@ -1160,7 +1160,7 @@ function stringifyAnchor(
   let wrapXml: string;
   const rawWrap = rawFloating?.wrap;
   if (rawWrap?.type === TextWrappingType.SQUARE) {
-    wrapXml = wrapSquareStr(rawWrap, floating.margins);
+    wrapXml = wrapSquareStr(rawWrap);
   } else if (rawWrap?.type === TextWrappingType.TIGHT) {
     wrapXml = wrapTightStr(rawWrap, floating.margins ?? {}, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.THROUGH) {

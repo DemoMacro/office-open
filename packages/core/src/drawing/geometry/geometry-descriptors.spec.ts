@@ -126,6 +126,15 @@ describe("customGeometryDesc", () => {
     expect(result.pathList?.[0]?.h).toBe(100000);
   });
 
+  it("round-trips an explicit empty connection-site list", () => {
+    const result = roundTrip(customGeometryDesc, {
+      connectionSites: [],
+      pathList: [],
+    });
+    expect(result.connectionSites).toEqual([]);
+    expect(result.pathList).toEqual([]);
+  });
+
   it("round-trips custom geometry with arc and bezier commands", () => {
     const opts: CustomGeometryOptions = {
       pathList: [

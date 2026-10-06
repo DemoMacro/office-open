@@ -257,6 +257,11 @@ export interface PresentationOptions extends CorePropertiesOptions {
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /**
+   * Root relationship Type for docProps/app.xml; preserved for non-canonical
+   * producers. Round-trip only — do not hand-author.
+   */
+  appPropertiesRelationshipType?: string;
+  /**
    * Content types from the source [Content_Types].xml (round-trip only).
    * Present, generate() keeps the source Default/Override entries as the
    * base declaration table and derives only what they leave uncovered.

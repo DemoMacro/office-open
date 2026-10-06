@@ -62,7 +62,16 @@ describe("parseStyleDefinitions (round-trip)", () => {
           name: "My Char",
           basedOn: "DefaultParagraphFont",
           link: "MyPara",
-          run: { bold: true },
+          run: {
+            bold: true,
+            underline: {
+              type: "single",
+              color: "FF0000",
+              themeColor: "text1",
+              themeTint: "99",
+              themeShade: "BF",
+            },
+          },
         },
       ],
     });
@@ -79,6 +88,13 @@ describe("parseStyleDefinitions (round-trip)", () => {
     expect(char!.basedOn).toBe("DefaultParagraphFont");
     expect(char!.link).toBe("MyPara");
     expect(char!.run?.bold).toBe(true);
+    expect(char!.run?.underline).toEqual({
+      type: "single",
+      color: "FF0000",
+      themeColor: "text1",
+      themeTint: "99",
+      themeShade: "BF",
+    });
   });
 
   it("reads back custom table style with conditional formats (fully structured)", () => {

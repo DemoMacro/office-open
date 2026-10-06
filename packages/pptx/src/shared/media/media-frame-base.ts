@@ -1,6 +1,7 @@
 import type {
   DataType,
   NonVisualDrawingPropertiesOptions,
+  PictureLockingOptions,
   UniversalMeasure,
 } from "@office-open/core";
 import type { MediaData } from "@shared/media/data";
@@ -29,6 +30,8 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
    * p:cNvPr) — Office emits it on media frames.
    */
   mediaAction?: boolean;
+  /** Picture locks (a:picLocks inside p:cNvPicPr). */
+  locking?: PictureLockingOptions;
   /**
    * Play window trim of the p14:media extension copy (p14:trim, seconds).
    * undefined = no trim child.

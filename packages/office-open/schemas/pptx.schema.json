@@ -1474,6 +1474,10 @@
         "id": {
           "type": "number"
         },
+        "locking": {
+          "$ref": "#/definitions/PictureLockingOptions",
+          "description": "Picture locks (a:picLocks inside p:cNvPicPr)."
+        },
         "mediaAction": {
           "$ref": "#/definitions/VideoFrameOptions/properties/mediaAction"
         },
@@ -3173,6 +3177,10 @@
         "roundedCorners": {
           "description": "Rounded chart-area corners (c:roundedCorners) — emitted only when set.",
           "type": "boolean"
+        },
+        "scatterStyle": {
+          "$ref": "#/definitions/ScatterStyle",
+          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
         },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
@@ -4927,6 +4935,10 @@
       "additionalProperties": false,
       "description": "Default shape/line/text definition.",
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "`@bwMode` on a:spPr — black-and-white rendering mode."
+        },
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
@@ -5119,6 +5131,14 @@
         "color2": {
           "$ref": "#/definitions/SolidFillOptions",
           "description": "Second color (light)."
+        },
+        "transformReference1": {
+          "description": "Office transform reference for the first color (`xfr1`).",
+          "type": "string"
+        },
+        "transformReference2": {
+          "description": "Office transform reference for the second color (`xfr2`).",
+          "type": "string"
         }
       },
       "required": ["color1", "color2"],
@@ -7129,8 +7149,12 @@
       "description": "Legend entry override.",
       "properties": {
         "delete": {
-          "description": "Hide this legend entry (c:delete).",
+          "description": "Hide this legend entry (c:delete); false preserves an explicit val=\"0\".",
           "type": "boolean"
+        },
+        "ext": {
+          "description": "Raw inner XML of the legend entry trailing c:extLst — round-trip only.",
+          "type": "string"
         },
         "index": {
           "type": "number"
@@ -9655,6 +9679,10 @@
           "$ref": "#/definitions/AppPropertiesOptions",
           "description": "Extended properties (docProps/app.xml)"
         },
+        "appPropertiesRelationshipType": {
+          "description": "Root relationship Type for docProps/app.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "autoCompressPictures": {
           "type": "boolean"
         },
@@ -10707,6 +10735,11 @@
       "required": ["xValues", "yValues"],
       "type": "object"
     },
+    "ScatterStyle": {
+      "description": "Scatter plot style (c:scatterStyle val) — scatter chart groups.",
+      "enum": ["none", "line", "lineWithMarkers", "markers", "smooth", "smoothWithMarkers"],
+      "type": "string"
+    },
     "Scene3DOptions": {
       "additionalProperties": false,
       "description": "Options for a 3D scene. Both `camera` and `lightRig` are required. `backdrop` is optional.",
@@ -10829,6 +10862,10 @@
         "overlap": {
           "description": "Bar/column overlap as percent (c:overlap, 2D bar group).",
           "type": "number"
+        },
+        "scatterStyle": {
+          "$ref": "#/definitions/ScatterStyle",
+          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
         },
         "series": {
           "description": "This group's series; categories come from the chart-level source.",
@@ -14729,6 +14766,10 @@
         },
         "id": {
           "type": "number"
+        },
+        "locking": {
+          "$ref": "#/definitions/PictureLockingOptions",
+          "description": "Picture locks (a:picLocks inside p:cNvPicPr)."
         },
         "mediaAction": {
           "description": "Click-to-play hyperlink (a:hlinkClick `action=\"ppaction://media\"` on p:cNvPr) — Office emits it on media frames.",

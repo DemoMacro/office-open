@@ -19,8 +19,10 @@ import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type {
   DrawingChartOptions,
+  DrawingContentPartOptions,
   DrawingPictureOptions,
   DrawingSmartArtOptions,
+  DrawingWebExtensionOptions,
 } from "@parts/drawing";
 import { pickAnchorOptions, drawingDesc } from "@parts/drawing";
 import { editSheetTailMarker, type WorksheetOptions } from "@parts/worksheet";
@@ -117,13 +119,17 @@ export function compileSheetDrawing(
   const imgOpts = wsOpts.images ?? [];
   const chartOpts = wsOpts.charts ?? [];
   const smartArtOpts = wsOpts.smartArts ?? [];
+  const webExtensionOpts = wsOpts.webExtensions ?? [];
   const shapeOpts = wsOpts.shapes ?? [];
   const connectorOpts = wsOpts.connectors ?? [];
   const groupOpts = wsOpts.groups ?? [];
+  const contentPartOpts = wsOpts.contentParts ?? [];
 
   const drawingImages: DrawingPictureOptions[] = [];
   const drawingCharts: DrawingChartOptions[] = [];
   const drawingSmartArts: DrawingSmartArtOptions[] = [];
+  const drawingWebExtensions: DrawingWebExtensionOptions[] = [];
+  const drawingContentParts: DrawingContentPartOptions[] = [];
   const drawingRels = new Relationships();
   let rid = 1;
   const sourceWorksheetRels = (passthroughRelationships ?? []).filter(
@@ -232,9 +238,13 @@ export function compileSheetDrawing(
   // Process charts
   for (const chart of chartOpts) {
     const chartKey = `chart_${state.globalChartIdx}`;
-    const sourceChartRel = sourceDrawingRels.filter((rel) =>
-      rel.relationshipType.endsWith("/chart"),
-    )[drawingCharts.length];
+    const sourceChartRel = chart.sourcePath
+      ? sourceDrawingRels.find(
+          (rel) =>
+            rel.relationshipType.endsWith("/chart") &&
+            resolveRelationshipTarget(drawingPath, rel.target) === chart.sourcePath,
+        )
+      : undefined;
     const chartPath = sourceChartRel
       ? resolveRelationshipTarget(drawingPath, sourceChartRel.target)
       : `xl/charts/chart${state.globalChartIdx + 1}.xml`;
@@ -299,6 +309,71 @@ export function compileSheetDrawing(
     });
   }
 
+  // Content parts are opaque companions; only their drawing relationship is
+  // rebuilt. The companion bytes stay in rawParts at the source path.
+  for (const contentPart of contentPartOpts) {
+    const sourceContentRel = sourceDrawingRels.find(
+      (rel) =>
+        rel.rId === contentPart.rId ||
+        resolveRelationshipTarget(drawingPath, rel.target) === contentPart.sourcePath,
+    );
+    const rId = addPreservedDrawingRel(
+      sourceContentRel,
+      contentPart.relationshipType as RelationshipType,
+      contentPart.relationshipTarget,
+    );
+    drawingContentParts.push({
+      ...pickAnchorOptions(contentPart),
+      rId,
+      ...(contentPart.zOrder !== undefined ? { zOrder: contentPart.zOrder } : {}),
+      ...(contentPart.shapeId !== undefined ? { shapeId: contentPart.shapeId } : {}),
+      ...(contentPart.alternateContent ? { alternateContent: true } : {}),
+    });
+  }
+
+  // WebExtension parts stay passthrough; the rebuilt drawing only needs their
+  // source relationships and the fallback snapshot image relationship.
+  for (const webExtension of webExtensionOpts) {
+    const sourceWebExtensionRel = webExtension.sourcePath
+      ? sourceDrawingRels.find(
+          (rel) =>
+            rel.relationshipType.endsWith("/webextension") &&
+            resolveRelationshipTarget(drawingPath, rel.target) === webExtension.sourcePath,
+        )
+      : undefined;
+    const webExtensionTarget =
+      sourceWebExtensionRel?.target ?? `../${webExtension.sourcePath.replace(/^xl\//, "")}`;
+    const rId = addPreservedDrawingRel(
+      sourceWebExtensionRel,
+      RELATIONSHIP_TYPES.webExtensionMs,
+      webExtensionTarget,
+    );
+    let fallback = webExtension.fallback;
+    if (fallback?.rId && webExtension.snapshotSourcePath) {
+      const sourceImageRel = sourceDrawingRels.find(
+        (rel) =>
+          rel.relationshipType.endsWith("/image") &&
+          resolveRelationshipTarget(drawingPath, rel.target) === webExtension.snapshotSourcePath,
+      );
+      const imageTarget =
+        sourceImageRel?.target ?? `../${webExtension.snapshotSourcePath.replace(/^xl\//, "")}`;
+      fallback = {
+        ...fallback,
+        rId: addPreservedDrawingRel(sourceImageRel, RELATIONSHIP_TYPES.image, imageTarget),
+      };
+    }
+    drawingWebExtensions.push({
+      ...pickAnchorOptions(webExtension),
+      ...pickNonVisualDrawingProperties(webExtension),
+      rId,
+      ...(fallback ? { fallback } : {}),
+      ...(webExtension.frameLocks ? { frameLocks: webExtension.frameLocks } : {}),
+      ...(webExtension.macro !== undefined ? { macro: webExtension.macro } : {}),
+      ...(webExtension.zOrder !== undefined ? { zOrder: webExtension.zOrder } : {}),
+      ...(webExtension.shapeId !== undefined ? { shapeId: webExtension.shapeId } : {}),
+    });
+  }
+
   // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
   // first so only runs stringified for this sheet's drawing resolve here.
   const hyperlinkBase = ctx.hyperlinks.length;
@@ -307,9 +382,11 @@ export function compileSheetDrawing(
       images: drawingImages,
       charts: drawingCharts,
       smartArts: drawingSmartArts,
+      webExtensions: drawingWebExtensions,
       shapes: shapeOpts,
       connectors: connectorOpts,
       groups: groupOpts,
+      contentParts: drawingContentParts,
     },
     ctx,
   );

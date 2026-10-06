@@ -276,10 +276,14 @@ const createColorReplaceEffect = (color: SolidFillOptions): string =>
   element("a:clrRepl", undefined, [createColorElement(color)]);
 
 const createDuotoneEffect = (options: DuotoneEffectOptions): string =>
-  element("a:duotone", undefined, [
-    createColorElement(options.color1),
-    createColorElement(options.color2),
-  ]);
+  element(
+    "a:duotone",
+    {
+      xfr1: options.transformReference1,
+      xfr2: options.transformReference2,
+    },
+    [createColorElement(options.color1), createColorElement(options.color2)],
+  );
 
 const createFillEffect = (options: FillEffectOptions): string => {
   let fillElement: string;

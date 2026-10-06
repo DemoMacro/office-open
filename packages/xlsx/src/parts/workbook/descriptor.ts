@@ -50,6 +50,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       const fv: FileVersionOptions = {};
       const appName = attr(fileVersionEl, "appName");
       if (appName) fv.appName = appName;
+      const codeName = attr(fileVersionEl, "codeName");
+      if (codeName) fv.codeName = codeName;
       const lastEdited = attrNum(fileVersionEl, "lastEdited");
       if (lastEdited !== undefined) fv.lastEdited = lastEdited;
       const lowestEdited = attrNum(fileVersionEl, "lowestEdited");
@@ -140,16 +142,26 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (wh !== undefined) bv.windowHeight = wh;
         const at = attrNum(bvEl, "activeTab");
         if (at !== undefined) bv.activeTab = at;
-        if (String(attr(bvEl, "autoFilterDateGrouping")) === "0") bv.autoFilterDateGrouping = false;
+        const onOff = (name: string): boolean | undefined => {
+          const value = attr(bvEl, name);
+          if (value === "0" || value === "false") return false;
+          if (value === "1" || value === "true") return true;
+          return undefined;
+        };
+        bv.autoFilterDateGrouping = onOff("autoFilterDateGrouping");
         const fs = attrNum(bvEl, "firstSheet");
         if (fs !== undefined) bv.firstSheet = fs;
-        if (String(attr(bvEl, "showHorizontalScroll")) === "0") bv.showHorizontalScroll = false;
-        if (String(attr(bvEl, "showVerticalScroll")) === "0") bv.showVerticalScroll = false;
-        if (String(attr(bvEl, "showSheetTabs")) === "0") bv.showSheetTabs = false;
+        bv.showHorizontalScroll = onOff("showHorizontalScroll");
+        bv.showVerticalScroll = onOff("showVerticalScroll");
+        bv.showSheetTabs = onOff("showSheetTabs");
+        const minimized = onOff("minimized");
+        if (minimized !== undefined) bv.minimized = minimized;
         const tr = attrNum(bvEl, "tabRatio");
         if (tr !== undefined) bv.tabRatio = tr;
         const vis = attr(bvEl, "visibility");
         if (vis !== undefined) bv.visibility = vis as WorkbookViewOptions["visibility"];
+        const uid = attr(bvEl, "xr2:uid");
+        if (uid !== undefined) bv.uid = uid;
         result.bookView = bv;
       }
     } else {
@@ -288,7 +300,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const wbPrEl = findChild(el, "workbookPr");
     if (wbPrEl?.attributes) {
       const wbPr: WorkbookPropertiesOptions = {};
-      if (parseOnOff(attr(wbPrEl, "date1904"))) wbPr.date1904 = true;
+      if (attr(wbPrEl, "date1904") !== undefined)
+        wbPr.date1904 = parseOnOff(attr(wbPrEl, "date1904"));
       const dtv = attrNum(wbPrEl, "defaultThemeVersion");
       if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
       if (attr(wbPrEl, "showObjects"))
@@ -296,7 +309,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
       if (parseOnOff(attr(wbPrEl, "hidePivotFieldList"))) wbPr.hidePivotFieldList = true;
       if (parseOnOff(attr(wbPrEl, "allowRefreshQuery"))) wbPr.allowRefreshQuery = true;
       if (parseOnOff(attr(wbPrEl, "filterPrivacy"))) wbPr.filterPrivacy = true;
-      if (parseOnOff(attr(wbPrEl, "backupFile"))) wbPr.backupFile = true;
+      if (attr(wbPrEl, "backupFile") !== undefined)
+        wbPr.backupFile = parseOnOff(attr(wbPrEl, "backupFile"));
       if (attr(wbPrEl, "codeName")) wbPr.codeName = attr(wbPrEl, "codeName");
       if (parseOnOff(attr(wbPrEl, "showBorderUnselectedTables")))
         wbPr.showBorderUnselectedTables = true;
@@ -421,7 +435,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         if (parseOnOff(attr(d, "workbookParameter"))) dn.workbookParameter = true;
         names.push(dn);
       }
-      if (names.length > 0) result.definedNames = names;
+      result.definedNames = names;
     }
 
     // Smart tag properties (CT_SmartTagPr)

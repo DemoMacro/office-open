@@ -156,7 +156,14 @@ export function stringifyBlipEffects(opts: BlipEffectsOptions, ctx: WriteContext
   if (opts.duotone) {
     const c1 = stringifyColorChoice(opts.duotone.color1, ctx);
     const c2 = stringifyColorChoice(opts.duotone.color2, ctx);
-    parts.push(`<a:duotone>${c1}${c2}</a:duotone>`);
+    const attrs =
+      (opts.duotone.transformReference1 !== undefined
+        ? ` xfr1="${escapeXml(opts.duotone.transformReference1)}"`
+        : "") +
+      (opts.duotone.transformReference2 !== undefined
+        ? ` xfr2="${escapeXml(opts.duotone.transformReference2)}"`
+        : "");
+    parts.push(`<a:duotone${attrs}>${c1}${c2}</a:duotone>`);
   }
 
   if (opts.biLevel) {
@@ -323,7 +330,12 @@ function readBlipEffects(el: XmlElement, ctx: ReadContext): BlipEffectsOptions |
     }
     const [color1, color2] = fills;
     if (color1 && color2) {
-      result.duotone = { color1, color2 };
+      const effect: NonNullable<BlipEffectsOptions["duotone"]> = { color1, color2 };
+      if (duotone.attributes?.["xfr1"] !== undefined)
+        effect.transformReference1 = String(duotone.attributes["xfr1"]);
+      if (duotone.attributes?.["xfr2"] !== undefined)
+        effect.transformReference2 = String(duotone.attributes["xfr2"]);
+      result.duotone = effect;
     }
   }
 

@@ -10,10 +10,19 @@
 import { parseOnOff } from "@office-open/core";
 import { convertToEmu, convertToPt } from "@office-open/core";
 import { parseVmlShape } from "@office-open/core";
+import { parseVmlShapeLayout } from "@office-open/core";
+import { parseVmlShapetype } from "@office-open/core";
 import { stringifyVmlShape } from "@office-open/core";
 import { stringifyVmlShapetype } from "@office-open/core";
 import { stringifyVmlShapeLayout } from "@office-open/core";
-import type { LengthUnit, UniversalMeasure, VmlShapeStyle } from "@office-open/core";
+import type {
+  LengthUnit,
+  UniversalMeasure,
+  VmlShapeLayoutOptions,
+  VmlShapeOptions,
+  VmlShapetypeOptions,
+  VmlShapeStyle,
+} from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import type { WriteContext } from "@office-open/core/descriptor";
 import { findChild, attr, textOf } from "@office-open/xml";
@@ -36,6 +45,13 @@ import type {
 
 export interface CommentsDocOptions {
   comments: CommentOptions[];
+}
+
+export interface CommentsVmlOptions extends CommentsDocOptions {
+  /** Source o:shapelayout settings; fresh comments use Excel's idmap default. */
+  layout?: VmlShapeLayoutOptions;
+  /** Source v:shapetype; fresh comments use the standard note-callout shape. */
+  shapeType?: VmlShapetypeOptions;
 }
 
 export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
@@ -122,116 +138,177 @@ export interface VmlNoteAnchor {
   width?: number;
   /** Shape height in points when present in the style. */
   height?: number;
+  /** Full source note shape, including unprojected VML fidelity. */
+  shape: VmlShapeOptions;
 }
 
-export const vmlNotesDesc: CustomDescriptor<CommentsDocOptions, WriteContext, VmlNoteAnchor[]> = {
-  kind: "custom",
+export interface VmlNotesParseResult {
+  layout?: VmlShapeLayoutOptions;
+  shapeType?: VmlShapetypeOptions;
+  anchors: VmlNoteAnchor[];
+}
 
-  stringify(opts, _ctx) {
-    if (opts.comments.length === 0) return undefined;
+export const vmlNotesDesc: CustomDescriptor<CommentsVmlOptions, WriteContext, VmlNotesParseResult> =
+  {
+    kind: "custom",
 
-    const p: string[] = [
-      '<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">',
-      stringifyVmlShapeLayout({ ext: "edit", idmap: { ext: "edit", data: "1" } }),
-      stringifyVmlShapetype({
-        id: "_x0000_t202",
-        coordsize: "21600,21600",
-        spt: 202,
-        path: "m,l,21600r21600,l21600,xe",
-        stroke: { joinstyle: "miter" },
-        pathElement: { gradientshapeok: true, connecttype: "rect" },
-      }),
-    ];
+    stringify(opts, _ctx) {
+      if (opts.comments.length === 0) return undefined;
 
-    for (const [i, c] of opts.comments.entries()) {
-      const { col, row } = cellRefToVmlCoords(c.cell);
-      const anchor = c.anchor
-        ? [
-            c.anchor.from.col,
-            Math.round(convertToEmu(c.anchor.from.colOff ?? 0) / 9525),
-            c.anchor.from.row,
-            Math.round(convertToEmu(c.anchor.from.rowOff ?? 0) / 9525),
-            c.anchor.to.col,
-            Math.round(convertToEmu(c.anchor.to.colOff ?? 0) / 9525),
-            c.anchor.to.row,
-            Math.round(convertToEmu(c.anchor.to.rowOff ?? 0) / 9525),
-          ]
-        : [col, 0, row, 0, col + 2, 0, row + 2, 0];
-      const style = {
-        position: "absolute",
-        marginLeft: "59.25pt",
-        marginTop: "1.5pt",
-        width: `${c.size?.width ?? DEFAULT_NOTE_WIDTH}pt` as UniversalMeasure,
-        height: `${c.size?.height ?? DEFAULT_NOTE_HEIGHT}pt` as UniversalMeasure,
-        zIndex: 1,
-      } as VmlShapeStyle;
-      if (!c.visible) style.visibility = "hidden";
-      p.push(
-        stringifyVmlShape({
-          id: `_x0000_s${1025 + i}`,
-          type: "#_x0000_t202",
-          style,
-          fillcolor: "infoBackground [80]",
-          strokecolor: "none [81]",
-          insetmode: "auto",
-          fill: { color2: "infoBackground [80]" },
-          shadow: { color: "none [81]", obscured: true },
-          pathElement: { connecttype: "none" },
-          textbox: {
-            style: { directionAlt: "auto" },
-            content: '<div style="text-align:left"></div>',
+      const p: string[] = [
+        '<xml xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">',
+        stringifyVmlShapeLayout(opts.layout ?? { ext: "edit", idmap: { ext: "edit", data: "1" } }),
+        stringifyVmlShapetype(
+          opts.shapeType ?? {
+            id: "_x0000_t202",
+            coordsize: "21600,21600",
+            spt: 202,
+            path: "m,l,21600r21600,l21600,xe",
+            stroke: { joinstyle: "miter" },
+            pathElement: { gradientshapeok: true, connecttype: "rect" },
           },
-          clientData: {
-            objectType: "Note",
-            MoveWithCells: "",
-            SizeWithCells: "",
-            Anchor: anchor.join(", "),
-            AutoFill: false,
-            Row: row,
-            Column: col,
-          },
-        }),
-      );
-    }
+        ),
+      ];
 
-    p.push("</xml>");
-    return p.join("");
-  },
-
-  parse(el, _ctx) {
-    const anchors: VmlNoteAnchor[] = [];
-    for (const child of el.elements ?? []) {
-      if (child.type !== "element" || child.name !== "v:shape") continue;
-      const shape = parseVmlShape(child);
-      const cd = shape.clientData;
-      if (!cd || cd.objectType !== "Note" || cd.Row === undefined || cd.Column === undefined) {
-        continue;
+      for (const [i, c] of opts.comments.entries()) {
+        const { col, row } = cellRefToVmlCoords(c.cell);
+        const shape = c.vmlShape ? { ...c.vmlShape } : defaultVmlNoteShape(c, col, row, i);
+        if (c.vmlShape) applyNoteProjections(shape, c, col, row);
+        p.push(stringifyVmlShape(shape));
       }
-      const note: VmlNoteAnchor = {
-        row: cd.Row,
-        column: cd.Column,
-        visible: shape.style?.visibility !== "hidden",
-      };
-      const nums = (cd.Anchor ?? "")
-        .split(/[,\s]+/)
-        .filter(Boolean)
-        .map(Number);
-      if (nums.length === 8 && nums.every((n) => !Number.isNaN(n))) {
-        // VML stores pixel offsets; the public API carries EMU (px × 9525).
-        note.anchor = {
-          from: { col: nums[0]!, colOff: nums[1]! * 9525, row: nums[2]!, rowOff: nums[3]! * 9525 },
-          to: { col: nums[4]!, colOff: nums[5]! * 9525, row: nums[6]!, rowOff: nums[7]! * 9525 },
+
+      p.push("</xml>");
+      return p.join("");
+    },
+
+    parse(el, _ctx) {
+      const anchors: VmlNoteAnchor[] = [];
+      let layout: VmlShapeLayoutOptions | undefined;
+      let shapeType: VmlShapetypeOptions | undefined;
+      for (const child of el.elements ?? []) {
+        if (child.type === "element" && child.name === "o:shapelayout") {
+          layout = parseVmlShapeLayout(child);
+          continue;
+        }
+        if (child.type === "element" && child.name === "v:shapetype") {
+          shapeType = parseVmlShapetype(child);
+          continue;
+        }
+        if (child.type !== "element" || child.name !== "v:shape") continue;
+        const shape = parseVmlShape(child);
+        const cd = shape.clientData;
+        if (!cd || cd.objectType !== "Note" || cd.Row === undefined || cd.Column === undefined) {
+          continue;
+        }
+        const note: VmlNoteAnchor = {
+          row: cd.Row,
+          column: cd.Column,
+          visible: shape.style?.visibility !== "hidden",
+          shape,
         };
+        const nums = (cd.Anchor ?? "")
+          .split(/[,\s]+/)
+          .filter(Boolean)
+          .map(Number);
+        if (nums.length === 8 && nums.every((n) => !Number.isNaN(n))) {
+          // VML stores pixel offsets; the public API carries EMU (px × 9525).
+          note.anchor = {
+            from: {
+              col: nums[0]!,
+              colOff: nums[1]! * 9525,
+              row: nums[2]!,
+              rowOff: nums[3]! * 9525,
+            },
+            to: { col: nums[4]!, colOff: nums[5]! * 9525, row: nums[6]!, rowOff: nums[7]! * 9525 },
+          };
+        }
+        const width = lengthToPt(shape.style?.width);
+        if (width !== undefined) note.width = width;
+        const height = lengthToPt(shape.style?.height);
+        if (height !== undefined) note.height = height;
+        anchors.push(note);
       }
-      const width = lengthToPt(shape.style?.width);
-      if (width !== undefined) note.width = width;
-      const height = lengthToPt(shape.style?.height);
-      if (height !== undefined) note.height = height;
-      anchors.push(note);
-    }
-    return anchors;
-  },
-};
+      return { anchors, ...(layout ? { layout } : {}), ...(shapeType ? { shapeType } : {}) };
+    },
+  };
+
+function defaultVmlNoteShape(
+  comment: CommentOptions,
+  col: number,
+  row: number,
+  index: number,
+): VmlShapeOptions {
+  const style = {
+    position: "absolute",
+    marginLeft: "59.25pt",
+    marginTop: "1.5pt",
+    width: `${comment.size?.width ?? DEFAULT_NOTE_WIDTH}pt` as UniversalMeasure,
+    height: `${comment.size?.height ?? DEFAULT_NOTE_HEIGHT}pt` as UniversalMeasure,
+    zIndex: 1,
+  } as VmlShapeStyle;
+  if (!comment.visible) style.visibility = "hidden";
+  return {
+    id: `_x0000_s${1025 + index}`,
+    type: "#_x0000_t202",
+    style,
+    fillcolor: "infoBackground [80]",
+    strokecolor: "none [81]",
+    insetmode: "auto",
+    fill: { color2: "infoBackground [80]" },
+    shadow: { color: "none [81]", obscured: true },
+    pathElement: { connecttype: "none" },
+    textbox: {
+      style: { directionAlt: "auto" },
+      content: '<div style="text-align:left"></div>',
+    },
+    clientData: {
+      objectType: "Note",
+      MoveWithCells: "",
+      SizeWithCells: "",
+      Anchor: noteAnchorValues(comment, col, row).join(", "),
+      AutoFill: false,
+      Row: row,
+      Column: col,
+    },
+  };
+}
+
+function applyNoteProjections(
+  shape: VmlShapeOptions,
+  comment: CommentOptions,
+  col: number,
+  row: number,
+): void {
+  const style = { ...shape.style };
+  if (comment.size) {
+    style.width = `${comment.size.width}pt`;
+    style.height = `${comment.size.height}pt`;
+  }
+  if (comment.visible) delete style.visibility;
+  else style.visibility = "hidden";
+  shape.style = style;
+  const clientData = shape.clientData ?? { objectType: "Note" as const };
+  shape.clientData = {
+    ...clientData,
+    ...(comment.anchor ? { Anchor: noteAnchorValues(comment, col, row).join(", ") } : {}),
+    Row: row,
+    Column: col,
+  };
+}
+
+function noteAnchorValues(comment: CommentOptions, col: number, row: number): number[] {
+  if (!comment.anchor) return [col, 0, row, 0, col + 2, 0, row + 2, 0];
+  return [
+    comment.anchor.from.col,
+    Math.round(convertToEmu(comment.anchor.from.colOff ?? 0) / 9525),
+    comment.anchor.from.row,
+    Math.round(convertToEmu(comment.anchor.from.rowOff ?? 0) / 9525),
+    comment.anchor.to.col,
+    Math.round(convertToEmu(comment.anchor.to.colOff ?? 0) / 9525),
+    comment.anchor.to.row,
+    Math.round(convertToEmu(comment.anchor.to.rowOff ?? 0) / 9525),
+  ];
+}
 
 /** Coerce a style length (number or measure string) to points; non-measure tokens yield undefined. */
 function lengthToPt(value: LengthUnit | undefined): number | undefined {
@@ -264,6 +341,7 @@ export function mergeNoteAnchors(
         height: note.height ?? DEFAULT_NOTE_HEIGHT,
       };
     }
+    if (note.shape) comment.vmlShape = note.shape;
   }
 }
 

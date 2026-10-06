@@ -1,9 +1,11 @@
+import { unzipSync, zipSync } from "@office-open/core";
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "../generate";
 import { parseWorkbookSync } from "../parse";
+import type { WorkbookOptions } from "./file";
 import { revisionHeadersDesc, revisionLogDesc, usersDesc } from "./revision-log";
 import type {
   RevisionHeadersOptions,
@@ -342,6 +344,40 @@ describe("revisionLogDesc round-trip", () => {
   });
 });
 
+const revisionOptions = (): WorkbookOptions => ({
+  worksheets: [{ name: "Data", rows: [{ cells: [{ value: "Product" }] }] }],
+  revisionLog: {
+    headers: {
+      guid: "{HDR}",
+      headers: [
+        {
+          guid: "{H1}",
+          dateTime: "2026-06-19T10:00:00Z",
+          userName: "Alice",
+          rId: "rId1",
+          maxSheetId: 1,
+          sheetIds: [1],
+        },
+      ],
+    },
+    logs: [
+      {
+        revisions: [
+          {
+            type: "cellChange",
+            data: {
+              rId: 1,
+              sheetId: 1,
+              newCellXml: `<nc r="A1" t="inlineStr"><is><t>foo</t></is></nc>`,
+            },
+          },
+        ],
+      },
+    ],
+    users: { users: [{ guid: "{U}", name: "Alice", id: 1, dateTime: "2026-06-19T10:00:00Z" }] },
+  },
+});
+
 describe("revision end-to-end round-trip", () => {
   it("generate → parse preserves revisionLog", async () => {
     const buffer = await generateWorkbook({
@@ -399,5 +435,70 @@ describe("revision end-to-end round-trip", () => {
     expect(parsed.revisionLog!.logs[0]?.revisions[0]?.type).toBe("cellChange");
     expect(parsed.revisionLog!.logs[0]?.revisions[1]?.type).toBe("comment");
     expect(parsed.revisionLog!.users?.users?.[0]?.name).toBe("Alice");
+  });
+
+  it("preserves a nonstandard revision part topology", async () => {
+    const source = (await generateWorkbook(revisionOptions(), {
+      type: "uint8array",
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    const move = (from: string, to: string): void => {
+      archive[to] = archive[from]!;
+      delete archive[from];
+    };
+    move("xl/revisionHeaders.xml", "xl/revisions/revisionHeaders.xml");
+    move("xl/users.xml", "xl/revisions/users.xml");
+    move("xl/_rels/revisionHeaders.xml.rels", "xl/revisions/_rels/revisionHeaders.xml.rels");
+    const replace = (path: string, from: string, to: string): void => {
+      archive[path] = new TextEncoder().encode(
+        new TextDecoder().decode(archive[path]!).replaceAll(from, to),
+      );
+    };
+    replace("xl/revisions/revisionHeaders.xml", 'r:id="rId1"', 'r:id="rId7"');
+    replace(
+      "xl/revisions/_rels/revisionHeaders.xml.rels",
+      'Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog" Target="revisions/revision1.xml"',
+      'Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/revisionLog" Target="revision1.xml"',
+    );
+    replace(
+      "xl/_rels/workbook.xml.rels",
+      'Target="revisionHeaders.xml"',
+      'Target="revisions/revisionHeaders.xml"',
+    );
+    replace("xl/_rels/workbook.xml.rels", 'Target="users.xml"', 'Target="revisions/users.xml"');
+    replace(
+      "[Content_Types].xml",
+      'PartName="/xl/revisionHeaders.xml"',
+      'PartName="/xl/revisions/revisionHeaders.xml"',
+    );
+    replace(
+      "[Content_Types].xml",
+      'PartName="/xl/users.xml"',
+      'PartName="/xl/revisions/users.xml"',
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.revisionLog?.headersPath).toBe("revisions/revisionHeaders.xml");
+    expect(parsed.revisionLog?.usersPath).toBe("revisions/users.xml");
+    expect(parsed.revisionLog?.logs[0]).toMatchObject({
+      path: "revisions/revision1.xml",
+      relationshipTarget: "revision1.xml",
+    });
+    expect(parsed.rawParts).toBeUndefined();
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    expect(result["xl/revisions/revisionHeaders.xml"]).toBeDefined();
+    const headerRels = new TextDecoder().decode(
+      result["xl/revisions/_rels/revisionHeaders.xml.rels"]!,
+    );
+    expect(headerRels).toContain('Id="rId7"');
+    expect(headerRels).toContain('Target="revision1.xml"');
+    expect(result["xl/revisions/users.xml"]).toBeDefined();
+    expect(result["xl/revisionHeaders.xml"]).toBeUndefined();
+    expect(result["xl/_rels/revisionHeaders.xml.rels"]).toBeUndefined();
+    expect(new TextDecoder().decode(result["[Content_Types].xml"]!)).toContain(
+      'PartName="/xl/revisions/revisionHeaders.xml"',
+    );
   });
 });

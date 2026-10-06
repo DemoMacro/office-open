@@ -421,8 +421,18 @@ export function finalizeContentTypes(
     const existing = input.overrides.find(
       (entry) => entry.partName.toLowerCase() === partName.toLowerCase(),
     );
-    if (existing) existing.contentType = override.contentType;
-    else input.overrides.push({ partName, contentType: override.contentType });
+    if (existing) {
+      existing.contentType = override.contentType;
+      continue;
+    }
+    const dot = override.path.lastIndexOf(".");
+    const slash = override.path.lastIndexOf("/");
+    const extension = dot > slash ? override.path.slice(dot + 1).toLowerCase() : undefined;
+    const coveredType = extension
+      ? input.defaults.find((entry) => entry.extension.toLowerCase() === extension)?.contentType
+      : undefined;
+    if (coveredType !== override.contentType)
+      input.overrides.push({ partName, contentType: override.contentType });
   }
   return OOXML_XML_DECLARATION + (contentTypesDesc.stringify(input, ctx) ?? "");
 }

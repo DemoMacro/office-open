@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   archiveSemanticDiffDetails,
+  archiveSemanticDiffs,
   archiveTagDiffs,
   canonicalXmlNodes,
   classifyPackageFailure,
@@ -112,6 +113,40 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("xl/worksheets/example.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes equivalent numeric row heights", () => {
+    const source = new TextEncoder().encode('<row ht="17.100000000000001"/>');
+    const output = new TextEncoder().encode('<row ht="17.1"/>');
+    expect(explainSemanticPartDiff("xl/worksheets/example.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes semantically unordered section and footnote children", () => {
+    const source = parseCanonicalXml(
+      "<document><body><sectPr><pgSz/><cols/><headerReference/></sectPr></body></document>",
+    );
+    const output = parseCanonicalXml(
+      "<document><body><sectPr><headerReference/><pgSz/><cols/></sectPr></body></document>",
+    );
+    expect(canonicalXmlNodes(source, "word/document.xml")).toEqual(
+      canonicalXmlNodes(output, "word/document.xml"),
+    );
+
+    const footnotesSource = parseCanonicalXml(
+      "<footnotes><footnote id='2'/><footnote id='1'/></footnotes>",
+    );
+    const footnotesOutput = parseCanonicalXml(
+      "<footnotes><footnote id='1'/><footnote id='2'/></footnotes>",
+    );
+    expect(canonicalXmlNodes(footnotesSource, "word/footnotes.xml")).toEqual(
+      canonicalXmlNodes(footnotesOutput, "word/footnotes.xml"),
+    );
+
+    const propertiesSource = parseCanonicalXml("<docPartPr><name/><guid/><category/></docPartPr>");
+    const propertiesOutput = parseCanonicalXml("<docPartPr><name/><category/><guid/></docPartPr>");
+    expect(canonicalXmlNodes(propertiesSource, "word/glossary/document.xml")).toEqual(
+      canonicalXmlNodes(propertiesOutput, "word/glossary/document.xml"),
+    );
+  });
+
   it("normalizes equivalent OOXML boolean attribute tokens", () => {
     const source = new TextEncoder().encode(
       '<root><flag w:val="off"/><math m:val="false"/></root>',
@@ -176,5 +211,15 @@ describe("corpus semantic comparison", () => {
     expect(archiveTagDiffs(zip(files), zip({ ...files, "word/a.xml": "<a><b/></a>" }))).toEqual([
       "word/a.xml",
     ]);
+  });
+  it("treats empty relationship parts as semantically optional", () => {
+    const files = { "word/document.xml": "<a/>" };
+    const source = zip({
+      ...files,
+      "word/_rels/footnotes.xml.rels":
+        '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships" />',
+    });
+    expect(archiveTagDiffs(source, zip(files))).toEqual([]);
+    expect(archiveSemanticDiffs(source, zip(files))).toEqual([]);
   });
 });

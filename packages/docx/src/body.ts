@@ -1088,6 +1088,7 @@ function isPlainFieldRuns(
   if (runs.length === 0) return true;
   if (runs.length > 1) return false;
   const run = runs[0]!;
+  if (attr(run, "w:rsidR") || attr(run, "w:rsidRPr") || attr(run, "w:rsidDel")) return false;
   if (runRPrXml(run) !== expectedRPr) return false;
   const content = (run.elements ?? []).filter((c) => c.name !== "w:rPr");
   return content.length === 1 && tags.includes(content[0]!.name!);
@@ -1857,7 +1858,7 @@ function parseRunLevelChildren(
           const sf: {
             instruction: string;
             cachedValue?: string;
-            cachedRunsXml?: string;
+            cachedRuns?: ParagraphChild[];
             fieldLock?: boolean;
             dirty?: boolean;
           } = { instruction };
@@ -1882,7 +1883,7 @@ function parseRunLevelChildren(
           // The plain template emits one bare text run — cached runs carrying
           // rPr (Word marks field results w:noProof) go through verbatim.
           if (!isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])) {
-            sf.cachedRunsXml = cachedRunEls.map((el) => stringifyElement(el)).join("");
+            sf.cachedRuns = cachedRunEls.map((el) => parsedRunToOptions(parseRun(el, ctx)));
           }
           const sfLock = attrBool(child, "w:fldLock");
           if (sfLock !== undefined) sf.fieldLock = sfLock;

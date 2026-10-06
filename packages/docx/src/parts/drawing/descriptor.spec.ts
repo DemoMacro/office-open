@@ -766,6 +766,60 @@ describe("drawingDesc round-trip", () => {
     expect(floating!.wrap?.side).toBe("left");
   });
 
+  it("round-trips wp:wrapSquare distances separately from wp:anchor", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "column", align: "center" },
+        verticalPosition: { relative: "page", offset: 100000 },
+        margins: { top: 10000, left: 20000 },
+        wrap: {
+          type: TextWrappingType.SQUARE,
+          side: "left",
+          margins: { distB: 30000, distR: 40000 },
+        },
+      },
+    });
+    expect(xml).toContain('<wp:anchor distT="10000"');
+    expect(xml).toContain('distB="0" distL="20000" distR="0" simplePos="0"');
+    expect(xml).toContain('<wp:wrapSquare wrapText="left" distB="30000" distR="40000"/>');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating?.margins).toEqual({
+      top: 10000,
+      bottom: 0,
+      left: 20000,
+      right: 0,
+    });
+    expect(result.picture?.floating?.wrap?.margins).toEqual({ distB: 30000, distR: 40000 });
+  });
+
+  it("omits absent wrapSquare distances on round-trip", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "column", align: "center" },
+        verticalPosition: { relative: "page", offset: 100000 },
+        margins: { top: 10000 },
+        wrap: { type: TextWrappingType.SQUARE, side: "left" },
+      },
+    });
+    expect(xml).toContain('<wp:wrapSquare wrapText="left"/>');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating?.margins).toEqual({
+      top: 10000,
+      bottom: 0,
+      left: 0,
+      right: 0,
+    });
+    expect(result.picture?.floating?.wrap?.margins).toBeUndefined();
+  });
+
   it("round-trips image rotation via pic:spPr/a:xfrm/@rot", () => {
     // parsePictureRun must read pic:spPr/a:xfrm/@rot (ST_Angle, 1/60000 deg) and
     // convert to degrees — otherwise rotated images lose orientation on round-trip.

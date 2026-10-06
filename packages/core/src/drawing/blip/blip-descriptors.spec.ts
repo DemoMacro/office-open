@@ -113,6 +113,31 @@ describe("blipDesc", () => {
     expect(result.blipEffects!.luminance?.contrast).toBe(10);
   });
 
+  it("round-trips duotone transform references", () => {
+    type BlipFull = BlipOptions & { blipEffects?: BlipEffectsOptions };
+    const opts: BlipFull = {
+      referenceId: "img.png",
+      blipEffects: {
+        duotone: {
+          color1: { value: "000000" },
+          color2: { value: "FFFFFF" },
+          transformReference1: "tint1",
+          transformReference2: "tint2",
+        },
+      },
+    };
+    const xml = stringify(blipDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('xfr1="tint1"');
+    expect(xml).toContain('xfr2="tint2"');
+    const result = roundTrip(blipDesc, opts);
+    expect(result.blipEffects!.duotone).toEqual({
+      color1: { value: "000000" },
+      color2: { value: "FFFFFF" },
+      transformReference1: "tint1",
+      transformReference2: "tint2",
+    });
+  });
+
   it("round-trips a linked-only blip (r:link, no r:embed)", () => {
     const xml = stringify(blipDesc, { linkReferenceId: "img-link_0" }, {} as WriteContext);
     expect(xml).toBe('<a:blip r:link="{img-link_0}"/>');

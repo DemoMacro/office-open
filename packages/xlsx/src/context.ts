@@ -45,7 +45,7 @@ export class XlsxWriteContext implements WriteContext {
   styles = new Styles();
   media = new Media<MediaData>();
   charts = new ChartCollection();
-  workbookRels = new Relationships();
+  workbookRels = new Relationships("xl/workbook.xml");
   pivotCacheRefs: PivotCacheReference[] = [];
   private _hyperlinks = new Map<string, HyperlinkEntry>();
 

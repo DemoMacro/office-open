@@ -85,13 +85,20 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
       ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
       ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
-      ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3">',
+      ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
+      (opts.uid ? ` xr:uid="${escapeXml(opts.uid)}"` : "") +
+      ">",
   ];
 
   // Sheet properties (tabColor, outlinePr go here)
   const hasTabColor = !!opts.tabColor;
-  const hasOutline = columns.some((c) => c.outlineLevel !== undefined);
   const sp = opts.properties;
+  const hasOutline =
+    columns.some((c) => c.outlineLevel !== undefined) ||
+    sp?.outlineSummaryBelow !== undefined ||
+    sp?.outlineSummaryRight !== undefined ||
+    sp?.outlineApplyStyles !== undefined ||
+    sp?.outlineShowSymbols !== undefined;
   const hasSheetPrAttrs =
     sp &&
     (sp.codeName ||
@@ -101,7 +108,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       sp.transitionEvaluation ||
       sp.transitionEntry ||
       sp.published !== undefined ||
-      sp.filterMode ||
+      sp.filterMode !== undefined ||
       sp.enableFormatConditionsCalculation !== undefined);
   const hasPageSetUpPr =
     !!opts.pageSetup?.fitToWidth ||
@@ -119,7 +126,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (sp?.transitionEntry) prAttrs.transitionEntry = 1;
     // XSD defaults true — emit only the explicit-false form (0).
     if (sp?.published === false) prAttrs.published = 0;
-    if (sp?.filterMode) prAttrs.filterMode = 1;
+    if (sp?.filterMode !== undefined) prAttrs.filterMode = sp.filterMode ? 1 : 0;
     if (sp?.enableFormatConditionsCalculation === false)
       prAttrs.enableFormatConditionsCalculation = 0;
     if (opts.tabColor) {
@@ -147,8 +154,9 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     // at their XSD defaults (1/1, attributes omitted) must re-emit the flag.
     if (hasPageSetUpPr) {
       const psupAttrs: Record<string, string | number | boolean | undefined> = {};
-      if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight || opts.pageSetup?.fitToPage)
-        psupAttrs.fitToPage = 1;
+      if (opts.pageSetup?.fitToPage !== undefined)
+        psupAttrs.fitToPage = opts.pageSetup.fitToPage ? 1 : 0;
+      else if (opts.pageSetup?.fitToWidth || opts.pageSetup?.fitToHeight) psupAttrs.fitToPage = 1;
       // autoPageBreaks defaults true — emit as written, explicit 0 included.
       if (opts.pageSetup?.autoPageBreaks !== undefined)
         psupAttrs.autoPageBreaks = opts.pageSetup.autoPageBreaks ? 1 : 0;
@@ -187,11 +195,15 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       fp.activePane ??
       (ySplit > 0 && xSplit > 0 ? "bottomRight" : ySplit > 0 ? "bottomLeft" : "topRight");
     const state = fp.split ? "split" : "frozen";
+    const paneAttrs =
+      (fp.row !== undefined ? ` ySplit="${fp.row}"` : "") +
+      (fp.col !== undefined ? ` xSplit="${fp.col}"` : "") +
+      ` topLeftCell="${topLeftCell}" activePane="${activePane}" state="${state}"`;
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
     const selections = (opts.selection ?? []).map(buildSelectionXml).join("");
     p.push(
       `<sheetViews><sheetView${svAttrs}>`,
-      `<pane ySplit="${ySplit}" xSplit="${xSplit}" topLeftCell="${topLeftCell}" activePane="${activePane}" state="${state}"/>`,
+      `<pane${paneAttrs}/>`,
       selections,
       opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "",
       "</sheetView></sheetViews>",
@@ -216,10 +228,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     const sfpAttrs: Record<string, string | number | boolean | undefined> = {};
     if (sfp.baseColWidth !== undefined) sfpAttrs.baseColWidth = sfp.baseColWidth;
     if (sfp.defaultColWidth !== undefined) sfpAttrs.defaultColWidth = sfp.defaultColWidth;
-    sfpAttrs.defaultRowHeight = sfp.defaultRowHeight ?? 15;
-    if (sfp.zeroHeight) sfpAttrs.zeroHeight = 1;
-    if (sfp.thickTop) sfpAttrs.thickTop = 1;
-    if (sfp.thickBottom) sfpAttrs.thickBottom = 1;
+    if (sfp.defaultRowHeight !== undefined) sfpAttrs.defaultRowHeight = sfp.defaultRowHeight;
+    if (sfp.customHeight !== undefined) sfpAttrs.customHeight = sfp.customHeight ? 1 : 0;
+    if (sfp.zeroHeight !== undefined) sfpAttrs.zeroHeight = sfp.zeroHeight ? 1 : 0;
+    if (sfp.thickTop !== undefined) sfpAttrs.thickTop = sfp.thickTop ? 1 : 0;
+    if (sfp.thickBottom !== undefined) sfpAttrs.thickBottom = sfp.thickBottom ? 1 : 0;
     if (sfp.outlineLevelRow !== undefined) sfpAttrs.outlineLevelRow = sfp.outlineLevelRow;
     if (sfp.outlineLevelCol !== undefined) sfpAttrs.outlineLevelCol = sfp.outlineLevelCol;
     if (sfp.dyDescent !== undefined) sfpAttrs["x14ac:dyDescent"] = sfp.dyDescent;
@@ -582,7 +595,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       // an external workbook plus an internal jump target is a legal pair.
       if (hl.url !== undefined) {
         hlIdx++;
-        hlAttrs["r:id"] = `rId${hlIdx}`;
+        hlAttrs["r:id"] = hl.relationshipId ?? `rId${hlIdx}`;
       }
       if (hl.location !== undefined) {
         hlAttrs.location = hl.location;
@@ -603,12 +616,12 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     const pm = opts.pageMargins;
     p.push(
       `<pageMargins${attrs({
-        left: convertToInch(pm.left ?? 0.75),
-        right: convertToInch(pm.right ?? 0.75),
-        top: convertToInch(pm.top ?? 1),
-        bottom: convertToInch(pm.bottom ?? 1),
-        header: convertToInch(pm.header ?? 0.5),
-        footer: convertToInch(pm.footer ?? 0.5),
+        ...(pm.left !== undefined ? { left: convertToInch(pm.left) } : {}),
+        ...(pm.right !== undefined ? { right: convertToInch(pm.right) } : {}),
+        ...(pm.top !== undefined ? { top: convertToInch(pm.top) } : {}),
+        ...(pm.bottom !== undefined ? { bottom: convertToInch(pm.bottom) } : {}),
+        ...(pm.header !== undefined ? { header: convertToInch(pm.header) } : {}),
+        ...(pm.footer !== undefined ? { footer: convertToInch(pm.footer) } : {}),
       })}/>`,
     );
   } else {
@@ -926,17 +939,18 @@ function buildSheetViewAttrs(sv?: SheetViewOptions): string {
   if (sv?.tabSelected !== undefined) svMap.tabSelected = sv.tabSelected ? 1 : 0;
   // Omit tabSelected otherwise: only the active sheet carries it (Excel uses
   // workbookView activeTab), so injecting it on every sheet marks all active.
-  if (sv?.showGridLines === false) svMap.showGridLines = 0;
-  if (sv?.showRowColHeaders === false) svMap.showRowColHeaders = 0;
-  if (sv?.showZeros === false) svMap.showZeros = 0;
+  if (sv?.showGridLines !== undefined) svMap.showGridLines = sv.showGridLines ? 1 : 0;
+  if (sv?.showRowColHeaders !== undefined) svMap.showRowColHeaders = sv.showRowColHeaders ? 1 : 0;
+  if (sv?.showZeros !== undefined) svMap.showZeros = sv.showZeros ? 1 : 0;
   if (sv?.zoomScale !== undefined) svMap.zoomScale = sv.zoomScale;
-  if (sv?.rightToLeft) svMap.rightToLeft = 1;
-  if (sv?.windowProtection) svMap.windowProtection = 1;
-  if (sv?.showFormulas) svMap.showFormulas = 1;
-  if (sv?.showRuler === false) svMap.showRuler = 0;
-  if (sv?.showOutlineSymbols === false) svMap.showOutlineSymbols = 0;
-  if (sv?.defaultGridColor === false) svMap.defaultGridColor = 0;
-  if (sv?.showWhiteSpace === false) svMap.showWhiteSpace = 0;
+  if (sv?.rightToLeft !== undefined) svMap.rightToLeft = sv.rightToLeft ? 1 : 0;
+  if (sv?.windowProtection !== undefined) svMap.windowProtection = sv.windowProtection ? 1 : 0;
+  if (sv?.showFormulas !== undefined) svMap.showFormulas = sv.showFormulas ? 1 : 0;
+  if (sv?.showRuler !== undefined) svMap.showRuler = sv.showRuler ? 1 : 0;
+  if (sv?.showOutlineSymbols !== undefined)
+    svMap.showOutlineSymbols = sv.showOutlineSymbols ? 1 : 0;
+  if (sv?.defaultGridColor !== undefined) svMap.defaultGridColor = sv.defaultGridColor ? 1 : 0;
+  if (sv?.showWhiteSpace !== undefined) svMap.showWhiteSpace = sv.showWhiteSpace ? 1 : 0;
   if (sv?.view) svMap.view = sv.view;
   if (sv?.topLeftCell) svMap.topLeftCell = sv.topLeftCell;
   if (sv?.colorId !== undefined) svMap.colorId = sv.colorId;
@@ -1193,6 +1207,7 @@ function buildCellString(
 
   if (typeof value === "string") {
     if (sharedStrings) {
+      if (value === "") return `<c${rAttr}${sAttr}${mdAttr} t="s"><v/></c>`;
       const idx = sharedStrings.register(value);
       return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${idx}</v></c>`;
     }
@@ -1225,12 +1240,13 @@ function defaultCellRef(row: number, col: number): string {
 export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   const psAttrs: Record<string, string | number | boolean | undefined> = {};
   if (ps.paperSize !== undefined) psAttrs.paperSize = ps.paperSize;
-  if (ps.orientation && ps.orientation !== "default") psAttrs.orientation = ps.orientation;
+  if (ps.orientation !== undefined) psAttrs.orientation = ps.orientation;
   if (ps.scale !== undefined) psAttrs.scale = ps.scale;
   if (ps.fitToWidth !== undefined) psAttrs.fitToWidth = ps.fitToWidth;
   if (ps.fitToHeight !== undefined) psAttrs.fitToHeight = ps.fitToHeight;
-  if (ps.pageOrder && ps.pageOrder !== "downThenOver") psAttrs.pageOrder = ps.pageOrder;
-  if (ps.useFirstPageNumber) psAttrs.useFirstPageNumber = 1;
+  if (ps.pageOrder !== undefined) psAttrs.pageOrder = ps.pageOrder;
+  if (ps.useFirstPageNumber !== undefined)
+    psAttrs.useFirstPageNumber = ps.useFirstPageNumber ? 1 : 0;
   if (ps.firstPageNumber !== undefined) psAttrs.firstPageNumber = ps.firstPageNumber;
   // ST_PositiveUniversalMeasure requires a unit suffix; a bare number means mm.
   if (ps.paperHeight !== undefined)
@@ -1239,11 +1255,12 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
   if (ps.paperWidth !== undefined)
     psAttrs.paperWidth = typeof ps.paperWidth === "number" ? `${ps.paperWidth}mm` : ps.paperWidth;
   // XSD default true — emit only the explicit-false form (0).
-  if (ps.usePrinterDefaults === false) psAttrs.usePrinterDefaults = 0;
-  if (ps.blackAndWhite) psAttrs.blackAndWhite = 1;
-  if (ps.draft) psAttrs.draft = 1;
-  if (ps.cellComments && ps.cellComments !== "none") psAttrs.cellComments = ps.cellComments;
-  if (ps.errors && ps.errors !== "displayed") psAttrs.errors = ps.errors;
+  if (ps.usePrinterDefaults !== undefined)
+    psAttrs.usePrinterDefaults = ps.usePrinterDefaults ? 1 : 0;
+  if (ps.blackAndWhite !== undefined) psAttrs.blackAndWhite = ps.blackAndWhite ? 1 : 0;
+  if (ps.draft !== undefined) psAttrs.draft = ps.draft ? 1 : 0;
+  if (ps.cellComments !== undefined) psAttrs.cellComments = ps.cellComments;
+  if (ps.errors !== undefined) psAttrs.errors = ps.errors;
   if (ps.horizontalDpi !== undefined) psAttrs.horizontalDpi = ps.horizontalDpi;
   if (ps.verticalDpi !== undefined) psAttrs.verticalDpi = ps.verticalDpi;
   if (ps.copies !== undefined) psAttrs.copies = ps.copies;
@@ -1254,10 +1271,11 @@ export function stringifyPageSetupXml(ps: PageSetupOptions): string {
 /** Stringify a CT_PrintOptions element (worksheet + dialogsheet). */
 export function stringifyPrintOptionsXml(po: PrintOptions): string {
   const poAttrs: Record<string, string | number | boolean | undefined> = {};
-  if (po.horizontalCentered) poAttrs.horizontalCentered = 1;
-  if (po.verticalCentered) poAttrs.verticalCentered = 1;
-  if (po.headings) poAttrs.headings = 1;
-  if (po.gridLines) poAttrs.gridLines = 1;
+  if (po.horizontalCentered !== undefined)
+    poAttrs.horizontalCentered = po.horizontalCentered ? 1 : 0;
+  if (po.verticalCentered !== undefined) poAttrs.verticalCentered = po.verticalCentered ? 1 : 0;
+  if (po.headings !== undefined) poAttrs.headings = po.headings ? 1 : 0;
+  if (po.gridLines !== undefined) poAttrs.gridLines = po.gridLines ? 1 : 0;
   if (po.gridLinesSet === false) poAttrs.gridLinesSet = 0;
   return selfCloseElement("printOptions", attrs(poAttrs));
 }

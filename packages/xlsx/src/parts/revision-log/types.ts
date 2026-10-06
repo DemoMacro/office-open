@@ -396,4 +396,8 @@ export type RevisionEntry =
 export interface RevisionLogOptions {
   /** Revision entries (the CT_Revisions choice sequence). */
   revisions: RevisionEntry[];
+  /** Source part path relative to xl/ — round-trip only. */
+  path?: string;
+  /** Source relationship target from revisionHeaders.xml.rels — round-trip only. */
+  relationshipTarget?: string;
 }

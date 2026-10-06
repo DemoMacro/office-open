@@ -281,6 +281,26 @@ describe("dropDanglingPassthroughRels", () => {
     );
   });
 
+  it("keeps legacy unresolved NULL targets", () => {
+    const files = assembled();
+    files["word/_rels/document.xml.rels"] = encoder.encode(
+      `<Relationships>` +
+        `<Relationship Id="rId8" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="NULL"/>` +
+        `</Relationships>`,
+    );
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "word/document.xml",
+        relationshipType:
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        target: "NULL",
+        rId: "rId8",
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["word/_rels/document.xml.rels"])).toContain('Target="NULL"');
+  });
+
   it("keeps External and #fragment targets without touching their rels part", () => {
     const files = assembled();
     const before = files["word/_rels/document.xml.rels"];

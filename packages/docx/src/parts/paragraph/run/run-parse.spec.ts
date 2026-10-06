@@ -32,9 +32,47 @@ describe("parseRunProperties round-trip", () => {
     });
   });
 
+  it("parses fallback run properties when a compatibility choice is empty", () => {
+    const doc = parseXml(
+      `<w:rPr ${W_NS} xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+        `<mc:AlternateContent><mc:Choice Requires="w16se"/><mc:Fallback>` +
+        `<w:rFonts w:ascii="Segoe UI Emoji" w:eastAsia="Segoe UI Emoji" ` +
+        `w:hAnsi="Segoe UI Emoji" w:cs="Segoe UI Emoji"/></mc:Fallback>` +
+        `</mc:AlternateContent></w:rPr>`,
+    );
+    const rPrEl = doc.elements?.[0];
+    if (!rPrEl) throw new Error("parsed document has no rPr element");
+
+    expect(parseRunProperties(rPrEl).font).toEqual({
+      ascii: "Segoe UI Emoji",
+      complexScript: "Segoe UI Emoji",
+      eastAsia: "Segoe UI Emoji",
+      hAnsi: "Segoe UI Emoji",
+    });
+  });
+
   it("round-trips color as plain string when no theme attributes", () => {
     const result = roundTrip({ color: "FF0000" });
     expect(result.color).toBe("FF0000");
+  });
+
+  it("round-trips underline with themeColor/themeTint/themeShade", () => {
+    const result = roundTrip({
+      underline: {
+        type: "single",
+        color: "FF0000",
+        themeColor: "text1",
+        themeTint: "99",
+        themeShade: "BF",
+      },
+    });
+    expect(result.underline).toEqual({
+      type: "single",
+      color: "FF0000",
+      themeColor: "text1",
+      themeTint: "99",
+      themeShade: "BF",
+    });
   });
 
   it("round-trips eastAsianLayout", () => {
@@ -228,6 +266,21 @@ describe("Office 2016 symbol parse", () => {
   it("accepts the schema symEx spelling and extension-qualified attributes", () => {
     const doc = parseXml(
       `<w:r ${W_NS} ${W16SE_NS}><w16se:symEx w16se:font="Webdings" w16se:char="F04E"/></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toEqual({
+      symbolRun: { char: "F04E", symbolFont: "Webdings", kind: "office2016" },
+    });
+  });
+
+  it("unwraps an Office 2016 symbol from markup compatibility choice", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} ${W16SE_NS} xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+        `<mc:AlternateContent><mc:Choice Requires="w16se">` +
+        `<w16se:symEx w16se:font="Webdings" w16se:char="F04E"/>` +
+        `</mc:Choice><mc:Fallback><w:t>icon</w:t></mc:Fallback></mc:AlternateContent></w:r>`,
     );
     const el = doc.elements?.[0];
     if (!el) throw new Error("parsed document has no root element");

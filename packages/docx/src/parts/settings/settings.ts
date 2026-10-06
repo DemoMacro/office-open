@@ -21,6 +21,8 @@ export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility
  * by `<w:hdrShapeDefaults>` and `<w:shapeDefaults>`.
  */
 export interface ShapeDefaultsOptions {
+  /** Recognized o: child order; omitted uses shapedefaults then shapelayout. */
+  childOrder?: ("shapedefaults" | "shapelayout")[];
   /** o:shapedefaults — VML shape defaults (fill/stroke/textbox/colormru/…). */
   shapedefaults?: VmlShapeDefaultsOptions;
   /** o:shapelayout — shape id map / regroup table / rules. */

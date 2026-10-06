@@ -56,14 +56,53 @@ describe("Media", () => {
     expect(entry.fileName).toBe("custom.jpg");
   });
 
-  it("reuses the existing entry when content matches, ignoring a pinned name", () => {
+  it("keeps the pinned source path when it collides with existing fresh media", () => {
     const media = new Media<TestEntry>();
     const bytes = new Uint8Array([1, 2, 3]);
 
     media.addMedia(bytes, "png", build(bytes, "png"));
     const reused = media.addMedia(bytes, "png", build(bytes, "png"), "other.png");
 
-    expect(reused.fileName).toBe("image1.png");
+    expect(reused.fileName).toBe("other.png");
+    expect(media.array).toHaveLength(2);
+  });
+
+  it("keeps byte-identical pinned media as separate source paths", () => {
+    const media = new Media<TestEntry>();
+    const first = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+      "image1.png",
+    );
+    const second = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+      "image2.png",
+    );
+
+    expect(first.fileName).toBe("image1.png");
+    expect(second.fileName).toBe("image2.png");
+    expect(media.array).toHaveLength(2);
+  });
+
+  it("reuses a pinned entry when the same source path is registered again", () => {
+    const media = new Media<TestEntry>();
+    const first = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+      "image1.png",
+    );
+    const second = media.addMedia(
+      new Uint8Array([1, 2, 3]),
+      "png",
+      build(new Uint8Array([1, 2, 3]), "png"),
+      "image1.png",
+    );
+
+    expect(second).toBe(first);
     expect(media.array).toHaveLength(1);
   });
 

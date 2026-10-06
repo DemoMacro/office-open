@@ -96,6 +96,8 @@ export interface PptxDocument {
   coreProps?: string;
   /** docProps/app.xml */
   appProps?: string;
+  /** Root relationship Type used for docProps/app.xml. */
+  appPropsType?: string;
   /** docProps/custom.xml */
   customProps?: string;
 }
@@ -115,6 +117,7 @@ function xmlKeys(keys: string[]): string[] {
 function parseRootRels(doc: ParsedArchive): {
   coreProps?: string;
   appProps?: string;
+  appPropsType?: string;
   customProps?: string;
 } {
   const relsEl = doc.get("_rels/.rels");
@@ -129,6 +132,7 @@ function parseRootRels(doc: ParsedArchive): {
   const canonicalCustom = RELATIONSHIP_TYPES.customProperties;
   let coreProps: string | undefined;
   let appProps: string | undefined;
+  let appPropsType: string | undefined;
   let customProps: string | undefined;
 
   for (const child of relsEl.elements ?? []) {
@@ -145,13 +149,16 @@ function parseRootRels(doc: ParsedArchive): {
     if (relType.includes("/coreproperties")) {
       if (type === canonicalCore || coreProps === undefined) coreProps = path;
     } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp")) {
-      if (type === canonicalApp || appProps === undefined) appProps = path;
+      if (type === canonicalApp || appProps === undefined) {
+        appProps = path;
+        appPropsType = type;
+      }
     } else if (relType.includes("/customproperties")) {
       if (type === canonicalCustom || customProps === undefined) customProps = path;
     }
   }
 
-  return { coreProps, appProps, customProps };
+  return { coreProps, appProps, appPropsType, customProps };
 }
 
 function parseSlideRels(doc: ParsedArchive, slidePaths: string[], refs: PptxPartRefs): void {
@@ -314,7 +321,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
   sortByNumber(partRefs.charts);
   sortByNumber(partRefs.diagramData);
 
-  const { coreProps, appProps, customProps } = parseRootRels(doc);
+  const { coreProps, appProps, appPropsType, customProps } = parseRootRels(doc);
 
   return {
     doc,
@@ -329,6 +336,7 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
     tableStyles,
     coreProps,
     appProps,
+    appPropsType,
     customProps,
   };
 }
@@ -635,6 +643,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (appPropsEl) {
       const ap = appPropertiesDesc.parse(appPropsEl, {} as ReadContext);
       if (ap && Object.keys(ap).length > 0) opts.appProperties = ap;
+      if (pptx.appPropsType && pptx.appPropsType !== RELATIONSHIP_TYPES.extendedProperties) {
+        opts.appPropertiesRelationshipType = pptx.appPropsType;
+      }
     }
   }
 

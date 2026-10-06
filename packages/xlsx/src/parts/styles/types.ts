@@ -163,6 +163,8 @@ export interface BorderSideOptions {
   diagonalUp?: boolean;
   /** Diagonal down (CT_Border `@diagonalDown`) — on the parent border element */
   diagonalDown?: boolean;
+  /** Apply only the outside edges of a cell range (CT_Border `@outline`). */
+  outline?: boolean;
   /** Leading edge border (CT_Border/start, for RTL support) */
   start?: BorderOptions;
   /** Trailing edge border (CT_Border/end, for RTL support) */

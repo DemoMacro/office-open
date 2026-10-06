@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import type { ContentTypesInput } from "./content-types-input";
-import { contentTypesDesc, deriveContentTypes, resolverFromRegistry } from "./content-types-input";
+import {
+  contentTypesDesc,
+  deriveContentTypes,
+  finalizeContentTypes,
+  resolverFromRegistry,
+} from "./content-types-input";
 import { PPTX_PARTS } from "./part-registry";
 
 const resolve = resolverFromRegistry(PPTX_PARTS);
@@ -134,5 +139,26 @@ describe("deriveContentTypes", () => {
     });
     expect(input.overrides).toHaveLength(1);
     expect(input.overrides[0]!.contentType).toBe("application/custom+xml");
+  });
+});
+
+describe("finalizeContentTypes", () => {
+  it("does not force an override when the source default already declares the same type", () => {
+    const input = finalizeContentTypes(
+      { "xl/workbook.xml": new TextEncoder().encode("<workbook/>") },
+      {
+        resolve: () => "application/vnd.custom.workbook+xml",
+        mediaContentTypes: {},
+        source: {
+          defaults: [{ extension: "xml", contentType: "application/vnd.custom.workbook+xml" }],
+          overrides: [],
+        },
+        forcedOverrides: [
+          { path: "xl/workbook.xml", contentType: "application/vnd.custom.workbook+xml" },
+        ],
+      },
+      {} as never,
+    );
+    expect(input).not.toContain("<Override");
   });
 });

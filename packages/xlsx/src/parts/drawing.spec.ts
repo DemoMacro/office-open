@@ -1,9 +1,10 @@
-import { unzipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "../generate";
+import { parseWorkbookSync } from "../parse";
 import { drawingDesc } from "./drawing";
 import type { DrawingOptions } from "./drawing";
 
@@ -397,6 +398,60 @@ describe("drawingDesc — anchored content parts", () => {
     expect(result.contentParts).toHaveLength(1);
     expect(cp.rId).toBe("rId9");
     expect(cp.toCol).toBe(3);
+  });
+
+  it("rebuilds the worksheet drawing relationship for a content part", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            shapes: [{ col: 1, row: 1, properties: { geometry: "rect" } }],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/drawings/drawing1.xml"] = new TextEncoder().encode(
+      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+        `<xdr:to><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>` +
+        `<xdr:contentPart r:id="rId9"/><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`,
+    );
+    archive["xl/drawings/_rels/drawing1.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/package" Target="../embeddings/content1.bin"/>` +
+        `</Relationships>`,
+    );
+    archive["xl/embeddings/content1.bin"] = new Uint8Array([1, 2, 3]);
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace(
+          /<Types\b[^>]*>/,
+          '$&<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>',
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.rawParts?.map((part) => part.path) ?? []).toEqual(["xl/embeddings/content1.bin"]);
+    expect(parsed.worksheets![0]!.contentParts).toMatchObject([
+      {
+        rId: "rId9",
+        relationshipTarget: "../embeddings/content1.bin",
+        sourcePath: "xl/embeddings/content1.bin",
+      },
+    ]);
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    const drawing = new TextDecoder().decode(result["xl/drawings/drawing1.xml"]!);
+    const rels = new TextDecoder().decode(result["xl/drawings/_rels/drawing1.xml.rels"]!);
+    expect(drawing).toContain('<xdr:contentPart r:id="rId9"/>');
+    expect(rels).toContain('Id="rId9"');
+    expect(rels).toContain('Target="../embeddings/content1.bin"');
+    expect(result["xl/embeddings/content1.bin"]).toBeDefined();
   });
 });
 

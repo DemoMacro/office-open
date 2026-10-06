@@ -69,6 +69,7 @@ export interface TextWrapping {
   type: (typeof TextWrappingType)[keyof typeof TextWrappingType];
   /** Which sides text may wrap on: bothSides, left, right, or "largest" whichever has more room. */
   side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
+  /** Wrap-element distances in EMUs; separate from Floating.margins on wp:anchor. */
   margins?: Distance;
   /** Wrap polygon for wrapTight/wrapThrough. Preserves the source contour on round-trip; defaults to the extent rectangle when unset. */
   polygon?: WrapPolygon;

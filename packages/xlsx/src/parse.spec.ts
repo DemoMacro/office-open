@@ -98,6 +98,173 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.appProperties?.docSecurity).toBe(0);
   });
 
+  it("keeps worksheet hyperlink relationship ids stable across round-trip", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet",
+            hyperlinks: [
+              { cell: "A1", url: "https://example.com/first" },
+              { cell: "B2", url: "https://example.com/second" },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    const sheetPath = "xl/worksheets/sheet1.xml";
+    const relsPath = "xl/worksheets/_rels/sheet1.xml.rels";
+    archive[sheetPath] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive[sheetPath]!)
+        .replaceAll('r:id="rId1"', 'r:id="rId7"')
+        .replaceAll('r:id="rId2"', 'r:id="rId3"'),
+    );
+    archive[relsPath] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive[relsPath]!)
+        .replaceAll('Id="rId1"', 'Id="rId7"')
+        .replaceAll('Id="rId2"', 'Id="rId3"'),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets![0]!.hyperlinks).toMatchObject([
+      { cell: "A1", url: "https://example.com/first", relationshipId: "rId7" },
+      { cell: "B2", url: "https://example.com/second", relationshipId: "rId3" },
+    ]);
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const outputArchive = unzipSync(output);
+    const sheet = new TextDecoder().decode(outputArchive[sheetPath]!);
+    const rels = new TextDecoder().decode(outputArchive[relsPath]!);
+    expect(sheet).toContain('ref="A1" r:id="rId7"');
+    expect(sheet).toContain('ref="B2" r:id="rId3"');
+    expect(rels).toMatch(/Id="rId7"[^>]*Target="https:\/\/example\.com\/first"/);
+    expect(rels).toMatch(/Id="rId3"[^>]*Target="https:\/\/example\.com\/second"/);
+  });
+
+  it("keeps WebExtension drawing anchors typed across round-trip", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet",
+            shapes: [
+              {
+                col: 1,
+                row: 1,
+                properties: { x: 0, y: 0, width: 100, height: 100, geometry: "rect" },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/drawings/drawing1.xml"] = new TextEncoder().encode(
+      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+        `<xdr:twoCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>10</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>20</xdr:rowOff></xdr:from>` +
+        `<xdr:to><xdr:col>2</xdr:col><xdr:row>4</xdr:row></xdr:to>` +
+        `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+        `<mc:Choice xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" Requires="we">` +
+        `<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="WebExtension 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr>` +
+        `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/webextensions/webextension/2010/11">` +
+        `<we:webextensionref r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame></mc:Choice>` +
+        `<mc:Fallback><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="2" name="WebExtension 1"/><xdr:cNvPicPr/></xdr:nvPicPr>` +
+        `<xdr:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
+        `<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic></mc:Fallback>` +
+        `</mc:AlternateContent><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`,
+    );
+    archive["xl/drawings/_rels/drawing1.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2011/relationships/webextension" Target="../webextensions/webextension1.xml"/>` +
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>` +
+        `</Relationships>`,
+    );
+    archive["xl/webextensions/webextension1.xml"] = new TextEncoder().encode(
+      `<we:webextension xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" id="{00000000-0000-0000-0000-000000000001}"/>`,
+    );
+    archive["xl/media/image1.png"] = new Uint8Array([1, 2, 3]);
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace(
+          "</Types>",
+          `<Override PartName="/xl/webextensions/webextension1.xml" ContentType="application/vnd.ms-office.webextension+xml"/></Types>`,
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets?.[0]?.webExtensions).toMatchObject([
+      {
+        col: 1,
+        row: 1,
+        name: "WebExtension 1",
+        sourcePath: "xl/webextensions/webextension1.xml",
+        snapshotSourcePath: "xl/media/image1.png",
+      },
+    ]);
+    expect(parsed.rawParts?.map((part) => part.path)).not.toContain("xl/drawings/drawing1.xml");
+
+    const regenerated = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const output = unzipSync(regenerated);
+    expect(new TextDecoder().decode(output["xl/drawings/drawing1.xml"]!)).toContain(
+      "we:webextensionref",
+    );
+    expect(output["xl/webextensions/webextension1.xml"]).toBeDefined();
+    const rels = new TextDecoder().decode(output["xl/drawings/_rels/drawing1.xml.rels"]!);
+    expect(rels).toContain("relationships/webextension");
+    expect(rels).toContain("../media/image1.png");
+  });
+
+  it("keeps comment VML shapes typed across round-trip", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [{ name: "Sheet", comments: [{ cell: "A1", author: "A", text: "note" }] }],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    const vml = new TextDecoder()
+      .decode(archive["xl/drawings/vmlDrawing1.vml"]!)
+      .replace('data="1"', 'data="7"')
+      .replace(
+        '<v:shape id="_x0000_s1025"',
+        '<v:shape id="_x0000_s1025" alt="Source note" o:spid="_x0000_s2049"',
+      )
+      .replace('<v:fill color2="infoBackground [80]"/>', '<v:fill color2="#123456" angle="45"/>');
+    archive["xl/drawings/vmlDrawing1.vml"] = new TextEncoder().encode(vml);
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.rawParts?.map((part) => part.path) ?? []).not.toContain(
+      "xl/drawings/vmlDrawing1.vml",
+    );
+    expect(parsed.worksheets?.[0]?.commentsVmlLayout).toMatchObject({
+      idmap: { data: "7" },
+    });
+    expect(parsed.worksheets?.[0]?.comments?.[0]?.vmlShape).toMatchObject({
+      id: "_x0000_s1025",
+      alt: "Source note",
+      spid: "_x0000_s2049",
+      fill: { color2: "#123456", angle: 45 },
+    });
+
+    const regenerated = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const outputVml = new TextDecoder().decode(
+      unzipSync(regenerated)["xl/drawings/vmlDrawing1.vml"]!,
+    );
+    expect(unzipSync(regenerated)["xl/drawings/vmlDrawing1.vml"]).toEqual(
+      archive["xl/drawings/vmlDrawing1.vml"],
+    );
+    expect(outputVml).toContain('data="7"');
+    expect(outputVml).toContain('alt="Source note"');
+    expect(outputVml).toContain('o:spid="_x0000_s2049"');
+    expect(outputVml).toContain('color2="#123456"');
+  });
+
   it("round-trips pivot table page filters", async () => {
     const opts: WorkbookOptions = {
       worksheets: [
@@ -243,6 +410,34 @@ describe("parseWorkbook round-trip", () => {
     const parsed = await roundTrip(opts);
     expect(parsed.dxfs).toBeDefined();
     expect(parsed.dxfs).toHaveLength(2);
+  });
+
+  it("preserves dxf border outline and color tint precision", async () => {
+    const opts: WorkbookOptions = {
+      dxfs: [
+        {
+          font: { themeColor: 1, tint: 0.499985 },
+          border: {
+            outline: false,
+            left: { style: "thin", themeColor: 2, tint: -0.249973 },
+          },
+        },
+      ],
+      worksheets: [{ name: "S", tabColor: { theme: 3, tint: 0.599995 } }],
+    };
+
+    const buffer = (await generateWorkbook(opts, { type: "uint8array" })) as Uint8Array;
+    const archive = unzipSync(buffer);
+    const styles = new TextDecoder().decode(archive["xl/styles.xml"]!);
+    expect(styles).toContain('outline="0"');
+    expect(styles).toContain('tint="-0.249973"');
+    expect(new TextDecoder().decode(archive["xl/worksheets/sheet1.xml"]!)).toContain(
+      'tint="0.599995"',
+    );
+
+    const parsed = parseWorkbookSync(buffer);
+    expect(parsed.dxfs![0]).toEqual(opts.dxfs![0]);
+    expect(parsed.worksheets![0]!.tabColor).toEqual({ theme: 3, tint: 0.599995 });
   });
 
   it("keeps built-in numFmt ids so date cells keep their format", async () => {

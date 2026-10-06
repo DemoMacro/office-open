@@ -86,6 +86,27 @@ describe("parsePresentation", () => {
     expect(parsePresentationSync(buffer).slideSizeType).to.equal("B4ISO");
   });
 
+  it("preserves a non-canonical app properties relationship type", async () => {
+    const buffer = await generatePresentation({
+      slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100 } }] }],
+    });
+    const archive = unzipSync(buffer);
+    archive["_rels/.rels"] = new TextEncoder().encode(
+      decodeEntry(buffer, "_rels/.rels").replace(
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties",
+        "http://schemas.openxmlformats.org/package/2006/relationships/metadata/extended-properties",
+      ),
+    );
+    const parsed = parsePresentationSync(zipSync(archive));
+
+    expect(parsed.appPropertiesRelationshipType).toBe(
+      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/extended-properties",
+    );
+    expect(decodeEntry(await generatePresentation(parsed), "_rels/.rels")).toContain(
+      "package/2006/relationships/metadata/extended-properties",
+    );
+  });
+
   it("preserves source slide identities and sldIdLst order", async () => {
     const buffer = await generatePresentation({
       slides: [

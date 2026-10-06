@@ -110,6 +110,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const result: Partial<WorksheetOptions> = {};
     let pageSetUpPrCache: Partial<PageSetupOptions> | undefined;
 
+    if (attr(el, "xr:uid")) result.uid = attr(el, "xr:uid");
+
     // Resolve shared strings from context (XlsxReadContext). Rich-text
     // entries arrive as RichTextOptions objects and flow into cell.value.
     const strings: (string | RichTextOptions)[] =
@@ -127,16 +129,21 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (parseOnOff(attr(sheetPrEl, "transitionEntry"))) sp.transitionEntry = true;
       // XSD defaults true — only the explicit "0" carries information back.
       if (String(attr(sheetPrEl, "published")) === "0") sp.published = false;
-      if (parseOnOff(attr(sheetPrEl, "filterMode"))) sp.filterMode = true;
+      if (attr(sheetPrEl, "filterMode") !== undefined)
+        sp.filterMode = parseOnOff(attr(sheetPrEl, "filterMode"));
       if (String(attr(sheetPrEl, "enableFormatConditionsCalculation")) === "0")
         sp.enableFormatConditionsCalculation = false;
 
       const outlinePr = findChild(sheetPrEl, "outlinePr");
       if (outlinePr) {
-        if (parseOnOff(attr(outlinePr, "applyStyles"))) sp.outlineApplyStyles = true;
-        if (String(attr(outlinePr, "showOutlineSymbols")) === "0") sp.outlineShowSymbols = false;
-        if (String(attr(outlinePr, "summaryBelow")) === "0") sp.outlineSummaryBelow = false;
-        if (String(attr(outlinePr, "summaryRight")) === "0") sp.outlineSummaryRight = false;
+        if (attr(outlinePr, "applyStyles") !== undefined)
+          sp.outlineApplyStyles = parseOnOff(attr(outlinePr, "applyStyles"));
+        if (attr(outlinePr, "showOutlineSymbols") !== undefined)
+          sp.outlineShowSymbols = parseOnOff(attr(outlinePr, "showOutlineSymbols"));
+        if (attr(outlinePr, "summaryBelow") !== undefined)
+          sp.outlineSummaryBelow = parseOnOff(attr(outlinePr, "summaryBelow"));
+        if (attr(outlinePr, "summaryRight") !== undefined)
+          sp.outlineSummaryRight = parseOnOff(attr(outlinePr, "summaryRight"));
       }
 
       // pageSetUpPr (inside sheetPr) — stash on result.pageSetup; merged into
@@ -173,20 +180,32 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       const svEl = findChild(sheetViewsEl, "sheetView");
       if (svEl) {
         const sv: SheetViewOptions = {};
-        if (String(attr(svEl, "showGridLines")) === "0") sv.showGridLines = false;
-        if (String(attr(svEl, "showRowColHeaders")) === "0") sv.showRowColHeaders = false;
-        if (String(attr(svEl, "showZeros")) === "0") sv.showZeros = false;
+        const sheetViewFlag = (name: string): boolean | undefined =>
+          attr(svEl, name) !== undefined ? parseOnOff(attr(svEl, name)) : undefined;
+        const showGridLines = sheetViewFlag("showGridLines");
+        if (showGridLines !== undefined) sv.showGridLines = showGridLines;
+        const showRowColHeaders = sheetViewFlag("showRowColHeaders");
+        if (showRowColHeaders !== undefined) sv.showRowColHeaders = showRowColHeaders;
+        const showZeros = sheetViewFlag("showZeros");
+        if (showZeros !== undefined) sv.showZeros = showZeros;
         const zs = attrNum(svEl, "zoomScale");
         if (zs !== undefined) sv.zoomScale = zs;
         if (attr(svEl, "tabSelected") !== undefined)
           sv.tabSelected = parseOnOff(attr(svEl, "tabSelected")) ?? true;
-        if (parseOnOff(attr(svEl, "rightToLeft"))) sv.rightToLeft = true;
-        if (parseOnOff(attr(svEl, "windowProtection"))) sv.windowProtection = true;
-        if (parseOnOff(attr(svEl, "showFormulas"))) sv.showFormulas = true;
-        if (String(attr(svEl, "showRuler")) === "0") sv.showRuler = false;
-        if (String(attr(svEl, "showOutlineSymbols")) === "0") sv.showOutlineSymbols = false;
-        if (String(attr(svEl, "defaultGridColor")) === "0") sv.defaultGridColor = false;
-        if (String(attr(svEl, "showWhiteSpace")) === "0") sv.showWhiteSpace = false;
+        const rightToLeft = sheetViewFlag("rightToLeft");
+        if (rightToLeft !== undefined) sv.rightToLeft = rightToLeft;
+        const windowProtection = sheetViewFlag("windowProtection");
+        if (windowProtection !== undefined) sv.windowProtection = windowProtection;
+        const showFormulas = sheetViewFlag("showFormulas");
+        if (showFormulas !== undefined) sv.showFormulas = showFormulas;
+        const showRuler = sheetViewFlag("showRuler");
+        if (showRuler !== undefined) sv.showRuler = showRuler;
+        const showOutlineSymbols = sheetViewFlag("showOutlineSymbols");
+        if (showOutlineSymbols !== undefined) sv.showOutlineSymbols = showOutlineSymbols;
+        const defaultGridColor = sheetViewFlag("defaultGridColor");
+        if (defaultGridColor !== undefined) sv.defaultGridColor = defaultGridColor;
+        const showWhiteSpace = sheetViewFlag("showWhiteSpace");
+        if (showWhiteSpace !== undefined) sv.showWhiteSpace = showWhiteSpace;
         const viewVal = attr(svEl, "view");
         if (viewVal) sv.view = viewVal as SheetViewOptions["view"];
         const topLeftCell = attr(svEl, "topLeftCell");
@@ -281,9 +300,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (dcw !== undefined) sfp.defaultColWidth = dcw;
       const drh = attrNum(sfpEl, "defaultRowHeight");
       if (drh !== undefined) sfp.defaultRowHeight = drh;
-      if (parseOnOff(attr(sfpEl, "zeroHeight"))) sfp.zeroHeight = true;
-      if (parseOnOff(attr(sfpEl, "thickTop"))) sfp.thickTop = true;
-      if (parseOnOff(attr(sfpEl, "thickBottom"))) sfp.thickBottom = true;
+      if (attr(sfpEl, "customHeight") !== undefined)
+        sfp.customHeight = parseOnOff(attr(sfpEl, "customHeight"));
+      if (attr(sfpEl, "zeroHeight") !== undefined)
+        sfp.zeroHeight = parseOnOff(attr(sfpEl, "zeroHeight"));
+      if (attr(sfpEl, "thickTop") !== undefined) sfp.thickTop = parseOnOff(attr(sfpEl, "thickTop"));
+      if (attr(sfpEl, "thickBottom") !== undefined)
+        sfp.thickBottom = parseOnOff(attr(sfpEl, "thickBottom"));
       const olr = attrNum(sfpEl, "outlineLevelRow");
       if (olr !== undefined) sfp.outlineLevelRow = olr;
       const olc = attrNum(sfpEl, "outlineLevelCol");
@@ -541,6 +564,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         // r:id starts as the raw relationship id; the parse pipeline resolves
         // it to the real target URL afterwards.
         if (rId) hl.url = rId;
+        if (rId) hl.relationshipId = rId;
         const location = attr(hEl, "location");
         if (location) hl.location = location;
         if (attr(hEl, "tooltip")) hl.tooltip = attr(hEl, "tooltip");
@@ -1112,13 +1136,16 @@ export function parsePageSetupEl(
   if (fth !== undefined) ps.fitToHeight = fth;
   const pageOrderVal = attr(el, "pageOrder");
   if (pageOrderVal) ps.pageOrder = pageOrderVal as PageSetupOptions["pageOrder"];
-  if (parseOnOff(attr(el, "useFirstPageNumber"))) ps.useFirstPageNumber = true;
+  if (attr(el, "useFirstPageNumber") !== undefined)
+    ps.useFirstPageNumber = parseOnOff(attr(el, "useFirstPageNumber"));
   const fpn = attrNum(el, "firstPageNumber");
   if (fpn !== undefined) ps.firstPageNumber = fpn;
   // XSD default true — only the explicit "0" carries information back.
-  if (String(attr(el, "usePrinterDefaults")) === "0") ps.usePrinterDefaults = false;
-  if (parseOnOff(attr(el, "blackAndWhite"))) ps.blackAndWhite = true;
-  if (parseOnOff(attr(el, "draft"))) ps.draft = true;
+  if (attr(el, "usePrinterDefaults") !== undefined)
+    ps.usePrinterDefaults = parseOnOff(attr(el, "usePrinterDefaults"));
+  if (attr(el, "blackAndWhite") !== undefined)
+    ps.blackAndWhite = parseOnOff(attr(el, "blackAndWhite"));
+  if (attr(el, "draft") !== undefined) ps.draft = parseOnOff(attr(el, "draft"));
   const cc = attr(el, "cellComments");
   if (cc) ps.cellComments = cc as PageSetupOptions["cellComments"];
   const err = attr(el, "errors");
@@ -1160,11 +1187,14 @@ export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
 /** Parse a CT_PrintOptions element. */
 export function parsePrintOptionsEl(el: Element): PrintOptions {
   const po: PrintOptions = {};
-  if (parseOnOff(attr(el, "horizontalCentered"))) po.horizontalCentered = true;
-  if (parseOnOff(attr(el, "verticalCentered"))) po.verticalCentered = true;
-  if (parseOnOff(attr(el, "headings"))) po.headings = true;
-  if (parseOnOff(attr(el, "gridLines"))) po.gridLines = true;
-  if (String(attr(el, "gridLinesSet")) === "0") po.gridLinesSet = false;
+  if (attr(el, "horizontalCentered") !== undefined)
+    po.horizontalCentered = parseOnOff(attr(el, "horizontalCentered"));
+  if (attr(el, "verticalCentered") !== undefined)
+    po.verticalCentered = parseOnOff(attr(el, "verticalCentered"));
+  if (attr(el, "headings") !== undefined) po.headings = parseOnOff(attr(el, "headings"));
+  if (attr(el, "gridLines") !== undefined) po.gridLines = parseOnOff(attr(el, "gridLines"));
+  if (attr(el, "gridLinesSet") !== undefined)
+    po.gridLinesSet = parseOnOff(attr(el, "gridLinesSet"));
   return po;
 }
 

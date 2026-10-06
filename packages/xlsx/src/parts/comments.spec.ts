@@ -218,12 +218,12 @@ describe("vmlNotesDesc parse round-trips note placement", () => {
     const xml = vmlNotesDesc.stringify(opts, writeCtx)!;
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    return vmlNotesDesc.parse(el, readCtx);
+    return vmlNotesDesc.parse(el, readCtx).anchors;
   }
 
   it("round-trips default anchor, hidden state, and default size", () => {
     const anchors = roundTripVml({ comments: [{ cell: "B3", author: "A", text: "x" }] });
-    expect(anchors).toEqual([
+    expect(anchors).toMatchObject([
       {
         row: 2,
         column: 1,
@@ -273,8 +273,8 @@ describe("vmlNotesDesc parse round-trips note placement", () => {
       "</v:shape></xml>";
     const el = parseXml(src).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
-    const anchors = vmlNotesDesc.parse(el, readCtx);
-    expect(anchors).toEqual([
+    const anchors = vmlNotesDesc.parse(el, readCtx).anchors;
+    expect(anchors).toMatchObject([
       {
         row: 1,
         column: 2,

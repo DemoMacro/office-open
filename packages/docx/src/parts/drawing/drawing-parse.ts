@@ -1308,6 +1308,18 @@ function readWrap(anchor: Element): TextWrapping | undefined {
     const wrap: TextWrapping = { type };
     const side = attr(el, "wrapText");
     if (side) wrap.side = side as TextWrapping["side"];
+    if (name === "wrapSquare") {
+      const margins: NonNullable<TextWrapping["margins"]> = {};
+      const distT = attrNum(el, "distT");
+      if (distT !== undefined) margins.distT = distT;
+      const distB = attrNum(el, "distB");
+      if (distB !== undefined) margins.distB = distB;
+      const distL = attrNum(el, "distL");
+      if (distL !== undefined) margins.distL = distL;
+      const distR = attrNum(el, "distR");
+      if (distR !== undefined) margins.distR = distR;
+      if (Object.keys(margins).length > 0) wrap.margins = margins;
+    }
     // wrapTight/wrapThrough carry a contour polygon; preserve it verbatim.
     if (name === "wrapTight" || name === "wrapThrough") {
       const polygon = readWrapPolygon(el);
