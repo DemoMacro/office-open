@@ -16,6 +16,8 @@
  * its position within a table (first/last row, first/last column, bands).
  */
 export interface CnfConditionalOptions {
+  /** Canonical 12-character conditional-format bit string (ST_Cnf). */
+  val?: string;
   /** Whether this is the first row in the table */
   firstRow?: boolean;
   /** Whether this is the last row in the table */

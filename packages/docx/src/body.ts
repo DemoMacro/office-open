@@ -1015,15 +1015,11 @@ const CNF_KEYS = [
  *  permits 12 individual w: attributes, parsed as a fallback. */
 function parseCnfStyle(el: Element): NonNullable<ParagraphPropertiesOptions["cnfStyle"]> {
   const val = attr(el, "w:val");
-  const result: Record<string, boolean> = {};
-  if (val && val.length === 12) {
-    for (let i = 0; i < 12; i++) {
-      if (val[i] === "1") result[CNF_KEYS[i]!] = true;
-    }
-  } else {
-    for (const key of CNF_KEYS) {
-      if (attrBool(el, `w:${key}`)) result[key] = true;
-    }
+  const result: Record<string, boolean | string> = {};
+  if (val !== undefined) result.val = val;
+  for (const key of CNF_KEYS) {
+    const value = attrBool(el, `w:${key}`);
+    if (value !== undefined) result[key] = value;
   }
   // An empty object preserves the presence of a bare/all-zero CT_Cnf element;
   // undefined remains reserved for an absent w:cnfStyle child.
@@ -1057,6 +1053,8 @@ interface FieldRunState {
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
   instrRunEls: Element[];
+  /** Source xml:space marker on the plain instruction text. */
+  instructionPreserveSpace?: boolean;
   /** Result-stage run elements (separate → end), buffered likewise. */
   resultRunEls: Element[];
 }
@@ -1068,6 +1066,7 @@ const initialFieldRunState = (): FieldRunState => ({
   pendingInstruction: "",
   pendingResult: "",
   collectingResult: false,
+  instructionPreserveSpace: false,
   resultPreserveSpace: false,
   instrRunEls: [],
   resultRunEls: [],
@@ -1187,6 +1186,7 @@ function feedFieldRun(
         // Mark the result present when the field carried any result run — an
         // empty-text result still round-trips its separate marker.
         if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
+        cf.instructionPreserveSpace = state.instructionPreserveSpace;
         cf.resultPreserveSpace = state.resultPreserveSpace;
         if (state.controlRPr) cf.rPrXml = state.controlRPr;
         if (state.resultRPr) cf.resultRPrXml = state.resultRPr;
@@ -1259,7 +1259,10 @@ function feedFieldRun(
       } else {
         // Deleted fields spell the instruction w:delInstrText instead.
         const instrEl = findChild(run, "w:instrText") ?? findChild(run, "w:delInstrText");
-        if (instrEl) state.pendingInstruction += textOf(instrEl);
+        if (instrEl) {
+          state.pendingInstruction += textOf(instrEl);
+          state.instructionPreserveSpace ||= attr(instrEl, "xml:space") === "preserve";
+        }
         // Buffer the run for the verbatim channel when its shape is not what
         // the plain instruction template reproduces (per-run rPr, w:br...).
         state.instrRunEls.push(run);
@@ -1858,6 +1861,9 @@ function parseRunLevelChildren(
           const sf: {
             instruction: string;
             cachedValue?: string;
+            cachedValuePreserveSpace?: boolean;
+            cachedInstructionText?: string;
+            cachedInstructionTextPreserveSpace?: boolean;
             cachedRuns?: ParagraphChild[];
             fieldLock?: boolean;
             dirty?: boolean;
@@ -1867,12 +1873,24 @@ function parseRunLevelChildren(
           // result as w:instrText runs instead (nested-field expansions) —
           // those count as display text too.
           let cachedValue = "";
+          let cachedValuePreserveSpace = false;
+          let cachedInstructionText = "";
+          let cachedInstructionTextPreserveSpace = false;
           const cachedRunEls: Element[] = [];
           for (const sub of child.elements ?? []) {
             if (sub.name === "w:r") {
               cachedValue += collectRunText(sub);
+              const firstText = (sub.elements ?? []).find(
+                (rc) => rc.name === "w:t" || rc.name === "w:delText",
+              );
+              if (firstText && attr(firstText, "xml:space") === "preserve") {
+                cachedValuePreserveSpace = true;
+              }
               for (const rc of sub.elements ?? []) {
-                if (rc.name === "w:instrText") cachedValue += textOf(rc) ?? "";
+                if (rc.name === "w:instrText") {
+                  cachedInstructionText += textOf(rc) ?? "";
+                  cachedInstructionTextPreserveSpace ||= attr(rc, "xml:space") === "preserve";
+                }
               }
               cachedRunEls.push(sub);
             }
@@ -1880,6 +1898,11 @@ function parseRunLevelChildren(
           // Mark the cached value present when any run sat inside the field —
           // empty-text results still round-trip their run.
           if (cachedRunEls.length > 0) sf.cachedValue = cachedValue;
+          if (cachedInstructionText) {
+            sf.cachedInstructionText = cachedInstructionText;
+            sf.cachedInstructionTextPreserveSpace = cachedInstructionTextPreserveSpace;
+          }
+          sf.cachedValuePreserveSpace = cachedValuePreserveSpace;
           // The plain template emits one bare text run — cached runs carrying
           // rPr (Word marks field results w:noProof) go through verbatim.
           if (!isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])) {

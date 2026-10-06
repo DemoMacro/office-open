@@ -18,7 +18,7 @@ import { imageTypeFromPath } from "../../util/image-type";
 import { xsdPattern } from "../../util/mappings";
 import type { ReproducibleScope } from "../../util/reproducible";
 import { parseOnOff, stripColorHashPrefix } from "../../util/values";
-import { blipFillDesc } from "../blip/blip-descriptors";
+import { blipFillDesc, stretchDesc } from "../blip/blip-descriptors";
 import { createBlipEffects } from "../blip/blip-effects";
 import { createSourceRectangle } from "../blip/source-rectangle";
 import { createTileInfo } from "../blip/tile";
@@ -336,8 +336,12 @@ function emitBlipFill(
     children.push(createSourceRectangle(options.sourceRectangle));
   if (options.tile) {
     children.push(createTileInfo(options.tile));
-  } else {
-    children.push("<a:stretch><a:fillRect/></a:stretch>");
+  } else if (options.stretch !== false) {
+    children.push(
+      options.fillRectangle === false
+        ? "<a:stretch/>"
+        : `<a:stretch>${createSourceRectangle(options.fillRectangle ?? {}, "a:fillRect")}</a:stretch>`,
+    );
   }
   const attrs: Record<string, string | number | undefined> = {};
   if (options.dpi !== undefined) attrs.dpi = options.dpi;
@@ -425,6 +429,13 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           ? (ctx.resolveExternalImage?.(blipOpts.linkReferenceId) ??
             ctx.resolveRelationship(blipOpts.linkReferenceId))
           : undefined;
+        const stretch = findChild(fillEl, "a:stretch");
+        const fillRectangle = stretch
+          ? findChild(stretch, "a:fillRect")
+            ? parse(stretchDesc, stretch, ctx)
+            : false
+          : undefined;
+        const preserveMissingStretch = stretch === undefined;
         if (mediaPath && data) {
           const blip: BlipFillConfigOptions & { type: "blip" } = {
             type: "blip",
@@ -439,6 +450,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
+          if (preserveMissingStretch) blip.stretch = false;
+          if (fillRectangle !== undefined) blip.fillRectangle = fillRectangle;
           return blip;
         }
         if (blipOpts.referenceId === undefined && linkedUrl !== undefined) {
@@ -449,6 +462,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
+          if (preserveMissingStretch) blip.stretch = false;
+          if (fillRectangle !== undefined) blip.fillRectangle = fillRectangle;
           return blip;
         }
         if (mediaPath !== undefined && data === undefined) {
@@ -462,6 +477,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
+          if (preserveMissingStretch) blip.stretch = false;
+          if (fillRectangle !== undefined) blip.fillRectangle = fillRectangle;
           return blip;
         }
         if (blipOpts.referenceId === undefined && blipOpts.linkReferenceId === undefined) {
@@ -475,6 +492,8 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
           if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
           if (blipOpts.tile) blip.tile = blipOpts.tile;
+          if (preserveMissingStretch) blip.stretch = false;
+          if (fillRectangle !== undefined) blip.fillRectangle = fillRectangle;
           return blip;
         }
         return { type: "none" };

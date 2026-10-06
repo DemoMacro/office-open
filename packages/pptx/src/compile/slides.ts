@@ -25,6 +25,7 @@ import {
   replaceMediaPlaceholders,
   replaceOleLinkPlaceholders,
   replaceOlePlaceholders,
+  replacePlaceholders,
   replaceSmartArtPlaceholders,
   replaceVideoPlaceholders,
 } from "@office-open/core";
@@ -326,6 +327,7 @@ export function compileSlideParts(
       descCtx,
       charts,
       smartArts,
+      slidePassthroughBySource.get(`ppt/slides/slide${i + 1}.xml`),
     );
 
     mapping[`Slide${i}`] = {
@@ -411,6 +413,7 @@ function wireSlidePlaceholderBatches(
   descCtx: PptxWriteContext,
   charts: ChartCollection,
   smartArts: SmartArtCollection,
+  sourceRelationships: PresentationOptions["passthroughRelationships"],
 ): string {
   let replacedSlideXml = slideXml;
   const media = descCtx.mediaCollection;
@@ -496,6 +499,22 @@ function wireSlidePlaceholderBatches(
     }
   }
 
+  // Externally linked audio (a:audioFile @r:link), including the modern dual
+  // form where p14:media separately embeds the playable bytes.
+  const slideAudioLinkKeys = collectPlaceholderKeys(replacedSlideXml, "audio-link:");
+  if (slideAudioLinkKeys.length > 0) {
+    const slideAudioLinkSet = new Set(slideAudioLinkKeys);
+    const slideAudioLinks = descCtx.audioLinks.filter((l) => slideAudioLinkSet.has(l.key));
+    const audioLinkOffset = rels.nextRelationshipId;
+    const replacements = new Map<string, string>();
+    for (const [li, audioLink] of slideAudioLinks.entries()) {
+      const id = audioLinkOffset + li;
+      replacements.set(`audio-link:${audioLink.key}`, `rId${id}`);
+      rels.addRelationship(id, RELATIONSHIP_TYPES.audio, audioLink.url, "External");
+    }
+    replacedSlideXml = replacePlaceholders(replacedSlideXml, replacements);
+  }
+
   // Linked OLE objects (p:oleObj @r:id with p:link) — one External
   // oleObject relationship per referenced URL.
   const slideOleLinkKeys = collectPlaceholderKeys(replacedSlideXml, "ole-link:");
@@ -551,9 +570,23 @@ function wireSlidePlaceholderBatches(
   // OLE embeddings
   const slideOleRefs = getOleRefs(replacedSlideXml, descCtx.embeddings);
   if (slideOleRefs.length > 0) {
+    const sourceOleIds = new Map<string, string>();
+    for (const oleRef of slideOleRefs) {
+      const target = `../embeddings/${oleRef.fileName}`;
+      const sourceRel = sourceRelationships?.find(
+        (rel) => rel.relationshipType.split("/").pop() === "oleObject" && rel.target === target,
+      );
+      if (!sourceRel) continue;
+      rels.claimSourceRel(sourceRel);
+      sourceOleIds.set(`ole:${oleRef.fileName}`, sourceRel.rId);
+    }
     const oleOffset = rels.nextRelationshipId;
-    replacedSlideXml = replaceOlePlaceholders(replacedSlideXml, slideOleRefs, oleOffset);
+    replacedSlideXml =
+      sourceOleIds.size > 0
+        ? replacePlaceholders(replacedSlideXml, sourceOleIds)
+        : replaceOlePlaceholders(replacedSlideXml, slideOleRefs, oleOffset);
     for (const [oi, oleRef] of slideOleRefs.entries()) {
+      if (sourceOleIds.has(`ole:${oleRef.fileName}`)) continue;
       rels.addRelationship(
         oleOffset + oi,
         RELATIONSHIP_TYPES.oleObject,
@@ -593,6 +626,7 @@ function absorbSlideSourceKinds(
   const media = descCtx.mediaCollection;
   if (getMediaRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("media");
   if (getAudioRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("audio");
+  if (collectPlaceholderKeys(slideXml, "audio-link:").length > 0) slideAbsorbedKinds.add("audio");
   if (getVideoRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("video");
   if (
     getOleRefs(slideXml, descCtx.embeddings).length > 0 ||

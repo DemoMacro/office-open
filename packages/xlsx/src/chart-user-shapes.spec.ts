@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { unzipSync } from "@office-open/core";
+import { unzipSync, zipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateWorkbook } from "./index";
@@ -50,6 +50,39 @@ function fileText(entries: Record<string, Uint8Array>, name: string): string {
   return new TextDecoder().decode(data);
 }
 
+function injectChartExternalLink(archive: Record<string, Uint8Array>): void {
+  archive["xl/charts/chart1.xml"] = new TextEncoder().encode(
+    new TextDecoder()
+      .decode(archive["xl/charts/chart1.xml"]!)
+      .replace(
+        "</c:chartSpace>",
+        '<c:externalData r:id="rId7"><c:autoUpdate val="1"/></c:externalData></c:chartSpace>',
+      ),
+  );
+  archive["xl/charts/_rels/chart1.xml.rels"] = new TextEncoder().encode(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath" Target="../externalLinks/externalLink7.xml"/>` +
+      `</Relationships>`,
+  );
+  archive["xl/externalLinks/externalLink7.xml"] = new TextEncoder().encode(
+    `<externalLink xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+      `<externalBook r:id="rId3"><sheetNames><sheetName val="Source"/></sheetNames></externalBook></externalLink>`,
+  );
+  archive["xl/externalLinks/_rels/externalLink7.xml.rels"] = new TextEncoder().encode(
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath" Target="https://example.com/source.xlsx" TargetMode="External"/>` +
+      `</Relationships>`,
+  );
+  archive["[Content_Types].xml"] = new TextEncoder().encode(
+    new TextDecoder()
+      .decode(archive["[Content_Types].xml"]!)
+      .replace(
+        "</Types>",
+        `<Override PartName="/xl/externalLinks/externalLink7.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml"/></Types>`,
+      ),
+  );
+}
+
 describe("chart userShapes companion part", () => {
   it("emits the part, chart rels entry, and content-type Override", async () => {
     const bytes = await generateWorkbook(WORKBOOK);
@@ -89,5 +122,114 @@ describe("chart userShapes companion part", () => {
     expect(anchor.object.type).toBe("shape");
     if (anchor.object.type !== "shape") throw new Error("expected a shape object");
     expect(anchor.object.shapeProperties.geometry).toEqual({ preset: "rect" });
+  });
+
+  it("rewires chart external data to its typed external link part", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Data",
+            rows: [{ cells: [{ value: "A" }] }],
+            charts: [
+              {
+                type: "column",
+                categories: ["A"],
+                series: [{ name: "S", values: [1] }],
+                col: 4,
+                row: 1,
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/charts/chart1.xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["xl/charts/chart1.xml"]!)
+        .replace(
+          "</c:chartSpace>",
+          '<c:externalData r:id="rId7"><c:autoUpdate val="1"/></c:externalData></c:chartSpace>',
+        ),
+    );
+    archive["xl/charts/_rels/chart1.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId7" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath" Target="../externalLinks/externalLink7.xml"/>` +
+        `</Relationships>`,
+    );
+    archive["xl/externalLinks/externalLink7.xml"] = new TextEncoder().encode(
+      `<externalLink xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<externalBook r:id="rId3"><sheetNames><sheetName val="Source"/></sheetNames></externalBook></externalLink>`,
+    );
+    archive["xl/externalLinks/_rels/externalLink7.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+        `<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/externalLinkPath" Target="https://example.com/source.xlsx" TargetMode="External"/>` +
+        `</Relationships>`,
+    );
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace(
+          "</Types>",
+          `<Override PartName="/xl/externalLinks/externalLink7.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.externalLink+xml"/></Types>`,
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const chart = parsed.worksheets![0]!.charts![0]!;
+    expect(chart.externalData).toMatchObject({ relationshipId: "rId7", autoUpdate: true });
+    expect(chart.externalDataRelationshipTarget).toBe("../externalLinks/externalLink7.xml");
+    expect(chart.externalLinkPath).toBe("xl/externalLinks/externalLink7.xml");
+    expect(chart.externalLink?.externalBook).toMatchObject({
+      sheetNames: ["Source"],
+      target: "https://example.com/source.xlsx",
+    });
+    expect(parsed.rawParts).toBeUndefined();
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    expect(fileText(result, "xl/charts/chart1.xml")).toContain('r:id="rId7"');
+    const chartRels = fileText(result, "xl/charts/_rels/chart1.xml.rels");
+    expect(chartRels).toContain('Id="rId7"');
+    expect(chartRels).toContain('Target="../externalLinks/externalLink7.xml"');
+    expect(fileText(result, "xl/externalLinks/externalLink7.xml")).toContain('r:id="rId3"');
+    expect(fileText(result, "xl/externalLinks/_rels/externalLink7.xml.rels")).toContain(
+      'Target="https://example.com/source.xlsx"',
+    );
+  });
+
+  it("rewires chartsheet chart external data to its typed external link part", async () => {
+    const source = (await generateWorkbook(
+      {
+        chartsheets: [
+          {
+            name: "Chart",
+            chart: { type: "column", series: [{ name: "S", values: [1] }] },
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    injectChartExternalLink(archive);
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    const sheet = parsed.chartsheets![0]!;
+    expect(sheet.chart?.externalData).toMatchObject({ relationshipId: "rId7", autoUpdate: true });
+    expect(sheet.externalLinkPath).toBe("xl/externalLinks/externalLink7.xml");
+    expect(sheet.externalLink?.externalBook).toMatchObject({
+      target: "https://example.com/source.xlsx",
+    });
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const result = unzipSync(output);
+    expect(fileText(result, "xl/charts/_rels/chart1.xml.rels")).toContain(
+      'Target="../externalLinks/externalLink7.xml"',
+    );
+    expect(fileText(result, "xl/externalLinks/_rels/externalLink7.xml.rels")).toContain(
+      'Target="https://example.com/source.xlsx"',
+    );
   });
 });

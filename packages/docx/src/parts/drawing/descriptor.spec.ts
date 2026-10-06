@@ -796,6 +796,23 @@ describe("drawingDesc round-trip", () => {
     expect(result.picture?.floating?.wrap?.margins).toEqual({ distB: 30000, distR: 40000 });
   });
 
+  it("round-trips simplePos marker coordinates", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      floating: {
+        horizontalPosition: { relative: "column", align: "center" },
+        verticalPosition: { relative: "page", offset: 100000 },
+        simplePos: { x: 11111, y: 22222 },
+      },
+    });
+    expect(xml).toContain('<wp:simplePos x="11111" y="22222"/>');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
+    expect(result.picture?.floating?.simplePos).toEqual({ x: 11111, y: 22222 });
+  });
+
   it("omits absent wrapSquare distances on round-trip", () => {
     const xml = stringify({
       mediaData: makeImageMediaData(),

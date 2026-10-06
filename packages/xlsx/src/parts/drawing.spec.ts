@@ -198,6 +198,37 @@ describe("drawingDesc round-trip", () => {
     expect(chart.description).toBe("Q3 sales");
   });
 
+  it("round-trips absolute chart position and cNvPr", () => {
+    const opts: DrawingOptions = {
+      charts: [
+        {
+          col: 1,
+          row: 1,
+          anchorType: "absolute",
+          absoluteX: 123456,
+          absoluteY: 654321,
+          extentCx: 9308969,
+          extentCy: 6096000,
+          shapeId: 7,
+          name: "Chart 7",
+          description: "Full page",
+          rId: "rId7",
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const chart = result.charts![0]!;
+
+    expect(chart.anchorType).toBe("absolute");
+    expect(chart.absoluteX).toBe(123456);
+    expect(chart.absoluteY).toBe(654321);
+    expect(chart.extentCx).toBe(9308969);
+    expect(chart.extentCy).toBe(6096000);
+    expect(chart.shapeId).toBe(7);
+    expect(chart.name).toBe("Chart 7");
+    expect(chart.description).toBe("Full page");
+  });
+
   it("round-trips mixed images and charts", () => {
     const opts: DrawingOptions = {
       images: [{ col: 1, row: 1, rId: "rId1" }],

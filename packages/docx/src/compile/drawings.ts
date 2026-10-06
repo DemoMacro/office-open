@@ -7,7 +7,12 @@
  * @module
  */
 
-import { RELATIONSHIP_TYPES, type XmlifyedFile, toUint8Array } from "@office-open/core";
+import {
+  Relationships,
+  RELATIONSHIP_TYPES,
+  type XmlifyedFile,
+  toUint8Array,
+} from "@office-open/core";
 import {
   getColorXml,
   getLayoutXml,
@@ -16,7 +21,6 @@ import {
   stringifyLayoutDefinitionPart,
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
-import { escapeXml } from "@office-open/xml";
 
 import type { DocxWriteContext } from "../context";
 import { PACKAGE_RELATIONSHIP, XML_DECL } from "./shared";
@@ -48,24 +52,28 @@ export function compileChartParts(ctx: DocxWriteContext): {
       // Embedded workbook behind c:externalData rides in the same rels
       // part. Relationship ids are carried verbatim so the re-emitted
       // r:ids resolve without rewriting.
-      const e = chartData.embedding;
-      const rels = [
-        ...(e
-          ? [
-              `<Relationship Id="${escapeXml(e.relationshipId)}" Type="${PACKAGE_RELATIONSHIP}" Target="../embeddings/${escapeXml(e.fileName)}"/>`,
-            ]
-          : []),
-        ...(chartData.userShapes
-          ? [
-              `<Relationship Id="${escapeXml(chartData.userShapes.relationshipId)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/>`,
-            ]
-          : []),
-      ];
-      if (rels.length > 0) {
+      const chartPath = `word/charts/chart${i + 1}.xml`;
+      const relationships = new Relationships(chartPath);
+      if (chartData.embedding) {
+        relationships.addRelationship(
+          chartData.embedding.relationshipId,
+          PACKAGE_RELATIONSHIP,
+          `../embeddings/${chartData.embedding.fileName}`,
+        );
+      }
+      if (chartData.userShapes) {
+        relationships.addRelationship(
+          chartData.userShapes.relationshipId,
+          CHART_USER_SHAPES_REL,
+          `userShapes${i + 1}.xml`,
+        );
+      }
+      for (const rel of ctx._options.passthroughRelationships ?? []) {
+        if (rel.source === chartPath) relationships.claimSourceRel(rel);
+      }
+      if (relationships.relationshipCount > 0) {
         parts.push({
-          data:
-            XML_DECL +
-            `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${rels.join("")}</Relationships>`,
+          data: XML_DECL + relationships.serialize(),
           path: `word/charts/_rels/chart${i + 1}.xml.rels`,
         });
       }

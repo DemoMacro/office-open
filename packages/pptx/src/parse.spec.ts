@@ -414,6 +414,59 @@ describe("raw fidelity fallbacks", () => {
     );
   });
 
+  it("preserves an embedded OLE file, relationship id, and target", async () => {
+    const source = await generatePresentation({
+      slides: [
+        {
+          children: [
+            {
+              ole: {
+                progId: "Test.Object",
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                embed: { data: new Uint8Array([1, 2, 3, 4]) },
+                iconImage: {
+                  type: "png",
+                  data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
+    const archive = unzipSync(source);
+    archive["ppt/embeddings/source-object.bin"] = archive["ppt/embeddings/oleObject1.bin"]!;
+    delete archive["ppt/embeddings/oleObject1.bin"];
+    const rels = new TextDecoder().decode(archive["ppt/slides/_rels/slide1.xml.rels"]!);
+    const sourceOleId = /Id="(rId\d+)"[^>]*relationships\/oleObject"/.exec(rels)?.[1];
+    expect(sourceOleId).toBeDefined();
+    archive["ppt/slides/_rels/slide1.xml.rels"] = new TextEncoder().encode(
+      rels
+        .replace(`Id="${sourceOleId}"`, 'Id="rId9"')
+        .replace("../embeddings/oleObject1.bin", "../embeddings/source-object.bin"),
+    );
+    archive["ppt/slides/slide1.xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["ppt/slides/slide1.xml"]!)
+        .replace(`r:id="${sourceOleId}"`, 'r:id="rId9"'),
+    );
+
+    const parsed = parsePresentationSync(zipSync(archive));
+    const regenerated = await generatePresentation(parsed);
+    const output = unzipSync(regenerated);
+    expect(output["ppt/embeddings/source-object.bin"]).toEqual(new Uint8Array([1, 2, 3, 4]));
+    expect(output["ppt/embeddings/oleObject1.bin"]).toBeUndefined();
+    expect(decodeEntry(regenerated, "ppt/slides/slide1.xml")).toContain('r:id="rId9"');
+    const outputRels = decodeEntry(regenerated, "ppt/slides/_rels/slide1.xml.rels");
+    expect(outputRels).toMatch(
+      /Id="rId9"[^>]*relationships\/oleObject"[^>]*Target="..\/embeddings\/source-object.bin"/,
+    );
+    expect(outputRels.match(/relationships\/oleObject"/g)).toHaveLength(1);
+  });
+
   it("does not synthesize a rels part omitted by the source layout", async () => {
     const source = await generatePresentation(minimalOptions);
     const mutatedArchive = unzipSync(source);
@@ -426,6 +479,42 @@ describe("raw fidelity fallbacks", () => {
     expect(archive["ppt/slideLayouts/_rels/slideLayout1.xml.rels"]).toBeUndefined();
     expect(decodeEntry(regenerated, "ppt/slideMasters/_rels/slideMaster1.xml.rels")).toContain(
       "slideLayout1.xml",
+    );
+  });
+
+  it("preserves layout drawing identity and shape 3D", async () => {
+    const buffer = await generatePresentation(minimalOptions);
+    const mutatedArchive = unzipSync(buffer);
+    mutatedArchive["ppt/slideLayouts/slideLayout1.xml"] = new TextEncoder().encode(
+      decodeEntry(buffer, "ppt/slideLayouts/slideLayout1.xml")
+        .replace('<p:cNvPr id="1" name=""/>', '<p:cNvPr id="9" name="Source Root"/>')
+        .replace(
+          '<p:cNvPr id="2" name="Date Placeholder 1"/>',
+          '<p:cNvPr id="7" name="Source Date"/>',
+        )
+        .replace("<p:spPr/>", '<p:spPr><a:sp3d extrusionH="25400"/></p:spPr>'),
+    );
+    const parsed = parsePresentationSync(zipSync(mutatedArchive));
+    const regenerated = await generatePresentation(parsed);
+    const layoutXml = decodeEntry(regenerated, "ppt/slideLayouts/slideLayout1.xml");
+    expect(layoutXml).toContain('<p:cNvPr id="9" name="Source Root"/>');
+    expect(layoutXml).toContain('<p:cNvPr id="7" name="Source Date"/>');
+    expect(layoutXml).toContain('<a:sp3d extrusionH="25400"/>');
+  });
+
+  it("preserves standard master placeholder sizing", async () => {
+    const buffer = await generatePresentation(minimalOptions);
+    const mutatedArchive = unzipSync(buffer);
+    mutatedArchive["ppt/slideMasters/slideMaster1.xml"] = new TextEncoder().encode(
+      decodeEntry(buffer, "ppt/slideMasters/slideMaster1.xml").replace(
+        '<p:ph type="dt" sz="half" idx="2"/>',
+        '<p:ph type="dt" sz="quarter" idx="2"/>',
+      ),
+    );
+    const parsed = parsePresentationSync(zipSync(mutatedArchive));
+    const regenerated = await generatePresentation(parsed);
+    expect(decodeEntry(regenerated, "ppt/slideMasters/slideMaster1.xml")).toContain(
+      '<p:ph type="dt" sz="quarter" idx="2"/>',
     );
   });
 

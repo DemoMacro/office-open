@@ -35,8 +35,7 @@ describe("paragraph-properties field consistency", () => {
     expect(opts.textDirection).toBe("lr");
     expect(opts.textboxTightWrap).toBe("none");
     expect(opts.divId).toBe(1);
-    // w:val="000000010000" — 12-char ST_Cnf, digit index 7 set → evenHBand.
-    expect(opts.cnfStyle).toEqual({ evenHBand: true });
+    expect(opts.cnfStyle).toEqual({ val: "000000010000" });
   });
 
   it("round-trips w15:collapsed on and off states", () => {
@@ -56,7 +55,20 @@ describe("paragraph-properties field consistency", () => {
         `w:firstRowFirstColumn="0" w:firstRowLastColumn="0" ` +
         `w:lastRowFirstColumn="0" w:lastRowLastColumn="0"/>`,
     ) as ParagraphPropertiesOptions;
-    expect(allZero.cnfStyle).toEqual({});
+    expect(allZero.cnfStyle).toEqual({
+      firstRow: false,
+      lastRow: false,
+      firstColumn: false,
+      lastColumn: false,
+      oddVBand: false,
+      evenVBand: false,
+      oddHBand: false,
+      evenHBand: false,
+      firstRowFirstColumn: false,
+      firstRowLastColumn: false,
+      lastRowFirstColumn: false,
+      lastRowLastColumn: false,
+    });
     const allZeroXml = stringifyParagraphProperties(allZero).xml;
     expect(allZeroXml).toContain("<w:cnfStyle");
     expect(allZeroXml).toContain('w:firstRow="0"');
@@ -69,8 +81,18 @@ describe("paragraph-properties field consistency", () => {
 
   it("preserves an all-zero transitional cnfStyle value", () => {
     const opts = parsePPr('<w:cnfStyle w:val="000000000000"/>') as ParagraphPropertiesOptions;
-    expect(opts.cnfStyle).toEqual({});
+    expect(opts.cnfStyle).toEqual({ val: "000000000000" });
     expect(stringifyParagraphProperties(opts).xml).toContain("<w:cnfStyle");
+  });
+
+  it("preserves sparse cnfStyle attributes without inventing absent flags", () => {
+    const opts = parsePPr(
+      '<w:cnfStyle w:firstRow="0" w:evenHBand="1" w:lastRowLastColumn="0"/>',
+    ) as ParagraphPropertiesOptions;
+    expect(opts.cnfStyle).toEqual({ firstRow: false, evenHBand: true, lastRowLastColumn: false });
+    expect(stringifyParagraphProperties(opts).xml).toBe(
+      '<w:pPr><w:cnfStyle w:firstRow="0" w:evenHBand="1" w:lastRowLastColumn="0"/></w:pPr>',
+    );
   });
 
   it("round-trips revision (w:pPrChange)", () => {

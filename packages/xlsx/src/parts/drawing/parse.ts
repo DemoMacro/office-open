@@ -337,7 +337,9 @@ export function parseWebExtensionAnchor(
     findChild(graphicFrame, "a:graphic") ?? graphicFrame,
     "a:graphicData",
   );
-  const reference = graphicData?.elements?.find((child) => child.name === "we:webextensionref");
+  const reference = graphicData?.elements?.find(
+    (child) => child.name === "we:webextensionref" || child.name === "we:webextension",
+  );
   const rId = reference?.attributes?.["r:id"] as string | undefined;
   if (!rId) return undefined;
 

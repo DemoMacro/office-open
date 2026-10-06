@@ -709,7 +709,10 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       const glossaryResult = ctx.withPart(docx.partRefs.glossary, () =>
         glossaryDesc.parse(glossaryEl, ctx),
       );
-      if (glossaryResult.parts && glossaryResult.parts.length > 0) opts.glossary = glossaryResult;
+      opts.glossary = glossaryResult;
+      if (opts.glossary && docx.partRefs.glossary.startsWith("word/")) {
+        opts.glossary.partName = docx.partRefs.glossary.slice("word/".length);
+      }
     }
   }
 
@@ -807,6 +810,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     return ids;
   };
   for (const partPath of [
+    "word/settings.xml",
     "word/footnotes.xml",
     "word/endnotes.xml",
     ...(opts.sections ?? [])
@@ -825,7 +829,10 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       const rId = attr(rel, "Id");
       const type = attr(rel, "Type");
       const target = attr(rel, "Target");
-      if (!rId || !type || !target || referenced.has(rId)) continue;
+      const preservesReferencedExternal =
+        partPath === "word/settings.xml" && attr(rel, "TargetMode") === "External";
+      if (!rId || !type || !target || (!preservesReferencedExternal && referenced.has(rId)))
+        continue;
       if (attr(rel, "TargetMode") !== "External") continue;
       if (passthroughRels.some((existing) => existing.source === partPath && existing.rId === rId))
         continue;

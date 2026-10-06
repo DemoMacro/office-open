@@ -529,7 +529,12 @@ export class Styles {
                   : s.color
                     ? `rgb="FF${s.color}"`
                     : "";
-              const tint = s.tint !== undefined ? ` tint="${decimalAttr(s.tint)}"` : "";
+              const tint =
+                s.tintRaw !== undefined
+                  ? ` tint="${s.tintRaw}"`
+                  : s.tint !== undefined
+                    ? ` tint="${decimalAttr(s.tint)}"`
+                    : "";
               return `<stop position="${s.position}"><color ${channel}${tint}/></stop>`;
             })
             .join("");
@@ -546,7 +551,12 @@ export class Styles {
                   : f.fgAutoColor
                     ? 'auto="1"'
                     : "";
-          const fgTint = f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : "";
+          const fgTint =
+            f.tintRaw !== undefined
+              ? ` tint="${f.tintRaw}"`
+              : f.tint !== undefined
+                ? ` tint="${decimalAttr(f.tint)}"`
+                : "";
           const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
             f.bgThemeColor !== undefined
@@ -558,7 +568,12 @@ export class Styles {
                   : f.bgAutoColor
                     ? 'auto="1"'
                     : "";
-          const bgTint = f.bgTint !== undefined ? ` tint="${decimalAttr(f.bgTint)}"` : "";
+          const bgTint =
+            f.bgTintRaw !== undefined
+              ? ` tint="${f.bgTintRaw}"`
+              : f.bgTint !== undefined
+                ? ` tint="${decimalAttr(f.bgTint)}"`
+                : "";
           const bgColor = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           const colorContent = fgColor + bgColor;
           p.push(
@@ -632,6 +647,7 @@ export class Styles {
         const applyNumberFormat =
           xf.applyNumberFormat ?? (derive && xf.numFmtId > 0 ? true : undefined);
         const applyAlignment = xf.applyAlignment ?? (derive && xf.alignment ? true : undefined);
+        const applyProtection = xf.applyProtection ?? (derive && xf.protection ? true : undefined);
         if (applyFont !== undefined) xAttrs.applyFont = applyFont ? 1 : 0;
         if (applyFill !== undefined) xAttrs.applyFill = applyFill ? 1 : 0;
         if (applyBorder !== undefined) xAttrs.applyBorder = applyBorder ? 1 : 0;
@@ -639,8 +655,7 @@ export class Styles {
         if (applyAlignment !== undefined) xAttrs.applyAlignment = applyAlignment ? 1 : 0;
         if (xf.quotePrefix) xAttrs.quotePrefix = 1;
         if (xf.pivotButton) xAttrs.pivotButton = 1;
-        if (xf.applyProtection !== undefined) xAttrs.applyProtection = xf.applyProtection ? 1 : 0;
-        if (xf.protection) xAttrs.applyProtection = xAttrs.applyProtection ?? 1;
+        if (applyProtection !== undefined) xAttrs.applyProtection = applyProtection ? 1 : 0;
 
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
         const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
@@ -721,7 +736,12 @@ export class Styles {
                   : f.fgAutoColor
                     ? 'auto="1"'
                     : "";
-          const fgTint = f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : "";
+          const fgTint =
+            f.tintRaw !== undefined
+              ? ` tint="${f.tintRaw}"`
+              : f.tint !== undefined
+                ? ` tint="${decimalAttr(f.tint)}"`
+                : "";
           const fgContent = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
           const bgChannel =
             f.bgThemeColor !== undefined
@@ -735,7 +755,12 @@ export class Styles {
                     : f.color && !hasBg
                       ? `rgb="FF${f.color}"`
                       : "";
-          const bgTint = f.bgTint !== undefined ? ` tint="${decimalAttr(f.bgTint)}"` : "";
+          const bgTint =
+            f.bgTintRaw !== undefined
+              ? ` tint="${f.bgTintRaw}"`
+              : f.bgTint !== undefined
+                ? ` tint="${decimalAttr(f.bgTint)}"`
+                : "";
           const bgContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
           const fillContent = fgContent + bgContent;
           dParts.push(
@@ -889,7 +914,13 @@ export class Styles {
     if (f.autoColor) parts.push('<color auto="1"/>');
     else if (f.themeColor !== undefined)
       parts.push(
-        `<color theme="${f.themeColor}"${f.tint !== undefined ? ` tint="${decimalAttr(f.tint)}"` : ""}/>`,
+        `<color theme="${f.themeColor}"${
+          f.tintRaw !== undefined
+            ? ` tint="${f.tintRaw}"`
+            : f.tint !== undefined
+              ? ` tint="${decimalAttr(f.tint)}"`
+              : ""
+        }/>`,
       );
     else if (f.colorIndexed !== undefined) parts.push(`<color indexed="${f.colorIndexed}"/>`);
     else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
@@ -909,7 +940,13 @@ export class Styles {
     const sideColorXmlStr = (side: BorderOptions): string => {
       if (side.autoColor) return '<color auto="1"/>';
       if (side.themeColor !== undefined)
-        return `<color theme="${side.themeColor}"${side.tint !== undefined ? ` tint="${decimalAttr(side.tint)}"` : ""}/>`;
+        return `<color theme="${side.themeColor}"${
+          side.tintRaw !== undefined
+            ? ` tint="${side.tintRaw}"`
+            : side.tint !== undefined
+              ? ` tint="${decimalAttr(side.tint)}"`
+              : ""
+        }/>`;
       if (side.colorIndexed !== undefined) return `<color indexed="${side.colorIndexed}"/>`;
       if (side.color) return `<color rgb="FF${side.color}"/>`;
       return "";

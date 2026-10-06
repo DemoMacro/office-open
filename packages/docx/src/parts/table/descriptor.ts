@@ -251,6 +251,7 @@ function stringifyTableRow(
   if (row.additionRsid) attr += ` w:rsidR="${row.additionRsid}"`;
   if (row.deletionRsid) attr += ` w:rsidDel="${row.deletionRsid}"`;
   if (row.tableRowRsid) attr += ` w:rsidTr="${row.tableRowRsid}"`;
+  if (row.editId) attr += ` w14:editId="${row.editId}"`;
 
   const body = parts.join("");
   return body ? `<w:tr${attr}>${body}</w:tr>` : attr ? `<w:tr${attr}/>` : "<w:tr/>";
@@ -1101,6 +1102,8 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
   if (paraId) opts.paraId = paraId;
   const textId = attr(el, "w14:textId");
   if (textId) opts.textId = textId;
+  const editId = attr(el, "w14:editId");
+  if (editId) opts.editId = editId;
 
   const trPr = findChild(el, "w:trPr");
   if (trPr) {

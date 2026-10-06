@@ -72,6 +72,33 @@ function maxCommentId(comments: readonly CommentOptions[] | undefined): number {
 const PRINTER_SETTINGS_RELATIONSHIP_TYPE =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/printerSettings";
 
+/** Resolves the theme part name from the source document relationship. */
+export function themePartName(options: DocumentOptions): string {
+  const themeRel = (options.passthroughRelationships ?? []).find(
+    (rel) =>
+      rel.source === "word/document.xml" && rel.relationshipType.endsWith("/theme") && rel.target,
+  );
+  if (!themeRel || themeRel.target.startsWith("#")) return "word/theme/theme1.xml";
+
+  const segments = themeRel.target.split("/");
+  if (themeRel.target.startsWith("/")) {
+    const resolved = segments.slice(1);
+    return resolved.length > 0 && resolved[0] === "word"
+      ? resolved.join("/")
+      : "word/theme/theme1.xml";
+  }
+  const resolved = ["word"];
+  for (const segment of segments) {
+    if (segment === "" || segment === ".") continue;
+    if (segment === "..") {
+      resolved.pop();
+      continue;
+    }
+    resolved.push(segment);
+  }
+  return resolved.length > 1 ? resolved.join("/") : "word/theme/theme1.xml";
+}
+
 /** Narrows an object to a `{ id: number }` marker without an `as` cast. */
 function isNumericIdMarker(value: unknown): value is { id: number } {
   return (
@@ -454,7 +481,10 @@ export class DocxWriteContext implements WriteContext {
     this.webSettings = options.webSettings ?? undefined;
 
     if (options.glossary) {
-      this.registerDocumentRel(RELATIONSHIP_TYPES.glossaryDocument, "glossary/document.xml");
+      this.registerDocumentRel(
+        RELATIONSHIP_TYPES.glossaryDocument,
+        options.glossary.partName ?? "glossary/document.xml",
+      );
     }
 
     if (this.webSettings) {

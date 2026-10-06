@@ -193,6 +193,23 @@ describe("slide-master placeholder facets round-trip", () => {
     expect(title.locking).toEqual({ noGrp: true, noChangeArrowheads: true });
   });
 
+  it("round-trips placeholder customer data tags", () => {
+    const result = roundTrip({
+      placeholders: {
+        title: {
+          x: 100,
+          y: 100,
+          width: 200,
+          height: 200,
+          customerData: [{ rId: "rId4", kind: "tags" }],
+        },
+      },
+    });
+    const title = result.placeholders?.title as { customerData?: unknown };
+    expect(title.customerData).toEqual([{ rId: "rId4", kind: "tags" }]);
+    expect(freshXml(result as SlideMasterDescriptorOptions)).toContain('<p:tags r:id="rId4"/>');
+  });
+
   it("round-trips a non-rect geometry facet", () => {
     const result = roundTrip({
       placeholders: {

@@ -37,7 +37,7 @@ import {
   type RunOptions,
 } from "@parts/paragraph/run/run";
 import type { SymbolRunOptions } from "@parts/paragraph/run/symbol-run";
-import { stringifyPict, type PictOptions } from "@parts/pict";
+import { pictRunAttrs, stringifyPict, type PictOptions } from "@parts/pict";
 import { autoRevisionId } from "@shared/track-revision/track-revision";
 
 import type { BodyContext } from "../context";
@@ -76,7 +76,7 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   const instrXml =
     cf.instrRunsXml ??
     (cf.instruction !== ""
-      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>`
+      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
   // result; a result-less field round-trips as begin/instrText/end. Result
@@ -87,7 +87,7 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
         cf.resultRunsXml
       : cf.result !== undefined
         ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
-          `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
+          `<w:r>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
         : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid]);
@@ -117,8 +117,14 @@ function runAttrs(ids: readonly [string | undefined, string | undefined]): strin
 }
 
 function runIdentityAttrs(child: ParagraphChild): string {
-  const attrs = child as { additionRsid?: string; runPropertiesRsid?: string };
-  return runAttrs([attrs.additionRsid, attrs.runPropertiesRsid]);
+  const attrs = child as {
+    additionRsid?: string;
+    runPropertiesRsid?: string;
+    deletionRsid?: string;
+  };
+  let identity = runAttrs([attrs.additionRsid, attrs.runPropertiesRsid]);
+  if (attrs.deletionRsid) identity += ` w:rsidDel="${attrs.deletionRsid}"`;
+  return identity;
 }
 
 /** Serialize a deleted run: rPr + delText (or field delInstrText). */
@@ -135,10 +141,14 @@ function stringifyDeletedRun(c: RunOptions | string): string {
   if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
   if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
   const openTag = attr ? `<w:r${attr}>` : "<w:r>";
+  const hasSpaceSegment =
+    opts.children?.some(
+      (child) => typeof child === "object" && child !== null && "preserveSpace" in child,
+    ) === true;
   if (opts.children) {
     for (const cc of opts.children) {
       if (typeof cc === "string") {
-        parts.push(textElementXml("w:delText", cc));
+        parts.push(textElementXml("w:delText", cc, opts.preserveSpace && !hasSpaceSegment));
       } else if (typeof cc === "object" && cc !== null && "commentReference" in cc) {
         parts.push(`<w:commentReference w:id="${Number(cc.commentReference)}"/>`);
       } else if (typeof cc === "object" && cc !== null && "break" in cc) {
@@ -204,6 +214,10 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   if (rPr) body += rPr;
 
   if (opts.break) body += breakXml(opts.break);
+  const hasSpaceSegment =
+    opts.children?.some(
+      (child) => typeof child === "object" && child !== null && "preserveSpace" in child,
+    ) === true;
 
   // Top-level references — a pure reference run flattened by the parse path
   // (e.g. inside w:hyperlink) carries the reference alongside its rPr with no
@@ -225,13 +239,18 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
-        body += textElementXml("w:t", child);
+        body += textElementXml("w:t", child, opts.preserveSpace && !hasSpaceSegment);
       } else if (typeof child === "object" && child !== null) {
         // Bare run-inner elements — emit directly inside this <w:r>. Must run
         // before stringifyChildDispatch, which wraps paragraph-level children
         // in their own <w:r> (correct for paragraphs, nested/invalid in a run).
         if ("tab" in child) {
           body += "<w:tab/>";
+          continue;
+        }
+        const textSegment = child as { text?: string; preserveSpace?: boolean };
+        if (typeof textSegment.text === "string" && "preserveSpace" in textSegment) {
+          body += textElementXml("w:t", textSegment.text, textSegment.preserveSpace);
           continue;
         }
         if ("pageBreak" in child) {
@@ -590,13 +609,13 @@ export function stringifyChildDispatch(
   // Simple break types — pure XML, no side effects. A break run may carry run
   // properties (round-tripped from <w:r><w:rPr>…</w:rPr><w:br…/></w:r>).
   if ("pageBreak" in child) {
-    return `<w:r>${runPropertiesXml(child)}<w:br w:type="page"/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${runPropertiesXml(child)}<w:br w:type="page"/></w:r>`;
   }
   if ("columnBreak" in child) {
-    return `<w:r>${runPropertiesXml(child)}<w:br w:type="column"/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${runPropertiesXml(child)}<w:br w:type="column"/></w:r>`;
   }
   if ("tab" in child) {
-    return `<w:r>${runPropertiesXml(child)}<w:tab/></w:r>`;
+    return `<w:r${runIdentityAttrs(child)}>${runPropertiesXml(child)}<w:tab/></w:r>`;
   }
   // Sub-document insertion (w:subDoc, EG_PContent member like hyperlink — no
   // run wrapper, the element sits directly in the paragraph)
@@ -666,7 +685,7 @@ export function stringifyChildDispatch(
   if ("symbolRun" in child) {
     const opts = child.symbolRun;
     const rPr = stringifyRunProperties(opts) ?? "";
-    return `<w:r>${rPr}${stringifySymbolRunInner(opts)}</w:r>`;
+    return `<w:r${runIdentityAttrs(opts)}>${rPr}${stringifySymbolRunInner(opts)}</w:r>`;
   }
 
   // OLE object run — the parse path flattens a pure w:object run to a bare
@@ -674,14 +693,17 @@ export function stringifyChildDispatch(
   // own <w:r> here rather than falling through to the run-children path.
   if ("object" in child) {
     const rPr = stringifyRunProperties(child as RunOptions) ?? "";
-    return `<w:r>${rPr}${objectDesc.stringify(child.object, ctx)}</w:r>`;
+    return `<w:r${runIdentityAttrs(child as RunOptions)}>${rPr}${objectDesc.stringify(
+      child.object,
+      ctx,
+    )}</w:r>`;
   }
 
   // VML picture run — same flattening: a bare { pict } child carries its run
   // properties merged in, and w:pict is emitted inside its own <w:r>.
   if ("pict" in child) {
     const rPr = stringifyRunProperties(child as RunOptions) ?? "";
-    return `<w:r>${rPr}${stringifyPict(child.pict, ctx)}</w:r>`;
+    return `<w:r${pictRunAttrs(child.pict)}>${rPr}${stringifyPict(child.pict, ctx)}</w:r>`;
   }
 
   // Form field (checkbox / dropdown list / text input) — fldChar sequence.
@@ -952,8 +974,13 @@ export function stringifyChildDispatch(
     if (sf.cachedRuns !== undefined) {
       return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
     }
+    if (sf.cachedInstructionText !== undefined) {
+      const space = sf.cachedInstructionTextPreserveSpace ? ' xml:space="preserve"' : "";
+      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:instrText${space}>${escapeXml(sf.cachedInstructionText)}</w:instrText></w:r></w:fldSimple>`;
+    }
     if (sf.cachedValue !== undefined) {
-      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
+      const space = sf.cachedValuePreserveSpace ? ' xml:space="preserve"' : "";
+      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t${space}>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
     }
     return `<w:fldSimple ${sfAttrs.join(" ")}/>`;
   }

@@ -56,10 +56,15 @@ export interface TextHyperlinkOptions {
   /** Internal placeholder key ("{hlink:N}" → "N"); preserved across parse → stringify. */
   referenceId?: string;
   tooltip?: string;
+  /** Browser target frame (a:hlinkClick `@tgtFrame`, e.g. "_blank"). */
+  targetFrame?: string;
   action?: string;
   highlightClick?: boolean;
   endSound?: boolean;
-  invalidUrl?: boolean;
+  /** Literal invalid URL text (a:hlinkClick `@invalidUrl`). */
+  invalidUrl?: string;
+  /** Add the target to browser history (a:hlinkClick `@history`, default true). */
+  history?: boolean;
 }
 
 // ── Text fonts (CT_TextFont: a:latin / a:ea / a:cs / a:sym) ──

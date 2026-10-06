@@ -354,6 +354,7 @@ export function compileWorkbook(
     calcCells: [],
     allTableParts: [],
     chartPaths: new Map(),
+    nextDrawingIndex: 1,
   };
   compileDefinitionPivotCaches(options, ctx, mapping, state);
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
@@ -369,7 +370,7 @@ export function compileWorkbook(
     );
   }
 
-  compileChartsheets(chartsheetConfigs, ctx, mapping, options.passthroughRelationships);
+  compileChartsheets(chartsheetConfigs, ctx, mapping, state, options.passthroughRelationships);
   compileDialogsheets(dialogsheetConfigs, ctx, mapping);
   // Workbook XML (via descriptor)
   let wbXml =
@@ -539,6 +540,15 @@ export function compileWorkbook(
   for (const [i, chartData] of ctx.charts.array.entries()) {
     const chartPath = state.chartPaths.get(chartData.key) ?? `xl/charts/chart${i + 1}.xml`;
     const chartRels = new Relationships();
+    const chartOptions = ctx.chartOptions.get(chartData.key);
+    const externalData = chartOptions?.externalData;
+    if (externalData && chartOptions?.externalDataRelationshipType) {
+      chartRels.addRelationship(
+        externalData.relationshipId,
+        chartOptions.externalDataRelationshipType as RelationshipType,
+        chartOptions.externalDataRelationshipTarget ?? "../externalLinks/externalLink1.xml",
+      );
+    }
     const chartXml = bindMediaPlaceholders(chartData.chartSpaceXml, ctx.media, chartRels);
     mapping[`Chart${i}`] = {
       data: XML_DECL + chartXml,
@@ -553,6 +563,49 @@ export function compileWorkbook(
         path: `xl/charts/userShapes${i + 1}.xml`,
       };
       chartRels.addRelationship(rid, CHART_USER_SHAPES_REL, `userShapes${i + 1}.xml`);
+    }
+    if (chartOptions?.externalLink && chartOptions.externalLinkPath) {
+      const externalLinkPath = chartOptions.externalLinkPath;
+      mapping[`ChartExternalLink${i}`] = {
+        data: XML_DECL + (externalLinkDesc.stringify(chartOptions.externalLink, ctx) ?? ""),
+        path: externalLinkPath,
+      };
+      if (chartOptions.externalLink.externalBook?.target) {
+        const externalLinkRels = new Relationships(externalLinkPath);
+        const preferredRid = /^rId(\d+)$/.exec(chartOptions.externalLink.bookRId ?? "")?.[1];
+        externalLinkRels.addRelationship(
+          preferredRid ? Number(preferredRid) : externalLinkRels.nextRelationshipId,
+          RELATIONSHIP_TYPES.externalLinkPath,
+          chartOptions.externalLink.externalBook.target,
+          TargetModeType.EXTERNAL,
+        );
+        mapping[`ChartExternalLinkRels${i}`] = {
+          data: XML_DECL + externalLinkRels.serialize(),
+          path: partPathToRelsPath(externalLinkPath),
+        };
+      }
+    }
+    // Chart media/userShapes/externalData are modeled; lesser-known companion
+    // parts still travel with the chart's source relationship topology.
+    for (const sourceRel of options.passthroughRelationships ?? []) {
+      if (sourceRel.source !== chartPath) continue;
+      if (chartRels.hasRelationship(sourceRel.relationshipType, sourceRel.target)) continue;
+      const preferred = /^rId\d+$/.exec(sourceRel.rId)?.[0];
+      if (preferred && !chartRels.hasId(preferred)) {
+        chartRels.addRelationship(
+          preferred,
+          sourceRel.relationshipType as RelationshipType,
+          sourceRel.target,
+          sourceRel.targetMode,
+        );
+        continue;
+      }
+      chartRels.addRelationship(
+        chartRels.nextRelationshipId,
+        sourceRel.relationshipType as RelationshipType,
+        sourceRel.target,
+        sourceRel.targetMode,
+      );
     }
     if (chartRels.relationshipCount > 0) {
       chartData.relsXml = chartRels.serialize();
@@ -625,6 +678,16 @@ export function compileWorkbook(
         source: options.contentTypes,
         rawParts: options.rawParts,
         forcedOverrides: [
+          ...(options.contentTypes?.overrides ?? [])
+            .filter(
+              (override) =>
+                override.contentType ===
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionLog+xml",
+            )
+            .map((override) => ({
+              path: override.partName.replace(/^\//, ""),
+              contentType: override.contentType,
+            })),
           {
             path: "xl/workbook.xml",
             contentType: ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType,
@@ -655,6 +718,7 @@ export interface WorksheetCompileState {
   calcCells: CalcCell[];
   allTableParts: TablePartReference[];
   chartPaths: Map<string, string>;
+  nextDrawingIndex: number;
 }
 
 /**
@@ -1144,6 +1208,7 @@ function compileChartsheets(
   chartsheetConfigs: ChartsheetOptions[],
   ctx: XlsxWriteContext,
   mapping: Record<string, { data: string; path: string }>,
+  state: WorksheetCompileState,
   passthroughRelationships?: readonly PassthroughRelationship[],
 ): void {
   // Chartsheets — chart-only sheets
@@ -1155,6 +1220,24 @@ function compileChartsheets(
     if (!chartDef) continue;
     const csChartGlobalIdx = ctx.charts.array.length;
     const csChartKey = `cs_chart_${csChartGlobalIdx}`;
+    const sourceDrawingRel = (passthroughRelationships ?? []).find(
+      (rel) =>
+        rel.source === `xl/chartsheets/sheet${i + 1}.xml` &&
+        rel.relationshipType === RELATIONSHIP_TYPES.drawing,
+    );
+    const drawingPath = csOpts.sourceDrawingPath ?? `xl/drawings/drawing${i + 1}.xml`;
+    const drawingIndex = Number(
+      drawingPath.match(/drawing(\d+)\.xml$/)?.[1] ?? state.nextDrawingIndex++,
+    );
+    const chartPath = csOpts.sourceChartPath ?? `xl/charts/chart${csChartGlobalIdx + 1}.xml`;
+    state.chartPaths.set(csChartKey, chartPath);
+    ctx.chartOptions.set(csChartKey, {
+      externalData: chartDef.externalData,
+      externalLink: csOpts.externalLink,
+      externalLinkPath: csOpts.externalLinkPath,
+      externalDataRelationshipType: csOpts.externalDataRelationshipType,
+      externalDataRelationshipTarget: csOpts.externalDataRelationshipTarget,
+    });
     const csChartRels = new Relationships();
     const csChartXml = bindMediaPlaceholders(
       preserveChartDecimalAttributes(chartSpaceDesc.stringify(chartDef, ctx) ?? ""),
@@ -1171,24 +1254,36 @@ function compileChartsheets(
 
     // Chartsheet relationships: drawing (required)
     const csRels = new Relationships();
-    const csDrawingIdx = i + 1;
-    csRels.addRelationship(1, RELATIONSHIP_TYPES.drawing, `../drawings/drawing${csDrawingIdx}.xml`);
+    const csDrawingIdx = drawingIndex;
+    const drawingTarget = sourceDrawingRel?.target ?? `../drawings/drawing${csDrawingIdx}.xml`;
+    csRels.addRelationship(
+      csOpts.sourceDrawingRelationshipId ?? 1,
+      RELATIONSHIP_TYPES.drawing,
+      drawingTarget,
+    );
+    const drawingRId = csRels.idOf(RELATIONSHIP_TYPES.drawing, drawingTarget) ?? "rId1";
 
     // Round-trip: re-emit chartsheet relationships the model did not absorb
     // (printerSettings above all) — same contract as worksheet rels.
-    let csNextRid = 2;
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `xl/chartsheets/sheet${i + 1}.xml`) continue;
       if (csRels.hasRelationship(rel.relationshipType, rel.target)) continue;
-      csRels.addRelationship(csNextRid++, rel.relationshipType as RelationshipType, rel.target);
+      csRels.addRelationship(
+        csRels.nextRelationshipId,
+        rel.relationshipType as RelationshipType,
+        rel.target,
+      );
     }
 
     // Drawing rels: chart reference
     const csDrawingRels = new Relationships();
+    const sourceChartRel = (passthroughRelationships ?? []).find(
+      (rel) => rel.source === drawingPath && rel.relationshipType === RELATIONSHIP_TYPES.chart,
+    );
     csDrawingRels.addRelationship(
       1,
       RELATIONSHIP_TYPES.chart,
-      `../charts/chart${csChartGlobalIdx + 1}.xml`,
+      sourceChartRel?.target ?? `../charts/chart${csChartGlobalIdx + 1}.xml`,
     );
 
     // Drawing XML with chart anchor — reuses the parts/drawing anchor and
@@ -1199,7 +1294,7 @@ function compileChartsheets(
     // chartsheet form: it sizes from the anchor ext and zeroes xfrm on save.
     const frame = graphicFrameXml(
       csOpts.shapeId ?? 1,
-      undefined,
+      { ...csOpts, name: csOpts.chartName },
       `Chart ${i + 1}`,
       "rId1",
       0,
@@ -1256,8 +1351,7 @@ function compileChartsheets(
     }
     mapping[`Chartsheet${i}`] = {
       data:
-        XML_DECL +
-        chartsheetDesc.stringify({ ...csOpts, drawingRId: "rId1", pageSetup: csPageSetup }, ctx),
+        XML_DECL + chartsheetDesc.stringify({ ...csOpts, drawingRId, pageSetup: csPageSetup }, ctx),
       path: `xl/chartsheets/sheet${i + 1}.xml`,
     };
   }

@@ -344,7 +344,11 @@ function parsePptxArchive(doc: ParsedArchive): PptxDocument {
 /**
  * Parse a single slide's relationship file into a Map<rId, path>.
  */
-function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, string> {
+function parseSlideRelMap(
+  doc: ParsedArchive,
+  slidePath: string,
+  externalRelIds?: Set<string>,
+): Map<string, string> {
   const rels = new Map<string, string>();
   const relsPath = partPathToRelsPath(slidePath);
 
@@ -358,6 +362,7 @@ function parseSlideRelMap(doc: ParsedArchive, slidePath: string): Map<string, st
     if (!id || !target) continue;
     // External links (hyperlinks) keep their original URL target
     if (attr(child, "TargetMode") === "External") {
+      externalRelIds?.add(id);
       rels.set(id, target);
     } else {
       rels.set(id, resolveRelationshipTarget(slidePath, target));
@@ -872,7 +877,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (!slideEl) continue;
 
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
-    const ctx = new ParseContext(pptx, slideRels);
+    const externalRelIds = new Set<string>();
+    parseSlideRelMap(pptx.doc, slidePath, externalRelIds);
+    const ctx = new ParseContext(pptx, slideRels, externalRelIds);
     const readCtx = new PptxReadContext(ctx);
     // slideDesc.parse returns the slide-part fields of SlideOptions (children/
     // background/transition/animations/…). The public-API-only fields (layout,

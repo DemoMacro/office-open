@@ -108,6 +108,23 @@ describe("tableDesc round-trip", () => {
     expect(columns[2]?.calculatedColumnFormula).toBe("A+B");
   });
 
+  it("round-trips table formulas with edge whitespace", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:C5",
+      columns: [
+        { name: "Label", totalsRowFormula: " COUNTA([@Label]) " },
+        { name: "Value", calculatedColumnFormula: " B2*2 " },
+      ],
+    };
+    const result = roundTrip(opts);
+    const columns = result.columns!;
+
+    expect(columns[0]?.totalsRowFormula).toBe(" COUNTA([@Label]) ");
+    expect(columns[1]?.calculatedColumnFormula).toBe(" B2*2 ");
+  });
+
   it("round-trips table with style", () => {
     const opts: TableOptions = {
       id: 1,

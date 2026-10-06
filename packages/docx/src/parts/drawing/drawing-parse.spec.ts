@@ -21,7 +21,13 @@ function chartContext(): DocxReadContext {
   const chartEl = parseXml(`<root ${NS}>${CHART_SPACE}</root>`).elements?.[0]?.elements?.[0];
   return {
     docx: {
-      partRefs: { charts: new Map([["rId1", "word/charts/chart1.xml"]]) },
+      partRefs: {
+        charts: new Map([["rId1", "word/charts/chart1.xml"]]),
+        hyperlinks: new Map([
+          ["rId2", "https://example.invalid/chart"],
+          ["rId3", "https://example.invalid/preview"],
+        ]),
+      },
       doc: {
         get: (path: string) => (path === "word/charts/chart1.xml" ? chartEl : undefined),
       },
@@ -29,8 +35,9 @@ function chartContext(): DocxReadContext {
   } as unknown as DocxReadContext;
 }
 
-function drawingXml(docPrAttrs?: string): string {
-  const docPr = docPrAttrs === undefined ? "" : `<wp:docPr ${docPrAttrs}/>`;
+function drawingXml(docPrAttrs?: string, docPrChildren = ""): string {
+  const docPr =
+    docPrAttrs === undefined ? "" : `<wp:docPr ${docPrAttrs}>${docPrChildren}</wp:docPr>`;
   return (
     `<w:drawing ${NS}><wp:inline><wp:extent cx="5486400" cy="3200400"/>` +
     '<wp:effectExtent l="19050" t="0" r="19050" b="0"/>' +
@@ -40,8 +47,8 @@ function drawingXml(docPrAttrs?: string): string {
   );
 }
 
-function parseDrawing(docPrAttrs?: string) {
-  const el = parseXml(drawingXml(docPrAttrs)).elements?.[0];
+function parseDrawing(docPrAttrs?: string, docPrChildren = "") {
+  const el = parseXml(drawingXml(docPrAttrs, docPrChildren)).elements?.[0];
   if (!el) throw new Error("parsed drawing has no root element");
   return parseDrawingRun(el, chartContext());
 }
@@ -51,6 +58,24 @@ describe("parseChartDrawing alt text", () => {
     const result = parseDrawing('id="1" name="Chart 1" descr="Sales chart" title="Sales"');
     expect(result).toMatchObject({
       chart: { altText: { name: "Chart 1", description: "Sales chart", title: "Sales" } },
+    });
+  });
+
+  it("carries docPr hyperlink tooltips", () => {
+    const result = parseDrawing(
+      'id="1" name="Chart 1"',
+      '<a:hlinkClick r:id="rId2" tooltip="Open chart"/>' +
+        '<a:hlinkHover r:id="rId3" tooltip="Preview chart"/>',
+    );
+    expect(result).toMatchObject({
+      chart: {
+        altText: {
+          hyperlink: {
+            clickTooltip: "Open chart",
+            hoverTooltip: "Preview chart",
+          },
+        },
+      },
     });
   });
 

@@ -1,19 +1,21 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseParagraph } from "../../body";
+import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
+import type { ParagraphOptions } from "../paragraph";
 
 // Complex fields never touch the read context, so an empty mock suffices.
 const readCtx = {} as unknown as DocxReadContext;
+const writeCtx = {} as never;
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 
-function parseParagraphXml(inner: string): { children?: unknown[] } {
+function parseParagraphXml(inner: string): ParagraphOptions {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parseParagraph(el, readCtx) as { children?: unknown[] };
+  return parseParagraph(el, readCtx);
 }
 
 function findComplexField(opts: { children?: unknown[] }): Record<string, unknown> | undefined {
@@ -34,6 +36,32 @@ describe("complex field parse", () => {
     const cf = findComplexField(opts);
     expect(cf).toBeDefined();
     expect(cf!.complexField).toMatchObject({ instruction: " PAGE ", result: "1" });
+  });
+
+  it("preserves absent and present xml:space on plain instruction text", () => {
+    const withoutMarker = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText>PAGE</w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const plainField = findComplexField(withoutMarker)!.complexField as Record<string, unknown>;
+    expect(plainField.instructionPreserveSpace).toBe(false);
+    expect(stringifyParagraph(withoutMarker, writeCtx)).toContain(
+      "<w:instrText>PAGE</w:instrText>",
+    );
+
+    const withMarker = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        '<w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    expect(
+      (findComplexField(withMarker)!.complexField as Record<string, unknown>)
+        .instructionPreserveSpace,
+    ).toBe(true);
+    expect(stringifyParagraph(withMarker, writeCtx)).toContain(
+      '<w:instrText xml:space="preserve"> PAGE </w:instrText>',
+    );
   });
 
   it("parses a complex field without a separate/result", () => {

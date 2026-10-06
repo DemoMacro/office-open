@@ -38,6 +38,7 @@ import {
 } from "@parts/document/body/section-properties/section-properties";
 import type { HeaderFooterReference } from "@parts/header-footer";
 import type { BorderOptions } from "@shared/border";
+import { parseBorderSide } from "@shared/border";
 import { NumberFormat } from "@shared/constants";
 import type { BodyContext } from "@shared/index";
 import { autoRevisionId } from "@shared/track-revision/track-revision";
@@ -601,14 +602,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       if (!sideEl) continue;
       const val = attr(sideEl, "w:val");
       if (!val) continue; // CT_Border/@val is XSD-required
-      const b: BorderOptions = { style: val as BorderOptions["style"] };
-      const color = attr(sideEl, "w:color");
-      if (color) b.color = color;
-      const sz = attrNum(sideEl, "w:sz");
-      if (sz !== undefined) b.size = sz;
-      const space = attrNum(sideEl, "w:space");
-      if (space !== undefined) b.space = space;
-      borders[side] = b;
+      borders[side] = parseBorderSide(sideEl)!;
     }
     const display = attr(pgBorders, "w:display");
     if (display) borders.display = display as PageBordersOptions["display"];

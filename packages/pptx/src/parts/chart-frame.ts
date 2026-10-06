@@ -4,7 +4,7 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
-import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
+import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 /**
  * Chart frame (p:graphicFrame → c:chartSpace): chart payload from
@@ -16,7 +16,7 @@ export interface ChartOptions
   extends
     ChartSpaceOptions,
     Omit<NonVisualDrawingPropertiesOptions, "title">,
-    NvPrPlaceholderOptions {
+    GraphicFrameNvPrOptions {
   /** Chart frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default

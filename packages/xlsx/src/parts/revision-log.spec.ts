@@ -501,4 +501,32 @@ describe("revision end-to-end round-trip", () => {
       'PartName="/xl/revisions/revisionHeaders.xml"',
     );
   });
+
+  it("preserves revision log content-type declarations", async () => {
+    const source = (await generateWorkbook(revisionOptions(), {
+      type: "uint8array",
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    const contentType =
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionLog+xml";
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace(
+          "</Types>",
+          `<Override PartName="/xl/revisions/revisionLog11.xml" ContentType="${contentType}"/></Types>`,
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.contentTypes?.overrides).toContainEqual({
+      partName: "/xl/revisions/revisionLog11.xml",
+      contentType,
+    });
+
+    const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    expect(new TextDecoder().decode(unzipSync(output)["[Content_Types].xml"]!)).toContain(
+      'PartName="/xl/revisions/revisionLog11.xml"',
+    );
+  });
 });

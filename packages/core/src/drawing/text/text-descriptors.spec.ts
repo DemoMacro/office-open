@@ -198,6 +198,19 @@ describe("runPropertiesDesc round-trip", () => {
     expect(r.hyperlink?.slide).toBeUndefined();
   });
 
+  it("preserves an unresolved action hyperlink relationship id", () => {
+    const xml =
+      '<a:rPr><a:hlinkClick r:id="rId9" action="ppaction://hlinkshowjump?jump=lastslide"/></a:rPr>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = runPropertiesDesc.parse(el, readCtx);
+    expect(parsed.hyperlink?.referenceId).toBe("rId9");
+    expect(parsed.hyperlink?.action).toBe("ppaction://hlinkshowjump?jump=lastslide");
+
+    const emitted = runPropertiesDesc.stringify({ hyperlink: parsed.hyperlink }, writeCtx)!;
+    expect(emitted).toContain('r:id="rId9"');
+  });
+
   it("round-trips action-only hyperlink token without r:id (CT_Hyperlink r:id optional)", () => {
     const xml = runPropertiesDesc.stringify(
       { hyperlink: { action: "ppaction://hlinkshowjump?jump=nextslide" } },
@@ -213,6 +226,20 @@ describe("runPropertiesDesc round-trip", () => {
     expect(r.hyperlink?.action).toBe("ppaction://hlinkshowjump?jump=nextslide");
     expect(r.hyperlink?.url).toBeUndefined();
     expect(r.hyperlink?.slide).toBeUndefined();
+  });
+
+  it("round-trips all non-relational hyperlink attributes", () => {
+    const hyperlink = {
+      action: "ppaction://hlinkshowjump?jump=nextslide",
+      tooltip: "Next",
+      targetFrame: "_blank",
+      history: false,
+      highlightClick: true,
+      endSound: true,
+      invalidUrl: "https://example.com/<broken>",
+    };
+    const r = roundTrip({ hyperlink });
+    expect(r.hyperlink).toEqual(hyperlink);
   });
 });
 

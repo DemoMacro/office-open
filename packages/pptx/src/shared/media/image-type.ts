@@ -14,5 +14,5 @@ import type { PictureOptions } from "../picture";
  */
 export function imageTypeFromPath(path: string): PictureOptions["type"] {
   const type = coreImageTypeFromPath(path);
-  return type === "tif" || type === "ico" ? "png" : type;
+  return type;
 }

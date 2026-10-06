@@ -210,6 +210,14 @@ describe("fillDesc blip fill (parse)", () => {
     expect(Array.from(result.data as Uint8Array)).toEqual([1, 2, 3]);
   });
 
+  it("marks an omitted a:stretch element for preservation", () => {
+    const xml = `<a:blipFill><a:blip r:embed="rId1"/></a:blipFill>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parse(fillDesc, el, mockReadCtx()) as Record<string, unknown>;
+    expect(result.stretch).toBe(false);
+  });
+
   it("preserves blip fill structure (dpi, rotWithShape)", () => {
     const xml = `<a:blipFill dpi="150" rotWithShape="1"><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
     const el = parseXml(xml).elements?.[0];
@@ -273,6 +281,18 @@ describe("fillDesc blip fill (stringify)", () => {
     expect(xml).toContain('r:embed="{image1.png}"');
     expect(xml).toContain("<a:stretch><a:fillRect/></a:stretch>");
     expect(media).toEqual(["unpinned"]);
+  });
+
+  it("preserves an omitted a:stretch element", () => {
+    const media: string[] = [];
+    const opts: FillOptions = {
+      type: "blip",
+      data: new Uint8Array([1, 2, 3]),
+      imageType: "png",
+      stretch: false,
+    };
+    const xml = stringify(fillDesc, opts, mockWriteCtx("{image1.png}", media));
+    expect(xml).not.toContain("<a:stretch");
   });
 
   it("pins round-trip media to its source file name", () => {

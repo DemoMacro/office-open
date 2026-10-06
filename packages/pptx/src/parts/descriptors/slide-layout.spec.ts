@@ -37,7 +37,7 @@ function parseXmlDef(xml: string): LayoutDefinition {
 const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
 
 // A realistic layout: title placeholder (positioned) + body placeholder (no xfrm).
-const LAYOUT_WITH_PLACEHOLDERS = `<p:sldLayout ${NS} type="title" preserve="1"><p:cSld name="Title Slide"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="100" y="200"/><a:ext cx="300" cy="400"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Content Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+const LAYOUT_WITH_PLACEHOLDERS = `<p:sldLayout ${NS} type="title" preserve="1"><p:cSld name="Title Slide"><p:spTree><p:nvGrpSpPr><p:cNvPr id="7" name="Layout Root"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr><p:sp><p:nvSpPr><p:cNvPr id="2" name="Title 1"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph type="title" sz="half"/></p:nvPr></p:nvSpPr><p:spPr><a:xfrm><a:off x="100" y="200"/><a:ext cx="300" cy="400"/></a:xfrm></p:spPr><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp><p:sp><p:nvSpPr><p:cNvPr id="3" name="Content Placeholder 2"/><p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr><p:ph idx="1"/></p:nvPr></p:nvSpPr><p:spPr/><p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p></p:txBody></p:sp></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 
 describe("slideLayoutDesc stringify/parse", () => {
   it("round-trips CT_SlideLayout attributes", () => {
@@ -130,9 +130,21 @@ describe("slideLayoutDesc stringify/parse", () => {
     const result = parseXmlDef(LAYOUT_WITH_PLACEHOLDERS);
     expect(result.type).toBe("title");
     expect(result.name).toBe("Title Slide");
+    expect(result.shapeTreeId).toBe(7);
+    expect(result.shapeTreeName).toBe("Layout Root");
     expect(result.children).toHaveLength(2);
     // Title placeholder position read from a:xfrm (textBody carried verbatim).
-    expect(result.placeholders?.title).toMatchObject({ x: 100, y: 200, width: 300, height: 400 });
+    const title = result.placeholders?.title;
+    if (title === false) throw new Error("title placeholder unexpectedly hidden");
+    expect(title).toMatchObject({ x: 100, y: 200, width: 300, height: 400 });
+    expect(title?.placeholderSize).toBe("half");
+  });
+
+  it("preserves the root spTree identity and placeholder sizing hint", () => {
+    const parsed = parseXmlDef(LAYOUT_WITH_PLACEHOLDERS);
+    const xml = slideLayoutDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain('<p:cNvPr id="7" name="Layout Root"/>');
+    expect(xml).toContain('<p:ph type="title" sz="half"/>');
   });
 
   it("does not infer type from cSld name when @type is absent", () => {

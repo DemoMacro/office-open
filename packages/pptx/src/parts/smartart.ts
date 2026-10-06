@@ -8,7 +8,7 @@ import type {
   SmartArtRawParts,
   TreeNode,
 } from "@office-open/core/smartart";
-import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
+import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 export {
   getLayoutXml,
@@ -29,7 +29,8 @@ export type { TreeNode };
  *
  * @publicApi
  */
-export interface SmartArtOptions extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
+export interface SmartArtOptions
+  extends NonVisualDrawingPropertiesOptions, GraphicFrameNvPrOptions {
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default
    * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
   locking?: GraphicFrameLockingOptions | null;

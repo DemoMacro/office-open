@@ -178,6 +178,19 @@ describe("v:shape", () => {
   it("emits a self-closing tag with no children", () => {
     expect(stringifyVmlShape({ id: "s1" })).toBe('<v:shape id="s1"/>');
   });
+
+  it("preserves source attribute order and unmodeled extension attributes", () => {
+    const xml =
+      '<v:rect unknown="kept" style="width:6pt;height:9pt;z-index:7" id="r1">' +
+      '<v:textbox inset="1pt,2pt" o:insetmode="custom"/>' +
+      "</v:rect>";
+    const el = parseXml(`<carrier>${xml}</carrier>`).elements?.[0]?.elements?.[0];
+    if (!el) throw new Error("test XML has no v:rect");
+    const opts = parseVmlShape(el);
+    expect(opts.sourceXml).toBe(xml);
+    expect(opts.id).toBe("r1");
+    expect(stringifyVmlShape(opts)).toBe(xml);
+  });
 });
 
 describe("v:shapetype", () => {

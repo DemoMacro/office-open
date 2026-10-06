@@ -65,4 +65,6 @@ export interface TableRowOptions
   paraId?: LongHexNumber;
   /** Table row text identifier (w14:textId, 8-digit hex string). */
   textId?: LongHexNumber;
+  /** Table row edit identifier (w14:editId, 8-digit hex string). */
+  editId?: LongHexNumber;
 }

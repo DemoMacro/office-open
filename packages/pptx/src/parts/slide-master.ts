@@ -14,6 +14,7 @@ import { DEFAULT_BACKGROUND_REFERENCE } from "@parts/background";
 import { backgroundDesc } from "@parts/descriptors/background";
 import { stringifyShapeStyle } from "@parts/descriptors/shape";
 import type { TextStylesOptions } from "@parts/descriptors/text-list-style";
+import { stringifyCustDataLst } from "@parts/slide/c-sld";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { AnimationsOptions } from "@shared/animation/timing";
@@ -141,7 +142,9 @@ function resolveDef(
 
 function copyFacets(src: PlaceholderDefinition, dst: Partial<PlaceholderDefinition>): void {
   if (src.id !== undefined) dst.id = src.id;
+  if (src.customerData !== undefined) dst.customerData = src.customerData;
   if (src.blackWhiteMode !== undefined) dst.blackWhiteMode = src.blackWhiteMode;
+  if (src.placeholderSize !== undefined) dst.placeholderSize = src.placeholderSize;
   if (src.locking !== undefined) dst.locking = src.locking;
   if (src.geometry !== undefined) dst.geometry = src.geometry;
   if (src.customGeometry !== undefined) dst.customGeometry = src.customGeometry;
@@ -194,7 +197,8 @@ function phSp(
   const cNvPr = stringifyNonVisualDrawingProperties("p:cNvPr", sourceId, def, name);
 
   const locking = def.locking ? createShapeLocking(def.locking) : '<a:spLocks noGrp="1"/>';
-  return `<p:sp><p:nvSpPr>${cNvPr}<p:cNvSpPr>${locking}</p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/></p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
+  const customerDataXml = stringifyCustDataLst(def.customerData);
+  return `<p:sp><p:nvSpPr>${cNvPr}<p:cNvSpPr>${locking}</p:cNvSpPr><p:nvPr><p:ph ${phAttrs}/>${customerDataXml}</p:nvPr></p:nvSpPr>${spPr}${styleXml}<p:txBody>${bodyContent}</p:txBody></p:sp>`;
 }
 
 export const BODY_DEFAULT = `<a:bodyPr/><a:lstStyle/><a:p><a:endParaRPr lang="en-US"/></a:p>`;
@@ -234,7 +238,7 @@ export function buildPlaceholderShapes(
     shapes.title = phSp(
       nextId++,
       "Title Placeholder 1",
-      'type="title"',
+      `type="title"${placeholderSizeAttr(titleDef.placeholderSize)}`,
       titleDef,
       BODY_DEFAULT,
       ctx,
@@ -246,7 +250,7 @@ export function buildPlaceholderShapes(
     shapes.body = phSp(
       nextId++,
       "Text Placeholder 2",
-      'type="body" idx="1"',
+      `type="body"${placeholderSizeAttr(bodyDef.placeholderSize)} idx="1"`,
       bodyDef,
       BODY_DEFAULT,
       ctx,
@@ -258,7 +262,7 @@ export function buildPlaceholderShapes(
     shapes.date = phSp(
       nextId++,
       "Date Placeholder 3",
-      'type="dt" sz="half" idx="2"',
+      `type="dt"${placeholderSizeAttr(dateDef.placeholderSize ?? "half")} idx="2"`,
       dateDef,
       footerBody("l", "datetimeFigureOut", "{5BCAD085-E8A6-8845-BD4E-CB4CCA059FC4}", "1/27/13"),
       ctx,
@@ -270,7 +274,7 @@ export function buildPlaceholderShapes(
     shapes.footer = phSp(
       nextId++,
       "Footer Placeholder 4",
-      'type="ftr" sz="quarter" idx="3"',
+      `type="ftr"${placeholderSizeAttr(footerDef.placeholderSize ?? "quarter")} idx="3"`,
       footerDef,
       footerBody("ctr", "", "", ""),
       ctx,
@@ -282,7 +286,7 @@ export function buildPlaceholderShapes(
     shapes.slideNumber = phSp(
       nextId++,
       "Slide Number Placeholder 5",
-      'type="sldNum" sz="quarter" idx="4"',
+      `type="sldNum"${placeholderSizeAttr(sldNumDef.placeholderSize ?? "quarter")} idx="4"`,
       sldNumDef,
       footerBody("r", "slidenum", "{C1FF6DA9-008F-8B48-92A6-B652298478BF}", "‹#›"),
       ctx,
@@ -290,6 +294,10 @@ export function buildPlaceholderShapes(
   }
 
   return { xml: Object.values(shapes).join(""), xmlByPlaceholder: shapes, nextId };
+}
+
+function placeholderSizeAttr(size: PlaceholderDefinition["placeholderSize"]): string {
+  return size === undefined ? "" : ` sz="${size}"`;
 }
 
 // ── Background ──

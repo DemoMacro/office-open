@@ -70,7 +70,8 @@ export function buildRPrXml(
       const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
       colorAttrs.push(`rgb="${escapeXml(rgb)}"`);
     }
-    if (pr.colorTint !== undefined) colorAttrs.push(`tint="${pr.colorTint}"`);
+    if (pr.colorTintRaw !== undefined) colorAttrs.push(`tint="${pr.colorTintRaw}"`);
+    else if (pr.colorTint !== undefined) colorAttrs.push(`tint="${pr.colorTint}"`);
     parts.push(`<color ${colorAttrs.join(" ")}/>`);
   }
   if (pr.font) parts.push(`<rFont val="${escapeXml(pr.font)}"/>`);
@@ -376,6 +377,7 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         }
         const tint = attr(child, "tint");
         if (tint !== undefined && Number.isFinite(Number(tint))) result.colorTint = Number(tint);
+        if (tint !== undefined) result.colorTintRaw = tint;
         break;
       }
       case "sz":

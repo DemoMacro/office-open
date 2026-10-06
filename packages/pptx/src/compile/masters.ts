@@ -112,6 +112,8 @@ function resolveLayoutDef(
 /** True when a def carries structured content that must drive stringify directly. */
 function hasStructuredLayoutContent(def: LayoutDefinition): boolean {
   return (
+    def.shapeTreeId !== undefined ||
+    def.shapeTreeName !== undefined ||
     (def.children !== undefined && def.children.length > 0) ||
     def.background !== undefined ||
     def.transition !== undefined ||

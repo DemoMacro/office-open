@@ -349,6 +349,10 @@
         "sortState": {
           "$ref": "#/definitions/SortStateOptions",
           "description": "Sort state"
+        },
+        "uid": {
+          "description": "Revision UID; round-trip only.",
+          "type": "string"
         }
       },
       "required": ["ref"],
@@ -1162,6 +1166,9 @@
         "tint": {
           "description": "Tint applied to the theme color",
           "type": "number"
+        },
+        "tintRaw": {
+          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "type": "object"
@@ -1229,6 +1236,10 @@
           },
           "type": "array"
         },
+        "bubbleSizeFormula": {
+          "description": "Bubble-size reference formula (c:bubbleSize > c:numRef > c:f) — round-trip.",
+          "type": "string"
+        },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
         },
@@ -1246,8 +1257,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -1300,6 +1310,12 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "$ref": "#/definitions/ScatterSeriesData/properties/xFormula"
         },
         "xValues": {
           "items": {
@@ -1952,6 +1968,10 @@
           "description": "Background tint",
           "type": "number"
         },
+        "bgTintRaw": {
+          "description": "Source lexical form of `bgTint`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "color": {
           "$ref": "#/definitions/HexColor",
           "description": "Foreground color hex without alpha, e.g. \"C6EFCE\""
@@ -2029,6 +2049,9 @@
           "description": "Foreground tint",
           "type": "number"
         },
+        "tintRaw": {
+          "$ref": "#/definitions/FontOptions/properties/tintRaw"
+        },
         "type": {
           "description": "Fill kind; pattern/gradient read the dedicated fields below.",
           "enum": ["solid", "pattern", "gradient"],
@@ -2056,6 +2079,9 @@
         "tint": {
           "description": "Tint applied to the theme color",
           "type": "number"
+        },
+        "tintRaw": {
+          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "required": ["position"],
@@ -2472,6 +2498,9 @@
         "tint": {
           "description": "Tint applied to the theme slot",
           "type": "number"
+        },
+        "tintRaw": {
+          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "type": "object"
@@ -2705,7 +2734,7 @@
           "type": "string"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "description": "Values number format (c:numCache > c:formatCode); an empty string keeps the child absent.",
           "type": "string"
         },
         "index": {
@@ -2765,6 +2794,18 @@
         "valueLiteral": {
           "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
           "type": "boolean"
+        },
+        "valuePointCount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Values cache point count (c:numCache > c:ptCount); false keeps the element absent."
         },
         "values": {
           "items": {
@@ -3303,8 +3344,39 @@
       "type": "object"
     },
     "ChartValue": {
-      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
-      "type": ["number", "string"]
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/ChartValuePointOptions"
+        }
+      ],
+      "description": "Numeric chart value; a string preserves c:v lexical form and null a missing cache slot."
+    },
+    "ChartValuePointOptions": {
+      "additionalProperties": false,
+      "description": "Explicit chart cache point; the index preserves sparse c:pt slots.",
+      "properties": {
+        "formatCode": {
+          "description": "Point-local number format (c:pt formatCode) — round-trip.",
+          "type": "string"
+        },
+        "index": {
+          "type": "number"
+        },
+        "value": {
+          "type": ["number", "string"]
+        }
+      },
+      "required": ["index", "value"],
+      "type": "object"
     },
     "ChartsheetOptions": {
       "additionalProperties": false,
@@ -3322,9 +3394,23 @@
           "$ref": "#/definitions/ChartSpaceOptions",
           "description": "Chart definition — the shared chart-space model, same shape as a worksheet chart."
         },
+        "chartName": {
+          "description": "Chart frame name (xdr:cNvPr `@name`); distinct from the sheet `name`.",
+          "type": "string"
+        },
         "codeName": {
           "description": "VBA code name",
           "type": "string"
+        },
+        "creationId": {
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+        },
+        "description": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
+        },
+        "ext": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
         "extentCx": {
           "description": "Chart width in EMU (xdr:ext",
@@ -3334,12 +3420,32 @@
           "description": "Chart height in EMU (xdr:ext",
           "type": "number"
         },
+        "externalDataRelationshipTarget": {
+          "description": "Source c:externalData relationship target — round-trip only.",
+          "type": "string"
+        },
+        "externalDataRelationshipType": {
+          "description": "Source c:externalData relationship type — round-trip only.",
+          "type": "string"
+        },
+        "externalLink": {
+          "$ref": "#/definitions/ExternalLinkOptions",
+          "description": "Chart-owned external link part for c:externalData — round-trip only."
+        },
+        "externalLinkPath": {
+          "description": "Source chart-owned external link path — round-trip only.",
+          "type": "string"
+        },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
           "description": "Frame locks on the chart's graphicFrame (a:graphicFrameLocks)."
         },
         "headerFooter": {
           "$ref": "#/definitions/HeaderFooterOptions"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
         },
         "macro": {
           "description": "Macro reference on the chart's graphicFrame.",
@@ -3374,18 +3480,34 @@
         "sheetProtection": {
           "$ref": "#/definitions/ChartsheetProtectionOptions"
         },
+        "sourceChartPath": {
+          "description": "Source chart part path (xl/charts/chartN.xml) — round-trip only.",
+          "type": "string"
+        },
+        "sourceDrawingPath": {
+          "description": "Source drawing part path (xl/drawings/drawingN.xml) — round-trip only.",
+          "type": "string"
+        },
+        "sourceDrawingRelationshipId": {
+          "description": "Source `<drawing>` relationship id — round-trip only.",
+          "type": "string"
+        },
         "state": {
           "description": "Visibility",
           "enum": ["visible", "hidden", "veryHidden"],
           "type": "string"
         },
         "tabColor": {
-          "$ref": "#/definitions/ArgbHexColor",
-          "description": "Tab color (hex ARGB, e.g. \"FF4472C4\")"
+          "$ref": "#/definitions/TabColor",
+          "description": "Tab color channel set (rgb, theme, or indexed) with optional tint."
         },
         "tabSelected": {
           "description": "Sheet selected state.",
           "type": "boolean"
+        },
+        "title": {
+          "description": "XSD `@title`.",
+          "type": "string"
         },
         "zoomScale": {
           "description": "Window zoom percent.",
@@ -5481,6 +5603,10 @@
         },
         "type": {
           "$ref": "#/definitions/DataValidationType"
+        },
+        "uid": {
+          "description": "Revision UID; round-trip only.",
+          "type": "string"
         }
       },
       "required": ["sqref"],
@@ -7000,6 +7126,18 @@
               "description": "Source media file name, pinned on round-trip so re-emitting registers the media under its original name instead of a re-derived one (jpeg→jpg normalization would otherwise fork a second media part).",
               "type": "string"
             },
+            "fillRectangle": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SourceRectangleOptions"
+                },
+                {
+                  "const": false,
+                  "type": "boolean"
+                }
+              ],
+              "description": "Fill rectangle inside a:stretch; false keeps the bare stretch element."
+            },
             "imageType": {
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
@@ -7020,6 +7158,10 @@
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for cropping"
+            },
+            "stretch": {
+              "description": "Set false to omit a:stretch (matching the source XML); omitted emits the default stretch.",
+              "type": "boolean"
             },
             "tile": {
               "$ref": "#/definitions/TileOptions",
@@ -7309,6 +7451,10 @@
           "description": "Tint applied to the theme color",
           "type": "number"
         },
+        "tintRaw": {
+          "description": "Source lexical form of `tint`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "underline": {
           "type": "boolean"
         },
@@ -7526,6 +7672,11 @@
         "split": {
           "description": "Split panes without freezing; default is frozen",
           "type": "boolean"
+        },
+        "state": {
+          "description": "Pane state; wins over `split`",
+          "enum": ["frozen", "frozenSplit", "split"],
+          "type": "string"
         },
         "topLeftCell": {
           "description": "Top-left cell of the scrollable pane; defaults to the cell just past the split. Round-trip keeps a scrolled position.",
@@ -8856,7 +9007,8 @@
       "description": "Manual plot-area layout. Field order follows the XSD.",
       "properties": {
         "h": {
-          "type": "number"
+          "description": "Height; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "hMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -8865,19 +9017,22 @@
           "$ref": "#/definitions/LayoutTarget"
         },
         "w": {
-          "type": "number"
+          "description": "Width; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "wMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "x": {
-          "type": "number"
+          "description": "X offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "xMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "y": {
-          "type": "number"
+          "description": "Y offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "yMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -14399,6 +14554,10 @@
           "description": "Color tint; round-trips the source value.",
           "type": "number"
         },
+        "colorTintRaw": {
+          "description": "Source lexical form of `colorTint`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "condense": {
           "type": "boolean"
         },
@@ -14603,8 +14762,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -14657,6 +14815,13 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "description": "X values reference formula (c:xVal > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "xValues": {
           "items": {
@@ -16675,6 +16840,17 @@
       "required": ["value"],
       "type": "object"
     },
+    "TabColor": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "$ref": "#/definitions/TabColorOptions"
+        }
+      ],
+      "description": "Authoring shorthand `rgb` or the full projection."
+    },
     "TabColorOptions": {
       "additionalProperties": false,
       "properties": {
@@ -16693,6 +16869,9 @@
         "tint": {
           "description": "Tint value (-1.0 to 1.0)",
           "type": "number"
+        },
+        "tintRaw": {
+          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "type": "object"
@@ -17451,8 +17630,13 @@
         "highlightClick": {
           "type": "boolean"
         },
-        "invalidUrl": {
+        "history": {
+          "description": "Add the target to browser history (a:hlinkClick `@history`, default true).",
           "type": "boolean"
+        },
+        "invalidUrl": {
+          "description": "Literal invalid URL text (a:hlinkClick `@invalidUrl`).",
+          "type": "string"
         },
         "referenceId": {
           "description": "Internal placeholder key (\"{hlink:N}\" → \"N\"); preserved across parse → stringify.",
@@ -17461,6 +17645,10 @@
         "slide": {
           "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
+        },
+        "targetFrame": {
+          "description": "Browser target frame (a:hlinkClick `@tgtFrame`, e.g. \"_blank\").",
+          "type": "string"
         },
         "tooltip": {
           "type": "string"
@@ -19982,6 +20170,10 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "description": "Verbatim source element XML used only to preserve unmodeled attributes and ordering (round-trip).",
+          "type": "string"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -20376,6 +20568,9 @@
         },
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapeOptions/properties/sourceXml"
         },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
@@ -21961,6 +22156,22 @@
           "$ref": "#/definitions/ExternalDataOptions",
           "description": "External linked workbook (c:externalData, after c:txPr)."
         },
+        "externalDataRelationshipTarget": {
+          "description": "Source c:externalData relationship target — round-trip only.",
+          "type": "string"
+        },
+        "externalDataRelationshipType": {
+          "description": "Source c:externalData relationship type — round-trip only.",
+          "type": "string"
+        },
+        "externalLink": {
+          "$ref": "#/definitions/ExternalLinkOptions",
+          "description": "Chart-owned external link part for c:externalData — round-trip only."
+        },
+        "externalLinkPath": {
+          "description": "Source chart-owned external link path — round-trip only.",
+          "type": "string"
+        },
         "firstSliceAngle": {
           "description": "Pie/doughnut first slice angle in degrees (c:firstSliceAng).",
           "type": "number"
@@ -22637,7 +22848,7 @@
           "type": "string"
         },
         "tabColor": {
-          "$ref": "#/definitions/TabColorOptions"
+          "$ref": "#/definitions/TabColor"
         },
         "tables": {
           "description": "Tables (list objects) for this worksheet",

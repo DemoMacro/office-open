@@ -12,7 +12,13 @@
 import { parseOnOff } from "@office-open/core";
 import { xsdSlideLayoutType } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
-import { attr, findChild, parse as parseXml, stringify as stringifyXml } from "@office-open/xml";
+import {
+  attr,
+  attrNum,
+  findChild,
+  parse as parseXml,
+  stringify as stringifyXml,
+} from "@office-open/xml";
 import { NS } from "@parts/slide-layout";
 import {
   parseControls,
@@ -23,7 +29,7 @@ import {
   stringifySlideHf,
 } from "@parts/slide/c-sld";
 import type { SlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 import type { LayoutDefinition, LayoutPlaceholderOptions } from "@shared/file";
 import { extractPlaceholderDefinition, PLACEHOLDER_TYPE_TO_KEY } from "@shared/placeholder";
 
@@ -64,7 +70,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
 
     // p:spTree
     parts.push("<p:spTree>");
-    parts.push(SP_TREE_HEADER);
+    parts.push(stringifySpTreeHeader(opts.shapeTreeId, opts.shapeTreeName));
     if (opts.children) {
       for (const child of opts.children) {
         const xml = stringifyChild(child, ctx);
@@ -141,6 +147,12 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       // spTree — structured children + derived placeholder positions.
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
+        const nvGrpSpPr = findChild(spTree, "p:nvGrpSpPr");
+        const rootCnvPr = nvGrpSpPr ? findChild(nvGrpSpPr, "p:cNvPr") : undefined;
+        const shapeTreeId = rootCnvPr ? attrNum(rootCnvPr, "id") : undefined;
+        if (shapeTreeId !== undefined) result.shapeTreeId = shapeTreeId;
+        const shapeTreeName = rootCnvPr ? attr(rootCnvPr, "name") : undefined;
+        if (shapeTreeName !== undefined) result.shapeTreeName = shapeTreeName;
         const children: SlideChild[] = [];
         const placeholders: LayoutPlaceholderOptions = {};
         for (const child of spTree.elements ?? []) {

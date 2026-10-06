@@ -23,7 +23,7 @@ import {
   toUint8ArrayAsync,
 } from "@office-open/core";
 import type { DataType } from "@office-open/core";
-import { chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
+import { chartSpaceDesc, userShapesDesc, type ExternalDataOptions } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
@@ -138,6 +138,56 @@ function readChartUserShapes(
   chart.userShapes = { ...chart.userShapes, anchors: body.anchors };
 }
 
+function readChartExternalLink(
+  chartPath: string,
+  externalData: ExternalDataOptions | undefined,
+  readContext: XlsxReadContext,
+  doc: XlsxDocument["doc"],
+  chartExternalLinkPaths: Set<string>,
+): {
+  externalLink?: ExternalLinkOptions;
+  externalLinkPath?: string;
+  externalDataRelationshipType?: string;
+  externalDataRelationshipTarget?: string;
+} {
+  const chartRelsEl = doc.get(partPathToRelsPath(chartPath));
+  const externalDataRel = chartRelsEl?.elements?.find(
+    (rel) => rel.name === "Relationship" && attr(rel, "Id") === externalData?.relationshipId,
+  );
+  const externalDataTarget = externalDataRel ? attr(externalDataRel, "Target") : undefined;
+  if (!externalDataRel || !externalDataTarget) return {};
+
+  const externalDataRelationshipType = attr(externalDataRel, "Type");
+  const result: {
+    externalLink?: ExternalLinkOptions;
+    externalLinkPath?: string;
+    externalDataRelationshipType?: string;
+    externalDataRelationshipTarget?: string;
+  } = {
+    externalDataRelationshipType,
+    externalDataRelationshipTarget: externalDataTarget,
+  };
+  if (!externalDataRelationshipType?.includes("/externalLinkPath")) return result;
+
+  const externalLinkPath = resolveRelationshipTarget(chartPath, externalDataTarget);
+  const externalLinkEl = doc.get(externalLinkPath);
+  if (!externalLinkEl) return result;
+
+  const externalLink = externalLinkDesc.parse(externalLinkEl, readContext);
+  const linkRelsEl = doc.get(partPathToRelsPath(externalLinkPath));
+  const bookRel = linkRelsEl?.elements?.find(
+    (rel) => rel.name === "Relationship" && (attr(rel, "Type") ?? "").includes("/externalLinkPath"),
+  );
+  const bookTarget = bookRel ? attr(bookRel, "Target") : undefined;
+  if (bookTarget && externalLink.externalBook) externalLink.externalBook.target = bookTarget;
+  chartExternalLinkPaths.add(externalLinkPath);
+  return {
+    ...result,
+    externalLink,
+    externalLinkPath,
+  };
+}
+
 /**
  * Worksheet parts read with sheetData deferred — the XML parser captures the
  * container's inner XML verbatim and `parseSheetDataRows` walks it directly.
@@ -183,9 +233,14 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
 
   // Scan for drawings, charts, media
   drawings.push(...doc.keys("xl/drawings/").filter((k) => k.endsWith(".xml")));
-  // userShapes companions of chart parts are not chart parts themselves
+  // Only chartSpace parts drive compilation; style/color companions and
+  // userShapes stay in the package passthrough set.
   charts.push(
-    ...doc.keys("xl/charts/").filter((k) => k.endsWith(".xml") && !/userShapes\d+\.xml$/.test(k)),
+    ...doc.keys("xl/charts/").filter((k) => {
+      if (!k.endsWith(".xml")) return false;
+      const name = doc.get(k)?.name ?? "";
+      return name === "chartSpace" || name === "c:chartSpace" || name.endsWith(":chartSpace");
+    }),
   );
   media.push(...doc.keys("xl/media/"));
   drawings = sortByNumber(drawings);
@@ -473,6 +528,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // sheetData — the row scanner walks the captured inner XML, skipping the
   // per-cell Element tree (the dominant allocation cost on large sheets).
   const worksheets: WorksheetOptions[] = [];
+  const chartExternalLinkPaths = new Set<string>();
   for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
@@ -656,6 +712,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             chartSpaceDesc.parse(chartEl, readContext),
           );
           readChartUserShapes(chartPath, chartSpace, readContext, xlsx.doc);
+          const chartExternalLink = readChartExternalLink(
+            chartPath,
+            chartSpace.externalData,
+            readContext,
+            xlsx.doc,
+            chartExternalLinkPaths,
+          );
           // cNvPr @title stays unbridged (same rule as the compiler leg):
           // WorksheetChartOptions.title is the chart title, not the frame's.
           const chartCnvPr = pickNonVisualDrawingProperties(anchor);
@@ -665,6 +728,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...pickAnchorOptions(anchor),
             ...chartCnvPr,
             ...(chartPath ? { sourcePath: chartPath } : {}),
+            ...chartExternalLink,
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.hyperlink ? { hyperlink: anchor.hyperlink } : {}),
@@ -865,18 +929,32 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       // core chartSpace descriptor into the simplified chartsheet chart shape.
       const csDrawingRels = readContext.getWorksheetRelsByType(csPath, "/drawing");
       outer: for (const dr of csDrawingRels) {
-        const drawingEl = xlsx.doc.get(dr.target);
+        const drawingPath = dr.target;
+        const drawingEl = xlsx.doc.get(drawingPath);
         if (!drawingEl) continue;
+        csData.sourceDrawingPath = drawingPath;
+        csData.sourceDrawingRelationshipId = dr.rId;
         const drawingData = drawingDesc.parse(drawingEl, readContext);
         for (const anchor of drawingData.charts ?? []) {
-          const chartPath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
+          const chartPath = readContext.resolveWorksheetRel(drawingPath, anchor.rId);
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
-          if (!chartEl) continue;
+          if (!chartPath || !chartEl) continue;
           // Full chartSpace passthrough — the simplified type/title/series
           // projection dropped chartSpace-level fidelity (c:lang, c:date1904,
           // axis/plot formatting, …) on round-trip.
           csData.chart = chartSpaceDesc.parse(chartEl, readContext);
+          csData.sourceChartPath = chartPath;
           readChartUserShapes(chartPath, csData.chart, readContext, xlsx.doc);
+          Object.assign(
+            csData,
+            readChartExternalLink(
+              chartPath,
+              csData.chart.externalData,
+              readContext,
+              xlsx.doc,
+              chartExternalLinkPaths,
+            ),
+          );
           if (anchor.macro !== undefined) csData.macro = anchor.macro;
           if (anchor.frameLocks) csData.frameLocks = anchor.frameLocks;
           // Anchor geometry is the rendered chart size on the sheet — Excel
@@ -888,6 +966,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           if (anchor.extentCx !== undefined) csData.extentCx = convertToEmu(anchor.extentCx);
           if (anchor.extentCy !== undefined) csData.extentCy = convertToEmu(anchor.extentCy);
           if (anchor.shapeId !== undefined) csData.shapeId = anchor.shapeId;
+          const { name, ...chartIdentity } = pickNonVisualDrawingProperties(anchor);
+          if (name !== undefined) csData.chartName = name;
+          Object.assign(csData, chartIdentity);
           break outer;
         }
       }
@@ -959,7 +1040,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   }
 
   // External links
-  const extLinkPaths = xlsx.doc.keys("xl/externalLinks/").filter((k) => k.endsWith(".xml"));
+  const extLinkPaths = xlsx.doc
+    .keys("xl/externalLinks/")
+    .filter((k) => k.endsWith(".xml") && !chartExternalLinkPaths.has(k));
   if (extLinkPaths.length > 0) {
     const externalLinks: ExternalLinkOptions[] = [];
     for (const elPath of extLinkPaths) {
@@ -1077,6 +1160,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...(volTypesPath === "volatileDependencies.xml" ? ["xl/volatileDependencies.xml"] : []),
     ...xlsx.partRefs.charts,
     ...xlsx.partRefs.charts.map((path) => partPathToRelsPath(path)),
+    ...[...chartExternalLinkPaths].flatMap((path) => [path, partPathToRelsPath(path)]),
     ...sortByNumber(
       xlsx.doc.keys("xl/comments").filter((path) => /^xl\/comments\d+\.xml$/i.test(path)),
     ).flatMap((path) => [path, partPathToRelsPath(path)]),

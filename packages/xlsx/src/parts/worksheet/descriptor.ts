@@ -168,6 +168,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (attr(tabColorEl, "rgb")) tc.rgb = attr(tabColorEl, "rgb");
         if (attrNum(tabColorEl, "theme") !== undefined) tc.theme = attrNum(tabColorEl, "theme");
         if (attrNum(tabColorEl, "tint") !== undefined) tc.tint = attrNum(tabColorEl, "tint");
+        if (attr(tabColorEl, "tint") !== undefined) tc.tintRaw = attr(tabColorEl, "tint");
         if (attrNum(tabColorEl, "indexed") !== undefined)
           tc.indexed = attrNum(tabColorEl, "indexed");
         result.tabColor = tc;
@@ -224,11 +225,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const paneEl = findChild(svEl, "pane");
         if (paneEl) {
           const fp: FreezePaneOptions = {};
+          const paneState = attr(paneEl, "state");
           const ys = attrNum(paneEl, "ySplit");
           if (ys !== undefined) fp.row = ys;
           const xs = attrNum(paneEl, "xSplit");
           if (xs !== undefined) fp.col = xs;
-          if (attr(paneEl, "state") === "split") fp.split = true;
+          if (paneState) fp.state = paneState as FreezePaneOptions["state"];
+          if (paneState === "split") fp.split = true;
           const paneTopLeft = attr(paneEl, "topLeftCell");
           if (paneTopLeft) fp.topLeftCell = paneTopLeft;
           const activePane = attr(paneEl, "activePane");
@@ -526,6 +529,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       for (const dEl of dvEl.elements ?? []) {
         if (dEl.name !== "dataValidation") continue;
         const dv: DataValidationOptions = { sqref: attr(dEl, "sqref") ?? "" };
+        if (attr(dEl, "xr:uid")) dv.uid = attr(dEl, "xr:uid");
         const typeVal = attr(dEl, "type");
         if (typeVal) dv.type = typeVal as DataValidationType;
         const opVal = attr(dEl, "operator");
@@ -840,11 +844,13 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const paneEl = findChild(vEl, "pane");
         if (paneEl) {
           const pane: FreezePaneOptions = {};
+          const paneState = attr(paneEl, "state");
           const ySplit = attrNum(paneEl, "ySplit");
           const xSplit = attrNum(paneEl, "xSplit");
           if (ySplit !== undefined) pane.row = ySplit;
           if (xSplit !== undefined) pane.col = xSplit;
-          if (attr(paneEl, "state") === "split") pane.split = true;
+          if (paneState) pane.state = paneState as FreezePaneOptions["state"];
+          if (paneState === "split") pane.split = true;
           const paneTopLeft = attr(paneEl, "topLeftCell");
           if (paneTopLeft) pane.topLeftCell = paneTopLeft;
           const activePane = attr(paneEl, "activePane");

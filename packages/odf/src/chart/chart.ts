@@ -523,29 +523,29 @@ function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
       tableRow(
         scatter
           ? [
-              String(
+              chartValueText(
                 chart.series[0] && "xValues" in chart.series[0]
-                  ? (chart.series[0].xValues[row] ?? "")
-                  : "",
+                  ? chart.series[0].xValues[row]
+                  : undefined,
               ),
               ...chart.series.map((series) =>
-                String(
-                  ("yValues" in series ? series.yValues[row] : seriesValues(series)[row]) ?? "",
+                chartValueText(
+                  "yValues" in series ? series.yValues[row] : seriesValues(series)[row],
                 ),
               ),
               ...(chart.type === "bubble"
                 ? [
-                    String(
+                    chartValueText(
                       firstSeries !== undefined && "bubbleSize" in firstSeries
-                        ? (firstSeries.bubbleSize[row] ?? "")
-                        : "",
+                        ? firstSeries.bubbleSize[row]
+                        : undefined,
                     ),
                   ]
                 : []),
             ]
           : [
               chart.categories?.[row] ?? "",
-              ...chart.series.map((series) => String(seriesValues(series)[row] ?? "")),
+              ...chart.series.map((series) => chartValueText(seriesValues(series)[row])),
             ],
       ),
     ),
@@ -918,6 +918,11 @@ function localCells(chart: Element, range: string | undefined): string[] {
     }
   }
   return values;
+}
+
+function chartValueText(value: ChartValue | undefined): string {
+  if (value === null || value === undefined) return "";
+  return typeof value === "object" ? String(value.value) : String(value);
 }
 
 function seriesValues(series: ChartSpaceOptions["series"][number]): readonly ChartValue[] {

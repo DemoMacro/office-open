@@ -11,6 +11,7 @@ const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
   addImage: (_key: string, entry: { fileName: string }) => entry,
+  addAudioLink: () => "audio-link_1",
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -136,6 +137,59 @@ describe("audioDesc round-trip", () => {
     expect(result.width).toBeCloseTo(50, 0);
     expect(result.height).toBeCloseTo(50, 0);
     expect(result.type).toBe("mp3");
+  });
+
+  it("preserves poster bytes and source file name", () => {
+    const poster = new Uint8Array([1, 2, 3]);
+    const xml = audioDesc.stringify(
+      {
+        id: 210,
+        data: "audio",
+        type: "mp3",
+        name: "Sound",
+        poster,
+        posterType: "gif",
+        posterFileName: "speaker.gif",
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('<a:blip r:embed="{speaker.gif}"/>');
+
+    const posterCtx = {
+      resolveRelationship: (rId: string) =>
+        rId === "{speaker.gif}" ? "ppt/media/speaker.gif" : undefined,
+      getRaw: (path: string) => (path === "ppt/media/speaker.gif" ? poster : undefined),
+      getPart: () => undefined,
+    } as unknown as Parameters<typeof audioDesc.parse>[1];
+    const result = audioDesc.parse(parseRoot(xml), posterCtx);
+    expect(result.poster).toBe(poster);
+    expect(result.posterType).toBe("gif");
+    expect(result.posterFileName).toBe("speaker.gif");
+  });
+
+  it("preserves dual external audio and embedded media references", () => {
+    const xml = audioDesc.stringify(
+      {
+        id: 211,
+        data: "audio",
+        type: "mp3",
+        sourceUrl: "https://example.com/audio.mp3",
+        embeddedMedia: true,
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('<a:audioFile r:link="{audio-link:audio-link_1}"');
+    expect(xml).toContain('<p14:media r:embed="{media:');
+
+    const audioCtx = {
+      resolveRelationship: (rId: string) =>
+        rId === "{audio-link:audio-link_1}" ? "https://example.com/audio.mp3" : undefined,
+      isExternalRelationship: (rId: string) => rId === "{audio-link:audio-link_1}",
+      getRaw: () => undefined,
+      getPart: () => undefined,
+    } as unknown as Parameters<typeof audioDesc.parse>[1];
+    const result = audioDesc.parse(parseRoot(xml), audioCtx);
+    expect(result.sourceUrl).toBe("https://example.com/audio.mp3");
   });
 
   it("round-trips audio with default name", () => {

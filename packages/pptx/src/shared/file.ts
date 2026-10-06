@@ -71,6 +71,10 @@ export interface LayoutDefinition {
   showMasterPlaceholderAnimations?: boolean;
   /** Source p:sldLayoutId @id — kept so round-trip reuses it instead of renumbering (PowerPoint rejects renumbered ids on real-open). */
   layoutId?: number;
+  /** Root spTree cNvPr id — round-trip only. */
+  shapeTreeId?: number;
+  /** Root spTree cNvPr name — round-trip only. */
+  shapeTreeName?: string;
   /** Whether the source package carried this layout's .rels part (round-trip only). */
   sourceOwnRels?: boolean;
   // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)

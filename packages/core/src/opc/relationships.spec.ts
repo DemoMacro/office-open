@@ -38,6 +38,26 @@ describe("Relationships", () => {
     expect(rels.serialize()).toContain('Target="/xl/theme/theme1.xml"');
   });
 
+  it("claimSourceRel restores the source target spelling and mode", () => {
+    const rels = new Relationships("ppt/slides/slide1.xml");
+    const image = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+    rels.addRelationship(1, image, "../media/image%20one.png");
+    rels.claimSourceRel({ relationshipType: image, target: "../media/image one.png", rId: "rId1" });
+    expect(rels.serialize()).toContain('Target="../media/image one.png"');
+
+    const audio = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
+    rels.addRelationship(2, audio, "https://example.com/audio.mp3", TargetModeType.EXTERNAL);
+    rels.claimSourceRel({
+      relationshipType: audio,
+      target: "https://example.com/source.mp3",
+      rId: "rId2",
+      targetMode: "External",
+    });
+    expect(rels.serialize()).toContain(
+      'Target="https://example.com/source.mp3" TargetMode="External"',
+    );
+  });
+
   it("addRelationship() takes an explicit id (fixed rId1, offset batches)", () => {
     const rels = new Relationships();
     rels.addRelationship(

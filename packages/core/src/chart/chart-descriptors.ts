@@ -80,6 +80,7 @@ import type {
   ChartHeaderFooterOptions,
   ChartPageMarginsOptions,
   ChartPageSetupOptions,
+  ChartValue,
   PrintSettingsOptions,
   PageSetupOrientation,
   PivotSourceOptions,
@@ -520,24 +521,48 @@ function stringifyCategorySource(opts: ChartSpaceOptions): string {
 
 // Numeric cache reference for series values and numeric categories (the latter
 // keep their literal text so formats survive verbatim).
+function stringifyChartPoint(value: ChartValue, index: number): string {
+  if (value === null) return "";
+  if (typeof value === "object") {
+    const format =
+      value.formatCode !== undefined ? ` formatCode="${escapeXml(value.formatCode)}"` : "";
+    return `<c:pt idx="${value.index}"${format}><c:v>${typeof value.value === "number" ? value.value : escapeXml(value.value)}</c:v></c:pt>`;
+  }
+  return `<c:pt idx="${index}"><c:v>${typeof value === "number" ? value : escapeXml(value)}</c:v></c:pt>`;
+}
+
 function stringifyNumRef(
-  values: readonly (string | number)[],
+  values: readonly ChartValue[],
   formula?: string,
   formatCode?: string,
+  pointCount?: number | false,
 ): string {
-  const pts = values
-    .map((v, i) => `<c:pt idx="${i}"><c:v>${typeof v === "number" ? v : escapeXml(v)}</c:v></c:pt>`)
-    .join("");
-  return `<c:numRef>${refFormula(formula)}<c:numCache><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numCache></c:numRef>`;
+  const pts = values.map((v, i) => stringifyChartPoint(v, i)).join("");
+  const count = pointCount ?? values.length;
+  const cacheParts = [
+    ...(formatCode === ""
+      ? []
+      : [`<c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode>`]),
+    ...(count === false ? [] : [`<c:ptCount ${attrVal("val", count)}/>`]),
+    ...(pts ? [pts] : []),
+  ];
+  const cache = cacheParts.length
+    ? `<c:numCache>${cacheParts.join("")}</c:numCache>`
+    : "<c:numCache/>";
+  return `<c:numRef>${refFormula(formula)}${cache}</c:numRef>`;
 }
 
 // CT_NumData literal form (c:val > c:numLit) — Excel writes this for
 // hand-entered series with no worksheet reference.
-function stringifyNumLitList(values: readonly (string | number)[], formatCode?: string): string {
-  const pts = values
-    .map((v, i) => `<c:pt idx="${i}"><c:v>${typeof v === "number" ? v : escapeXml(v)}</c:v></c:pt>`)
-    .join("");
-  return `<c:numLit><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:numLit>`;
+function stringifyNumLitList(
+  values: readonly ChartValue[],
+  formatCode?: string,
+  pointCount?: number | false,
+): string {
+  const pts = values.map((v, i) => stringifyChartPoint(v, i)).join("");
+  const count = pointCount ?? values.length;
+  const pointCountXml = count === false ? "" : `<c:ptCount ${attrVal("val", count)}/>`;
+  return `<c:numLit><c:formatCode>${escapeXml(formatCode ?? "General")}</c:formatCode>${pointCountXml}${pts}</c:numLit>`;
 }
 
 // ── Chart type header XML ──
@@ -895,28 +920,34 @@ function stringifySeries(
   // data references (type-specific element names)
   if (chartType === "bubble") {
     const bs = series as BubbleSeriesData;
-    parts.push(`<c:xVal>${stringifyNumRef(bs.xValues)}</c:xVal>`);
-    parts.push(`<c:yVal>${stringifyNumRef(bs.yValues)}</c:yVal>`);
-    parts.push(`<c:bubbleSize>${stringifyNumRef(bs.bubbleSize)}</c:bubbleSize>`);
+    parts.push(`<c:xVal>${stringifyNumRef(bs.xValues, bs.xFormula)}</c:xVal>`);
+    parts.push(
+      `<c:yVal>${stringifyNumRef(bs.yValues, bs.valueFormula, bs.formatCode, bs.valuePointCount)}</c:yVal>`,
+    );
+    parts.push(
+      `<c:bubbleSize>${stringifyNumRef(bs.bubbleSize, bs.bubbleSizeFormula)}</c:bubbleSize>`,
+    );
   } else if (chartType === "scatter") {
     if ("xValues" in series) {
       // True numeric axes: c:xVal/c:yVal are CT_NumDataSource references.
-      parts.push(`<c:xVal>${stringifyNumRef(series.xValues)}</c:xVal>`);
+      parts.push(`<c:xVal>${stringifyNumRef(series.xValues, series.xFormula)}</c:xVal>`);
       parts.push(
-        `<c:yVal>${stringifyNumRef(series.yValues, series.valueFormula, series.formatCode)}</c:yVal>`,
+        `<c:yVal>${stringifyNumRef(series.yValues, series.valueFormula, series.formatCode, series.valuePointCount)}</c:yVal>`,
       );
     } else {
       // Label-x shape: x values share the category source model — string
       // labels round-trip through c:strRef like regular categories.
       parts.push(`<c:xVal>${stringifyCategorySource(opts)}</c:xVal>`);
-      parts.push(`<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:yVal>`);
+      parts.push(
+        `<c:yVal>${stringifyNumRef(s.values, s.valueFormula, s.formatCode, s.valuePointCount)}</c:yVal>`,
+      );
     }
   } else {
     if (hasCategoryData(opts)) {
       parts.push(`<c:cat>${stringifyCategorySource(opts)}</c:cat>`);
     }
     parts.push(
-      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode) : stringifyNumRef(s.values, s.valueFormula, s.formatCode)}</c:val>`,
+      `<c:val>${s.valueLiteral ? stringifyNumLitList(s.values, s.formatCode, s.valuePointCount) : stringifyNumRef(s.values, s.valueFormula, s.formatCode, s.valuePointCount)}</c:val>`,
     );
   }
 
@@ -1038,7 +1069,7 @@ function readSecondaryGroup(
     const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
     const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
     const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
-    const values = valueEl ? readNumCache(valueEl) : [];
+    const valueCache = valueEl ? readNumCache(valueEl) : { values: [] };
     const valMeta = valueEl ? readRefMeta(valueEl) : {};
     secSeries.push({
       name,
@@ -1046,8 +1077,9 @@ function readSecondaryGroup(
       ...(nameFormula ? { nameFormula } : {}),
       ...(valueLiteral ? { valueLiteral } : {}),
       ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
-      ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
-      values,
+      ...(valMeta.formatCode !== undefined ? { formatCode: valMeta.formatCode } : {}),
+      ...(valueCache.pointCount !== undefined ? { valuePointCount: valueCache.pointCount } : {}),
+      values: valueCache.values,
       ...readSeriesCommon(serEl, ctx),
     });
   }
@@ -1137,9 +1169,6 @@ function stringifyLegendEntry(entry: LegendEntryOptions, ctx: WriteContext): str
         ? `<c:txPr>${textBodyDesc.stringify(entry.textProperties, ctx) ?? ""}</c:txPr>`
         : "";
   const ext = entry.ext ? `<c:extLst>${entry.ext}</c:extLst>` : "";
-  if (!data) {
-    return "";
-  }
   return `<c:legendEntry><c:idx val="${entry.index}"/>${data}${ext}</c:legendEntry>`;
 }
 
@@ -1348,15 +1377,14 @@ function readRefMeta(el: XmlElement): { formula?: string; formatCode?: string } 
   if (numRef) {
     const cache = findChild(numRef, "c:numCache");
     const fc = cache ? findChild(cache, "c:formatCode") : undefined;
-    const text = fc ? textOf(fc) : "";
-    if (text) meta.formatCode = text;
+    if (cache) meta.formatCode = fc ? (textOf(fc) ?? "") : "";
   }
   // c:numLit carries its formatCode as a direct child
   const numLit = strRef || numRef ? undefined : findChild(el, "c:numLit");
   if (numLit) {
     const fc = findChild(numLit, "c:formatCode");
     const text = fc ? textOf(fc) : "";
-    if (text) meta.formatCode = text;
+    meta.formatCode = text;
   }
   return meta;
 }
@@ -1422,26 +1450,37 @@ function hasNumericXRef(serEl: XmlElement): boolean {
   );
 }
 
-function readNumCache(el: XmlElement): (string | number)[] {
+function readNumCache(el: XmlElement): { values: ChartValue[]; pointCount?: number | false } {
   // c:numLit literal points (CT_NumDataSource choice: numRef | numLit)
   const numLit = findChild(el, "c:numLit");
-  if (numLit) return readNumLitPoints(numLit);
+  if (numLit) return { values: readNumLitPoints(numLit) };
   const numRef = findChild(el, "c:numRef");
-  if (!numRef) return [];
+  if (!numRef) return { values: [] };
   const numCache = findChild(numRef, "c:numCache");
-  if (!numCache?.elements) return [];
-  const result: (string | number)[] = [];
+  if (!numCache?.elements) return { values: [], pointCount: false };
+  const pointCountEl = findChild(numCache, "c:ptCount");
+  const declaredCount = pointCountEl ? Number(attr(pointCountEl, "val")) : false;
+  const result: ChartValue[] = Array.from(
+    { length: declaredCount === false ? 0 : declaredCount },
+    () => null,
+  );
   for (const pt of numCache.elements) {
     if (pt.name === "c:pt") {
+      const idx = Number(attr(pt, "idx") ?? result.length);
       const v = findChild(pt, "c:v");
       const text = v ? textOf(v) : "";
       if (text !== "") {
         const numeric = Number(text);
-        result.push(String(numeric) === text ? numeric : text);
+        const value: ChartValue = String(numeric) === text ? numeric : text;
+        const formatCode = attr(pt, "formatCode");
+        result[idx] = formatCode !== undefined ? { index: idx, value, formatCode } : value;
       }
     }
   }
-  return result;
+  return {
+    values: result.map((value) => value ?? null),
+    pointCount: declaredCount,
+  };
 }
 
 function readSeriesName(serEl: XmlElement): { name: string | undefined; literal: boolean } {
@@ -1858,14 +1897,10 @@ function readManualLayout(layoutEl: XmlElement | undefined): ManualLayoutOptions
   if (wMode) opts.wMode = wMode as LayoutMode;
   const hMode = readValStr(ml, "c:hMode");
   if (hMode) opts.hMode = hMode as LayoutMode;
-  const x = readValNum(ml, "c:x");
-  if (x !== undefined) opts.x = x;
-  const y = readValNum(ml, "c:y");
-  if (y !== undefined) opts.y = y;
-  const w = readValNum(ml, "c:w");
-  if (w !== undefined) opts.w = w;
-  const h = readValNum(ml, "c:h");
-  if (h !== undefined) opts.h = h;
+  for (const key of ["x", "y", "w", "h"] as const) {
+    const value = readValStr(ml, `c:${key}`);
+    if (value !== undefined) opts[key] = value;
+  }
   return Object.keys(opts).length ? opts : undefined;
 }
 
@@ -2734,14 +2769,23 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           const bubbleSeries: BubbleSeriesData[] = [];
           for (const serEl of seriesEls) {
             const { name } = readSeriesName(serEl);
+            const txEl = findChild(serEl, "c:tx");
+            const nameFormula = txEl ? readRefMeta(txEl).formula : undefined;
             const xVal = findChild(serEl, "c:xVal");
             const yVal = findChild(serEl, "c:yVal");
             const bubbleSize = findChild(serEl, "c:bubbleSize");
+            const xMeta = xVal ? readRefMeta(xVal) : {};
+            const yMeta = yVal ? readRefMeta(yVal) : {};
+            const sizeMeta = bubbleSize ? readRefMeta(bubbleSize) : {};
             bubbleSeries.push({
               name,
-              xValues: xVal ? readNumCache(xVal) : [],
-              yValues: yVal ? readNumCache(yVal) : [],
-              bubbleSize: bubbleSize ? readNumCache(bubbleSize) : [],
+              ...(nameFormula ? { nameFormula } : {}),
+              ...(xMeta.formula ? { xFormula: xMeta.formula } : {}),
+              ...(yMeta.formula ? { valueFormula: yMeta.formula } : {}),
+              ...(sizeMeta.formula ? { bubbleSizeFormula: sizeMeta.formula } : {}),
+              xValues: xVal ? readNumCache(xVal).values : [],
+              yValues: yVal ? readNumCache(yVal).values : [],
+              bubbleSize: bubbleSize ? readNumCache(bubbleSize).values : [],
               ...readSeriesCommon(serEl, ctx),
             });
           }
@@ -2757,6 +2801,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             const xVal = findChild(serEl, "c:xVal");
             const yVal = findChild(serEl, "c:yVal");
             const valueLiteral = yVal ? findChild(yVal, "c:numLit") !== undefined : false;
+            const xMeta = xVal ? readRefMeta(xVal) : {};
             const yMeta = yVal ? readRefMeta(yVal) : {};
             xySeries.push({
               name,
@@ -2764,9 +2809,10 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
               ...(nameFormula ? { nameFormula } : {}),
               ...(valueLiteral ? { valueLiteral } : {}),
               ...(yMeta.formula ? { valueFormula: yMeta.formula } : {}),
-              ...(yMeta.formatCode ? { formatCode: yMeta.formatCode } : {}),
-              xValues: xVal ? readNumCache(xVal) : [],
-              yValues: yVal ? readNumCache(yVal) : [],
+              ...(yMeta.formatCode !== undefined ? { formatCode: yMeta.formatCode } : {}),
+              ...(xMeta.formula ? { xFormula: xMeta.formula } : {}),
+              xValues: xVal ? readNumCache(xVal).values : [],
+              yValues: yVal ? readNumCache(yVal).values : [],
               ...readSeriesCommon(serEl, ctx),
             });
           }
@@ -2816,7 +2862,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
             // Read values
             const valueEl = findChild(serEl, "c:val") ?? findChild(serEl, "c:yVal");
             const valueLiteral = valueEl ? findChild(valueEl, "c:numLit") !== undefined : false;
-            const values = valueEl ? readNumCache(valueEl) : [];
+            const valueCache = valueEl ? readNumCache(valueEl) : { values: [] };
             const valMeta = valueEl ? readRefMeta(valueEl) : {};
 
             chartSeries.push({
@@ -2825,8 +2871,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
               ...(nameFormula ? { nameFormula } : {}),
               ...(valueLiteral ? { valueLiteral } : {}),
               ...(valMeta.formula ? { valueFormula: valMeta.formula } : {}),
-              ...(valMeta.formatCode ? { formatCode: valMeta.formatCode } : {}),
-              values,
+              ...(valMeta.formatCode !== undefined ? { formatCode: valMeta.formatCode } : {}),
+              ...(valueCache.pointCount !== undefined
+                ? { valuePointCount: valueCache.pointCount }
+                : {}),
+              values: valueCache.values,
               ...readSeriesCommon(serEl, ctx),
             });
           }

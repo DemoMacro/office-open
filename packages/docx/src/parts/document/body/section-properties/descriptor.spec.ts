@@ -61,6 +61,27 @@ describe("sectionPropertiesDesc round-trip", () => {
     expect(pageSize(result).height).toBe(15840);
   });
 
+  it("round-trips page border theme colors", () => {
+    const result = roundTrip({
+      pageBorders: {
+        top: {
+          style: "single",
+          color: "auto",
+          themeColor: "accent4",
+          themeTint: "99",
+          themeShade: "66",
+        },
+      },
+    });
+    expect(result.pageBorders?.top).toMatchObject({
+      style: "single",
+      color: "auto",
+      themeColor: "accent4",
+      themeTint: "99",
+      themeShade: "66",
+    });
+  });
+
   it("round-trips landscape orientation (swaps w/h and swaps back)", () => {
     const result = roundTrip({
       pageSize: { width: 12240, height: 15840, orientation: "landscape" },

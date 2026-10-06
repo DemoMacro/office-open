@@ -25,8 +25,9 @@ import type { AudioCdOptions, AudioFrameOptions, AudioType } from "@shared/media
 import { imageTypeFromPath } from "@shared/media/image-type";
 import type { MediaFrameBaseOptions, MediaTrimOptions } from "@shared/media/media-frame-base";
 import type { VideoFrameOptions, VideoType } from "@shared/media/video-frame";
+import type { PictureOptions } from "@shared/picture";
 
-import type { MediaEntry, PptxWriteContext } from "../../context";
+import type { MediaEntry, PptxReadContext, PptxWriteContext } from "../../context";
 import { readCnvPr, readPositionFromXfrm } from "./shape";
 import { nextSlideDrawingId } from "./slide-drawing-ids";
 
@@ -103,6 +104,7 @@ function stringifyAudioFile(
   mediaFileName: string,
   type: AudioType,
   opts: AudioFrameOptions,
+  linkReference = `audio:${mediaFileName}`,
 ): string {
   const contentType = opts.contentType ? ` contentType="${escapeXml(opts.contentType)}"` : "";
   if (type === "wav") {
@@ -110,7 +112,7 @@ function stringifyAudioFile(
     const name = opts.audioFileName ? ` name="${escapeXml(opts.audioFileName)}"` : "";
     return `<a:wavAudioFile r:embed="{audio:${mediaFileName}}"${name}/>`;
   }
-  return `<a:audioFile r:link="{audio:${mediaFileName}}"${contentType}/>`;
+  return `<a:audioFile r:link="{${linkReference}}"${contentType}/>`;
 }
 
 // ── Video descriptor ──
@@ -153,7 +155,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
         pptx,
         opts.poster,
         opts.posterType ?? "png",
-        `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
+        opts.posterFileName ?? `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
       );
       if (posterFileName) posterAttr = `<a:blip r:embed="{${posterFileName}}"/>`;
     }
@@ -257,9 +259,12 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     let mediaEl: string;
     if (opts.audioCd) {
       mediaEl = stringifyAudioCd(opts.audioCd);
-    } else if (mediaFileName) {
+    } else if (mediaFileName || opts.sourceUrl) {
       const audioType = opts.embeddedMedia && opts.type === "wav" ? "mp3" : (opts.type ?? "mp3");
-      mediaEl = stringifyAudioFile(mediaFileName, audioType, opts);
+      const linkKey = opts.sourceUrl
+        ? `audio-link:${pptx.addAudioLink(opts.sourceUrl)}`
+        : undefined;
+      mediaEl = stringifyAudioFile(mediaFileName ?? "", audioType, opts, linkKey);
     } else {
       mediaEl = "";
     }
@@ -281,7 +286,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
         pptx,
         opts.poster,
         opts.posterType ?? "png",
-        `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
+        opts.posterFileName ?? `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
       );
       if (posterFileName) posterAttr = `<a:blip r:embed="{${posterFileName}}"/>`;
     }
@@ -345,6 +350,9 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
     const mediaRef = rLink ?? rEmbedAttr ?? rEmbedExt;
     if (mediaRef) {
       const mediaPath = _ctx.resolveRelationship(mediaRef);
+      if (mediaRef === rLink && (_ctx as PptxReadContext).isExternalRelationship?.(mediaRef)) {
+        result.sourceUrl = mediaPath;
+      }
       let data: Uint8Array | undefined;
       let resolvedPath = mediaPath;
       if (mediaPath) data = _ctx.getRaw(mediaPath);
@@ -396,7 +404,11 @@ function readMediaAction(el: Element, result: { mediaAction?: boolean }): void {
 /** Read the poster image from p:blipFill → a:blip r:embed. */
 function readPoster(
   el: Element,
-  result: { poster?: DataType; posterType?: "png" | "jpg" },
+  result: {
+    poster?: DataType;
+    posterType?: PictureOptions["type"];
+    posterFileName?: string;
+  },
   ctx: ReadContext,
 ): void {
   const blipFill = findChild(el, "p:blipFill");
@@ -409,9 +421,9 @@ function readPoster(
   if (posterPath) {
     const data = ctx.getRaw(posterPath);
     if (data) result.poster = data;
-    // PosterType only allows png/jpg — other extensions fall back to png.
     const posterType = imageTypeFromPath(posterPath);
-    result.posterType = posterType === "jpg" ? "jpg" : "png";
+    result.posterType = posterType;
+    result.posterFileName = posterPath.split("/").pop();
   }
 }
 

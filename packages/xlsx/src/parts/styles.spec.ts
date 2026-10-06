@@ -109,6 +109,15 @@ describe("Styles", () => {
     });
   });
 
+  it("round-trips long font tint lexemes", () => {
+    const styles = new Styles();
+    styles.register({
+      font: { themeColor: 1, tint: -0.249977111117893, tintRaw: "-0.2499771111178930" },
+    });
+    const xml = styles.serialize();
+    expect(xml).toContain('<color theme="1" tint="-0.2499771111178930"/>');
+  });
+
   // ── DXFs (differential formats) ──
 
   describe("registerDxf", () => {
@@ -215,6 +224,27 @@ describe("Styles", () => {
           new RegExp(`<fonts count="1" [^>]*x14ac:knownFonts="${sourceValue}"`),
         );
       }
+    });
+
+    it("preserves an omitted applyProtection flag with protection", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>` +
+        `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>` +
+        `<borders count="1"><border/></borders>` +
+        `<cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0">` +
+        `<protection locked="0"/></protection></xf></cellXfs>` +
+        `</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.cellXfs?.[0]?.applyProtection).toBeUndefined();
+
+      const styles = new Styles();
+      styles.adopt({ fonts: [], fills: [], borders: [], cellXfs: parsed.cellXfs! });
+      const out = styles.serialize();
+      expect(out).toContain("<protection locked=");
+      expect(out).not.toContain("applyProtection=");
     });
 
     it("keeps a cellStyleXfs numFmtId without a format code", () => {

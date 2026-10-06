@@ -225,6 +225,13 @@ export interface Floating {
   margins?: Margins;
   wrap?: TextWrapping;
   zIndex?: number;
+  /** Marker coordinates (wp:simplePos, EMU or universal measure); defaults to 0,0. */
+  simplePos?: {
+    /** Marker X coordinate in EMUs or universal measure. */
+    x?: number | UniversalMeasure;
+    /** Marker Y coordinate in EMUs or universal measure. */
+    y?: number | UniversalMeasure;
+  };
   /**
    * Horizontal size as a percentage of a base (wp14:sizeRelH, Word 2010+).
    * `percent` is a whole-number percentage (0 = auto-size from the extent).

@@ -11,9 +11,11 @@ import {
   resolveRelationshipTarget,
   type RelationshipType,
 } from "@office-open/core";
+import type { ExternalDataOptions } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type { ReproducibleScope } from "@office-open/core/util";
 import type { Element } from "@office-open/xml";
+import type { ExternalLinkOptions } from "@parts/external-link";
 import { SharedStrings } from "@parts/shared-strings";
 import { Styles } from "@parts/styles";
 import type { DxfOptions } from "@parts/styles";
@@ -37,6 +39,14 @@ export interface HyperlinkEntry {
   tooltip?: string;
 }
 
+interface ChartExternalLinkOptions {
+  externalData?: ExternalDataOptions;
+  externalLink?: ExternalLinkOptions;
+  externalLinkPath?: string;
+  externalDataRelationshipType?: string;
+  externalDataRelationshipTarget?: string;
+}
+
 export class XlsxWriteContext implements WriteContext {
   /** Deterministic id/date scope when generating reproducibly (see PackerOptions). */
   reproducible?: ReproducibleScope;
@@ -45,6 +55,7 @@ export class XlsxWriteContext implements WriteContext {
   styles = new Styles();
   media = new Media<MediaData>();
   charts = new ChartCollection();
+  chartOptions = new Map<string, ChartExternalLinkOptions>();
   workbookRels = new Relationships("xl/workbook.xml");
   pivotCacheRefs: PivotCacheReference[] = [];
   private _hyperlinks = new Map<string, HyperlinkEntry>();

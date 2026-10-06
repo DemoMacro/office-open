@@ -12,7 +12,7 @@ import type { HandoutMasterOptions } from "@parts/handout-master";
 import { NS } from "@parts/slide-layout";
 import { buildBackgroundXml } from "@parts/slide-master";
 import type { SlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 
 import type { PptxWriteContext } from "../../context";
 import { backgroundDesc } from "./background";
@@ -40,7 +40,7 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions,
         parts.push("<p:cSld>");
         parts.push(buildBackgroundXml(opts.options.background, ctx));
         parts.push("<p:spTree>");
-        parts.push(SP_TREE_HEADER);
+        parts.push(stringifySpTreeHeader(1, "", opts.options.shapeTreeBlackWhiteMode));
         let childId = 100;
         for (const child of opts.options.children) {
           const xml = stringifyChild(withChildId(child, childId++), ctx);
@@ -72,6 +72,10 @@ export const handoutMasterDesc: CustomDescriptor<HandoutMasterDescriptorOptions,
 
         const spTree = findChild(cSld, "p:spTree");
         if (spTree) {
+          const blackWhiteMode = findChild(spTree, "p:grpSpPr")?.attributes?.["bwMode"];
+          if (blackWhiteMode !== undefined)
+            options.shapeTreeBlackWhiteMode =
+              blackWhiteMode as HandoutMasterOptions["shapeTreeBlackWhiteMode"];
           const children: SlideChild[] = [];
           for (const child of spTree.elements ?? []) {
             if (child.name === "p:nvGrpSpPr" || child.name === "p:grpSpPr") continue;

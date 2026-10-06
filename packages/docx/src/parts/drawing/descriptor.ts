@@ -244,11 +244,16 @@ function buildHyperlinkChildren(ids: HyperlinkIds, dialect?: DocumentNamespaceDi
   return parts.join("");
 }
 
+function hyperlinkAttribute(tooltip: string | undefined): string {
+  return tooltip ? ` tooltip="${escapeXml(tooltip)}"` : "";
+}
+
 // ── DocPr ──
 
 function stringifyDocPr(
   opts: DocPropertiesOptions | undefined,
   hlIds: HyperlinkIds,
+  hyperlink: HyperlinkOptions | undefined,
   reproducible?: ReproducibleScope,
   dialect?: DocumentNamespaceDialect,
 ): string {
@@ -258,7 +263,9 @@ function stringifyDocPr(
     id,
     opts,
     "",
-    buildHyperlinkChildren(hlIds, dialect),
+    buildHyperlinkChildren(hlIds, dialect) +
+      (hlIds.clickId ? hyperlinkAttribute(hyperlink?.clickTooltip) : "") +
+      (hlIds.hoverId ? hyperlinkAttribute(hyperlink?.hoverTooltip) : ""),
   );
 }
 
@@ -1111,7 +1118,13 @@ function stringifyInline(
     ].join(" ")}>` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
-    stringifyDocPr(docProperties, hlIds, ctx.reproducible, opts.dialect) +
+    stringifyDocPr(
+      docProperties,
+      hlIds,
+      opts.docProperties?.hyperlink,
+      ctx.reproducible,
+      opts.dialect,
+    ) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks, opts.dialect) +
     choiceXml +
     `</wp:inline></w:drawing>`
@@ -1200,13 +1213,21 @@ function stringifyAnchor(
 
   return (
     `<w:drawing><wp:anchor ${attrParts.join(" ")}>` +
-    '<wp:simplePos x="0" y="0"/>' +
+    `<wp:simplePos x="${convertToEmu(floating.simplePos?.x ?? 0)}" y="${convertToEmu(
+      floating.simplePos?.y ?? 0,
+    )}"/>` +
     stringifyPositionH(floating.horizontalPosition) +
     stringifyPositionV(floating.verticalPosition) +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
     effectExtentXml +
     wrapXml +
-    stringifyDocPr(docProperties, hlIds, ctx.reproducible, opts.dialect) +
+    stringifyDocPr(
+      docProperties,
+      hlIds,
+      opts.docProperties?.hyperlink,
+      ctx.reproducible,
+      opts.dialect,
+    ) +
     stringifyCnvGraphicFramePr(opts.graphicFrameLocks, opts.dialect) +
     choiceXml +
     sizeRelXml +

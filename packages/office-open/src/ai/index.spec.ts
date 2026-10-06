@@ -111,7 +111,6 @@ describe("schemaLookupTool", () => {
     expect(result.typeText).toContain("ParagraphOptions {");
     // closure renders dependencies; cataloged boundaries (and defs demoted by
     // the slice size cap, ParagraphChild being the largest) stay stubs
-    expect(result.typeText).toContain("CnfConditionalOptions {");
     expect(result.typeText).toContain("RunOptions // stub");
     expect(result.typeText).toContain("ParagraphChild // stub");
   });

@@ -1,5 +1,6 @@
 import { convertToEmu } from "@office-open/core";
 import type { MasterPlaceholderPosition } from "@parts/slide-master";
+import { stringifySpTreeHeader } from "@shared/constants";
 import type { LayoutDefinition } from "@shared/file";
 
 /** Slide layout family (ST_SlideLayoutType). */
@@ -22,8 +23,6 @@ export type SlideLayoutType =
   | "verticalTitleAndText";
 
 export const NS = `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"`;
-
-import { SP_TREE_HEADER } from "@shared/constants";
 
 // 16:9 reference slide width
 const SW_REF = 12192000;
@@ -310,7 +309,7 @@ export function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number =
     ftrPlaceholder(footerStartId + 1) +
     sldNumPlaceholder(footerStartId + 2);
 
-  return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"><p:cSld name="${def.name}"><p:spTree>${SP_TREE_HEADER}${contentShapes}${footerShapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+  return `<p:sldLayout ${NS} type="${layoutType}" preserve="1"><p:cSld name="${def.name}"><p:spTree>${stringifySpTreeHeader()}${contentShapes}${footerShapes}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }
 
 // ── Custom layout builder ──
@@ -446,5 +445,5 @@ export function buildCustomLayoutXml(def: LayoutDefinition): string {
   // has no "custom" token); slideLayoutDesc preserves the absence on re-emit.
   const typeAttr = def.type !== undefined ? ` type="${def.type}"` : "";
   const matchingAttr = def.matchingName !== undefined ? ` matchingName="${def.matchingName}"` : "";
-  return `<p:sldLayout ${NS}${typeAttr} preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${SP_TREE_HEADER}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
+  return `<p:sldLayout ${NS}${typeAttr} preserve="1"${matchingAttr}><p:cSld name="${displayName}"><p:spTree>${stringifySpTreeHeader(def.shapeTreeId, def.shapeTreeName)}${shapes.join("")}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`;
 }

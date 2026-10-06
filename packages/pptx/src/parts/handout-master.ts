@@ -1,10 +1,11 @@
 import { parseOnOff, stringifyColorMapping } from "@office-open/core";
 import type { ColorMappingOptions } from "@office-open/core";
+import type { BlackWhiteMode } from "@office-open/core/drawing";
 import type { ThemeOptions } from "@office-open/core/theme";
 import { attr, type Element } from "@office-open/xml";
 import type { BackgroundOptions } from "@parts/background";
 import type { SlideChild } from "@parts/slide/slide-child";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 
 /** Header/footer options for handout/notes master */
 export interface HeaderFooterOptions {
@@ -24,6 +25,8 @@ export interface HandoutMasterOptions {
   background?: BackgroundOptions;
   /** Custom spTree shapes (p:spTree children after the group header). */
   children?: SlideChild[];
+  /** Root spTree black-and-white mode (p:grpSpPr @bwMode). */
+  shapeTreeBlackWhiteMode?: BlackWhiteMode;
   /** Color mapping overrides */
   colorMapping?: Partial<ColorMappingOptions>;
   /** Header/footer settings */
@@ -77,7 +80,7 @@ export function buildHandoutMasterXml(options?: HandoutMasterOptions): string {
     'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
     'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
     '<p:cSld><p:bg><p:bgRef idx="1001"><a:schemeClr val="bg1"/></p:bgRef></p:bg>' +
-    `<p:spTree>${SP_TREE_HEADER}</p:spTree></p:cSld>` +
+    `<p:spTree>${stringifySpTreeHeader(1, "", options?.shapeTreeBlackWhiteMode)}</p:spTree></p:cSld>` +
     colorMapping +
     `<p:hf${hfAttrs ? ` ${hfAttrs}` : ""}/>` +
     "</p:handoutMaster>"

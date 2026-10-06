@@ -1,8 +1,10 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { stringifyRunInline } from "../../inline";
 import { stringifyRunProperties } from "../stringify";
 import type { RunPropertiesOptions } from "./properties";
+import type { RunOptions } from "./run";
 import { breakXml } from "./run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "./run-parse";
 
@@ -197,7 +199,38 @@ describe("empty run preservation (CT_Run allows an empty w:r)", () => {
   });
 });
 
+describe("parseRun text space preservation", () => {
+  it("keeps the source marker on multiple w:t segments", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:t>a</w:t><w:t xml:space="preserve">b</w:t></w:r>`);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(el, {} as never));
+    expect(opts).toEqual({
+      children: ["a", { text: "b", preserveSpace: true }],
+      preserveSpace: true,
+    });
+    const xml = stringifyRunInline(opts as never, {} as never);
+    expect(xml).toContain("<w:t>a</w:t>");
+    expect(xml).toContain('<w:t xml:space="preserve">b</w:t>');
+  });
+});
+
 describe("parseRun break clear (CT_Br/@w:clear)", () => {
+  it("parses and stringifies textWrapping break types", () => {
+    const doc = parseXml(`<w:r ${W_NS}><w:br w:type="textWrapping"/></w:r>`);
+    const brEl = doc.elements?.[0];
+    if (!brEl) throw new Error("parsed document has no root element");
+    const opts = parsedRunToOptions(parseRun(brEl, {} as never));
+    expect(opts).toEqual({ break: { count: 1, type: "textWrapping" } });
+    expect(breakXml((opts as RunOptions).break)).toBe('<w:br w:type="textWrapping"/>');
+  });
+
+  it("preserves a break type and clear together", () => {
+    expect(breakXml({ count: 1, type: "column", clear: "all" })).toBe(
+      '<w:br w:type="column" w:clear="all"/>',
+    );
+  });
+
   it("parses w:br/@w:clear into a structured break", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:br w:clear="all"/></w:r>`);
     const brEl = doc.elements?.[0];

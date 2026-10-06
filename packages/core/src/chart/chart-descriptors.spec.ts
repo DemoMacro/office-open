@@ -4,7 +4,12 @@ import { describe, it, expect } from "vite-plus/test";
 import { stringify, parse } from "../descriptor";
 import type { ReadContext, WriteContext } from "../descriptor";
 import { chartSpaceDesc } from "./chart-descriptors";
-import type { ChartSeriesData, ChartSpaceOptions, ScatterSeriesData } from "./types";
+import type {
+  BubbleSeriesData,
+  ChartSeriesData,
+  ChartSpaceOptions,
+  ScatterSeriesData,
+} from "./types";
 
 function roundTrip(opts: ChartSpaceOptions): ChartSpaceOptions {
   const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
@@ -98,14 +103,51 @@ describe("chartSpaceDesc", () => {
   it("round-trips numeric-axis scatter series (c:xVal/c:yVal)", () => {
     const opts: ChartSpaceOptions = {
       type: "scatter",
-      series: [{ name: "Height vs Weight", xValues: [160, 170, 180], yValues: [55, 70, 85] }],
+      series: [
+        {
+          name: "Height vs Weight",
+          nameFormula: "Sheet1!$A$1",
+          xValues: [160, 170, 180],
+          xFormula: "Sheet1!$A$2:$A$4",
+          yValues: [55, 70, 85],
+          valueFormula: "Sheet1!$B$2:$B$4",
+        },
+      ],
     };
     const result = roundTrip(opts);
     expect(result.type).toBe("scatter");
     const series = result.series as ScatterSeriesData[];
     expect(series[0]!.xValues).toEqual([160, 170, 180]);
+    expect(series[0]!.nameFormula).toBe("Sheet1!$A$1");
+    expect(series[0]!.xFormula).toBe("Sheet1!$A$2:$A$4");
+    expect(series[0]!.valueFormula).toBe("Sheet1!$B$2:$B$4");
     expect(series[0]!.yValues).toEqual([55, 70, 85]);
     expect("bubbleSize" in series[0]!).toBe(false);
+  });
+
+  it("round-trips bubble series formulas", () => {
+    const opts: ChartSpaceOptions = {
+      type: "bubble",
+      series: [
+        {
+          name: "S",
+          nameFormula: "Sheet1!$A$1",
+          xValues: [1],
+          xFormula: "Sheet1!$A$2:$A$2",
+          yValues: [2],
+          valueFormula: "Sheet1!$B$2:$B$2",
+          bubbleSize: [3],
+          bubbleSizeFormula: "Sheet1!$C$2:$C$2",
+        },
+      ],
+    };
+    const series = roundTrip(opts).series as BubbleSeriesData[];
+    expect(series[0]).toMatchObject({
+      nameFormula: "Sheet1!$A$1",
+      xFormula: "Sheet1!$A$2:$A$2",
+      valueFormula: "Sheet1!$B$2:$B$2",
+      bubbleSizeFormula: "Sheet1!$C$2:$C$2",
+    });
   });
 
   it("round-trips bar chart type (distinguished from column via c:barDir)", () => {
@@ -842,6 +884,99 @@ describe("chartSpaceDesc", () => {
     expect(result.plotAreaLayout?.h).toBeCloseTo(0.6);
   });
 
+  it("preserves manual layout numeric lexical forms", () => {
+    const x = "3.4722222222222245E-2";
+    const y = "7.2829131652661097E-2";
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      series: [{ name: "S", values: [1, 2] }],
+      title: { text: "Chart", layout: { x } },
+      plotAreaLayout: { y },
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain(`c:x val="${x}"`);
+    expect(xml).toContain(`c:y val="${y}"`);
+
+    const result = roundTrip(opts);
+    expect(result.title).toMatchObject({ layout: { x } });
+    expect(result.plotAreaLayout?.y).toBe(y);
+  });
+
+  it("preserves sparse chart cache point indexes", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      series: [{ name: "S", values: [4.5, null, { index: 2, value: 6.7, formatCode: "0.0" }] }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<c:ptCount val="3"/>');
+    expect(xml).toContain('<c:pt idx="0">');
+    expect(xml).toContain('<c:pt idx="2" formatCode="0.0">');
+    expect(xml).not.toContain('<c:pt idx="1">');
+
+    const result = roundTrip(opts);
+    const series = result.series?.[0];
+    if (!series || !("values" in series)) throw new Error("expected a standard chart series");
+    expect(series.values).toEqual([4.5, null, { index: 2, value: 6.7, formatCode: "0.0" }]);
+  });
+
+  it("preserves an empty chart number cache", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      series: [
+        {
+          name: "S",
+          values: [],
+          valueFormula: "Sheet1!$A$1",
+          formatCode: "",
+          valuePointCount: false,
+        },
+      ],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<c:numCache/>");
+
+    const result = roundTrip(opts);
+    expect(result.series?.[0]).toMatchObject({
+      valuePointCount: false,
+      values: [],
+    });
+  });
+
+  it("omits an absent chart number cache format code", () => {
+    const opts: ChartSpaceOptions = {
+      type: "pie",
+      threeD: true,
+      series: [
+        {
+          name: "S",
+          nameFormula: "Sheet1!$B$1",
+          valueFormula: "Sheet1!$C$2:$C$4",
+          values: [1, 2, 3],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    expect(result.series?.[0]).toMatchObject({ valueFormula: opts.series![0]!.valueFormula });
+  });
+
+  it("preserves a source number cache with no format code", () => {
+    const source = stringify(
+      chartSpaceDesc,
+      {
+        type: "pie",
+        threeD: true,
+        series: [{ name: "S", valueFormula: "Sheet1!$B$2:$B$4", values: [1, 2, 3] }],
+      },
+      {} as WriteContext,
+    )!.replace("<c:formatCode>General</c:formatCode>", "");
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("expected a chart root");
+    const result = parse(chartSpaceDesc, el, {} as ReadContext);
+    const series = result.series?.[0] as ChartSeriesData;
+    expect(series.formatCode).toBe("");
+    expect(stringify(chartSpaceDesc, result, {} as WriteContext)).not.toContain("<c:formatCode>");
+  });
+
   it("3D walls and manual layout are byte-stable on round-trip", () => {
     const opts: ChartSpaceOptions = {
       type: "column",
@@ -1278,6 +1413,18 @@ describe("chartSpaceDesc", () => {
 
     const result = roundTrip(opts);
     expect(result.legendEntries).toEqual(opts.legendEntries);
+  });
+
+  it("round-trips legend entries that contain only an index", () => {
+    const opts: ChartSpaceOptions = {
+      type: "column",
+      categories: ["A"],
+      series: [{ name: "S", values: [1] }],
+      legendEntries: [{ index: 2 }],
+    };
+    const xml = stringify(chartSpaceDesc, opts, {} as WriteContext);
+    expect(xml).toContain('<c:legendEntry><c:idx val="2"/></c:legendEntry>');
+    expect(roundTrip(opts).legendEntries).toEqual([{ index: 2 }]);
   });
 
   it("omits optional header elements when unset and round-trips them when set", () => {

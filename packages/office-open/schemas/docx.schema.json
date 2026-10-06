@@ -1605,6 +1605,11 @@
         "count": {
           "description": "Number of `<w:br/>` elements (defaults to 1).",
           "type": "number"
+        },
+        "type": {
+          "description": "Break type (`w:br/`@w:type`).",
+          "enum": ["page", "column", "textWrapping"],
+          "type": "string"
         }
       },
       "type": "object"
@@ -1621,6 +1626,10 @@
             "$ref": "#/definitions/ChartValue"
           },
           "type": "array"
+        },
+        "bubbleSizeFormula": {
+          "description": "Bubble-size reference formula (c:bubbleSize > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
@@ -1639,8 +1648,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -1693,6 +1701,12 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "$ref": "#/definitions/ScatterSeriesData/properties/xFormula"
         },
         "xValues": {
           "items": {
@@ -2867,7 +2881,7 @@
           "type": "string"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "description": "Values number format (c:numCache > c:formatCode); an empty string keeps the child absent.",
           "type": "string"
         },
         "index": {
@@ -2927,6 +2941,18 @@
         "valueLiteral": {
           "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
           "type": "boolean"
+        },
+        "valuePointCount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Values cache point count (c:numCache > c:ptCount); false keeps the element absent."
         },
         "values": {
           "items": {
@@ -3312,8 +3338,39 @@
       "type": "object"
     },
     "ChartValue": {
-      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
-      "type": ["number", "string"]
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/ChartValuePointOptions"
+        }
+      ],
+      "description": "Numeric chart value; a string preserves c:v lexical form and null a missing cache slot."
+    },
+    "ChartValuePointOptions": {
+      "additionalProperties": false,
+      "description": "Explicit chart cache point; the index preserves sparse c:pt slots.",
+      "properties": {
+        "formatCode": {
+          "description": "Point-local number format (c:pt formatCode) — round-trip.",
+          "type": "string"
+        },
+        "index": {
+          "type": "number"
+        },
+        "value": {
+          "type": ["number", "string"]
+        }
+      },
+      "required": ["index", "value"],
+      "type": "object"
     },
     "CheckBoxControlOptions": {
       "additionalProperties": false,
@@ -3462,6 +3519,10 @@
         "oddVBand": {
           "description": "Whether this is an odd vertical band",
           "type": "boolean"
+        },
+        "val": {
+          "description": "Canonical 12-character conditional-format bit string.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -4454,6 +4515,10 @@
         "instructionAdditionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+        },
+        "instructionPreserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker on the plain instruction text.",
+          "type": "boolean"
         },
         "instructionRunPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -7268,6 +7333,18 @@
               "description": "Source media file name, pinned on round-trip so re-emitting registers the media under its original name instead of a re-derived one (jpeg→jpg normalization would otherwise fork a second media part).",
               "type": "string"
             },
+            "fillRectangle": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SourceRectangleOptions"
+                },
+                {
+                  "const": false,
+                  "type": "boolean"
+                }
+              ],
+              "description": "Fill rectangle inside a:stretch; false keeps the bare stretch element."
+            },
             "imageType": {
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
@@ -7288,6 +7365,10 @@
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for cropping"
+            },
+            "stretch": {
+              "description": "Set false to omit a:stretch (matching the source XML); omitted emits the default stretch.",
+              "type": "boolean"
             },
             "tile": {
               "$ref": "#/definitions/TileOptions",
@@ -7422,6 +7503,35 @@
         },
         "margins": {
           "$ref": "#/definitions/Margins"
+        },
+        "simplePos": {
+          "additionalProperties": false,
+          "description": "Marker coordinates (wp:simplePos, EMU or universal measure); defaults to 0,0.",
+          "properties": {
+            "x": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ],
+              "description": "Marker X coordinate in EMUs or universal measure."
+            },
+            "y": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "$ref": "#/definitions/UniversalMeasure"
+                }
+              ],
+              "description": "Marker Y coordinate in EMUs or universal measure."
+            }
+          },
+          "type": "object"
         },
         "verticalPosition": {
           "$ref": "#/definitions/VerticalPositionOptions"
@@ -7999,6 +8109,10 @@
       "additionalProperties": false,
       "description": "Glossary document options",
       "properties": {
+        "partName": {
+          "description": "Glossary document path relative to word/ (round-trip, e.g. \"glossary/document.xml\"). Fresh generation uses glossary/document.xml.",
+          "type": "string"
+        },
         "parts": {
           "description": "Building blocks",
           "items": {
@@ -8848,8 +8962,16 @@
           "description": "URL for click hyperlink",
           "type": "string"
         },
+        "clickTooltip": {
+          "description": "Click hyperlink tooltip (a:hlinkClick attribute tooltip)",
+          "type": "string"
+        },
         "hover": {
           "description": "URL for hover hyperlink",
+          "type": "string"
+        },
+        "hoverTooltip": {
+          "description": "Hover hyperlink tooltip (a:hlinkHover attribute tooltip)",
           "type": "string"
         }
       },
@@ -9967,7 +10089,8 @@
       "description": "Manual plot-area layout. Field order follows the XSD.",
       "properties": {
         "h": {
-          "type": "number"
+          "description": "Height; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "hMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -9976,19 +10099,22 @@
           "$ref": "#/definitions/LayoutTarget"
         },
         "w": {
-          "type": "number"
+          "description": "Width; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "wMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "x": {
-          "type": "number"
+          "description": "X offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "xMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "y": {
-          "type": "number"
+          "description": "Y offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "yMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -12072,6 +12198,10 @@
           "$ref": "#/definitions/ObjectEmbedOptions",
           "description": "Embedded OLE object (o:OLEObject Type=\"Embed\")."
         },
+        "fillcolor": {
+          "description": "VML fill color (v:shape/`@fillcolor`).",
+          "type": "string"
+        },
         "height": {
           "anyOf": [
             {
@@ -12102,6 +12232,14 @@
         "shapetype": {
           "$ref": "#/definitions/VmlShapetypeOptions",
           "description": "v:shapetype preamble — Word writes the _x0000_t75 OLE shapetype (with its formula table) before the preview v:shape; round-tripped verbatim."
+        },
+        "style": {
+          "$ref": "#/definitions/VmlShapeStyle",
+          "description": "Full VML style properties; width/height remain the sizing convenience."
+        },
+        "textbox": {
+          "$ref": "#/definitions/VmlTextboxOptions",
+          "description": "VML textbox child and attributes (v:textbox)."
         },
         "width": {
           "anyOf": [
@@ -14171,6 +14309,20 @@
               {
                 "additionalProperties": false,
                 "properties": {
+                  "preserveSpace": {
+                    "type": "boolean"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": ["text"],
+                "title": "text",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
                   "tab": {
                     "const": true,
                     "type": "boolean"
@@ -15242,6 +15394,18 @@
             "$ref": "#/definitions/PictMediaOptions"
           },
           "type": "array"
+        },
+        "runAdditionRsid": {
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip).",
+          "type": "string"
+        },
+        "runDeletionRsid": {
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip).",
+          "type": "string"
+        },
+        "runPropertiesRsid": {
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip).",
+          "type": "string"
         },
         "vmlFallback": {
           "description": "Serialized mc:Fallback element carried when the source wrapped this pict in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on stringify); round-trip only — do not hand-author.",
@@ -17383,8 +17547,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -17437,6 +17600,13 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "description": "X values reference formula (c:xVal > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "xValues": {
           "items": {
@@ -20628,6 +20798,14 @@
       "additionalProperties": false,
       "description": "Simple field types for WordprocessingML documents.",
       "properties": {
+        "cachedInstructionText": {
+          "description": "Cached result expressed as instruction text (round-trip; rare nested-field form).",
+          "type": "string"
+        },
+        "cachedInstructionTextPreserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker on `cachedInstructionText`.",
+          "type": "boolean"
+        },
         "cachedRuns": {
           "description": "Cached-value runs when the plain single-text-run template cannot express their run properties, identity attributes, or child sequence.",
           "items": {
@@ -20638,6 +20816,10 @@
         "cachedValue": {
           "description": "Optional cached field value",
           "type": "string"
+        },
+        "cachedValuePreserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker on the plain cached value.",
+          "type": "boolean"
         },
         "dirty": {
           "description": "Field result is out of date",
@@ -22788,6 +22970,10 @@
           "description": "div ID for HTML compatibility (divId)",
           "type": "number"
         },
+        "editId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Table row edit identifier (w14:editId, 8-digit hex string)."
+        },
         "gridAfter": {
           "description": "Number of grid columns after the last cell (gridAfter)",
           "type": "number"
@@ -23601,8 +23787,13 @@
         "highlightClick": {
           "type": "boolean"
         },
-        "invalidUrl": {
+        "history": {
+          "description": "Add the target to browser history (a:hlinkClick `@history`, default true).",
           "type": "boolean"
+        },
+        "invalidUrl": {
+          "description": "Literal invalid URL text (a:hlinkClick `@invalidUrl`).",
+          "type": "string"
         },
         "referenceId": {
           "description": "Internal placeholder key (\"{hlink:N}\" → \"N\"); preserved across parse → stringify.",
@@ -23611,6 +23802,10 @@
         "slide": {
           "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
+        },
+        "targetFrame": {
+          "description": "Browser target frame (a:hlinkClick `@tgtFrame`, e.g. \"_blank\").",
+          "type": "string"
         },
         "tooltip": {
           "type": "string"
@@ -25107,6 +25302,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -25812,6 +26010,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -26414,6 +26615,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -26867,6 +27071,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -27156,6 +27363,9 @@
         },
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
         },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
@@ -27487,6 +27697,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -27807,6 +28020,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -28062,6 +28278,9 @@
         },
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
         },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
@@ -28350,6 +28569,9 @@
         },
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
         },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
@@ -28998,6 +29220,9 @@
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
         },
+        "sourceXml": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/sourceXml"
+        },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",
           "type": "string"
@@ -29398,6 +29623,10 @@
         },
         "skew": {
           "$ref": "#/definitions/VmlSkewOptions"
+        },
+        "sourceXml": {
+          "description": "Verbatim source element XML used only to preserve unmodeled attributes and ordering (round-trip).",
+          "type": "string"
         },
         "spid": {
           "description": "o:spid — shape id from the drawing part's id map.",

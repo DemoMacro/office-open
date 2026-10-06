@@ -47,6 +47,12 @@ let nextHyperlinkId = 1;
  * hyperlinks (both serialize CT_Hyperlink elements).
  */
 export function registerHyperlink(hl: TextHyperlinkOptions, ctx: WriteContext): string | undefined {
+  if (hl.url === undefined && hl.slide === undefined && hl.referenceId?.startsWith("{")) {
+    return undefined;
+  }
+  if (hl.url === undefined && hl.slide === undefined && hl.referenceId !== undefined) {
+    return hl.referenceId;
+  }
   if (hl.url === undefined && hl.slide === undefined) return undefined;
   const key = hl.referenceId ?? `hlink_${nextHyperlinkId++}`;
   ctx.addHyperlink(key, { url: hl.url, slide: hl.slide, tooltip: hl.tooltip });
@@ -62,19 +68,23 @@ export function buildHyperlinkElement(
   // CT_Hyperlink r:id is optional — emit it only for relational targets
   // (external url or internal slide). Action-only tokens (nextslide/endshow/
   // macro/program/...) carry no r:id.
-  if ((hl.url !== undefined || hl.slide !== undefined) && key !== undefined) {
+  if (hl.url !== undefined || hl.slide !== undefined) {
     attrs.push(`r:id="{hlink:${key}}"`);
+  } else if (hl.referenceId !== undefined && key !== undefined) {
+    attrs.push(`r:id="${escapeXml(key)}"`);
   }
   // Internal slide jump takes precedence over an explicit action token.
   if (hl.slide !== undefined) {
     attrs.push('action="ppaction://hlinksldjump"');
-  } else if (hl.action) {
+  } else if (hl.action !== undefined) {
     attrs.push(`action="${escapeXml(hl.action)}"`);
   }
-  if (hl.tooltip) attrs.push(`tooltip="${escapeXml(hl.tooltip)}"`);
-  if (hl.highlightClick) attrs.push('highlightClick="1"');
-  if (hl.endSound) attrs.push('endSnd="1"');
-  if (hl.invalidUrl) attrs.push('invalidUrl="1"');
+  if (hl.tooltip !== undefined) attrs.push(`tooltip="${escapeXml(hl.tooltip)}"`);
+  if (hl.targetFrame !== undefined) attrs.push(`tgtFrame="${escapeXml(hl.targetFrame)}"`);
+  if (hl.history !== undefined) attrs.push(`history="${hl.history ? 1 : 0}"`);
+  if (hl.highlightClick !== undefined) attrs.push(`highlightClick="${hl.highlightClick ? 1 : 0}"`);
+  if (hl.endSound !== undefined) attrs.push(`endSnd="${hl.endSound ? 1 : 0}"`);
+  if (hl.invalidUrl !== undefined) attrs.push(`invalidUrl="${escapeXml(hl.invalidUrl)}"`);
   return attrs.length ? `<${tag} ${attrs.join(" ")}/>` : `<${tag}/>`;
 }
 
@@ -97,14 +107,21 @@ export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOp
     }
     const m = ridStr.match(/^\{hlink:(.+)\}$/);
     if (m) hl.referenceId = m[1];
+    else if (!target) hl.referenceId = ridStr;
   }
-  if (el.attributes?.["tooltip"]) hl.tooltip = String(el.attributes["tooltip"]);
+  if (el.attributes?.["tooltip"] !== undefined) hl.tooltip = String(el.attributes["tooltip"]);
+  if (el.attributes?.["tgtFrame"] !== undefined) hl.targetFrame = String(el.attributes["tgtFrame"]);
   // Preserve explicit action only when it isn't the synthesized slide-jump token
   // (slide already captures that intent).
-  if (action && action !== "ppaction://hlinksldjump") hl.action = action;
-  if (el.attributes?.["highlightClick"]) hl.highlightClick = true;
-  if (el.attributes?.["endSnd"]) hl.endSound = true;
-  if (el.attributes?.["invalidUrl"]) hl.invalidUrl = true;
+  if (action !== undefined && action !== "ppaction://hlinksldjump") hl.action = action;
+  if (el.attributes?.["highlightClick"] !== undefined)
+    hl.highlightClick = parseOnOff(el.attributes["highlightClick"]) ?? false;
+  if (el.attributes?.["endSnd"] !== undefined)
+    hl.endSound = parseOnOff(el.attributes["endSnd"]) ?? false;
+  if (el.attributes?.["invalidUrl"] !== undefined)
+    hl.invalidUrl = String(el.attributes["invalidUrl"]);
+  if (el.attributes?.["history"] !== undefined)
+    hl.history = parseOnOff(el.attributes["history"]) ?? true;
   return hl as TextHyperlinkOptions;
 }
 

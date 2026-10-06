@@ -47,8 +47,10 @@ export interface ChartSeriesCommon {
    * parse sets this when the source carried c:numLit.
    */
   valueLiteral?: boolean;
-  /** Values number format (c:numCache > c:formatCode) — round-trip. */
+  /** Values number format (c:numCache > c:formatCode); an empty string keeps the child absent. */
   formatCode?: string;
+  /** Values cache point count (c:numCache > c:ptCount); false keeps the element absent. */
+  valuePointCount?: number | false;
   trendlines?: readonly TrendlineOptions[];
   errorBars?: ErrorBarOptions;
   dataLabels?: DataLabelsOptions;
@@ -79,8 +81,16 @@ export interface ChartSeriesCommon {
 
 // ── ScatterSeriesData ──
 
-/** Numeric chart value; a string preserves the source c:v lexical form. */
-export type ChartValue = number | string;
+/** Explicit chart cache point; the index preserves sparse c:pt slots. */
+export interface ChartValuePointOptions {
+  index: number;
+  value: number | string;
+  /** Point-local number format (c:pt formatCode) — round-trip. */
+  formatCode?: string;
+}
+
+/** Numeric chart value; a string preserves c:v lexical form and null a missing cache slot. */
+export type ChartValue = number | string | null | ChartValuePointOptions;
 
 /**
  * XY numeric series (c:xVal/c:yVal) — a scatter series without bubble sizes.
@@ -89,6 +99,8 @@ export type ChartValue = number | string;
  */
 export interface ScatterSeriesData extends ChartSeriesCommon {
   xValues: readonly ChartValue[];
+  /** X values reference formula (c:xVal > c:numRef > c:f) — round-trip. */
+  xFormula?: string;
   yValues: readonly ChartValue[];
 }
 
@@ -96,6 +108,8 @@ export interface ScatterSeriesData extends ChartSeriesCommon {
 
 export interface BubbleSeriesData extends ScatterSeriesData {
   bubbleSize: readonly ChartValue[];
+  /** Bubble-size reference formula (c:bubbleSize > c:numRef > c:f) — round-trip. */
+  bubbleSizeFormula?: string;
 }
 
 // ── Trendline ──
@@ -775,10 +789,14 @@ export interface ManualLayoutOptions {
   yMode?: LayoutMode;
   wMode?: LayoutMode;
   hMode?: LayoutMode;
-  x?: number;
-  y?: number;
-  w?: number;
-  h?: number;
+  /** X offset/fraction; a string preserves the source lexical form. */
+  x?: number | string;
+  /** Y offset/fraction; a string preserves the source lexical form. */
+  y?: number | string;
+  /** Width; a string preserves the source lexical form. */
+  w?: number | string;
+  /** Height; a string preserves the source lexical form. */
+  h?: number | string;
 }
 
 /** 3D wall/floor surface (CT_Surface: thickness → spPr → pictureOptions). */

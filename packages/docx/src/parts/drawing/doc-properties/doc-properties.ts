@@ -17,8 +17,12 @@ import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 export interface HyperlinkOptions {
   /** URL for click hyperlink */
   click?: string;
+  /** Click hyperlink tooltip (a:hlinkClick attribute tooltip) */
+  clickTooltip?: string;
   /** URL for hover hyperlink */
   hover?: string;
+  /** Hover hyperlink tooltip (a:hlinkHover attribute tooltip) */
+  hoverTooltip?: string;
 }
 
 /**

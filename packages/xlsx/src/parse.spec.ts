@@ -220,6 +220,59 @@ describe("parseWorkbook round-trip", () => {
     expect(rels).toContain("../media/image1.png");
   });
 
+  it("accepts the webextension element alias across round-trip", async () => {
+    const source = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet",
+            shapes: [
+              {
+                col: 1,
+                row: 1,
+                properties: { x: 0, y: 0, width: 100, height: 100, geometry: "rect" },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    archive["xl/drawings/drawing1.xml"] = new TextEncoder().encode(
+      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +
+        `<xdr:twoCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>` +
+        `<xdr:to><xdr:col>1</xdr:col><xdr:row>1</xdr:row></xdr:to>` +
+        `<mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+        `<mc:Choice Requires="we"><xdr:graphicFrame><xdr:nvGraphicFramePr><xdr:cNvPr id="1" name="WebExtension"/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/webextensions/webextension/2010/11"><we:webextension xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame></mc:Choice>` +
+        `<mc:Fallback/></mc:AlternateContent><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`,
+    );
+    archive["xl/drawings/_rels/drawing1.xml.rels"] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2011/relationships/webextension" Target="../webextensions/webextension1.xml"/></Relationships>`,
+    );
+    archive["xl/webextensions/webextension1.xml"] = new TextEncoder().encode(
+      `<we:webextension xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" id="{synthetic-id}"/>`,
+    );
+    archive["[Content_Types].xml"] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive["[Content_Types].xml"]!)
+        .replace(
+          "</Types>",
+          `<Override PartName="/xl/webextensions/webextension1.xml" ContentType="application/vnd.ms-office.webextension+xml"/></Types>`,
+        ),
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets?.[0]?.webExtensions?.[0]).toMatchObject({
+      sourcePath: "xl/webextensions/webextension1.xml",
+    });
+    const output = unzipSync((await generateWorkbook(parsed)) as Uint8Array);
+    expect(output["xl/webextensions/webextension1.xml"]).toBeDefined();
+    expect(new TextDecoder().decode(output["xl/drawings/_rels/drawing1.xml.rels"]!)).toContain(
+      "relationships/webextension",
+    );
+  });
+
   it("keeps comment VML shapes typed across round-trip", async () => {
     const source = (await generateWorkbook(
       {
@@ -436,8 +489,18 @@ describe("parseWorkbook round-trip", () => {
     );
 
     const parsed = parseWorkbookSync(buffer);
-    expect(parsed.dxfs![0]).toEqual(opts.dxfs![0]);
-    expect(parsed.worksheets![0]!.tabColor).toEqual({ theme: 3, tint: 0.599995 });
+    expect(parsed.dxfs![0]).toEqual({
+      font: { themeColor: 1, tint: 0.499985, tintRaw: "0.499985" },
+      border: {
+        outline: false,
+        left: { style: "thin", themeColor: 2, tint: -0.249973, tintRaw: "-0.249973" },
+      },
+    });
+    expect(parsed.worksheets![0]!.tabColor).toEqual({
+      theme: 3,
+      tint: 0.599995,
+      tintRaw: "0.599995",
+    });
   });
 
   it("keeps built-in numFmt ids so date cells keep their format", async () => {

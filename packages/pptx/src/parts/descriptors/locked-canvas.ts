@@ -8,17 +8,15 @@
 
 import { convertToEmu } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import {
-  stringifyNonVisualDrawingProperties,
-  shapePropertiesDesc,
-  textBodyDesc,
-} from "@office-open/core/drawing";
+import { shapePropertiesDesc, textBodyDesc } from "@office-open/core/drawing";
 import { findChild } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { LockedCanvasFrameOptions, LockedCanvasShapeOptions } from "../locked-canvas-frame";
 import {
   readGraphicFrameLocking,
+  readGraphicFrameHyperlink,
+  stringifyGraphicFrameCnvPr,
   readNvPrPlaceholder,
   stringifyCnvGraphicFramePr,
   stringifyNvPr,
@@ -50,7 +48,7 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvGraphicFramePr>${stringifyGraphicFrameCnvPr(id, opts, name, ctx)}` +
         `${stringifyCnvGraphicFramePr(opts.locking)}` +
         `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
@@ -81,7 +79,9 @@ export const lockedCanvasDesc: CustomDescriptor<LockedCanvasFrameOptions> = {
     // id, name from p:nvGraphicFramePr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
     const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), _ctx);
+    const hyperlink = readGraphicFrameHyperlink(findChild(el, "p:nvGraphicFramePr"), _ctx);
     readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (hyperlink) result.hyperlink = hyperlink;
     if (locking !== undefined) result.locking = locking;
 
     // x, y, width, height from p:xfrm

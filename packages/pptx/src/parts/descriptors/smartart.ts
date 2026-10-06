@@ -17,7 +17,6 @@ import {
   toUint8Array,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
   COLOR_CATEGORIES,
   LAYOUT_CATEGORIES,
@@ -37,6 +36,8 @@ import type { PptxWriteContext } from "../../context";
 import type { SmartArtOptions } from "../smartart";
 import {
   readGraphicFrameLocking,
+  readGraphicFrameHyperlink,
+  stringifyGraphicFrameCnvPr,
   readNvPrPlaceholder,
   stringifyCnvGraphicFramePr,
   stringifyNvPr,
@@ -119,7 +120,7 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvGraphicFramePr>${stringifyGraphicFrameCnvPr(id, opts, name, ctx)}` +
         `${stringifyCnvGraphicFramePr(opts.locking)}` +
         `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
@@ -148,7 +149,9 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     // Name from p:nvGraphicFramePr → p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
     const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), _ctx);
+    const hyperlink = readGraphicFrameHyperlink(findChild(el, "p:nvGraphicFramePr"), _ctx);
     readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (hyperlink) result.hyperlink = hyperlink;
     if (locking !== undefined) result.locking = locking;
 
     // SmartArt data via dgm:relIds → r:dm, plus the layout/style/colors parts

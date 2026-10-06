@@ -24,6 +24,8 @@ export interface FontOptions {
   themeColor?: number;
   /** Tint applied to the theme color (CT_Color `@tint`) */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
   /** Indexed color palette entry (CT_Color `@indexed`) */
   colorIndexed?: number;
   /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
@@ -57,6 +59,8 @@ export interface CellGradientStopOptions {
   themeColor?: number;
   /** Tint applied to the theme color (CT_Color `@tint`) */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
 }
 
 /**
@@ -73,6 +77,8 @@ export interface CellFillOptions {
   themeColor?: number;
   /** Foreground tint (CT_Color `@tint` on fgColor) */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
   /** Foreground automatic color (CT_Color `@auto` on fgColor) */
   fgAutoColor?: boolean;
   /** Pattern kind (CT_PatternFill `@patternType`, ST_PatternType) */
@@ -102,6 +108,8 @@ export interface CellFillOptions {
   bgThemeColor?: number;
   /** Background tint (CT_Color `@tint` on bgColor) */
   bgTint?: number;
+  /** Source lexical form of `bgTint`; round-trip only — do not hand-author. */
+  bgTintRaw?: string;
   /** Foreground color indexed (CT_Color `@indexed` on fgColor) */
   colorIndexed?: number;
   /** Background color indexed (CT_Color `@indexed` on bgColor) */
@@ -146,6 +154,8 @@ export interface BorderOptions {
   themeColor?: number;
   /** Tint applied to the theme color (CT_Color `@tint`) */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
   /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
   autoColor?: boolean;
   /** Indexed color palette entry (CT_Color `@indexed`) */

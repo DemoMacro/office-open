@@ -42,6 +42,8 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   y2?: number | UniversalMeasure;
   /** Rotation angle in degrees (a:xfrm @rot; 90 = 90°). */
   rotation?: number;
+  /** Vertical mirror (a:xfrm @flipV) — preserves zero-height lines. */
+  flipVertical?: boolean;
   /** @bwMode on p:spPr — black-and-white render mode. */
   blackWhiteMode?: BlackWhiteMode;
   /**
@@ -75,6 +77,8 @@ export interface ConnectorOptions extends BaseConnectorOptions {
   y2?: number | UniversalMeasure;
   /** Rotation angle in degrees (a:xfrm @rot; 90 = 90°). */
   rotation?: number;
+  /** Vertical mirror (a:xfrm @flipV) — preserves zero-height connectors. */
+  flipVertical?: boolean;
   /** @bwMode on p:spPr — black-and-white render mode. */
   blackWhiteMode?: BlackWhiteMode;
   /** Shape style matrix reference (p:style). */

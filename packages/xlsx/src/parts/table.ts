@@ -272,16 +272,18 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       // calculatedColumnFormula
       if (col.calculatedColumnFormula !== undefined) {
         const fAttrs = col.calculatedColumnFormulaArray ? ' array="1"' : "";
+        const space = /^\s|\s$/.test(col.calculatedColumnFormula) ? ' xml:space="preserve"' : "";
         inner.push(
-          `<calculatedColumnFormula${fAttrs}>${escapeXml(col.calculatedColumnFormula)}</calculatedColumnFormula>`,
+          `<calculatedColumnFormula${fAttrs}${space}>${escapeXml(col.calculatedColumnFormula)}</calculatedColumnFormula>`,
         );
       }
 
       // totalsRowFormula (when totalsRowFunction is "custom")
       if (col.totalsRowFormula !== undefined) {
         const fAttrs = col.totalsRowFormulaArray ? ' array="1"' : "";
+        const space = /^\s|\s$/.test(col.totalsRowFormula) ? ' xml:space="preserve"' : "";
         inner.push(
-          `<totalsRowFormula${fAttrs}>${escapeXml(col.totalsRowFormula)}</totalsRowFormula>`,
+          `<totalsRowFormula${fAttrs}${space}>${escapeXml(col.totalsRowFormula)}</totalsRowFormula>`,
         );
       }
 

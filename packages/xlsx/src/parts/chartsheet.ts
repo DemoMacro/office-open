@@ -12,16 +12,24 @@ import { parseOnOff } from "@office-open/core";
 import { derivePasswordHash } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import { convertToInch } from "@office-open/core";
-import type { ArgbHexColor, Base64 } from "@office-open/core";
+import type { Base64 } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import type { GraphicFrameLockingOptions } from "@office-open/core/drawing";
 import { attrs, attr, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import { hashPassword } from "@util/index";
 
+import type { ExternalLinkOptions } from "./external-link";
 import { parseHeaderFooterEl } from "./worksheet/descriptor";
 import { stringifyHeaderFooterXml } from "./worksheet/stringify";
-import type { HeaderFooterOptions, PageMarginsOptions, PageOrientation } from "./worksheet/types";
+import type {
+  HeaderFooterOptions,
+  PageMarginsOptions,
+  PageOrientation,
+  TabColor,
+  TabColorOptions,
+} from "./worksheet/types";
 
 // ── Types ──
 
@@ -77,15 +85,15 @@ export interface ChartsheetProtectionOptions {
 }
 
 /** A chart sheet (xl/chartsheets/sheetN.xml) — a full-sheet chart with its own view state. */
-export interface ChartsheetOptions {
+export interface ChartsheetOptions extends Omit<NonVisualDrawingPropertiesOptions, "name"> {
   /** Sheet name */
   name?: string;
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
   sheetId?: number;
   /** Visibility (CT_Sheet `@state`) */
   state?: "visible" | "hidden" | "veryHidden";
-  /** Tab color (hex ARGB, e.g. "FF4472C4") */
-  tabColor?: ArgbHexColor;
+  /** Tab color channel set (rgb, theme, or indexed) with optional tint. */
+  tabColor?: TabColor;
   pageMargins?: PageMarginsOptions;
   pageSetup?: ChartsheetPageSetup;
   headerFooter?: HeaderFooterOptions;
@@ -104,6 +112,14 @@ export interface ChartsheetOptions {
   zoomScale?: number;
   /** Chart definition — the shared chart-space model, same shape as a worksheet chart. */
   chart?: ChartSpaceOptions;
+  /** Chart-owned external link part for c:externalData — round-trip only. */
+  externalLink?: ExternalLinkOptions;
+  /** Source chart-owned external link path — round-trip only. */
+  externalLinkPath?: string;
+  /** Source c:externalData relationship type — round-trip only. */
+  externalDataRelationshipType?: string;
+  /** Source c:externalData relationship target — round-trip only. */
+  externalDataRelationshipTarget?: string;
   /** Macro reference on the chart's graphicFrame (CT_GraphicFrame/@macro). */
   macro?: string;
   /** Frame locks on the chart's graphicFrame (a:graphicFrameLocks). */
@@ -121,6 +137,14 @@ export interface ChartsheetOptions {
   extentCy?: number;
   /** Chart frame shape id (xdr:cNvPr @id) — unique within the drawing part. */
   shapeId?: number;
+  /** Chart frame name (xdr:cNvPr `@name`); distinct from the sheet `name`. */
+  chartName?: string;
+  /** Source drawing part path (xl/drawings/drawingN.xml) — round-trip only. */
+  sourceDrawingPath?: string;
+  /** Source `<drawing>` relationship id — round-trip only. */
+  sourceDrawingRelationshipId?: string;
+  /** Source chart part path (xl/charts/chartN.xml) — round-trip only. */
+  sourceChartPath?: string;
 }
 
 // ── Descriptor Types ──
@@ -144,7 +168,21 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // sheetPr (optional)
     if (opts.tabColor || opts.published !== undefined || opts.codeName || opts.sheetPrPresent) {
       const prAttrs: string[] = [];
-      if (opts.tabColor) prAttrs.push(`<tabColor${attrs({ rgb: opts.tabColor })}/>`);
+      if (opts.tabColor) {
+        const tc = typeof opts.tabColor === "string" ? { rgb: opts.tabColor } : opts.tabColor;
+        const tcAttrs: Record<string, string | number | boolean | undefined> = {
+          rgb: tc.rgb,
+          theme: tc.theme,
+          indexed: tc.indexed,
+        };
+        const tint =
+          tc.tintRaw !== undefined
+            ? ` tint="${tc.tintRaw}"`
+            : tc.tint !== undefined
+              ? ` tint="${tc.tint}"`
+              : "";
+        prAttrs.push(`<tabColor${attrs(tcAttrs)}${tint}/>`);
+      }
       const spAttrs: string[] = [];
       // XSD default true — emit only the explicit-false form (0).
       if (opts.published === false) spAttrs.push(' published="0"');
@@ -250,8 +288,18 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");
       const tabColor = findChild(sheetPr, "tabColor");
       if (tabColor) {
+        const tc: TabColorOptions = {};
         const rgb = attr(tabColor, "rgb");
-        if (rgb) result.tabColor = String(rgb);
+        if (rgb) tc.rgb = String(rgb) as TabColorOptions["rgb"];
+        const theme = attrNum(tabColor, "theme");
+        if (theme !== undefined) tc.theme = theme;
+        const tint = attrNum(tabColor, "tint");
+        if (tint !== undefined) tc.tint = tint;
+        const tintRaw = attr(tabColor, "tint");
+        if (tintRaw !== undefined) tc.tintRaw = tintRaw;
+        const indexed = attrNum(tabColor, "indexed");
+        if (indexed !== undefined) tc.indexed = indexed;
+        result.tabColor = tc;
       }
     }
 

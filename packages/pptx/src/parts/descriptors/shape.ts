@@ -183,6 +183,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
         opts.blipEffects,
         ctx,
         opts.useLocalDpi,
+        opts.blipExt,
         opts.fillRectangle,
         opts.rotWithShape,
       ),
@@ -325,6 +326,7 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       const parsedBlip = parse(blipDesc, blip, ctx);
       if (parsedBlip.blipEffects) result.blipEffects = parsedBlip.blipEffects;
       if (parsedBlip.useLocalDpi !== undefined) result.useLocalDpi = parsedBlip.useLocalDpi;
+      if (parsedBlip.ext !== undefined) result.blipExt = parsedBlip.ext;
       if (parsedBlip.compression !== undefined) result.compression = parsedBlip.compression;
       const rEmbed = attr(blip, "r:embed");
       if (rEmbed) {
@@ -563,6 +565,7 @@ function stringifyPptxBlipFill(
   blipEffects?: PictureOptions["blipEffects"],
   ctx?: WriteContext,
   useLocalDpi?: boolean,
+  ext?: string,
   fillRectangle?: SourceRectangleOptions | false,
   rotWithShape?: boolean,
 ): string {
@@ -581,6 +584,7 @@ function stringifyPptxBlipFill(
       compression: blip.compression,
       blipEffects,
       useLocalDpi,
+      ext,
     },
     ctx,
   );

@@ -14,13 +14,14 @@ import { buildUserShapesData, chartSpaceDesc, userShapesDesc } from "@office-ope
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
-import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import { attr, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
 import type { ChartOptions } from "../chart-frame";
 import {
   readGraphicFrameLocking,
+  readGraphicFrameHyperlink,
+  stringifyGraphicFrameCnvPr,
   readNvPrPlaceholder,
   stringifyCnvGraphicFramePr,
   stringifyNvPr,
@@ -65,7 +66,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     // field and never leaks into the cNvPr @title attribute.
     const { title: _chartTitle, ...cNvPrProps } = opts;
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, cNvPrProps, name)}` +
+      `<p:nvGraphicFramePr>${stringifyGraphicFrameCnvPr(id, cNvPrProps, name, ctx)}` +
         `${stringifyCnvGraphicFramePr(opts.locking)}` +
         `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
@@ -90,9 +91,11 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
     // chart title (parsed from the chart part below) stays the single source.
     const { title: _cNvPrTitle, ...cNvPrProps } = readCnvPr(el, "p:nvGraphicFramePr");
     const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), _ctx);
+    const hyperlink = readGraphicFrameHyperlink(findChild(el, "p:nvGraphicFramePr"), _ctx);
     if (locking !== undefined) result.locking = locking;
     readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
     Object.assign(result, cNvPrProps);
+    if (hyperlink) result.hyperlink = hyperlink;
 
     // Position from p:xfrm
     const xfrm = findChild(el, "p:xfrm");

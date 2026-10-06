@@ -101,6 +101,29 @@ describe("document theme part", () => {
     expect(regenerated.theme).toEqual(options.theme);
   });
 
+  it("preserves a non-default source theme part name", () => {
+    const source = zipSync({
+      "word/document.xml": new TextEncoder().encode(documentXml),
+      "word/_rels/document.xml.rels": new TextEncoder().encode(
+        documentRelsXml.replace("theme/theme1.xml", "theme/theme.xml"),
+      ),
+      "word/theme/theme.xml": new TextEncoder().encode(buildThemeXml(themeOptions)),
+    });
+    const parsed = parseDocumentSync(source);
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    const documentRels = new TextDecoder().decode(output["word/_rels/document.xml.rels"]!);
+    const contentTypes = new TextDecoder().decode(output["[Content_Types].xml"]!);
+
+    expect(parsed.theme?.name).toBe("Custom Theme");
+    expect(documentRels).toContain('Target="theme/theme.xml"');
+    expect(contentTypes).toContain('PartName="/word/theme/theme.xml"');
+    expect(new TextDecoder().decode(output["word/theme/theme.xml"]!)).toContain(
+      'name="Custom Theme"',
+    );
+    expect(Object.keys(output)).not.toContain("word/theme/theme1.xml");
+    expect(Object.keys(output)).not.toContain("word/theme/_rels/theme1.xml.rels");
+  });
+
   it("emits the default theme when no canonical theme is present", () => {
     const zip = unzipSync(
       generateDocumentSync({ sections: [{ children: [] }] }, { type: "uint8array" }),

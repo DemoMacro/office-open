@@ -53,7 +53,7 @@ import { compileChartParts, compileSmartArtParts } from "./compile/drawings";
 import { compileHeaderFooterParts } from "./compile/headerfooter";
 import { compileNotesParts } from "./compile/notes";
 import { XML_DECL } from "./compile/shared";
-import { DocxWriteContext } from "./context";
+import { DocxWriteContext, themePartName } from "./context";
 import {
   corePropertiesDesc,
   customPropertiesDesc,
@@ -76,6 +76,8 @@ const encoder = new TextEncoder();
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
 
+const DOCX_THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml";
+
 function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships): string {
   const names = new Set(ctx.media.array.map((media) => media.fileName));
   if (![...names].some((name) => xml.includes(`{${name}}`))) return xml;
@@ -93,7 +95,7 @@ function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships)
 function withThemeRelationships(ctx: DocxWriteContext, rels: Relationships): WriteContext {
   const themeCtx = Object.create(ctx);
   themeCtx.addRelationship = (type: RelationshipType, target: string, mode?: string) => {
-    const ownerPath = "word/theme/theme1.xml";
+    const ownerPath = themePartName(ctx._options);
     const source = ownerPath.split("/").slice(0, -1);
     const targetPath = target.split("/").slice(0, -1);
     let common = 0;
@@ -240,6 +242,19 @@ export function compileDocument(
             path: packageFormat.mainPartPath,
             contentType: packageFormat.mainContentType,
           },
+          {
+            path: themePartName(ctx._options),
+            contentType: DOCX_THEME_CONTENT_TYPE,
+          },
+          ...(ctx.glossaryOptions
+            ? [
+                {
+                  path: `word/${ctx.glossaryOptions.partName ?? "glossary/document.xml"}`,
+                  contentType:
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
+                },
+              ]
+            : []),
         ],
       },
       ctx,
@@ -302,6 +317,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const mailMergeRecipients = ctx._options.mailMergeRecipients ?? [];
   const recipientData =
     ctx._settingsOptions.mailMerge?.odso?.recipientData?.slice(0, mailMergeRecipients.length) ?? [];
+  const mailMerge = ctx._settingsOptions.mailMerge;
   const mkCtx = (viewWrapper: DocxContext["viewWrapper"] = ctx.document): DocxContext => {
     const bodyCtx: DocxContext = {
       fileData: ctx,
@@ -405,13 +421,15 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
             rels,
           )
         : createThemeXml();
+      const themePath = themePartName(ctx._options);
+      const themeFile = themePath.split("/").at(-1)!;
       return {
-        Theme: { data: XML_DECL + themeXml, path: "word/theme/theme1.xml" },
+        Theme: { data: XML_DECL + themeXml, path: themePath },
         ...(rels.relationshipCount > 0
           ? {
               ThemeRelationships: {
                 data: XML_DECL + rels.serialize(),
-                path: "word/theme/_rels/theme1.xml.rels",
+                path: `word/theme/_rels/${themeFile}.rels`,
               },
             }
           : {}),
@@ -470,7 +488,11 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           })),
         }
       : {}),
-    ...(ctx._settingsOptions.attachedTemplate !== undefined || recipientData.length > 0
+    ...(ctx._settingsOptions.attachedTemplate !== undefined ||
+    recipientData.length > 0 ||
+    mailMerge?.dataSource !== undefined ||
+    mailMerge?.headerSource !== undefined ||
+    mailMerge?.odso?.src !== undefined
       ? {
           SettingsRelationships: {
             data: (() => {
@@ -493,6 +515,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
                   );
                 }
               });
+              for (const rel of ctx._options.passthroughRelationships ?? []) {
+                if (rel.source !== "word/settings.xml") continue;
+                rels.claimSourceRel(rel);
+              }
               return XML_DECL + rels.serialize();
             })(),
             path: "word/_rels/settings.xml.rels",
@@ -539,7 +565,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
               const glossaryCtx = mkCtx(undefined);
               return XML_DECL + (glossaryDesc.stringify(ctx.glossaryOptions!, glossaryCtx) ?? "");
             })(),
-            path: "word/glossary/document.xml",
+            path: `word/${ctx.glossaryOptions!.partName ?? "glossary/document.xml"}`,
           },
         }
       : {}),

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { chartsheetDesc } from "./chartsheet";
 import type { ChartsheetDescriptorOptions } from "./chartsheet";
+import type { TabColorOptions } from "./worksheet/types";
 
 // ── Minimal context stubs ──
 
@@ -62,10 +63,28 @@ describe("chartsheetDesc round-trip", () => {
   });
 
   it("round-trips tabColor", () => {
-    const opts: ChartsheetDescriptorOptions = { ...baseOpts, tabColor: "FF4472C4" };
+    const opts: ChartsheetDescriptorOptions = {
+      ...baseOpts,
+      tabColor: { rgb: "FF4472C4" },
+    };
     const result = roundTrip(opts);
 
-    expect(result.tabColor).toBe("FF4472C4");
+    expect(result.tabColor).toEqual({ rgb: "FF4472C4" });
+  });
+
+  it("round-trips theme tabColor tint verbatim", () => {
+    const opts: ChartsheetDescriptorOptions = {
+      ...baseOpts,
+      tabColor: { theme: 8, tint: 0.59999389629810485, tintRaw: "0.599993896298104850" },
+    };
+    const xml = chartsheetDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<tabColor theme="8" tint="0.599993896298104850"/>');
+
+    const result = roundTrip(opts);
+    const tabColor = result.tabColor as TabColorOptions;
+    expect(tabColor.theme).toBe(8);
+    expect(tabColor.tint).toBeCloseTo(0.6);
+    expect(tabColor.tintRaw).toBe("0.599993896298104850");
   });
 
   it("round-trips pageMargins", () => {

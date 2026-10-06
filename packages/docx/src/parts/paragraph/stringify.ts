@@ -182,18 +182,23 @@ function tabStopsStr(defs: TabStopDefinition[]): string {
 
 function cnfStyleStr(opts: CnfConditionalOptions): string {
   const a = attrsRaw({
-    "w:firstRow": opts.firstRow ? "1" : "0",
-    "w:lastRow": opts.lastRow ? "1" : "0",
-    "w:firstColumn": opts.firstColumn ? "1" : "0",
-    "w:lastColumn": opts.lastColumn ? "1" : "0",
-    "w:oddVBand": opts.oddVBand ? "1" : "0",
-    "w:evenVBand": opts.evenVBand ? "1" : "0",
-    "w:oddHBand": opts.oddHBand ? "1" : "0",
-    "w:evenHBand": opts.evenHBand ? "1" : "0",
-    "w:firstRowFirstColumn": opts.firstRowFirstColumn ? "1" : "0",
-    "w:firstRowLastColumn": opts.firstRowLastColumn ? "1" : "0",
-    "w:lastRowFirstColumn": opts.lastRowFirstColumn ? "1" : "0",
-    "w:lastRowLastColumn": opts.lastRowLastColumn ? "1" : "0",
+    "w:val": opts.val,
+    "w:firstRow": opts.firstRow !== undefined ? (opts.firstRow ? 1 : 0) : undefined,
+    "w:lastRow": opts.lastRow !== undefined ? (opts.lastRow ? 1 : 0) : undefined,
+    "w:firstColumn": opts.firstColumn !== undefined ? (opts.firstColumn ? 1 : 0) : undefined,
+    "w:lastColumn": opts.lastColumn !== undefined ? (opts.lastColumn ? 1 : 0) : undefined,
+    "w:oddVBand": opts.oddVBand !== undefined ? (opts.oddVBand ? 1 : 0) : undefined,
+    "w:evenVBand": opts.evenVBand !== undefined ? (opts.evenVBand ? 1 : 0) : undefined,
+    "w:oddHBand": opts.oddHBand !== undefined ? (opts.oddHBand ? 1 : 0) : undefined,
+    "w:evenHBand": opts.evenHBand !== undefined ? (opts.evenHBand ? 1 : 0) : undefined,
+    "w:firstRowFirstColumn":
+      opts.firstRowFirstColumn !== undefined ? (opts.firstRowFirstColumn ? 1 : 0) : undefined,
+    "w:firstRowLastColumn":
+      opts.firstRowLastColumn !== undefined ? (opts.firstRowLastColumn ? 1 : 0) : undefined,
+    "w:lastRowFirstColumn":
+      opts.lastRowFirstColumn !== undefined ? (opts.lastRowFirstColumn ? 1 : 0) : undefined,
+    "w:lastRowLastColumn":
+      opts.lastRowLastColumn !== undefined ? (opts.lastRowLastColumn ? 1 : 0) : undefined,
   });
   return `<w:cnfStyle${a}/>`;
 }

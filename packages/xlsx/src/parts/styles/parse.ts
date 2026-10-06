@@ -55,7 +55,10 @@ export function parseFont(el: XmlElement): FontOptions {
         result.size = attrNum(child, "val");
         break;
       case "color":
-        result.color = parseColorHex(child);
+        {
+          const color = parseColorHex(child);
+          if (color !== undefined) result.color = color;
+        }
         readThemeColor(child, result);
         const indexed = attrNum(child, "indexed");
         if (indexed !== undefined) result.colorIndexed = indexed;
@@ -89,7 +92,8 @@ export function parseFill(el: XmlElement): CellFillOptions {
     if (patternType) result.patternType = patternType as CellFillOptions["patternType"];
     const fg = findChild(patternFill, "fgColor");
     if (fg) {
-      result.color = parseColorHex(fg);
+      const color = parseColorHex(fg);
+      if (color !== undefined) result.color = color;
       readThemeColor(fg, result);
       const indexed = attrNum(fg, "indexed");
       if (indexed !== undefined) result.colorIndexed = indexed;
@@ -102,6 +106,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
       if (bgTheme !== undefined) result.bgThemeColor = bgTheme;
       const bgTint = attrNum(bg, "tint");
       if (bgTint !== undefined) result.bgTint = bgTint;
+      if (attr(bg, "tint") !== undefined) result.bgTintRaw = attr(bg, "tint");
       const bgIndexed = attrNum(bg, "indexed");
       if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
       if (parseOnOff(attr(bg, "auto"))) result.bgAutoColor = true;
@@ -131,7 +136,8 @@ export function parseFill(el: XmlElement): CellFillOptions {
       const color = findChild(s, "color");
       if (pos === undefined || !color) continue;
       const stop: CellGradientStopOptions = { position: pos };
-      stop.color = parseColorHex(color);
+      const stopColor = parseColorHex(color);
+      if (stopColor !== undefined) stop.color = stopColor;
       readThemeColor(color, stop);
       stops.push(stop);
     }
@@ -171,7 +177,8 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
       if (style) opts.style = style as BorderOptions["style"];
       const color = findChild(sideEl, "color");
       if (color) {
-        opts.color = parseColorHex(color);
+        const sideColor = parseColorHex(color);
+        if (sideColor !== undefined) opts.color = sideColor;
         readThemeColor(color, opts);
         if (parseOnOff(attr(color, "auto"))) opts.autoColor = true;
         const indexed = attrNum(color, "indexed");
@@ -238,10 +245,12 @@ export function parseColorHex(el: XmlElement): string | undefined {
  */
 export function readThemeColor(
   el: XmlElement,
-  target: { themeColor?: number; tint?: number },
+  target: { themeColor?: number; tint?: number; tintRaw?: string },
 ): void {
   const theme = attrNum(el, "theme");
   if (theme !== undefined) target.themeColor = theme;
   const tint = attrNum(el, "tint");
   if (tint !== undefined) target.tint = tint;
+  const tintRaw = attr(el, "tint");
+  if (tintRaw !== undefined) target.tintRaw = tintRaw;
 }

@@ -118,6 +118,11 @@ export interface DocPartOptions {
 
 /** Glossary document options */
 export interface GlossaryDocumentOptions {
+  /**
+   * Glossary document path relative to word/ (round-trip, e.g.
+   * "glossary/document.xml"). Fresh generation uses glossary/document.xml.
+   */
+  partName?: string;
   /** Building blocks */
   parts: DocPartOptions[];
 }
@@ -221,7 +226,9 @@ function parseDocPartBody(body: Element, ctx: DocxReadContext): DocPartSectionOp
 function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   const prParts: string[] = [];
   prParts.push(
-    `<w:name w:val="${escapeXml(part.name)}"${part.decorated ? ' w:decorated="1"' : ""}/>`,
+    `<w:name w:val="${escapeXml(part.name)}"${
+      part.decorated !== undefined ? ` w:decorated="${part.decorated ? 1 : 0}"` : ""
+    }/>`,
   );
   if (part.category || part.gallery) {
     const catParts: string[] = [];
@@ -233,7 +240,7 @@ function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   }
   if (part.types && part.types.length > 0) {
     const typeXml = part.types.map((t) => `<w:type w:val="${t}"/>`).join("");
-    const allAttr = part.allTypes ? ' w:all="1"' : "";
+    const allAttr = part.allTypes !== undefined ? ` w:all="${part.allTypes ? 1 : 0}"` : "";
     prParts.push(`<w:types${allAttr}>${typeXml}</w:types>`);
   }
   if (part.behaviors && part.behaviors.length > 0) {
@@ -285,7 +292,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
         if (name) {
           part.name = attr(name, "w:val") ?? "";
           const decorated = attr(name, "w:decorated");
-          if (parseOnOff(decorated)) part.decorated = true;
+          if (decorated !== undefined) part.decorated = parseOnOff(decorated) ?? false;
         }
 
         // category
@@ -309,7 +316,7 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
           }
           if (typeList.length > 0) part.types = typeList as DocPartOptions["types"];
           const allAttr = attr(types, "w:all");
-          if (parseOnOff(allAttr)) part.allTypes = true;
+          if (allAttr !== undefined) part.allTypes = parseOnOff(allAttr) ?? false;
         }
 
         // behaviors
@@ -350,7 +357,6 @@ export const glossaryDesc: CustomDescriptor<GlossaryDocumentOptions, BodyContext
       // a non-final section; a direct terminal w:sectPr describes the last one.
       const body = findChild(docPart, "w:docPartBody");
       part.sections = body ? parseDocPartBody(body, dctx) : [];
-
       parts.push(part as DocPartOptions);
     }
 

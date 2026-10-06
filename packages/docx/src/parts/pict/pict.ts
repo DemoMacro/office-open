@@ -48,6 +48,12 @@ export interface PictOptions {
   mcChoiceRequires?: string;
   /** w14:anchorId extension attribute on w:pict. */
   w14AnchorId?: string;
+  /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
+  runAdditionRsid?: string;
+  /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: string;
+  /** Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip). */
+  runDeletionRsid?: string;
 }
 
 // ── Stringify ──
@@ -107,6 +113,9 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
 function remapPlaceholders(children: VmlShapeChild[], renames: Map<string, string>): void {
   for (const child of children) {
     const fields = shapeFieldsOf(child);
+    if (fields.sourceXml !== undefined) {
+      fields.sourceXml = remapRawPlaceholders(fields.sourceXml, renames);
+    }
     const rid = fields.imagedata?.relationshipId;
     if (rid !== undefined) {
       const mapped = renames.get(rid.slice(1, -1));
@@ -141,9 +150,20 @@ export function parsePict(el: Element, ctx: DocxReadContext): PictOptions {
   const media: PictMediaOptions[] = [];
   bridgeImagedata(children, ctx, media);
   bridgeTxbxContent(children, ctx, media);
+  const anchorId = el.attributes?.["w14:anchorId"];
   return {
     ...(children.length > 0 ? { children } : {}),
     ...(media.length > 0 ? { media } : {}),
+    ...(anchorId !== undefined ? { w14AnchorId: String(anchorId) } : {}),
+    ...(el.attributes?.["w:rsidR"] !== undefined
+      ? { runAdditionRsid: String(el.attributes["w:rsidR"]) }
+      : {}),
+    ...(el.attributes?.["w:rsidRPr"] !== undefined
+      ? { runPropertiesRsid: String(el.attributes["w:rsidRPr"]) }
+      : {}),
+    ...(el.attributes?.["w:rsidDel"] !== undefined
+      ? { runDeletionRsid: String(el.attributes["w:rsidDel"]) }
+      : {}),
   };
 }
 
@@ -178,6 +198,15 @@ function bridgeTxbxContent(
     }
     if ("group" in child) bridgeTxbxContent(child.group.children ?? [], ctx, media);
   }
+}
+
+/** Wrapper-run identity attributes carried beside a parsed pict. */
+export function pictRunAttrs(opts: PictOptions): string {
+  let attrs = "";
+  if (opts.runAdditionRsid) attrs += ` w:rsidR="${opts.runAdditionRsid}"`;
+  if (opts.runPropertiesRsid) attrs += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
+  if (opts.runDeletionRsid) attrs += ` w:rsidDel="${opts.runDeletionRsid}"`;
+  return attrs;
 }
 
 /** Capture the binary behind each imagedata r:id, leaving a `{fileName}`

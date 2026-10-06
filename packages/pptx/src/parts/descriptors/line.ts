@@ -48,11 +48,13 @@ function stringifyLineXfrmGeometry(
   y2: number,
   geomXml = '<a:prstGeom prst="line"><a:avLst/></a:prstGeom>',
   rotation?: number,
+  flipVertical?: boolean,
 ): string {
+  const verticalFlip = flipVertical !== undefined ? flipVertical : y1 > y2 ? true : undefined;
   const attrs = [
     rotation !== undefined ? ` rot="${Math.round(rotation * 60000)}"` : "",
     x1 > x2 ? ' flipH="1"' : "",
-    y1 > y2 ? ' flipV="1"' : "",
+    verticalFlip !== undefined ? ` flipV="${verticalFlip ? 1 : 0}"` : "",
   ].join("");
   const offX = Math.min(x1, x2);
   const offY = Math.min(y1, y2);
@@ -67,7 +69,7 @@ function stringifyLineXfrmGeometry(
 function parseLineSpPr(
   spPr: Element,
   ctx: ReadContext,
-): Pick<LineShapeOptions, "x1" | "y1" | "x2" | "y2"> & {
+): Pick<ConnectorOptions, "x1" | "y1" | "x2" | "y2" | "flipVertical"> & {
   properties: NonNullable<LineShapeOptions["properties"]>;
   rotation?: number;
 } {
@@ -81,6 +83,7 @@ function parseLineSpPr(
     const flipV = attrBool(xfrm, "flipV");
     const rotation = attrNum(xfrm, "rot");
     if (rotation !== undefined) result.rotation = rotation / 60000;
+    if (flipV !== undefined) result.flipVertical = flipV;
 
     if (off && ext) {
       const offX = attrNum(off, "x") ?? 0;
@@ -145,7 +148,9 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
     const spPrAttrs = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
-    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, undefined, opts.rotation));
+    spPrParts.push(
+      stringifyLineXfrmGeometry(x1, y1, x2, y2, undefined, opts.rotation, opts.flipVertical),
+    );
 
     // Fill
     if (sp.fill !== undefined) {
@@ -269,7 +274,9 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     const sp = opts.properties ?? {};
     const spPrParts: string[] = [];
     const spPrAttrs = opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : "";
-    spPrParts.push(stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml, opts.rotation));
+    spPrParts.push(
+      stringifyLineXfrmGeometry(x1, y1, x2, y2, geomXml, opts.rotation, opts.flipVertical),
+    );
 
     // Fill
     if (sp.fill !== undefined) {

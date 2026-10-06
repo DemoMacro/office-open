@@ -18,10 +18,15 @@ import type { RubyOptions } from "./ruby";
 /** w:br/`@w:clear` values (ST_BrClear) — clears floating content on the given side(s). */
 export type BreakClear = "none" | "left" | "right" | "all";
 
+/** w:br/`@w:type` values (ST_BrType). */
+type BreakKind = "page" | "column" | "textWrapping";
+
 /** Options for a line break with optional float-clearing (CT_Br). */
 export interface BreakOptions {
   /** Number of `<w:br/>` elements (defaults to 1). */
   count?: number;
+  /** Break type (`w:br/`@w:type`). */
+  type?: BreakKind;
   /** Clear floating content (w:br/`@w:clear`). */
   clear?: BreakClear;
 }
@@ -34,8 +39,12 @@ export function breakXml(breakOpt: number | BreakOptions | undefined): string {
   if (!breakOpt) return "";
   const count = typeof breakOpt === "number" ? breakOpt : (breakOpt.count ?? 1);
   if (count <= 0) return "";
+  const type = typeof breakOpt === "object" ? breakOpt.type : undefined;
   const clear = typeof breakOpt === "object" ? breakOpt.clear : undefined;
-  const one = clear ? `<w:br w:clear="${clear}"/>` : "<w:br/>";
+  const attrs = [type ? `w:type="${type}"` : "", clear ? `w:clear="${clear}"` : ""]
+    .filter(Boolean)
+    .join(" ");
+  const one = attrs ? `<w:br ${attrs}/>` : "<w:br/>";
   return count === 1 ? one : one.repeat(count);
 }
 
@@ -75,6 +84,7 @@ interface RunOptionsBase {
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]
     | string
+    | { text: string; preserveSpace?: boolean }
     | { tab: true }
     | { noBreakHyphen: true }
     | { softHyphen: true }

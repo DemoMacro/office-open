@@ -44,6 +44,23 @@ describe("shapeDesc round-trip", () => {
     resetShapeIdCounter(2);
   });
 
+  it("round-trips unmodeled picture blip extensions", () => {
+    const xml =
+      '<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:nvPicPr><p:cNvPr id="1" name="P"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+      '<p:blipFill><a:blip><a:extLst><a:ext uri="{TEST}"><test:x xmlns:test="urn:test"/></a:ext></a:extLst></a:blip>' +
+      "<a:stretch><a:fillRect/></a:stretch></p:blipFill></p:pic>";
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    const parsed = pictureDesc.parse(element, readCtx);
+    expect(parsed.blipExt).toContain('uri="{TEST}"');
+
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const emitted = pictureDesc.stringify({ type: "png", blipExt: parsed.blipExt }, writeCtx)!;
+    expect(emitted).toContain('uri="{TEST}"');
+  });
+
   it("round-trips basic shape with position", () => {
     const result = roundTrip({ x: 100, y: 200, width: 400, height: 300 });
     expect(result.x).toBe(100);
@@ -165,6 +182,18 @@ describe("shapeDesc round-trip", () => {
       flipVertical: true,
     });
     expect(result.flipVertical).toBe(true);
+  });
+
+  it("round-trips a:sp3d on a shape", () => {
+    const shape3d = { z: 12700, extrusionH: 25400, prstMaterial: "matte" as const };
+    const result = roundTrip({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+      properties: { shape3d },
+    });
+    expect(result.properties?.shape3d).toEqual(shape3d);
   });
 
   it("round-trips shape click hyperlink on cNvPr", () => {

@@ -1488,9 +1488,17 @@
           "$ref": "#/definitions/DataType",
           "description": "Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art."
         },
+        "posterFileName": {
+          "description": "Source poster media file name (round-trip only).",
+          "type": "string"
+        },
         "posterType": {
-          "description": "Poster image format (png/jpg only).",
-          "enum": ["png", "jpg"],
+          "description": "Poster image format (poster media extension).",
+          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
+          "type": "string"
+        },
+        "sourceUrl": {
+          "description": "External audio source (a:audioFile `@r:link`). With `data`, this is the modern dual-reference form: external link plus embedded p14:media copy.",
           "type": "string"
         },
         "title": {
@@ -2312,6 +2320,10 @@
           },
           "type": "array"
         },
+        "bubbleSizeFormula": {
+          "description": "Bubble-size reference formula (c:bubbleSize > c:numRef > c:f) — round-trip.",
+          "type": "string"
+        },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
         },
@@ -2329,8 +2341,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -2383,6 +2394,12 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "$ref": "#/definitions/ScatterSeriesData/properties/xFormula"
         },
         "xValues": {
           "items": {
@@ -2947,6 +2964,9 @@
           },
           "type": "array"
         },
+        "customerData": {
+          "$ref": "#/definitions/TableOptions/properties/customerData"
+        },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions",
           "description": "Chart-group-level data labels (c:dLbls after the ser elements)."
@@ -3041,6 +3061,10 @@
         "holeSize": {
           "description": "Pie/doughnut doughnut hole size as percent (c:holeSize).",
           "type": "number"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink (a:hlinkClick inside p:cNvPr)."
         },
         "id": {
           "description": "Chart frame id (p:cNvPr `@id`). Auto-generated if omitted.",
@@ -3487,7 +3511,7 @@
           "type": "string"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
+          "description": "Values number format (c:numCache > c:formatCode); an empty string keeps the child absent.",
           "type": "string"
         },
         "index": {
@@ -3547,6 +3571,18 @@
         "valueLiteral": {
           "description": "Values are inline literals (c:val > c:numLit instead of c:numRef) — parse sets this when the source carried c:numLit.",
           "type": "boolean"
+        },
+        "valuePointCount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "const": false,
+              "type": "boolean"
+            }
+          ],
+          "description": "Values cache point count (c:numCache > c:ptCount); false keeps the element absent."
         },
         "values": {
           "items": {
@@ -3658,8 +3694,39 @@
       "type": "object"
     },
     "ChartValue": {
-      "description": "Numeric chart value; a string preserves the source c:v lexical form.",
-      "type": ["number", "string"]
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/definitions/ChartValuePointOptions"
+        }
+      ],
+      "description": "Numeric chart value; a string preserves c:v lexical form and null a missing cache slot."
+    },
+    "ChartValuePointOptions": {
+      "additionalProperties": false,
+      "description": "Explicit chart cache point; the index preserves sparse c:pt slots.",
+      "properties": {
+        "formatCode": {
+          "description": "Point-local number format (c:pt formatCode) — round-trip.",
+          "type": "string"
+        },
+        "index": {
+          "type": "number"
+        },
+        "value": {
+          "type": ["number", "string"]
+        }
+      },
+      "required": ["index", "value"],
+      "type": "object"
     },
     "CheckBoxControlOptions": {
       "additionalProperties": false,
@@ -4156,6 +4223,10 @@
         },
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
+        },
+        "flipVertical": {
+          "description": "Vertical mirror (a:xfrm",
+          "type": "boolean"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -5771,6 +5842,18 @@
               "description": "Source media file name, pinned on round-trip so re-emitting registers the media under its original name instead of a re-derived one (jpeg→jpg normalization would otherwise fork a second media part).",
               "type": "string"
             },
+            "fillRectangle": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/SourceRectangleOptions"
+                },
+                {
+                  "const": false,
+                  "type": "boolean"
+                }
+              ],
+              "description": "Fill rectangle inside a:stretch; false keeps the bare stretch element."
+            },
             "imageType": {
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
@@ -5791,6 +5874,10 @@
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for cropping"
+            },
+            "stretch": {
+              "description": "Set false to omit a:stretch (matching the source XML); omitted emits the default stretch.",
+              "type": "boolean"
             },
             "tile": {
               "$ref": "#/definitions/TileOptions",
@@ -6587,6 +6674,10 @@
           "$ref": "#/definitions/HeaderFooterOptions",
           "description": "Header/footer settings"
         },
+        "shapeTreeBlackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Root spTree black-and-white mode (p:grpSpPr"
+        },
         "theme": {
           "$ref": "#/definitions/ThemeOptions",
           "description": "The handout master's own theme part; defaults to the Office theme."
@@ -6805,6 +6896,14 @@
         },
         "preserve": {
           "type": "boolean"
+        },
+        "shapeTreeId": {
+          "description": "Root spTree cNvPr id — round-trip only.",
+          "type": "number"
+        },
+        "shapeTreeName": {
+          "description": "Root spTree cNvPr name — round-trip only.",
+          "type": "string"
         },
         "showMasterPlaceholderAnimations": {
           "type": "boolean"
@@ -7299,6 +7398,10 @@
         "ext": {
           "$ref": "#/definitions/ShapeOptions/properties/ext"
         },
+        "flipVertical": {
+          "description": "Vertical mirror (a:xfrm",
+          "type": "boolean"
+        },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
@@ -7413,6 +7516,9 @@
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
+        "customerData": {
+          "$ref": "#/definitions/TableOptions/properties/customerData"
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -7435,6 +7541,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink (a:hlinkClick inside p:cNvPr)."
         },
         "id": {
           "description": "Locked canvas frame id (p:cNvPr `@id`). Auto-generated if omitted.",
@@ -7635,7 +7745,8 @@
       "description": "Manual plot-area layout. Field order follows the XSD.",
       "properties": {
         "h": {
-          "type": "number"
+          "description": "Height; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "hMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -7644,19 +7755,22 @@
           "$ref": "#/definitions/LayoutTarget"
         },
         "w": {
-          "type": "number"
+          "description": "Width; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "wMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "x": {
-          "type": "number"
+          "description": "X offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "xMode": {
           "$ref": "#/definitions/LayoutMode"
         },
         "y": {
-          "type": "number"
+          "description": "Y offset/fraction; a string preserves the source lexical form.",
+          "type": ["number", "string"]
         },
         "yMode": {
           "$ref": "#/definitions/LayoutMode"
@@ -8254,6 +8368,10 @@
           "$ref": "#/definitions/DataType",
           "description": "OLE container binary — registered as ppt/embeddings/oleObjectN.bin."
         },
+        "fileName": {
+          "description": "Source embedding file name (ppt/embeddings/*) — round-trip only.",
+          "type": "string"
+        },
         "followColorScheme": {
           "description": "Follow color scheme (p:embed `@followColorScheme`)",
           "enum": ["none", "full", "textAndBackground"],
@@ -8301,6 +8419,9 @@
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
+        "customerData": {
+          "$ref": "#/definitions/TableOptions/properties/customerData"
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -8327,6 +8448,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink (a:hlinkClick inside p:cNvPr)."
         },
         "iconImage": {
           "$ref": "#/definitions/OleIconImageOptions",
@@ -8962,6 +9087,10 @@
           "$ref": "#/definitions/BlipEffectsOptions",
           "description": "Blip color effects (a:lum, a:duotone, … children of a:blip)."
         },
+        "blipExt": {
+          "description": "Verbatim a:blip extension-list children beyond modeled hints (round-trip only).",
+          "type": "string"
+        },
         "compression": {
           "$ref": "#/definitions/BlipCompression",
           "description": "Compression state (a:blip"
@@ -9111,7 +9240,7 @@
         },
         "type": {
           "description": "Image format. Loose string here; each package narrows to its supported union.",
-          "enum": ["png", "jpg", "gif", "bmp", "emf", "wmf"],
+          "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
           "type": "string"
         },
         "useLocalDpi": {
@@ -9185,6 +9314,9 @@
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },
+        "customerData": {
+          "$ref": "#/definitions/TableOptions/properties/customerData"
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -9241,6 +9373,10 @@
         },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
+        },
+        "placeholderSize": {
+          "$ref": "#/definitions/PlaceholderSize",
+          "description": "`@sz` — sizing hint (default \"full\")."
         },
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions"
@@ -9668,7 +9804,7 @@
     },
     "PosterType": {
       "description": "Poster-frame image format.",
-      "enum": ["png", "jpg"],
+      "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
       "type": "string"
     },
     "PresentationOptions": {
@@ -10664,8 +10800,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/ext"
         },
         "formatCode": {
-          "description": "Values number format (c:numCache > c:formatCode) — round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/ChartSeriesData/properties/formatCode"
         },
         "index": {
           "$ref": "#/definitions/ChartSeriesData/properties/index"
@@ -10718,6 +10853,13 @@
         },
         "valueLiteral": {
           "$ref": "#/definitions/ChartSeriesData/properties/valueLiteral"
+        },
+        "valuePointCount": {
+          "$ref": "#/definitions/ChartSeriesData/properties/valuePointCount"
+        },
+        "xFormula": {
+          "description": "X values reference formula (c:xVal > c:numRef > c:f) — round-trip.",
+          "type": "string"
         },
         "xValues": {
           "items": {
@@ -12135,6 +12277,9 @@
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
+        "customerData": {
+          "$ref": "#/definitions/TableOptions/properties/customerData"
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -12157,6 +12302,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink (a:hlinkClick inside p:cNvPr)."
         },
         "id": {
           "description": "Diagram id (p:cNvPr `@id`). Auto-generated if omitted.",
@@ -12871,6 +13020,13 @@
           "$ref": "#/definitions/Guid",
           "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
         },
+        "customerData": {
+          "description": "Customer-data references (p:nvPr > p:custDataLst > p:tags/p:custData).",
+          "items": {
+            "$ref": "#/definitions/SlideCustomerDataReferenceOptions"
+          },
+          "type": "array"
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -12900,6 +13056,10 @@
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
           "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink (a:hlinkClick inside p:cNvPr)."
         },
         "id": {
           "description": "Table id (p:cNvPr `@id`). Auto-generated if omitted.",
@@ -13595,8 +13755,13 @@
         "highlightClick": {
           "type": "boolean"
         },
-        "invalidUrl": {
+        "history": {
+          "description": "Add the target to browser history (a:hlinkClick `@history`, default true).",
           "type": "boolean"
+        },
+        "invalidUrl": {
+          "description": "Literal invalid URL text (a:hlinkClick `@invalidUrl`).",
+          "type": "string"
         },
         "referenceId": {
           "description": "Internal placeholder key (\"{hlink:N}\" → \"N\"); preserved across parse → stringify.",
@@ -13605,6 +13770,10 @@
         "slide": {
           "description": "Internal slide target, 1-based slide number (mutually exclusive with url); emitted as r:id → slideN.xml + action=\"ppaction://hlinksldjump\". PPTX only — other formats reject the field at generate time.",
           "type": "number"
+        },
+        "targetFrame": {
+          "description": "Browser target frame (a:hlinkClick `@tgtFrame`, e.g. \"_blank\").",
+          "type": "string"
         },
         "tooltip": {
           "type": "string"
@@ -14780,6 +14949,10 @@
         },
         "poster": {
           "$ref": "#/definitions/DataType"
+        },
+        "posterFileName": {
+          "description": "Source poster media file name (round-trip only).",
+          "type": "string"
         },
         "posterType": {
           "$ref": "#/definitions/PosterType"

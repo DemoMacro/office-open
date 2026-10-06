@@ -27,6 +27,11 @@ function roundTrip(opts: HandoutMasterDescriptorOptions) {
 }
 
 describe("handoutMasterDesc round-trip", () => {
+  it("round-trips the root spTree black-and-white mode", () => {
+    const result = roundTrip({ options: { shapeTreeBlackWhiteMode: "gray" } });
+    expect(result.options?.shapeTreeBlackWhiteMode).toBe("gray");
+  });
+
   it("round-trips with default options", () => {
     const opts: HandoutMasterDescriptorOptions = {};
     const result = roundTrip(opts);

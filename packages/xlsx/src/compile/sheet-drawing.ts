@@ -249,6 +249,7 @@ export function compileSheetDrawing(
       ? resolveRelationshipTarget(drawingPath, sourceChartRel.target)
       : `xl/charts/chart${state.globalChartIdx + 1}.xml`;
     state.chartPaths.set(chartKey, chartPath);
+    ctx.chartOptions.set(chartKey, chart);
     const userShapes = chart.userShapes ? buildUserShapesData(chart.userShapes) : undefined;
     ctx.charts.addChart(chartKey, {
       key: chartKey,
@@ -419,7 +420,34 @@ export function compileSheetDrawing(
   // Shape blip fills inside the drawing register `{fileName}` media
   // placeholders — bind them the same way the theme does.
   resolvedDrawingXml = bindMediaPlaceholders(resolvedDrawingXml, ctx.media, drawingRels);
-  const drawingIdx = i + 1;
+  // Typed anchors absorb their known relationships; unmodeled companions
+  // (for example diagram preview drawings) still belong to the drawing part.
+  for (const sourceRel of sourceDrawingRels) {
+    if (drawingRels.hasRelationship(sourceRel.relationshipType, sourceRel.target)) continue;
+    const preferred = /^rId\d+$/.exec(sourceRel.rId)?.[0];
+    if (preferred && !drawingRels.hasId(preferred)) {
+      drawingRels.addRelationship(
+        preferred,
+        sourceRel.relationshipType as RelationshipType,
+        sourceRel.target,
+        sourceRel.targetMode,
+      );
+      rid = drawingRels.nextRelationshipId;
+      continue;
+    }
+    drawingRels.addRelationship(
+      rid,
+      sourceRel.relationshipType as RelationshipType,
+      sourceRel.target,
+      sourceRel.targetMode,
+    );
+    rid = drawingRels.nextRelationshipId;
+  }
+  const sourceDrawingIndex = Number(drawingPath.match(/drawing(\d+)\.xml$/)?.[1]);
+  const drawingIdx = sourceDrawingIndex ?? state.nextDrawingIndex++;
+  if (sourceDrawingIndex !== undefined) {
+    state.nextDrawingIndex = Math.max(state.nextDrawingIndex, sourceDrawingIndex + 1);
+  }
   mapping[`Drawing${i}`] = {
     data: XML_DECL + resolvedDrawingXml,
     path: drawingPath,

@@ -36,6 +36,7 @@ import type {
   GroupOptions,
   ShapeOptions,
 } from "../drawing";
+import type { ExternalLinkOptions } from "../external-link";
 import type { PivotTableOptions } from "../pivot";
 import type { PivotAreaOptions } from "../pivot/pivot-utils";
 import type { QueryTableOptions } from "../query-table";
@@ -123,6 +124,8 @@ export interface RichTextRunPropertiesOptions {
   color?: RichTextColor;
   /** Color tint (CT_Color `@tint`, -1.0–1.0); round-trips the source value. */
   colorTint?: number;
+  /** Source lexical form of `colorTint`; round-trip only — do not hand-author. */
+  colorTintRaw?: string;
   /** Font size in points */
   size?: number;
   /** Underline type */
@@ -343,6 +346,8 @@ export interface FreezePaneOptions {
   col?: number;
   /** Split panes without freezing (CT_Pane `@state="split"`); default is frozen */
   split?: boolean;
+  /** Pane state (CT_Pane `@state`, default "frozen"); wins over `split` */
+  state?: "frozen" | "frozenSplit" | "split";
   /**
    * Top-left cell of the scrollable pane (CT_Pane `@topLeftCell`); defaults to
    * the cell just past the split. Round-trip keeps a scrolled position.
@@ -425,6 +430,14 @@ export interface WorksheetChartOptions
   macro?: string;
   /** Source chart part path; round-trip only and preserves relationship wiring. */
   sourcePath?: string;
+  /** Chart-owned external link part for c:externalData — round-trip only. */
+  externalLink?: ExternalLinkOptions;
+  /** Source chart-owned external link path — round-trip only. */
+  externalLinkPath?: string;
+  /** Source c:externalData relationship type — round-trip only. */
+  externalDataRelationshipType?: string;
+  /** Source c:externalData relationship target — round-trip only. */
+  externalDataRelationshipTarget?: string;
 }
 
 /** Anchored external content part with its source drawing relationship. */
@@ -596,9 +609,14 @@ export interface TabColorOptions {
   theme?: number;
   /** Tint value (-1.0 to 1.0) */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
   /** Indexed color (CT_Color `@indexed`) */
   indexed?: number;
 }
+
+/** Authoring shorthand `rgb` or the full CT_Color projection. */
+export type TabColor = string | TabColorOptions;
 
 /** Cell corner marker (CT_Marker): 0-based column/row plus EMU offsets. */
 /**
@@ -722,6 +740,8 @@ export type DataValidationOperator =
 export interface DataValidationOptions {
   /** Cell range, e.g. "A1:A10" */
   sqref: string;
+  /** Revision UID (CT_DataValidation `@xr:uid`); round-trip only. */
+  uid?: string;
   type?: DataValidationType;
   operator?: DataValidationOperator;
   formula1?: string;
@@ -819,6 +839,8 @@ export interface CfColorOptions {
   theme?: number;
   /** Tint applied to the theme slot */
   tint?: number;
+  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
+  tintRaw?: string;
   /** Legacy palette index */
   indexed?: number;
 }
@@ -974,6 +996,8 @@ export interface SortStateOptions {
 export interface AutoFilterOptions {
   /** Range, e.g. "A1:D10" */
   ref: string;
+  /** Revision UID (CT_AutoFilter `@xr:uid`); round-trip only. */
+  uid?: string;
   /** Filter columns, one per filtered column (CT_FilterColumn) */
   columns?: FilterColumnOptions[];
   /** Sort state (CT_SortState child; `ref` typically spans the filter range) */
@@ -1501,7 +1525,7 @@ export interface WorksheetOptions {
   commentsVmlSource?: string;
   headerFooter?: HeaderFooterOptions;
   pageSetup?: PageSetupOptions;
-  tabColor?: TabColorOptions;
+  tabColor?: TabColor;
   sheetView?: SheetViewOptions;
   pivotTables?: PivotTableOptions[];
   /** Tables (list objects) for this worksheet */

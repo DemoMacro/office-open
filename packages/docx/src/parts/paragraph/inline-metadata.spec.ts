@@ -3,6 +3,7 @@ import { describe, expect, it } from "vite-plus/test";
 
 import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
+import type { ParagraphOptions } from "../paragraph";
 
 // Inline metadata carriers never touch the read context, so an empty mock
 // suffices.
@@ -12,14 +13,11 @@ const writeCtx = {} as never;
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const W16SE_NS = 'xmlns:w16se="http://schemas.microsoft.com/office/word/2015/wordml/symex"';
 
-function parseParagraphXml(
-  inner: string,
-  context: DocxReadContext = readCtx,
-): { children?: unknown[] } {
+function parseParagraphXml(inner: string, context: DocxReadContext = readCtx): ParagraphOptions {
   const doc = parseXml(`<w:p ${W_NS}>${inner}</w:p>`);
   const el = doc.elements?.[0];
   if (!el) throw new Error("parsed document has no root element");
-  return parseParagraph(el, context) as { children?: unknown[] };
+  return parseParagraph(el, context);
 }
 
 function findChildByKey(
@@ -40,6 +38,17 @@ describe("inline metadata parse", () => {
     const sf = findChildByKey(opts, "simpleField");
     expect(sf).toBeDefined();
     expect(sf!.simpleField).toMatchObject({ instruction: " PAGE ", cachedValue: "1" });
+  });
+
+  it("preserves xml:space on a plain simple-field cached value", () => {
+    const opts = parseParagraphXml(
+      `<w:fldSimple w:instr=" PAGE "><w:r><w:t xml:space="preserve"> 1 </w:t></w:r></w:fldSimple>`,
+    );
+    expect(findChildByKey(opts, "simpleField")!.simpleField).toMatchObject({
+      cachedValue: " 1 ",
+      cachedValuePreserveSpace: true,
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain('<w:t xml:space="preserve"> 1 </w:t>');
   });
 
   it("parses a simple field without a cached value", () => {
@@ -68,6 +77,23 @@ describe("inline metadata parse", () => {
     const stOpts = st!.smartTag as Record<string, unknown>;
     expect(stOpts.properties).toEqual([{ name: "type", val: "home", uri: "http://x" }]);
     expect(stOpts.children).toEqual([{ text: "123 Main St" }]);
+  });
+
+  it("preserves empty and special-character smartTag attribute values", () => {
+    const opts = parseParagraphXml(
+      `<w:smartTag w:element="Address"><w:smartTagPr>` +
+        `<w:attr w:name="empty" w:val=""/>` +
+        `<w:attr w:name="quoted" w:val="a&quot;b"/>` +
+        `</w:smartTagPr><w:r><w:t>x</w:t></w:r></w:smartTag>`,
+    );
+    const st = findChildByKey(opts, "smartTag")!.smartTag as Record<string, unknown>;
+    expect(st.properties).toEqual([
+      { name: "empty", val: "" },
+      { name: "quoted", val: 'a"b' },
+    ]);
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('<w:attr w:name="empty" w:val=""/>');
+    expect(xml).toContain('<w:attr w:name="quoted" w:val="a&quot;b"/>');
   });
 
   it("parses an inline customXml with element, uri, customXmlPr and children", () => {

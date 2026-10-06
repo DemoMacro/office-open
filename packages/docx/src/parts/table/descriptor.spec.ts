@@ -398,6 +398,7 @@ describe("tableDesc round-trip", () => {
           tableRowRsid: "00445566",
           paraId: "1A2B3C4D",
           textId: "0E0F0A0B",
+          editId: "55667788",
           cells: [{ children: [] }],
         },
       ],
@@ -409,6 +410,7 @@ describe("tableDesc round-trip", () => {
     expect(row.tableRowRsid).toBe("00445566");
     expect(row.paraId).toBe("1A2B3C4D");
     expect(row.textId).toBe("0E0F0A0B");
+    expect(row.editId).toBe("55667788");
   });
 
   it("round-trips row trPr fields (cnfStyle/divId/grid/gridBefore/gridAfter/wBefore/wAfter/jc/hidden)", () => {

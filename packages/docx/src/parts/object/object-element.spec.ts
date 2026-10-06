@@ -69,6 +69,33 @@ describe("objectDesc.parse", () => {
       data: oleBytes,
     });
   });
+
+  it("round-trips OLE VML fillcolor, full style, and textbox", () => {
+    const el = parseObjectXml(
+      `<v:shape id="_x0000_i1025" type="#_x0000_t75" fillcolor="#ff0000" ` +
+        `style="width:414pt;height:123.1pt;position:absolute;mso-wrap-style:square">` +
+        `<v:textbox inset="2pt,2pt,2pt,2pt" o:insetmode="custom"/>` +
+        `</v:shape>`,
+    );
+    const opts = objectDesc.parse(el, readCtx({}));
+    expect(opts).toMatchObject({
+      shapeId: "_x0000_i1025",
+      fillcolor: "#ff0000",
+      style: {
+        width: "414pt",
+        height: "123.1pt",
+        position: "absolute",
+        wrapStyle: "square",
+      },
+      textbox: { inset: "2pt,2pt,2pt,2pt", insetmode: "custom" },
+    });
+    const xml = objectDesc.stringify(opts, {} as never)!;
+    expect(xml).toContain('fillcolor="#ff0000"');
+    expect(xml).toContain(
+      'style="width:414pt;height:123.1pt;position:absolute;mso-wrap-style:square"',
+    );
+    expect(xml).toContain('<v:textbox inset="2pt,2pt,2pt,2pt" o:insetmode="custom"/>');
+  });
 });
 
 describe("objectDesc.stringify", () => {

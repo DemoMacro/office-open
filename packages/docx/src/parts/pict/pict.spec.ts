@@ -114,6 +114,17 @@ describe("stringifyPict", () => {
     expect(stringifyPict({}, writeCtx().ctx)).toBe("<w:pict/>");
   });
 
+  it("round-trips w14:anchorId on a plain pict", () => {
+    const doc = parseXml(`<w:pict ${NS} w14:anchorId="1A2B3C4D"><v:rect/></w:pict>`);
+    const opts = parsePict(doc.elements![0]!, readCtx({}));
+    expect(opts.w14AnchorId).toBe("1A2B3C4D");
+
+    doc.elements![0]!.attributes = {};
+    expect(stringifyPict({ ...opts, w14AnchorId: "1A2B3C4D" }, writeCtx().ctx)).toContain(
+      '<w:pict w14:anchorId="1A2B3C4D">',
+    );
+  });
+
   it("round-trips a WordArt shape with textpath", () => {
     const xml =
       `<v:shape id="_x0000_i1030" type="#_x0000_t136" style="width:227.55pt;height:22.4pt">` +

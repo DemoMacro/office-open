@@ -6,10 +6,20 @@
  */
 import type { GraphicFrameLockingOptions } from "@office-open/core";
 import { extUriMatches, parseOnOff, xsdPlaceholderType } from "@office-open/core";
-import type { ReadContext } from "@office-open/core/descriptor";
-import { graphicFrameLockingDesc } from "@office-open/core/drawing";
+import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import {
+  buildHyperlinkElement,
+  graphicFrameLockingDesc,
+  readHyperlink,
+  registerHyperlink,
+  stringifyNonVisualDrawingProperties,
+} from "@office-open/core/drawing";
+import type { TextHyperlinkOptions } from "@office-open/core/drawing";
+import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import { attr, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import { parseCustDataLst, stringifyCustDataLst } from "@parts/slide/c-sld";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 import type { PlaceholderOrientation, PlaceholderSize, PlaceholderType } from "@shared/shape/shape";
 
 /**
@@ -66,13 +76,44 @@ export interface NvPrPlaceholderOptions {
    * modification stamp, the sole known p:nvPr ext content.
    */
   modId?: string;
+  /** Click hyperlink (a:hlinkClick inside p:cNvPr). */
+  hyperlink?: TextHyperlinkOptions;
+}
+
+/** Graphic-frame nvPr adds the p:custDataLst slot shared by its five frames. */
+export interface GraphicFrameNvPrOptions extends NvPrPlaceholderOptions {
+  /** Customer-data references (p:nvPr > p:custDataLst > p:tags/p:custData). */
+  customerData?: SlideCustomerDataReferenceOptions[];
+}
+
+export function stringifyGraphicFrameCnvPr(
+  id: number | string,
+  opts: NvPrPlaceholderOptions & Partial<NonVisualDrawingPropertiesOptions>,
+  fallbackName: string,
+  ctx: WriteContext,
+): string {
+  const key = opts.hyperlink ? registerHyperlink(opts.hyperlink, ctx) : undefined;
+  const hyperlinkXml = opts.hyperlink
+    ? buildHyperlinkElement("a:hlinkClick", opts.hyperlink, key)
+    : undefined;
+  return stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, fallbackName, hyperlinkXml);
+}
+
+export function readGraphicFrameHyperlink(
+  nvGraphicFramePr: XmlElement | undefined,
+  ctx: ReadContext,
+): TextHyperlinkOptions | undefined {
+  const cNvPr = nvGraphicFramePr ? findChild(nvGraphicFramePr, "p:cNvPr") : undefined;
+  const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
+  return hlinkClick ? readHyperlink(hlinkClick, ctx) : undefined;
 }
 
 /** The p14:modId extension uri (CT_ApplicationNonVisualDrawingProps extLst). */
 const MODID_EXT_URI = "{D42A27DB-BD31-4B8C-83A1-F6EECF244321}";
 
 /** Serialize the p:nvPr content (placeholder reference, or photo/user-drawn attrs). */
-export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
+export function stringifyNvPr(opts: GraphicFrameNvPrOptions): string {
+  const customerDataXml = stringifyCustDataLst(opts.customerData);
   const modIdExt = opts.modId
     ? `<p:extLst><p:ext uri="${MODID_EXT_URI}"><p14:modId xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main" val="${opts.modId}"/></p:ext></p:extLst>`
     : "";
@@ -92,16 +133,17 @@ export function stringifyNvPr(opts: NvPrPlaceholderOptions): string {
     if (opts.placeholderOrientation !== undefined)
       phAttrs.push(`orient="${opts.placeholderOrientation}"`);
     if (opts.hasCustomPrompt) phAttrs.push('hasCustomPrompt="1"');
-    return `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/>${modIdExt}</p:nvPr>`;
+    return `<p:nvPr${nvPrAttrsXml}><p:ph ${phAttrs.join(" ")}/>${customerDataXml}${modIdExt}</p:nvPr>`;
   }
-  if (modIdExt) return `<p:nvPr${nvPrAttrsXml}>${modIdExt}</p:nvPr>`;
+  if (customerDataXml || modIdExt)
+    return `<p:nvPr${nvPrAttrsXml}>${customerDataXml}${modIdExt}</p:nvPr>`;
   return nvPrAttrsXml ? `<p:nvPr${nvPrAttrsXml}/>` : "<p:nvPr/>";
 }
 
 /** Read the p:nvPr placeholder reference into a result object. */
 export function readNvPrPlaceholder(
   nvParent: XmlElement,
-  result: {
+  result: GraphicFrameNvPrOptions & {
     placeholder?: PlaceholderType;
     placeholderIndex?: number;
     placeholderSize?: PlaceholderSize;
@@ -120,6 +162,7 @@ export function readNvPrPlaceholder(
     if (nvPr.attributes["userDrawn"] !== undefined)
       result.userDrawn = parseOnOff(nvPr.attributes["userDrawn"]) ?? false;
   }
+  result.customerData = parseCustDataLst(findChild(nvPr, "p:custDataLst"));
   const ph = findChild(nvPr, "p:ph");
   if (ph?.attributes) {
     if (ph.attributes["type"] !== undefined)

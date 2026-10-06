@@ -204,6 +204,8 @@ export interface VmlBaseShapeFields
    * `wvml:bordertop` border elements), re-emitted after the modeled children.
    */
   rawChildrenXml?: string;
+  /** Verbatim source element XML used only to preserve unmodeled attributes and ordering (round-trip). */
+  sourceXml?: string;
   /** Source order of modeled EG_ShapeElements children when it differs from the canonical order. */
   childOrder?: VmlShapeElementField[];
 }
@@ -505,9 +507,19 @@ function parseShapeAttrs(
   out: Record<string, unknown>,
   extraSpecs: readonly VmlAttrSpec[] = [],
 ): void {
-  parseVmlAttributes(el, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR], out);
+  const specs = [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR];
+  parseVmlAttributes(el, specs, out);
   if (el.attributes?.style !== undefined) {
-    out.style = parseVmlShapeStyle(parseVmlStyle(String(el.attributes.style)));
+    const styleRecord = parseVmlStyle(String(el.attributes.style));
+    const style = parseVmlShapeStyle(styleRecord);
+    out.style = style;
+    if (Object.keys(style).length < Object.keys(styleRecord).length) {
+      out.sourceXml = stringifyElement(el);
+    }
+  }
+  const knownAttrs = new Set([...specs.map((spec) => spec.attr), "style"]);
+  if (Object.keys(el.attributes ?? {}).some((name) => !knownAttrs.has(name))) {
+    out.sourceXml = stringifyElement(el);
   }
 }
 
@@ -646,6 +658,7 @@ function stringifyShapeElement(
   extraSpecs: readonly VmlAttrSpec[] = [],
   childrenXml = "",
 ): string {
+  if (typeof opts.sourceXml === "string") return opts.sourceXml;
   const attrStr = stringifyShapeAttrs(opts, extraSpecs);
   return childrenXml !== "" ? `<${tag}${attrStr}>${childrenXml}</${tag}>` : `<${tag}${attrStr}/>`;
 }
@@ -781,6 +794,7 @@ export function parseVmlShapeChild(el: XmlElement): VmlShapeChild | undefined {
 
 /** Serialize v:group. */
 export function stringifyVmlGroup(opts: VmlGroupOptions): string {
+  if (opts.sourceXml !== undefined) return opts.sourceXml;
   let children =
     (opts.children ?? []).map(stringifyVmlShapeChild).join("") + stringifyShapeElements(opts);
   if (opts.diagram !== undefined) children += stringifyVmlDiagram(opts.diagram);
@@ -797,7 +811,16 @@ export function parseVmlGroup(el: XmlElement): VmlGroupOptions {
   const out: Record<string, unknown> = {};
   parseVmlAttributes(el, GROUP_ATTRS, out);
   if (el.attributes?.style !== undefined) {
-    out.style = parseVmlShapeStyle(parseVmlStyle(String(el.attributes.style)));
+    const styleRecord = parseVmlStyle(String(el.attributes.style));
+    const style = parseVmlShapeStyle(styleRecord);
+    out.style = style;
+    if (Object.keys(style).length < Object.keys(styleRecord).length) {
+      out.sourceXml = stringifyElement(el);
+    }
+  }
+  const knownAttrs = new Set([...GROUP_ATTRS.map((spec) => spec.attr), "style"]);
+  if (Object.keys(el.attributes ?? {}).some((name) => !knownAttrs.has(name))) {
+    out.sourceXml = stringifyElement(el);
   }
   parseShapeElements(el, out);
 

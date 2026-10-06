@@ -62,6 +62,10 @@ export interface BlipFillConfigOptions {
   blipEffects?: BlipEffectsOptions;
   /** Source rectangle for cropping */
   sourceRectangle?: SourceRectangleOptions;
+  /** Fill rectangle inside a:stretch; false keeps the bare stretch element. */
+  fillRectangle?: SourceRectangleOptions | false;
+  /** Set false to omit a:stretch (matching the source XML); omitted emits the default stretch. */
+  stretch?: boolean;
   /** Tile fill mode (if omitted, defaults to stretch) */
   tile?: TileOptions;
 }

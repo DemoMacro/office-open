@@ -432,7 +432,8 @@ export type ParsedRunChild =
   | { ruby: RubyOptions }
   | { break: number | BreakOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
-  | { endnoteReference: number | FootnoteEndnoteReferenceOptions };
+  | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
+  | { text: string; preserveSpace?: boolean };
 
 function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions {
   const children: (RunOptions | string)[] = [];
@@ -521,7 +522,9 @@ export function parseRun(
       case "w:t": {
         let text = textOf(child);
         preserveSpace ||= attr(child, "xml:space") === "preserve";
-        children.push(text);
+        children.push(
+          attr(child, "xml:space") === "preserve" ? { text, preserveSpace: true } : text,
+        );
         break;
       }
       case "w:delText": {
@@ -538,10 +541,13 @@ export function parseRun(
           children.push(PARSED_PAGE_BREAK);
         } else if (brType === "column") {
           children.push(PARSED_COLUMN_BREAK);
-        } else if (brClear) {
-          // Line break clearing floating content (w:br/@w:clear) — preserve clear
+        } else if (brType || brClear) {
           children.push({
-            break: { count: 1, clear: brClear as BreakClear },
+            break: {
+              count: 1,
+              ...(brType ? { type: brType as BreakOptions["type"] } : {}),
+              ...(brClear ? { clear: brClear as BreakClear } : {}),
+            },
           } as unknown as ParsedRunChild);
         } else {
           children.push(PARSED_LINE_BREAK);
@@ -846,7 +852,15 @@ export function parsedRunToOptions(
   if (symbolIdx >= 0 && nonRefChildren.length === 1) {
     const sym = (nonRefChildren[symbolIdx] as unknown as { symbolRun: Record<string, unknown> })
       .symbolRun;
-    return { symbolRun: { ...parsed.properties, ...sym } } as unknown as RunOptions;
+    return {
+      symbolRun: {
+        ...parsed.properties,
+        ...sym,
+        ...(parsed.additionRsid ? { additionRsid: parsed.additionRsid } : {}),
+        ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
+        ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
+      },
+    } as unknown as RunOptions;
   }
 
   // If the run contains only an OLE object (w:object), return it directly with
@@ -857,7 +871,13 @@ export function parsedRunToOptions(
   );
   if (objectIdx >= 0 && nonRefChildren.length === 1) {
     const objectChild = nonRefChildren[objectIdx] as { object: ObjectElementOptions };
-    return { ...parsed.properties, ...objectChild } as unknown as RunOptions;
+    return {
+      ...parsed.properties,
+      ...objectChild,
+      ...(parsed.additionRsid ? { additionRsid: parsed.additionRsid } : {}),
+      ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
+      ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
+    } as unknown as RunOptions;
   }
 
   // A VML picture (w:pict) likewise occupies its own run when alone.
@@ -866,6 +886,9 @@ export function parsedRunToOptions(
   );
   if (pictIdx >= 0 && nonRefChildren.length === 1) {
     const pictChild = nonRefChildren[pictIdx] as unknown as { pict: PictOptions };
+    if (parsed.additionRsid) pictChild.pict.runAdditionRsid = parsed.additionRsid;
+    if (parsed.runPropertiesRsid) pictChild.pict.runPropertiesRsid = parsed.runPropertiesRsid;
+    if (parsed.deletionRsid) pictChild.pict.runDeletionRsid = parsed.deletionRsid;
     return { ...parsed.properties, ...pictChild } as unknown as RunOptions;
   }
   const hasBlockChild = objectIdx >= 0 || pictIdx >= 0;
@@ -880,6 +903,10 @@ export function parsedRunToOptions(
   let hasPageBreak = false;
   let hasColumnBreak = false;
   const extraChildren: Record<string, unknown>[] = [];
+  const hasStructuredText = nonRefChildren.some(
+    (child) =>
+      typeof child === "object" && child !== null && "text" in child && "preserveSpace" in child,
+  );
 
   for (const child of nonRefChildren) {
     if (typeof child === "string") {
@@ -915,6 +942,7 @@ export function parsedRunToOptions(
     // Multiple w:t in one run (Word splits text for session history) — joining
     // them into `text` would re-emit a single w:t and lose the split points.
     textParts.length > 1 ||
+    hasStructuredText ||
     (hasStructuredBreaks &&
       (breakCount > 0 || structuredBreaks.length > 1 || hasPageBreak || hasColumnBreak));
 

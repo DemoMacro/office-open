@@ -6,6 +6,7 @@ import { SharedStrings } from "./shared-strings";
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
+import type { TabColorOptions } from "./worksheet/types";
 
 describe("Worksheet", () => {
   describe("cell formula", () => {
@@ -20,6 +21,14 @@ describe("Worksheet", () => {
       );
       expect(shorthand).toContain("<f>SUM(A1:A2)</f>");
       expect(shorthand).toBe(expanded);
+    });
+
+    it("emits preserve for formulas with edge whitespace", () => {
+      const xml = buildWorksheetXml(
+        { rows: [{ cells: [{ formula: { formula: " SUM(A1) " }, reference: "B1" }] }] },
+        {},
+      );
+      expect(xml).toContain('<f xml:space="preserve"> SUM(A1) </f>');
     });
   });
 
@@ -86,6 +95,7 @@ describe("Worksheet", () => {
       expect(result.freezePanes).toEqual({
         row: 0,
         col: 0,
+        state: "frozen",
         topLeftCell: "A1",
         activePane: "topLeft",
       });
@@ -94,13 +104,63 @@ describe("Worksheet", () => {
       );
     });
 
+    it("round-trips frozenSplit pane state", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetViews><sheetView workbookViewId="0">` +
+          `<pane xSplit="1" ySplit="1" topLeftCell="B2" activePane="bottomRight" state="frozenSplit"/>` +
+          `</sheetView></sheetViews>` +
+          `<sheetData/></worksheet>`,
+      );
+      expect(result.freezePanes).toMatchObject({ state: "frozenSplit" });
+      expect(buildWorksheetXml(result, {})).toContain('state="frozenSplit"');
+    });
+
+    it("keeps split shorthand compatible with explicit state", () => {
+      const splitXml = buildWorksheetXml({ freezePanes: { row: 1, split: true } }, {});
+      expect(splitXml).toContain('state="split"');
+      const explicitXml = buildWorksheetXml(
+        { freezePanes: { row: 1, split: true, state: "frozenSplit" } },
+        {},
+      );
+      expect(explicitXml).toContain('state="frozenSplit"');
+    });
+
     it("round-trips tabColor tint", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
           `<sheetPr><tabColor theme="2" tint="-0.25"/></sheetPr><sheetData/></worksheet>`,
       );
-      expect(result.tabColor).toEqual({ theme: 2, tint: -0.25 });
+      expect(result.tabColor).toEqual({ theme: 2, tint: -0.25, tintRaw: "-0.25" });
       expect(buildWorksheetXml(result, {})).toContain('<tabColor theme="2" tint="-0.25"/>');
+    });
+
+    it("round-trips long tabColor tint lexemes", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetPr><tabColor theme="2" tint="-0.249977111117893"/></sheetPr><sheetData/></worksheet>`,
+      );
+      expect((result.tabColor as TabColorOptions).tintRaw).toBe("-0.249977111117893");
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<tabColor theme="2" tint="-0.249977111117893"/>',
+      );
+    });
+
+    it("preserves whitespace in validation and conditional formulas", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData/><conditionalFormatting sqref="A1">` +
+          `<cfRule type="cellIs" dxfId="0" priority="1" operator="between">` +
+          `<formula> 1 </formula><formula> 10 </formula></cfRule></conditionalFormatting>` +
+          `<dataValidations count="1"><dataValidation type="whole" operator="between" sqref="B1">` +
+          `<formula1> 1 </formula1><formula2> 10 </formula2></dataValidation></dataValidations>` +
+          `</worksheet>`,
+      );
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('<formula xml:space="preserve"> 1 </formula>');
+      expect(xml).toContain('<formula xml:space="preserve"> 10 </formula>');
+      expect(xml).toContain('<formula1 xml:space="preserve"> 1 </formula1>');
+      expect(xml).toContain('<formula2 xml:space="preserve"> 10 </formula2>');
     });
 
     it("round-trips revision uid and explicit filter mode", () => {
@@ -706,6 +766,27 @@ describe("Worksheet", () => {
         rows: [{ cells: [{ value: "A" }] }],
       });
       expect(result.autoFilter).toBe("A1:D10");
+    });
+
+    it("round-trips autoFilter and dataValidation revision UIDs", () => {
+      const result = roundTrip({
+        autoFilter: { ref: "A1:D10", uid: "{11111111-1111-1111-1111-111111111111}" },
+        dataValidations: [
+          {
+            sqref: "B1:B10",
+            type: "whole",
+            operator: "between",
+            formula1: "1",
+            formula2: "10",
+            uid: "{22222222-2222-2222-2222-222222222222}",
+          },
+        ],
+        rows: [{ cells: [{ value: "A" }] }],
+      });
+      expect(result.autoFilter).toMatchObject({
+        uid: "{11111111-1111-1111-1111-111111111111}",
+      });
+      expect(result.dataValidations?.[0]?.uid).toBe("{22222222-2222-2222-2222-222222222222}");
     });
 
     it("round-trips top10 filter", () => {

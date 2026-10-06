@@ -25,7 +25,6 @@ import {
   parseTableStyle,
   outlineDesc,
   stringifyLineProperties,
-  stringifyNonVisualDrawingProperties,
 } from "@office-open/core/drawing";
 import {
   attr,
@@ -46,6 +45,8 @@ import type { TableRowOptions } from "@shared/table/table-row";
 import type { PptxWriteContext } from "../../context";
 import {
   readGraphicFrameLocking,
+  readGraphicFrameHyperlink,
+  stringifyGraphicFrameCnvPr,
   stringifyCnvGraphicFramePr,
   readNvPrPlaceholder,
   stringifyNvPr,
@@ -111,7 +112,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvGraphicFramePr>${stringifyGraphicFrameCnvPr(id, opts, name, ctx)}` +
         `${stringifyCnvGraphicFramePr(opts.locking)}` +
         `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
@@ -168,7 +169,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // Name from p:nvGraphicFramePr → p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
     const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), ctx);
+    const hyperlink = readGraphicFrameHyperlink(findChild(el, "p:nvGraphicFramePr"), ctx);
     readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (hyperlink) result.hyperlink = hyperlink;
     if (locking !== undefined) result.locking = locking;
 
     // Find a:tbl inside a:graphicData

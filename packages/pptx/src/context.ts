@@ -27,6 +27,8 @@ export class ParseContext {
     public pptx: PptxDocument,
     /** Slide relationship ID → path, parsed from slide's _rels file */
     public slideRels: Map<string, string>,
+    /** Relationship IDs explicitly marked TargetMode="External". */
+    public externalRelIds: ReadonlySet<string> = new Set(),
   ) {}
 }
 
@@ -78,6 +80,12 @@ export interface OleLinkEntry {
   url: string;
 }
 
+/** An externally linked audio source (a:audioFile @r:link). */
+export interface AudioLinkEntry {
+  key: string;
+  url: string;
+}
+
 // ── Context ──
 
 /**
@@ -104,6 +112,9 @@ export class PptxWriteContext implements WriteContext {
   /** url → key side index for O(1) registration dedup. */
   private _oleLinkKeys = new Map<string, string>();
   private _nextOleLinkId = 1;
+  private _audioLinks = new Map<string, AudioLinkEntry>();
+  private _audioLinkKeys = new Map<string, string>();
+  private _nextAudioLinkId = 1;
   private _nextRelId = 1;
   /** cNvPr name → id for the part being serialized (cleared per slide/layout/master). */
   private _shapeIds = new Map<string, number>();
@@ -148,8 +159,8 @@ export class PptxWriteContext implements WriteContext {
    * `{ole:oleObjectN.bin}` placeholder. The compiler rewrites the placeholder
    * to a real relationship id and adds the oleObject relationship per slide.
    */
-  public addOle(data: Uint8Array, progId?: string): string {
-    const entry = this._embeddings.addEmbedding(data, undefined, progId);
+  public addOle(data: Uint8Array, progId?: string, fileName?: string): string {
+    const entry = this._embeddings.addEmbedding(data, fileName, progId);
     return `{ole:${entry.fileName}}`;
   }
 
@@ -205,6 +216,15 @@ export class PptxWriteContext implements WriteContext {
     const key = `ole-link_${this._nextOleLinkId++}`;
     this._oleLinks.set(key, { key, url });
     this._oleLinkKeys.set(url, key);
+    return key;
+  }
+
+  public addAudioLink(url: string): string {
+    const existingKey = this._audioLinkKeys.get(url);
+    if (existingKey !== undefined) return existingKey;
+    const key = `audio-link_${this._nextAudioLinkId++}`;
+    this._audioLinks.set(key, { key, url });
+    this._audioLinkKeys.set(url, key);
     return key;
   }
 
@@ -299,6 +319,10 @@ export class PptxWriteContext implements WriteContext {
   public get oleLinks(): OleLinkEntry[] {
     return [...this._oleLinks.values()];
   }
+
+  public get audioLinks(): AudioLinkEntry[] {
+    return [...this._audioLinks.values()];
+  }
 }
 
 // ── Read context ──
@@ -314,6 +338,10 @@ export class PptxReadContext implements ReadContext {
 
   public resolveRelationship(rId: string): string | undefined {
     return this._parseCtx.slideRels.get(rId);
+  }
+
+  public isExternalRelationship(rId: string): boolean {
+    return this._parseCtx.externalRelIds.has(rId);
   }
 
   public getPart(path: string) {

@@ -20,9 +20,11 @@ import type {
 import { parseNonVisualDrawingProperties } from "@office-open/core/drawing";
 import { attr, attrBool, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
+import { parseCustDataLst } from "@parts/slide/c-sld";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 
 import type { LayoutDefinition, MasterDefinition } from "./file";
-import { readShapeStyle, type ShapeStyleOptions } from "./shape/shape";
+import { readShapeStyle, type PlaceholderSize, type ShapeStyleOptions } from "./shape/shape";
 
 /** Logical keys of the placeholder maps (LayoutPlaceholderOptions /
  *  MasterPlaceholderOptions fields). */
@@ -125,7 +127,12 @@ export interface PlaceholderFacets {
  * its identity. Accepts the old flat x/y/width/height shape.
  */
 export interface PlaceholderDefinition
-  extends PlaceholderPosition, PlaceholderFacets, NonVisualDrawingPropertiesOptions {}
+  extends PlaceholderPosition, PlaceholderFacets, NonVisualDrawingPropertiesOptions {
+  /** CT_Placeholder `@sz` — sizing hint (default "full"). */
+  placeholderSize?: PlaceholderSize;
+  /** Customer-data references (p:nvPr > p:custDataLst > p:tags/p:custData). */
+  customerData?: SlideCustomerDataReferenceOptions[];
+}
 
 /** Result of resolving a placeholder against the layout/master chain. */
 export interface ResolvedPlaceholder {
@@ -253,6 +260,10 @@ export function extractPlaceholderDefinition(
   if (attr(ph, "sz") === "0") return { key, def: false };
 
   const def: Partial<PlaceholderDefinition> = {};
+  const placeholderSize = attr(ph, "sz");
+  if (placeholderSize !== undefined) def.placeholderSize = placeholderSize as PlaceholderSize;
+  const customerData = parseCustDataLst(nvPr ? findChild(nvPr, "p:custDataLst") : undefined);
+  if (customerData) def.customerData = customerData;
 
   // cNvPr fields (name/description/title/hidden + a16:creationId) so a
   // re-emitted placeholder keeps its identity.

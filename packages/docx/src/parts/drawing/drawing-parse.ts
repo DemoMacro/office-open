@@ -5,7 +5,7 @@
  *
  * @module
  */
-import type { ChartSpaceOptions } from "@office-open/core";
+import type { ChartSpaceOptions, UniversalMeasure } from "@office-open/core";
 import { parseOnOff, partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
 import {
   blipDesc,
@@ -241,11 +241,21 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     const id = attr(docPr, "id");
     // CT_NonVisualDrawingProps children: click/hover hyperlinks resolve to
     // their external targets, re-registered on stringify.
-    const hyperlink: { click?: string; hover?: string } = {};
-    const clickRid = attr(findChild(docPr, "a:hlinkClick"), "r:id");
-    if (clickRid) hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
-    const hoverRid = attr(findChild(docPr, "a:hlinkHover"), "r:id");
-    if (hoverRid) hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
+    const hyperlink: NonNullable<DocPropertiesOptions["hyperlink"]> = {};
+    const clickEl = findChild(docPr, "a:hlinkClick");
+    const clickRid = attr(clickEl, "r:id");
+    if (clickRid) {
+      hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
+      const tooltip = attr(clickEl, "tooltip");
+      if (tooltip) hyperlink.clickTooltip = tooltip;
+    }
+    const hoverEl = findChild(docPr, "a:hlinkHover");
+    const hoverRid = attr(hoverEl, "r:id");
+    if (hoverRid) {
+      hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
+      const tooltip = attr(hoverEl, "tooltip");
+      if (tooltip) hyperlink.hoverTooltip = tooltip;
+    }
     if (
       id !== undefined ||
       Object.keys(cNvPrOpts).length > 0 ||
@@ -255,7 +265,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
       const alt: Partial<DocPropertiesOptions> = { ...cNvPrOpts };
       if (id !== undefined) alt.id = id;
       if (hyperlink.click !== undefined || hyperlink.hover !== undefined) {
-        alt.hyperlink = hyperlink as DocPropertiesOptions["hyperlink"];
+        alt.hyperlink = hyperlink;
       }
       info.altText = alt as DocPropertiesOptions;
     }
@@ -330,6 +340,21 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     if (layoutInCell !== undefined) floating.layoutInCell = layoutInCell;
     const relativeHeight = attrNum(anchor, "relativeHeight");
     if (relativeHeight !== undefined) floating.zIndex = relativeHeight;
+
+    const simplePos = findChild(anchor, "wp:simplePos");
+    const simplePosX = attr(simplePos, "x");
+    const simplePosY = attr(simplePos, "y");
+    const coordinate = (value: string | undefined): number | UniversalMeasure | undefined => {
+      const number = Number(value);
+      if (value === undefined) return undefined;
+      return Number.isNaN(number) ? (value as UniversalMeasure) : number;
+    };
+    if (simplePos && (simplePosX !== undefined || simplePosY !== undefined)) {
+      floating.simplePos = {
+        ...(simplePosX !== undefined ? { x: coordinate(simplePosX) } : {}),
+        ...(simplePosY !== undefined ? { y: coordinate(simplePosY) } : {}),
+      };
+    }
 
     // wp14:sizeRelH/V (Word 2010+) — pctWidth/pctHeight carry 1/1000 %, the
     // API exposes a whole-number percentage.

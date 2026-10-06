@@ -38,10 +38,17 @@ export interface AudioFrameOptions extends Omit<MediaFrameBaseOptions, "data" | 
    * a:wavAudioFile element.
    */
   embeddedMedia?: boolean;
+  /**
+   * External audio source (a:audioFile `@r:link`). With `data`, this is the
+   * modern dual-reference form: external link plus embedded p14:media copy.
+   */
+  sourceUrl?: string;
   /** Original audio file name (CT_EmbeddedWAVAudioFile `@name`, wav only) */
   audioFileName?: string;
   /** Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art. */
   poster?: DataType;
-  /** Poster image format (png/jpg only). */
-  posterType?: "png" | "jpg";
+  /** Poster image format (poster media extension). */
+  posterType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
+  /** Source poster media file name (round-trip only). */
+  posterFileName?: string;
 }

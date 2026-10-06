@@ -308,6 +308,7 @@ describe("mergeNoteAnchors", () => {
         visible: true,
         width: 200,
         height: 90,
+        shape: {},
       },
     ]);
     expect(comments[0]).toEqual({ cell: "A1", author: "A", text: "x" });

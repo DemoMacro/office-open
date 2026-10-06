@@ -107,3 +107,28 @@ describe("header/footer part naming", () => {
     expect(decodePart(second, "word/header2.xml")).toContain("Even header");
   });
 });
+
+describe("header/footer run identity", () => {
+  it("round-trips rsids on body, header, and footer runs", async () => {
+    const paragraph = {
+      children: [{ text: "Marked", additionRsid: "00112233", runPropertiesRsid: "AABBCCDD" }],
+    };
+    const doc = {
+      sections: [
+        {
+          children: [{ paragraph }],
+          headers: { default: [{ paragraph }] },
+          footers: { default: [{ paragraph }] },
+        },
+      ],
+    };
+    const first = await generateDocument(doc, { type: "uint8array" });
+    const second = await generateDocument(parseDocumentSync(first), { type: "uint8array" });
+
+    for (const path of ["word/document.xml", "word/header1.xml", "word/footer1.xml"]) {
+      expect(decodePart(second, path)).toContain(
+        '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD"><w:t>Marked</w:t></w:r>',
+      );
+    }
+  });
+});

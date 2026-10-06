@@ -6,7 +6,7 @@ import type {
   UniversalMeasure,
 } from "@office-open/core";
 import type { Guid } from "@office-open/core";
-import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
+import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 import type { CellBorderOptions } from "./table-cell-properties";
 import type { TableRowOptions } from "./table-row";
@@ -20,7 +20,7 @@ export interface TableOptions
   extends
     BaseTableOptions<TableRowOptions>,
     NonVisualDrawingPropertiesOptions,
-    NvPrPlaceholderOptions {
+    GraphicFrameNvPrOptions {
   /** Table id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default

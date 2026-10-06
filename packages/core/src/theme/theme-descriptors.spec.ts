@@ -161,6 +161,25 @@ describe("themeDesc", () => {
 });
 
 describe("custom colors", () => {
+  it("round-trips a bare theme blip stretch", () => {
+    const opts: ThemeOptions = {
+      formatScheme: {
+        fillStyles: [],
+        lineStyles: [],
+        effectStyles: [],
+        backgroundFillStyles: [{ type: "blip", noEmbed: true, fillRectangle: false }],
+      },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain("<a:stretch/>");
+    expect(xml).not.toContain("<a:fillRect");
+    expect(roundTrip(opts).formatScheme?.backgroundFillStyles?.[0]).toMatchObject({
+      type: "blip",
+      noEmbed: true,
+      fillRectangle: false,
+    });
+  });
+
   it("round-trips transform references on theme blip duotone", () => {
     const opts: ThemeOptions = {
       formatScheme: {

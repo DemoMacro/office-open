@@ -71,6 +71,26 @@ describe("run rsid round-trip", () => {
     expect(xml).toContain('w:rsidR="00000009" w:rsidRPr="0000000A"');
   });
 
+  it("preserves run identity on page, column, textWrapping, and tab runs", () => {
+    for (const [inner, expected] of [
+      ['<w:br w:type="page"/>', '<w:br w:type="page"/>'],
+      ['<w:br w:type="column"/>', '<w:br w:type="column"/>'],
+      ['<w:br w:type="textWrapping"/>', '<w:br w:type="textWrapping"/>'],
+      ["<w:tab/>", "<w:tab/>"],
+    ] as const) {
+      const opts = parseParagraphXml(
+        `<w:p ${NS}><w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">${inner}</w:r></w:p>`,
+      );
+      expect(opts.children?.[0]).toMatchObject({
+        additionRsid: "00112233",
+        runPropertiesRsid: "AABBCCDD",
+      });
+      expect(stringifyParagraph(opts, writeCtx)).toContain(
+        `<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">${expected}</w:r>`,
+      );
+    }
+  });
+
   it("preserves w:rsidR and w:rsidRPr on hyperlink text runs", () => {
     const opts = parseParagraphXml(
       `<w:p ${NS}><w:hyperlink w:anchor="target">` +
@@ -109,6 +129,36 @@ describe("run rsid round-trip", () => {
     );
   });
 
+  it("preserves run identity around a VML picture", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD" w:rsidDel="99887766">` +
+        '<w:pict xmlns:v="urn:schemas-microsoft-com:vml"><v:rect/></w:pict>' +
+        "</w:r></w:p>",
+    );
+    expect(firstChild(opts).pict).toMatchObject({
+      runAdditionRsid: "00112233",
+      runPropertiesRsid: "AABBCCDD",
+      runDeletionRsid: "99887766",
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD" w:rsidDel="99887766">',
+    );
+  });
+
+  it("preserves run identity on symbol runs", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">` +
+        '<w:sym w:font="Wingdings" w:char="F0E0"/></w:r></w:p>',
+    );
+    expect(firstChild(opts).symbolRun).toMatchObject({
+      additionRsid: "00112233",
+      runPropertiesRsid: "AABBCCDD",
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">',
+    );
+  });
+
   it("preserves non-plain simple-field result runs structurally", () => {
     const opts = parseParagraphXml(
       `<w:p ${NS}><w:fldSimple w:instr=" PAGE ">` +
@@ -129,6 +179,21 @@ describe("run rsid round-trip", () => {
     const xml = stringifyParagraph(opts, writeCtx);
     expect(xml).toContain('<w:fldSimple w:instr=" PAGE ">');
     expect(xml).toContain('<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD"><w:rPr>');
+  });
+
+  it("round-trips a plain simple-field instruction-text result", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:fldSimple w:instr=" PAGE ">` +
+        '<w:r><w:instrText xml:space="preserve">A</w:instrText></w:r>' +
+        "</w:fldSimple></w:p>",
+    );
+    expect(firstChild(opts).simpleField).toMatchObject({
+      cachedInstructionText: "A",
+      cachedInstructionTextPreserveSpace: true,
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:r><w:instrText xml:space="preserve">A</w:instrText></w:r>',
+    );
   });
 
   it("preserves w:rsidR and w:rsidRPr on drawing runs", () => {

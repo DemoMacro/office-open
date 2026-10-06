@@ -261,6 +261,19 @@ export class Relationships {
     targetMode?: "External";
   }): void {
     if (this.hasRelationship(rel.relationshipType, rel.target)) return;
+    if (this.hasRelationshipKind(rel.relationshipType.split("/").pop() ?? "")) {
+      const semanticKind = rel.relationshipType.split("/").pop();
+      const semantic = this.entries.find(
+        (entry) =>
+          entry.type.split("/").pop() === semanticKind &&
+          this.semanticTarget(entry) === this.semanticTarget(rel),
+      );
+      if (semantic) {
+        semantic.target = rel.target;
+        semantic.targetMode = rel.targetMode;
+        return;
+      }
+    }
     const numeric = /^rId(\d+)$/.exec(rel.rId);
     if (numeric && !this.hasId(rel.rId)) {
       this.addRelationship(

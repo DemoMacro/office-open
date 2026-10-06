@@ -90,6 +90,25 @@ describe("inline SDT (CT_SdtRun) parse", () => {
   });
 });
 
+describe("inline SDT run identity", () => {
+  it("preserves rsids on runs inside sdtContent", () => {
+    const opts = parseParagraphXml(
+      '<w:sdt><w:sdtPr><w:alias w:val="Identity"/></w:sdtPr>' +
+        '<w:sdtContent><w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD"><w:t>Jane</w:t></w:r>' +
+        "</w:sdtContent></w:sdt>",
+    );
+    const sdt = findInlineSdt(opts)!.sdt as Record<string, unknown>;
+    expect((sdt.children as Record<string, unknown>[])[0]).toMatchObject({
+      text: "Jane",
+      additionRsid: "00112233",
+      runPropertiesRsid: "AABBCCDD",
+    });
+    expect(stringifyParagraph(opts as never, writeCtx)).toContain(
+      '<w:r w:rsidR="00112233" w:rsidRPr="AABBCCDD">',
+    );
+  });
+});
+
 describe("SDT properties fidelity (CT_SdtPr)", () => {
   it("round-trips the sdtPr run properties (leading w:rPr)", () => {
     const opts = parseParagraphXml(

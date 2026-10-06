@@ -10,13 +10,15 @@ import type {
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
+import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 // ── Options ──
 
 export interface OleEmbedOptions {
   /** OLE container binary — registered as ppt/embeddings/oleObjectN.bin. */
   data: DataType;
+  /** Source embedding file name (ppt/embeddings/*) — round-trip only. */
+  fileName?: string;
   /** Follow color scheme (p:embed `@followColorScheme`) */
   followColorScheme?: "none" | "full" | "textAndBackground";
 }
@@ -43,7 +45,7 @@ export interface OleIconImageOptions {
  * fields (name/description/title/hidden) from
  * NonVisualDrawingPropertiesOptions.
  */
-export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
+export interface OleOptions extends NonVisualDrawingPropertiesOptions, GraphicFrameNvPrOptions {
   /** Frame locking (a:graphicFrameLocks). undefined = fresh default
    * (noGrp="1"); null = empty cNvGraphicFramePr; object = explicit flags. */
   locking?: GraphicFrameLockingOptions | null;

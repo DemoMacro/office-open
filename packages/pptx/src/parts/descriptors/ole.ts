@@ -8,7 +8,6 @@
 
 import { convertToEmu, toUint8Array } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { stringifyNonVisualDrawingProperties } from "@office-open/core/drawing";
 import {
   attr,
   attrBool,
@@ -23,6 +22,8 @@ import type { PptxWriteContext } from "../../context";
 import type { OleOptions } from "../ole-frame";
 import {
   readGraphicFrameLocking,
+  readGraphicFrameHyperlink,
+  stringifyGraphicFrameCnvPr,
   readNvPrPlaceholder,
   stringifyCnvGraphicFramePr,
   stringifyNvPr,
@@ -53,7 +54,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
 
     // p:nvGraphicFramePr
     parts.push(
-      `<p:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}` +
+      `<p:nvGraphicFramePr>${stringifyGraphicFrameCnvPr(id, opts, name, ctx)}` +
         `${stringifyCnvGraphicFramePr(opts.locking)}` +
         `${stringifyNvPr(opts)}</p:nvGraphicFramePr>`,
     );
@@ -78,7 +79,11 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     const oleChildren: string[] = [];
     if (opts.embed) {
       const pptxCtx = ctx as PptxWriteContext;
-      const ref = pptxCtx.addOle(toUint8Array(opts.embed.data) as Uint8Array, opts.progId);
+      const ref = pptxCtx.addOle(
+        toUint8Array(opts.embed.data) as Uint8Array,
+        opts.progId,
+        opts.embed.fileName,
+      );
       oleAttrs.push(`r:id="${ref}"`);
       const fcs = opts.embed.followColorScheme
         ? ` followColorScheme="${opts.embed.followColorScheme}"`
@@ -129,7 +134,9 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
     // id, name from p:nvGraphicFramePr/p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvGraphicFramePr"));
     const locking = readGraphicFrameLocking(findChild(el, "p:nvGraphicFramePr"), ctx);
+    const hyperlink = readGraphicFrameHyperlink(findChild(el, "p:nvGraphicFramePr"), ctx);
     readNvPrPlaceholder(findChild(el, "p:nvGraphicFramePr") ?? el, result);
+    if (hyperlink) result.hyperlink = hyperlink;
     if (locking !== undefined) result.locking = locking;
 
     // x, y, width, height from p:xfrm (in EMU)
@@ -165,9 +172,11 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
           | "full"
           | "textAndBackground"
           | undefined;
+        const sourceFileName = mediaPath?.split("/").pop();
         if (raw) {
           result.embed = {
             data: raw,
+            ...(sourceFileName !== undefined ? { fileName: sourceFileName } : {}),
             ...(followCS !== undefined ? { followColorScheme: followCS } : {}),
           };
         }

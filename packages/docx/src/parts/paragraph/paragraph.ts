@@ -61,6 +61,8 @@ export interface FootnoteEndnoteReferenceOptions {
  */
 export interface ComplexFieldOptions {
   instruction: string;
+  /** Source `xml:space="preserve"` marker on the plain instruction text. */
+  instructionPreserveSpace?: boolean;
   result?: string;
   /** Source `xml:space="preserve"` marker on the plain result text. */
   resultPreserveSpace?: boolean;

@@ -108,6 +108,44 @@ describe("chart embedding rels", () => {
     );
     expect(xml).toContain('Target="../embeddings/Chart.xlsx"');
   });
+
+  it("claims source chart style and color relationships", () => {
+    const files = compileDocument({
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    chart: {
+                      type: "column",
+                      series: [{ values: [1, 2, 3] }],
+                      transformation: { width: 5486400, height: 3200400 },
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+      rawParts: [{ path: "word/charts/style1.xml", data: "<chartStyle/>" }],
+      passthroughRelationships: [
+        {
+          source: "word/charts/chart1.xml",
+          relationshipType: "http://schemas.microsoft.com/office/2011/relationships/chartStyle",
+          target: "style1.xml",
+          rId: "rId1",
+        },
+      ],
+    });
+    const rels = new TextDecoder().decode(files["word/charts/_rels/chart1.xml.rels"] as Uint8Array);
+    expect(rels).toContain(
+      'Id="rId1" Type="http://schemas.microsoft.com/office/2011/relationships/chartStyle"',
+    );
+    expect(rels).toContain('Target="style1.xml"');
+  });
 });
 
 describe("picture media dedup", () => {

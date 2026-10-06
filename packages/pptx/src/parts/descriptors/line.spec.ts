@@ -108,6 +108,26 @@ describe("lineShapeDesc round-trip", () => {
 });
 
 describe("connectorShapeDesc round-trip", () => {
+  it("round-trips flipV on a zero-height connector", () => {
+    const writeXml = connectorShapeDesc.stringify(
+      { id: 21, x1: 10, y1: 20, x2: 10, y2: 20, flipVertical: true },
+      writeCtx,
+    );
+    expect(writeXml).toContain('flipV="1"');
+    const element = parseXml(writeXml!)?.elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    expect(connectorShapeDesc.parse(element, readCtx).flipVertical).toBe(true);
+
+    const explicitFalseXml = connectorShapeDesc.stringify(
+      { id: 22, x1: 10, y1: 20, x2: 20, y2: 30, flipVertical: false },
+      writeCtx,
+    );
+    expect(explicitFalseXml).toContain('flipV="0"');
+    const falseElement = parseXml(explicitFalseXml!)?.elements?.[0];
+    if (!falseElement) throw new Error("parsed document has no root element");
+    expect(connectorShapeDesc.parse(falseElement, readCtx).flipVertical).toBe(false);
+  });
+
   it("round-trips basic connector", () => {
     const opts: ConnectorOptions = {
       id: 20,

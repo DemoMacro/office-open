@@ -9,6 +9,12 @@ export interface SimpleFieldOptions {
   instruction: string;
   /** Optional cached field value */
   cachedValue?: string;
+  /** Source `xml:space="preserve"` marker on the plain cached value. */
+  cachedValuePreserveSpace?: boolean;
+  /** Cached result expressed as instruction text (round-trip; rare nested-field form). */
+  cachedInstructionText?: string;
+  /** Source `xml:space="preserve"` marker on `cachedInstructionText`. */
+  cachedInstructionTextPreserveSpace?: boolean;
   /** Cached-value runs when the plain single-text-run template cannot express
    *  their run properties, identity attributes, or child sequence. */
   cachedRuns?: ParagraphChild[];

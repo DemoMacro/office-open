@@ -155,6 +155,7 @@ export function stringifyAutoFilter(af: string | AutoFilterOptions | undefined):
   if (typeof af === "string") {
     return selfCloseElement("autoFilter", attrs({ ref: af }));
   }
+  const uid = af.uid === undefined ? "" : ` xr:uid="${escapeXml(af.uid)}"`;
   const inner: string[] = [];
   for (const fc of af.columns ?? []) {
     inner.push(stringifyFilterColumn(fc));
@@ -163,9 +164,9 @@ export function stringifyAutoFilter(af: string | AutoFilterOptions | undefined):
     inner.push(stringifySortStateXml(af.sortState));
   }
   if (inner.length > 0) {
-    return `<autoFilter ref="${escapeXml(af.ref)}">${inner.join("")}</autoFilter>`;
+    return `<autoFilter ref="${escapeXml(af.ref)}"${uid}>${inner.join("")}</autoFilter>`;
   }
-  return selfCloseElement("autoFilter", attrs({ ref: af.ref }));
+  return `<autoFilter ref="${escapeXml(af.ref)}"${uid}/>`;
 }
 
 /** Parse a CT_Filters element (filter values + dateGroupItem children). */
@@ -212,6 +213,7 @@ function parseFiltersEl(fc: XmlElement): FilterItemsOptions {
  */
 export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
   const af: AutoFilterOptions = { ref: attr(afEl, "ref") ?? "" };
+  if (attr(afEl, "xr:uid")) af.uid = attr(afEl, "xr:uid");
   for (const child of afEl.elements ?? []) {
     if (child.name === "filterColumn") {
       const fc: FilterColumnOptions = { colId: attrNum(child, "colId") ?? 0 };
@@ -276,7 +278,7 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
       af.sortState = parseSortStateEl(child);
     }
   }
-  const hasFilters = af.columns !== undefined || af.sortState !== undefined;
+  const hasFilters = af.columns !== undefined || af.sortState !== undefined || af.uid !== undefined;
   return hasFilters ? af : af.ref;
 }
 

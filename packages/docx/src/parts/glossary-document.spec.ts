@@ -1,8 +1,11 @@
+import { unzipSync, zipSync } from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
 import type { BodyContext } from "../context";
+import { generateDocumentSync } from "../generate";
+import { parseDocumentSync } from "../parse";
 import { parseSectionChild } from "../parse/body";
 import { glossaryDesc } from "./glossary-document";
 import type { GlossaryDocumentOptions } from "./glossary-document";
@@ -31,7 +34,63 @@ function roundTrip(opts: GlossaryDocumentOptions) {
   return glossaryDesc.parse(el, readCtx);
 }
 
+const GLOSSARY_RELATIONSHIP_TYPE =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/glossaryDocument";
+const packageDocumentXml =
+  '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>';
+const packageGlossaryXml =
+  '<?xml version="1.0"?><w:glossaryDocument xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+  "<w:docParts/></w:glossaryDocument>";
+const customGlossaryPackage = () =>
+  zipSync({
+    "word/document.xml": new TextEncoder().encode(packageDocumentXml),
+    "word/_rels/document.xml.rels": new TextEncoder().encode(
+      '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        `<Relationship Id="rId1" Type="${GLOSSARY_RELATIONSHIP_TYPE}" Target="custom/glossary.xml"/>` +
+        "</Relationships>",
+    ),
+    "word/custom/glossary.xml": new TextEncoder().encode(packageGlossaryXml),
+  });
+
 describe("glossaryDesc round-trip", () => {
+  it("round-trips explicit false doc-part metadata", () => {
+    const result = roundTrip({
+      parts: [
+        {
+          name: "ExplicitFalse",
+          gallery: "default",
+          types: ["normal"],
+          allTypes: false,
+          decorated: false,
+          sections: [],
+        },
+      ],
+    });
+    expect(result.parts[0]?.decorated).toBe(false);
+    expect(result.parts[0]?.allTypes).toBe(false);
+
+    const xml = glossaryDesc.stringify(result, writeCtx)!;
+    expect(xml).toContain('w:decorated="0"');
+    expect(xml).toContain('<w:types w:all="0">');
+  });
+
+  it("round-trips a custom glossary part target", () => {
+    const options = parseDocumentSync(customGlossaryPackage());
+    expect(options.glossary?.partName).toBe("custom/glossary.xml");
+
+    const output = unzipSync(generateDocumentSync(options, { type: "uint8array" }));
+    expect(output["word/custom/glossary.xml"]).toBeDefined();
+    expect(new TextDecoder().decode(output["word/_rels/document.xml.rels"]!)).toContain(
+      'Target="custom/glossary.xml"',
+    );
+    expect(new TextDecoder().decode(output["[Content_Types].xml"]!)).toContain(
+      '<Override PartName="/word/custom/glossary.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>',
+    );
+
+    const regenerated = parseDocumentSync(generateDocumentSync(options, { type: "uint8array" }));
+    expect(regenerated.glossary).toEqual(options.glossary);
+  });
+
   it("round-trips a simple building block", () => {
     const result = roundTrip({
       parts: [

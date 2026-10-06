@@ -130,13 +130,18 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     if (sp?.enableFormatConditionsCalculation === false)
       prAttrs.enableFormatConditionsCalculation = 0;
     if (opts.tabColor) {
-      const tc = opts.tabColor;
+      const tc = typeof opts.tabColor === "string" ? { rgb: opts.tabColor } : opts.tabColor;
       const tcAttrs: Record<string, string | number | boolean | undefined> = {};
       if (tc.rgb) tcAttrs.rgb = tc.rgb;
       if (tc.theme !== undefined) tcAttrs.theme = tc.theme;
-      if (tc.tint !== undefined) tcAttrs.tint = tc.tint;
       if (tc.indexed !== undefined) tcAttrs.indexed = tc.indexed;
-      prParts.push(`<tabColor${attrs(tcAttrs)}/>`);
+      const tintAttr =
+        tc.tintRaw !== undefined
+          ? ` tint="${tc.tintRaw}"`
+          : tc.tint !== undefined
+            ? ` tint="${tc.tint}"`
+            : "";
+      prParts.push(`<tabColor${attrs(tcAttrs)}${tintAttr}/>`);
     }
     if (hasOutline) {
       const outAttrs: Record<string, string | number | boolean | undefined> = {
@@ -194,7 +199,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     const activePane =
       fp.activePane ??
       (ySplit > 0 && xSplit > 0 ? "bottomRight" : ySplit > 0 ? "bottomLeft" : "topRight");
-    const state = fp.split ? "split" : "frozen";
+    const state = fp.state ?? (fp.split ? "split" : "frozen");
     const paneAttrs =
       (fp.row !== undefined ? ` ySplit="${fp.row}"` : "") +
       (fp.col !== undefined ? ` xSplit="${fp.col}"` : "") +
@@ -413,7 +418,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (csv.topLeftCell !== undefined) csvAttrs.topLeftCell = csv.topLeftCell;
       if (csv.colorId !== undefined) csvAttrs.colorId = csv.colorId;
       const paneXml = csv.pane
-        ? `<pane ySplit="${csv.pane.row ?? 0}" xSplit="${csv.pane.col ?? 0}" topLeftCell="${escapeXml(csv.pane.topLeftCell ?? "")}" activePane="${csv.pane.activePane ?? "topLeft"}" state="${csv.pane.split ? "split" : "frozen"}"/>`
+        ? `<pane ySplit="${csv.pane.row ?? 0}" xSplit="${csv.pane.col ?? 0}" topLeftCell="${escapeXml(csv.pane.topLeftCell ?? "")}" activePane="${csv.pane.activePane ?? "topLeft"}" state="${csv.pane.state ?? (csv.pane.split ? "split" : "frozen")}"/>`
         : "";
       const selectionXml = (csv.selection ?? []).map(buildSelectionXml).join("");
       const pm = csv.pageMargins;
@@ -485,7 +490,10 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;
 
         const formulaXml = rule.formulas
-          ?.map((formula) => `<formula>${escapeXml(formula)}</formula>`)
+          ?.map(
+            (formula) =>
+              `<formula${/^\s|\s$/.test(formula) ? ' xml:space="preserve"' : ""}>${escapeXml(formula)}</formula>`,
+          )
           .join("");
 
         // Color scale
@@ -560,6 +568,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(`<dataValidations${attrs(dvContainerAttrs)}>`);
     for (const dv of dataValidations) {
       const dvAttrs: Record<string, string | number | boolean | undefined> = { sqref: dv.sqref };
+      if (dv.uid) dvAttrs["xr:uid"] = dv.uid;
       if (dv.type && dv.type !== "none") dvAttrs.type = dv.type;
       if (dv.operator) dvAttrs.operator = dv.operator;
       if (dv.allowBlank) dvAttrs.allowBlank = 1;
@@ -573,8 +582,14 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (dv.imeMode) dvAttrs.imeMode = dv.imeMode;
       if (dv.showDropDown) dvAttrs.showDropDown = 1;
       const inner: string[] = [];
-      if (dv.formula1 !== undefined) inner.push(`<formula1>${escapeXml(dv.formula1)}</formula1>`);
-      if (dv.formula2 !== undefined) inner.push(`<formula2>${escapeXml(dv.formula2)}</formula2>`);
+      if (dv.formula1 !== undefined)
+        inner.push(
+          `<formula1${/^\s|\s$/.test(dv.formula1) ? ' xml:space="preserve"' : ""}>${escapeXml(dv.formula1)}</formula1>`,
+        );
+      if (dv.formula2 !== undefined)
+        inner.push(
+          `<formula2${/^\s|\s$/.test(dv.formula2) ? ' xml:space="preserve"' : ""}>${escapeXml(dv.formula2)}</formula2>`,
+        );
       if (inner.length > 0) {
         p.push(`<dataValidation${attrs(dvAttrs)}>`, ...inner, "</dataValidation>");
       } else {
@@ -1012,6 +1027,7 @@ function buildFormulaString(cellFormula: string | FormulaOptions): string {
   if (fOpts.inputCell2) fAttrs.r2 = fOpts.inputCell2;
   if (fOpts.calculateCell) fAttrs.ca = 1;
   if (fOpts.arrayContext) fAttrs.bx = 1;
+  if (/^\s|\s$/.test(fOpts.formula)) fAttrs["xml:space"] = "preserve";
 
   const hasContent = fOpts.formula !== undefined && fOpts.formula !== "";
 

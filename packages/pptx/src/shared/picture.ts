@@ -38,7 +38,7 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   rotation?: number;
   /** Rotate image fill with the shape frame (p:blipFill @rotWithShape). */
   rotWithShape?: boolean;
-  type: "png" | "jpg" | "gif" | "bmp" | "emf" | "wmf";
+  type: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /**
    * Media file name inside the package (ppt/media/<fileName>). Round-trip
    * keeps the source name; fresh generation derives it from the shape name.
@@ -60,6 +60,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   blipEffects?: BlipEffectsOptions;
   /** Local-DPI display hint (a14:useLocalDpi in the a:blip extension list). */
   useLocalDpi?: boolean;
+  /** Verbatim a:blip extension-list children beyond modeled hints (round-trip only). */
+  blipExt?: string;
   /** Fill on p:spPr (a:noFill on cropped pictures is common). */
   fill?: FillOptions;
   /** Outline on p:spPr (a:ln — decorated pictures carry one). */

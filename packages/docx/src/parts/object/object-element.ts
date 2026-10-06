@@ -17,8 +17,13 @@
 import { toUint8Array, parseOnOff } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { parseVmlStyle } from "@office-open/core";
-import { stringifyVmlShape, stringifyVmlShapetype, parseVmlShapetype } from "@office-open/core";
-import type { VmlShapetypeOptions } from "@office-open/core";
+import {
+  stringifyVmlShape,
+  stringifyVmlShapetype,
+  parseVmlShapetype,
+  parseVmlShape,
+} from "@office-open/core";
+import type { VmlShapetypeOptions, VmlShapeStyle, VmlTextboxOptions } from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrNum, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
@@ -95,6 +100,12 @@ export interface ObjectElementOptions {
   dyaOrig?: number;
   /** VML shape id (v:shape/`@id`). Defaults to a generated id. */
   shapeId?: string;
+  /** VML fill color (v:shape/`@fillcolor`). */
+  fillcolor?: string;
+  /** Full VML style properties; width/height remain the sizing convenience. */
+  style?: VmlShapeStyle;
+  /** VML textbox child and attributes (v:textbox). */
+  textbox?: VmlTextboxOptions;
   /** Display width (px or universal measure) for v:shape style + icon size. */
   width?: number | UniversalMeasure;
   /** Display height (px or universal measure). */
@@ -167,7 +178,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         type: "#_x0000_t75",
         // o:ole marks the shape as an OLE container (Word always writes it here).
         ole: "",
-        style: { width: styleWidth, height: styleHeight },
+        fillcolor: opts.fillcolor,
+        style: { ...opts.style, width: styleWidth, height: styleHeight },
+        textbox: opts.textbox,
         imagedata: imagedataOptions,
       }),
     );
@@ -239,8 +252,12 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     // part's rels (r:id → media path → raw bytes) so round-trips keep the data.
     const shape = findChild(el, "v:shape");
     if (shape) {
+      const parsedShape = parseVmlShape(shape);
       const id = attr(shape, "id");
       if (id) result.shapeId = id;
+      if (parsedShape.fillcolor !== undefined) result.fillcolor = parsedShape.fillcolor;
+      if (parsedShape.style !== undefined) result.style = parsedShape.style;
+      if (parsedShape.textbox !== undefined) result.textbox = parsedShape.textbox;
       const style = attr(shape, "style");
       if (style) {
         const parsed = parseVmlStyle(style);

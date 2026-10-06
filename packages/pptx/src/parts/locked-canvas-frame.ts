@@ -4,7 +4,7 @@ import type {
   ShapePropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { NvPrPlaceholderOptions } from "@parts/descriptors/graphic-frame";
+import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 /**
  * Locked-canvas child shape (a:sp). Shape properties (position/geometry/fill/
@@ -22,7 +22,7 @@ export interface LockedCanvasShapeOptions extends ShapePropertiesOptions {
  * NonVisualDrawingPropertiesOptions.
  */
 export interface LockedCanvasFrameOptions
-  extends NonVisualDrawingPropertiesOptions, NvPrPlaceholderOptions {
+  extends NonVisualDrawingPropertiesOptions, GraphicFrameNvPrOptions {
   /** Locked canvas frame id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
   x?: number | UniversalMeasure;

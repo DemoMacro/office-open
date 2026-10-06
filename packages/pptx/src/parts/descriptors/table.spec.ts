@@ -36,6 +36,27 @@ function roundTrip(opts: TableOptions) {
 }
 
 describe("tableDesc round-trip", () => {
+  it("round-trips a click hyperlink on the graphic frame", () => {
+    const hyperlink = {
+      action: "ppaction://hlinkshowjump?jump=nextslide",
+      tooltip: "Next",
+      targetFrame: "_blank",
+      history: false,
+    };
+    const writeCtx = new MockWriteContext() as unknown as WriteContext;
+    const xml = tableDesc.stringify(
+      { rows: [{ cells: [{ text: "Table" }] }], hyperlink },
+      writeCtx,
+    )!;
+    expect(xml).toContain("<a:hlinkClick ");
+    expect(xml).toContain('tgtFrame="_blank"');
+    expect(xml).toContain('history="0"');
+
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    expect(tableDesc.parse(element, readCtx).hyperlink).toEqual(hyperlink);
+  });
+
   it("round-trips a cell border dash token outside the legacy union", () => {
     // lgDashDotDot is a ST_PresetLineDashVal token the old hand-written
     // dashStyle union lacked — the identity read/write must keep it verbatim.
