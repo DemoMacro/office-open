@@ -67,6 +67,15 @@ describe("tableDesc round-trip", () => {
     expect(cell.vertical).toBe("eastAsianVertical");
   });
 
+  it("round-trips cell horizontal overflow (a:tcPr @horzOverflow)", () => {
+    const opts: TableOptions = {
+      rows: [{ cells: [{ text: "Overflow", horizontalOverflow: "overflow" }] }],
+    };
+    const result = roundTrip(opts);
+    const cell = result.rows?.[0]?.cells?.[0] as { horizontalOverflow?: string };
+    expect(cell.horizontalOverflow).toBe("overflow");
+  });
+
   it("round-trips basic 2x2 table", () => {
     const opts: TableOptions = {
       rows: [

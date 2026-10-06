@@ -50,6 +50,44 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("_rels/.rels", source, output)).toEqual([]);
   });
 
+  it("normalizes legacy Office relationship URIs to transitional equivalents", () => {
+    const source = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.microsoft.com/package/2005/06/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.microsoft.com/office/2006/relationships/docPropsApp" Target="docProps/app.xml"/>' +
+        "</Relationships>",
+    );
+    const output = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>' +
+        "</Relationships>",
+    );
+    expect(explainSemanticPartDiff("_rels/.rels", source, output)).toEqual([]);
+  });
+
+  it("normalizes absolute and relative internal relationship targets", () => {
+    const source = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="/xl/theme/theme1.xml"/>' +
+        "</Relationships>",
+    );
+    const output = new TextEncoder().encode(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId9" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/>' +
+        "</Relationships>",
+    );
+    expect(explainSemanticPartDiff("xl/_rels/workbook.xml.rels", source, output)).toEqual([]);
+  });
+
+  it("normalizes versioned strict markup namespaces to transitional equivalents", () => {
+    const source = new TextEncoder().encode(
+      '<root><graphicData uri="http://purl.oclc.org/ooxml/drawingml/chart"/></root>',
+    );
+    const output = new TextEncoder().encode(
+      '<root><graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"/></root>',
+    );
+    expect(explainSemanticPartDiff("ppt/slides/example.xml", source, output)).toEqual([]);
+  });
+
   it("reports source-only elements without comparing raw declarations", () => {
     const source = new TextEncoder().encode("<root><lost/></root>");
     const output = new TextEncoder().encode("<root/>");
@@ -59,7 +97,7 @@ describe("corpus semantic comparison", () => {
         kind: "xml",
         category: "child",
         xpath: "word/example.xml/lost",
-        detail: "source-only child",
+        detail: "source-only lost",
       },
     ]);
   });
@@ -109,7 +147,7 @@ describe("corpus semantic comparison", () => {
         kind: "relationship",
         category: "child",
         xpath: "xl/example.rels/item",
-        detail: "output-only child",
+        detail: "output-only item",
       },
     ]);
   });

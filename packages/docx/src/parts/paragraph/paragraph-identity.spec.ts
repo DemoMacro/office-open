@@ -1,12 +1,13 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseParagraph } from "../../body";
+import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
 
 // Paragraph identity attributes (rsid family + w14:paraId/textId) never touch
 // the read context, so an empty mock suffices.
 const readCtx = {} as unknown as DocxReadContext;
+const writeCtx = {} as never;
 
 const NS =
   'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
@@ -41,5 +42,14 @@ describe("paragraph identity attributes parse", () => {
     expect(opts.additionRsid).toBe("00FF");
     // Single text run is promoted to opts.text by the simple-text optimization.
     expect(opts.text).toBe("hi");
+  });
+
+  it("round-trips w14:editId", () => {
+    const xml = `<w:p ${NS} w14:editId="1A2B3C4D"/>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseParagraph(el, readCtx);
+    expect(opts.editId).toBe("1A2B3C4D");
+    expect(stringifyParagraph(opts, writeCtx)).toContain('w14:editId="1A2B3C4D"');
   });
 });

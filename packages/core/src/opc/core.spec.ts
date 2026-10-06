@@ -42,6 +42,17 @@ describe("core properties", () => {
     expect(rebuilt).toContain("<cp:category></cp:category>");
   });
 
+  it("parses legacy core-property children by case-insensitive local names", () => {
+    const xml =
+      '<coreProperties xmlns="http://schemas.microsoft.com/package/2005/06/metadata/core-properties">' +
+      "<Creator>Legacy</Creator><DateCreated>2001-01-01T00:00:00Z</DateCreated>" +
+      "</coreProperties>";
+    const el = parseXml(xml).elements?.[0];
+    const parsed = parseCorePropsElement(el);
+    expect(parsed.creator).toBe("Legacy");
+    expect(parsed.created).toBe("2001-01-01T00:00:00Z");
+  });
+
   it("omits the new fields when not supplied", () => {
     const xml = buildCorePropertiesXmlString({ title: "T" });
     expect(xml).not.toContain("cp:category");

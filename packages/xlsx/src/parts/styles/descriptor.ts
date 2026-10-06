@@ -126,6 +126,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (numFmtId !== undefined) {
           const code = numFmtById.get(numFmtId);
           if (code !== undefined) entry.numFmt = code;
+          else entry.numFmtId = numFmtId;
         }
         const alignmentEl = findChild(xf, "alignment");
         if (alignmentEl) entry.alignment = parseAlignment(alignmentEl);

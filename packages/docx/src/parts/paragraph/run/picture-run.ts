@@ -1,7 +1,8 @@
-import type { DataType } from "@office-open/core";
+import type { DataType, LongHexNumber } from "@office-open/core";
 import type {
   BlipCompression,
   BlipEffectsOptions,
+  BlackWhiteMode,
   EffectListOptions,
   FillOptions,
   OutlineOptions,
@@ -49,6 +50,10 @@ interface CorePictureOptions {
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
   runProperties?: RunPropertiesOptions;
+  /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
+  additionRsid?: LongHexNumber;
+  /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
   /** A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing. */
   lastRenderedPageBreak?: boolean;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */
@@ -65,6 +70,8 @@ interface CorePictureOptions {
   sourceUrl?: string;
   /** Compression state (a:blip `@cstate`); absent = attribute omitted (schema default "none"). */
   compression?: BlipCompression;
+  /** Black-and-white rendering mode (pic:spPr `@bwMode`); absent = omitted. */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 interface RegularPictureOptions {

@@ -403,7 +403,24 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         ? `<pane ySplit="${csv.pane.row ?? 0}" xSplit="${csv.pane.col ?? 0}" topLeftCell="${escapeXml(csv.pane.topLeftCell ?? "")}" activePane="${csv.pane.activePane ?? "topLeft"}" state="${csv.pane.split ? "split" : "frozen"}"/>`
         : "";
       const selectionXml = (csv.selection ?? []).map(buildSelectionXml).join("");
-      const csvInner = paneXml + selectionXml;
+      const pm = csv.pageMargins;
+      const pageMarginsXml = pm
+        ? `<pageMargins${attrs({
+            left: convertToInch(pm.left ?? 0.75),
+            right: convertToInch(pm.right ?? 0.75),
+            top: convertToInch(pm.top ?? 1),
+            bottom: convertToInch(pm.bottom ?? 1),
+            header: convertToInch(pm.header ?? 0.5),
+            footer: convertToInch(pm.footer ?? 0.5),
+          })}/>`
+        : "";
+      const printOptionsXml = csv.printOptions ? stringifyPrintOptionsXml(csv.printOptions) : "";
+      const pageSetupXml = csv.pageSetup ? stringifyPageSetupXml(csv.pageSetup) : "";
+      const headerFooterXml = csv.headerFooter
+        ? (stringifyHeaderFooterXml(csv.headerFooter) ?? "<headerFooter/>")
+        : "";
+      const csvInner =
+        paneXml + selectionXml + pageMarginsXml + printOptionsXml + pageSetupXml + headerFooterXml;
       p.push(
         csvInner
           ? `<customSheetView${attrs(csvAttrs)}>${csvInner}</customSheetView>`

@@ -115,6 +115,8 @@ export function stringifyParagraphPropertiesElement(
   // Bullets
   if (options.bullet) {
     children.push(...stringifyBullet(options.bullet));
+  } else if (options.bulletStyle) {
+    children.push(...stringifyBullet(options.bulletStyle));
   }
 
   // Tab stops (after bullets, before defRPr)
@@ -147,7 +149,15 @@ function stringifyParagraphProperties(
   return stringifyParagraphPropertiesElement("a:pPr", options, ctx);
 }
 
-function stringifyBullet(options: BulletOptions): string[] {
+function stringifyBullet(
+  options: BulletStyleOptions & {
+    type?: BulletOptions["type"];
+    char?: string;
+    format?: BulletAutoNumOptions["format"];
+    startAt?: number;
+    embed?: string;
+  },
+): string[] {
   const parts: string[] = [];
 
   // Color: buClrTx | buClr
@@ -167,10 +177,9 @@ function stringifyBullet(options: BulletOptions): string[] {
   } else if (options.sizePoints !== undefined) {
     parts.push(`<a:buSzPts val="${Math.round(options.sizePoints * 100)}"/>`);
   } else if (options.size !== undefined) {
-    // ST_TextBulletSizePercent is an "N%" string per the XSD pattern (25-400);
-    // the union's per-mille-integer branch is what Office writes but the XSD
-    // loader here only enforces the pattern, so emit the string form.
-    parts.push(`<a:buSzPct val="${Math.round(options.size)}%"/>`);
+    // The XSD union accepts either "N%" or ST_TextBulletSizeDecimal; Office
+    // writes the decimal per-mille form (60000 = 100%).
+    parts.push(`<a:buSzPct val="${Math.round(options.size * 1000)}"/>`);
   }
 
   // Font: buFontTx | buFont. No fresh default — Office files omit buFont when
@@ -291,7 +300,16 @@ export function readParagraphProperties(
     const buChar = findChild(el, "a:buChar");
     const buAutoNum = findChild(el, "a:buAutoNum");
     const buBlip = findChild(el, "a:buBlip");
-    if (buChar || buAutoNum || buBlip || buNone) {
+    const hasStyleFields = Boolean(
+      findChild(el, "a:buClrTx") ||
+      findChild(el, "a:buClr") ||
+      findChild(el, "a:buSzTx") ||
+      findChild(el, "a:buSzPts") ||
+      findChild(el, "a:buSzPct") ||
+      findChild(el, "a:buFontTx") ||
+      findChild(el, "a:buFont"),
+    );
+    if (buChar || buAutoNum || buBlip || buNone || hasStyleFields) {
       // Shared color/size/font style — each dimension is a choice.
       const style: Mutable<BulletStyleOptions> = {};
       if (findChild(el, "a:buClrTx")) {
@@ -356,14 +374,15 @@ export function readParagraphProperties(
         const bullet: Mutable<BulletCharOptions> = { type: "char", ...style };
         if (buChar.attributes?.["char"]) bullet.char = String(buChar.attributes["char"]);
         result.bullet = bullet as BulletCharOptions;
-      } else {
+      } else if (buAutoNum) {
         const bullet: Mutable<BulletAutoNumOptions> = { type: "autoNum", ...style };
-        if (buAutoNum!.attributes?.["type"])
-          bullet.format = String(buAutoNum!.attributes["type"]) as BulletAutoNumOptions["format"];
-        if (buAutoNum!.attributes?.["startAt"] !== undefined)
-          bullet.startAt = Number(buAutoNum!.attributes["startAt"]);
+        if (buAutoNum.attributes?.["type"])
+          bullet.format = String(buAutoNum.attributes["type"]) as BulletAutoNumOptions["format"];
+        if (buAutoNum.attributes?.["startAt"] !== undefined)
+          bullet.startAt = Number(buAutoNum.attributes["startAt"]);
         result.bullet = bullet as BulletAutoNumOptions;
       }
+      if (!result.bullet && Object.keys(style).length > 0) result.bulletStyle = style;
     }
   }
 

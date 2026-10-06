@@ -49,6 +49,10 @@ export const VerticalMergeType = {
    */
   CONTINUE: "continue",
   /**
+   * Cell that is merged with upper one using an explicit value.
+   */
+  EXPLICIT_CONTINUE: "explicitContinue",
+  /**
    * Cell that is starting the vertical merge.
    */
   RESTART: "restart",

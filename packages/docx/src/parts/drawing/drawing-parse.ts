@@ -440,6 +440,8 @@ export function parsePictureRun(
   // via the shared core descriptors (bidirectional).
   const picSpPr = findFirst(el, "pic:spPr");
   if (picSpPr) {
+    const bwMode = attr(picSpPr, "bwMode");
+    if (bwMode) imageOpts.blackWhiteMode = bwMode;
     const fill = readShapeFill(picSpPr, ctx);
     if (fill) imageOpts.fill = fill;
     const ln = findChild(picSpPr, "a:ln");
@@ -754,6 +756,8 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   // the shared core descriptors (bidirectional) so spPr stays structured.
   const spPr = findChild(wspEl, "wps:spPr");
   if (spPr) {
+    const bwMode = attr(spPr, "bwMode");
+    if (bwMode) result.blackWhiteMode = bwMode as ShapeCoreOptions["blackWhiteMode"];
     const fill = readShapeFill(spPr, ctx);
     if (fill) result.fill = fill;
     const ln = findChild(spPr, "a:ln");

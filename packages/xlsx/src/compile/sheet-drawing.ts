@@ -165,9 +165,17 @@ export function compileSheetDrawing(
       // Media-store extension (jpg → jpeg); vector formats pass through.
       const ext = img.type === "jpg" ? "jpeg" : img.type;
       const rawBytes = toUint8Array(img.data, { encoding: "base64" });
-      const sourceImageRel = sourceDrawingRels.filter((rel) =>
-        rel.relationshipType.endsWith("/image"),
-      )[drawingImages.length];
+      const sourceImageRel =
+        (img.sourcePath
+          ? sourceDrawingRels.find(
+              (rel) =>
+                rel.relationshipType.endsWith("/image") &&
+                resolveRelationshipTarget(drawingPath, rel.target) === img.sourcePath,
+            )
+          : undefined) ??
+        sourceDrawingRels.filter((rel) => rel.relationshipType.endsWith("/image"))[
+          drawingImages.length
+        ];
       const sourceImagePath = sourceImageRel
         ? resolveRelationshipTarget(drawingPath, sourceImageRel.target)
         : undefined;
@@ -181,7 +189,7 @@ export function compileSheetDrawing(
           width: 0,
           height: 0,
         }),
-        sourceImagePath?.split("/").pop(),
+        (sourceImagePath ?? img.sourcePath)?.split("/").pop(),
       );
 
       // Anchors sharing one picture share the relationship too — the source

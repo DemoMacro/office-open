@@ -1,3 +1,4 @@
+import type { LongHexNumber } from "@office-open/core";
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 /**
  * ChartRun types for WordprocessingML documents.
@@ -34,6 +35,10 @@ export interface ChartOptions extends ChartSpaceOptions {
   extensionIds?: DrawingExtensionIds;
   /** Run properties of the wrapping w:r (w:rPr before w:drawing). */
   runProperties?: RunPropertiesOptions;
+  /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
+  additionRsid?: LongHexNumber;
+  /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
   /** A w:lastRenderedPageBreak shared the drawing's run (round-trip). */
   lastRenderedPageBreak?: boolean;
 }

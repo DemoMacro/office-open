@@ -62,11 +62,33 @@ export interface FootnoteEndnoteReferenceOptions {
 export interface ComplexFieldOptions {
   instruction: string;
   result?: string;
+  /** Source `xml:space="preserve"` marker on the plain result text. */
+  resultPreserveSpace?: boolean;
   rPrXml?: string;
+  /** Revision save ID of the begin run (w:rsidR, round-trip). */
+  additionRsid?: string;
+  /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
+  /** Revision save ID of the instruction run (w:rsidR, round-trip). */
+  instructionAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
+  instructionRunPropertiesRsid?: LongHexNumber;
+  /** Revision save ID of the separator run (w:rsidR, round-trip). */
+  separatorAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
+  separatorRunPropertiesRsid?: LongHexNumber;
   resultRPrXml?: string;
+  /** Revision save ID of the first plain result run (w:rsidR, round-trip). */
+  resultAdditionRsid?: string;
+  /** Revision save ID of the first plain result run's properties (w:rsidRPr). */
+  resultRunPropertiesRsid?: string;
   /** Verbatim run-properties of the end fldChar run (may differ from the
    *  control rPr — Word styles the end run like the result). */
   endRPrXml?: string;
+  /** Revision save ID of the end run (w:rsidR, round-trip). */
+  endAdditionRsid?: LongHexNumber;
+  /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
+  endRunPropertiesRsid?: LongHexNumber;
   /** Verbatim XML of the instruction runs (begin → separate/end) when the
    *  source split them across runs with per-run properties or line breaks —
    *  shapes the plain instruction template cannot reproduce. */
@@ -277,6 +299,8 @@ export type ParagraphOptions = {
   paraId?: LongHexNumber;
   /** Paragraph text identifier (w14:textId, 8-digit hex string). */
   textId?: LongHexNumber;
+  /** Paragraph edit identifier (w14:editId, 8-digit hex string). */
+  editId?: LongHexNumber;
   /** Whether this paragraph is excluded from spell check (w14:noSpellErr). */
   noSpellErr?: boolean;
 } & ParagraphPropertiesOptions;

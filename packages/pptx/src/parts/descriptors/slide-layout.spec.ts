@@ -135,9 +135,9 @@ describe("slideLayoutDesc stringify/parse", () => {
     expect(result.placeholders?.title).toMatchObject({ x: 100, y: 200, width: 300, height: 400 });
   });
 
-  it("derives type from cSld name when @type is absent", () => {
+  it("does not infer type from cSld name when @type is absent", () => {
     const result = parseXmlDef(`<p:sldLayout ${NS}><p:cSld name="Blank"/></p:sldLayout>`);
-    expect(result.type).toBe("blank");
+    expect(result.type).toBeUndefined();
   });
 
   it("omits @type when unset — XSD default is cust and 'custom' is not an ST token", () => {

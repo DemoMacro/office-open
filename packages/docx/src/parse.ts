@@ -284,11 +284,13 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
   // header rId1), so collect them keyed by part path; drawings and w:object
   // runs inside a part resolve their binaries through its own rels. Covers
   // document, headers, footers, footnotes, endnotes, comments.
-  for (const relsPath of doc.keys("word/_rels/")) {
+  for (const relsPath of doc.keys("word/")) {
     if (!relsPath.endsWith(".rels")) continue;
+    const relsMarker = relsPath.lastIndexOf("/_rels/");
+    if (relsMarker < 0) continue;
     const relsEl = doc.get(relsPath);
     if (!relsEl) continue;
-    const partPath = "word/" + relsPath.slice("word/_rels/".length, -".rels".length);
+    const partPath = `${relsPath.slice(0, relsMarker)}/${relsPath.slice(relsMarker + 7, -5)}`;
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
       const type = attr(rel, "Type") ?? "";
@@ -374,7 +376,7 @@ function parseRootRels(doc: ParsedArchive): {
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.includes("/coreproperties")) {
       coreProps = path;
-    } else if (relType.includes("/extendedproperties")) {
+    } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp")) {
       appProps = path;
     } else if (relType.includes("/customproperties")) {
       customProps = path;

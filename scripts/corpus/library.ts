@@ -20,7 +20,14 @@ export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
     /^word\/printerSettings\//i,
     /^word\/fonts\//i,
   ],
-  xlsx: [/^xl\/vbaProject\.bin$/i, /^xl\/embeddings\//i, /^xl\/printerSettings\//i],
+  xlsx: [
+    /^xl\/vbaProject\.bin$/i,
+    /^xl\/embeddings\//i,
+    /^xl\/printerSettings\//i,
+    /^xl\/media\//i,
+    /^xl\/activeX\/activeX/i,
+    /^docProps\/thumbnail\./i,
+  ],
   pptx: [/^ppt\/vbaProject\.bin$/i, /^ppt\/embeddings\//i],
 };
 

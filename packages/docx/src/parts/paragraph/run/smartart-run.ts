@@ -7,6 +7,7 @@
  *
  * @module
  */
+import type { LongHexNumber } from "@office-open/core";
 import type {
   ColorDefinitionOptions,
   LayoutDefinitionOptions,
@@ -54,6 +55,10 @@ export interface SmartArtOptions {
   color?: string | ColorDefinitionOptions;
   /** Run properties of the wrapping drawing run (round-trip fidelity). */
   runProperties?: RunPropertiesOptions;
+  /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
+  additionRsid?: LongHexNumber;
+  /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
   /** Word's pagination hint sharing the drawing run (round-trip fidelity). */
   lastRenderedPageBreak?: boolean;
   /**

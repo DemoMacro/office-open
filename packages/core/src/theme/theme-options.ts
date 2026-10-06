@@ -131,6 +131,8 @@ export interface ObjectDefaultsOptions {
   lineDefault?: DefaultShapeDefinitionOptions;
   /** Text default (txDef). */
   textDefault?: DefaultShapeDefinitionOptions;
+  /** Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions. */
+  ext?: string;
 }
 
 /** Theme color slot referenced by CT_ColorMapping. */

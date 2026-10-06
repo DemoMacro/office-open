@@ -217,6 +217,26 @@ describe("Styles", () => {
       }
     });
 
+    it("keeps a cellStyleXfs numFmtId without a format code", () => {
+      const xml = `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="1"><fill><patternFill patternType="none"/></fill></fills>
+<borders count="1"><border/></borders>
+<cellStyleXfs count="1"><xf numFmtId="99" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+</styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.cellStyleXfs?.[0]?.numFmtId).toBe(99);
+      expect(parsed.cellStyleXfs?.[0]?.numFmt).toBeUndefined();
+
+      const styles = new Styles();
+      styles.setCellStyleXfs(parsed.cellStyleXfs!);
+      expect(styles.serialize()).toContain(
+        '<xf numFmtId="99" fontId="0" fillId="0" borderId="0"/>',
+      );
+    });
+
     it("round-trips alignment with relativeIndent/shrinkToFit/readingOrder/justifyLastLine", () => {
       const styles = new Styles();
       styles.register({

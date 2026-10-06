@@ -1,4 +1,5 @@
 import type {
+  BlackWhiteMode,
   CustomGeometryOptions,
   EffectDagOptions,
   EffectListOptions,
@@ -58,6 +59,8 @@ export interface TextBoxPartOptions {
 }
 
 export interface ShapeCoreOptions {
+  /** Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted. */
+  blackWhiteMode?: BlackWhiteMode;
   /**
    * Block-level w:txbxContent children (w:EG_BlockLevelElts). Paragraphs keep
    * their established shorthand; wrapped paragraphs and other block elements

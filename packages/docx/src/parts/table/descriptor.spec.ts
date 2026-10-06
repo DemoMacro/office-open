@@ -396,6 +396,8 @@ describe("tableDesc round-trip", () => {
           additionRsid: "00AABBCC",
           deletionRsid: "00DDEEFF",
           tableRowRsid: "00445566",
+          paraId: "1A2B3C4D",
+          textId: "0E0F0A0B",
           cells: [{ children: [] }],
         },
       ],
@@ -405,6 +407,8 @@ describe("tableDesc round-trip", () => {
     expect(row.additionRsid).toBe("00AABBCC");
     expect(row.deletionRsid).toBe("00DDEEFF");
     expect(row.tableRowRsid).toBe("00445566");
+    expect(row.paraId).toBe("1A2B3C4D");
+    expect(row.textId).toBe("0E0F0A0B");
   });
 
   it("round-trips row trPr fields (cnfStyle/divId/grid/gridBefore/gridAfter/wBefore/wAfter/jc/hidden)", () => {
@@ -495,6 +499,34 @@ describe("tableDesc round-trip", () => {
     expect(cell.fitText).toBe(true);
     expect(cell.hideMark).toBe(true);
     expect(cell.headers).toEqual(["h1", "h2"]);
+  });
+
+  it("distinguishes bare and explicit vertical merge continue", () => {
+    const implicit = tableDesc.stringify(
+      { rows: [{ cells: [{ children: [], verticalMerge: "continue" }] }] },
+      writeCtx,
+    )!;
+    const explicit = tableDesc.stringify(
+      { rows: [{ cells: [{ children: [], verticalMerge: "explicitContinue" }] }] },
+      writeCtx,
+    )!;
+    expect(implicit).toContain("<w:vMerge/>");
+    expect(implicit).not.toContain('w:vMerge w:val="continue"');
+    expect(explicit).toContain('<w:vMerge w:val="continue"/>');
+
+    const parseMerge = (xml: string) => {
+      const el = parseXml(xml).elements?.[0];
+      if (!el) throw new Error("parsed table has no root element");
+      return tableDesc.parse(el, readCtx);
+    };
+    expect(
+      ((parseMerge(implicit).rows[0] as TableRowOptions).cells[0] as TableCellOptions)
+        .verticalMerge,
+    ).toBe("continue");
+    expect(
+      ((parseMerge(explicit).rows[0] as TableRowOptions).cells[0] as TableCellOptions)
+        .verticalMerge,
+    ).toBe("explicitContinue");
   });
 
   it("round-trips cell cellIns/cellDel and tcPrChange revision", () => {

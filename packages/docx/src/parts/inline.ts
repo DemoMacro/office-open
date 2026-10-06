@@ -76,25 +76,44 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   const instrXml =
     cf.instrRunsXml ??
     (cf.instruction !== ""
-      ? `<w:r>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>`
+      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag} xml:space="preserve">${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
   // result; a result-less field round-trips as begin/instrText/end. Result
   // runs go verbatim when the source split them beyond the plain template.
   const resultXml =
     cf.resultRunsXml !== undefined
-      ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` + cf.resultRunsXml
+      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
+        cf.resultRunsXml
       : cf.result !== undefined
-        ? `<w:r>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
+        ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>` +
           `<w:r>${res}<${textTag} xml:space="preserve">${escapeXml(cf.result)}</${textTag}></w:r>`
         : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
+  const beginAttrs = runAttrs([cf.additionRsid, cf.runPropertiesRsid]);
+  const resultAttrs = [
+    cf.resultAdditionRsid ? ` w:rsidR="${cf.resultAdditionRsid}"` : "",
+    cf.resultRunPropertiesRsid ? ` w:rsidRPr="${cf.resultRunPropertiesRsid}"` : "",
+  ].join("");
+  const resultRunWithAttrs = resultXml
+    .replace(`<w:r>${res}<`, `<w:r${resultAttrs}>${res}<`)
+    .replace(
+      `${textTag} xml:space="preserve">`,
+      `${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>`,
+    );
   return (
-    `<w:r>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
+    `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
     instrXml +
-    resultXml +
-    `<w:r>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
+    resultRunWithAttrs +
+    `<w:r${runAttrs([cf.endAdditionRsid, cf.endRunPropertiesRsid])}>${cf.endRPrXml ?? ctrl}<w:fldChar w:fldCharType="end"/></w:r>`
   );
+}
+
+function runAttrs(ids: readonly [string | undefined, string | undefined]): string {
+  let attrs = "";
+  if (ids[0]) attrs += ` w:rsidR="${ids[0]}"`;
+  if (ids[1]) attrs += ` w:rsidRPr="${ids[1]}"`;
+  return attrs;
 }
 
 /** Serialize a deleted run: rPr + delText (or field delInstrText). */

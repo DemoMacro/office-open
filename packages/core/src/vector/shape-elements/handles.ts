@@ -8,7 +8,14 @@
 import type { Element as XmlElement } from "@office-open/xml";
 import { escapeXml } from "@office-open/xml";
 
-import { stringifyVmlTrueFalse, parseVmlTrueFalse, type VmlTrueFalse } from "../attributes";
+import {
+  parseVmlTrueFalse,
+  stringifyVmlTrueFalseBlank,
+  parseVmlTrueFalseBlank,
+  stringifyVmlTrueFalse,
+  type VmlTrueFalse,
+  type VmlTrueFalseBlank,
+} from "../attributes";
 
 /** v:h options (CT_H). `switch` matches the XML attribute name. */
 export interface VmlHandleOptions {
@@ -17,7 +24,7 @@ export interface VmlHandleOptions {
   map?: string;
   invx?: VmlTrueFalse;
   invy?: VmlTrueFalse;
-  switch?: VmlTrueFalse;
+  switch?: VmlTrueFalseBlank;
   xrange?: string;
   yrange?: string;
   radiusrange?: string;
@@ -36,7 +43,8 @@ const HANDLE_STRING_FIELDS = [
   "yrange",
   "radiusrange",
 ] as const;
-const HANDLE_BOOLEAN_FIELDS = ["invx", "invy", "switch"] as const;
+const HANDLE_BOOLEAN_FIELDS = ["invx", "invy"] as const;
+const HANDLE_BLANK_BOOLEAN_FIELDS = ["switch"] as const;
 
 /** Serialize v:handles. */
 export function stringifyVmlHandles(opts: VmlHandlesOptions): string {
@@ -49,6 +57,10 @@ export function stringifyVmlHandles(opts: VmlHandlesOptions): string {
     for (const field of HANDLE_BOOLEAN_FIELDS) {
       const value = handle[field];
       if (value !== undefined) attrs.push(`${field}="${stringifyVmlTrueFalse(value)}"`);
+    }
+    for (const field of HANDLE_BLANK_BOOLEAN_FIELDS) {
+      const value = handle[field];
+      if (value !== undefined) attrs.push(`${field}="${stringifyVmlTrueFalseBlank(value)}"`);
     }
     const attrStr = attrs.length > 0 ? ` ${attrs.join(" ")}` : "";
     return `<v:h${attrStr}/>`;
@@ -70,6 +82,10 @@ export function parseVmlHandles(el: XmlElement): VmlHandlesOptions {
     for (const field of HANDLE_BOOLEAN_FIELDS) {
       const raw = attrs[field];
       if (raw !== undefined) handle[field] = parseVmlTrueFalse(String(raw));
+    }
+    for (const field of HANDLE_BLANK_BOOLEAN_FIELDS) {
+      const raw = attrs[field];
+      if (raw !== undefined) handle[field] = parseVmlTrueFalseBlank(String(raw));
     }
     handles.push(handle);
   }

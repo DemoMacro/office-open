@@ -1,11 +1,12 @@
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
-import { parseParagraph } from "../../body";
+import { parseParagraph, stringifyParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
 
 // Inline SDTs never touch the read context, so an empty mock suffices.
 const readCtx = {} as unknown as DocxReadContext;
+const writeCtx = {} as never;
 
 const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
 const W14 = 'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"';
@@ -114,5 +115,18 @@ describe("SDT properties fidelity (CT_SdtPr)", () => {
     expect((child!.sdt as Record<string, unknown>).properties).toMatchObject({
       docPartObj: { gallery: "Table of Contents", unique: true },
     });
+  });
+
+  it("round-trips the date SDT dateFormat attribute", () => {
+    const opts = parseParagraphXml(
+      '<w:sdt><w:sdtPr><w:date><w:dateFormat w:val="yyyy-MM-dd"/></w:date></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:t>2026-01-02</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    expect((findInlineSdt(opts)!.sdt as Record<string, any>).properties.date).toMatchObject({
+      dateFormat: "yyyy-MM-dd",
+    });
+    expect(stringifyParagraph(opts as never, writeCtx)).toContain(
+      '<w:dateFormat w:val="yyyy-MM-dd"/>',
+    );
   });
 });

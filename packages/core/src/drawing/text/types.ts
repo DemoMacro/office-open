@@ -279,6 +279,8 @@ export interface TextParagraphPropertiesOptions {
   /** Space before a paragraph as a percentage (a:spcBef/a:spcPct). */
   spaceBeforePercent?: number;
   bullet?: BulletOptions;
+  /** Shared bullet color/size/font style when the source carries no bullet type element. */
+  bulletStyle?: BulletStyleOptions;
   /** Line spacing as a percentage (100 = single). */
   lineSpacingPercent?: number;
   /** Line spacing in exact points (a:lnSpc/a:spcPts). */

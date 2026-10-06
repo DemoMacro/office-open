@@ -56,6 +56,8 @@ export interface OleOptions extends NonVisualDrawingPropertiesOptions, NvPrPlace
   height?: number | UniversalMeasure;
   /** OLE program ID (e.g., "Excel.Sheet.12") */
   progId?: string;
+  /** p:oleObj `@name` — independent of the frame's p:cNvPr `@name`. */
+  objectName?: string;
   shapeId?: string;
   showAsIcon?: boolean;
   /** Image width (EMU) for icon/preview (AG_Ole `@imgW`) */

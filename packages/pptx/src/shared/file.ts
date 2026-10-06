@@ -41,6 +41,7 @@ import type { SlideChild } from "@parts/slide/slide-child";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
 import type { ViewPropertiesOptions } from "@parts/view-properties";
 import type { AnimationEntry, AnimationsOptions } from "@shared/animation/timing";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 import type { PlaceholderMapOptions } from "@shared/placeholder";
 import type { ThemeOptions } from "@shared/theme";
@@ -70,12 +71,14 @@ export interface LayoutDefinition {
   showMasterPlaceholderAnimations?: boolean;
   /** Source p:sldLayoutId @id — kept so round-trip reuses it instead of renumbering (PowerPoint rejects renumbered ids on real-open). */
   layoutId?: number;
+  /** Whether the source package carried this layout's .rels part (round-trip only). */
+  sourceOwnRels?: boolean;
   // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)
   children?: SlideChild[];
   background?: BackgroundOptions;
   headerFooter?: SlideHeaderFooterOptions;
   controls?: ControlOptions[];
-  customerData?: { rId: string }[];
+  customerData?: SlideCustomerDataReferenceOptions[];
   /**
    * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
    * where p14:creationId lives) — verbatim round-trip (captured from a parsed source; do not hand-author).
@@ -153,7 +156,7 @@ export interface SlideOptions {
   /** Hidden slide — excluded from slideshow (emits p:sld/`@show`="0"). */
   hidden?: boolean;
   controls?: ControlOptions[];
-  customerData?: { rId: string }[];
+  customerData?: SlideCustomerDataReferenceOptions[];
   slideSync?: SlideSyncOptions;
   /**
    * Raw inner XML of the p:extLst inside p:cSld (CT_CommonSlideData tail —
@@ -190,6 +193,10 @@ export interface PresentationOptions extends CorePropertiesOptions {
   size?: SlideSize;
   /** Slide size class (`p:sldSz/@type`); cx/cy decide actual size. */
   slideSizeType?: SlideSizeType;
+  /** Notes page width in EMU (`p:notesSz/@cx`, default 6858000). */
+  notesWidth?: number;
+  /** Notes page height in EMU (`p:notesSz/@cy`, default 9144000). */
+  notesHeight?: number;
   /**
    * Source file is an encrypted OOXML package (OLE2/CFB). Round-trip only:
    * original bytes carried verbatim and re-emitted unchanged; every other

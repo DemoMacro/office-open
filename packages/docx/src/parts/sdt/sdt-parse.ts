@@ -106,7 +106,7 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
     const date = findChild(el, "w:date")!;
     const dateOpts: Record<string, unknown> = {};
     const dateFormat = findChild(date, "w:dateFormat");
-    if (dateFormat) dateOpts.dateFormat = textOf(dateFormat);
+    if (dateFormat) dateOpts.dateFormat = attr(dateFormat, "w:val");
     const lid = findChild(date, "w:lid");
     if (lid) dateOpts.languageId = textOf(lid);
     const storeMapped = findChild(date, "w:storeMappedDataAs");

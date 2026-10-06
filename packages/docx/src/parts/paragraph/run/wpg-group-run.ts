@@ -3,6 +3,7 @@
  *
  * @module
  */
+import type { LongHexNumber } from "@office-open/core";
 import type { EffectListOptions, FillOptions } from "@office-open/core/drawing";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
@@ -52,6 +53,10 @@ export interface GroupOptions {
   mcChoiceRequires?: string;
   /** Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing. */
   runProperties?: RunPropertiesOptions;
+  /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
+  additionRsid?: LongHexNumber;
+  /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
+  runPropertiesRsid?: LongHexNumber;
   /** A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing. */
   lastRenderedPageBreak?: boolean;
   /** Graphic frame locks (wp:cNvGraphicFramePr) for round-trip. */

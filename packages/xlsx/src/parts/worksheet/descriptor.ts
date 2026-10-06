@@ -206,9 +206,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (paneEl) {
           const fp: FreezePaneOptions = {};
           const ys = attrNum(paneEl, "ySplit");
-          if (ys && ys > 0) fp.row = ys;
+          if (ys !== undefined) fp.row = ys;
           const xs = attrNum(paneEl, "xSplit");
-          if (xs && xs > 0) fp.col = xs;
+          if (xs !== undefined) fp.col = xs;
           if (attr(paneEl, "state") === "split") fp.split = true;
           const paneTopLeft = attr(paneEl, "topLeftCell");
           if (paneTopLeft) fp.topLeftCell = paneTopLeft;
@@ -552,15 +552,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
     // Print options
     const poEl = findChild(el, "printOptions");
-    if (poEl) {
-      const po: PrintOptions = {};
-      if (parseOnOff(attr(poEl, "horizontalCentered"))) po.horizontalCentered = true;
-      if (parseOnOff(attr(poEl, "verticalCentered"))) po.verticalCentered = true;
-      if (parseOnOff(attr(poEl, "headings"))) po.headings = true;
-      if (parseOnOff(attr(poEl, "gridLines"))) po.gridLines = true;
-      if (String(attr(poEl, "gridLinesSet")) === "0") po.gridLinesSet = false;
-      result.printOptions = po;
-    }
+    if (poEl) result.printOptions = parsePrintOptionsEl(poEl);
 
     // Page setup
     const psEl = findChild(el, "pageSetup");
@@ -826,8 +818,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const pane: FreezePaneOptions = {};
           const ySplit = attrNum(paneEl, "ySplit");
           const xSplit = attrNum(paneEl, "xSplit");
-          if (ySplit) pane.row = ySplit;
-          if (xSplit) pane.col = xSplit;
+          if (ySplit !== undefined) pane.row = ySplit;
+          if (xSplit !== undefined) pane.col = xSplit;
           if (attr(paneEl, "state") === "split") pane.split = true;
           const paneTopLeft = attr(paneEl, "topLeftCell");
           if (paneTopLeft) pane.topLeftCell = paneTopLeft;
@@ -850,6 +842,29 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           selections.push(selection);
         }
         if (selections.length > 0) view.selection = selections;
+        const pageMarginsEl = findChild(vEl, "pageMargins");
+        if (pageMarginsEl) {
+          const pageMargins: PageMarginsOptions = {};
+          const left = attrNum(pageMarginsEl, "left");
+          const right = attrNum(pageMarginsEl, "right");
+          const top = attrNum(pageMarginsEl, "top");
+          const bottom = attrNum(pageMarginsEl, "bottom");
+          const header = attrNum(pageMarginsEl, "header");
+          const footer = attrNum(pageMarginsEl, "footer");
+          if (left !== undefined) pageMargins.left = left;
+          if (right !== undefined) pageMargins.right = right;
+          if (top !== undefined) pageMargins.top = top;
+          if (bottom !== undefined) pageMargins.bottom = bottom;
+          if (header !== undefined) pageMargins.header = header;
+          if (footer !== undefined) pageMargins.footer = footer;
+          view.pageMargins = pageMargins;
+        }
+        const printOptionsEl = findChild(vEl, "printOptions");
+        if (printOptionsEl) view.printOptions = parsePrintOptionsEl(printOptionsEl);
+        const pageSetupEl = findChild(vEl, "pageSetup");
+        if (pageSetupEl) view.pageSetup = parsePageSetupEl(pageSetupEl);
+        const headerFooterEl = findChild(vEl, "headerFooter");
+        if (headerFooterEl) view.headerFooter = parseHeaderFooterEl(headerFooterEl);
         views.push(view);
       }
       if (views.length > 0) result.customSheetViews = views;
@@ -1140,6 +1155,17 @@ export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
   const ff = findChild(el, "firstFooter");
   if (ff) hf.firstFooter = textOf(ff);
   return hf;
+}
+
+/** Parse a CT_PrintOptions element. */
+export function parsePrintOptionsEl(el: Element): PrintOptions {
+  const po: PrintOptions = {};
+  if (parseOnOff(attr(el, "horizontalCentered"))) po.horizontalCentered = true;
+  if (parseOnOff(attr(el, "verticalCentered"))) po.verticalCentered = true;
+  if (parseOnOff(attr(el, "headings"))) po.headings = true;
+  if (parseOnOff(attr(el, "gridLines"))) po.gridLines = true;
+  if (String(attr(el, "gridLinesSet")) === "0") po.gridLinesSet = false;
+  return po;
 }
 
 /** Parse a CT_SheetProtection element. */

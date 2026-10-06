@@ -31,6 +31,18 @@ export interface BlipFillConfigOptions {
    * and imageType are meaningless.
    */
   noEmbed?: true;
+  /**
+   * External image URL referenced by a:blip @r:link. Linked-only fills carry
+   * this instead of data/imageType; the writer registers an external image
+   * relationship.
+   */
+  linkedUrl?: string;
+  /**
+   * Relationship target retained when an internal a:blip reference names a
+   * missing media part. The writer preserves the reference instead of
+   * fabricating image bytes or degrading the fill.
+   */
+  unresolvedTarget?: string;
   /** Image data: raw bytes, ArrayBuffer, or a base64 data URL string. */
   data?: DataType;
   imageType?: "png" | "jpg" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";

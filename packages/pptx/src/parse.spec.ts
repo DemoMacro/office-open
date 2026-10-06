@@ -111,6 +111,18 @@ describe("parsePresentation", () => {
     expect(regeneratedIds).toEqual([260, 256]);
   });
 
+  it("round-trips notes page dimensions", async () => {
+    const options: PresentationOptions = {
+      notesWidth: 6934200,
+      notesHeight: 9220200,
+      slides: [{ children: [{ shape: { x: 0, y: 0, width: 200, height: 100 } }] }],
+    };
+    const buffer = await generatePresentation(options);
+    const result = parsePresentationSync(buffer);
+    expect(result.notesWidth).toBe(6934200);
+    expect(result.notesHeight).toBe(9220200);
+  });
+
   it("preserves source master identities", async () => {
     const buffer = await generatePresentation({
       masters: [{ masterId: 2147483660 }, { masterId: 2147483661 }],

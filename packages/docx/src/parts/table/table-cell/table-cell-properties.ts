@@ -30,7 +30,7 @@ export interface TableCellPropertiesOptionsBase {
   /** Text direction/flow within the cell */
   textDirection?: (typeof TextDirection)[keyof typeof TextDirection];
   /** Vertical merge setting for the cell */
-  verticalMerge?: "continue" | "restart";
+  verticalMerge?: "continue" | "explicitContinue" | "restart";
   /** Width specification for the cell */
   width?: TableWidthProperties;
   /** Number of columns this cell spans (horizontal merge) */

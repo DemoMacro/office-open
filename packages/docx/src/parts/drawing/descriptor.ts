@@ -21,6 +21,7 @@ import { RELATIONSHIP_TYPES, type ReproducibleScope, TargetModeType } from "@off
 import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import type {
+  BlackWhiteMode,
   BlipEffectsOptions,
   EffectListOptions,
   FillOptions,
@@ -362,6 +363,7 @@ function stringifyShapeProps(
   effects?: EffectListOptions,
   scene3d?: Scene3DOptions,
   shape3d?: Shape3DOptions,
+  blackWhiteMode?: BlackWhiteMode,
 ): string {
   const spPr = shapePropertiesDesc.stringify(
     {
@@ -382,7 +384,8 @@ function stringifyShapeProps(
     },
     NOOP_CTX,
   );
-  return `<pic:spPr bwMode="auto">${spPr ?? ""}</pic:spPr>`;
+  const bwAttr = blackWhiteMode ? ` bwMode="${blackWhiteMode}"` : "";
+  return `<pic:spPr${bwAttr}>${spPr ?? ""}</pic:spPr>`;
 }
 
 // ── Non-visual picture properties (pic:nvPicPr) ──
@@ -501,7 +504,7 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   return (
     `<wps:wsp${neafAttr}>` +
     cNvSpPr +
-    `<wps:spPr bwMode="auto">${spPrContent}</wps:spPr>` +
+    `<wps:spPr${opts.blackWhiteMode ? ` bwMode="${opts.blackWhiteMode}"` : ""}>${spPrContent}</wps:spPr>` +
     styleXml +
     txbxXml +
     linkedTxbxXml +
@@ -691,7 +694,17 @@ function stringifyGroupChild(
   if (groupSrcRectXml) groupBlipParts.push(groupSrcRectXml);
   groupBlipParts.push("<a:stretch><a:fillRect/></a:stretch>");
   picParts.push(`<pic:blipFill>${groupBlipParts.join("")}</pic:blipFill>`);
-  picParts.push(stringifyShapeProps(picData.transformation, picData.outline, picData.fill));
+  picParts.push(
+    stringifyShapeProps(
+      picData.transformation,
+      picData.outline,
+      picData.fill,
+      undefined,
+      undefined,
+      undefined,
+      picData.blackWhiteMode,
+    ),
+  );
   return `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">${picParts.join("")}</pic:pic>`;
 }
 

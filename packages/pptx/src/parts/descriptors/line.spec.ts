@@ -147,6 +147,13 @@ describe("connectorShapeDesc round-trip", () => {
     expect(result.properties?.outline?.tailEnd?.type).toBe("arrow");
   });
 
+  it("round-trips connector userDrawn marking", () => {
+    const opts: ConnectorOptions = { id: 23, userDrawn: true };
+    const xml = connectorShapeDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('<p:nvPr userDrawn="1"/>');
+    expect(roundTripConnector(opts).userDrawn).toBe(true);
+  });
+
   it("round-trips connector with outline", () => {
     const opts: ConnectorOptions = {
       id: 22,

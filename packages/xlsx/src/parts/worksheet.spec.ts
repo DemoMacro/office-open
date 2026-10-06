@@ -64,6 +64,34 @@ describe("Worksheet", () => {
       return worksheetDesc.parse(el, readCtx) as unknown as WorksheetOptions;
     }
 
+    it("preserves explicit zero pane splits", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetViews><sheetView workbookViewId="0">` +
+          `<pane xSplit="0" ySplit="0" topLeftCell="A1" activePane="topLeft" state="frozen"/>` +
+          `</sheetView></sheetViews>` +
+          `<sheetData/></worksheet>`,
+      );
+      expect(result.freezePanes).toEqual({
+        row: 0,
+        col: 0,
+        topLeftCell: "A1",
+        activePane: "topLeft",
+      });
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<pane ySplit="0" xSplit="0" topLeftCell="A1" activePane="topLeft" state="frozen"/>',
+      );
+    });
+
+    it("round-trips tabColor tint", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetPr><tabColor theme="2" tint="-0.25"/></sheetPr><sheetData/></worksheet>`,
+      );
+      expect(result.tabColor).toEqual({ theme: 2, tint: -0.25 });
+      expect(buildWorksheetXml(result, {})).toContain('<tabColor theme="2" tint="-0.25"/>');
+    });
+
     it("round-trips sheetFormatPr and row dyDescent", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
@@ -996,6 +1024,17 @@ describe("Worksheet", () => {
             filter: true,
             state: "hidden",
             view: "pageBreakPreview",
+            pageMargins: {
+              left: 0.7,
+              right: 0.7,
+              top: 0.75,
+              bottom: 0.75,
+              header: 0.3,
+              footer: 0.3,
+            },
+            printOptions: { horizontalCentered: true },
+            pageSetup: { orientation: "landscape", scale: 80 },
+            headerFooter: { oddHeader: "H", oddFooter: "F" },
           },
         ],
       };
@@ -1011,6 +1050,17 @@ describe("Worksheet", () => {
           filter: true,
           state: "hidden",
           view: "pageBreakPreview",
+          pageMargins: {
+            left: 0.7,
+            right: 0.7,
+            top: 0.75,
+            bottom: 0.75,
+            header: 0.3,
+            footer: 0.3,
+          },
+          printOptions: { horizontalCentered: true },
+          pageSetup: { orientation: "landscape", scale: 80 },
+          headerFooter: { oddHeader: "H", oddFooter: "F" },
         },
       ]);
     });

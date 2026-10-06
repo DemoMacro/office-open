@@ -287,7 +287,10 @@ export class Styles {
       borderId:
         this.adoptedDefinitionIndex(entry.border, this.borders) ??
         this.registerBorder(entry.border),
-      numFmtId: this.registerNumFmt(entry.numFmt),
+      numFmtId:
+        entry.numFmt === undefined && entry.numFmtId !== undefined
+          ? entry.numFmtId
+          : this.registerNumFmt(entry.numFmt),
       alignment: entry.alignment,
       protection: entry.protection,
       quotePrefix: entry.quotePrefix,
@@ -938,6 +941,7 @@ export class Styles {
     if (a.justifyLastLine !== undefined) aAttrs.justifyLastLine = a.justifyLastLine ? 1 : 0;
     if (a.shrinkToFit !== undefined) aAttrs.shrinkToFit = a.shrinkToFit ? 1 : 0;
     if (a.readingOrder !== undefined) aAttrs.readingOrder = a.readingOrder;
+    if (a.mergeCell !== undefined) aAttrs.mergeCell = a.mergeCell ? 1 : 0;
     return `<alignment${attrs(aAttrs)}/>`;
   }
 

@@ -1,8 +1,8 @@
-import {
-  toUint8Array,
-  type ChartSpaceOptions,
-  type FormContainerOptions,
-  type FormControlOptions,
+import type {
+  ChartSpaceOptions,
+  DataType,
+  FormContainerOptions,
+  FormControlOptions,
 } from "@office-open/core";
 import {
   attributeNumber,
@@ -137,7 +137,24 @@ function addPackageFile(files: OdfPackageFiles, member: OdsPackageMemberOptions)
     throw new Error("ODS package members cannot replace META-INF/manifest.xml");
   if (files[member.path] !== undefined)
     throw new Error(`ODS package member conflicts with modeled content: ${member.path}`);
-  files[member.path] = typeof member.data === "string" ? member.data : toUint8Array(member.data);
+  files[member.path] =
+    typeof member.data === "string" ? member.data : toPackageMemberBytes(member.data);
+}
+
+const DATA_URL_PATTERN = /^data:([\w.+-]+\/[\w.+-]+)?;base64,/;
+
+function toPackageMemberBytes(data: DataType): Uint8Array {
+  if (data instanceof Uint8Array) return data;
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (data instanceof DataView)
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  if (typeof data === "string") {
+    const dataUrl = DATA_URL_PATTERN.exec(data);
+    if (dataUrl) return base64ToBytes(data.slice(dataUrl[0].length));
+    return new TextEncoder().encode(data);
+  }
+  if (Array.isArray(data)) return new Uint8Array(data);
+  throw new TypeError("ODS package member binary requires synchronous data");
 }
 
 export function unsupportedOdsValue(name: string, reason: string): OdsParseError {

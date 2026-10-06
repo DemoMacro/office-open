@@ -84,6 +84,8 @@ function buildPresAttrOpts(
     | "autoCompressPictures"
     | "bookmarkIdSeed"
     | "conformance"
+    | "notesWidth"
+    | "notesHeight"
     | "photoAlbum"
     | "modifyVerifier"
     | "embeddedFonts"
@@ -107,6 +109,8 @@ function buildPresAttrOpts(
     options.autoCompressPictures === undefined &&
     options.bookmarkIdSeed === undefined &&
     options.conformance === undefined &&
+    options.notesWidth === undefined &&
+    options.notesHeight === undefined &&
     options.photoAlbum === undefined &&
     options.modifyVerifier === undefined &&
     options.embeddedFonts === undefined &&
@@ -131,6 +135,8 @@ function buildPresAttrOpts(
     autoCompressPictures: options.autoCompressPictures,
     bookmarkIdSeed: options.bookmarkIdSeed,
     conformance: options.conformance,
+    notesWidth: options.notesWidth,
+    notesHeight: options.notesHeight,
     photoAlbum: options.photoAlbum,
     modifyVerifier: options.modifyVerifier,
     embeddedFonts: options.embeddedFonts,

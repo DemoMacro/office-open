@@ -33,6 +33,7 @@ import {
   type Zippable,
 } from "@office-open/core";
 import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
+import type { WriteContext } from "@office-open/core/descriptor";
 import { buildThemeXml } from "@office-open/core/theme";
 import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CalcCell } from "@parts/calc-chain";
@@ -89,6 +90,36 @@ const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;
 const VOLATILE_DEPENDENCIES_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/volatileDependencies" as RelationshipType;
+
+function withPartRelationships(
+  ctx: XlsxWriteContext,
+  relationships: Relationships,
+  ownerPath: string,
+): WriteContext {
+  const partCtx = Object.create(ctx);
+  partCtx.addRelationship = (type: RelationshipType, target: string, mode?: string) => {
+    const source = ownerPath.split("/").slice(0, -1);
+    const targetPath = target.split("/").slice(0, -1);
+    let common = 0;
+    while (
+      common < source.length &&
+      common < targetPath.length &&
+      source[common] === targetPath[common]
+    )
+      common++;
+    const relativeTarget = [
+      ...Array.from({ length: source.length - common }, () => ".."),
+      ...target.split("/").slice(common),
+    ].join("/");
+    return `rId${relationships.add(
+      type,
+      target.startsWith("/") ? target : relativeTarget,
+      mode as "External" | undefined,
+    )}`;
+  };
+  partCtx.addMedia = ctx.addMedia.bind(ctx);
+  return partCtx;
+}
 /** Extension → MIME for image and VML Default entries. Declared only for
  * extensions actually present in the package. VML backs legacy comment
  * anchors (xl/drawings/vmlDrawing${i}.vml). */
@@ -426,7 +457,11 @@ export function compileWorkbook(
   // media placeholders; bind them to a theme-part image relationship.
   const themeRels = new Relationships();
   const themeXml = options.theme
-    ? bindMediaPlaceholders(buildThemeXml(options.theme, ctx), ctx.media, themeRels)
+    ? bindMediaPlaceholders(
+        buildThemeXml(options.theme, withPartRelationships(ctx, themeRels, "xl/theme/theme1.xml")),
+        ctx.media,
+        themeRels,
+      )
     : createThemeXml();
   mapping["Theme"] = {
     data: XML_DECL + themeXml,

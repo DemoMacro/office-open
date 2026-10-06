@@ -41,15 +41,24 @@ const UNORDERED_PART_PATHS = new Set([
 
 const IGNORED_ATTRIBUTES = new Set(["mc:Ignorable"]);
 
+const LEGACY_OFFICE_URI_PREFIX = "http://schemas.microsoft.com/office/2006/relationships/";
 const STRICT_URI_PREFIX = "http://purl.oclc.org/ooxml/";
 const TRANSITIONAL_URI_PREFIX = "http://schemas.openxmlformats.org/";
 
 const TRANSITIONAL_URI_ALIASES = new Map([
+  ["docPropsApp", "officeDocument/2006/relationships/extended-properties"],
   [
     "officeDocument/2006/relationships/extendedProperties",
     "officeDocument/2006/relationships/extended-properties",
   ],
 ]);
+
+const VERSIONED_TRANSITIONAL_PREFIXES = [
+  "drawingml/",
+  "presentationml/",
+  "spreadsheetml/",
+  "wordprocessingml/",
+] as const;
 
 function canonicalAttributeValue(name: string, value: string): string {
   if (value === "on" || value === "true") return "1";
@@ -57,16 +66,43 @@ function canonicalAttributeValue(name: string, value: string): string {
   if (name === "Type" || name === "uri" || name === "Namespace") {
     if (value.startsWith(STRICT_URI_PREFIX)) {
       const path = value.slice(STRICT_URI_PREFIX.length);
-      const transitionalPath = path.replace(
+      const versionedPath = VERSIONED_TRANSITIONAL_PREFIXES.some(
+        (prefix) =>
+          path.startsWith(prefix) && !/^0*(?:\d+\.)*\d+\//.test(path.slice(prefix.length)),
+      )
+        ? path.replace(/^([^/]+)\//, "$1/2006/")
+        : path;
+      const transitionalPath = versionedPath.replace(
         "officeDocument/relationships/",
         "officeDocument/2006/relationships/",
       );
       const alias = TRANSITIONAL_URI_ALIASES.get(transitionalPath);
       return `${TRANSITIONAL_URI_PREFIX}${alias ?? transitionalPath}`;
     }
+    const legacyPath = value.startsWith(LEGACY_OFFICE_URI_PREFIX)
+      ? value.slice(LEGACY_OFFICE_URI_PREFIX.length)
+      : undefined;
+    if (legacyPath !== undefined) {
+      const alias = TRANSITIONAL_URI_ALIASES.get(legacyPath);
+      if (alias) return `${TRANSITIONAL_URI_PREFIX}${alias}`;
+    }
     return value;
   }
   return value;
+}
+
+function canonicalElementName(name: string, partPath: string): string {
+  if (!partPath.startsWith("docProps/core.xml") && !partPath.startsWith("docProps/app.xml")) {
+    return name;
+  }
+  const localName = name.includes(":") ? name.slice(name.indexOf(":") + 1) : name;
+  return localName.toLowerCase();
+}
+
+function relationshipOwnerPath(relsPath: string): string {
+  if (relsPath === "_rels/.rels" || relsPath.startsWith("_rels/")) return "";
+  const ownerPath = relsPath.replace(/\/_rels\//, "/");
+  return ownerPath.endsWith(".rels") ? ownerPath.slice(0, -".rels".length) : ownerPath;
 }
 
 function canonicalNode(
@@ -85,6 +121,8 @@ function canonicalNode(
     if (content) return canonicalNode(content, childPath);
   }
   const isRelationship = name === "Relationship" && path.includes("_rels/");
+  const relsPath = name === "Relationship" ? path.slice(0, path.lastIndexOf("/")) : path;
+  const ownerPath = relationshipOwnerPath(relsPath);
   const attributes = Object.fromEntries(
     Object.entries(element.attributes ?? {})
       .filter(([attributeName]) => attributeName !== "xmlns" && !attributeName.startsWith("xmlns:"))
@@ -95,7 +133,11 @@ function canonicalNode(
         references && attributeName.startsWith("r:")
           ? (references.get(String(value ?? "")) ??
             canonicalAttributeValue(attributeName, String(value ?? "")))
-          : canonicalAttributeValue(attributeName, String(value ?? "")),
+          : isRelationship &&
+              attributeName === "Target" &&
+              element.attributes?.TargetMode !== "External"
+            ? resolveRelationshipTarget(ownerPath, String(value ?? ""))
+            : canonicalAttributeValue(attributeName, String(value ?? "")),
       ])
       .sort(([left], [right]) => left.localeCompare(right)),
   );
@@ -108,7 +150,7 @@ function canonicalNode(
       ? String(Number(rawText))
       : rawText;
   return {
-    name,
+    name: canonicalElementName(name, path),
     attributes,
     text: element.attributes?.["xml:space"] === "preserve" ? text : text.trim(),
     children: (element.elements ?? [])
@@ -221,6 +263,21 @@ function childKey(node: CanonicalNode): string {
   return childFingerprint(node);
 }
 
+function childDiagnostic(node: CanonicalNode): string {
+  const attributes = Object.entries(node.attributes).map(
+    ([name, value]) => `${name}=${JSON.stringify(value)}`,
+  );
+  const childNames = [...new Set(node.children.map((child) => child.name))];
+  return [
+    node.name,
+    attributes.length > 0 ? `{ ${attributes.join(", ")} }` : undefined,
+    node.text !== "" ? `text=${JSON.stringify(node.text)}` : undefined,
+    childNames.length > 0 ? `children=[${childNames.join(", ")}]` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function compareNodes(
   path: string,
   source: CanonicalNode | undefined,
@@ -268,27 +325,55 @@ function compareNodes(
   for (const { key } of sourceChildren) sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   const outputCounts = new Map(outputChildren.map(({ key }) => [key, 0]));
   for (const { key } of outputChildren) outputCounts.set(key, (outputCounts.get(key) ?? 0) + 1);
-  const sourceOnlyKeys = [...sourceCounts.entries()].filter(
-    ([key, count]) => count > (outputCounts.get(key) ?? 0),
-  );
-  const outputOnlyKeys = [...outputCounts.entries()].filter(
-    ([key, count]) => count > (sourceCounts.get(key) ?? 0),
-  );
+  const sourceMatched = sourceChildren.map(() => false);
+  const outputMatched = outputChildren.map(() => false);
+  for (const [sourceIndex, { key }] of sourceChildren.entries()) {
+    const outputIndex = outputChildren.findIndex(
+      ({ key: outputKey }, index) => !outputMatched[index] && outputKey === key,
+    );
+    if (outputIndex !== -1) {
+      sourceMatched[sourceIndex] = true;
+      outputMatched[outputIndex] = true;
+    }
+  }
+
+  for (const [sourceIndex, { child }] of sourceChildren.entries()) {
+    if (sourceMatched[sourceIndex]) continue;
+    const outputIndex = outputChildren.findIndex(
+      ({ child: outputChild }, index) => !outputMatched[index] && outputChild.name === child.name,
+    );
+    if (outputIndex === -1) continue;
+    sourceMatched[sourceIndex] = true;
+    outputMatched[outputIndex] = true;
+    const childDiffs = compareNodes(
+      `${location}/${child.name}[${sourceIndex + 1}]`,
+      child,
+      outputChildren[outputIndex]!.child,
+    );
+    if (childDiffs.length) return childDiffs;
+  }
+
+  const sourceOnlyKeys = sourceChildren
+    .map(({ key }, index) => (sourceMatched[index] ? undefined : key))
+    .filter((key): key is string => key !== undefined);
+  const outputOnlyKeys = outputChildren
+    .map(({ key }, index) => (outputMatched[index] ? undefined : key))
+    .filter((key): key is string => key !== undefined);
   if (sourceOnlyKeys.length || outputOnlyKeys.length) {
-    for (const [key] of sourceOnlyKeys) {
+    for (const key of sourceOnlyKeys) {
       const child = sourceChildren.find(({ key: childKey }) => childKey === key)!.child;
       diffs.push({
         category: "child",
         xpath: `${location}/${child.name}`,
-        detail: "source-only child",
+        detail: `source-only ${childDiagnostic(child)}`,
       });
     }
-    for (const [key] of outputOnlyKeys) {
+    for (const key of outputOnlyKeys) {
       const child = outputChildren.find(({ key: childKey }) => childKey === key)!.child;
       diffs.push({
         category: "child",
         xpath: `${location}/${child.name}`,
-        detail: "output-only child",
+        detail: `output-only ${childDiagnostic(child)}`,
       });
     }
   } else if (
@@ -345,7 +430,8 @@ function relationshipPath(partPath: string): string {
 }
 
 function resolveRelationshipTarget(ownerPath: string, target: string): string {
-  if (/^[a-z]+:\/\//i.test(target) || target.startsWith("/")) return target;
+  if (/^[a-z]+:\/\//i.test(target)) return target;
+  if (target.startsWith("/")) return target.slice(1);
   const separator = ownerPath.lastIndexOf("/");
   const directory = separator === -1 ? "." : ownerPath.slice(0, separator);
   return path.posix.normalize(path.posix.join(directory, target));

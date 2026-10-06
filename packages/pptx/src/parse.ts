@@ -144,7 +144,7 @@ function parseRootRels(doc: ParsedArchive): {
     const relType = type.toLowerCase().replaceAll("-", "");
     if (relType.includes("/coreproperties")) {
       if (type === canonicalCore || coreProps === undefined) coreProps = path;
-    } else if (relType.includes("/extendedproperties")) {
+    } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp")) {
       if (type === canonicalApp || appProps === undefined) appProps = path;
     } else if (relType.includes("/customproperties")) {
       if (type === canonicalCustom || customProps === undefined) customProps = path;
@@ -598,6 +598,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       };
     }
     if (presPart.slideSizeType) opts.slideSizeType = presPart.slideSizeType;
+    if (presPart.notesWidth !== undefined) opts.notesWidth = presPart.notesWidth;
+    if (presPart.notesHeight !== undefined) opts.notesHeight = presPart.notesHeight;
     opts.photoAlbum = presPart.photoAlbum;
     opts.defaultTextStyle = presPart.defaultTextStyle;
     if (presPart.kinsoku) opts.kinsoku = presPart.kinsoku;
@@ -756,12 +758,16 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         const sourceLayoutId = layoutIdsByPath.get(layoutPath);
         if (sourceLayoutId !== undefined) layoutDef.layoutId = sourceLayoutId;
+        layoutDef.sourceOwnRels = pptx.doc.has(partPathToRelsPath(layoutPath));
         if (sourceLayoutId !== undefined)
           layoutKeysByPath.set(layoutPath, `layout:${sourceLayoutId}`);
         const themeOverridePath = layoutThemeOverridePaths.get(layoutPath);
         const themeOverrideEl = themeOverridePath ? pptx.doc.get(themeOverridePath) : undefined;
         if (themeOverrideEl) {
-          layoutDef.themeOverride = themeOverrideDesc.parse(themeOverrideEl, layoutReadCtx);
+          layoutDef.themeOverride = themeOverrideDesc.parse(
+            themeOverrideEl,
+            readContextForPart(themeOverridePath!),
+          );
         }
         masterLayouts.push(layoutDef);
       }
@@ -958,6 +964,18 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   for (const p of pptx.slideMasters) {
     rebuilt.push(p);
     rebuilt.push(partPathToRelsPath(p));
+  }
+  for (const p of pptx.slideLayouts) {
+    rebuilt.push(p);
+    rebuilt.push(partPathToRelsPath(p));
+  }
+  for (const themePath of masterThemePaths.values()) {
+    rebuilt.push(themePath);
+    rebuilt.push(partPathToRelsPath(themePath));
+  }
+  for (const overridePath of layoutThemeOverridePaths.values()) {
+    rebuilt.push(overridePath);
+    rebuilt.push(partPathToRelsPath(overridePath));
   }
   if (pptx.presProps) rebuilt.push(pptx.presProps);
   if (pptx.viewProps) rebuilt.push(pptx.viewProps);

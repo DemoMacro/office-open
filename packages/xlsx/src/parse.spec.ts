@@ -74,6 +74,30 @@ describe("parseWorkbook round-trip", () => {
     expect(withRels).toContain("/sharedStrings");
   });
 
+  it("resolves absolute root metadata relationship targets", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        creator: "Owner",
+        lastModifiedBy: "Editor",
+        appProperties: { application: "Spreadsheet", docSecurity: 0 },
+        worksheets: [{ name: "Sheet", rows: [{ cells: [{ value: 1 }] }] }],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(buffer);
+    const relsPath = "_rels/.rels";
+    archive[relsPath] = new TextEncoder().encode(
+      new TextDecoder()
+        .decode(archive[relsPath]!)
+        .replaceAll('Target="docProps/', 'Target="/docProps/'),
+    );
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.creator).toBe("Owner");
+    expect(parsed.lastModifiedBy).toBe("Editor");
+    expect(parsed.appProperties?.application).toBe("Spreadsheet");
+    expect(parsed.appProperties?.docSecurity).toBe(0);
+  });
+
   it("round-trips pivot table page filters", async () => {
     const opts: WorkbookOptions = {
       worksheets: [

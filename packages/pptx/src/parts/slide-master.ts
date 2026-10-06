@@ -17,6 +17,7 @@ import type { TextStylesOptions } from "@parts/descriptors/text-list-style";
 import type { ControlOptions } from "@parts/slide/slide";
 import type { SlideChild } from "@parts/slide/slide-child";
 import type { AnimationsOptions } from "@shared/animation/timing";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 import type { PlaceholderDefinition, PlaceholderMapOptions } from "@shared/placeholder";
 import type { TransitionOptions } from "@shared/transition";
 
@@ -57,7 +58,7 @@ export interface SlideMasterOptions {
   /** p:timing — animation timeline. */
   animations?: AnimationsOptions;
   /** cSld/custDataLst — relationship references to customer data parts. */
-  customerData?: { rId: string }[];
+  customerData?: SlideCustomerDataReferenceOptions[];
   /** cSld/controls — embedded controls (ActiveX/legacy). */
   controls?: ControlOptions[];
   /**

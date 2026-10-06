@@ -368,6 +368,34 @@ describe("drawingDesc round-trip", () => {
     expect(result.wpsShape?.normalEastAsianFlow).toBe(true);
   });
 
+  it("preserves wps black-white mode only when present", () => {
+    const absent = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: { children: [] },
+      },
+    });
+    expect(absent).toContain("<wps:spPr>");
+    expect(absent).not.toContain("bwMode");
+
+    const xml = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: { children: [], blackWhiteMode: "blackWhite" as const },
+      },
+    });
+    expect(xml).toContain('<wps:spPr bwMode="blackWhite">');
+    const doc = parseXml(xml);
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, readCtx) as {
+      wpsShape?: { blackWhiteMode?: string };
+    };
+    expect(result.wpsShape?.blackWhiteMode).toBe("blackWhite");
+  });
+
   it("round-trips a relationship-based wps text box part", () => {
     const relationships = new Relationships();
     const relationCtx = {

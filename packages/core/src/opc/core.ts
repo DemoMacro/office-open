@@ -85,8 +85,20 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
     // namespace, so cp:/dcterms: children appear prefix-less — match by
     // local name too (field local names are unique across the map).
     const localName = field.name.slice(field.name.indexOf(":") + 1);
+    const normalizedLocalName = localName.toLowerCase();
+    const legacyAliases =
+      normalizedLocalName === "created"
+        ? ["datecreated"]
+        : normalizedLocalName === "modified"
+          ? ["datemodified"]
+          : [];
     const child = el.elements?.find(
-      (e) => e.type === "element" && (e.name === field.name || e.name === localName),
+      (e) =>
+        e.type === "element" &&
+        (e.name === field.name ||
+          e.name === localName ||
+          legacyAliases.includes(e.name?.slice(e.name.indexOf(":") + 1).toLowerCase() ?? "") ||
+          e.name?.slice(e.name.indexOf(":") + 1).toLowerCase() === normalizedLocalName),
     );
     // Presence-based: Word writes whitespace-only text ("<dc:title>\n</dc:title>"),
     // which the XML parser reduces to an empty element — capture "" so the
@@ -94,7 +106,12 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
     if (child) (props as Record<string, unknown>)[field.key] = textOf(child);
   }
 
-  const revEl = el.elements?.find((e) => e.name === "cp:revision" || e.name === "revision");
+  const revEl = el.elements?.find(
+    (e) =>
+      e.name === "cp:revision" ||
+      e.name === "revision" ||
+      e.name?.slice(e.name.indexOf(":") + 1).toLowerCase() === "revision",
+  );
   if (revEl) {
     const rev = textOf(revEl);
     if (rev) {

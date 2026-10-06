@@ -65,6 +65,7 @@ export function paragraphIdentityAttrs(opts: ParagraphOptions): string {
   let attr = "";
   if (opts.paraId) attr += ` w14:paraId="${opts.paraId}"`;
   if (opts.textId) attr += ` w14:textId="${opts.textId}"`;
+  if (opts.editId) attr += ` w14:editId="${opts.editId}"`;
   if (opts.noSpellErr !== undefined)
     attr += opts.noSpellErr ? ` w14:noSpellErr="1"` : ` w14:noSpellErr="0"`;
   if (opts.additionRsid) attr += ` w:rsidR="${opts.additionRsid}"`;

@@ -2598,6 +2598,39 @@
       "required": ["embed", "type"],
       "type": "object"
     },
+    "BulletStyleOptions": {
+      "additionalProperties": false,
+      "description": "Shared bullet color/size/font styling (EG_TextBulletColorSizeFont). Each dimension is a choice: an explicit value, a \"follows text\" toggle, or unset.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
+        },
+        "colorFollowsText": {
+          "description": "a:buClrTx — bullet color follows the text run color.",
+          "type": "boolean"
+        },
+        "font": {
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+        },
+        "fontFollowsText": {
+          "description": "a:buFontTx — bullet font follows the text run font.",
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
+        },
+        "sizeFollowsText": {
+          "description": "a:buSzTx — bullet size follows the text run size.",
+          "type": "boolean"
+        },
+        "sizePoints": {
+          "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "CameraOptions": {
       "additionalProperties": false,
       "description": "Camera options. Defines the camera type and optional rotation for the 3D scene.",
@@ -4150,6 +4183,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn` — preserve presentation-authored connector marking.",
+          "type": "boolean"
+        },
         "x1": {
           "anyOf": [
             {
@@ -4530,7 +4567,17 @@
           "type": "string"
         },
         "slides": {
-          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "rId": {
+                "type": "string"
+              }
+            },
+            "required": ["rId"],
+            "type": "object"
+          },
+          "type": "array"
         }
       },
       "required": ["name", "slides"],
@@ -4541,7 +4588,7 @@
       "description": "Customer data on the presentation (p:custDataLst — r:id part references).",
       "properties": {
         "data": {
-          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
+          "$ref": "#/definitions/CustomShowOptions/properties/slides"
         },
         "tags": {
           "$ref": "#/definitions/SlideChild/anyOf/12/properties/contentPart"
@@ -5708,6 +5755,10 @@
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
             },
+            "linkedUrl": {
+              "description": "External image URL referenced by a:blip",
+              "type": "string"
+            },
             "noEmbed": {
               "const": true,
               "description": "An empty a:blip carrying no r:embed — Word emits this in a pic:spPr duplicate of pic:blipFill (the spPr copy references no image of its own). No media is registered; the blip re-emits empty. When set, data and imageType are meaningless.",
@@ -5727,6 +5778,10 @@
             },
             "type": {
               "const": "blip",
+              "type": "string"
+            },
+            "unresolvedTarget": {
+              "description": "Relationship target retained when an internal a:blip reference names a missing media part. The writer preserves the reference instead of fabricating image bytes or degrading the fill.",
               "type": "string"
             }
           },
@@ -6701,14 +6756,7 @@
         },
         "customerData": {
           "items": {
-            "additionalProperties": false,
-            "properties": {
-              "rId": {
-                "type": "string"
-              }
-            },
-            "required": ["rId"],
-            "type": "object"
+            "$ref": "#/definitions/SlideCustomerDataReferenceOptions"
           },
           "type": "array"
         },
@@ -6742,6 +6790,10 @@
           "type": "boolean"
         },
         "showMasterShapes": {
+          "type": "boolean"
+        },
+        "sourceOwnRels": {
+          "description": "Whether the source package carried this layout's .rels part (round-trip only).",
           "type": "boolean"
         },
         "themeOverride": {
@@ -7261,6 +7313,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "userDrawn": {
+          "description": "p:nvPr `@userDrawn` — preserve presentation-authored line marking.",
+          "type": "boolean"
+        },
         "x1": {
           "anyOf": [
             {
@@ -7711,14 +7767,7 @@
         "customerData": {
           "description": "cSld/custDataLst — relationship references to customer data parts.",
           "items": {
-            "additionalProperties": false,
-            "properties": {
-              "rId": {
-                "type": "string"
-              }
-            },
-            "required": ["rId"],
-            "type": "object"
+            "$ref": "#/definitions/SlideCustomerDataReferenceOptions"
           },
           "type": "array"
         },
@@ -8150,6 +8199,10 @@
       "additionalProperties": false,
       "description": "Object defaults — a:objectDefaults.",
       "properties": {
+        "ext": {
+          "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "type": "string"
+        },
         "lineDefault": {
           "$ref": "#/definitions/DefaultShapeDefinitionOptions",
           "description": "Line/connector default (lnDef)."
@@ -8283,6 +8336,10 @@
         },
         "name": {
           "$ref": "#/definitions/ShapeOptions/properties/name"
+        },
+        "objectName": {
+          "description": "p:oleObj `@name` — independent of the frame's p:cNvPr `@name`.",
+          "type": "string"
         },
         "placeholder": {
           "$ref": "#/definitions/PlaceholderType",
@@ -9745,8 +9802,16 @@
         "modifyVerifier": {
           "$ref": "#/definitions/ModifyVerifierOptions"
         },
+        "notesHeight": {
+          "description": "Notes page height in EMU (`p:notesSz/@cy`, default 9144000).",
+          "type": "number"
+        },
         "notesMasterOptions": {
           "$ref": "#/definitions/NotesMasterOptions"
+        },
+        "notesWidth": {
+          "description": "Notes page width in EMU (`p:notesSz/@cx`, default 6858000).",
+          "type": "number"
         },
         "passthroughRelationships": {
           "description": "Source .rels relationships from rebuilt parts that point at rawParts (e.g. presentation.xml → handoutMaster). Re-emitted verbatim, fresh rId. Round-trip only — do not hand-author.",
@@ -11716,6 +11781,39 @@
       "required": ["author", "text", "x", "y"],
       "type": "object"
     },
+    "SlideCustomerDataReferenceOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "custData",
+              "type": "string"
+            },
+            "rId": {
+              "type": "string"
+            }
+          },
+          "required": ["rId"],
+          "title": "rId",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "tags",
+              "type": "string"
+            },
+            "rId": {
+              "type": "string"
+            }
+          },
+          "required": ["rId", "kind"],
+          "type": "object"
+        }
+      ]
+    },
     "SlideHeaderFooterOptions": {
       "additionalProperties": false,
       "properties": {
@@ -11803,7 +11901,10 @@
           "type": "array"
         },
         "customerData": {
-          "$ref": "#/definitions/LayoutDefinition/properties/customerData"
+          "items": {
+            "$ref": "#/definitions/SlideCustomerDataReferenceOptions"
+          },
+          "type": "array"
         },
         "ext": {
           "$ref": "#/definitions/MasterDefinition/properties/ext"
@@ -12569,6 +12670,10 @@
           "description": "Horizontal merge: \"restart\" first cell of the merge, \"continue\" cell absorbed into it.",
           "enum": ["continue", "restart"],
           "type": "string"
+        },
+        "horizontalOverflow": {
+          "$ref": "#/definitions/TextHorzOverflow",
+          "description": "`@horzOverflow` — horizontal overflow behavior."
         },
         "margins": {
           "additionalProperties": false,
@@ -13511,6 +13616,10 @@
         },
         "bullet": {
           "$ref": "#/definitions/BulletOptions"
+        },
+        "bulletStyle": {
+          "$ref": "#/definitions/BulletStyleOptions",
+          "description": "Shared bullet color/size/font style when the source carries no bullet type element."
         },
         "defTabSize": {
           "type": "number"

@@ -2,6 +2,7 @@ import type { BaseTableCellOptions, UniversalMeasure } from "@office-open/core";
 import type {
   Cell3DOptions,
   ParagraphDescriptorOptions,
+  TextHorzOverflow,
   TextVertical,
   VerticalAnchor,
 } from "@office-open/core/drawing";
@@ -24,6 +25,8 @@ export interface TableCellOptions extends Omit<BaseTableCellOptions, "verticalAl
   verticalAlign?: VerticalAnchor;
   /** `@vert` — text direction (ST_TextVerticalType). */
   vertical?: TextVertical;
+  /** `@horzOverflow` — horizontal overflow behavior (ST_TextHorzOverflowType). */
+  horizontalOverflow?: TextHorzOverflow;
   text?: string;
   children?: (ParagraphDescriptorOptions | string)[];
   fill?: FillOptions;

@@ -111,7 +111,12 @@ function writeMetadata(options: DocumentOptions): string {
       const value = appProperties[field];
       if (value === undefined) return "";
       if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
-        reject("app-properties", `appProperties.${field}`, String(value), "RTF requires a count");
+        reject(
+          "app-properties",
+          `appProperties.${field}`,
+          JSON.stringify(value) ?? "",
+          "RTF requires a count",
+        );
       }
       return `{\\${word}${value}}`;
     })

@@ -1912,6 +1912,39 @@
       "required": ["embed", "type"],
       "type": "object"
     },
+    "BulletStyleOptions": {
+      "additionalProperties": false,
+      "description": "Shared bullet color/size/font styling (EG_TextBulletColorSizeFont). Each dimension is a choice: an explicit value, a \"follows text\" toggle, or unset.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
+        },
+        "colorFollowsText": {
+          "description": "a:buClrTx — bullet color follows the text run color.",
+          "type": "boolean"
+        },
+        "font": {
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+        },
+        "fontFollowsText": {
+          "description": "a:buFontTx — bullet font follows the text run font.",
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
+        },
+        "sizeFollowsText": {
+          "description": "a:buSzTx — bullet size follows the text run size.",
+          "type": "boolean"
+        },
+        "sizePoints": {
+          "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "CameraOptions": {
       "additionalProperties": false,
       "description": "Camera options. Defines the camera type and optional rotation for the 3D scene.",
@@ -2234,6 +2267,10 @@
       "additionalProperties": false,
       "description": "Options for creating a ChartRun.\n\nExtends `ChartSpaceOptions` from `@office-open/core` with DOCX-specific positioning and layout properties.",
       "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+        },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions",
           "description": "Alternative text for accessibility"
@@ -2546,6 +2583,10 @@
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Run properties of the wrapping w:r (w:rPr before w:drawing)."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
         },
         "secondPieSize": {
           "description": "ofPie second-pie size — number (5–200) or percent string (c:secondPieSize).",
@@ -4379,9 +4420,21 @@
       "additionalProperties": false,
       "description": "A complex field (PAGE/DATE/TOC/HYPERLINK — any fldChar field without w:ffData). `instruction` is the raw field code incl. surrounding spaces; `result` is the cached result text; `rPrXml`/`resultRPrXml` carry the control/result run properties for round-trip fidelity.",
       "properties": {
+        "additionRsid": {
+          "description": "Revision save ID of the begin run (w:rsidR, round-trip).",
+          "type": "string"
+        },
+        "endAdditionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the end run (w:rsidR, round-trip)."
+        },
         "endRPrXml": {
           "description": "Verbatim run-properties of the end fldChar run (may differ from the control rPr — Word styles the end run like the result).",
           "type": "string"
+        },
+        "endRunPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
         },
         "instrRunsXml": {
           "description": "Verbatim XML of the instruction runs (begin → separate/end) when the source split them across runs with per-run properties or line breaks — shapes the plain instruction template cannot reproduce.",
@@ -4389,6 +4442,14 @@
         },
         "instruction": {
           "type": "string"
+        },
+        "instructionAdditionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+        },
+        "instructionRunPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (w:r > w:lastRenderedPageBreak + w:fldChar begin in one run).",
@@ -4400,12 +4461,36 @@
         "result": {
           "type": "string"
         },
+        "resultAdditionRsid": {
+          "description": "Revision save ID of the first plain result run (w:rsidR, round-trip).",
+          "type": "string"
+        },
+        "resultPreserveSpace": {
+          "description": "Source `xml:space=\"preserve\"` marker on the plain result text.",
+          "type": "boolean"
+        },
         "resultRPrXml": {
+          "type": "string"
+        },
+        "resultRunPropertiesRsid": {
+          "description": "Revision save ID of the first plain result run's properties (w:rsidRPr).",
           "type": "string"
         },
         "resultRunsXml": {
           "description": "Verbatim XML of the result runs (separate → end) when the source split the cached value across runs with per-run properties — e.g. Word's locale-mixed date results where every segment carries its own rFonts.",
           "type": "string"
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
+        },
+        "separatorAdditionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+        },
+        "separatorRunPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
         }
       },
       "required": ["instruction"],
@@ -7167,6 +7252,10 @@
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
             },
+            "linkedUrl": {
+              "description": "External image URL referenced by a:blip",
+              "type": "string"
+            },
             "noEmbed": {
               "const": true,
               "description": "An empty a:blip carrying no r:embed — Word emits this in a pic:spPr duplicate of pic:blipFill (the spPr copy references no image of its own). No media is registered; the blip re-emits empty. When set, data and imageType are meaningless.",
@@ -7186,6 +7275,10 @@
             },
             "type": {
               "const": "blip",
+              "type": "string"
+            },
+            "unresolvedTarget": {
+              "description": "Relationship target retained when an internal a:blip reference names a missing media part. The writer preserves the reference instead of fabricating image bytes or degrading the fill.",
               "type": "string"
             }
           },
@@ -8064,6 +8157,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "blackWhiteMode": {
+              "$ref": "#/definitions/BlackWhiteMode",
+              "description": "Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted."
+            },
             "compression": {
               "$ref": "#/definitions/BlipCompression",
               "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
@@ -8112,6 +8209,10 @@
         {
           "additionalProperties": false,
           "properties": {
+            "blackWhiteMode": {
+              "$ref": "#/definitions/BlackWhiteMode",
+              "description": "Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted."
+            },
             "compression": {
               "$ref": "#/definitions/BlipCompression",
               "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
@@ -8123,6 +8224,10 @@
               "additionalProperties": false,
               "description": "Fallback image for Word processors that do not support SVG. This ensures the document displays correctly in all viewers.",
               "properties": {
+                "blackWhiteMode": {
+                  "$ref": "#/definitions/BlackWhiteMode",
+                  "description": "Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted."
+                },
                 "compression": {
                   "$ref": "#/definitions/BlipCompression",
                   "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
@@ -8364,6 +8469,10 @@
       "additionalProperties": false,
       "description": "Group options for docx (wpg:wgp). The cNvPr fields bridge through altText (DocPropertiesOptions); the rest is the docx run-level group model.",
       "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+        },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
         },
@@ -8421,6 +8530,10 @@
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
         },
         "transformation": {
           "$ref": "#/definitions/MediaTransformation"
@@ -11897,6 +12010,10 @@
       "additionalProperties": false,
       "description": "Object defaults — a:objectDefaults.",
       "properties": {
+        "ext": {
+          "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "type": "string"
+        },
         "lineDefault": {
           "$ref": "#/definitions/DefaultShapeDefinitionOptions",
           "description": "Line/connector default (lnDef)."
@@ -13632,6 +13749,10 @@
           "description": "HTML div ID reference",
           "type": "number"
         },
+        "editId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Paragraph edit identifier (w14:editId, 8-digit hex string)."
+        },
         "emptyProperties": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
@@ -15130,8 +15251,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+            },
             "altText": {
               "$ref": "#/definitions/DocPropertiesOptions"
+            },
+            "blackWhiteMode": {
+              "$ref": "#/definitions/BlackWhiteMode",
+              "description": "Black-and-white rendering mode (pic:spPr `@bwMode`); absent = omitted."
             },
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions"
@@ -15187,6 +15316,10 @@
               "$ref": "#/definitions/RunPropertiesOptions",
               "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
             },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+            },
             "scene3d": {
               "$ref": "#/definitions/Scene3DOptions",
               "description": "3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture."
@@ -15223,8 +15356,16 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+            },
             "altText": {
               "$ref": "#/definitions/DocPropertiesOptions"
+            },
+            "blackWhiteMode": {
+              "$ref": "#/definitions/BlackWhiteMode",
+              "description": "Black-and-white rendering mode (pic:spPr `@bwMode`); absent = omitted."
             },
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions"
@@ -15288,6 +15429,10 @@
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
               "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
             },
             "scene3d": {
               "$ref": "#/definitions/Scene3DOptions",
@@ -18063,6 +18208,10 @@
                   "description": "HTML div ID reference",
                   "type": "number"
                 },
+                "editId": {
+                  "$ref": "#/definitions/LongHexNumber",
+                  "description": "Paragraph edit identifier (w14:editId, 8-digit hex string)."
+                },
                 "emptyProperties": {
                   "description": "The source carried a bare `<w:pPr/>` with no attributes or children. Round-trip marker only — re-emits the empty element instead of dropping it (element presence is part of the source's fidelity).",
                   "type": "boolean"
@@ -19751,6 +19900,10 @@
     "ShapeCoreOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted."
+        },
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
         },
@@ -19874,8 +20027,16 @@
       "additionalProperties": false,
       "description": "Shape options for docx (wps:wsp). The shape body comes from `ShapeCoreOptions`; the rest is the docx run-level shape model (transformation, floating, altText, run wrapping).",
       "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+        },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
+        },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted."
         },
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
@@ -19963,6 +20124,10 @@
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
         },
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions"
@@ -20433,6 +20598,10 @@
       "additionalProperties": false,
       "description": "Options for creating a SmartArtRun.",
       "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+        },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions",
           "description": "Alternative text for accessibility"
@@ -20496,6 +20665,10 @@
         "runProperties": {
           "$ref": "#/definitions/RunPropertiesOptions",
           "description": "Run properties of the wrapping drawing run (round-trip fidelity)."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
         },
         "style": {
           "anyOf": [
@@ -21774,7 +21947,7 @@
         },
         "verticalMerge": {
           "description": "Vertical merge setting for the cell",
-          "enum": ["continue", "restart"],
+          "enum": ["continue", "explicitContinue", "restart"],
           "type": "string"
         },
         "width": {
@@ -21862,9 +22035,7 @@
           "description": "Vertical alignment of content within the cell"
         },
         "verticalMerge": {
-          "description": "Vertical merge setting for the cell",
-          "enum": ["continue", "restart"],
-          "type": "string"
+          "$ref": "#/definitions/TableCellOptions/properties/verticalMerge"
         },
         "width": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -21944,9 +22115,7 @@
           "description": "Vertical alignment of content within the cell"
         },
         "verticalMerge": {
-          "description": "Vertical merge setting for the cell",
-          "enum": ["continue", "restart"],
-          "type": "string"
+          "$ref": "#/definitions/TableCellOptions/properties/verticalMerge"
         },
         "width": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -22575,6 +22744,10 @@
         "insertion": {
           "$ref": "#/definitions/ChangedProperties"
         },
+        "paraId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Unique table row identifier (w14:paraId, 8-digit hex string)."
+        },
         "propertyExceptions": {
           "$ref": "#/definitions/TablePropertyExOptions",
           "description": "Table property exceptions for this row (override table-level properties)"
@@ -22611,6 +22784,10 @@
         "tableRowRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID for table row (w:rsidTr, hex string)."
+        },
+        "textId": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Table row text identifier (w14:textId, 8-digit hex string)."
         },
         "widthAfter": {
           "$ref": "#/definitions/TableWidthProperties",
@@ -23427,6 +23604,10 @@
         },
         "bullet": {
           "$ref": "#/definitions/BulletOptions"
+        },
+        "bulletStyle": {
+          "$ref": "#/definitions/BulletStyleOptions",
+          "description": "Shared bullet color/size/font style when the source carries no bullet type element."
         },
         "defTabSize": {
           "type": "number"
@@ -26232,7 +26413,7 @@
           "type": "string"
         },
         "switch": {
-          "$ref": "#/definitions/VmlTrueFalse"
+          "$ref": "#/definitions/VmlTrueFalseBlank"
         },
         "xrange": {
           "type": "string"

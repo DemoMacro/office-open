@@ -199,12 +199,15 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       if (child.name !== "Relationship") continue;
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
+      if (!target) continue;
+      const path = target.startsWith("/") ? target.slice(1) : target;
       // Transitional packages use the oclc URI form with camelCase segments
       // (…/extendedProperties); normalize case and hyphens so both resolve.
       const relType = type.toLowerCase().replaceAll("-", "");
-      if (relType.includes("/coreproperties")) coreProps = target;
-      else if (relType.includes("/extendedproperties")) appProps = target;
-      else if (relType.includes("/customproperties")) customProps = target;
+      if (relType.includes("/coreproperties")) coreProps = path;
+      else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp"))
+        appProps = path;
+      else if (relType.includes("/customproperties")) customProps = path;
     }
   }
 
@@ -597,6 +600,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           images.push({
             data: raw,
             type,
+            ...(mediaPath ? { sourcePath: mediaPath } : {}),
             ...(sourceUrl !== undefined ? { sourceUrl } : {}),
             ...pickAnchorOptions(image),
             name: image.name,

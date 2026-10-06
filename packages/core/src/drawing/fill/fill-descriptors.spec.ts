@@ -232,6 +232,17 @@ describe("fillDesc blip fill (parse)", () => {
     expect(result.imageType).toBe("jpg");
   });
 
+  it("parses a linked-only blip fill through its external image relationship", () => {
+    const xml = `<a:blipFill><a:blip r:link="rId2"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const ctx = mockReadCtx({
+      resolveExternalImage: (rId) => (rId === "rId2" ? "https://example.com/image.png" : undefined),
+    });
+    const result = parse(fillDesc, el, ctx) as Record<string, unknown>;
+    expect(result).toMatchObject({ type: "blip", linkedUrl: "https://example.com/image.png" });
+  });
+
   it("falls back to none when media cannot be resolved", () => {
     const xml = `<a:blipFill><a:blip r:embed="missing"/><a:stretch><a:fillRect/></a:stretch></a:blipFill>`;
     const el = parseXml(xml).elements?.[0];
@@ -275,6 +286,32 @@ describe("fillDesc blip fill (stringify)", () => {
     const xml = stringify(fillDesc, opts, mockWriteCtx("{image1.png}", media));
     expect(xml).toContain('r:embed="{image1.png}"');
     expect(media).toEqual(["image1.png"]);
+  });
+
+  it("registers an external relationship for a linked-only fill", () => {
+    const relationships: [string, string, string?][] = [];
+    const opts: FillOptions = {
+      type: "blip",
+      linkedUrl: "https://example.com/image.png",
+      tile: { alignment: "topLeft" },
+    };
+    const ctx = {
+      addRelationship: (type: string, target: string, mode?: string) => {
+        relationships.push([type, target, mode]);
+        return "rId7";
+      },
+    } as WriteContext;
+    const xml = stringify(fillDesc, opts, ctx);
+    expect(relationships).toEqual([
+      [
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+        "https://example.com/image.png",
+        "External",
+      ],
+    ]);
+    expect(xml).toContain('r:link="rId7"');
+    expect(xml).not.toContain("r:embed");
+    expect(xml).toContain("<a:tile");
   });
 
   it("emits source rectangle and blip effects when provided", () => {

@@ -203,6 +203,8 @@ export function parseAlignment(el: XmlElement): AlignmentOptions {
   if (shrinkToFit !== undefined) result.shrinkToFit = shrinkToFit;
   const readingOrder = attrNum(el, "readingOrder");
   if (readingOrder !== undefined) result.readingOrder = readingOrder;
+  const mergeCell = parseOnOff(attr(el, "mergeCell"));
+  if (mergeCell !== undefined) result.mergeCell = mergeCell;
   return result;
 }
 

@@ -133,11 +133,12 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
     // p:nvSpPr
     const spLocks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
     const txBoxAttr = opts.textBox ? ' txBox="1"' : "";
+    const nvPr = opts.userDrawn ? '<p:nvPr userDrawn="1"/>' : "<p:nvPr/>";
     const cNvSpPr = spLocks
       ? `<p:cNvSpPr${txBoxAttr}>${spLocks}</p:cNvSpPr>`
       : `<p:cNvSpPr${txBoxAttr}/>`;
     parts.push(
-      `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvSpPr}<p:nvPr/></p:nvSpPr>`,
+      `<p:nvSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvSpPr}${nvPr}</p:nvSpPr>`,
     );
 
     // p:spPr
@@ -193,6 +194,8 @@ export const lineShapeDesc: CustomDescriptor<LineShapeOptions> = {
       if (locks && Object.keys(locks).length > 0) result.locking = locks;
     }
     if (attrBool(cNvSpPr, "txBox")) result.textBox = true;
+    if (attrBool(nvSpPr ? findChild(nvSpPr, "p:nvPr") : undefined, "userDrawn"))
+      result.userDrawn = true;
 
     // p:spPr → endpoints (off/ext + flip) + fill/outline/effects
     const spPr = findChild(el, "p:spPr");
@@ -259,7 +262,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
       ? `<p:cNvCxnSpPr>${cNvCxnSpPrInner.join("")}</p:cNvCxnSpPr>`
       : "<p:cNvCxnSpPr/>";
     parts.push(
-      `<p:nvCxnSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvCxnSpPr}<p:nvPr/></p:nvCxnSpPr>`,
+      `<p:nvCxnSpPr>${stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name)}${cNvCxnSpPr}${opts.userDrawn ? '<p:nvPr userDrawn="1"/>' : "<p:nvPr/>"}</p:nvCxnSpPr>`,
     );
 
     // p:spPr
@@ -303,6 +306,7 @@ export const connectorShapeDesc: CustomDescriptor<ConnectorOptions> = {
     const nvCxnSpPr = findChild(el, "p:nvCxnSpPr");
     if (nvCxnSpPr) {
       Object.assign(result, readCnvPr(nvCxnSpPr));
+      if (attrBool(findChild(nvCxnSpPr, "p:nvPr"), "userDrawn")) result.userDrawn = true;
       const cNvCxnSpPr = findChild(nvCxnSpPr, "p:cNvCxnSpPr");
       if (cNvCxnSpPr) {
         const cxnSpLocks = findChild(cNvCxnSpPr, "a:cxnSpLocks");

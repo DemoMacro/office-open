@@ -185,6 +185,19 @@ describe("oleDesc round-trip", () => {
     expect(parsed.shapeId).toBe("_x0000_s1025");
   });
 
+  it("round-trips object name separately from frame name", () => {
+    const opts: OleOptions = {
+      id: 450,
+      name: "Frame Name",
+      objectName: "Object Name",
+      embed: { data: OLE_BYTES },
+    };
+    const { parsed, xml } = roundTrip(opts);
+    expect(xml).toContain('<p:oleObj name="Object Name"');
+    expect(parsed.name).toBe("Frame Name");
+    expect(parsed.objectName).toBe("Object Name");
+  });
+
   it("round-trips OLE with followColorScheme", () => {
     const opts: OleOptions = {
       id: 500,

@@ -3,6 +3,7 @@ import type {
   ChartSeriesData,
   ChartSpaceOptions,
   ChartTitleOptions,
+  ChartValue,
   ScatterSeriesData,
   ShapePropertiesOptions,
 } from "@office-open/core";
@@ -919,7 +920,7 @@ function localCells(chart: Element, range: string | undefined): string[] {
   return values;
 }
 
-function seriesValues(series: ChartSpaceOptions["series"][number]): readonly number[] {
+function seriesValues(series: ChartSpaceOptions["series"][number]): readonly ChartValue[] {
   return "values" in series ? series.values : series.yValues;
 }
 

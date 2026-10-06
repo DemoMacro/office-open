@@ -197,6 +197,8 @@ export interface AlignmentOptions {
   shrinkToFit?: boolean;
   /** Reading order (CT_CellAlignment `@readingOrder`) */
   readingOrder?: number;
+  /** Merge cells applies this alignment across the merged range (CT_CellAlignment `@mergeCell`). */
+  mergeCell?: boolean;
 }
 
 export interface StyleOptions {
@@ -369,6 +371,8 @@ export interface CellStyleXfOptions {
   fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
+  /** Raw numFmtId when the source id has no resolvable format code (round-trip only). */
+  numFmtId?: number;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;

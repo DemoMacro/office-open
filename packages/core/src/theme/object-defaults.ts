@@ -7,7 +7,7 @@
  *
  * @module
  */
-import { findChild } from "@office-open/xml";
+import { findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../descriptor";
@@ -77,8 +77,9 @@ export function stringifyObjectDefaults(
   const txDef = opts.textDefault
     ? stringifyDefaultShapeDefinition("a:txDef", opts.textDefault, ctx)
     : "";
-  if (!spDef && !lnDef && !txDef) return "<a:objectDefaults/>";
-  return `<a:objectDefaults>${spDef}${lnDef}${txDef}</a:objectDefaults>`;
+  const ext = opts.ext ? `<a:extLst>${opts.ext}</a:extLst>` : "";
+  if (!spDef && !lnDef && !txDef && !ext) return "<a:objectDefaults/>";
+  return `<a:objectDefaults>${spDef}${lnDef}${txDef}${ext}</a:objectDefaults>`;
 }
 
 /** Parse a:objectDefaults. */
@@ -94,5 +95,10 @@ export function parseObjectDefaults(
   if (lineDefault) result.lineDefault = lineDefault;
   const textDefault = parseDefaultShapeDefinition(findChild(el, "a:txDef"), ctx);
   if (textDefault) result.textDefault = textDefault;
+  const extLst = findChild(el, "a:extLst");
+  if (extLst) {
+    const ext = stringifyXml(extLst);
+    if (ext) result.ext = ext;
+  }
   return Object.keys(result).length > 0 ? (result as ObjectDefaultsOptions) : undefined;
 }

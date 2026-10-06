@@ -58,6 +58,16 @@ describe("themeDesc", () => {
     expect(result.colorScheme?.hyperlink).toBe("2563EB");
   });
 
+  it("round-trips color scheme name separately from theme name", () => {
+    const opts: ThemeOptions = {
+      name: "Theme Name",
+      colorScheme: { name: "Scheme Name", accent1: "FF0000" },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:clrScheme name="Scheme Name">');
+    expect(roundTrip(opts).colorScheme?.name).toBe("Scheme Name");
+  });
+
   it("round-trips extra color-scheme mappings with full-word API values", () => {
     const opts: ThemeOptions = {
       extraColorSchemes: [
@@ -146,6 +156,19 @@ describe("themeDesc", () => {
 });
 
 describe("custom colors", () => {
+  it("round-trips object default extensions", () => {
+    const opts: ThemeOptions = {
+      objectDefaults: {
+        ext: '<a:ext uri="{TEST-URI}"><a:custGeom/></a:ext>',
+      },
+    };
+    const xml = stringify(themeDesc, opts, {} as WriteContext)!;
+    expect(xml).toContain('<a:ext uri="{TEST-URI}"><a:custGeom/></a:ext>');
+    expect(roundTrip(opts).objectDefaults?.ext).toBe(
+      '<a:ext uri="{TEST-URI}"><a:custGeom/></a:ext>',
+    );
+  });
+
   it("round-trips custClrLst entries", () => {
     const opts: ThemeOptions = {
       customColors: [

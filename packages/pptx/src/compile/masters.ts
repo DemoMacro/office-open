@@ -12,6 +12,7 @@ import {
   collectPlaceholderKeys,
   convertToEmu,
   getReferencedMedia,
+  partPathToRelsPath,
   replaceImageLinkPlaceholders,
   replaceImagePlaceholders,
   replaceOleLinkPlaceholders,
@@ -60,11 +61,30 @@ export interface MasterInfo {
   index: number;
   master: string;
   theme: string;
+  themeRelationships?: Relationships;
   /** Emitted theme part index — shared when masters carry identical themes. */
   themeIndex: number;
   layouts: LayoutInfo[];
   masterRels: Relationships;
   layoutRels: Relationships[];
+}
+
+function bindThemeMedia(
+  themeXml: string,
+  media: PptxWriteContext["mediaCollection"],
+): { xml: string; relationships?: Relationships } {
+  const mediaData = getReferencedMedia(themeXml, media.array);
+  if (mediaData.length === 0) return { xml: themeXml };
+  const relationships = new Relationships();
+  const imageOffset = relationships.nextRelationshipId;
+  for (const [index, mediaItem] of mediaData.entries()) {
+    relationships.addRelationship(
+      imageOffset + index,
+      RELATIONSHIP_TYPES.image,
+      `../media/${mediaItem.fileName}`,
+    );
+  }
+  return { xml: replaceImagePlaceholders(themeXml, mediaData, imageOffset), relationships };
 }
 
 /**
@@ -135,7 +155,12 @@ export function buildMasterMap(
   const themeIndexByXml = new Map<string, number>();
   let themeCount = 0;
   const sourceRawPaths = rawParts
-    ? new Set(rawParts.map((part) => part.path.toLowerCase()))
+    ? new Set([
+        ...rawParts.map((part) => part.path.toLowerCase()),
+        ...(passthroughRelationships
+          ?.filter((rel) => rel.source.toLowerCase().startsWith("ppt/slidelayouts/"))
+          .map((rel) => partPathToRelsPath(rel.source).toLowerCase()) ?? []),
+      ])
     : undefined;
 
   for (const [mi, def] of defs.entries()) {
@@ -172,11 +197,11 @@ export function buildMasterMap(
     // field-copy whitelists here have dropped newly added options before.
     const { name: _masterName, theme: _theme, layouts: _layouts, ...masterOpts } = def;
     const master = slideMasterDesc.stringify({ ...masterOpts, slideLayoutIds }, ctx) ?? "";
-    const theme = createThemeXml(def.theme, ctx);
-    let themeIndex = themeIndexByXml.get(theme);
+    const boundTheme = bindThemeMedia(createThemeXml(def.theme, ctx), ctx.mediaCollection);
+    let themeIndex = themeIndexByXml.get(boundTheme.xml);
     if (themeIndex === undefined) {
       themeIndex = themeCount++;
-      themeIndexByXml.set(theme, themeIndex);
+      themeIndexByXml.set(boundTheme.xml, themeIndex);
     }
 
     const layouts: LayoutInfo[] = [];
@@ -189,8 +214,11 @@ export function buildMasterMap(
         ? (themeOverrideDesc.stringify(layoutDef.themeOverride, ctx) ?? undefined)
         : undefined;
       const sourceOwnRels =
-        sourceRawPaths === undefined ||
-        sourceRawPaths.has(`ppt/slidelayouts/_rels/slidelayout${globalLayoutIndex + 1}.xml.rels`);
+        layoutDef?.sourceOwnRels ??
+        (sourceRawPaths === undefined ||
+          sourceRawPaths.has(
+            `ppt/slidelayouts/_rels/slidelayout${globalLayoutIndex + 1}.xml.rels`,
+          ));
       layouts.push({
         key,
         index: globalLayoutIndex,
@@ -305,7 +333,8 @@ export function buildMasterMap(
       name,
       index: mi,
       master: masterXml,
-      theme,
+      theme: boundTheme.xml,
+      themeRelationships: boundTheme.relationships,
       themeIndex,
       layouts,
       masterRels,
@@ -430,6 +459,12 @@ export function mapMasterAndLayoutParts(
       data: XML_DECL + masterRels[mi]!.serialize(),
       path: `ppt/slideMasters/_rels/slideMaster${mi + 1}.xml.rels`,
     };
+    if (masterInfo.themeRelationships) {
+      mapping[`SlideMasterThemeRelationships${mi}`] = {
+        data: XML_DECL + masterInfo.themeRelationships.serialize(),
+        path: `ppt/theme/_rels/theme${masterInfo.themeIndex + 1}.xml.rels`,
+      };
+    }
   }
 
   // Slide Layouts
@@ -530,10 +565,17 @@ export function mapMasterAndLayoutParts(
       path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
     };
     if (layoutInfo.themeOverride) {
+      const boundThemeOverride = bindThemeMedia(layoutInfo.themeOverride, media);
       mapping[`SlideLayoutThemeOverride${li}`] = {
-        data: XML_DECL + layoutInfo.themeOverride,
+        data: XML_DECL + boundThemeOverride.xml,
         path: `ppt/theme/themeOverride${li + 1}.xml`,
       };
+      if (boundThemeOverride.relationships) {
+        mapping[`SlideLayoutThemeOverrideRelationships${li}`] = {
+          data: XML_DECL + boundThemeOverride.relationships.serialize(),
+          path: `ppt/theme/_rels/themeOverride${li + 1}.xml.rels`,
+        };
+      }
     }
   }
 }
@@ -577,7 +619,10 @@ export function mapNotesAndHandoutMasters(
       "NotesMaster",
       "notesMasters/notesMaster1",
       notesMasterDesc.stringify(options.notesMasterOptions ?? {}, descCtx) ?? "",
-      createThemeXml(options.notesMasterOptions?.theme, descCtx),
+      bindThemeMedia(
+        createThemeXml(options.notesMasterOptions?.theme, descCtx),
+        descCtx.mediaCollection,
+      ).xml,
       themesCount + 1,
     );
   }
@@ -600,7 +645,10 @@ export function mapNotesAndHandoutMasters(
       "HandoutMaster",
       "handoutMasters/handoutMaster1",
       handoutMasterDesc.stringify({ options: options.handoutMasterOptions }, descCtx) ?? "",
-      createThemeXml(options.handoutMasterOptions?.theme, descCtx),
+      bindThemeMedia(
+        createThemeXml(options.handoutMasterOptions?.theme, descCtx),
+        descCtx.mediaCollection,
+      ).xml,
       themesCount + (includeNotesMasterPart ? 2 : 1),
     );
   }
@@ -618,10 +666,17 @@ function mapMasterLikePart(
   themeXml: string,
   themeIndex: number,
 ): void {
+  const boundTheme = bindThemeMedia(themeXml, descCtx.mediaCollection);
   mapping[`${key}Theme`] = {
-    data: XML_DECL + themeXml,
+    data: XML_DECL + boundTheme.xml,
     path: `ppt/theme/theme${themeIndex}.xml`,
   };
+  if (boundTheme.relationships) {
+    mapping[`${key}ThemeRelationships`] = {
+      data: XML_DECL + boundTheme.relationships.serialize(),
+      path: `ppt/theme/_rels/theme${themeIndex}.xml.rels`,
+    };
+  }
   const rels = new Relationships();
   rels.addRelationship(1, RELATIONSHIP_TYPES.theme, `../theme/theme${themeIndex}.xml`);
   // Media referenced by master shapes gets slide-style image wiring.

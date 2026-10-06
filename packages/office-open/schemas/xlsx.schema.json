@@ -85,6 +85,10 @@
           "description": "Justify last line",
           "type": "boolean"
         },
+        "mergeCell": {
+          "description": "Merge cells applies this alignment across the merged range.",
+          "type": "boolean"
+        },
         "readingOrder": {
           "description": "Reading order",
           "type": "number"
@@ -1511,6 +1515,39 @@
       "required": ["embed", "type"],
       "type": "object"
     },
+    "BulletStyleOptions": {
+      "additionalProperties": false,
+      "description": "Shared bullet color/size/font styling (EG_TextBulletColorSizeFont). Each dimension is a choice: an explicit value, a \"follows text\" toggle, or unset.",
+      "properties": {
+        "color": {
+          "$ref": "#/definitions/BulletCharOptions/properties/color"
+        },
+        "colorFollowsText": {
+          "description": "a:buClrTx — bullet color follows the text run color.",
+          "type": "boolean"
+        },
+        "font": {
+          "$ref": "#/definitions/TextFont",
+          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+        },
+        "fontFollowsText": {
+          "description": "a:buFontTx — bullet font follows the text run font.",
+          "type": "boolean"
+        },
+        "size": {
+          "$ref": "#/definitions/BulletCharOptions/properties/size"
+        },
+        "sizeFollowsText": {
+          "description": "a:buSzTx — bullet size follows the text run size.",
+          "type": "boolean"
+        },
+        "sizePoints": {
+          "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "CacheHierarchyOptions": {
       "additionalProperties": false,
       "description": "Cache hierarchy for OLAP pivot caches",
@@ -2383,6 +2420,10 @@
         },
         "numFmt": {
           "type": "string"
+        },
+        "numFmtId": {
+          "description": "Raw numFmtId when the source id has no resolvable format code (round-trip only).",
+          "type": "number"
         },
         "pivotButton": {
           "type": "boolean"
@@ -4710,6 +4751,10 @@
           "description": "GUID identifier (required, `@guid`)",
           "type": "string"
         },
+        "headerFooter": {
+          "$ref": "#/definitions/HeaderFooterOptions",
+          "description": "Header/footer."
+        },
         "hiddenColumns": {
           "description": "Hidden columns",
           "type": "boolean"
@@ -4722,6 +4767,14 @@
           "description": "Show outline symbols",
           "type": "boolean"
         },
+        "pageMargins": {
+          "$ref": "#/definitions/PageMarginsOptions",
+          "description": "Print margins in inches."
+        },
+        "pageSetup": {
+          "$ref": "#/definitions/PageSetupOptions",
+          "description": "Page setup."
+        },
         "pane": {
           "$ref": "#/definitions/FreezePaneOptions",
           "description": "Pane state"
@@ -4729,6 +4782,10 @@
         "printArea": {
           "description": "Print area",
           "type": "boolean"
+        },
+        "printOptions": {
+          "$ref": "#/definitions/PrintOptions",
+          "description": "Print options."
         },
         "scale": {
           "description": "Zoom scale",
@@ -6866,6 +6923,10 @@
               "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
               "type": "string"
             },
+            "linkedUrl": {
+              "description": "External image URL referenced by a:blip",
+              "type": "string"
+            },
             "noEmbed": {
               "const": true,
               "description": "An empty a:blip carrying no r:embed — Word emits this in a pic:spPr duplicate of pic:blipFill (the spPr copy references no image of its own). No media is registered; the blip re-emits empty. When set, data and imageType are meaningless.",
@@ -6885,6 +6946,10 @@
             },
             "type": {
               "const": "blip",
+              "type": "string"
+            },
+            "unresolvedTarget": {
+              "description": "Relationship target retained when an internal a:blip reference names a missing media part. The writer preserves the reference instead of fabricating image bytes or degrading the fill.",
               "type": "string"
             }
           },
@@ -9498,6 +9563,10 @@
       "additionalProperties": false,
       "description": "Object defaults — a:objectDefaults.",
       "properties": {
+        "ext": {
+          "description": "Verbatim inner XML of a:objectDefaults/a:extLst — round-trip only for unmodeled Office extensions.",
+          "type": "string"
+        },
         "lineDefault": {
           "$ref": "#/definitions/DefaultShapeDefinitionOptions",
           "description": "Line/connector default (lnDef)."
@@ -10553,6 +10622,10 @@
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
           "type": "number"
+        },
+        "sourcePath": {
+          "description": "Source package path of embedded bytes; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "sourceRectangle": {
           "$ref": "#/definitions/SourceRectangleOptions",
@@ -17271,6 +17344,10 @@
         },
         "bullet": {
           "$ref": "#/definitions/BulletOptions"
+        },
+        "bulletStyle": {
+          "$ref": "#/definitions/BulletStyleOptions",
+          "description": "Shared bullet color/size/font style when the source carries no bullet type element."
         },
         "defTabSize": {
           "type": "number"

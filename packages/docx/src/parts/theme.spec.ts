@@ -12,6 +12,26 @@ const documentXml =
 const documentRelsXml =
   '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
   `<Relationship Id="rId1" Type="${THEME_RELATIONSHIP_TYPE}" Target="theme/theme1.xml"/></Relationships>`;
+const themeMediaRelsXml =
+  '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+  `<Relationship Id="rId1" Type="${THEME_RELATIONSHIP_TYPE.replace("/theme", "/image")}" Target="../media/theme-media.png"/></Relationships>`;
+const mediaBlipThemeXml =
+  '<?xml version="1.0"?><a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+  'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" name="Media Theme">' +
+  '<a:themeElements><a:fmtScheme name="Office">' +
+  '<a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+  '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+  '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst>' +
+  '<a:lnStyleLst><a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>' +
+  '<a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln>' +
+  '<a:ln><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst>' +
+  "<a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle>" +
+  "<a:effectStyle><a:effectLst/></a:effectStyle>" +
+  "<a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst>" +
+  '<a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+  '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>' +
+  '<a:blipFill><a:blip r:embed="rId1"/></a:blipFill></a:bgFillStyleLst>' +
+  "</a:fmtScheme></a:themeElements></a:theme>";
 
 const themeOptions: ThemeOptions = {
   name: "Custom Theme",
@@ -117,5 +137,25 @@ describe("document theme part", () => {
     const rels = new TextDecoder().decode(zip["word/theme/_rels/theme1.xml.rels"]!);
     expect(rels).toContain('Target="../media/theme-media.png"');
     expect(zip["word/media/theme-media.png"]).toEqual(new Uint8Array([1, 2, 3]));
+  });
+
+  it("resolves format-scheme blip fills against nested theme relationships", () => {
+    const source = zipSync({
+      "word/document.xml": new TextEncoder().encode(documentXml),
+      "word/_rels/document.xml.rels": new TextEncoder().encode(documentRelsXml),
+      "word/theme/theme1.xml": new TextEncoder().encode(mediaBlipThemeXml),
+      "word/theme/_rels/theme1.xml.rels": new TextEncoder().encode(themeMediaRelsXml),
+      "word/media/theme-media.png": new Uint8Array([1, 2, 3]),
+    });
+
+    const parsed = parseDocumentSync(source);
+    const fill = parsed.theme?.formatScheme?.backgroundFillStyles.at(-1);
+    expect(fill).toMatchObject({ type: "blip", fileName: "theme-media.png" });
+
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    expect(output["word/media/theme-media.png"]).toEqual(new Uint8Array([1, 2, 3]));
+    expect(output["word/theme/_rels/theme1.xml.rels"]).toBeDefined();
+    const regenerated = parseDocumentSync(zipSync(output));
+    expect(regenerated.theme?.formatScheme?.backgroundFillStyles.at(-1)).toEqual(fill);
   });
 });

@@ -34,23 +34,6 @@ import { parseChild, stringifyChild } from "./bridge";
 import { colorMappingOverrideDesc } from "./color-map-override";
 import { readTransition, stringifyTransition } from "./slide";
 
-// ── Display name → SlideLayoutType mapping (fallback when @type absent) ──
-
-const NAME_TO_TYPE: Record<string, string> = {
-  "Title Slide": "title",
-  "Title and Content": "object",
-  "Section Header": "sectionHeader",
-  "Two Content": "twoObjects",
-  Comparison: "twoTextAndTwoObjects",
-  "Title Only": "titleOnly",
-  Blank: "blank",
-  "Content with Caption": "objectAndText",
-  "Picture with Caption": "pictureText",
-  "Vertical Text": "verticalText",
-  "Vertical Title and Text": "verticalTitleAndText",
-  "Title and Text": "text",
-};
-
 // ── Descriptor ──
 
 export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContext> = {
@@ -66,7 +49,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
     const attrs: string[] = [];
     if (opts.type !== undefined) attrs.push(`type="${xsdSlideLayoutType.to(opts.type)}"`);
     if (opts.matchingName !== undefined) attrs.push(`matchingName="${opts.matchingName}"`);
-    attrs.push(`preserve="${opts.preserve ? 1 : 0}"`);
+    if (opts.preserve) attrs.push('preserve="1"');
     if (opts.userDrawn) attrs.push('userDrawn="1"');
     if (opts.showMasterShapes === false) attrs.push('showMasterSp="0"');
     if (opts.showMasterPlaceholderAnimations === false) attrs.push('showMasterPhAnim="0"');
@@ -150,9 +133,6 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       if (name !== undefined) {
         result.name = name;
         // Only map display names that have a real ST_SlideLayoutType value —
-        // free-form names ("True or False") are not legal @type values and
-        // PowerPoint rejects the part on real-open.
-        if (!result.type) result.type = NAME_TO_TYPE[name];
       }
 
       const bg = findChild(cSld, "p:bg");

@@ -91,6 +91,8 @@ export interface CoreMediaData extends BaseMediaEntry {
   useLocalDpi?: boolean;
   /** Compression state (a:blip `@cstate`); absent = attribute omitted (schema default "none"). */
   compression?: BlipCompression;
+  /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
+  blackWhiteMode?: BlackWhiteMode;
   /**
    * External image source URL (a:blip @r:link) — registered as an External
    * image relationship of the owning part when the picture is emitted.

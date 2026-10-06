@@ -51,6 +51,8 @@ function wrapDrawingRun(
     vmlFallback?: string;
     mcChoiceRequires?: string;
     runProperties?: RunPropertiesOptions;
+    additionRsid?: string;
+    runPropertiesRsid?: string;
     lastRenderedPageBreak?: boolean;
   },
   // The remapped fallback copy from registerVmlFallbackMedia — spliced in
@@ -60,13 +62,16 @@ function wrapDrawingRun(
   const xml = drawingXml ?? "";
   const rPr = stringifyRunProperties(opts.runProperties) ?? "";
   const lrpb = opts.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
+  const runAttrs =
+    (opts.additionRsid ? ` w:rsidR="${opts.additionRsid}"` : "") +
+    (opts.runPropertiesRsid ? ` w:rsidRPr="${opts.runPropertiesRsid}"` : "");
   if (vmlFallback) {
     const requires = opts.mcChoiceRequires ?? "wps";
     // vmlFallback is the serialized <mc:Fallback>…</mc:Fallback> element, so
     // splice it in directly (no extra wrapper).
-    return `<w:r>${rPr}${lrpb}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${vmlFallback}</mc:AlternateContent></w:r>`;
+    return `<w:r${runAttrs}>${rPr}${lrpb}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${vmlFallback}</mc:AlternateContent></w:r>`;
   }
-  return `<w:r>${rPr}${lrpb}${xml}</w:r>`;
+  return `<w:r${runAttrs}>${rPr}${lrpb}${xml}</w:r>`;
 }
 
 /**
@@ -336,6 +341,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       altText: _a,
       graphicFrameLocks: _g,
       runProperties: _r,
+      additionRsid: _ri,
+      runPropertiesRsid: _rPrRsid,
       lastRenderedPageBreak: _l,
       ...chartSpace
     } = opts;
@@ -446,6 +453,8 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
     );
     return wrapDrawingRun(drawingXml, {
       runProperties: opts.runProperties,
+      additionRsid: opts.additionRsid,
+      runPropertiesRsid: opts.runPropertiesRsid,
       lastRenderedPageBreak: opts.lastRenderedPageBreak,
     });
   }

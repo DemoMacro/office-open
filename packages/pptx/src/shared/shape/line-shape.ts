@@ -34,6 +34,8 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
   textBody?: TextBodyOptions;
   /** Text-box marker (p:cNvSpPr @txBox). */
   textBox?: boolean;
+  /** p:nvPr `@userDrawn` — preserve presentation-authored line marking. */
+  userDrawn?: boolean;
   x1?: number | UniversalMeasure;
   y1?: number | UniversalMeasure;
   x2?: number | UniversalMeasure;
@@ -58,6 +60,8 @@ export interface LineShapeOptions extends NonVisualDrawingPropertiesOptions {
  */
 export interface ConnectorOptions extends BaseConnectorOptions {
   id?: number;
+  /** p:nvPr `@userDrawn` — preserve presentation-authored connector marking. */
+  userDrawn?: boolean;
   /**
    * Connector paint (a:spPr children): geometry/fill/outline/effects/3D. The
    * endpoint model defaults to "line"; source connectors often use

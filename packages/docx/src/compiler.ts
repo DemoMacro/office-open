@@ -34,8 +34,10 @@ import {
   resolverFromRegistry,
   ooxmlPackageFormatInfo,
 } from "@office-open/core";
+import type { RelationshipType } from "@office-open/core";
 import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
 import type { OoxmlPackageVariant } from "@office-open/core";
+import type { WriteContext } from "@office-open/core/descriptor";
 import { buildThemeXml } from "@office-open/core/theme";
 import type { DocumentOptions } from "@parts/core-properties";
 import {
@@ -86,6 +88,33 @@ function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships)
     ids.set(fileName, id);
     return id;
   });
+}
+
+function withThemeRelationships(ctx: DocxWriteContext, rels: Relationships): WriteContext {
+  const themeCtx = Object.create(ctx);
+  themeCtx.addRelationship = (type: RelationshipType, target: string, mode?: string) => {
+    const ownerPath = "word/theme/theme1.xml";
+    const source = ownerPath.split("/").slice(0, -1);
+    const targetPath = target.split("/").slice(0, -1);
+    let common = 0;
+    while (
+      common < source.length &&
+      common < targetPath.length &&
+      source[common] === targetPath[common]
+    )
+      common++;
+    const relativeTarget = [
+      ...Array.from({ length: source.length - common }, () => ".."),
+      ...target.split("/").slice(common),
+    ].join("/");
+    return `rId${rels.add(
+      type,
+      target.startsWith("/") ? target : relativeTarget,
+      mode as "External" | undefined,
+    )}`;
+  };
+  themeCtx.addMedia = ctx.addMedia.bind(ctx);
+  return themeCtx;
 }
 
 /** Extension → MIME for media/font/embedding Default entries. Declared only
@@ -370,7 +399,11 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
     ...(() => {
       const rels = new Relationships();
       const themeXml = ctx._options.theme
-        ? bindThemeMedia(buildThemeXml(ctx._options.theme, ctx), ctx, rels)
+        ? bindThemeMedia(
+            buildThemeXml(ctx._options.theme, withThemeRelationships(ctx, rels)),
+            ctx,
+            rels,
+          )
         : createThemeXml();
       return {
         Theme: { data: XML_DECL + themeXml, path: "word/theme/theme1.xml" },

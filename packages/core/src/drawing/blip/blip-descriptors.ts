@@ -425,7 +425,11 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
 // ── BlipFill descriptor (pic:blipFill / a:blipFill) ──
 
 export const blipFillDesc: CustomDescriptor<
-  BlipFillOptions & { referenceId?: string; blipEffects?: BlipEffectsOptions }
+  BlipFillOptions & {
+    referenceId?: string;
+    linkReferenceId?: string;
+    blipEffects?: BlipEffectsOptions;
+  }
 > = {
   kind: "custom",
   stringify(opts, ctx) {
@@ -437,10 +441,11 @@ export const blipFillDesc: CustomDescriptor<
 
     const parts: string[] = [];
 
-    // Blip child (uses referenceId from parent)
-    if (opts.referenceId) {
+    // Blip child (uses references from parent)
+    if (opts.referenceId || opts.linkReferenceId) {
       const blipOpts = {
-        referenceId: opts.referenceId,
+        ...(opts.referenceId !== undefined && { referenceId: opts.referenceId }),
+        ...(opts.linkReferenceId !== undefined && { linkReferenceId: opts.linkReferenceId }),
         compression: opts.compression,
         blipEffects: opts.blipEffects,
       };
@@ -469,7 +474,11 @@ export const blipFillDesc: CustomDescriptor<
   },
   parse(el, ctx) {
     const result: Partial<
-      BlipFillOptions & { referenceId?: string; blipEffects?: BlipEffectsOptions }
+      BlipFillOptions & {
+        referenceId?: string;
+        linkReferenceId?: string;
+        blipEffects?: BlipEffectsOptions;
+      }
     > = {};
 
     // Attributes
@@ -482,6 +491,7 @@ export const blipFillDesc: CustomDescriptor<
     if (blip) {
       const blipResult = parse(blipDesc, blip, ctx);
       if (blipResult.referenceId) result.referenceId = blipResult.referenceId;
+      if (blipResult.linkReferenceId) result.linkReferenceId = blipResult.linkReferenceId;
       if (blipResult.compression !== undefined) result.compression = blipResult.compression;
       if (blipResult.blipEffects) result.blipEffects = blipResult.blipEffects;
     }
@@ -494,6 +504,10 @@ export const blipFillDesc: CustomDescriptor<
     const tile = findChild(el, "a:tile");
     if (tile) result.tile = parse(tileDesc, tile, ctx);
 
-    return result as BlipFillOptions & { referenceId?: string; blipEffects?: BlipEffectsOptions };
+    return result as BlipFillOptions & {
+      referenceId?: string;
+      linkReferenceId?: string;
+      blipEffects?: BlipEffectsOptions;
+    };
   },
 };

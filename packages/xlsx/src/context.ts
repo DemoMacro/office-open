@@ -183,6 +183,11 @@ export class XlsxReadContext implements ReadContext {
     return undefined;
   }
 
+  /** External image source URL of an a:blip @r:link in the current part. */
+  public resolveExternalImage(rId: string): string | undefined {
+    return this.externalPartRels.get(this.currentPart)?.get(rId);
+  }
+
   /**
    * Resolve a relationship rId from a worksheet-level rels file.
    * Worksheet rels paths: `xl/worksheets/sheet1.xml` → `xl/worksheets/_rels/sheet1.xml.rels`

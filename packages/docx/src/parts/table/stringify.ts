@@ -502,7 +502,11 @@ function stringifyTableCellPropertiesInner(
   }
 
   if (options.verticalMerge) {
-    parts.push(`<w:vMerge w:val="${options.verticalMerge}"/>`);
+    parts.push(
+      options.verticalMerge === "continue"
+        ? "<w:vMerge/>"
+        : `<w:vMerge w:val="${options.verticalMerge === "explicitContinue" ? "continue" : "restart"}"/>`,
+    );
   } else if (options.rowSpan && options.rowSpan > 1) {
     parts.push(`<w:vMerge w:val="${VerticalMergeType.RESTART}"/>`);
   }

@@ -61,4 +61,8 @@ export interface TableRowOptions
   deletionRsid?: LongHexNumber;
   /** Revision save ID for table row (w:rsidTr, hex string). */
   tableRowRsid?: LongHexNumber;
+  /** Unique table row identifier (w14:paraId, 8-digit hex string). */
+  paraId?: LongHexNumber;
+  /** Table row text identifier (w14:textId, 8-digit hex string). */
+  textId?: LongHexNumber;
 }

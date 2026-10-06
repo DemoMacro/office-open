@@ -11,6 +11,7 @@
 import { parseOnOff } from "@office-open/core";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import type { SlideCustomerDataReferenceOptions } from "@shared/customer-data";
 import type { SlideHeaderFooterOptions } from "@shared/header-footer";
 
 import type { ControlOptions } from "./slide";
@@ -18,17 +19,28 @@ import type { ControlOptions } from "./slide";
 // ── p:custDataLst ──
 
 /** Serialize cSld customer-data references; empty string when there are none. */
-export function stringifyCustDataLst(items: { rId: string }[] | undefined): string {
+export function stringifyCustDataLst(
+  items: SlideCustomerDataReferenceOptions[] | undefined,
+): string {
   if (!items || items.length === 0) return "";
-  return `<p:custDataLst>${items.map((d) => `<p:custData r:id="${d.rId}"/>`).join("")}</p:custDataLst>`;
+  return `<p:custDataLst>${items
+    .map((item) =>
+      item.kind === "tags" ? `<p:tags r:id="${item.rId}"/>` : `<p:custData r:id="${item.rId}"/>`,
+    )
+    .join("")}</p:custDataLst>`;
 }
 
 /** Parse a p:custDataLst element into customer-data references. */
-export function parseCustDataLst(el: Element | undefined): { rId: string }[] | undefined {
+export function parseCustDataLst(
+  el: Element | undefined,
+): SlideCustomerDataReferenceOptions[] | undefined {
   if (!el) return undefined;
-  const items: { rId: string }[] = [];
+  const items: SlideCustomerDataReferenceOptions[] = [];
   for (const cd of el.elements ?? []) {
-    if (cd.name === "p:custData") {
+    if (cd.name === "p:tags") {
+      const rId = attr(cd, "r:id");
+      if (rId) items.push({ rId, kind: "tags" });
+    } else if (cd.name === "p:custData") {
       const rId = attr(cd, "r:id");
       if (rId) items.push({ rId });
     }

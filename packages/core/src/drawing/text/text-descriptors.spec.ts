@@ -363,6 +363,21 @@ describe("paragraphDesc round-trip", () => {
     expect(b.fontFollowsText).toBe(true);
   });
 
+  it("round-trips bullet style without a bullet type element", () => {
+    const result = roundTrip({
+      text: "x",
+      properties: {
+        bulletStyle: { color: "112233", size: 100, font: "Arial" },
+      },
+    });
+    expect(result.properties?.bullet).toBeUndefined();
+    expect(result.properties?.bulletStyle).toEqual({
+      color: "112233",
+      size: 100,
+      font: "Arial",
+    });
+  });
+
   it("round-trips bullet font metrics without synthesizing defaults", () => {
     const bareXml = paragraphDesc.stringify(
       { text: "x", properties: { bullet: { type: "char", char: "•", font: "Arial" } } },

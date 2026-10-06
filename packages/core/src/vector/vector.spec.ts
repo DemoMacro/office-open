@@ -371,6 +371,13 @@ describe("shape elements", () => {
     };
     expect(roundTrip(stringifyVmlHandles, parseVmlHandles, opts)).toEqual(opts);
   });
+
+  it("round-trips an empty v:h switch", () => {
+    const opts: VmlHandlesOptions = {
+      handles: [{ position: "topLeft,#0", switch: "", yrange: "0,21600" }],
+    };
+    expect(roundTrip(stringifyVmlHandles, parseVmlHandles, opts)).toEqual(opts);
+  });
 });
 
 describe("office shape elements (o:)", () => {

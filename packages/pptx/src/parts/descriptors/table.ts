@@ -351,6 +351,7 @@ function stringifyTcPr(cell: TableCellOptions, ctx: PptxWriteContext): string {
 
   if (cell.verticalAlign) attrs.push(`anchor="${xsdTextAnchor.to(cell.verticalAlign)}"`);
   if (cell.vertical) attrs.push(`vert="${xsdTextVerticalType.to(cell.vertical)}"`);
+  if (cell.horizontalOverflow) attrs.push(`horzOverflow="${cell.horizontalOverflow}"`);
   if (cell.margins?.left !== undefined) attrs.push(`marL="${convertToEmu(cell.margins.left)}"`);
   if (cell.margins?.right !== undefined) attrs.push(`marR="${convertToEmu(cell.margins.right)}"`);
   if (cell.margins?.top !== undefined) attrs.push(`marT="${convertToEmu(cell.margins.top)}"`);
@@ -500,6 +501,9 @@ function parseTableCell(tc: Element, readCtx?: ReadContext): TableCellOptions {
     if (anchor) result.verticalAlign = xsdTextAnchor.from(anchor) as VerticalAnchor;
     const vert = attr(tcPr, "vert");
     if (vert) result.vertical = xsdTextVerticalType.from(vert) as TextVerticalType;
+    const horizontalOverflow = attr(tcPr, "horzOverflow");
+    if (horizontalOverflow)
+      result.horizontalOverflow = horizontalOverflow as TableCellOptions["horizontalOverflow"];
 
     // Margins from tcPr attributes
     const margins: CellMargins = {};

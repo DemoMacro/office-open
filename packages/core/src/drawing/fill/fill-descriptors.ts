@@ -10,6 +10,7 @@ import { findChild } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext } from "../../descriptor";
 import { parse } from "../../descriptor";
+import { RELATIONSHIP_TYPES } from "../../opc/relationships";
 import { emitAngle, emitPercent, parseAngle, parsePercent } from "../../util/converters";
 import { toUint8Array } from "../../util/data-type";
 import { uniqueId } from "../../util/generators";
@@ -288,6 +289,8 @@ function emitBlipFill(
   options: BlipFillConfigOptions & { type: "blip" },
   embed?: string,
   reproducible?: ReproducibleScope,
+  linkedReferenceId?: string,
+  unresolvedReferenceId?: string,
 ): string {
   // Build a:blip with {fileName} placeholder — the packer's ImageReplacer
   // replaces `{fileName}` with `rId{N}` and creates the relationship. When the
@@ -310,17 +313,21 @@ function emitBlipFill(
   // The r: prefix is declared inline on the blip: hosts whose root declares
   // only the a: namespace (a theme's fmtScheme) still get well-formed XML.
   const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-  const blip = options.noEmbed
-    ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
-    : element(
-        "a:blip",
-        {
-          ...(options.compression !== undefined ? { cstate: options.compression } : {}),
-          "xmlns:r": R_NS,
-          "r:embed": embedRef,
-        },
-        blipChildren.length > 0 ? blipChildren : undefined,
-      );
+  const blip =
+    options.noEmbed && linkedReferenceId === undefined && unresolvedReferenceId === undefined
+      ? element("a:blip", undefined, blipChildren.length > 0 ? blipChildren : undefined)
+      : element(
+          "a:blip",
+          {
+            ...(options.compression !== undefined ? { cstate: options.compression } : {}),
+            "xmlns:r": R_NS,
+            ...(unresolvedReferenceId !== undefined
+              ? { "r:embed": unresolvedReferenceId }
+              : embedRef !== "" && { "r:embed": embedRef }),
+            ...(linkedReferenceId !== undefined && { "r:link": linkedReferenceId }),
+          },
+          blipChildren.length > 0 ? blipChildren : undefined,
+        );
 
   const children: string[] = [blip];
   // a:srcRect is optional in CT_BlipFillProperties — emit it only when the
@@ -342,6 +349,32 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
   kind: "custom",
   stringify(opts, ctx) {
     if (typeof opts !== "string" && opts.type === "blip") {
+      if (opts.linkedUrl !== undefined) {
+        const linkedReferenceId = ctx.addRelationship(
+          RELATIONSHIP_TYPES.image,
+          opts.linkedUrl,
+          "External",
+        );
+        return emitBlipFill(
+          { ...opts, noEmbed: opts.data === undefined ? true : opts.noEmbed },
+          undefined,
+          ctx.reproducible,
+          linkedReferenceId,
+        );
+      }
+      if (opts.unresolvedTarget !== undefined) {
+        const unresolvedReferenceId = ctx.addRelationship(
+          RELATIONSHIP_TYPES.image,
+          opts.unresolvedTarget,
+        );
+        return emitBlipFill(
+          { ...opts, noEmbed: true },
+          undefined,
+          ctx.reproducible,
+          undefined,
+          unresolvedReferenceId,
+        );
+      }
       // noEmbed: an empty-marker blip — nothing to register with the media
       // store; emit the bare a:blipFill shape (attrs, srcRect, stretch).
       if (opts.noEmbed) return emitBlipFill(opts, undefined, ctx.reproducible);
@@ -388,12 +421,17 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           ? ctx.resolveRelationship(blipOpts.referenceId)
           : undefined;
         const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+        const linkedUrl = blipOpts.linkReferenceId
+          ? (ctx.resolveExternalImage?.(blipOpts.linkReferenceId) ??
+            ctx.resolveRelationship(blipOpts.linkReferenceId))
+          : undefined;
         if (mediaPath && data) {
           const blip: BlipFillConfigOptions & { type: "blip" } = {
             type: "blip",
             data,
             imageType: imageTypeFromPath(mediaPath),
             fileName: mediaPath.split("/").pop(),
+            ...(linkedUrl !== undefined && { linkedUrl }),
           };
           if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
           if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
@@ -403,7 +441,30 @@ export const fillDesc: CustomDescriptor<FillOptions> = {
           if (blipOpts.tile) blip.tile = blipOpts.tile;
           return blip;
         }
-        if (blipOpts.referenceId === undefined) {
+        if (blipOpts.referenceId === undefined && linkedUrl !== undefined) {
+          const blip: BlipFillConfigOptions & { type: "blip" } = { type: "blip", linkedUrl };
+          if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
+          if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+          if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+          if (blipOpts.tile) blip.tile = blipOpts.tile;
+          return blip;
+        }
+        if (mediaPath !== undefined && data === undefined) {
+          const blip: BlipFillConfigOptions & { type: "blip" } = {
+            type: "blip",
+            unresolvedTarget: mediaPath,
+          };
+          if (blipOpts.dpi !== undefined) blip.dpi = blipOpts.dpi;
+          if (blipOpts.compression !== undefined) blip.compression = blipOpts.compression;
+          if (blipOpts.rotWithShape !== undefined) blip.rotWithShape = blipOpts.rotWithShape;
+          if (blipOpts.blipEffects) blip.blipEffects = blipOpts.blipEffects;
+          if (blipOpts.sourceRectangle) blip.sourceRectangle = blipOpts.sourceRectangle;
+          if (blipOpts.tile) blip.tile = blipOpts.tile;
+          return blip;
+        }
+        if (blipOpts.referenceId === undefined && blipOpts.linkReferenceId === undefined) {
           // Empty a:blip (no r:embed) — Word's pic:spPr duplicate of
           // pic:blipFill references no image of its own. Keep the fill shape
           // (attrs, srcRect, stretch) instead of degrading to noFill.

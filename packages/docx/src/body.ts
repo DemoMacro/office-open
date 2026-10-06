@@ -1049,7 +1049,11 @@ interface FieldRunState {
   depth: number;
   /** The outer field's begin run — checked for a co-located pagination hint. */
   beginRunEl?: Element;
+  /** The separator run — its rsid attributes are captured separately. */
+  separatorRunEl?: Element;
   collectingResult: boolean;
+  /** Source xml:space marker on the first plain result text. */
+  resultPreserveSpace?: boolean;
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
   instrRunEls: Element[];
@@ -1064,6 +1068,7 @@ const initialFieldRunState = (): FieldRunState => ({
   pendingInstruction: "",
   pendingResult: "",
   collectingResult: false,
+  resultPreserveSpace: false,
   instrRunEls: [],
   resultRunEls: [],
 });
@@ -1129,6 +1134,7 @@ function feedFieldRun(
       // The begin run's rPr stands in for the field's control-run rPr.
       state.controlRPr = runRPrXml(run);
       state.beginRunEl = run;
+      state.separatorRunEl = undefined;
       state.resultRPr = undefined;
       state.collectingResult = false;
       state.depth = 1;
@@ -1140,6 +1146,7 @@ function feedFieldRun(
         return { consumed: true };
       }
       state.collectingResult = true;
+      state.separatorRunEl = run;
       state.resultRunEls = [];
     } else if (fctype === "end" && state.kind) {
       if (state.kind === "complex" && state.depth > 1) {
@@ -1156,14 +1163,44 @@ function feedFieldRun(
         if (findChild(state.beginRunEl ?? run, "w:lastRenderedPageBreak")) {
           cf.lastRenderedPageBreak = true;
         }
+        const beginRsid = attr(state.beginRunEl ?? run, "w:rsidR");
+        if (beginRsid) cf.additionRsid = beginRsid;
+        const beginRunPropertiesRsid = attr(state.beginRunEl ?? run, "w:rsidRPr");
+        if (beginRunPropertiesRsid) cf.runPropertiesRsid = beginRunPropertiesRsid;
+        const instructionRun = state.instrRunEls.length === 1 ? state.instrRunEls[0] : undefined;
+        const instructionRsid = instructionRun ? attr(instructionRun, "w:rsidR") : undefined;
+        const instructionRunPropertiesRsid = instructionRun
+          ? attr(instructionRun, "w:rsidRPr")
+          : undefined;
+        if (instructionRsid) cf.instructionAdditionRsid = instructionRsid;
+        if (instructionRunPropertiesRsid)
+          cf.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
+        const separatorRsid = state.separatorRunEl
+          ? attr(state.separatorRunEl, "w:rsidR")
+          : undefined;
+        const separatorRunPropertiesRsid = state.separatorRunEl
+          ? attr(state.separatorRunEl, "w:rsidRPr")
+          : undefined;
+        if (separatorRsid) cf.separatorAdditionRsid = separatorRsid;
+        if (separatorRunPropertiesRsid) cf.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
         // Mark the result present when the field carried any result run — an
         // empty-text result still round-trips its separate marker.
         if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
+        cf.resultPreserveSpace = state.resultPreserveSpace;
         if (state.controlRPr) cf.rPrXml = state.controlRPr;
         if (state.resultRPr) cf.resultRPrXml = state.resultRPr;
+        const plainResultRun = state.resultRunEls.length === 1 ? state.resultRunEls[0] : undefined;
+        const resultRsid = plainResultRun ? attr(plainResultRun, "w:rsidR") : undefined;
+        const resultRPrRsid = plainResultRun ? attr(plainResultRun, "w:rsidRPr") : undefined;
+        if (resultRsid) cf.resultAdditionRsid = resultRsid;
+        if (resultRPrRsid) cf.resultRunPropertiesRsid = resultRPrRsid;
         // Word styles the end run like the result (not like the controls).
         const endRPr = runRPrXml(run);
         if (endRPr && endRPr !== state.controlRPr) cf.endRPrXml = endRPr;
+        const endRsid = attr(run, "w:rsidR");
+        const endRunPropertiesRsid = attr(run, "w:rsidRPr");
+        if (endRsid) cf.endAdditionRsid = endRsid;
+        if (endRunPropertiesRsid) cf.endRunPropertiesRsid = endRunPropertiesRsid;
         if (
           !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
         ) {
@@ -1212,6 +1249,10 @@ function feedFieldRun(
       if (state.collectingResult) {
         // Capture the first result run's rPr for round-trip.
         if (state.resultRPr === undefined) state.resultRPr = runRPrXml(run);
+        const resultTextEl = findChild(run, "w:t") ?? findChild(run, "w:delText");
+        if (resultTextEl && attr(resultTextEl, "xml:space") === "preserve") {
+          state.resultPreserveSpace = true;
+        }
         state.pendingResult += collectRunText(run);
         state.resultRunEls.push(run);
       } else {
@@ -1279,6 +1320,8 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
   // editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
   const rPrEl = findChild(child, "w:rPr");
   const runProperties = rPrEl ? parseRunProperties(rPrEl) : undefined;
+  const additionRsid = attr(child, "w:rsidR");
+  const runPropertiesRsid = attr(child, "w:rsidRPr");
   // Attach the VML fallback + Choice Requires so stringify can rebuild the
   // mc:AlternateContent wrapper (Choice structured + Fallback raw).
   if (altFallback) {
@@ -1304,6 +1347,23 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     } else if ("smartArt" in drawingChild) {
       drawingChild.smartArt.runProperties = runProperties;
     }
+  }
+  if (additionRsid) {
+    if ("picture" in drawingChild) drawingChild.picture.additionRsid = additionRsid;
+    else if ("wpsShape" in drawingChild) drawingChild.wpsShape.additionRsid = additionRsid;
+    else if ("wpgGroup" in drawingChild) drawingChild.wpgGroup.additionRsid = additionRsid;
+    else if ("chart" in drawingChild) drawingChild.chart.additionRsid = additionRsid;
+    else if ("smartArt" in drawingChild) drawingChild.smartArt.additionRsid = additionRsid;
+  }
+  if (runPropertiesRsid) {
+    if ("picture" in drawingChild) drawingChild.picture.runPropertiesRsid = runPropertiesRsid;
+    else if ("wpsShape" in drawingChild)
+      drawingChild.wpsShape.runPropertiesRsid = runPropertiesRsid;
+    else if ("wpgGroup" in drawingChild)
+      drawingChild.wpgGroup.runPropertiesRsid = runPropertiesRsid;
+    else if ("chart" in drawingChild) drawingChild.chart.runPropertiesRsid = runPropertiesRsid;
+    else if ("smartArt" in drawingChild)
+      drawingChild.smartArt.runPropertiesRsid = runPropertiesRsid;
   }
   // A run-level empty element (Word's pagination hint) sharing the drawing's
   // run — carried on the drawing options and emitted before the drawing.
@@ -2083,6 +2143,8 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   if (paraId) opts.paraId = paraId;
   const textId = attr(el, "w14:textId");
   if (textId) opts.textId = textId;
+  const editId = attr(el, "w14:editId");
+  if (editId) opts.editId = editId;
   const noSpellErr = attr(el, "w14:noSpellErr");
   if (noSpellErr !== undefined) {
     opts.noSpellErr = noSpellErr === "1" || noSpellErr.toLowerCase() === "true";

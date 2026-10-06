@@ -353,6 +353,8 @@ export interface FreezePaneOptions {
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
   /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
   type: "png" | "jpg" | "wmf" | "emf";
+  /** Source package path of embedded bytes; round-trip only — do not hand-author. */
+  sourcePath?: string;
   /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
   properties?: ShapePropertiesOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
@@ -1305,6 +1307,14 @@ export interface CustomSheetViewOptions {
   topLeftCell?: string;
   /** Color id (CT_CustomSheetView `@colorId`, default 64) */
   colorId?: number;
+  /** Print margins in inches (CT_CustomSheetView/pageMargins). */
+  pageMargins?: PageMarginsOptions;
+  /** Print options (CT_CustomSheetView/printOptions). */
+  printOptions?: PrintOptions;
+  /** Page setup (CT_CustomSheetView/pageSetup). */
+  pageSetup?: PageSetupOptions;
+  /** Header/footer (CT_CustomSheetView/headerFooter). */
+  headerFooter?: HeaderFooterOptions;
   /** Pane state (CT_CustomSheetView/pane) */
   pane?: FreezePaneOptions;
   /** Selections (CT_CustomSheetView/selection) */
