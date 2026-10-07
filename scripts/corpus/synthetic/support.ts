@@ -1,4 +1,4 @@
-import { unzipSync, zipSync } from "../../../packages/core/dist/index.mjs";
+import { opaquePassthroughPolicy, unzipSync, zipSync } from "../../../packages/core/dist/index.mjs";
 import { auditCanonicalOptions } from "./raw-audit";
 
 export const ENCODER = new TextEncoder();
@@ -48,7 +48,7 @@ export function partText(packageBytes: Uint8Array, path: string): string {
 }
 
 export function auditSyntheticOptions(options: unknown, part: string): void {
-  const blockers = auditCanonicalOptions(options, [/^word\/printerSettings\//i]);
+  const blockers = auditCanonicalOptions(options, opaquePassthroughPolicy("docx").opaquePatterns);
   const blocker = blockers[0];
   if (blocker) throw new ProjectionError(part, `${blocker.reason}:${blocker.part}`);
 }

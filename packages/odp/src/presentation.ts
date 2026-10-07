@@ -33,8 +33,7 @@ import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
 import { OdpParseError } from "./error";
-import type { OdpDocumentOptions } from "./semantics";
-import type { OdpPackageMemberOptions } from "./semantics";
+import type { OdpPackageMemberOptions, OdpRuntimeOptions } from "./semantics";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
 import { parseStyleOverlays, parseTextStyles, styleOverlaysXml } from "./styles";
 
@@ -54,7 +53,7 @@ export const NAMESPACES = [
   'xmlns:xforms="http://www.w3.org/2002/xforms"',
 ].join(" ");
 
-export function generatePresentation(options: OdpDocumentOptions): Uint8Array {
+export function generatePresentation(options: OdpRuntimeOptions): Uint8Array {
   const { packageManifest, packageMembers, styleOverlays } = options;
   const styles: string[] = styleOverlaysXml(styleOverlays);
   const images: OdpImage[] = [];
@@ -100,7 +99,7 @@ function addPackageFile(files: OdfPackageFiles, member: OdpPackageMemberOptions)
   files[member.path] = typeof member.data === "string" ? member.data : toUint8Array(member.data);
 }
 
-export function parsePresentation(data: Uint8Array): OdpDocumentOptions {
+export function parsePresentation(data: Uint8Array): PresentationOptions {
   try {
     return parseOdpBody(data);
   } catch (cause) {
@@ -121,7 +120,7 @@ export function parsePresentation(data: Uint8Array): OdpDocumentOptions {
   }
 }
 
-function parseOdpBody(data: Uint8Array): OdpDocumentOptions {
+function parseOdpBody(data: Uint8Array): OdpRuntimeOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:presentation");

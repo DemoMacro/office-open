@@ -141,6 +141,12 @@ describe("appPropertiesDesc vector round-trip", () => {
     expect(result.titlesOfParts).toEqual(["Office Theme", "Title Slide", "Content Slide"]);
   });
 
+  it("round-trips empty HeadingPairs and TitlesOfParts vectors", () => {
+    const result = roundTrip({ headingPairs: [], titlesOfParts: [] });
+    expect(result.headingPairs).toEqual([]);
+    expect(result.titlesOfParts).toEqual([]);
+  });
+
   it("round-trips the HLinks variant vector with its int/string mix", () => {
     // Word's per-link records: four integers then two strings (often empty),
     // flat in the vector — the record fields are undocumented, so they stay

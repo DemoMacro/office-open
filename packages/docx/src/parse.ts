@@ -816,15 +816,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.contentTypes) {
     const ctResult = contentTypesDesc.parse(docx.contentTypes, ctx);
     if (ctResult) {
-      const actualCoreProps = docx.coreProps ? docx.doc.get(docx.coreProps) : undefined;
-      const actualAppProps = docx.appProps ? docx.doc.get(docx.appProps) : undefined;
-      ctResult.overrides = ctResult.overrides.filter((override) => {
-        const partName = override.partName.toLowerCase();
-        if (partName === "/docprops/core.xml") return actualCoreProps !== undefined;
-        if (partName === "/docprops/app.xml") return actualAppProps !== undefined;
-        return true;
-      });
-      opts.contentTypes = ctResult;
+      opts.contentTypes = { ...ctResult, preserveSourceDeclarations: true };
     }
   }
 

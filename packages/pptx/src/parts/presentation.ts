@@ -90,8 +90,12 @@ export interface StringTagOptions {
   val: string;
 }
 
-/** User-defined tags part (ppt/tags/tagsN.xml — p:tagLst). */
-export type TagListOptions = StringTagOptions[];
+/** A user-defined tags part (ppt/tags/tagsN.xml — p:tagLst). */
+export interface TagPartOptions {
+  /** Source package path; round-trip only — do not hand-author. */
+  sourcePath?: string;
+  tags: StringTagOptions[];
+}
 
 /** One OPC custom-XML item and its optional properties companion. */
 export interface CustomXmlItemOptions {
@@ -166,8 +170,8 @@ export interface PresentationPartOptions {
    */
   defaultTextStyle?: string | false;
   customerData?: CustomerDataOptions;
-  /** User-defined tags part contents; compiler wires p:custDataLst/p:tags. */
-  tags?: TagListOptions;
+  /** User-defined tags parts; compiler wires the presentation-owned reference. */
+  tags?: TagPartOptions[];
   /** Slide sections (p14:sectionLst); slides are grouped by name. */
   sections?: PresentationSectionGroup[];
   /**

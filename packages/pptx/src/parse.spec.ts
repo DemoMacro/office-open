@@ -437,7 +437,7 @@ describe("raw fidelity fallbacks", () => {
   it("reuses the source presentation tags part path", async () => {
     const source = await generatePresentation({
       ...minimalOptions,
-      tags: [{ name: "category", val: "demo" }],
+      tags: [{ tags: [{ name: "category", val: "demo" }] }],
     });
     const mutatedArchive = unzipSync(source);
     mutatedArchive["ppt/tags/tag1.xml"] = mutatedArchive["ppt/tags/tags1.xml"]!;

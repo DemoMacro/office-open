@@ -3,7 +3,7 @@ import type {
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { ChartSpaceOptions } from "@office-open/core/chart";
+import type { ChartSourceRelationship, ChartSpaceOptions } from "@office-open/core/chart";
 import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 /**
@@ -29,4 +29,8 @@ export interface ChartOptions
   height?: number | UniversalMeasure;
   /** Pre-generated chart key (e.g. "chart_2048"). If omitted, auto-generated. */
   chartKey?: string;
+  /** Source chart part path (`ppt/charts/chartN.xml`); round-trip only. */
+  sourcePath?: string;
+  /** Chart-part relationships other than userShapes; round-trip only. */
+  sourceRelationships?: ChartSourceRelationship[];
 }

@@ -89,7 +89,7 @@ export function cellStyleChildren(style: StyleOptions): string[] {
   const fill = style.fill;
   const alignment = style.alignment;
   const textAttributes = {
-    "fo:color": odfHex(font?.color),
+    "fo:color": odfHex(font?.color?.rgb),
     "fo:font-size": font?.size !== undefined ? `${font.size}pt` : undefined,
     "fo:font-weight": font?.bold ? "bold" : undefined,
     "fo:font-style": font?.italic ? "italic" : undefined,
@@ -133,7 +133,7 @@ export function odfBorder(side: BorderOptions | undefined): string | undefined {
   if (side.style === "none") return "none";
   const width = side.style === "thick" ? "2.5pt" : mediumBorder(side.style) ? "1pt" : "0.5pt";
   const style = odfLineStyle(side.style);
-  return [width, style, odfHex(side.color)].filter(Boolean).join(" ");
+  return [width, style, odfHex(side.color?.rgb)].filter(Boolean).join(" ");
 }
 
 export function mediumBorder(style: BorderOptions["style"]): boolean {
@@ -177,7 +177,7 @@ export function parseBorder(value: string | undefined): BorderOptions | undefine
     if (points < 0.25) return "hair";
     return "thin";
   })();
-  return { style, color: color?.toUpperCase() };
+  return { style, color: color ? { rgb: `FF${color.toUpperCase()}` } : undefined };
 }
 
 /** xlsx horizontal → ODF fo:text-align. */
@@ -197,7 +197,7 @@ export function odfVertical(value: AlignmentOptions["vertical"]): string | undef
 
 /** Solid-fill foreground color; pattern/gradient fills keep their typed shape. */
 export function solidFillColor(fill: CellFillOptions | undefined): string | undefined {
-  return fill?.type === undefined || fill.type === "solid" ? fill?.color : undefined;
+  return fill?.type === undefined || fill.type === "solid" ? fill?.foregroundColor?.rgb : undefined;
 }
 
 /** xlsx hex (RRGGBB or AARRGGBB) → ODF #RRGGBB. */

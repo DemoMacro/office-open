@@ -16,7 +16,7 @@ import type {
   VmlShapeOptions,
   VmlShapetypeOptions,
 } from "@office-open/core";
-import type { ArgbHexColor, Base64, HexColor } from "@office-open/core";
+import type { Base64 } from "@office-open/core";
 import type {
   BlackWhiteMode,
   BlipCompression,
@@ -28,6 +28,9 @@ import type {
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 
+import type { ColorOptions } from "../../shared/color";
+import type { ActiveXControlOptions } from "../active-x-control";
+import type { FormControlPropertiesOptions } from "../control-properties";
 import type {
   ConnectorOptions,
   DrawingContentPartOptions,
@@ -104,8 +107,6 @@ export interface RowOptions {
  * 6-digit RGB (alpha auto-prefixed), 8-digit ARGB verbatim, a legacy palette
  * index ("10"), or a "theme:N" slot reference.
  */
-export type RichTextColor = string;
-
 /** CT_RPrElt child spellings; `propertyOrder` records their source order. */
 export type RichTextRunProperty =
   | "rFont"
@@ -141,23 +142,8 @@ export interface RichTextRunPropertiesOptions {
   shadow?: boolean;
   condense?: boolean;
   extend?: boolean;
-  /**
-   * Font color: 6-digit RGB ("FF0000", FF alpha auto-prefixed on emit),
-   * 8-digit ARGB verbatim, a bare palette index ("10" → indexed), or
-   * "theme:N" — the same string parse produces.
-   */
-  color?: RichTextColor;
-  /** Source lexical form of color `@rgb`; round-trip only — do not hand-author. */
-  colorRgbRaw?: string;
-  /**
-   * Source color `@theme` when an explicit `@rgb` is also present (CT_Color
-   * carries both). Round-trip only — theme-only colors use `color: "theme:N"`.
-   */
-  colorThemeRaw?: string;
-  /** Color tint (CT_Color `@tint`, -1.0–1.0); round-trips the source value. */
-  colorTint?: number;
-  /** Source lexical form of `colorTint`; round-trip only — do not hand-author. */
-  colorTintRaw?: string;
+  /** Font color (CT_Color) */
+  color?: ColorOptions;
   /** Font size in points */
   size?: number;
   /** Source lexical form of `sz/@val`; round-trip only — do not hand-author. */
@@ -262,7 +248,7 @@ export interface CellOptions {
    * re-deduplicating to the first occurrence.
    */
   sharedIndex?: number;
-  /** Source numeric/text lexical form for `<v xml:space="preserve">`; round-trip only. */
+  /** Source numeric/text lexical form for `<v>`; round-trip only. */
   valueRaw?: string;
   /** Explicit source `@t` token that matches the defaulted form (`t="n"`).
    * Also carries declared types with no canonical value carrier (`t="s"` and
@@ -305,6 +291,7 @@ export const FormulaType = {
   NORMAL: "normal",
   ARRAY: "array",
   SHARED: "shared",
+  DATA_TABLE: "dataTable",
 } as const;
 
 export type FormulaType = (typeof FormulaType)[keyof typeof FormulaType];
@@ -732,21 +719,8 @@ export interface PageSetupOptions {
   printerSettingsRId?: string;
 }
 
-export interface TabColorOptions {
-  /** Hex ARGB color string with alpha, e.g. "FF4472C4" (passed through verbatim) */
-  rgb?: ArgbHexColor;
-  /** Theme color index (0-based) */
-  theme?: number;
-  /** Tint value (-1.0 to 1.0) */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
-  /** Indexed color (CT_Color `@indexed`) */
-  indexed?: number;
-}
-
 /** Authoring shorthand `rgb` or the full CT_Color projection. */
-export type TabColor = string | TabColorOptions;
+export type TabColor = string | ColorOptions;
 
 /** Cell corner marker (CT_Marker): 0-based column/row plus EMU offsets. */
 /**
@@ -967,29 +941,12 @@ export type IconSetType =
   | "5Rating"
   | "5Quarters";
 
-/**
- * One CT_Color channel set for conditional-formatting colors. A color picks
- * exactly one channel (rgb, theme, or indexed); tint qualifies a theme slot.
- */
-export interface CfColorOptions {
-  /** RGB hex without alpha, e.g. "FF0000" */
-  rgb?: HexColor;
-  /** Theme palette slot (CT_Color @theme) */
-  theme?: number;
-  /** Tint applied to the theme slot */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
-  /** Legacy palette index */
-  indexed?: number;
-}
-
 /** Color scale rule configuration */
 export interface ColorScaleOptions {
   /** Conditional format values (minimum 2, typically 2 or 3) */
   cfvo: CfvoOptions[];
   /** Colors for each value (same count as cfvo) */
-  colors: CfColorOptions[];
+  colors: ColorOptions[];
 }
 
 /** Data bar rule configuration */
@@ -997,7 +954,7 @@ export interface DataBarOptions {
   /** Minimum and maximum value objects (exactly 2) */
   cfvo: [CfvoOptions, CfvoOptions];
   /** Bar color */
-  color: CfColorOptions;
+  color: ColorOptions;
   /** Minimum bar length as percentage (default: 10) */
   minLength?: number;
   /** Maximum bar length as percentage (default: 90) */
@@ -1785,8 +1742,10 @@ export interface WorksheetOptions {
   calculation?: SheetCalculationPropertiesOptions;
   /** Extension list (extLst) */
   ext?: string;
-  /** Control objects (CT_Controls) */
-  controls?: ControlOptions[];
+  /** Control objects (CT_Controls). */
+  controls?: WorksheetControlOptions[];
+  /** Source wrapped the whole controls container in mc:AlternateContent. */
+  controlsAlternateContent?: boolean;
   /** Custom sheet properties (CT_CustomProperties) */
   customProperties?: CustomSheetPropertyOptions[];
   /** OLE objects (CT_OleObjects) */
@@ -1827,50 +1786,77 @@ export interface SheetCalculationPropertiesOptions {
   fullCalcOnLoad?: boolean;
 }
 
-/** Form control object (CT_Control) */
-export interface ControlOptions {
-  /** Shape ID (CT_Control `@shapeId`) */
-  shapeId: number;
-  /**
-   * Control r:id (CT_ControlPr `@r:id`). Round-trip only: the control's VML
-   * and binary parts are not re-emitted, so the id is not resolvable in a
-   * freshly generated workbook.
-   */
-  rId: string;
-  /** Control name (CT_ControlPr `@name`) */
-  name?: string;
-  /** Locked (CT_ControlPr `@locked`) */
+/**
+ * Placement and icon properties (CT_ControlPr); anchor uses 0-based cell
+ * markers, e.g. from={col:0,row:0}.
+ */
+export interface ControlPrOptions {
+  /** True prevents move or resize (locked="0" when false; default true). */
   locked?: boolean;
-  /** UI-locked (CT_ControlPr `@uiObject`) */
-  uiObject?: boolean;
-  /** Recalc always (CT_ControlPr `@recalcAlways`) */
-  recalcAlways?: boolean;
-  /** Linked cell (CT_ControlPr `@linkedCell`) */
-  linkedCell?: string;
-  /** List fill range (CT_ControlPr `@listFillRange`) */
-  listFillRange?: string;
-  /** Control formula (CT_ControlPr `@cf`) */
-  formula?: string;
-  /** Use the default icon size (CT_ControlPr `@defaultSize`; default true). */
+  /** True keeps the source size (defaultSize="0" when false; default true). */
   defaultSize?: boolean;
-  /** Auto line (CT_ControlPr `@autoLine`; default true). */
+  /** True prints the control (print="0" when false; default true). */
+  print?: boolean;
+  /** True disables user interaction (disabled="1"; default false). */
+  disabled?: boolean;
+  /** Always recalculate the control (recalcAlways="1"; default false). */
+  recalcAlways?: boolean;
+  /** True locks the UI object (uiObject="1"; default false). */
+  uiObject?: boolean;
+  /** True fills the linked cell automatically (default true). */
+  autoFill?: boolean;
+  /** True preserves automatic line placement (default true). */
   autoLine?: boolean;
-  /** Auto picture (CT_ControlPr `@autoPict`; default true). */
+  /** True preserves automatic picture sizing (default true). */
   autoPict?: boolean;
-  /**
-   * Relationship ID of the icon image (controlPr `@r:id`). Round-trip only:
-   * the icon part is not re-emitted by the compiler.
-   */
+  /** Assigned macro formula, e.g. macro="Module1.Run". */
+  macro?: string;
+  /** Screen-reader description, e.g. altText="Submit order". */
+  altText?: string;
+  /** Linked-cell formula, e.g. linkedCell="Sheet1!$A$1". */
+  linkedCell?: string;
+  /** List-source formula, e.g. listFillRange="Sheet1!$A$1:$A$4". */
+  listFillRange?: string;
+  /** Clipboard format, e.g. cf="pict". */
+  cf?: string;
+  /** Icon relationship ID (controlPr `@r:id`). */
   iconRid?: string;
-  /** Cell anchor inside controlPr (from/to corners, 0-based). */
-  anchor?: ObjectAnchorOptions;
-  /**
-   * Source wrapped the control in mc:AlternateContent (Excel 2010+ form:
-   * Choice carries the full element, Fallback the bare one). Re-emit the
-   * wrapper only when the source had it.
-   */
-  alternateContent?: boolean;
+  /** Required 0-based cell anchor (CT_ObjectAnchor). */
+  anchor: ObjectAnchorOptions;
 }
+
+/** A form control (x14:formControlPr part) or ActiveX control (ax:ocx part). */
+export type WorksheetControlOptions =
+  | {
+      kind: "form";
+      /** Drawing shape ID (CT_Control `@shapeId`). */
+      shapeId: number;
+      /** Relationship to xl/ctrlProps/ctrlPropN.xml; round-trip emission only. */
+      rId?: string;
+      /** Source wrapped this control in mc:AlternateContent. */
+      alternateContent?: boolean;
+      /** Accessible control name (CT_Control `@name`), e.g. "Button1". */
+      name?: string;
+      /** Icon and placement properties (CT_ControlPr). */
+      properties?: ControlPrOptions;
+      /** Form-control settings from xl/ctrlProps/ctrlPropN.xml. */
+      formControlProperties: FormControlPropertiesOptions;
+    }
+  | {
+      kind: "activeX";
+      /** Drawing shape ID (CT_Control `@shapeId`). */
+      shapeId: number;
+      /** Relationship to xl/activeX/activeXN.xml; round-trip emission only. */
+      rId?: string;
+      /** Source wrapped this control in mc:AlternateContent. */
+      alternateContent?: boolean;
+      /** Accessible control name (CT_Control `@name`), e.g. "CommandButton1". */
+      name?: string;
+      /** Icon and placement properties (CT_ControlPr). */
+      properties?: ControlPrOptions;
+      /** ActiveX metadata from xl/activeX/activeXN.xml. */
+      activeXControl: ActiveXControlOptions;
+    };
 
 /** Custom property (CT_CustomProperty) */
 export interface CustomSheetPropertyOptions {

@@ -102,8 +102,9 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     if (numFmt) options.numFmt = numFmt;
     const text = childNamed(style, "style:text-properties");
     const size = attributeString(text, "fo:font-size");
+    const fontColor = odfColor(attributeString(text, "fo:color"));
     const font: FontOptions = {
-      color: odfColor(attributeString(text, "fo:color")),
+      color: fontColor ? { rgb: `FF${fontColor}` } : undefined,
       size: size?.endsWith("pt") ? Number(size.slice(0, -2)) : undefined,
       bold: attributeString(text, "fo:font-weight") === "bold" || undefined,
       italic: attributeString(text, "fo:font-style") === "italic" || undefined,
@@ -114,7 +115,7 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     const background = odfColor(
       attributeString(childNamed(style, "style:table-cell-properties"), "fo:background-color"),
     );
-    if (background) options.fill = { type: "solid", color: background };
+    if (background) options.fill = { type: "solid", foregroundColor: { rgb: `FF${background}` } };
     const cellProps = childNamed(style, "style:table-cell-properties");
     const border: BorderSideOptions = {
       top: parseBorder(attributeString(cellProps, "fo:border-top")),

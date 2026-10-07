@@ -7,6 +7,7 @@ export {
   type SlideOptions,
   type SlideAnimation,
   type SlideCommentOptions,
+  type CommentAuthorOptions,
   type MasterDefinition,
   type LayoutDefinition,
   type LayoutPlaceholderOptions,

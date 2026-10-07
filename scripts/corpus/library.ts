@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { OOXML_PACKAGE_FORMATS } from "../../packages/core/dist/index.mjs";
+import { OOXML_PACKAGE_FORMATS, opaquePassthroughPolicy } from "../../packages/core/dist/index.mjs";
 import { parseDocument } from "../../packages/docx/dist/index.mjs";
 import { parsePresentation } from "../../packages/pptx/dist/index.mjs";
 import { parseWorkbook } from "../../packages/xlsx/dist/index.mjs";
@@ -15,30 +15,9 @@ import {
 } from "./semantics";
 
 export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
-  docx: [
-    /^word\/vbaProject\.bin$/i,
-    /^customXml\//i,
-    /^docProps\/thumbnail\./i,
-    /^word\/media\//i,
-    /^word\/embeddings\//i,
-    /^word\/printerSettings\//i,
-    /^word\/fonts\//i,
-  ],
-  xlsx: [
-    /^xl\/vbaProject\.bin$/i,
-    /^xl\/embeddings\//i,
-    /^xl\/printerSettings\//i,
-    /^xl\/media\//i,
-    /^xl\/activeX\/activeX/i,
-    /^docProps\/thumbnail\./i,
-  ],
-  pptx: [
-    /^ppt\/vbaProject\.bin$/i,
-    /^ppt\/embeddings\//i,
-    /^ppt\/media\//i,
-    /^ppt\/printerSettings\//i,
-    /^docProps\/thumbnail\./i,
-  ],
+  docx: opaquePassthroughPolicy("docx").opaquePatterns,
+  xlsx: opaquePassthroughPolicy("xlsx").opaquePatterns,
+  pptx: opaquePassthroughPolicy("pptx").opaquePatterns,
 };
 
 export type Format = "docx" | "xlsx" | "pptx";

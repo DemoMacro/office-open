@@ -97,7 +97,18 @@ describe("worksheet rels with passthrough source ids and rebuilt parts", () => {
           drawingRid: "rId2",
           legacyDrawingHF: "rId5",
           oleObjects: [{ shapeId: 1, rId: "rId6", properties: { iconRid: "rId7" } }],
-          controls: [{ shapeId: 2, rId: "rId8", iconRid: "rId9" }],
+          controls: [
+            {
+              kind: "form",
+              shapeId: 2,
+              rId: "rId8",
+              properties: {
+                iconRid: "rId9",
+                anchor: { from: { col: 0, row: 0 }, to: { col: 1, row: 1 } },
+              },
+              formControlProperties: { objectType: "Button" },
+            },
+          ],
           customProperties: [{ name: "prop", rId: "rId10" }],
           tables: [table("A1:B4"), table("D1:E4"), table("G1:H4"), table("J1:K4")],
         },

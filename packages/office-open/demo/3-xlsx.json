@@ -19,7 +19,7 @@
               "value": "Name",
               "style": {
                 "font": { "bold": true },
-                "fill": { "type": "solid", "color": "4472C4" },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } },
                 "alignment": { "horizontal": "center" }
               }
             },
@@ -27,7 +27,7 @@
               "value": "Qty",
               "style": {
                 "font": { "bold": true },
-                "fill": { "type": "solid", "color": "4472C4" },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } },
                 "alignment": { "horizontal": "center" }
               }
             },
@@ -35,7 +35,7 @@
               "value": "Price",
               "style": {
                 "font": { "bold": true },
-                "fill": { "type": "solid", "color": "4472C4" },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } },
                 "alignment": { "horizontal": "center" }
               }
             },
@@ -43,7 +43,7 @@
               "value": "Total",
               "style": {
                 "font": { "bold": true },
-                "fill": { "type": "solid", "color": "4472C4" },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } },
                 "alignment": { "horizontal": "center" }
               }
             },
@@ -51,7 +51,7 @@
               "value": "Note",
               "style": {
                 "font": { "bold": true },
-                "fill": { "type": "solid", "color": "4472C4" },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } },
                 "alignment": { "horizontal": "center" }
               }
             }
@@ -114,15 +114,24 @@
           "cells": [
             {
               "value": "Metric",
-              "style": { "font": { "bold": true }, "fill": { "type": "solid", "color": "4472C4" } }
+              "style": {
+                "font": { "bold": true },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } }
+              }
             },
             {
               "value": "Value",
-              "style": { "font": { "bold": true }, "fill": { "type": "solid", "color": "4472C4" } }
+              "style": {
+                "font": { "bold": true },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } }
+              }
             },
             {
               "value": "Status",
-              "style": { "font": { "bold": true }, "fill": { "type": "solid", "color": "4472C4" } }
+              "style": {
+                "font": { "bold": true },
+                "fill": { "type": "solid", "foregroundColor": { "rgb": "FF4472C4" } }
+              }
             }
           ]
         },
@@ -130,7 +139,10 @@
           "cells": [
             { "value": "Total Items", "style": { "font": { "bold": true } } },
             { "value": 3, "style": { "alignment": { "horizontal": "center" } } },
-            { "value": "OK", "style": { "fill": { "type": "solid", "color": "C6EFCE" } } }
+            {
+              "value": "OK",
+              "style": { "fill": { "type": "solid", "foregroundColor": { "rgb": "FFC6EFCE" } } }
+            }
           ]
         },
         {
@@ -140,7 +152,10 @@
               "value": 59.6,
               "style": { "numFmt": "$#,##0.00", "alignment": { "horizontal": "right" } }
             },
-            { "value": "OK", "style": { "fill": { "type": "solid", "color": "C6EFCE" } } }
+            {
+              "value": "OK",
+              "style": { "fill": { "type": "solid", "foregroundColor": { "rgb": "FFC6EFCE" } } }
+            }
           ]
         },
         {
@@ -150,7 +165,10 @@
               "value": 2.5,
               "style": { "numFmt": "$#,##0.00", "alignment": { "horizontal": "right" } }
             },
-            { "value": "OK", "style": { "fill": { "type": "solid", "color": "C6EFCE" } } }
+            {
+              "value": "OK",
+              "style": { "fill": { "type": "solid", "foregroundColor": { "rgb": "FFC6EFCE" } } }
+            }
           ]
         }
       ]

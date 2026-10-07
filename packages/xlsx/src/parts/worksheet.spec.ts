@@ -2,11 +2,11 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { ColorOptions } from "../shared/color";
 import { SharedStrings } from "./shared-strings";
 import { buildWorksheetXml } from "./worksheet";
 import { worksheetDesc } from "./worksheet";
 import type { AutoFilterOptions, WorksheetOptions } from "./worksheet";
-import type { TabColorOptions } from "./worksheet/types";
 
 describe("Worksheet", () => {
   describe("cell formula", () => {
@@ -72,7 +72,8 @@ describe("Worksheet", () => {
 
   describe("worksheet source fidelity", () => {
     const readCtx = {
-      resolveRelationship: () => undefined,
+      resolveRelationship: (rid: string) =>
+        rid === "rId2" || rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
       getPart: () => undefined,
       getRaw: () => undefined,
       sharedStrings: [],
@@ -131,7 +132,7 @@ describe("Worksheet", () => {
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
           `<sheetPr><tabColor theme="2" tint="-0.25"/></sheetPr><sheetData/></worksheet>`,
       );
-      expect(result.tabColor).toEqual({ theme: 2, tint: -0.25, tintRaw: "-0.25" });
+      expect(result.tabColor).toEqual({ theme: 2, tint: -0.25 });
       expect(buildWorksheetXml(result, {})).toContain('<tabColor theme="2" tint="-0.25"/>');
     });
 
@@ -140,7 +141,7 @@ describe("Worksheet", () => {
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
           `<sheetPr><tabColor theme="2" tint="-0.249977111117893"/></sheetPr><sheetData/></worksheet>`,
       );
-      expect((result.tabColor as TabColorOptions).tintRaw).toBe("-0.249977111117893");
+      expect((result.tabColor as ColorOptions).tint).toBe(-0.249977111117893);
       expect(buildWorksheetXml(result, {})).toContain(
         '<tabColor theme="2" tint="-0.249977111117893"/>',
       );
@@ -185,6 +186,71 @@ describe("Worksheet", () => {
       expect(result.rows?.[0]?.cells?.[0]?.value).toBe(" value ");
       expect(buildWorksheetXml(result, {})).toContain(
         '<f>B1</f><v xml:space="preserve"> value </v>',
+      );
+    });
+
+    it("round-trips rich inline strings with run properties", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="inlineStr"><is>` +
+          `<r><rPr><b/><color rgb="FFFF0000"/><sz val="14"/></rPr><t>Red</t></r>` +
+          `<r><rPr><i/></rPr><t>It</t></r>` +
+          `</is></c></row></sheetData></worksheet>`,
+      );
+      const cell = result.rows?.[0]?.cells?.[0];
+      expect(cell).toMatchObject({
+        inline: true,
+        value: {
+          runs: [
+            { text: "Red", properties: { bold: true, color: { rgb: "FFFF0000" }, size: 14 } },
+            { text: "It", properties: { italic: true } },
+          ],
+        },
+      });
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<r><rPr><b/><color rgb="FFFF0000"/><sz val="14"/></rPr><t>Red</t></r>' +
+          "<r><rPr><i/></rPr><t>It</t></r>",
+      );
+    });
+
+    it("round-trips non-preserved numeric cell and formula cache lexemes", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1">` +
+          `<c r="A1"><v>10.199999999999999</v></c>` +
+          `<c r="B1" t="n"><f>SQRT(A1)</f><v>1E-4</v></c>` +
+          `</row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]).toEqual({
+        reference: "A1",
+        value: 10.199999999999999,
+        valueRaw: "10.199999999999999",
+      });
+      expect(result.rows?.[0]?.cells?.[1]?.valueRaw).toBe("1E-4");
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain("<v>10.199999999999999</v>");
+      expect(xml).toContain('<c r="B1" t="n"><f>SQRT(A1)</f><v>1E-4</v></c>');
+    });
+
+    it("round-trips data table formula attributes", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1"><f t="dataTable" ref="B1:C2" ` +
+          `dt2D="1" dtr="1" del1="1" del2="1" r1="D1" r2="D2"/></c></row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]?.formula).toEqual({
+        formula: "",
+        type: "dataTable",
+        reference: "B1:C2",
+        dt2D: true,
+        dtr: true,
+        del1: true,
+        del2: true,
+        inputCell1: "D1",
+        inputCell2: "D2",
+      });
+      expect(buildWorksheetXml(result, {})).toContain(
+        '<f t="dataTable" ref="B1:C2" dt2D="1" dtr="1" del1="1" del2="1" r1="D1" r2="D2"/>',
       );
     });
 
@@ -393,7 +459,8 @@ describe("Worksheet", () => {
 
   it("preserves an empty formula cache as a string result", () => {
     const readCtx = {
-      resolveRelationship: () => undefined,
+      resolveRelationship: (rid: string) =>
+        rid === "rId2" || rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
       getPart: () => undefined,
       getRaw: () => undefined,
     } as unknown as ReadContext;
@@ -1352,7 +1419,8 @@ describe("Worksheet", () => {
 
   describe("rowBreaks/colBreaks round-trip", () => {
     const readCtx = {
-      resolveRelationship: () => undefined,
+      resolveRelationship: (rid: string) =>
+        rid === "rId2" || rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
       getPart: () => undefined,
       getRaw: () => undefined,
       sharedStrings: [],
@@ -1594,7 +1662,23 @@ describe("Worksheet", () => {
             properties: { locked: false, print: false, disabled: true, macro: "Module1.Run" },
           },
         ],
-        controls: [{ shapeId: 2, rId: "rId2", name: "Button1", locked: false, linkedCell: "A1" }],
+        controls: [
+          {
+            kind: "form",
+            shapeId: 2,
+            rId: "rId2",
+            name: "Button1",
+            properties: {
+              anchor: {
+                from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
+                to: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+              },
+              locked: false,
+              linkedCell: "A1",
+            },
+            formControlProperties: { objectType: "Button" },
+          },
+        ],
       };
       const result = roundTrip(opts);
       expect(result.oleObjects).toEqual([
@@ -1606,7 +1690,21 @@ describe("Worksheet", () => {
         },
       ]);
       expect(result.controls).toEqual([
-        { shapeId: 2, rId: "rId2", name: "Button1", locked: false, linkedCell: "A1" },
+        {
+          kind: "form",
+          shapeId: 2,
+          rId: "rId2",
+          name: "Button1",
+          properties: {
+            anchor: {
+              from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
+              to: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+            },
+            locked: false,
+            linkedCell: "A1",
+          },
+          formControlProperties: { objectType: "Button" },
+        },
       ]);
     });
 
@@ -1632,18 +1730,22 @@ describe("Worksheet", () => {
         ],
         controls: [
           {
+            kind: "form",
             shapeId: 2,
             rId: "rId6",
             name: "Button1",
             alternateContent: true,
-            defaultSize: false,
-            autoLine: false,
-            autoPict: false,
-            iconRid: "rId7",
-            anchor: {
-              from: { col: 0, row: 0 },
-              to: { col: 1, row: 1 },
+            properties: {
+              defaultSize: false,
+              autoLine: false,
+              autoPict: false,
+              iconRid: "rId7",
+              anchor: {
+                from: { col: 0, row: 0 },
+                to: { col: 1, row: 1 },
+              },
             },
+            formControlProperties: { objectType: "Button" },
           },
         ],
       };
@@ -1662,10 +1764,12 @@ describe("Worksheet", () => {
       const doc = parseXml(xml, { nativeTypeAttributes: true });
       const el = doc.elements?.[0];
       if (!el) throw new Error("parsed document has no root element");
-      const result = worksheetDesc.parse(
-        el,
-        {} as unknown as ReadContext,
-      ) as unknown as WorksheetOptions;
+      const result = worksheetDesc.parse(el, {
+        resolveRelationship: (rid: string) =>
+          rid === "rId6" ? "xl/ctrlProps/ctrlProp1.xml" : undefined,
+        getPart: () => undefined,
+        getRaw: () => undefined,
+      } as unknown as ReadContext) as unknown as WorksheetOptions;
       // CT_Marker's four elements are all required in the XSD, so stringify
       // materializes omitted offsets as explicit zeros and parse reads them
       // back — compare against the materialized form.
@@ -1684,9 +1788,12 @@ describe("Worksheet", () => {
       expect(result.controls).toEqual([
         {
           ...opts.controls![0]!,
-          anchor: {
-            from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
-            to: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+          properties: {
+            ...opts.controls![0]!.properties!,
+            anchor: {
+              from: { col: 0, colOff: 0, row: 0, rowOff: 0 },
+              to: { col: 1, colOff: 0, row: 1, rowOff: 0 },
+            },
           },
         },
       ]);

@@ -5092,6 +5092,10 @@
             "$ref": "#/definitions/ContentTypeOverride"
           },
           "type": "array"
+        },
+        "preserveSourceDeclarations": {
+          "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "type": "boolean"
         }
       },
       "required": ["defaults", "overrides"],

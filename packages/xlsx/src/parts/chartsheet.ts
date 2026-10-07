@@ -20,6 +20,7 @@ import type { GraphicFrameLockingOptions } from "@office-open/core/drawing";
 import { attrs, attr, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import { hashPassword } from "@util/index";
 
+import { colorAttributes, parseColorOptions } from "../shared/color";
 import type { ExternalLinkOptions } from "./external-link";
 import { parseHeaderFooterEl } from "./worksheet/descriptor";
 import { stringifyHeaderFooterXml } from "./worksheet/stringify";
@@ -28,7 +29,6 @@ import type {
   PageMarginsOptions,
   PageOrientation,
   TabColor,
-  TabColorOptions,
 } from "./worksheet/types";
 
 // ── Types ──
@@ -174,18 +174,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       const prAttrs: string[] = [];
       if (opts.tabColor) {
         const tc = typeof opts.tabColor === "string" ? { rgb: opts.tabColor } : opts.tabColor;
-        const tcAttrs: Record<string, string | number | boolean | undefined> = {
-          rgb: tc.rgb,
-          theme: tc.theme,
-          indexed: tc.indexed,
-        };
-        const tint =
-          tc.tintRaw !== undefined
-            ? ` tint="${tc.tintRaw}"`
-            : tc.tint !== undefined
-              ? ` tint="${tc.tint}"`
-              : "";
-        prAttrs.push(`<tabColor${attrs(tcAttrs)}${tint}/>`);
+        const tcAttrs = colorAttributes(tc);
+        prAttrs.push(`<tabColor${tcAttrs ? ` ${tcAttrs}` : ""}/>`);
       }
       const spAttrs: string[] = [];
       // XSD default true — emit only the explicit-false form (0).
@@ -294,18 +284,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
       if (attr(sheetPr, "codeName")) result.codeName = attr(sheetPr, "codeName");
       const tabColor = findChild(sheetPr, "tabColor");
       if (tabColor) {
-        const tc: TabColorOptions = {};
-        const rgb = attr(tabColor, "rgb");
-        if (rgb) tc.rgb = String(rgb) as TabColorOptions["rgb"];
-        const theme = attrNum(tabColor, "theme");
-        if (theme !== undefined) tc.theme = theme;
-        const tint = attrNum(tabColor, "tint");
-        if (tint !== undefined) tc.tint = tint;
-        const tintRaw = attr(tabColor, "tint");
-        if (tintRaw !== undefined) tc.tintRaw = tintRaw;
-        const indexed = attrNum(tabColor, "indexed");
-        if (indexed !== undefined) tc.indexed = indexed;
-        result.tabColor = tc;
+        result.tabColor = parseColorOptions(tabColor);
       }
     }
 

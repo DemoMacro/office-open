@@ -52,6 +52,13 @@ describe("commentAuthorsDesc round-trip", () => {
     expect(result[1]?.id).toBe(1);
     expect(result[1]?.clrIdx).toBe(1);
   });
+
+  it("round-trips author extensions", () => {
+    const result = roundTrip([
+      { id: 0, name: "Alice", initials: "AL", clrIdx: 0, lastIdx: 1, ext: '<p:ext uri="{TEST}"/>' },
+    ]);
+    expect(result[0]?.ext).toBe('<p:ext uri="{TEST}"/>');
+  });
 });
 
 // ── slideCommentsDesc ──
@@ -114,5 +121,22 @@ describe("slideCommentsDesc round-trip", () => {
     const result = roundTrip(comments);
 
     expect(result[0]?.text).toBe('<Tag> & "quotes"');
+  });
+
+  it("round-trips source identity and comment extensions", () => {
+    const comments: CommentEntry[] = [
+      {
+        authorId: 7,
+        idx: 3,
+        x: 0,
+        y: 0,
+        text: "Source identity",
+        ext: '<p:ext uri="{TEST}" mod="1"/>',
+      },
+    ];
+    const result = roundTrip(comments);
+    expect(result[0]?.authorId).toBe(7);
+    expect(result[0]?.idx).toBe(3);
+    expect(result[0]?.ext).toBe('<p:ext uri="{TEST}" mod="1"/>');
   });
 });

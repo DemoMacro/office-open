@@ -86,6 +86,7 @@ export const DOCX_PARTS = {
     "[Content_Types].xml",
   ],
   opaquePrefixes: [
+    "word/media/",
     "word/embeddings/",
     "word/printerSettings/",
     "word/fonts/",
@@ -280,6 +281,12 @@ export const DOCX_PARTS = {
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
       presence: { kind: "conditional", flag: "hasWebSettings" },
     },
+    {
+      opaque: true,
+      path: "word/printerSettings/printerSettings${i}.bin",
+      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.printerSettings",
+      presence: { kind: "conditional", flag: "printer settings relationship" },
+    },
     // docx theme — fresh-compile generates a language-neutral default theme
     // (createThemeXml); round-trip passes the source theme through rawParts.
     // Declared as a theme+xml Override to match Word's own packages.
@@ -323,10 +330,29 @@ export const PPTX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
-  opaquePrefixes: ["ppt/embeddings/", "ppt/media/", "ppt/printerSettings/", "docProps/thumbnail."],
+  opaquePrefixes: [
+    "ppt/embeddings/",
+    "ppt/media/",
+    "ppt/printerSettings/",
+    "ppt/drawings/vmlDrawing",
+    "ppt/drawings/_rels/vmlDrawing",
+    "ppt/charts/style",
+    "ppt/charts/colors",
+    "ppt/charts/chartEx",
+    "ppt/charts/_rels/chartEx",
+    "ppt/diagrams/drawing",
+    "_xmlsignatures/",
+    "docProps/thumbnail.",
+  ],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },
+    {
+      opaque: true,
+      path: "ppt/printerSettings/printerSettings${i}.bin",
+      contentType: "application/vnd.openxmlformats-officedocument.presentationml.printerSettings",
+      presence: { kind: "conditional", flag: "printer settings relationship" },
+    },
     {
       path: "ppt/presentation.xml",
       contentType:
@@ -503,8 +529,15 @@ export const XLSX_PARTS = {
     "xl/embeddings/",
     "xl/printerSettings/",
     "xl/media/",
+    "xl/customProperty",
+    "customXml/",
     "xl/drawings/vmlDrawing",
+    "xl/drawings/_rels/vmlDrawing",
     "xl/activeX/activeX",
+    "xl/charts/style",
+    "xl/charts/colors",
+    "xl/diagrams/",
+    "_xmlsignatures/",
     "docProps/thumbnail.",
   ],
   parts: [
@@ -529,6 +562,12 @@ export const XLSX_PARTS = {
       path: "docProps/custom.xml",
       contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
       presence: { kind: "conditional", flag: "has custom properties" },
+    },
+    {
+      opaque: true,
+      path: "xl/printerSettings/printerSettings${i}.bin",
+      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings",
+      presence: { kind: "conditional", flag: "printer settings relationship" },
     },
     {
       path: "xl/styles.xml",
@@ -567,6 +606,16 @@ export const XLSX_PARTS = {
       path: "xl/drawings/drawing${i}.xml",
       contentType: "application/vnd.openxmlformats-officedocument.drawing+xml",
       presence: { kind: "conditional", flag: "worksheet has drawing" },
+    },
+    {
+      path: "xl/ctrlProps/ctrlProp${i}.xml",
+      contentType: "application/vnd.ms-excel.controlproperties+xml",
+      presence: { kind: "conditional", flag: "worksheet form controls" },
+    },
+    {
+      path: "xl/activeX/activeX${i}.xml",
+      contentType: "application/vnd.ms-office.activeX+xml",
+      presence: { kind: "conditional", flag: "worksheet ActiveX controls" },
     },
     {
       path: "xl/comments${i}.xml",

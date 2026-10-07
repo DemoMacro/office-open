@@ -24,7 +24,7 @@ export function parseFont(
     size: view.getUint16(0, true) / 20,
     bold: weight >= 700,
     italic: (view.getUint16(2, true) & 0x0002) !== 0,
-    colorIndexed: view.getUint16(4, true),
+    color: { indexed: view.getUint16(4, true) },
     underline: body[10] === 1,
     font: fontName,
   };

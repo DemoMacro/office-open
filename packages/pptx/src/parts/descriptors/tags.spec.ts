@@ -18,4 +18,16 @@ describe("tagListDesc", () => {
     expect(xml).toContain(`val="A &amp; B &lt;C&gt;"`);
     expect(tagListDesc.parse(parseXml(xml).elements![0]!, readCtx)).toEqual(tags);
   });
+
+  it("rejects malformed tags structurally", () => {
+    const missing = parseXml('<p:tagLst><p:tag name="category"/></p:tagLst>');
+    expect(() => tagListDesc.parse(missing.elements![0]!, readCtx)).toThrowError(
+      /requires name and val/,
+    );
+
+    const unsupported = parseXml("<p:tagLst><p:other/></p:tagLst>");
+    expect(() => tagListDesc.parse(unsupported.elements![0]!, readCtx)).toThrowError(
+      /Unsupported tags child/,
+    );
+  });
 });

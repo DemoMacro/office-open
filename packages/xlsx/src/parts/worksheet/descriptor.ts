@@ -23,6 +23,7 @@ import {
 import type { Element } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
+import { parseColorOptions, type ColorOptions } from "../../shared/color";
 import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
 import { parseCfColor, parseCfvo, parsePageBreaks } from "./parse";
@@ -30,14 +31,12 @@ import { parseSheetDataRows } from "./sheet-data";
 import type {
   CellSmartTagsOptions,
   CellWatchOptions,
-  CfColorOptions,
   CfvoOptions,
   ColumnOptions,
   ConditionalFormatOperator,
   ConditionalFormatOptions,
   ConditionalFormatRule,
   ConditionalFormatType,
-  ControlOptions,
   AnchorMarkerOptions,
   ObjectAnchorOptions,
   CustomSheetPropertyOptions,
@@ -57,6 +56,7 @@ import type {
   MergeCellOptions,
   OleObjectOptions,
   OleObjectPropertiesOptions,
+  ControlPrOptions,
   PageMarginsOptions,
   PageOrientation,
   PageSetupOptions,
@@ -74,10 +74,26 @@ import type {
   SheetPropertiesOptions,
   SheetProtectionOptions,
   SheetViewOptions,
-  TabColorOptions,
   WebPublishItemOptions,
   WorksheetOptions,
+  WorksheetControlOptions,
 } from "./types";
+
+/** Structured worksheet-control parse failure. */
+class WorksheetControlParseError extends Error {
+  readonly part: string;
+  readonly path: string;
+  readonly name: string;
+  readonly reason: string;
+
+  constructor(part: string, path: string, name: string, reason: string) {
+    super(`${part}${path}: ${name}: ${reason}`);
+    this.part = part;
+    this.path = path;
+    this.name = name;
+    this.reason = reason;
+  }
+}
 
 const DRAWING_HF_OFFSET_KEYS = [
   "lho",
@@ -175,14 +191,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       // Tab color
       const tabColorEl = findChild(sheetPrEl, "tabColor");
       if (tabColorEl) {
-        const tc: TabColorOptions = {};
-        if (attr(tabColorEl, "rgb")) tc.rgb = attr(tabColorEl, "rgb");
-        if (attrNum(tabColorEl, "theme") !== undefined) tc.theme = attrNum(tabColorEl, "theme");
-        if (attrNum(tabColorEl, "tint") !== undefined) tc.tint = attrNum(tabColorEl, "tint");
-        if (attr(tabColorEl, "tint") !== undefined) tc.tintRaw = attr(tabColorEl, "tint");
-        if (attrNum(tabColorEl, "indexed") !== undefined)
-          tc.indexed = attrNum(tabColorEl, "indexed");
-        result.tabColor = tc;
+        result.tabColor = parseColorOptions(tabColorEl);
       }
     }
 
@@ -504,7 +513,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const csEl = findChild(ruleEl, "colorScale");
           if (csEl) {
             const cfvo: CfvoOptions[] = [];
-            const colors: CfColorOptions[] = [];
+            const colors: ColorOptions[] = [];
             for (const child of csEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
               if (child.name === "color") {
@@ -519,7 +528,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           const dbEl = findChild(ruleEl, "dataBar");
           if (dbEl) {
             const cfvo: CfvoOptions[] = [];
-            let color: CfColorOptions | undefined;
+            let color: ColorOptions | undefined;
             for (const child of dbEl.elements ?? []) {
               if (child.name === "cfvo") cfvo.push(parseCfvo(child));
               if (child.name === "color") color = parseCfColor(child) ?? { indexed: 0 };
@@ -1087,47 +1096,147 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       if (oleObjects.length > 0) result.oleObjects = oleObjects;
     }
 
-    // Controls (CT_Controls — control attrs + optional controlPr child)
-    const controlsEl = findChild(el, "controls");
+    // Controls (CT_Controls — control attrs + optional controlPr child).
+    // Excel 2010+ can wrap either the whole container or each control.
+    const directControlsEl = findChild(el, "controls");
+    let controlsWrapped = false;
+    let controlsEl = directControlsEl;
+    if (!controlsEl) {
+      const controlsAcEl = findChild(el, "mc:AlternateContent");
+      const choiceEl = findChild(controlsAcEl ?? ({} as Element), "mc:Choice");
+      const wrappedControlsEl = findChild(choiceEl ?? ({} as Element), "controls");
+      if (wrappedControlsEl) {
+        controlsEl = wrappedControlsEl;
+        controlsWrapped = true;
+      }
+    }
     if (controlsEl) {
-      const controls: ControlOptions[] = [];
+      const controls: WorksheetControlOptions[] = [];
       for (const rawEl of controlsEl.elements ?? []) {
-        // Same mc:AlternateContent wrapper as oleObjects (Excel 2010+ form).
+        // Excel 2010+ wraps each control when the container itself is direct.
         const unwrapped = unwrapAlternateContent(rawEl, "control");
         const cEl = unwrapped.element;
-        if (!cEl) continue;
+        if (!cEl) {
+          throw new WorksheetControlParseError(
+            "xl/worksheets",
+            "/controls",
+            String(rawEl.name ?? ""),
+            "unsupported control element",
+          );
+        }
         const shapeId = attrNum(cEl, "shapeId");
         const cRid = attr(cEl, "r:id");
-        if (shapeId === undefined || cRid === undefined) continue;
-        const c: ControlOptions = { shapeId, rId: cRid };
-        if (unwrapped.wrapped) c.alternateContent = true;
+        if (shapeId === undefined) {
+          throw new WorksheetControlParseError(
+            "xl/worksheets",
+            "/controls/control",
+            "shapeId",
+            "missing required attribute",
+          );
+        }
+        if (cRid === undefined) {
+          throw new WorksheetControlParseError(
+            "xl/worksheets",
+            "/controls/control",
+            "r:id",
+            "missing required attribute",
+          );
+        }
+        const target = ctx.resolveRelationship(cRid);
+        if (target === undefined) {
+          throw new WorksheetControlParseError(
+            "xl/worksheets",
+            "/controls/control",
+            cRid,
+            "unresolved control relationship",
+          );
+        }
+        const kind = target.includes("/ctrlProps/")
+          ? ("form" as const)
+          : target.includes("/activeX/")
+            ? ("activeX" as const)
+            : undefined;
+        if (kind === undefined) {
+          throw new WorksheetControlParseError(
+            "xl/worksheets",
+            "/controls/control",
+            target,
+            "unsupported control relationship target",
+          );
+        }
+        const wrapped = unwrapped.wrapped;
+        let c: WorksheetControlOptions;
+        if (kind === "form") {
+          c = {
+            kind,
+            shapeId,
+            rId: cRid,
+            ...(wrapped ? { alternateContent: true } : {}),
+            formControlProperties: { objectType: "Button" },
+          };
+        } else {
+          c = {
+            kind,
+            shapeId,
+            rId: cRid,
+            ...(wrapped ? { alternateContent: true } : {}),
+            activeXControl: { classId: "" },
+          };
+        }
         const name = attr(cEl, "name");
         if (name !== undefined) c.name = name;
         const prEl = findChild(cEl, "controlPr");
         if (prEl) {
-          if (String(attr(prEl, "locked")) === "0") c.locked = false;
-          if (parseOnOff(attr(prEl, "uiObject"))) c.uiObject = true;
-          if (parseOnOff(attr(prEl, "recalcAlways"))) c.recalcAlways = true;
+          const properties: Partial<ControlPrOptions> = {
+            ...(String(attr(prEl, "locked")) === "0" ? { locked: false } : {}),
+            ...(parseOnOff(attr(prEl, "uiObject")) ? { uiObject: true } : {}),
+            ...(parseOnOff(attr(prEl, "recalcAlways")) ? { recalcAlways: true } : {}),
+            ...(String(attr(prEl, "defaultSize")) === "0" ? { defaultSize: false } : {}),
+            ...(String(attr(prEl, "print")) === "0" ? { print: false } : {}),
+            ...(parseOnOff(attr(prEl, "disabled")) ? { disabled: true } : {}),
+            ...(String(attr(prEl, "autoFill")) === "0" ? { autoFill: false } : {}),
+            ...(String(attr(prEl, "autoLine")) === "0" ? { autoLine: false } : {}),
+            ...(String(attr(prEl, "autoPict")) === "0" ? { autoPict: false } : {}),
+          };
+          const macro = attr(prEl, "macro");
+          if (macro !== undefined) properties.macro = macro;
+          const altText = attr(prEl, "altText");
+          if (altText !== undefined) properties.altText = altText;
           const linkedCell = attr(prEl, "linkedCell");
-          if (linkedCell !== undefined) c.linkedCell = linkedCell;
+          if (linkedCell !== undefined) properties.linkedCell = linkedCell;
           const listFillRange = attr(prEl, "listFillRange");
-          if (listFillRange !== undefined) c.listFillRange = listFillRange;
+          if (listFillRange !== undefined) properties.listFillRange = listFillRange;
           const cf = attr(prEl, "cf");
-          if (cf !== undefined) c.formula = cf;
-          if (String(attr(prEl, "defaultSize")) === "0") c.defaultSize = false;
-          if (String(attr(prEl, "autoLine")) === "0") c.autoLine = false;
-          if (String(attr(prEl, "autoPict")) === "0") c.autoPict = false;
+          if (cf !== undefined) properties.cf = cf;
           const prRid = attr(prEl, "r:id");
-          if (prRid !== undefined) c.iconRid = prRid;
+          if (prRid !== undefined) properties.iconRid = prRid;
           const anchorEl = findChild(prEl, "anchor");
-          if (anchorEl) {
-            const anchor = readEmbeddedAnchor(anchorEl);
-            if (anchor) c.anchor = anchor;
+          if (!anchorEl) {
+            throw new WorksheetControlParseError(
+              "xl/worksheets",
+              "/controls/control/controlPr",
+              "anchor",
+              "missing required element",
+            );
           }
+          const anchor = readEmbeddedAnchor(anchorEl);
+          if (!anchor) {
+            throw new WorksheetControlParseError(
+              "xl/worksheets",
+              "/controls/control/controlPr/anchor",
+              "from,to",
+              "invalid required marker",
+            );
+          }
+          properties.anchor = anchor;
+          c.properties = properties as ControlPrOptions;
         }
         controls.push(c);
       }
-      if (controls.length > 0) result.controls = controls;
+      if (controls.length > 0) {
+        result.controls = controls;
+        if (controlsWrapped) result.controlsAlternateContent = true;
+      }
     }
 
     // Web publish items (CT_WebPublishItems — attribute bag per item)

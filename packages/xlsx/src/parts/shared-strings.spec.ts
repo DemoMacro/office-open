@@ -66,6 +66,19 @@ describe("SharedStrings", () => {
     );
   });
 
+  it("parses the legacy Excel 2005 SST compatibility vocabulary", () => {
+    const doc = parseXml(
+      '<sst xmlns="http://schemas.microsoft.com/office/excel/2005/8/sst" ' +
+        'totalCount="3" uniqueCount="2"><sstItem><t>A</t></sstItem>' +
+        "<sstItem><t>B</t></sstItem></sst>",
+    );
+    const root = doc.elements?.[0];
+    if (!root) throw new Error("parsed document has no root element");
+    const result = sharedStringsDesc.parse(root, {} as never);
+    expect(result.entries).toEqual(["A", "B"]);
+    expect(sharedStringsDesc.stringify(result, {} as never)).toContain("<si><t>A</t></si>");
+  });
+
   it("round-trips legacy shared-string compatibility content", () => {
     const doc = parseXml(
       '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +

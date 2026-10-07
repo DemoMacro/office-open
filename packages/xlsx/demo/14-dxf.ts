@@ -5,11 +5,11 @@ import { generateWorkbook } from "@office-open/xlsx";
 const buffer = await generateWorkbook({
   dxfs: [
     // DXF 0: red text for values > 200
-    { font: { color: "FF0000", bold: true } },
+    { font: { color: { rgb: "FFFF0000" }, bold: true } },
     // DXF 1: green fill for values > 100
-    { fill: { color: "C6EFCE" } },
+    { fill: { backgroundColor: { rgb: "FFC6EFCE" } } },
     // DXF 2: yellow fill for values < 50
-    { fill: { color: "FFEB9C" } },
+    { fill: { backgroundColor: { rgb: "FFFFEB9C" } } },
   ],
   worksheets: [
     {

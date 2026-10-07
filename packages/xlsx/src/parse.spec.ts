@@ -14,6 +14,63 @@ async function roundTrip(opts: WorkbookOptions): Promise<WorkbookOptions> {
 }
 
 describe("parseWorkbook round-trip", () => {
+  it("parses and regenerates rich, numeric-lexical, and data-table cells", async () => {
+    const source = (await generateWorkbook(
+      { worksheets: [{ name: "Sheet" }] },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    const sheetPath = "xl/worksheets/sheet1.xml";
+    const namespace = `xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"`;
+    archive[sheetPath] = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>` +
+        `<worksheet ${namespace}><sheetData><row r="1">` +
+        `<c r="A1" t="inlineStr"><is>` +
+        `<r><rPr><b/><color rgb="FFFF0000"/><sz val="14"/></rPr><t>Red</t></r>` +
+        `<r><rPr><i/></rPr><t>It</t></r></is></c>` +
+        `<c r="B1"><v>10.199999999999999</v></c>` +
+        `<c r="C1" t="n"><f t="dataTable" ref="D1:E2" dt2D="1" dtr="1" ` +
+        `del1="1" del2="1" r1="F1" r2="F2"/><v>1E-4</v></c>` +
+        `</row></sheetData></worksheet>`,
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value).toMatchObject({
+      runs: [
+        { text: "Red", properties: { bold: true, color: { rgb: "FFFF0000" }, size: 14 } },
+        { text: "It", properties: { italic: true } },
+      ],
+    });
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[1]).toMatchObject({
+      value: 10.199999999999999,
+      valueRaw: "10.199999999999999",
+    });
+    expect(parsed.worksheets?.[0]?.rows?.[0]?.cells?.[2]?.formula).toMatchObject({
+      type: "dataTable",
+      reference: "D1:E2",
+      dt2D: true,
+      dtr: true,
+      del1: true,
+      del2: true,
+      inputCell1: "F1",
+      inputCell2: "F2",
+    });
+
+    const output = unzipSync(
+      (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array,
+    );
+    const sheet = new TextDecoder().decode(output[sheetPath]!);
+    expect(sheet).toContain(
+      `<r><rPr><b/><color rgb="FFFF0000"/><sz val="14"/></rPr><t>Red</t></r>` +
+        `<r><rPr><i/></rPr><t>It</t></r>`,
+    );
+    expect(sheet).toContain("<v>10.199999999999999</v>");
+    expect(sheet).toContain(
+      `<f t="dataTable" ref="D1:E2" dt2D="1" dtr="1" del1="1" del2="1" r1="F1" r2="F2"/>` +
+        `<v>1E-4</v>`,
+    );
+  });
+
   it("keeps worksheet contents aligned when workbook relationships are out of order", async () => {
     const buffer = (await generateWorkbook(
       {
@@ -485,7 +542,10 @@ describe("parseWorkbook round-trip", () => {
 
   it("round-trips dxfs from options through the workbook", async () => {
     const opts: WorkbookOptions = {
-      dxfs: [{ font: { bold: true } }, { fill: { color: "FF0000", patternType: "solid" } }],
+      dxfs: [
+        { font: { bold: true } },
+        { fill: { backgroundColor: { rgb: "FFFF0000" }, patternType: "solid" } },
+      ],
       worksheets: [{ name: "S", rows: [{ cells: [{ value: 1 }] }] }],
     };
 
@@ -498,10 +558,10 @@ describe("parseWorkbook round-trip", () => {
     const opts: WorkbookOptions = {
       dxfs: [
         {
-          font: { themeColor: 1, tint: 0.499985 },
+          font: { color: { theme: 1, tint: 0.499985 } },
           border: {
             outline: false,
-            left: { style: "thin", themeColor: 2, tint: -0.249973 },
+            left: { style: "thin", color: { theme: 2, tint: -0.249973 } },
           },
         },
       ],
@@ -519,16 +579,15 @@ describe("parseWorkbook round-trip", () => {
 
     const parsed = parseWorkbookSync(buffer);
     expect(parsed.dxfs![0]).toEqual({
-      font: { themeColor: 1, tint: 0.499985, tintRaw: "0.499985" },
+      font: { color: { theme: 1, tint: 0.499985 } },
       border: {
         outline: false,
-        left: { style: "thin", themeColor: 2, tint: -0.249973, tintRaw: "-0.249973" },
+        left: { style: "thin", color: { theme: 2, tint: -0.249973 } },
       },
     });
     expect(parsed.worksheets![0]!.tabColor).toEqual({
       theme: 3,
       tint: 0.599995,
-      tintRaw: "0.599995",
     });
   });
 

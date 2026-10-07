@@ -143,6 +143,35 @@ describe("deriveContentTypes", () => {
 });
 
 describe("finalizeContentTypes", () => {
+  it("preserves source declarations for absent parts and adds only uncovered outputs", () => {
+    const source: ContentTypesInput = {
+      preserveSourceDeclarations: true,
+      defaults: [
+        {
+          extension: "rels",
+          contentType: "application/vnd.openxmlformats-package.relationships+xml",
+        },
+      ],
+      overrides: [
+        { partName: "/xl/styles.xml", contentType: "spreadsheetml.styles+xml" },
+        { partName: "/docProps/core.xml", contentType: "core-properties+xml" },
+      ],
+    };
+    const xml = finalizeContentTypes(
+      { "xl/workbook.xml": new TextEncoder().encode("<workbook/>") },
+      {
+        resolve: (path) => (path === "xl/workbook.xml" ? "spreadsheetml.workbook+xml" : undefined),
+        mediaContentTypes: {},
+        source,
+      },
+      {} as never,
+    );
+
+    expect(xml).toContain('PartName="/docProps/core.xml"');
+    expect(xml).toContain('Extension="rels"');
+    expect(xml).toContain('PartName="/xl/workbook.xml"');
+  });
+
   it("does not force an override when the source default already declares the same type", () => {
     const input = finalizeContentTypes(
       { "xl/workbook.xml": new TextEncoder().encode("<workbook/>") },
@@ -160,5 +189,23 @@ describe("finalizeContentTypes", () => {
       {} as never,
     );
     expect(input).not.toContain("<Override");
+  });
+
+  it("keeps a generic source XML default instead of retyping the part", () => {
+    const input = finalizeContentTypes(
+      { "ppt/diagrams/drawing1.xml": new TextEncoder().encode("<drawing/>") },
+      {
+        resolve: () => "application/vnd.ms-office.drawingml.diagramDrawing+xml",
+        mediaContentTypes: {},
+        source: {
+          preserveSourceDeclarations: true,
+          defaults: [{ extension: "xml", contentType: "application/xml" }],
+          overrides: [],
+        },
+      },
+      {} as never,
+    );
+    expect(input).not.toContain("<Override");
+    expect(input).toContain('Extension="xml" ContentType="application/xml"');
   });
 });

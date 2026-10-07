@@ -29,11 +29,13 @@ import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
 import { attr, attrNum, findChild } from "@office-open/xml";
+import { ActiveXControlParseError, activeXControlDesc } from "@parts/active-x-control";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc, mergeNoteAnchors, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
+import { ControlPropertiesParseError, controlPropertiesDesc } from "@parts/control-properties";
 import { dialogsheetDesc } from "@parts/dialogsheet";
 import type { DialogsheetOptions } from "@parts/dialogsheet";
 import { drawingDesc, pickAnchorOptions } from "@parts/drawing";
@@ -323,7 +325,8 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       return (
         (name === "chartSpace" || name === "c:chartSpace" || name.endsWith(":chartSpace")) &&
         (chartNamespace === undefined ||
-          chartNamespace.includes("openxmlformats.org/drawingml/2006/chart"))
+          chartNamespace.includes("openxmlformats.org/drawingml/2006/chart") ||
+          chartNamespace.includes("purl.oclc.org/ooxml/drawingml/chart"))
       );
     }),
   );
@@ -463,7 +466,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   let sharedStringsUniqueCount: number | undefined;
   if (xlsx.sharedStrings) {
     sstEntries = sharedStringsDesc.parse(xlsx.sharedStrings, {} as never).entries;
-    sharedStringsCount = attrNum(xlsx.sharedStrings, "count");
+    sharedStringsCount =
+      attrNum(xlsx.sharedStrings, "count") ?? attrNum(xlsx.sharedStrings, "totalCount");
     sharedStringsUniqueCount = attrNum(xlsx.sharedStrings, "uniqueCount");
   }
   if (sstEntries.length > 0) opts.sharedStrings = sstEntries;
@@ -674,6 +678,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const absorbedDrawingParts = new Set<string>();
   const absorbedChartParts = new Set<string>();
   const absorbedCommentsParts = new Set<string>();
+  const absorbedControlParts = new Set<string>();
   for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
@@ -719,6 +724,70 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         wsOpts.commentsVmlSource = new TextDecoder().decode(source);
       }
       break; // one vmlDrawing per worksheet
+    }
+
+    // Form-control properties and ActiveX metadata live in per-control parts.
+    for (const control of wsOpts.controls ?? []) {
+      const target = readContext.resolveWorksheetRel(wsPath, control.rId!);
+      if (target === undefined) {
+        throw new ControlPropertiesParseError(
+          "xl/worksheets",
+          wsPath,
+          control.rId!,
+          "unresolved control relationship",
+        );
+      }
+      if (control.kind === "form") {
+        const el = xlsx.doc.get(target);
+        if (!el) {
+          throw new ControlPropertiesParseError(
+            "xl/ctrlProps",
+            target,
+            "formControlPr",
+            "missing part",
+          );
+        }
+        control.formControlProperties = controlPropertiesDesc.parse(el, readContext);
+      } else {
+        const el = xlsx.doc.get(target);
+        if (!el) {
+          throw new ActiveXControlParseError("xl/activeX", target, "ax:ocx", "missing part");
+        }
+        control.activeXControl = activeXControlDesc.parse(el, readContext);
+        const relsEl = xlsx.doc.get(partPathToRelsPath(target));
+        for (const child of relsEl?.elements ?? []) {
+          if (child.name !== "Relationship") {
+            throw new ActiveXControlParseError(
+              target,
+              partPathToRelsPath(target),
+              String(child.name ?? ""),
+              "unsupported relationship element",
+            );
+          }
+          const type = attr(child, "Type");
+          const relTarget = attr(child, "Target");
+          const rId = attr(child, "Id");
+          if (!type || !relTarget || !rId) {
+            throw new ActiveXControlParseError(
+              target,
+              partPathToRelsPath(target),
+              "Relationship",
+              "missing required relationship attribute",
+            );
+          }
+          if (!type.endsWith("/activeXControlBinary")) {
+            throw new ActiveXControlParseError(
+              target,
+              partPathToRelsPath(target),
+              type,
+              "unsupported relationship type",
+            );
+          }
+          control.activeXControl.binaryPath = resolveRelationshipTarget(target, relTarget);
+        }
+      }
+      absorbedControlParts.add(target);
+      absorbedControlParts.add(partPathToRelsPath(target));
     }
 
     // Drawings (images + charts)
@@ -1318,6 +1387,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.worksheets.map((path) => partPathToRelsPath(path)),
     ...chartsheetPaths,
     ...dialogsheetPaths,
+    ...extLinkPaths,
+    ...extLinkPaths.map((path) => partPathToRelsPath(path)),
     ...(xlsx.styles ? [xlsx.stylesPath, partPathToRelsPath(xlsx.stylesPath)] : []),
     ...(xlsx.theme ? [xlsx.theme, partPathToRelsPath(xlsx.theme)] : []),
     ...(xlsx.sharedStrings ? [xlsx.sharedStringsPath] : []),
@@ -1334,6 +1405,10 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         .keys("xl/comments")
         .filter((path) => /^xl\/comments\d+\.xml$/i.test(path) && absorbedCommentsParts.has(path)),
     ).flatMap((path) => [path, partPathToRelsPath(path)]),
+    ...xlsx.doc
+      .keys("xl/ctrlProps/")
+      .filter((path) => path.endsWith(".xml") && absorbedControlParts.has(path)),
+    ...xlsx.doc.keys("xl/activeX/").filter((path) => absorbedControlParts.has(path)),
     ...xlsx.worksheets.flatMap((worksheetPath) => {
       if (readContext.getWorksheetRelsByType(worksheetPath, "/comments").length === 0) return [];
       return readContext
@@ -1392,7 +1467,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const sourceContentTypes = xlsx.doc.get("[Content_Types].xml");
   if (sourceContentTypes) {
     const ct = contentTypesDesc.parse(sourceContentTypes, {} as ReadContext);
-    if (ct) opts.contentTypes = ct;
+    if (ct) opts.contentTypes = { ...ct, preserveSourceDeclarations: true };
   }
 
   return opts as WorkbookOptions;

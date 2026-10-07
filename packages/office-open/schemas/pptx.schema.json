@@ -3300,6 +3300,17 @@
           "description": "Smooth lines for the whole line-chart group (c:smooth on c:lineChart, after c:marker) — distinct from the per-series `smooth`. Emitted only when set.",
           "type": "boolean"
         },
+        "sourcePath": {
+          "description": "Source chart part path (`ppt/charts/chartN.xml`); round-trip only.",
+          "type": "string"
+        },
+        "sourceRelationships": {
+          "description": "Chart-part relationships other than userShapes; round-trip only.",
+          "items": {
+            "$ref": "#/definitions/ChartSourceRelationship"
+          },
+          "type": "array"
+        },
         "splitPosition": {
           "description": "ofPie split position (c:splitPos, used with splitType pos/val).",
           "type": "number"
@@ -3654,6 +3665,26 @@
         }
       },
       "required": ["values"],
+      "type": "object"
+    },
+    "ChartSourceRelationship": {
+      "additionalProperties": false,
+      "properties": {
+        "rId": {
+          "type": "string"
+        },
+        "relationshipType": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "targetMode": {
+          "const": "External",
+          "type": "string"
+        }
+      },
+      "required": ["relationshipType", "target", "rId"],
       "type": "object"
     },
     "ChartStyle2010Options": {
@@ -4349,6 +4380,37 @@
       },
       "type": "object"
     },
+    "CommentAuthorOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "clrIdx": {
+          "description": "Author color index (`p:cmAuthor/@clrIdx`).",
+          "type": "number"
+        },
+        "ext": {
+          "description": "Verbatim inner XML of `p:extLst`; round-trip only.",
+          "type": "string"
+        },
+        "id": {
+          "description": "Stable author identifier (`p:cmAuthor/@id`).",
+          "type": "number"
+        },
+        "initials": {
+          "description": "Initials (`p:cmAuthor/@initials`).",
+          "type": "string"
+        },
+        "lastIdx": {
+          "description": "Next comment ordinal (`p:cmAuthor/@lastIdx`).",
+          "type": "number"
+        },
+        "name": {
+          "description": "Display name (`p:cmAuthor/@name`).",
+          "type": "string"
+        }
+      },
+      "required": ["id", "name", "initials", "clrIdx", "lastIdx"],
+      "type": "object"
+    },
     "CommonViewPropertiesOptions": {
       "additionalProperties": false,
       "description": "(`p:cViewPr`) — zoom scale and origin, the child shared by the slide/outline/notes-text/sorter view property elements.",
@@ -4745,6 +4807,10 @@
             "$ref": "#/definitions/ContentTypeOverride"
           },
           "type": "array"
+        },
+        "preserveSourceDeclarations": {
+          "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "type": "boolean"
         }
       },
       "required": ["defaults", "overrides"],
@@ -10182,6 +10248,13 @@
           },
           "type": "array"
         },
+        "commentAuthors": {
+          "description": "Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions.",
+          "items": {
+            "$ref": "#/definitions/CommentAuthorOptions"
+          },
+          "type": "array"
+        },
         "compatMode": {
           "type": "boolean"
         },
@@ -10450,8 +10523,11 @@
           "$ref": "#/definitions/TableStyleListOptions"
         },
         "tags": {
-          "$ref": "#/definitions/TagListOptions",
-          "description": "User-defined tags part contents (ppt/tags/tagsN.xml); compiler wires p:custDataLst/p:tags."
+          "description": "User-defined tags parts (ppt/tags/tagsN.xml); compiler wires the presentation-owned reference.",
+          "items": {
+            "$ref": "#/definitions/TagPartOptions"
+          },
+          "type": "array"
         },
         "title": {
           "type": "string"
@@ -12303,8 +12379,20 @@
         "author": {
           "type": "string"
         },
+        "authorId": {
+          "description": "Source author identity (`p:cm/@authorId`); round-trip only.",
+          "type": "number"
+        },
         "date": {
           "$ref": "#/definitions/DateTime"
+        },
+        "ext": {
+          "description": "Verbatim inner XML of `p:extLst`; round-trip only.",
+          "type": "string"
+        },
+        "idx": {
+          "description": "Source ordinal (`p:cm/@idx`); round-trip only.",
+          "type": "number"
         },
         "initials": {
           "type": "string"
@@ -13710,12 +13798,23 @@
       },
       "type": "object"
     },
-    "TagListOptions": {
-      "description": "User-defined tags part (ppt/tags/tagsN.xml — p:tagLst).",
-      "items": {
-        "$ref": "#/definitions/StringTagOptions"
+    "TagPartOptions": {
+      "additionalProperties": false,
+      "description": "A user-defined tags part (ppt/tags/tagsN.xml — p:tagLst).",
+      "properties": {
+        "sourcePath": {
+          "description": "Source package path; round-trip only — do not hand-author.",
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "$ref": "#/definitions/StringTagOptions"
+          },
+          "type": "array"
+        }
       },
-      "type": "array"
+      "required": ["tags"],
+      "type": "object"
     },
     "TextAlignment": {
       "description": "Paragraph alignment; \"justify\" stretches lines to full width, \"distribute\" justifies including the last line, \"lowJustification\" aligns to a low baseline, \"thaiDistributed\" is Thai-style distribution.",

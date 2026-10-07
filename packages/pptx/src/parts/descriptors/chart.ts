@@ -51,6 +51,8 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
       pptxCtx.addChart(chartKey, {
         key: chartKey,
         chartSpaceXml: chartXml,
+        ...(opts.sourcePath ? { sourcePath: opts.sourcePath } : {}),
+        ...(opts.sourceRelationships ? { sourceRelationships: opts.sourceRelationships } : {}),
         ...(opts.userShapes ? { userShapes: buildUserShapesData(opts.userShapes) } : {}),
       });
     }
@@ -115,21 +117,44 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
             Object.assign(result, chartSpaceDesc.parse(chartXml, _ctx));
             // c:userShapes body hangs off the chart part's own rels — the
             // core descriptor reads the r:id only, fill the anchors here
+            const chartRelsEl = _ctx.getPart(partPathToRelsPath(chartPath));
+            const relationships =
+              chartRelsEl?.elements?.filter((element) => element.name === "Relationship") ?? [];
             const us = result.userShapes;
+            const userShapesRel = us
+              ? relationships.find(
+                  (element) =>
+                    attr(element, "Id") === (us.relationshipId ?? "") &&
+                    (attr(element, "Type") ?? "").endsWith("/chartUserShapes"),
+                )
+              : undefined;
+            const target = userShapesRel ? attr(userShapesRel, "Target") : undefined;
+            const userShapesPath = target
+              ? resolveRelationshipTarget(chartPath, target)
+              : undefined;
             if (us && us.anchors.length === 0) {
-              const relsEl = _ctx.getPart(partPathToRelsPath(chartPath));
-              const rel = relsEl?.elements?.find(
-                (e) =>
-                  e.name === "Relationship" &&
-                  attr(e, "Id") === (us.relationshipId ?? "") &&
-                  (attr(e, "Type") ?? "").endsWith("/chartUserShapes"),
-              );
-              const target = rel ? attr(rel, "Target") : undefined;
-              const bodyEl = target
-                ? _ctx.getPart(resolveRelationshipTarget(chartPath, target))
-                : undefined;
+              const bodyEl = userShapesPath ? _ctx.getPart(userShapesPath) : undefined;
               if (bodyEl) us.anchors = userShapesDesc.parse(bodyEl, _ctx).anchors;
             }
+            if (us && userShapesPath) us.path = userShapesPath;
+            result.sourcePath = chartPath;
+            result.sourceRelationships = relationships
+              ?.filter((element) => element !== userShapesRel)
+              .flatMap((element) => {
+                const relationshipType = attr(element, "Type");
+                const relationshipTarget = attr(element, "Target");
+                const relationshipId = attr(element, "Id");
+                const targetMode = attr(element, "TargetMode");
+                if (!relationshipType || !relationshipTarget || !relationshipId) return [];
+                return [
+                  {
+                    relationshipType,
+                    target: relationshipTarget,
+                    rId: relationshipId,
+                    ...(targetMode === "External" ? { targetMode: "External" as const } : {}),
+                  },
+                ];
+              });
           }
         }
       }

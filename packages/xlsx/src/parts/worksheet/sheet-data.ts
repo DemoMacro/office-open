@@ -383,6 +383,7 @@ export function parseSheetDataRows(
           cellEnd = cellClose + 4;
           let vText: string | undefined;
           let vNum: number | undefined;
+          let vRaw: string | undefined;
           let vPreserve = false;
           let inline:
             | {
@@ -441,8 +442,13 @@ export function parseSheetDataRows(
                       n = n * 10 + d;
                     }
                   }
-                  if (allDigits) vNum = n;
-                  else vText = textContent(raw, vStart, close);
+                  if (allDigits) {
+                    vNum = n;
+                    vRaw = raw.slice(vStart, close);
+                  } else {
+                    vText = textContent(raw, vStart, close);
+                    vRaw = vText;
+                  }
                 }
                 p = close + 4;
                 continue;
@@ -583,6 +589,7 @@ export function parseSheetDataRows(
             (type === undefined || type === "str" || type === "d")
           )
             cell.valueRaw = vText;
+          if (vRaw !== undefined && (type === undefined || type === "n")) cell.valueRaw = vRaw;
         } else if (type !== undefined) {
           cell.typeRaw = type;
         }

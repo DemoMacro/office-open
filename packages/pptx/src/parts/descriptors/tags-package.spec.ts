@@ -10,7 +10,7 @@ describe("user-defined tags part", () => {
   it("packs tags, wires customer data, and round-trips", () => {
     const options = {
       slides: [],
-      tags: [{ name: "category", val: "demo" }],
+      tags: [{ tags: [{ name: "category", val: "demo" }] }],
     };
     const output = generatePresentationSync(options, { type: "uint8array" });
     const files = unzipSync(output);
@@ -23,13 +23,20 @@ describe("user-defined tags part", () => {
     );
     expect(decoder.decode(files["[Content_Types].xml"]!)).toContain("presentationml.tags+xml");
 
-    expect(parsePresentationSync(output).tags).toEqual(options.tags);
+    expect(parsePresentationSync(output).tags).toEqual([
+      { sourcePath: "ppt/tags/tags1.xml", tags: [{ name: "category", val: "demo" }] },
+    ]);
   });
 
-  it("round-trips an explicitly empty tag list", () => {
-    const output = generatePresentationSync({ slides: [], tags: [] }, { type: "uint8array" });
+  it("round-trips an explicitly empty tag part", () => {
+    const output = generatePresentationSync(
+      { slides: [], tags: [{ tags: [] }] },
+      { type: "uint8array" },
+    );
     const files = unzipSync(output);
     expect(decoder.decode(files["ppt/tags/tags1.xml"]!)).toContain("<p:tagLst");
-    expect(parsePresentationSync(output).tags).toEqual([]);
+    expect(parsePresentationSync(output).tags).toEqual([
+      { sourcePath: "ppt/tags/tags1.xml", tags: [] },
+    ]);
   });
 });

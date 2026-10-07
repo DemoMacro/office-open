@@ -146,7 +146,7 @@ export function buildCommentData(
 } {
   const authorMap = new Map<
     string,
-    { id: number; name: string; initials: string; clrIdx: number; commentCount: number }
+    { id: number; name: string; initials: string; clrIdx: number; lastIdx: number; ext?: string }
   >();
   let nextAuthorId = 0;
   // Seed from existing authors so appended comments continue author ids and the
@@ -157,7 +157,8 @@ export function buildCommentData(
       name: a.name,
       initials: a.initials,
       clrIdx: a.clrIdx,
-      commentCount: a.lastIdx,
+      lastIdx: a.lastIdx,
+      ...(a.ext ? { ext: a.ext } : {}),
     });
     if (a.id >= nextAuthorId) nextAuthorId = a.id + 1;
   }
@@ -172,27 +173,39 @@ export function buildCommentData(
 
     for (const c of slideComments) {
       let author = authorMap.get(c.author);
-      if (!author) {
+      if (c.authorId !== undefined) {
+        const sourceAuthor = existingAuthors.find((candidate) => candidate.id === c.authorId);
+        author = {
+          id: c.authorId,
+          name: sourceAuthor?.name ?? c.author,
+          initials: sourceAuthor?.initials ?? (c.initials || deriveInitials(c.author)),
+          clrIdx: sourceAuthor?.clrIdx ?? c.authorId,
+          lastIdx: c.idx ?? sourceAuthor?.lastIdx ?? 0,
+          ...(sourceAuthor?.ext || c.ext ? { ext: sourceAuthor?.ext ?? c.ext } : {}),
+        };
+        authorMap.set(c.author, author);
+      } else if (!author) {
         const id = nextAuthorId++;
         author = {
           id,
           name: c.author,
           initials: c.initials || deriveInitials(c.author),
           clrIdx: id,
-          commentCount: 0,
+          lastIdx: 0,
         };
         authorMap.set(c.author, author);
       }
-      author.commentCount++;
+      author.lastIdx = c.idx ?? author.lastIdx + 1;
 
       commentEntries.push({
-        authorId: author.id,
-        idx: author.commentCount,
+        authorId: c.authorId ?? author.id,
+        idx: c.idx ?? author.lastIdx,
         date: c.date,
         x: convertToEmu(c.x),
         y: convertToEmu(c.y),
         text: c.text,
         modified: c.modified,
+        ...(c.ext ? { ext: c.ext } : {}),
       });
     }
 
@@ -200,13 +213,14 @@ export function buildCommentData(
   }
 
   const authors =
-    authorMap.size > 0
+    existingAuthors.length > 0 || authorMap.size > 0
       ? Array.from(authorMap.values(), (a) => ({
           id: a.id,
           name: a.name,
           initials: a.initials,
           clrIdx: a.clrIdx,
-          lastIdx: a.commentCount,
+          lastIdx: a.lastIdx,
+          ...(a.ext ? { ext: a.ext } : {}),
         }))
       : undefined;
 
@@ -254,6 +268,7 @@ export function compileSlideParts(
   charts: ChartCollection,
   smartArts: SmartArtCollection,
   passthroughRelationships: PresentationOptions["passthroughRelationships"],
+  existingAuthors: AuthorEntry[] = [],
 ): SlideCompileArtifacts {
   const media = descCtx.mediaCollection;
 
@@ -277,7 +292,10 @@ export function compileSlideParts(
     }
   }
 
-  const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(slides);
+  const { authors: commentAuthorEntries, perSlide: slideCommentEntries } = buildCommentData(
+    slides,
+    existingAuthors,
+  );
 
   // Group passthrough rels by source part once — the per-slide loop below
   // looks its own slice up instead of re-filtering the full list each time.
@@ -429,10 +447,16 @@ function wireSlidePlaceholderBatches(
     const allChartKeys = [...xmlCompCharts.map((c) => c.key), ...descCharts.map((c) => c.key)];
     replacedSlideXml = replaceChartPlaceholders(replacedSlideXml, allChartKeys, slideChartOffset);
     for (const [ci, chartKey] of allChartKeys.entries()) {
+      const chartData = [...charts.array, ...descCtx.charts].find(
+        (chart) => chart.key === chartKey,
+      );
+      const chartPath =
+        chartData?.sourcePath ??
+        `ppt/charts/chart${getChartGlobalIndex(chartKey, charts.array, descCtx.charts) + 1}.xml`;
       rels.addRelationship(
         slideChartOffset + ci,
         RELATIONSHIP_TYPES.chart,
-        `../charts/chart${getChartGlobalIndex(chartKey, charts.array, descCtx.charts) + 1}.xml`,
+        chartPath.startsWith("ppt/charts/") ? `../${chartPath.slice("ppt/".length)}` : chartPath,
       );
     }
   }

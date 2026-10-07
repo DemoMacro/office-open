@@ -7,6 +7,7 @@ import { parseOnOff } from "@office-open/core";
 import { attr, attrNum, findChild } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
+import { parseColorOptions } from "../../shared/color";
 import type {
   AlignmentOptions,
   BorderOptions,
@@ -79,21 +80,7 @@ export function parseFont(el: XmlElement): FontOptions {
         result.sizeRaw = attr(child, "val");
         break;
       case "color":
-        {
-          const color = parseColorHex(child);
-          if (color !== undefined) result.color = color;
-          result.colorRaw = attr(child, "type") === "rgb" ? attr(child, "val") : attr(child, "rgb");
-        }
-        readThemeColor(child, result);
-        const indexed = attrNum(child, "indexed");
-        const legacyIndexed = attr(child, "type") === "icv" ? attrNum(child, "val") : undefined;
-        const resolvedIndexed = indexed ?? legacyIndexed;
-        if (resolvedIndexed !== undefined) result.colorIndexed = resolvedIndexed;
-        if (attr(child, "type") !== undefined) {
-          result.legacyColorType = attr(child, "type") as FontOptions["legacyColorType"];
-          result.legacyColorValue = attr(child, "val");
-        }
-        if (parseOnOff(attr(child, "auto"))) result.autoColor = true;
+        result.color = parseColorOptions(child);
         break;
       case "name":
         result.font = attr(child, "val") ?? undefined;
@@ -128,21 +115,11 @@ export function parseFill(el: XmlElement): CellFillOptions {
     }
     const fg = findChild(legacyPattern, "fgColor");
     if (fg) {
-      result.color = parseColorHex(fg);
-      readThemeColor(fg, result);
-      result.fgLegacyColorType = attr(fg, "type") as CellFillOptions["fgLegacyColorType"];
-      result.fgLegacyColorValue = attr(fg, "val");
-      const indexed = attrNum(fg, "indexed");
-      if (indexed !== undefined) result.colorIndexed = indexed;
+      result.foregroundColor = parseColorOptions(fg);
     }
     const bg = findChild(legacyPattern, "bgColor");
     if (bg) {
-      result.bgColor = parseColorHex(bg);
-      result.bgThemeColor = attrNum(bg, "theme");
-      result.bgLegacyColorType = attr(bg, "type") as CellFillOptions["bgLegacyColorType"];
-      result.bgLegacyColorValue = attr(bg, "val");
-      const bgIndexed = attrNum(bg, "indexed");
-      if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
+      result.backgroundColor = parseColorOptions(bg);
     }
     return result;
   }
@@ -155,26 +132,11 @@ export function parseFill(el: XmlElement): CellFillOptions {
     if (patternType) result.patternType = patternType as CellFillOptions["patternType"];
     const fg = findChild(patternFill, "fgColor");
     if (fg) {
-      const color = parseColorHex(fg);
-      if (color !== undefined) result.color = color;
-      result.fgColorRaw = attr(fg, "type") === "rgb" ? attr(fg, "val") : attr(fg, "rgb");
-      readThemeColor(fg, result);
-      const indexed = attrNum(fg, "indexed");
-      if (indexed !== undefined) result.colorIndexed = indexed;
-      if (parseOnOff(attr(fg, "auto"))) result.fgAutoColor = true;
+      result.foregroundColor = parseColorOptions(fg);
     }
     const bg = findChild(patternFill, "bgColor");
     if (bg) {
-      result.bgColor = parseColorHex(bg);
-      result.bgColorRaw = attr(bg, "type") === "rgb" ? attr(bg, "val") : attr(bg, "rgb");
-      const bgTheme = attrNum(bg, "theme");
-      if (bgTheme !== undefined) result.bgThemeColor = bgTheme;
-      const bgTint = attrNum(bg, "tint");
-      if (bgTint !== undefined) result.bgTint = bgTint;
-      if (attr(bg, "tint") !== undefined) result.bgTintRaw = attr(bg, "tint");
-      const bgIndexed = attrNum(bg, "indexed");
-      if (bgIndexed !== undefined) result.bgColorIndexed = bgIndexed;
-      if (parseOnOff(attr(bg, "auto"))) result.bgAutoColor = true;
+      result.backgroundColor = parseColorOptions(bg);
     }
     return result;
   }
@@ -201,9 +163,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
       const color = findChild(s, "color");
       if (pos === undefined || !color) continue;
       const stop: CellGradientStopOptions = { position: pos };
-      const stopColor = parseColorHex(color);
-      if (stopColor !== undefined) stop.color = stopColor;
-      readThemeColor(color, stop);
+      stop.color = parseColorOptions(color);
       stops.push(stop);
     }
     if (stops.length > 0) result.stops = stops;
@@ -249,17 +209,7 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
       if (style !== undefined) opts.style = style as BorderOptions["style"];
       const color = findChild(sideEl, "color");
       if (color) {
-        const sideColor = parseColorHex(color);
-        if (sideColor !== undefined) opts.color = sideColor;
-        opts.colorRaw = attr(color, "type") === "rgb" ? attr(color, "val") : attr(color, "rgb");
-        readThemeColor(color, opts);
-        if (attr(color, "type") !== undefined) {
-          opts.legacyColorType = attr(color, "type") as BorderOptions["legacyColorType"];
-          opts.legacyColorValue = attr(color, "val");
-        }
-        if (parseOnOff(attr(color, "auto"))) opts.autoColor = true;
-        const indexed = attrNum(color, "indexed");
-        if (indexed !== undefined) opts.colorIndexed = indexed;
+        opts.color = parseColorOptions(color);
       }
       result[
         side as
@@ -318,8 +268,8 @@ export function parseProtection(el: XmlElement): CellProtectionOptions {
 }
 
 /**
- * Read an sml color element's `@rgb`, stripping the alpha prefix when present
- * (FF000000 → 000000). Shared by all xlsx color-attr parse sites.
+ * Read a CT_RgbColor `@rgb`, stripping the alpha prefix when present
+ * (FF000000 → 000000). Used by legacy color-list extensions, not CT_Color.
  */
 export function parseColorHex(el: XmlElement): string | undefined {
   const rgb = attr(el, "rgb");
@@ -328,34 +278,4 @@ export function parseColorHex(el: XmlElement): string | undefined {
     return rgb.length === 8 ? rgb.slice(2) : rgb;
   }
   return undefined;
-}
-
-/**
- * Read an sml color element's theme channels (`@theme`/`@tint`) onto a target
- * object. Called wherever a color element carries a palette reference instead
- * of an explicit RGB (fonts, fills, border sides).
- */
-export function readThemeColor(
-  el: XmlElement,
-  target: {
-    themeColor?: number;
-    tint?: number;
-    tintRaw?: string;
-    legacyColorType?: "theme" | "icv" | "rgb";
-    legacyColorValue?: string;
-  },
-): void {
-  const legacyColorType = attr(el, "type");
-  const legacyValue = attrNum(el, "val");
-  const theme =
-    attrNum(el, "theme") ??
-    (legacyColorType === "theme" && legacyValue !== undefined ? legacyValue : undefined);
-  if (theme !== undefined) target.themeColor = theme;
-  if (legacyColorType !== undefined)
-    target.legacyColorType = legacyColorType as "theme" | "icv" | "rgb";
-  if (legacyValue !== undefined) target.legacyColorValue = String(legacyValue);
-  const tint = attrNum(el, "tint");
-  if (tint !== undefined) target.tint = tint;
-  const tintRaw = attr(el, "tint");
-  if (tintRaw !== undefined) target.tintRaw = tintRaw;
 }

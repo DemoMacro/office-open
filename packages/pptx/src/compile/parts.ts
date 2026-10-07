@@ -18,6 +18,8 @@ import {
   resolverFromRegistry,
 } from "@office-open/core";
 import type { Zippable } from "@office-open/core";
+import { partPathToRelsPath } from "@office-open/core";
+import type { RelationshipType } from "@office-open/core";
 import { ChartCollection } from "@office-open/core/chart";
 import {
   stringifyColorDefinitionPart,
@@ -25,7 +27,6 @@ import {
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
 import { SmartArtCollection } from "@office-open/core/smartart";
-import { escapeXml } from "@office-open/xml";
 import { getColorXml, getLayoutXml, getStyleXml, DEFAULT_DRAWING_XML } from "@parts/smartart";
 import type { PresentationOptions } from "@shared/file";
 
@@ -78,26 +79,45 @@ export function compileTailParts(
     ...charts.array.map((c) => ({
       key: c.key,
       xml: XML_DECL + c.chartSpaceXml,
+      sourcePath: c.sourcePath,
+      sourceRelationships: c.sourceRelationships,
       userShapes: c.userShapes,
     })),
     ...descCtx.charts.map((c) => ({
       key: c.key,
       xml: c.chartSpaceXml,
+      sourcePath: c.sourcePath,
+      sourceRelationships: c.sourceRelationships,
       userShapes: c.userShapes,
     })),
   ];
   for (const [i, chart] of allCharts.entries()) {
-    files[`ppt/charts/chart${i + 1}.xml`] = encoder.encode(chart.xml);
+    const chartPath = chart.sourcePath ?? `ppt/charts/chart${i + 1}.xml`;
+    files[chartPath] = encoder.encode(chart.xml);
+    const chartRels = new Relationships();
+    for (const relationship of chart.sourceRelationships ?? []) {
+      chartRels.addRelationship(
+        relationship.rId,
+        relationship.relationshipType as RelationshipType,
+        relationship.target,
+        relationship.targetMode,
+      );
+    }
     // User-shapes part behind c:userShapes: the chart's own rels entry plus
     // the body part (chartUserShapes relationship, same directory).
     if (chart.userShapes) {
-      files[`ppt/charts/userShapes${i + 1}.xml`] = encoder.encode(chart.userShapes.xml);
-      files[`ppt/charts/_rels/chart${i + 1}.xml.rels`] = encoder.encode(
-        XML_DECL +
-          `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
-          `<Relationship Id="${escapeXml(chart.userShapes.relationshipId)}" Type="${CHART_USER_SHAPES_REL}" Target="userShapes${i + 1}.xml"/>` +
-          `</Relationships>`,
+      const userShapesPath = chart.userShapes.path ?? `ppt/charts/userShapes${i + 1}.xml`;
+      files[userShapesPath] = encoder.encode(chart.userShapes.xml);
+      chartRels.addRelationship(
+        chart.userShapes.relationshipId,
+        CHART_USER_SHAPES_REL,
+        userShapesPath.startsWith("ppt/charts/")
+          ? userShapesPath.slice("ppt/charts/".length)
+          : userShapesPath,
       );
+    }
+    if (chartRels.relationshipCount > 0) {
+      files[partPathToRelsPath(chartPath)] = encoder.encode(XML_DECL + chartRels.serialize());
     }
   }
 

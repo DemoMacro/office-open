@@ -200,7 +200,7 @@ describe("package metadata presence", () => {
     expect(rels).toContain("docProps/app.xml");
   });
 
-  it("removes orphan metadata declarations from damaged sources", () => {
+  it("preserves orphan metadata declarations from damaged sources", () => {
     const source = zipSync({
       "[Content_Types].xml": new TextEncoder().encode(
         '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
@@ -223,18 +223,18 @@ describe("package metadata presence", () => {
     const parsed = parseDocumentSync(source);
     expect(
       parsed.contentTypes?.overrides.some((override) => override.partName === "/docProps/core.xml"),
-    ).toBe(false);
+    ).toBe(true);
     expect(
       parsed.contentTypes?.overrides.some((override) => override.partName === "/docProps/app.xml"),
-    ).toBe(false);
+    ).toBe(true);
     const output = generateDocumentSync(parsed, { type: "uint8array" });
     const rootRelsXml = new TextDecoder().decode(unzipSync(output)["_rels/.rels"]!);
     expect(rootRelsXml).toContain("/relationships/officeDocument");
     expect(rootRelsXml).toContain("docProps/core.xml");
     expect(rootRelsXml).toContain("docProps/app.xml");
     const contentTypesXml = new TextDecoder().decode(unzipSync(output)["[Content_Types].xml"]!);
-    expect(contentTypesXml).not.toContain("/docProps/core.xml");
-    expect(contentTypesXml).not.toContain("/docProps/app.xml");
+    expect(contentTypesXml).toContain("/docProps/core.xml");
+    expect(contentTypesXml).toContain("/docProps/app.xml");
   });
 
   it("round-trips a non-default primary document path", () => {

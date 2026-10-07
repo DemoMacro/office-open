@@ -66,6 +66,36 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("_rels/.rels", source, output)).toEqual([]);
   });
 
+  it("normalizes legacy shared-string vocabulary to transitional SML", () => {
+    const source = new TextEncoder().encode(
+      '<sst xmlns="http://schemas.microsoft.com/office/excel/2005/8/sst" ' +
+        'totalCount="2" uniqueCount="2"><sstItem><t>A</t></sstItem>' +
+        "<sstItem><t>B</t></sstItem></sst>",
+    );
+    const output = new TextEncoder().encode(
+      '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+        'count="2" uniqueCount="2"><si><t>A</t></si><si><t>B</t></si></sst>',
+    );
+    expect(explainSemanticPartDiff("xl/sharedStrings.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes legacy CT_Color type/value lexemes", () => {
+    const source = new TextEncoder().encode(
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<fonts><font><color type="theme" val="1"/><color type="rgb" val="FF112233"/>' +
+        '<color type="icv" val="9"/></font>' +
+        '<fills><fill><pattern patternType="solid"><fgColor type="theme" val="3" tint="0.5"/>' +
+        '<bgColor type="icv" val="65"/></pattern></fill></fills>',
+    );
+    const output = new TextEncoder().encode(
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<fonts><font><color theme="1"/><color rgb="FF112233"/><color indexed="9"/></font>' +
+        '<fills><fill><pattern patternType="solid"><fgColor theme="3" tint="0.5"/>' +
+        '<bgColor indexed="65"/></pattern></fill></fills></styleSheet>',
+    );
+    expect(explainSemanticPartDiff("xl/styles.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes legacy Office relationship URIs to transitional equivalents", () => {
     const source = new TextEncoder().encode(
       '<Relationships xmlns="http://schemas.microsoft.com/package/2005/06/relationships">' +

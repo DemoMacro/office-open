@@ -117,7 +117,7 @@ describe("commentsDesc round-trip", () => {
                   bold: true,
                   italic: false,
                   size: 12,
-                  color: "FF0000",
+                  color: { rgb: "FFFF0000" },
                   font: "Calibri",
                 },
               },
@@ -144,7 +144,7 @@ describe("commentsDesc round-trip", () => {
     const props0 = (runs[0] as { properties: Record<string, unknown> }).properties;
     expect(props0.bold).toBe(true);
     expect(props0.size).toBe(12);
-    expect(props0.color).toBe("FF0000");
+    expect(props0.color).toEqual({ rgb: "FFFF0000" });
     expect(props0.font).toBe("Calibri");
     const props1 = (runs[1] as { properties: Record<string, unknown> }).properties;
     expect(props1.underline).toBe("single");

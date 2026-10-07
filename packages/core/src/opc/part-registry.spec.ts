@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vite-plus/test";
 
+import { resolverFromRegistry } from "./content-types-input";
 import { opaquePassthroughPolicy, PART_REGISTRIES } from "./part-registry";
 
 describe("opaque part policy", () => {
@@ -33,5 +34,26 @@ describe("opaque part policy", () => {
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/printerSettings/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PART_REGISTRIES.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
+  });
+
+  it("resolves printer settings parts to their family content types", () => {
+    const docx = resolverFromRegistry(PART_REGISTRIES.docx)(
+      "word/printerSettings/printerSettings1.bin",
+    );
+    expect(docx).toBe(
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.printerSettings",
+    );
+    const pptx = resolverFromRegistry(PART_REGISTRIES.pptx)(
+      "ppt/printerSettings/printerSettings1.bin",
+    );
+    expect(pptx).toBe(
+      "application/vnd.openxmlformats-officedocument.presentationml.printerSettings",
+    );
+    const xlsx = resolverFromRegistry(PART_REGISTRIES.xlsx)(
+      "xl/printerSettings/printerSettings1.bin",
+    );
+    expect(xlsx).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings",
+    );
   });
 });

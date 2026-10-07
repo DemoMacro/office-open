@@ -6,6 +6,7 @@
 
 import { EmbeddingCollection, Media } from "@office-open/core";
 import type { BaseMediaEntry, EmbeddingData } from "@office-open/core";
+import type { ChartSourceRelationship } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type {
   ColorDefinitionOptions,
@@ -41,10 +42,16 @@ export interface MediaEntry extends BaseMediaEntry {
 export interface ChartEntry {
   key: string;
   chartSpaceXml: string;
+  /** Source chart package path; round-trip only. */
+  sourcePath?: string;
+  /** Source chart-part relationships; round-trip only. */
+  sourceRelationships?: ChartSourceRelationship[];
   /** User-shapes part behind c:userShapes (body + the chart's own rels id). */
   userShapes?: {
     relationshipId: string;
     xml: string;
+    /** Source user-shapes package path; round-trip only. */
+    path?: string;
   };
 }
 

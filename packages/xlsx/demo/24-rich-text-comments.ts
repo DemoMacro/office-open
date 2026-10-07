@@ -19,7 +19,7 @@ const buffer = await generateWorkbook({
               value: {
                 runs: [
                   { text: "High " },
-                  { text: "quality", properties: { bold: true, color: "FF0000" } },
+                  { text: "quality", properties: { bold: true, color: { rgb: "FFFF0000" } } },
                   { text: " product" },
                 ],
               },
@@ -61,7 +61,7 @@ const buffer = await generateWorkbook({
           author: "Bob",
           text: {
             runs: [
-              { text: "Best seller! ", properties: { color: "008000", bold: true } },
+              { text: "Best seller! ", properties: { color: { rgb: "FF008000" }, bold: true } },
               { text: "Consider bulk discount." },
             ],
           },

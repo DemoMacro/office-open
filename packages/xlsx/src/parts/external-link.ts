@@ -342,9 +342,7 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
               if (vEl?.attributes?.["xml:space"] !== undefined) {
                 cell.valueSpaceRaw = String(vEl.attributes["xml:space"]);
               }
-              if (vEl && vEl.elements?.[0]?.text !== undefined) {
-                cell.value = String(vEl.elements[0].text);
-              }
+              if (vEl) cell.value = String(vEl.elements?.[0]?.text ?? "");
               cells.push(cell);
             }
             if (cells.length > 0) row.cells = cells;

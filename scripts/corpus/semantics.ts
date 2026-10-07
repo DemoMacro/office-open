@@ -175,7 +175,9 @@ function canonicalAttributeValue(name: string, value: string, elementName?: stri
     }
   }
   if (elementName === "a:buSzPct" && name === "val") {
-    const percent = value.endsWith("%") ? value.slice(0, -1) : String(Number(value) / 1000);
+    const percent = value.endsWith("%")
+      ? String(Number(value.slice(0, -1)) * 1000)
+      : String(Number(value) / 1000);
     return Number.isFinite(Number(percent)) ? String(Number(percent)) : value;
   }
   if (name === "ht" && Number.isFinite(Number(value))) return String(Number(value));
@@ -208,6 +210,7 @@ function canonicalAttributeValue(name: string, value: string, elementName?: stri
 }
 
 function canonicalElementName(name: string, partPath: string): string {
+  if (partPath.startsWith("xl/sharedStrings.xml") && name === "sstItem") return "si";
   if (name === "w16se:symEx") return "w16se:sym";
   if (!partPath.startsWith("docProps/core.xml") && !partPath.startsWith("docProps/app.xml")) {
     return name;
@@ -249,6 +252,7 @@ function canonicalNode(
   const name = element.name ?? "";
   const childPath = `${path}/${name}`;
   const canonicalAttributeName = (attributeName: string): string => {
+    if (name === "sst" && attributeName === "totalCount") return "count";
     if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:char")
       return "w:char";
     if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:font")
@@ -303,9 +307,26 @@ function canonicalNode(
   for (const [attributeName, value] of Object.entries(DEFAULT_ATTRIBUTES.get(name) ?? {})) {
     if (!(attributeName in attributes)) attributes[attributeName] = value;
   }
-  const orderedAttributes = Object.fromEntries(
+  let orderedAttributes = Object.fromEntries(
     Object.entries(attributes).sort(([left], [right]) => left.localeCompare(right)),
   );
+  const localName = name.split(":").pop() ?? name;
+  if (localName === "color" || localName.endsWith("Color")) {
+    const legacyType = orderedAttributes.type;
+    const legacyValue = orderedAttributes.val;
+    if (legacyType === "theme" && legacyValue !== undefined) orderedAttributes.theme = legacyValue;
+    if ((legacyType === "indexed" || legacyType === "icv") && legacyValue !== undefined) {
+      orderedAttributes.indexed = legacyValue;
+    }
+    if (legacyType === "rgb" && legacyValue !== undefined) orderedAttributes.rgb = legacyValue;
+    if (legacyType !== undefined && legacyValue !== undefined) {
+      delete orderedAttributes.type;
+      delete orderedAttributes.val;
+    }
+    orderedAttributes = Object.fromEntries(
+      Object.entries(orderedAttributes).sort(([left], [right]) => left.localeCompare(right)),
+    );
+  }
   if (DERIVED_COUNT_ELEMENTS.has(name)) delete orderedAttributes.count;
   const rawText = (element.elements ?? [])
     .filter((child) => child.type === "text" || child.type === "cdata")

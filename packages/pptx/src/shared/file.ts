@@ -27,7 +27,7 @@ import type {
   CustomShowOptions,
   KinsokuOptions,
   CustomerDataOptions,
-  TagListOptions,
+  TagPartOptions,
   CustomXmlItemOptions,
 } from "@parts/presentation";
 import type {
@@ -126,6 +126,27 @@ export interface SlideCommentOptions {
   initials?: string;
   date?: DateTime;
   modified?: boolean;
+  /** Source author identity (`p:cm/@authorId`); round-trip only. */
+  authorId?: number;
+  /** Source ordinal (`p:cm/@idx`); round-trip only. */
+  idx?: number;
+  /** Verbatim inner XML of `p:extLst`; round-trip only. */
+  ext?: string;
+}
+
+export interface CommentAuthorOptions {
+  /** Stable author identifier (`p:cmAuthor/@id`). */
+  id: number;
+  /** Display name (`p:cmAuthor/@name`). */
+  name: string;
+  /** Initials (`p:cmAuthor/@initials`). */
+  initials: string;
+  /** Author color index (`p:cmAuthor/@clrIdx`). */
+  clrIdx: number;
+  /** Next comment ordinal (`p:cmAuthor/@lastIdx`). */
+  lastIdx: number;
+  /** Verbatim inner XML of `p:extLst`; round-trip only. */
+  ext?: string;
 }
 
 // Alias of AnimationEntry — the slide-level timing entry is structurally identical.
@@ -218,6 +239,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   includeNotesMaster?: boolean;
   handoutMasterOptions?: HandoutMasterOptions;
   notesMasterOptions?: NotesMasterOptions;
+  /** Canonical author list backing ppt/commentAuthors.xml; parsed sources preserve ids and extensions. */
+  commentAuthors?: CommentAuthorOptions[];
   tableStyles?: TableStyleListOptions;
   web?: WebPropertiesOptions;
   print?: PrintPropertiesOptions;
@@ -250,8 +273,8 @@ export interface PresentationOptions extends CorePropertiesOptions {
   defaultTextStyle?: string | false;
   kinsoku?: KinsokuOptions[];
   customerData?: CustomerDataOptions;
-  /** User-defined tags part contents (ppt/tags/tagsN.xml); compiler wires p:custDataLst/p:tags. */
-  tags?: TagListOptions;
+  /** User-defined tags parts (ppt/tags/tagsN.xml); compiler wires the presentation-owned reference. */
+  tags?: TagPartOptions[];
   /** Smart tags (p:smartTags) — r:id to the smart-tags part. */
   smartTags?: { rId: string };
   colorMru?: string[];

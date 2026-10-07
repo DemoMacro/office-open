@@ -81,7 +81,7 @@ function runLibraryWorker(libraryId: string, destination: string): Promise<Libra
         libraryId,
         input: { destination, root: ROOT_DIR, strictSemantic: STRICT_SEMANTIC_GATE },
       },
-      resourceLimits: { maxOldGenerationSizeMb: 8192, maxYoungGenerationSizeMb: 512 },
+      resourceLimits: { maxOldGenerationSizeMb: 16384, maxYoungGenerationSizeMb: 512 },
     });
     worker.once("message", resolve);
     worker.once("error", reject);

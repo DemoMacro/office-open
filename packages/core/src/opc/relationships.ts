@@ -23,6 +23,8 @@ export const RELATIONSHIP_TYPES = {
   aFChunk: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk",
   attachedTemplate:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate",
+  activeXControlBinary:
+    "http://schemas.microsoft.com/office/2006/relationships/activeXControlBinary",
   audio: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio",
   bibliography: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
   calcChain: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain",
@@ -34,6 +36,9 @@ export const RELATIONSHIP_TYPES = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/commentAuthors",
   comments: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/comments",
   connections: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/connections",
+  control: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/control",
+  controls: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/controls",
+  ctrlProps: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/ctrlProp",
   customProperties:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
   customXml: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml",

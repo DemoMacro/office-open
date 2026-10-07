@@ -12,6 +12,8 @@ export interface AuthorEntry {
   initials: string;
   clrIdx: number;
   lastIdx: number;
+  /** Verbatim inner XML of p:extLst — round-trip only. */
+  ext?: string;
 }
 
 export interface CommentEntry {
@@ -19,6 +21,8 @@ export interface CommentEntry {
   idx: number;
   date?: DateTime;
   modified?: boolean;
+  /** Verbatim inner XML of p:extLst — round-trip only. */
+  ext?: string;
   x: number | UniversalMeasure;
   y: number | UniversalMeasure;
   text: string;

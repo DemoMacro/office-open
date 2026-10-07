@@ -77,6 +77,30 @@ describe("workbookDesc round-trip", () => {
     expect(output.indexOf("<fileRecoveryPr")).toBeLessThan(output.indexOf("<calcPr"));
   });
 
+  it("round-trips workbookView window-state booleans", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      bookView: {
+        activeTab: 1,
+        defaultGridColor: false,
+        rightToLeft: true,
+        showRowColHeaders: false,
+        showWhiteSpace: false,
+        showZeros: false,
+        windowProtection: true,
+      },
+    });
+    expect(result.bookView).toMatchObject({
+      activeTab: 1,
+      defaultGridColor: false,
+      rightToLeft: true,
+      showRowColHeaders: false,
+      showWhiteSpace: false,
+      showZeros: false,
+      windowProtection: true,
+    });
+  });
+
   it("round-trips explicit incomplete calculation", () => {
     const result = roundTrip({
       sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],

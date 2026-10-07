@@ -166,4 +166,20 @@ describe("externalLinkDesc round-trip", () => {
     expect(result.oleLink?.oleItems![0]?.advise).toBe(true);
     expect(result.oleLink?.oleItems![0]?.preferPic).toBe(true);
   });
+
+  it("round-trips an empty external cell value", () => {
+    const opts: ExternalLinkOptions = {
+      externalBook: {
+        sheetDataSet: [
+          {
+            sheetId: 1,
+            rows: [{ rowNumber: 1, cells: [{ reference: "A1", type: "str", value: "" }] }],
+          },
+        ],
+      },
+    };
+    const result = roundTrip(opts);
+
+    expect(result.externalBook?.sheetDataSet?.[0]?.rows?.[0]?.cells?.[0]?.value).toBe("");
+  });
 });

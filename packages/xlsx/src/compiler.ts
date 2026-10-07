@@ -36,11 +36,13 @@ import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import type { WriteContext } from "@office-open/core/descriptor";
 import { buildThemeXml } from "@office-open/core/theme";
 import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
+import { activeXControlDesc, type ActiveXControlOptions } from "@parts/active-x-control";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
+import { controlPropertiesDesc } from "@parts/control-properties";
 import { dialogsheetDesc, type DialogsheetOptions } from "@parts/dialogsheet";
 import { A_NS, R_NS, XDR_NS, graphicFrameXml, wrapAnchor } from "@parts/drawing/stringify";
 import { externalLinkDesc } from "@parts/external-link";
@@ -450,6 +452,8 @@ export function compileWorkbook(
     globalTableIdx: 0,
     globalQueryTableIdx: 0,
     globalSingleXmlCellsIdx: 0,
+    globalControlPropertiesIdx: 0,
+    globalActiveXIdx: 0,
     pivotCacheDataMap: new Map<string, { cacheId: number; cacheIdx: number }>(),
     pivotCachePathById: new Map<number, string>(),
     definedPivotCacheCount: 0,
@@ -855,6 +859,8 @@ export interface WorksheetCompileState {
   globalTableIdx: number;
   globalQueryTableIdx: number;
   globalSingleXmlCellsIdx: number;
+  globalControlPropertiesIdx: number;
+  globalActiveXIdx: number;
   pivotCacheDataMap: Map<string, { cacheId: number; cacheIdx: number }>;
   pivotCachePathById: Map<number, string>;
   definedPivotCacheCount: number;
@@ -937,6 +943,7 @@ function compileWorksheetPart(
   const hasQueryTables = queryTableOpts.length > 0;
   const singleXmlCellOpts = wsOpts.singleXmlCells ?? [];
   const bgImg = wsOpts.backgroundImage;
+  const controlOpts = wsOpts.controls ?? [];
 
   // Worksheet-level relationships
   const wsPath = wsOpts.sourcePath ?? `xl/worksheets/sheet${i + 1}.xml`;
@@ -953,6 +960,7 @@ function compileWorksheetPart(
     hasTables ||
     hasQueryTables ||
     singleXmlCellOpts.length > 0 ||
+    controlOpts.length > 0 ||
     bgImg ||
     hasDataConsolidateRelationships ||
     sourceWorksheetRels.length > 0
@@ -991,6 +999,34 @@ function compileWorksheetPart(
   };
   const sourceRelationshipPath = (rel: { target: string } | undefined, fallback: string): string =>
     rel ? resolveRelationshipTarget(wsPath, rel.target) : fallback;
+
+  const sourceControlRels = sourceWorksheetRels.filter(
+    (rel) =>
+      rel.relationshipType.endsWith("/ctrlProp") ||
+      rel.relationshipType.endsWith("/control") ||
+      rel.relationshipType.endsWith("/controls"),
+  );
+  let freshFormControlIndex = state.globalControlPropertiesIdx;
+  let freshActiveXIndex = state.globalActiveXIdx;
+  const wiredControls = controlOpts.map((control, controlIndex) => {
+    const sourceRel = control.rId
+      ? sourceControlRels.find((rel) => rel.rId === control.rId)
+      : sourceControlRels[controlIndex];
+    const isForm = control.kind === "form";
+    const fallbackIndex = isForm ? ++freshFormControlIndex : ++freshActiveXIndex;
+    const relationshipType =
+      sourceRel?.relationshipType ??
+      (isForm ? RELATIONSHIP_TYPES.ctrlProps : RELATIONSHIP_TYPES.controls);
+    const fallbackTarget = isForm
+      ? `../ctrlProps/ctrlProp${fallbackIndex}.xml`
+      : `../activeX/activeX${fallbackIndex}.xml`;
+    const target = sourceRel?.target ?? fallbackTarget;
+    return {
+      ...control,
+      rId: addWorksheetRelationship(relationshipType as RelationshipType, target),
+      sourceTarget: target,
+    };
+  });
 
   // Round-trip drawing/legacyDrawing references. The referenced part passes
   // through verbatim when its anchors do not map onto options (e.g. OLE
@@ -1077,10 +1113,15 @@ function compileWorksheetPart(
             }
           : ole.properties,
     }));
-    const controls = wsOpts.controls?.map((c) => ({
-      ...c,
-      rId: resolvePassthroughRid("/controls", c.rId),
-      iconRid: c.iconRid !== undefined ? resolvePassthroughRid("/image", c.iconRid) : c.iconRid,
+    const projectedControls = wiredControls.map((control) => ({
+      ...control,
+      properties:
+        control.properties?.iconRid !== undefined
+          ? {
+              ...control.properties,
+              iconRid: resolvePassthroughRid("/image", control.properties.iconRid),
+            }
+          : control.properties,
     }));
     const pageSetup = wsOpts.pageSetup?.printerSettingsRId
       ? {
@@ -1107,7 +1148,7 @@ function compileWorksheetPart(
     xmlOpts = {
       ...xmlOpts,
       ...(oleObjects ? { oleObjects } : {}),
-      ...(controls ? { controls } : {}),
+      ...(projectedControls ? { controls: projectedControls } : {}),
       ...(pageSetup !== wsOpts.pageSetup ? { pageSetup } : {}),
       ...(pivotSelection !== wsOpts.pivotSelection ? { pivotSelection } : {}),
       ...(legacyDrawingHF !== wsOpts.legacyDrawingHF ? { legacyDrawingHF } : {}),
@@ -1116,6 +1157,8 @@ function compileWorksheetPart(
   }
 
   // Worksheet uses buildWorksheetXml fast path (zero-allocation string concat)
+  xmlOpts = { ...xmlOpts, controls: wiredControls };
+
   let sheetXml = buildWorksheetXml(xmlOpts, wsContext);
 
   if (hasMedia) {
@@ -1226,6 +1269,66 @@ function compileWorksheetPart(
       "<!--LEGACY_DRAWING-->",
       `<legacyDrawing r:id="${rid}"/>`,
     );
+  }
+
+  // Form-control and ActiveX metadata parts. ActiveX binary contents remain
+  // opaque rawParts; only ax:ocx and the relationship to that binary are built.
+  for (const control of wiredControls) {
+    const isForm = control.kind === "form";
+    if (isForm) {
+      state.globalControlPropertiesIdx++;
+      const partPath = resolveRelationshipTarget(
+        wsPath,
+        control.sourceTarget ?? `../ctrlProps/ctrlProp${state.globalControlPropertiesIdx}.xml`,
+      );
+      mapping[`ControlProperties${state.globalControlPropertiesIdx}`] = {
+        data: XML_DECL + controlPropertiesDesc.stringify(control.formControlProperties, ctx),
+        path: partPath,
+      };
+    } else {
+      state.globalActiveXIdx++;
+      const activeXPath = resolveRelationshipTarget(
+        wsPath,
+        control.sourceTarget ?? `../activeX/activeX${state.globalActiveXIdx}.xml`,
+      );
+      const activeXRels = new Relationships(activeXPath);
+      let binaryRelationshipId: string | undefined;
+      if (control.activeXControl.binaryPath !== undefined) {
+        const ownerDir = activeXPath.split("/").slice(0, -1);
+        const binarySegments = control.activeXControl.binaryPath.split("/");
+        let common = 0;
+        while (
+          common < ownerDir.length &&
+          common < binarySegments.length - 1 &&
+          ownerDir[common] === binarySegments[common]
+        ) {
+          common++;
+        }
+        const upSegments = ownerDir.slice(common).map(() => "..");
+        const downSegments = binarySegments.slice(common);
+        const target = [...upSegments, ...downSegments].join("/") || ".";
+        binaryRelationshipId = `rId${activeXRels.add(
+          RELATIONSHIP_TYPES.activeXControlBinary,
+          target,
+        )}`;
+      }
+      mapping[`ActiveXControl${state.globalActiveXIdx}`] = {
+        data:
+          XML_DECL +
+          activeXControlDesc.stringify(
+            {
+              ...control.activeXControl,
+              ...(binaryRelationshipId ? { relationshipId: binaryRelationshipId } : {}),
+            } as ActiveXControlOptions,
+            ctx,
+          ),
+        path: activeXPath,
+      };
+      mapping[`ActiveXControlRels${state.globalActiveXIdx}`] = {
+        data: XML_DECL + activeXRels.serialize(),
+        path: partPathToRelsPath(activeXPath),
+      };
+    }
   }
 
   // Pivot tables

@@ -31,7 +31,7 @@ import { slideDesc } from "./parts/descriptors/slide";
 import { slideLayoutDesc } from "./parts/descriptors/slide-layout";
 import { slideMasterDesc } from "./parts/descriptors/slide-master";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
-import { tagListDesc } from "./parts/descriptors/tags";
+import { tagPartDesc } from "./parts/descriptors/tags";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 export { parseArchive };
@@ -545,6 +545,20 @@ function parsePresentationFromBytes(uint8: Uint8Array): PresentationOptions {
 
 function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const opts: Partial<PresentationOptions> = {};
+  const absorbedChartParts = new Set<string>();
+
+  const collectChartSourcePaths = (value: unknown): void => {
+    if (Array.isArray(value)) {
+      for (const item of value) collectChartSourcePaths(item);
+      return;
+    }
+    if (typeof value !== "object" || value === null) return;
+    for (const [key, child] of Object.entries(value)) {
+      if (key === "sourcePath" && typeof child === "string") absorbedChartParts.add(child);
+      else collectChartSourcePaths(child);
+    }
+  };
+
   if (pptx.partRefs.handoutMaster) opts.includeHandoutMaster = true;
   const sectionBySlidePath = parseSlideSections(pptx.presentation, pptx.doc);
   // Package-level fallback context — parts parsed with it carry no rel wiring
@@ -660,11 +674,16 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     if (items.length > 0) opts.customXml = items;
   }
 
-  if (pptx.partRefs.tags[0]) {
-    const tagsEl = pptx.doc.get(pptx.partRefs.tags[0]);
-    if (tagsEl) {
-      opts.tags = tagListDesc.parse(tagsEl, bareReadCtx);
-    }
+  const tagPaths = xmlKeys(pptx.doc.keys("ppt/tags/")).sort((left, right) =>
+    left.localeCompare(right, undefined, { numeric: true }),
+  );
+  if (tagPaths.length > 0) {
+    opts.tags = tagPaths.reduce<NonNullable<PresentationOptions["tags"]>>((parts, path) => {
+      const tagsEl = pptx.doc.get(path);
+      if (tagsEl) parts.push({ ...tagPartDesc.parse(tagsEl, bareReadCtx), sourcePath: path });
+      return parts;
+    }, []);
+    if (opts.tags.length === 0) delete opts.tags;
   }
 
   // 2. Parse core properties
@@ -896,10 +915,13 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
   // 6. Parse comment authors
   const commentAuthors = new Map<number, { name: string; initials: string }>();
+  let canonicalCommentAuthors: PresentationOptions["commentAuthors"];
+  const absorbedCommentParts = new Set<string>();
   if (pptx.partRefs.commentAuthors) {
     const authorsEl = pptx.doc.get(pptx.partRefs.commentAuthors);
     if (authorsEl) {
       const authors = commentAuthorsDesc.parse(authorsEl, bareReadCtx);
+      canonicalCommentAuthors = authors;
       for (const a of authors) {
         commentAuthors.set(a.id, { name: a.name, initials: a.initials });
       }
@@ -921,6 +943,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // background/transition/animations/…). The public-API-only fields (layout,
     // master, comments, notes, section) are enriched below before the push.
     const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
+    collectChartSourcePaths(slideOpts);
     const slideId = sourceSlideIds?.[slideIndex];
     if (slideId !== undefined) slideOpts.slideId = slideId;
 
@@ -956,12 +979,16 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
       const parsedComments = slideCommentsDesc.parse(commentsEl, readCtx);
       if (parsedComments.length > 0) {
+        absorbedCommentParts.add(relPath);
         const comments: Partial<SlideCommentOptions>[] = [];
         for (const cm of parsedComments) {
           const entry: Partial<SlideCommentOptions> = { x: cm.x, y: cm.y };
+          entry.authorId = cm.authorId;
+          entry.idx = cm.idx;
           if (cm.text) entry.text = cm.text;
           if (cm.date) entry.date = cm.date;
           if (cm.modified !== undefined) entry.modified = cm.modified;
+          if (cm.ext) entry.ext = cm.ext;
           const author = commentAuthors.get(cm.authorId);
           if (author) {
             entry.author = author.name;
@@ -1000,6 +1027,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   }
 
   opts.slides = result;
+  if (canonicalCommentAuthors) opts.commentAuthors = canonicalCommentAuthors;
 
   // Package-wide passthrough (SDK ExtendedPart analogue): every part the model
   // did NOT absorb is carried verbatim instead of dropped. Listed below are
@@ -1008,6 +1036,13 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   // passes through and the compiler's own output at the same path wins by
   // assembly order. Media is likewise not listed (pinned source paths).
   const rebuilt: string[] = ["ppt/presentation.xml", "ppt/_rels/presentation.xml.rels"];
+  if (canonicalCommentAuthors) rebuilt.push(pptx.partRefs.commentAuthors!);
+  for (const commentPath of absorbedCommentParts) {
+    rebuilt.push(commentPath, partPathToRelsPath(commentPath));
+  }
+  for (const chartPath of pptx.partRefs.charts.filter((path) => absorbedChartParts.has(path))) {
+    rebuilt.push(chartPath, partPathToRelsPath(chartPath));
+  }
   if (pptx.coreProps) rebuilt.push(pptx.coreProps);
   if (pptx.appProps) rebuilt.push(pptx.appProps);
   if (pptx.customProps) rebuilt.push(pptx.customProps);
@@ -1069,7 +1104,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   if (pptx.presProps) rebuilt.push(pptx.presProps);
   if (pptx.viewProps) rebuilt.push(pptx.viewProps);
   if (pptx.tableStyles) rebuilt.push(pptx.tableStyles);
-  if (opts.tags && pptx.partRefs.tags[0]) rebuilt.push(pptx.partRefs.tags[0]);
+  for (const tagPart of opts.tags ?? []) {
+    if (tagPart.sourcePath) rebuilt.push(tagPart.sourcePath);
+  }
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     pptx.doc,
     rebuilt,
@@ -1085,7 +1122,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
   const sourceContentTypes = pptx.doc.get("[Content_Types].xml");
   if (sourceContentTypes) {
     const ct = contentTypesDesc.parse(sourceContentTypes, {} as ReadContext);
-    if (ct) opts.contentTypes = ct;
+    if (ct) opts.contentTypes = { ...ct, preserveSourceDeclarations: true };
   }
 
   return opts as PresentationOptions;

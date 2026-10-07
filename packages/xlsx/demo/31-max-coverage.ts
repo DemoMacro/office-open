@@ -20,7 +20,10 @@ const buffer = await generateWorkbook({
   customProperties: [{ name: "Reviewed", value: true }],
   definedNames: [{ name: "_xlnm.Print_Area", value: "Data!$A$1:$D$8", localSheetId: 0 }],
   appProperties: { company: "Example", application: "office-open", appVersion: "1.0000" },
-  dxfs: [{ font: { color: "9C0006", bold: true } }, { fill: { color: "C6EFCE" } }],
+  dxfs: [
+    { font: { color: { rgb: "FF9C0006" }, bold: true } },
+    { fill: { backgroundColor: { rgb: "FFC6EFCE" } } },
+  ],
   cellStyles: [
     { name: "Comma", xfId: 0 },
     { name: "Accent", xfId: 0, builtinId: 40 },
@@ -40,7 +43,7 @@ const buffer = await generateWorkbook({
               value: {
                 runs: [
                   { text: "Rich ", properties: { bold: true } },
-                  { text: "header", properties: { italic: true, color: "008000" } },
+                  { text: "header", properties: { italic: true, color: { rgb: "FF008000" } } },
                 ],
               },
             },

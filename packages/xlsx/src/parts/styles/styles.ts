@@ -10,6 +10,8 @@
  */
 import { attrs, escapeXml } from "@office-open/xml";
 
+import { colorAttributes } from "../../shared/color";
+import type { ColorOptions } from "../../shared/color";
 import type {
   AlignmentOptions,
   BorderOptions,
@@ -32,6 +34,12 @@ import type {
 
 // ── Style key helpers for deduplication ──
 
+function colorKey(c?: ColorOptions): string {
+  return c
+    ? `r${c.rgb ?? ""}t${c.theme ?? ""}n${c.tint ?? ""}x${c.indexed ?? ""}a${c.auto ? 1 : 0}`
+    : "";
+}
+
 function fontKey(f: FontOptions): string {
   const underlineKey =
     f.underline === undefined
@@ -41,27 +49,19 @@ function fontKey(f: FontOptions): string {
         : f.underline === true
           ? "1"
           : f.underline;
-  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${underlineKey}s${f.strike ? 1 : 0}z${f.size ?? 0}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}a${f.autoColor ? 1 : 0}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
+  return `b${f.bold ? 1 : 0}i${f.italic ? 1 : 0}u${underlineKey}s${f.strike ? 1 : 0}z${f.size ?? 0}c${colorKey(f.color)}n${f.font ?? ""}cs${f.charset ?? ""}fm${f.family ?? ""}co${f.condense ? 1 : 0}ex${f.extend ? 1 : 0}va${f.vertAlign ?? ""}sc${f.scheme ?? ""}sh${f.shadow ? 1 : 0}ol${f.outline ? 1 : 0}`;
 }
 
 function fillKey(f: CellFillOptions): string {
-  const stopKey = (s: CellGradientStopOptions) =>
-    `${s.position}_${s.color ?? ""}_${s.themeColor ?? ""}_${s.tint ?? ""}`;
-  return `t${f.type ?? ""}c${f.color ?? ""}tc${f.themeColor ?? ""}ti${f.tint ?? ""}ix${f.colorIndexed ?? ""}fa${f.fgAutoColor ? 1 : 0}p${f.patternType ?? ""}bg${f.bgColor ?? ""}bgtc${f.bgThemeColor ?? ""}bgti${f.bgTint ?? ""}bgix${f.bgColorIndexed ?? ""}bga${f.bgAutoColor ? 1 : 0}gt${f.gradientType ?? ""}gd${f.gradientDegree ?? ""}gl${f.gradientLeft ?? ""}gr${f.gradientRight ?? ""}gtp${f.gradientTop ?? ""}gb${f.gradientBottom ?? ""}s${f.stops?.map(stopKey).join("|") ?? ""}`;
+  const stopKey = (s: CellGradientStopOptions) => `${s.position}_${colorKey(s.color)}`;
+  return `t${f.type ?? ""}fg${colorKey(f.foregroundColor)}p${f.patternType ?? ""}bg${colorKey(f.backgroundColor)}gt${f.gradientType ?? ""}gd${f.gradientDegree ?? ""}gl${f.gradientLeft ?? ""}gr${f.gradientRight ?? ""}gtp${f.gradientTop ?? ""}gb${f.gradientBottom ?? ""}s${f.stops?.map(stopKey).join("|") ?? ""}`;
 }
 
 function borderKey(b: BorderSideOptions): string {
   // Existence bit: an empty <vertical/> (side: {}) must not dedup against a
   // border without that side — adopted tables rebuild keys from raw entries.
-  const sk = (o?: BorderOptions) =>
-    `${o ? 1 : 0}_${o?.style ?? ""}_${o?.color ?? ""}_${o?.themeColor ?? ""}_${o?.tint ?? ""}_${o?.colorIndexed ?? ""}_${o?.autoColor ? 1 : 0}`;
+  const sk = (o?: BorderOptions) => `${o ? 1 : 0}_${o?.style ?? ""}_${colorKey(o?.color)}`;
   return `t${sk(b.top)}b${sk(b.bottom)}l${sk(b.left)}r${sk(b.right)}d${sk(b.diagonal)}du${b.diagonalUp ? 1 : 0}dd${b.diagonalDown ? 1 : 0}ol${b.outline === undefined ? "" : b.outline ? 1 : 0}st${sk(b.start)}en${sk(b.end)}v${sk(b.vertical)}h${sk(b.horizontal)}`;
-}
-
-function decimalAttr(value: number): string {
-  const shortest = String(value);
-  if (shortest.length < 17) return shortest;
-  return value.toPrecision(17).replace(/0+$/, "").replace(/\.$/, "");
 }
 
 // ── Built-in number format IDs ──
@@ -564,73 +564,35 @@ export class Styles {
           if (f.gradientBottom !== undefined) gfAttrs.bottom = f.gradientBottom;
           const stopParts = f.stops
             .map((s) => {
-              const channel =
-                s.themeColor !== undefined
-                  ? `theme="${s.themeColor}"`
-                  : s.color
-                    ? `rgb="FF${s.color}"`
-                    : "";
-              const tint =
-                s.tintRaw !== undefined
-                  ? ` tint="${s.tintRaw}"`
-                  : s.tint !== undefined
-                    ? ` tint="${decimalAttr(s.tint)}"`
-                    : "";
-              return `<stop position="${s.position}"><color ${channel}${tint}/></stop>`;
+              const stopAttrs = s.color ? colorAttributes(s.color) : "";
+              return `<stop position="${s.position}"><color${stopAttrs ? ` ${stopAttrs}` : ""}/></stop>`;
             })
             .join("");
           p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
         } else {
-          const defaultPatternType =
-            f.patternType ??
-            (f.type === "solid" ? "solid" : f.patternTypeDeclared === false ? undefined : "solid");
+          const defaultPatternType = f.patternType ?? (f.type === "solid" ? "solid" : undefined);
           const patternAttrs =
             f.legacyPatternElement && f.legacyPatternType !== undefined
               ? ` patternType="${f.legacyPatternType}"`
               : attrs({ patternType: defaultPatternType });
-          const fgChannel =
-            f.fgLegacyColorType !== undefined
-              ? `type="${f.fgLegacyColorType}" val="${f.fgLegacyColorValue ?? ""}"`
-              : f.themeColor !== undefined
-                ? `theme="${f.themeColor}"`
-                : f.colorIndexed !== undefined
-                  ? `indexed="${f.colorIndexed}"`
-                  : f.color
-                    ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
-                    : f.fgAutoColor
-                      ? 'auto="1"'
-                      : "";
-          const fgTint =
-            f.tintRaw !== undefined
-              ? ` tint="${f.tintRaw}"`
-              : f.tint !== undefined
-                ? ` tint="${decimalAttr(f.tint)}"`
-                : "";
-          const fgColor = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
-          const bgChannel =
-            f.bgLegacyColorType !== undefined
-              ? `type="${f.bgLegacyColorType}" val="${f.bgLegacyColorValue ?? ""}"`
-              : f.bgThemeColor !== undefined
-                ? `theme="${f.bgThemeColor}"`
-                : f.bgColorIndexed !== undefined
-                  ? `indexed="${f.bgColorIndexed}"`
-                  : f.bgColor
-                    ? `rgb="${f.bgColorRaw ?? `FF${f.bgColor}`}"`
-                    : f.bgAutoColor
-                      ? 'auto="1"'
-                      : "";
-          const bgTint =
-            f.bgTintRaw !== undefined
-              ? ` tint="${f.bgTintRaw}"`
-              : f.bgTint !== undefined
-                ? ` tint="${decimalAttr(f.bgTint)}"`
-                : "";
-          const bgColor = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          const fgAttrs = f.foregroundColor ? colorAttributes(f.foregroundColor) : "";
+          const bgAttrs = f.backgroundColor ? colorAttributes(f.backgroundColor) : "";
+          const fgColor = fgAttrs ? `<fgColor ${fgAttrs}/>` : "";
+          const bgColor = bgAttrs ? `<bgColor ${bgAttrs}/>` : "";
           const colorContent = fgColor + bgColor;
+          const tagName = f.legacyPatternElement ? "pattern" : "patternFill";
+          const declaredPattern =
+            f.patternType !== undefined ||
+            f.patternTypeDeclared === false ||
+            colorContent !== "" ||
+            f.type === "solid" ||
+            f.legacyPatternElement === true;
           p.push(
-            colorContent
-              ? `<fill><${f.legacyPatternElement ? "pattern" : "patternFill"}${patternAttrs}>${colorContent}</${f.legacyPatternElement ? "pattern" : "patternFill"}></fill>`
-              : `<fill><${f.legacyPatternElement ? "pattern" : "patternFill"}${patternAttrs}/></fill>`,
+            !declaredPattern
+              ? "<fill/>"
+              : colorContent === ""
+                ? `<fill><${tagName}${patternAttrs}/></fill>`
+                : `<fill><${tagName}${patternAttrs}>${colorContent}</${tagName}></fill>`,
           );
         }
       }
@@ -769,53 +731,13 @@ export class Styles {
         if (dxf.fill) {
           const f = dxf.fill;
           // Excel's dxf fill convention: the visible tint color carries on
-          // bgColor (often with no patternType). Round-trips keep both color
-          // elements as written; a fresh color-only fill (no bg channel) falls
-          // back to bgColor so conditional formatting keeps showing the color.
+          // bgColor (often with no patternType). Author `backgroundColor` for
+          // dxf fills; round-trips keep both color elements as written.
           const patAttrs = f.patternType !== undefined ? attrs({ patternType: f.patternType }) : "";
-          const hasBg =
-            f.bgColor !== undefined ||
-            f.bgColorIndexed !== undefined ||
-            f.bgThemeColor !== undefined ||
-            f.bgAutoColor !== undefined;
-          // With a bg channel present the color field is the parsed fgColor;
-          // alone it is the fresh-authoring color that lands on bgColor.
-          const fgChannel =
-            f.themeColor !== undefined
-              ? `theme="${f.themeColor}"`
-              : f.colorIndexed !== undefined
-                ? `indexed="${f.colorIndexed}"`
-                : f.color && (hasBg || f.fgColorRaw !== undefined)
-                  ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
-                  : f.fgAutoColor
-                    ? 'auto="1"'
-                    : "";
-          const fgTint =
-            f.tintRaw !== undefined
-              ? ` tint="${f.tintRaw}"`
-              : f.tint !== undefined
-                ? ` tint="${decimalAttr(f.tint)}"`
-                : "";
-          const fgContent = fgChannel ? `<fgColor ${fgChannel}${fgTint}/>` : "";
-          const bgChannel =
-            f.bgThemeColor !== undefined
-              ? `theme="${f.bgThemeColor}"`
-              : f.bgColorIndexed !== undefined
-                ? `indexed="${f.bgColorIndexed}"`
-                : f.bgColor
-                  ? `rgb="${f.bgColorRaw ?? `FF${f.bgColor}`}"`
-                  : f.bgAutoColor
-                    ? 'auto="1"'
-                    : f.color && !hasBg && f.fgColorRaw === undefined
-                      ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
-                      : "";
-          const bgTint =
-            f.bgTintRaw !== undefined
-              ? ` tint="${f.bgTintRaw}"`
-              : f.bgTint !== undefined
-                ? ` tint="${decimalAttr(f.bgTint)}"`
-                : "";
-          const bgContent = bgChannel ? `<bgColor ${bgChannel}${bgTint}/>` : "";
+          const fgAttrs = f.foregroundColor ? colorAttributes(f.foregroundColor) : "";
+          const bgAttrs = f.backgroundColor ? colorAttributes(f.backgroundColor) : "";
+          const fgContent = fgAttrs ? `<fgColor ${fgAttrs}/>` : "";
+          const bgContent = bgAttrs ? `<bgColor ${bgAttrs}/>` : "";
           const fillContent = fgContent + bgContent;
           dParts.push(
             fillContent
@@ -993,41 +915,7 @@ export class Styles {
     }
     if (f.vertAlign) push("vertAlign", `<vertAlign val="${f.vertAlign}"/>`);
     if (f.size !== undefined) push("sz", `<sz val="${f.sizeRaw ?? f.size}"/>`);
-    if (f.autoColor) push("color", '<color auto="1"/>');
-    else if (f.legacyColorType !== undefined)
-      push(
-        "color",
-        `<color type="${f.legacyColorType}" val="${f.legacyColorValue ?? ""}"${
-          f.tintRaw !== undefined
-            ? ` tint="${f.tintRaw}"`
-            : f.tint !== undefined
-              ? ` tint="${decimalAttr(f.tint)}"`
-              : ""
-        }/>`,
-      );
-    else if (f.themeColor !== undefined)
-      push(
-        "color",
-        `<color theme="${f.themeColor}"${
-          f.tintRaw !== undefined
-            ? ` tint="${f.tintRaw}"`
-            : f.tint !== undefined
-              ? ` tint="${decimalAttr(f.tint)}"`
-              : ""
-        }/>`,
-      );
-    else if (f.colorIndexed !== undefined) push("color", `<color indexed="${f.colorIndexed}"/>`);
-    else if (f.color)
-      push(
-        "color",
-        `<color rgb="${f.colorRaw ?? `FF${f.color}`}"${
-          f.tintRaw !== undefined
-            ? ` tint="${f.tintRaw}"`
-            : f.tint !== undefined
-              ? ` tint="${decimalAttr(f.tint)}"`
-              : ""
-        }/>`,
-      );
+    if (f.color) push("color", `<color ${colorAttributes(f.color)}/>`);
     if (f.font) push("name", `<name val="${escapeXml(f.font)}"/>`);
     if (f.family !== undefined) push("family", `<family val="${f.family}"/>`);
     if (f.charset !== undefined) push("charset", `<charset val="${f.charset}"/>`);
@@ -1050,26 +938,7 @@ export class Styles {
   private borderXmlStr(b: BorderSideOptions, allSides = true): string {
     const parts: { name: string; xml: string }[] = [];
     const sideColorXmlStr = (side: BorderOptions): string => {
-      if (side.autoColor) return '<color auto="1"/>';
-      if (side.legacyColorType !== undefined)
-        return `<color type="${side.legacyColorType}" val="${side.legacyColorValue ?? ""}"${
-          side.tintRaw !== undefined
-            ? ` tint="${side.tintRaw}"`
-            : side.tint !== undefined
-              ? ` tint="${decimalAttr(side.tint)}"`
-              : ""
-        }/>`;
-      if (side.themeColor !== undefined)
-        return `<color theme="${side.themeColor}"${
-          side.tintRaw !== undefined
-            ? ` tint="${side.tintRaw}"`
-            : side.tint !== undefined
-              ? ` tint="${decimalAttr(side.tint)}"`
-              : ""
-        }/>`;
-      if (side.colorIndexed !== undefined) return `<color indexed="${side.colorIndexed}"/>`;
-      if (side.color) return `<color rgb="${side.colorRaw ?? `FF${side.color}`}"/>`;
-      return "";
+      return side.color ? `<color ${colorAttributes(side.color)}/>` : "";
     };
     const renderSide = (name: string, opts: BorderOptions | undefined, required: boolean) => {
       const sideContent = opts ? sideColorXmlStr(opts) : "";

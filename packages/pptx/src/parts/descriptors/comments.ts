@@ -10,7 +10,7 @@
 import { convertToEmu, parseOnOff } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml } from "@office-open/xml";
-import { attr, attrNum, findChild, textOf } from "@office-open/xml";
+import { attr, attrNum, findChild, stringify as stringifyXml, textOf } from "@office-open/xml";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 
 // ── Comment Authors ──
@@ -23,9 +23,10 @@ export const commentAuthorsDesc: CustomDescriptor<AuthorEntry[]> = {
       '<p:cmAuthorLst xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">',
     ];
     for (const a of authors) {
-      parts.push(
-        `<p:cmAuthor id="${a.id}" name="${escapeXml(a.name)}" initials="${escapeXml(a.initials)}" clrIdx="${a.clrIdx}" lastIdx="${a.lastIdx}"/>`,
-      );
+      const attrs =
+        `<p:cmAuthor id="${a.id}" name="${escapeXml(a.name)}" initials="${escapeXml(a.initials)}"` +
+        ` clrIdx="${a.clrIdx}" lastIdx="${a.lastIdx}">`;
+      parts.push(attrs + (a.ext ? `<p:extLst>${a.ext}</p:extLst>` : "") + "</p:cmAuthor>");
     }
     parts.push("</p:cmAuthorLst>");
     return parts.join("");
@@ -41,7 +42,10 @@ export const commentAuthorsDesc: CustomDescriptor<AuthorEntry[]> = {
       const clrIdx = attrNum(child, "clrIdx");
       const lastIdx = attrNum(child, "lastIdx");
       if (id !== undefined && name && initials && clrIdx !== undefined && lastIdx !== undefined) {
-        authors.push({ id, name, initials, clrIdx, lastIdx });
+        const author: AuthorEntry = { id, name, initials, clrIdx, lastIdx };
+        const extLst = findChild(child, "p:extLst");
+        if (extLst) author.ext = stringifyXml(extLst);
+        authors.push(author);
       }
     }
     return authors as AuthorEntry[];
@@ -64,8 +68,9 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       parts.push(`<p:pos x="${convertToEmu(c.x)}" y="${convertToEmu(c.y)}"/>`);
       parts.push(`<p:text>${escapeXml(c.text)}</p:text>`);
       // CT_ExtensionListModify.mod lives on <p:extLst>, not <p:cm>.
-      if (c.modified !== undefined) {
-        parts.push(`<p:extLst mod="${c.modified ? 1 : 0}"/>`);
+      if (c.modified !== undefined || c.ext !== undefined) {
+        const mod = c.modified === undefined ? "" : ` mod="${c.modified ? 1 : 0}"`;
+        parts.push(`<p:extLst${mod}>${c.ext ?? ""}</p:extLst>`);
       }
       parts.push("</p:cm>");
     }
@@ -92,6 +97,7 @@ export const slideCommentsDesc: CustomDescriptor<CommentEntry[]> = {
       if (extLst) {
         const mod = attr(extLst, "mod");
         if (mod !== undefined) entry.modified = parseOnOff(mod) ?? false;
+        if (extLst.elements?.length) entry.ext = stringifyXml(extLst);
       }
       comments.push(entry);
     }

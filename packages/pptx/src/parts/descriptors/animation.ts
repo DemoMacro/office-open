@@ -38,6 +38,7 @@ import type {
 } from "@shared/animation/types";
 
 import type { PptxWriteContext } from "../../context";
+import { PptxParseError } from "../../pptx-parse-error";
 
 // ── Reverse lookup maps: presetID → type name ──
 // Built from the single stringify-side tables in shared/animation/timing.ts.
@@ -60,18 +61,6 @@ const SUBTYPE_TO_DIRECTION = new Map<number, string>();
 for (const [k, v] of Object.entries(DIRECTION_SUBTYPES)) SUBTYPE_TO_DIRECTION.set(v, k);
 
 // ── Parse helpers ──
-
-class PptxParseError extends Error {
-  constructor(
-    message: string,
-    readonly part: string,
-    readonly path: string,
-    readonly reason: string,
-  ) {
-    super(message);
-    this.name = "PptxParseError";
-  }
-}
 
 /**
  * Parse p:timing element and return animation entries grouped by shape ID.

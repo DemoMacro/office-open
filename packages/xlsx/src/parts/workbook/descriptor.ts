@@ -171,6 +171,12 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         bv.showHorizontalScroll = onOff("showHorizontalScroll");
         bv.showVerticalScroll = onOff("showVerticalScroll");
         bv.showSheetTabs = onOff("showSheetTabs");
+        bv.showRowColHeaders = onOff("showRowColHeaders");
+        bv.showWhiteSpace = onOff("showWhiteSpace");
+        bv.showZeros = onOff("showZeros");
+        bv.defaultGridColor = onOff("defaultGridColor");
+        bv.windowProtection = onOff("windowProtection");
+        bv.rightToLeft = onOff("rightToLeft");
         const minimized = onOff("minimized");
         if (minimized !== undefined) bv.minimized = minimized;
         const tr = attrNum(bvEl, "tabRatio");

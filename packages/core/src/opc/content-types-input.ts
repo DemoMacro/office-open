@@ -43,6 +43,8 @@ export interface ContentTypeOverride {
 export interface ContentTypesInput {
   /** Legacy Microsoft OPC namespace flavor; omitted for standard OPC. */
   namespace?: "microsoft2005";
+  /** Preserve every source declaration, including entries for absent parts. Round-trip only. */
+  preserveSourceDeclarations?: boolean;
   defaults: ContentTypeDefault[];
   overrides: ContentTypeOverride[];
 }
@@ -224,6 +226,42 @@ export function deriveContentTypes(
     overrideMap.set(partName.toLowerCase(), { partName, contentType: extra.contentType });
   }
   if (!options.source) return { defaults, overrides: [...overrideMap.values()] };
+  if (options.source.preserveSourceDeclarations === true) {
+    const source = options.source;
+    const sourceOverrideByPath = new Set(
+      source.overrides.map((entry) => entry.partName.toLowerCase()),
+    );
+    const sourceDefaultByExt = new Map(
+      source.defaults.map((entry) => [entry.extension.toLowerCase(), entry.contentType]),
+    );
+    const derivedTypeByPath = new Map(
+      partTypes.map((entry) => [entry.partName.toLowerCase(), entry.contentType]),
+    );
+    for (const entry of overrideMap.values())
+      derivedTypeByPath.set(entry.partName.toLowerCase(), entry.contentType);
+
+    const additions: ContentTypeOverride[] = [];
+    const covered = new Set<string>();
+    for (const file of files) {
+      const partName = withLeadingSlash(file);
+      const key = partName.toLowerCase();
+      if (sourceOverrideByPath.has(key)) continue;
+      const desiredType = derivedTypeByPath.get(key);
+      if (desiredType === undefined) continue;
+      const ext = extensionOf(file)?.toLowerCase();
+      if (ext === "xml" && sourceDefaultByExt.get("xml") === "application/xml") continue;
+      if (ext && sourceDefaultByExt.get(ext) === desiredType) continue;
+      if (covered.has(key)) continue;
+      covered.add(key);
+      additions.push({ partName, contentType: desiredType });
+    }
+    return {
+      ...(source.namespace ? { namespace: source.namespace } : {}),
+      preserveSourceDeclarations: true,
+      defaults: [...source.defaults],
+      overrides: [...source.overrides, ...additions],
+    };
+  }
   return {
     ...(options.source.namespace ? { namespace: options.source.namespace } : {}),
     ...mergeSourceContentTypes(options.source, files, defaults, overrideMap, partTypes, {

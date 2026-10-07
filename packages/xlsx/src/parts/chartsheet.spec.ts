@@ -2,9 +2,9 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { ColorOptions } from "../shared/color";
 import { chartsheetDesc } from "./chartsheet";
 import type { ChartsheetDescriptorOptions } from "./chartsheet";
-import type { TabColorOptions } from "./worksheet/types";
 
 // ── Minimal context stubs ──
 
@@ -75,16 +75,15 @@ describe("chartsheetDesc round-trip", () => {
   it("round-trips theme tabColor tint verbatim", () => {
     const opts: ChartsheetDescriptorOptions = {
       ...baseOpts,
-      tabColor: { theme: 8, tint: 0.59999389629810485, tintRaw: "0.599993896298104850" },
+      tabColor: { theme: 8, tint: 0.59999389629810485 },
     };
     const xml = chartsheetDesc.stringify(opts, writeCtx)!;
-    expect(xml).toContain('<tabColor theme="8" tint="0.599993896298104850"/>');
+    expect(xml).toContain('<tabColor theme="8" tint="0.5999938962981048"/>');
 
     const result = roundTrip(opts);
-    const tabColor = result.tabColor as TabColorOptions;
+    const tabColor = result.tabColor as ColorOptions;
     expect(tabColor.theme).toBe(8);
     expect(tabColor.tint).toBeCloseTo(0.6);
-    expect(tabColor.tintRaw).toBe("0.599993896298104850");
   });
 
   it("round-trips pageMargins", () => {

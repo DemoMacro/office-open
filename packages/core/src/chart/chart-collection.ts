@@ -8,15 +8,12 @@ import type { DataType } from "../util/data-type";
 export interface ChartData {
   key: string;
   chartSpaceXml: string;
+  /** Source package path for sparse chart names; round-trip only. */
+  sourcePath?: string;
   /** Chart-part relationships for media, user shapes and external data. */
   relsXml?: string;
   /** Source chart-part relationships preserved with their original rIds. */
-  sourceRelationships?: {
-    relationshipType: string;
-    target: string;
-    rId: string;
-    targetMode?: "External";
-  }[];
+  sourceRelationships?: ChartSourceRelationship[];
   /**
    * Embedded workbook for c:externalData (round-trip). The compiler emits the
    * chart part's own rels plus the word/embeddings part so the rId resolves.
@@ -35,6 +32,13 @@ export interface ChartData {
     xml: string;
     path?: string;
   };
+}
+
+export interface ChartSourceRelationship {
+  relationshipType: string;
+  target: string;
+  rId: string;
+  targetMode?: "External";
 }
 
 export class ChartCollection {

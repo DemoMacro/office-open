@@ -20,6 +20,62 @@
       "required": ["from", "extent", "object"],
       "type": "object"
     },
+    "ActiveXControlOptions": {
+      "additionalProperties": false,
+      "description": "ActiveX control metadata (ax:ocx); binary contents remain opaque.",
+      "properties": {
+        "binaryPath": {
+          "description": "Opaque ActiveX property binary path (xl/activeX/activeXN.bin).",
+          "type": "string"
+        },
+        "classId": {
+          "description": "COM class identifier, e.g. classId=\"{8BD21D10-EC42-11CE-9E0D-00AA006002f3}\".",
+          "type": "string"
+        },
+        "license": {
+          "description": "License key stored verbatim, e.g. license=\"ABC123\".",
+          "type": "string"
+        },
+        "persistence": {
+          "$ref": "#/definitions/ActiveXPersistence",
+          "description": "Persistence mode, e.g. persistence=\"persistPropertyBag\"."
+        },
+        "properties": {
+          "description": "Named property-bag entries (ax:ocxPr).",
+          "items": {
+            "$ref": "#/definitions/ActiveXPropertyOptions"
+          },
+          "type": "array"
+        },
+        "relationshipId": {
+          "description": "Binary relationship ID (ax:ocx `@r:id`). Round-trip emission only.",
+          "type": "string"
+        }
+      },
+      "required": ["classId"],
+      "type": "object"
+    },
+    "ActiveXPersistence": {
+      "description": "ActiveX persistence mode (ax:ocx `@ax:persistence`).",
+      "enum": ["persistPropertyBag", "persistStorage", "persistStream", "persistStreamInit"],
+      "type": "string"
+    },
+    "ActiveXPropertyOptions": {
+      "additionalProperties": false,
+      "description": "Named ActiveX design-time property (ax:ocxPr).",
+      "properties": {
+        "name": {
+          "description": "Property name (ax:ocxPr `@ax:name`).",
+          "type": "string"
+        },
+        "value": {
+          "description": "Source property value (ax:ocxPr `@ax:value`).",
+          "type": "string"
+        }
+      },
+      "required": ["name", "value"],
+      "type": "object"
+    },
     "AdjustHandle": {
       "anyOf": [
         {
@@ -1137,26 +1193,9 @@
     "BorderOptions": {
       "additionalProperties": false,
       "properties": {
-        "autoColor": {
-          "description": "Automatic (system) color instead of an explicit RGB",
-          "type": "boolean"
-        },
         "color": {
-          "type": "string"
-        },
-        "colorIndexed": {
-          "description": "Indexed color palette entry",
-          "type": "number"
-        },
-        "colorRaw": {
-          "$ref": "#/definitions/FontOptions/properties/colorRaw"
-        },
-        "legacyColorType": {
-          "$ref": "#/definitions/FontOptions/properties/legacyColorType"
-        },
-        "legacyColorValue": {
-          "description": "Source value for legacyColorType; round-trip only.",
-          "type": "string"
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Border color"
         },
         "style": {
           "description": "Border pattern; \"medium*\" variants thicken the pattern, \"hair\" is the thinnest hairline, \"slantDashDot\" slanted dashes with dots.",
@@ -1177,17 +1216,6 @@
             "slantDashDot"
           ],
           "type": "string"
-        },
-        "themeColor": {
-          "description": "Theme palette index — takes precedence over `color`",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Tint applied to the theme color",
-          "type": "number"
-        },
-        "tintRaw": {
-          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "type": "object"
@@ -1977,67 +2005,13 @@
       "additionalProperties": false,
       "description": "Worksheet fill description. `color` alone is a solid fill; `patternType` + `bgColor` describe a pattern fill; `stops` + `gradientType` describe a gradient fill.",
       "properties": {
-        "bgAutoColor": {
-          "description": "Background automatic color",
-          "type": "boolean"
+        "backgroundColor": {
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Background color. Differential-format fills show bgColor as the visible tint, so author `backgroundColor` for dxf fills."
         },
-        "bgColor": {
-          "$ref": "#/definitions/HexColor",
-          "description": "Background color for pattern fill"
-        },
-        "bgColorIndexed": {
-          "description": "Background color indexed",
-          "type": "number"
-        },
-        "bgColorRaw": {
-          "description": "Source lexical form of bgColor `@rgb`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "bgLegacyColorType": {
-          "description": "Legacy bgColor channel spelling; round-trip only.",
-          "enum": ["theme", "icv", "rgb"],
-          "type": "string"
-        },
-        "bgLegacyColorValue": {
-          "description": "Legacy bgColor source value; round-trip only.",
-          "type": "string"
-        },
-        "bgThemeColor": {
-          "description": "Background theme palette index",
-          "type": "number"
-        },
-        "bgTint": {
-          "description": "Background tint",
-          "type": "number"
-        },
-        "bgTintRaw": {
-          "description": "Source lexical form of `bgTint`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "color": {
-          "$ref": "#/definitions/HexColor",
-          "description": "Foreground color hex without alpha, e.g. \"C6EFCE\""
-        },
-        "colorIndexed": {
-          "description": "Foreground color indexed",
-          "type": "number"
-        },
-        "fgAutoColor": {
-          "description": "Foreground automatic color",
-          "type": "boolean"
-        },
-        "fgColorRaw": {
-          "description": "Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "fgLegacyColorType": {
-          "description": "Legacy fgColor channel spelling; round-trip only.",
-          "enum": ["theme", "icv", "rgb"],
-          "type": "string"
-        },
-        "fgLegacyColorValue": {
-          "description": "Legacy fgColor source value; round-trip only.",
-          "type": "string"
+        "foregroundColor": {
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Foreground color"
         },
         "gradientBottom": {
           "description": "Gradient bottom position for path",
@@ -2108,17 +2082,6 @@
           },
           "type": "array"
         },
-        "themeColor": {
-          "description": "Foreground theme palette index",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Foreground tint",
-          "type": "number"
-        },
-        "tintRaw": {
-          "$ref": "#/definitions/FontOptions/properties/tintRaw"
-        },
         "type": {
           "description": "Fill kind; pattern/gradient read the dedicated fields below.",
           "enum": ["solid", "pattern", "gradient"],
@@ -2132,26 +2095,12 @@
       "description": "Gradient stop",
       "properties": {
         "color": {
-          "$ref": "#/definitions/HexColor",
-          "description": "RGB color hex without alpha, e.g. \"FF0000\"; omitted for theme colors"
-        },
-        "fgColorRaw": {
-          "$ref": "#/definitions/CellFillOptions/properties/fgColorRaw"
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Stop color"
         },
         "position": {
           "description": "Position (0.0–1.0)",
           "type": "number"
-        },
-        "themeColor": {
-          "description": "Theme palette index",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Tint applied to the theme color",
-          "type": "number"
-        },
-        "tintRaw": {
-          "$ref": "#/definitions/FontOptions/properties/tintRaw"
         }
       },
       "required": ["position"],
@@ -2431,7 +2380,7 @@
           "type": "number"
         },
         "valueRaw": {
-          "description": "Source numeric/text lexical form for `<v xml:space=\"preserve\">`; round-trip only.",
+          "description": "Source numeric/text lexical form for `<v>`; round-trip only.",
           "type": "string"
         }
       },
@@ -2587,32 +2536,6 @@
         }
       },
       "required": ["reference"],
-      "type": "object"
-    },
-    "CfColorOptions": {
-      "additionalProperties": false,
-      "description": "One channel set for conditional-formatting colors. A color picks exactly one channel (rgb, theme, or indexed); tint qualifies a theme slot.",
-      "properties": {
-        "indexed": {
-          "description": "Legacy palette index",
-          "type": "number"
-        },
-        "rgb": {
-          "$ref": "#/definitions/HexColor",
-          "description": "RGB hex without alpha, e.g. \"FF0000\""
-        },
-        "theme": {
-          "description": "Theme palette slot (",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Tint applied to the theme slot",
-          "type": "number"
-        },
-        "tintRaw": {
-          "$ref": "#/definitions/FontOptions/properties/tintRaw"
-        }
-      },
       "type": "object"
     },
     "CfvoOptions": {
@@ -3864,6 +3787,33 @@
       },
       "type": "object"
     },
+    "ColorOptions": {
+      "additionalProperties": false,
+      "description": "Spreadsheet color. Exactly one channel — `rgb`, `theme` or `indexed` — is authoritative; `tint` qualifies `theme`.",
+      "properties": {
+        "auto": {
+          "description": "Automatic system color",
+          "type": "boolean"
+        },
+        "indexed": {
+          "description": "Indexed legacy palette entry",
+          "type": "number"
+        },
+        "rgb": {
+          "$ref": "#/definitions/ArgbHexColor",
+          "description": "ARGB hex with alpha, e.g. \"FF4472C4\""
+        },
+        "theme": {
+          "description": "Theme palette index",
+          "type": "number"
+        },
+        "tint": {
+          "description": "Tint applied to the theme color, -1.0–1.0",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "ColorReplaceEffectOptions": {
       "additionalProperties": false,
       "description": "Options for color replace effect.",
@@ -3890,7 +3840,7 @@
         "colors": {
           "description": "Colors for each value (same count as cfvo)",
           "items": {
-            "$ref": "#/definitions/CfColorOptions"
+            "$ref": "#/definitions/ColorOptions"
           },
           "type": "array"
         }
@@ -5014,77 +4964,85 @@
             "$ref": "#/definitions/ContentTypeOverride"
           },
           "type": "array"
+        },
+        "preserveSourceDeclarations": {
+          "description": "Preserve every source declaration, including entries for absent parts. Round-trip only.",
+          "type": "boolean"
         }
       },
       "required": ["defaults", "overrides"],
       "type": "object"
     },
-    "ControlOptions": {
+    "ControlPrOptions": {
       "additionalProperties": false,
-      "description": "Form control object",
+      "description": "Placement and icon properties; anchor uses 0-based cell markers, e.g. from={col:0,row:0}.",
       "properties": {
-        "alternateContent": {
-          "description": "Source wrapped the control in mc:AlternateContent (Excel 2010+ form: Choice carries the full element, Fallback the bare one). Re-emit the wrapper only when the source had it.",
-          "type": "boolean"
+        "altText": {
+          "description": "Screen-reader description, e.g. altText=\"Submit order\".",
+          "type": "string"
         },
         "anchor": {
           "$ref": "#/definitions/ObjectAnchorOptions",
-          "description": "Cell anchor inside controlPr (from/to corners, 0-based)."
+          "description": "Required 0-based cell anchor."
+        },
+        "autoFill": {
+          "description": "True fills the linked cell automatically (default true).",
+          "type": "boolean"
         },
         "autoLine": {
-          "description": "Auto line.",
+          "description": "True preserves automatic line placement (default true).",
           "type": "boolean"
         },
         "autoPict": {
-          "description": "Auto picture.",
+          "description": "True preserves automatic picture sizing (default true).",
           "type": "boolean"
         },
-        "defaultSize": {
-          "description": "Use the default icon size.",
-          "type": "boolean"
-        },
-        "formula": {
-          "description": "Control formula",
+        "cf": {
+          "description": "Clipboard format, e.g. cf=\"pict\".",
           "type": "string"
         },
+        "defaultSize": {
+          "description": "True keeps the source size (defaultSize=\"0\" when false; default true).",
+          "type": "boolean"
+        },
+        "disabled": {
+          "description": "True disables user interaction (disabled=\"1\"; default false).",
+          "type": "boolean"
+        },
         "iconRid": {
-          "description": "Relationship ID of the icon image (controlPr `@r:id`). Round-trip only: the icon part is not re-emitted by the compiler.",
+          "description": "Icon relationship ID (controlPr `@r:id`).",
           "type": "string"
         },
         "linkedCell": {
-          "description": "Linked cell",
+          "description": "Linked-cell formula, e.g. linkedCell=\"Sheet1!$A$1\".",
           "type": "string"
         },
         "listFillRange": {
-          "description": "List fill range",
+          "description": "List-source formula, e.g. listFillRange=\"Sheet1!$A$1:$A$4\".",
           "type": "string"
         },
         "locked": {
-          "description": "Locked",
+          "description": "True prevents move or resize (locked=\"0\" when false; default true).",
           "type": "boolean"
         },
-        "name": {
-          "description": "Control name",
+        "macro": {
+          "description": "Assigned macro formula, e.g. macro=\"Module1.Run\".",
           "type": "string"
         },
-        "rId": {
-          "description": "Control r:id. Round-trip only: the control's VML and binary parts are not re-emitted, so the id is not resolvable in a freshly generated workbook.",
-          "type": "string"
+        "print": {
+          "description": "True prints the control (print=\"0\" when false; default true).",
+          "type": "boolean"
         },
         "recalcAlways": {
-          "description": "Recalc always",
+          "description": "Always recalculate the control (recalcAlways=\"1\"; default false).",
           "type": "boolean"
         },
-        "shapeId": {
-          "description": "Shape ID",
-          "type": "number"
-        },
         "uiObject": {
-          "description": "UI-locked",
+          "description": "True locks the UI object (uiObject=\"1\"; default false).",
           "type": "boolean"
         }
       },
-      "required": ["shapeId", "rId"],
+      "required": ["anchor"],
       "type": "object"
     },
     "CoveredCellOptions": {
@@ -5594,7 +5552,7 @@
           "type": "array"
         },
         "color": {
-          "$ref": "#/definitions/CfColorOptions",
+          "$ref": "#/definitions/ColorOptions",
           "description": "Bar color"
         },
         "maxLength": {
@@ -7895,10 +7853,6 @@
     "FontOptions": {
       "additionalProperties": false,
       "properties": {
-        "autoColor": {
-          "description": "Automatic (system) color instead of an explicit RGB",
-          "type": "boolean"
-        },
         "bold": {
           "type": "boolean"
         },
@@ -7918,15 +7872,8 @@
           "type": "array"
         },
         "color": {
-          "$ref": "#/definitions/HexColor"
-        },
-        "colorIndexed": {
-          "description": "Indexed color palette entry",
-          "type": "number"
-        },
-        "colorRaw": {
-          "description": "Source lexical form of `color/@rgb`; round-trip only — do not hand-author.",
-          "type": "string"
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Font color"
         },
         "condense": {
           "description": "Condense (macOS, /condense)",
@@ -7956,15 +7903,6 @@
         },
         "italicRaw": {
           "description": "Source lexical form of `italic/@val`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "legacyColorType": {
-          "description": "Legacy SpreadsheetML color channel spelling; round-trip only.",
-          "enum": ["theme", "icv", "rgb"],
-          "type": "string"
-        },
-        "legacyColorValue": {
-          "description": "Source value for legacyColorType; round-trip only.",
           "type": "string"
         },
         "outline": {
@@ -8000,18 +7938,6 @@
         },
         "strikeRaw": {
           "description": "Source lexical form of `strike/@val`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "themeColor": {
-          "description": "Theme palette index — takes precedence over `color` when both are set, matching the XSD's single-channel choice.",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Tint applied to the theme color",
-          "type": "number"
-        },
-        "tintRaw": {
-          "description": "Source lexical form of `tint`; round-trip only — do not hand-author.",
           "type": "string"
         },
         "underline": {
@@ -8119,6 +8045,33 @@
       "required": ["controls"],
       "type": "object"
     },
+    "FormControlChecked": {
+      "description": "Check state for checkbox and radio controls (`@checked`).",
+      "enum": ["Checked", "Unchecked", "Mixed"],
+      "type": "string"
+    },
+    "FormControlDropStyle": {
+      "description": "Drop-down presentation (`@dropStyle`).",
+      "enum": ["Combo", "ComboEdit", "Simple"],
+      "type": "string"
+    },
+    "FormControlObjectType": {
+      "description": "Form-control kind (x14:formControlPr `@objectType`).",
+      "enum": [
+        "Button",
+        "Checkbox",
+        "Radio",
+        "Drop",
+        "Edit",
+        "GBox",
+        "Label",
+        "List",
+        "Scroll",
+        "Spin",
+        "Group"
+      ],
+      "type": "string"
+    },
     "FormControlOptions": {
       "anyOf": [
         {
@@ -8131,6 +8084,95 @@
           "$ref": "#/definitions/DropDownListControlOptions"
         }
       ]
+    },
+    "FormControlPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Excel form-control settings (x14:formControlPr).",
+      "properties": {
+        "checked": {
+          "$ref": "#/definitions/FormControlChecked",
+          "description": "Check state, e.g. checked=\"Checked\"."
+        },
+        "dropStyle": {
+          "$ref": "#/definitions/FormControlDropStyle",
+          "description": "Drop-down presentation, e.g. dropStyle=\"Combo\"."
+        },
+        "fmlaLink": {
+          "description": "Linked-cell formula, e.g. fmlaLink=\"Sheet1!$A$1\".",
+          "type": "string"
+        },
+        "fmlaMacro": {
+          "description": "Macro formula, e.g. fmlaMacro=\"[0]!Module1.Run\".",
+          "type": "string"
+        },
+        "fmlaRange": {
+          "description": "Source range formula, e.g. fmlaRange=\"Sheet1!$A$1:$A$4\".",
+          "type": "string"
+        },
+        "increment": {
+          "description": "Change per click, e.g. increment=\"1\" (XML inc=\"1\").",
+          "type": "number"
+        },
+        "items": {
+          "description": "List or choice labels in XML order, e.g. items=[\"Yes\", \"No\"].",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "lockText": {
+          "description": "True prevents user text edits (lockText=\"1\").",
+          "type": "boolean"
+        },
+        "max": {
+          "description": "Maximum scroll or spinner value, e.g. max=\"100\".",
+          "type": "number"
+        },
+        "min": {
+          "description": "Minimum scroll or spinner value, e.g. min=\"0\".",
+          "type": "number"
+        },
+        "noThreeD": {
+          "description": "True omits the first 3D effect (noThreeD=\"1\").",
+          "type": "boolean"
+        },
+        "noThreeD2": {
+          "description": "True omits the second 3D effect (noThreeD2=\"1\").",
+          "type": "boolean"
+        },
+        "objectType": {
+          "$ref": "#/definitions/FormControlObjectType",
+          "description": "Control kind, e.g. objectType=\"Checkbox\"."
+        },
+        "page": {
+          "description": "Change per page click, e.g. page=\"10\".",
+          "type": "number"
+        },
+        "textAlign": {
+          "$ref": "#/definitions/FormControlTextAlign",
+          "description": "Horizontal text alignment, e.g. textAlign=\"Center\"."
+        },
+        "val": {
+          "description": "Current scroll, spinner, or selection value, e.g. val=\"3\".",
+          "type": "number"
+        },
+        "vertical": {
+          "$ref": "#/definitions/FormControlVerticalAlign",
+          "description": "Vertical text alignment, e.g. vertical=\"Top\"."
+        }
+      },
+      "required": ["objectType"],
+      "type": "object"
+    },
+    "FormControlTextAlign": {
+      "description": "Horizontal text alignment (`@textAlign`), e.g. textAlign=\"Center\".",
+      "enum": ["Left", "Center", "Right"],
+      "type": "string"
+    },
+    "FormControlVerticalAlign": {
+      "description": "Vertical text alignment (`@vertical`), e.g. vertical=\"Top\".",
+      "enum": ["Top", "Center", "Bottom"],
+      "type": "string"
     },
     "FormatSchemeOptions": {
       "additionalProperties": false,
@@ -8237,7 +8279,7 @@
     },
     "FormulaType": {
       "description": "Cell formula type (maps to).",
-      "enum": ["normal", "array", "shared"],
+      "enum": ["normal", "array", "shared", "dataTable"],
       "type": "string"
     },
     "FreezePaneOptions": {
@@ -15272,12 +15314,6 @@
       "required": ["value"],
       "type": "object"
     },
-    "RichTextColor": {
-      "description": "Color as the parse encoding: 6-digit RGB (\"FF0000\"), 8-digit ARGB (\"FFFF0000\"), a legacy palette index (\"10\"), or \"theme:N\".",
-      "examples": ["FF0000", "FFFF0000", "10", "theme:4"],
-      "pattern": "^([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8}|[0-9]+|theme:[0-9]+)$",
-      "type": "string"
-    },
     "RichTextOptions": {
       "additionalProperties": false,
       "description": "Rich text content. Either plain text or rich runs.",
@@ -15351,24 +15387,8 @@
           "type": "number"
         },
         "color": {
-          "$ref": "#/definitions/RichTextColor",
-          "description": "Font color: 6-digit RGB (\"FF0000\", FF alpha auto-prefixed on emit), 8-digit ARGB verbatim, a bare palette index (\"10\" → indexed), or \"theme:N\" — the same string parse produces."
-        },
-        "colorRgbRaw": {
-          "description": "Source lexical form of color `@rgb`; round-trip only — do not hand-author.",
-          "type": "string"
-        },
-        "colorThemeRaw": {
-          "description": "Source color `@theme` when an explicit `@rgb` is also present. Round-trip only — theme-only colors use `color: \"theme:N\"`.",
-          "type": "string"
-        },
-        "colorTint": {
-          "description": "Color tint; round-trips the source value.",
-          "type": "number"
-        },
-        "colorTintRaw": {
-          "description": "Source lexical form of `colorTint`; round-trip only — do not hand-author.",
-          "type": "string"
+          "$ref": "#/definitions/ColorOptions",
+          "description": "Font color"
         },
         "condense": {
           "type": "boolean"
@@ -17777,35 +17797,10 @@
           "type": "string"
         },
         {
-          "$ref": "#/definitions/TabColorOptions"
+          "$ref": "#/definitions/ColorOptions"
         }
       ],
       "description": "Authoring shorthand `rgb` or the full projection."
-    },
-    "TabColorOptions": {
-      "additionalProperties": false,
-      "properties": {
-        "indexed": {
-          "description": "Indexed color",
-          "type": "number"
-        },
-        "rgb": {
-          "$ref": "#/definitions/ArgbHexColor",
-          "description": "Hex ARGB color string with alpha, e.g. \"FF4472C4\" (passed through verbatim)"
-        },
-        "theme": {
-          "description": "Theme color index (0-based)",
-          "type": "number"
-        },
-        "tint": {
-          "description": "Tint value (-1.0 to 1.0)",
-          "type": "number"
-        },
-        "tintRaw": {
-          "$ref": "#/definitions/FontOptions/properties/tintRaw"
-        }
-      },
-      "type": "object"
     },
     "TabStopOptions": {
       "additionalProperties": false,
@@ -23095,6 +23090,10 @@
           "description": "Auto filter date grouping (default true)",
           "type": "boolean"
         },
+        "defaultGridColor": {
+          "description": "Use the default grid color for sheet gridlines",
+          "type": "boolean"
+        },
         "firstSheet": {
           "description": "First sheet tab",
           "type": "number"
@@ -23103,8 +23102,16 @@
           "description": "Workbook window minimized.",
           "type": "boolean"
         },
+        "rightToLeft": {
+          "description": "Right-to-left workbook view",
+          "type": "boolean"
+        },
         "showHorizontalScroll": {
           "description": "Show horizontal scroll (default true)",
+          "type": "boolean"
+        },
+        "showRowColHeaders": {
+          "description": "Show row and column headers",
           "type": "boolean"
         },
         "showSheetTabs": {
@@ -23113,6 +23120,14 @@
         },
         "showVerticalScroll": {
           "description": "Show vertical scroll (default true)",
+          "type": "boolean"
+        },
+        "showWhiteSpace": {
+          "description": "Show white space around sheets",
+          "type": "boolean"
+        },
+        "showZeros": {
+          "description": "Show zero values in cells",
           "type": "boolean"
         },
         "tabRatio": {
@@ -23130,6 +23145,10 @@
         "windowHeight": {
           "description": "Window height in twips",
           "type": "number"
+        },
+        "windowProtection": {
+          "description": "Sheet and workbook-window protection",
+          "type": "boolean"
         },
         "windowWidth": {
           "description": "Window width in twips",
@@ -23639,6 +23658,81 @@
       "required": ["col", "rId", "relationshipTarget", "relationshipType", "row", "sourcePath"],
       "type": "object"
     },
+    "WorksheetControlOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alternateContent": {
+              "description": "Source wrapped this control in mc:AlternateContent.",
+              "type": "boolean"
+            },
+            "formControlProperties": {
+              "$ref": "#/definitions/FormControlPropertiesOptions",
+              "description": "Form-control settings from xl/ctrlProps/ctrlPropN.xml."
+            },
+            "kind": {
+              "const": "form",
+              "type": "string"
+            },
+            "name": {
+              "description": "Accessible control name, e.g. \"Button1\".",
+              "type": "string"
+            },
+            "properties": {
+              "$ref": "#/definitions/ControlPrOptions",
+              "description": "Icon and placement properties."
+            },
+            "rId": {
+              "description": "Relationship to xl/ctrlProps/ctrlPropN.xml; round-trip emission only.",
+              "type": "string"
+            },
+            "shapeId": {
+              "description": "Drawing shape ID.",
+              "type": "number"
+            }
+          },
+          "required": ["kind", "shapeId", "formControlProperties"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "activeXControl": {
+              "$ref": "#/definitions/ActiveXControlOptions",
+              "description": "ActiveX metadata from xl/activeX/activeXN.xml."
+            },
+            "alternateContent": {
+              "description": "Source wrapped this control in mc:AlternateContent.",
+              "type": "boolean"
+            },
+            "kind": {
+              "const": "activeX",
+              "type": "string"
+            },
+            "name": {
+              "description": "Accessible control name, e.g. \"CommandButton1\".",
+              "type": "string"
+            },
+            "properties": {
+              "$ref": "#/definitions/ControlPrOptions",
+              "description": "Icon and placement properties."
+            },
+            "rId": {
+              "description": "Relationship to xl/activeX/activeXN.xml; round-trip emission only.",
+              "type": "string"
+            },
+            "shapeId": {
+              "description": "Drawing shape ID.",
+              "type": "number"
+            }
+          },
+          "required": ["kind", "shapeId", "activeXControl"],
+          "type": "object"
+        }
+      ],
+      "description": "A form control (x14:formControlPr part) or ActiveX control (ax:ocx part)."
+    },
     "WorksheetOptions": {
       "additionalProperties": false,
       "description": "One worksheet (xl/worksheets/sheetN.xml) — cells, dimensions, and sheet-level parts.",
@@ -23731,11 +23825,15 @@
           "type": "array"
         },
         "controls": {
-          "description": "Control objects",
+          "description": "Control objects.",
           "items": {
-            "$ref": "#/definitions/ControlOptions"
+            "$ref": "#/definitions/WorksheetControlOptions"
           },
           "type": "array"
+        },
+        "controlsAlternateContent": {
+          "description": "Source wrapped the whole controls container in mc:AlternateContent.",
+          "type": "boolean"
         },
         "customProperties": {
           "description": "Custom sheet properties",

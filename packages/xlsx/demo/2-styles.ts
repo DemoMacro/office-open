@@ -14,15 +14,24 @@ const buffer = await generateWorkbook({
           cells: [
             {
               value: "Name",
-              style: { font: { bold: true, color: "FFFFFF" }, fill: { color: "4472C4" } },
+              style: {
+                font: { bold: true, color: { rgb: "FFFFFFFF" } },
+                fill: { foregroundColor: { rgb: "FF4472C4" } },
+              },
             },
             {
               value: "Age",
-              style: { font: { bold: true, color: "FFFFFF" }, fill: { color: "4472C4" } },
+              style: {
+                font: { bold: true, color: { rgb: "FFFFFFFF" } },
+                fill: { foregroundColor: { rgb: "FF4472C4" } },
+              },
             },
             {
               value: "Score",
-              style: { font: { bold: true, color: "FFFFFF" }, fill: { color: "4472C4" } },
+              style: {
+                font: { bold: true, color: { rgb: "FFFFFFFF" } },
+                fill: { foregroundColor: { rgb: "FF4472C4" } },
+              },
             },
           ],
         },
@@ -36,7 +45,10 @@ const buffer = await generateWorkbook({
         },
         {
           cells: [
-            { value: "Bob", style: { border: { bottom: { style: "thin", color: "000000" } } } },
+            {
+              value: "Bob",
+              style: { border: { bottom: { style: "thin", color: { rgb: "FF000000" } } } },
+            },
             { value: 25, style: { alignment: { horizontal: "center" } } },
             { value: 87.3, style: { numFmt: "0.00", font: { bold: true } } },
           ],

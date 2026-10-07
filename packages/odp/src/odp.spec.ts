@@ -1,12 +1,8 @@
 import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import {
-  generatePresentation,
-  OdpParseError,
-  parsePresentation,
-  type OdpDocumentOptions,
-} from "./index";
+import { generatePresentation, OdpParseError, parsePresentation } from "./index";
+import type { OdpRuntimeOptions } from "./semantics";
 
 describe("ODP codec", () => {
   it("round-trips a presentation through canonical PresentationOptions", () => {
@@ -20,13 +16,13 @@ describe("ODP codec", () => {
       "content.xml": content,
       "Object 1": new Uint8Array([1]),
     });
-    const parsed = parsePresentation(source) as OdpDocumentOptions;
+    const parsed = parsePresentation(source) as OdpRuntimeOptions;
     expect(parsed.packageMembers).toEqual([
       { path: "Object 1", mediaType: "application/binary", data: new Uint8Array([1]) },
     ]);
-    expect(parsePresentation(generatePresentation(parsed)).packageMembers).toEqual(
-      parsed.packageMembers,
-    );
+    expect(
+      (parsePresentation(generatePresentation(parsed)) as OdpRuntimeOptions).packageMembers,
+    ).toEqual(parsed.packageMembers);
 
     let error: unknown;
     try {
@@ -43,7 +39,7 @@ describe("ODP codec", () => {
   });
 
   it("round-trips a linked picture with a parent-relative URL", () => {
-    const options: OdpDocumentOptions = {
+    const options: OdpRuntimeOptions = {
       slides: [
         {
           children: [
@@ -67,7 +63,7 @@ describe("ODP codec", () => {
   });
 
   it("restores percent and length semantics in style overlays", () => {
-    const options: OdpDocumentOptions = {
+    const options: OdpRuntimeOptions = {
       slides: [{ notes: "Overlay" }],
       styleOverlays: [
         {
@@ -89,7 +85,7 @@ describe("ODP codec", () => {
     expect(first).toContain('fo:line-height="150%"');
     expect(first).toContain('fo:margin-left="1cm"');
 
-    const parsed = parsePresentation(generated) as OdpDocumentOptions;
+    const parsed = parsePresentation(generated) as OdpRuntimeOptions;
     const second = readOcf(
       generatePresentation(parsed),
       "application/vnd.oasis.opendocument.presentation",

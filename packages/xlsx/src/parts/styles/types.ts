@@ -1,4 +1,6 @@
 import type { ArgbHexColor, HexColor } from "@office-open/core";
+
+import type { ColorOptions } from "../../shared/color";
 /**
  * Styles — option types for xl/styles.xml.
  *
@@ -26,26 +28,8 @@ export interface FontOptions {
   size?: number;
   /** Source lexical form of `size`; round-trip only — do not hand-author. */
   sizeRaw?: string;
-  color?: HexColor;
-  /** Source lexical form of `color/@rgb`; round-trip only — do not hand-author. */
-  colorRaw?: string;
-  /**
-   * Theme palette index (CT_Color `@theme`) — takes precedence over `color`
-   * when both are set, matching the XSD's single-channel choice.
-   */
-  themeColor?: number;
-  /** Legacy SpreadsheetML color channel spelling; round-trip only. */
-  legacyColorType?: "theme" | "icv" | "rgb";
-  /** Source value for legacyColorType; round-trip only. */
-  legacyColorValue?: string;
-  /** Tint applied to the theme color (CT_Color `@tint`) */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
-  /** Indexed color palette entry (CT_Color `@indexed`) */
-  colorIndexed?: number;
-  /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
-  autoColor?: boolean;
+  /** Font color (CT_Color) */
+  color?: ColorOptions;
   font?: string;
   /** Character set (CT_Font/charset `@val`) */
   charset?: number;
@@ -80,16 +64,8 @@ export interface FontOptions {
 export interface CellGradientStopOptions {
   /** Position (0.0–1.0) */
   position: number;
-  /** RGB color hex without alpha, e.g. "FF0000"; omitted for theme colors */
-  color?: HexColor;
-  /** Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author. */
-  fgColorRaw?: string;
-  /** Theme palette index (CT_Color `@theme`) */
-  themeColor?: number;
-  /** Tint applied to the theme color (CT_Color `@tint`) */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
+  /** Stop color (CT_Color) */
+  color?: ColorOptions;
 }
 
 /**
@@ -100,22 +76,8 @@ export interface CellGradientStopOptions {
 export interface CellFillOptions {
   /** Fill kind; pattern/gradient read the dedicated fields below. */
   type?: "solid" | "pattern" | "gradient";
-  /** Foreground color hex without alpha, e.g. "C6EFCE" */
-  color?: HexColor;
-  /** Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author. */
-  fgColorRaw?: string;
-  /** Foreground theme palette index (CT_Color `@theme` on fgColor) */
-  themeColor?: number;
-  /** Foreground tint (CT_Color `@tint` on fgColor) */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
-  /** Foreground automatic color (CT_Color `@auto` on fgColor) */
-  fgAutoColor?: boolean;
-  /** Legacy fgColor channel spelling; round-trip only. */
-  fgLegacyColorType?: "theme" | "icv" | "rgb";
-  /** Legacy fgColor source value; round-trip only. */
-  fgLegacyColorValue?: string;
+  /** Foreground color (CT_PatternFill/fgColor) */
+  foregroundColor?: ColorOptions;
   /** Pattern kind (CT_PatternFill `@patternType`, ST_PatternType) */
   patternType?:
     | "none"
@@ -143,26 +105,11 @@ export interface CellFillOptions {
   legacyPatternType?: string;
   /** True when the source declared `@patternType`. Round-trip only. */
   patternTypeDeclared?: boolean;
-  /** Background color for pattern fill (CT_PatternFill/bgColor) */
-  bgColor?: HexColor;
-  /** Source lexical form of bgColor `@rgb`; round-trip only — do not hand-author. */
-  bgColorRaw?: string;
-  /** Background theme palette index (CT_Color `@theme` on bgColor) */
-  bgThemeColor?: number;
-  /** Background tint (CT_Color `@tint` on bgColor) */
-  bgTint?: number;
-  /** Source lexical form of `bgTint`; round-trip only — do not hand-author. */
-  bgTintRaw?: string;
-  /** Foreground color indexed (CT_Color `@indexed` on fgColor) */
-  colorIndexed?: number;
-  /** Background color indexed (CT_Color `@indexed` on bgColor) */
-  bgColorIndexed?: number;
-  /** Background automatic color (CT_Color `@auto` on bgColor) */
-  bgAutoColor?: boolean;
-  /** Legacy bgColor channel spelling; round-trip only. */
-  bgLegacyColorType?: "theme" | "icv" | "rgb";
-  /** Legacy bgColor source value; round-trip only. */
-  bgLegacyColorValue?: string;
+  /**
+   * Background color (CT_PatternFill/bgColor). Differential-format fills show
+   * bgColor as the visible tint, so author `backgroundColor` for dxf fills.
+   */
+  backgroundColor?: ColorOptions;
   /** Gradient stops (CT_GradientFill/stop) */
   stops?: CellGradientStopOptions[];
   /** Gradient type (CT_GradientFill `@type`) */
@@ -196,23 +143,8 @@ export interface BorderOptions {
     | "dashDotDot"
     | "mediumDashDotDot"
     | "slantDashDot";
-  color?: string;
-  /** Source lexical form of `color/@rgb`; round-trip only — do not hand-author. */
-  colorRaw?: string;
-  /** Theme palette index (CT_Color `@theme`) — takes precedence over `color` */
-  themeColor?: number;
-  /** Legacy SpreadsheetML color channel spelling; round-trip only. */
-  legacyColorType?: "theme" | "icv" | "rgb";
-  /** Source value for legacyColorType; round-trip only. */
-  legacyColorValue?: string;
-  /** Tint applied to the theme color (CT_Color `@tint`) */
-  tint?: number;
-  /** Source lexical form of `tint`; round-trip only — do not hand-author. */
-  tintRaw?: string;
-  /** Automatic (system) color instead of an explicit RGB (CT_Color `@auto`) */
-  autoColor?: boolean;
-  /** Indexed color palette entry (CT_Color `@indexed`) */
-  colorIndexed?: number;
+  /** Border color (CT_Color) */
+  color?: ColorOptions;
 }
 
 /** The four sides plus diagonals of a cell border (CT_Border children). */

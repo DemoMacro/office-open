@@ -64,10 +64,12 @@ describe("getSkeletonSchema", () => {
     // The paragraph branch's value is { anyOf: [string shorthand, ParagraphOptions stub] }.
     const paragraphBranch = section?.properties.children?.items?.anyOf?.find(
       (b) => b.title === "paragraph",
-    ) as { properties: { paragraph: { anyOf?: { $comment?: string }[] } } } | undefined;
+    ) as { properties: { paragraph: { anyOf?: { description?: string }[] } } } | undefined;
     const stubLegs =
-      paragraphBranch?.properties.paragraph.anyOf?.filter((leg) => leg.$comment) ?? [];
-    expect(stubLegs[0]?.$comment).toBe("office-open-stub:ParagraphOptions");
+      paragraphBranch?.properties.paragraph.anyOf?.filter((leg) =>
+        leg.description?.includes("office-open-schema-lookup"),
+      ) ?? [];
+    expect(stubLegs[0]?.description).toContain("ParagraphOptions — use office-open-schema-lookup.");
   });
 
   it("never rejects real input: each format's demo JSON passes the skeleton", () => {

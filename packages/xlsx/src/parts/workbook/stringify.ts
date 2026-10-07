@@ -240,9 +240,19 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (bv.showHorizontalScroll !== undefined)
       bvAttrs.push(`showHorizontalScroll="${bv.showHorizontalScroll ? 1 : 0}"`);
     if (bv.showSheetTabs !== undefined) bvAttrs.push(`showSheetTabs="${bv.showSheetTabs ? 1 : 0}"`);
+    if (bv.showRowColHeaders !== undefined)
+      bvAttrs.push(`showRowColHeaders="${bv.showRowColHeaders ? 1 : 0}"`);
+    if (bv.showWhiteSpace !== undefined)
+      bvAttrs.push(`showWhiteSpace="${bv.showWhiteSpace ? 1 : 0}"`);
     if (bv.showVerticalScroll !== undefined)
       bvAttrs.push(`showVerticalScroll="${bv.showVerticalScroll ? 1 : 0}"`);
+    if (bv.showZeros !== undefined) bvAttrs.push(`showZeros="${bv.showZeros ? 1 : 0}"`);
+    if (bv.defaultGridColor !== undefined)
+      bvAttrs.push(`defaultGridColor="${bv.defaultGridColor ? 1 : 0}"`);
     if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
+    if (bv.windowProtection !== undefined)
+      bvAttrs.push(`windowProtection="${bv.windowProtection ? 1 : 0}"`);
+    if (bv.rightToLeft !== undefined) bvAttrs.push(`rightToLeft="${bv.rightToLeft ? 1 : 0}"`);
     if (bv.visibility !== undefined) bvAttrs.push(`visibility="${bv.visibility}"`);
     if (bv.uid !== undefined) bvAttrs.push(`xr2:uid="${bv.uid}"`);
     parts.push(

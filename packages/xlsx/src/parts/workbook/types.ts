@@ -332,16 +332,28 @@ export interface WorkbookViewOptions {
   activeTab?: number;
   /** Auto filter date grouping (default true) */
   autoFilterDateGrouping?: boolean;
+  /** Use the default grid color for sheet gridlines (CT_BookView `@defaultGridColor`; default true) */
+  defaultGridColor?: boolean;
   /** First sheet tab */
   firstSheet?: number;
   /** Show horizontal scroll (default true) */
   showHorizontalScroll?: boolean;
   /** Show sheet tabs (default true) */
   showSheetTabs?: boolean;
+  /** Show row and column headers (CT_BookView `@showRowColHeaders`; default true) */
+  showRowColHeaders?: boolean;
+  /** Show white space around sheets (CT_BookView `@showWhiteSpace`; default true) */
+  showWhiteSpace?: boolean;
   /** Show vertical scroll (default true) */
   showVerticalScroll?: boolean;
+  /** Show zero values in cells (CT_BookView `@showZeros`; default true) */
+  showZeros?: boolean;
   /** Tab ratio (default 600) */
   tabRatio?: number;
+  /** Sheet and workbook-window protection (CT_BookView `@windowProtection`; default false) */
+  windowProtection?: boolean;
+  /** Right-to-left workbook view (CT_BookView `@rightToLeft`; default false) */
+  rightToLeft?: boolean;
   /** Workbook visibility: "visible" | "hidden" | "veryHidden" (default "visible") */
   /** Workbook window minimized (CT_BookView `@minimized`; XSD default false). */
   minimized?: boolean;

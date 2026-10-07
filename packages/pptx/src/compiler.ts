@@ -69,7 +69,7 @@ import { PptxWriteContext } from "./context";
 import { presentationDesc } from "./parts/descriptors/presentation";
 import { presentationPropertiesDesc } from "./parts/descriptors/presentation-properties";
 import { tableStylesDesc } from "./parts/descriptors/table-styles";
-import { tagListDesc } from "./parts/descriptors/tags";
+import { tagPartDesc } from "./parts/descriptors/tags";
 import { viewPropsDesc } from "./parts/descriptors/view-properties";
 
 function buildPresAttrOpts(
@@ -160,6 +160,12 @@ function sourceTagsRel(options: PresentationOptions) {
       rel.source === "ppt/presentation.xml" &&
       rel.relationshipType.split("/").pop() === "tags" &&
       (rId === undefined || rel.rId === rId),
+  );
+}
+
+function tagOutputPaths(options: PresentationOptions): string[] {
+  return (options.tags ?? []).map(
+    (part, index) => part.sourcePath ?? `ppt/tags/tags${index + 1}.xml`,
   );
 }
 
@@ -283,14 +289,16 @@ export function compilePresentation(
       })),
     };
   }
-  if (options.tags !== undefined) {
+  if (options.tags?.length) {
     const sourceTags = sourceTagsRel(options);
-    const tagsTarget = sourceTags?.target ?? "tags/tags1.xml";
-    const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, tagsTarget);
-    presOptions.customerData = {
-      ...presOptions.customerData,
-      tags: { rId: `rId${tagsRId}` },
-    };
+    const hasFreshPresentationTags = !sourceTags && options.tags.some((part) => !part.sourcePath);
+    if (hasFreshPresentationTags) {
+      const tagsRId = presRels.add(RELATIONSHIP_TYPES.tags, "tags/tags1.xml");
+      presOptions.customerData = {
+        ...presOptions.customerData,
+        tags: { rId: `rId${tagsRId}` },
+      };
+    }
   }
   const hasCoreProperties =
     !options.contentTypes ||
@@ -465,13 +473,10 @@ export function compilePresentation(
     data: replacedPresentationXml,
     path: "ppt/presentation.xml",
   };
-  if (options.tags !== undefined) {
-    const sourceTags = sourceTagsRel(options);
-    mapping["Tags"] = {
-      data: XML_DECL + (tagListDesc.stringify(options.tags, descCtx) ?? ""),
-      path: sourceTags
-        ? resolveRelationshipTarget(sourceTags.source, sourceTags.target)
-        : "ppt/tags/tags1.xml",
+  for (const [tagIndex, tagPart] of (options.tags ?? []).entries()) {
+    mapping[`Tags${tagIndex}`] = {
+      data: XML_DECL + (tagPartDesc.stringify(tagPart, descCtx) ?? ""),
+      path: tagOutputPaths(options)[tagIndex]!,
     };
   }
   mapping["PresentationRelationships"] = {
@@ -488,6 +493,7 @@ export function compilePresentation(
     charts,
     smartArts,
     options.passthroughRelationships,
+    options.commentAuthors ?? [],
   );
 
   // Compile mapping to Zippable

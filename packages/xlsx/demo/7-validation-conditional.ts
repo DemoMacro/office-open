@@ -71,7 +71,7 @@ const buffer = await generateWorkbook({
               priority: 1,
               colorScale: {
                 cfvo: [{ type: "min" }, { type: "percentile", val: 50 }, { type: "max" }],
-                colors: [{ rgb: "F8696B" }, { rgb: "FFEB84" }, { rgb: "63BE7B" }],
+                colors: [{ rgb: "FFF8696B" }, { rgb: "FFFFEB84" }, { rgb: "FF63BE7B" }],
               },
             },
           ],
@@ -85,7 +85,7 @@ const buffer = await generateWorkbook({
               priority: 2,
               dataBar: {
                 cfvo: [{ type: "min" }, { type: "max" }],
-                color: { rgb: "638EC6" },
+                color: { rgb: "FF638EC6" },
                 showValue: true,
               },
             },
@@ -132,7 +132,7 @@ const buffer = await generateWorkbook({
                   { type: "num", val: 0 },
                   { type: "num", val: 100 },
                 ],
-                color: { rgb: "00B050" },
+                color: { rgb: "FF00B050" },
                 showValue: false,
               },
             },

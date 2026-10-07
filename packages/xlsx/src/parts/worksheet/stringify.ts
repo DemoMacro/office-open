@@ -16,6 +16,8 @@ import { xsdConsolidateFunction } from "@office-open/core";
 import { attrs, escapeXml, selfCloseElement } from "@office-open/xml";
 import { columnToLetter, dateToSerialNumber, hashPassword } from "@util/index";
 
+import { colorAttributes } from "../../shared/color";
+import type { ColorOptions } from "../../shared/color";
 import { stringifyAutoFilter, stringifySortStateXml } from "../auto-filter";
 import { buildPivotAreaXml } from "../pivot-table/stringify";
 import { buildRstXml, tElement } from "../shared-strings";
@@ -25,7 +27,6 @@ import { FormulaType } from "./types";
 import type { AnchorMarkerOptions, ObjectAnchorOptions } from "./types";
 import type {
   CellOptions,
-  CfColorOptions,
   CfvoOptions,
   FormulaOptions,
   HeaderFooterOptions,
@@ -140,17 +141,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       prAttrs.enableFormatConditionsCalculation = 0;
     if (opts.tabColor) {
       const tc = typeof opts.tabColor === "string" ? { rgb: opts.tabColor } : opts.tabColor;
-      const tcAttrs: Record<string, string | number | boolean | undefined> = {};
-      if (tc.rgb) tcAttrs.rgb = tc.rgb;
-      if (tc.theme !== undefined) tcAttrs.theme = tc.theme;
-      if (tc.indexed !== undefined) tcAttrs.indexed = tc.indexed;
-      const tintAttr =
-        tc.tintRaw !== undefined
-          ? ` tint="${tc.tintRaw}"`
-          : tc.tint !== undefined
-            ? ` tint="${tc.tint}"`
-            : "";
-      prParts.push(`<tabColor${attrs(tcAttrs)}${tintAttr}/>`);
+      const tcAttrs = colorAttributes(tc);
+      prParts.push(`<tabColor${tcAttrs ? ` ${tcAttrs}` : ""}/>`);
     }
     if (hasOutline) {
       const outAttrs: Record<string, string | number | boolean | undefined> = {
@@ -945,33 +937,54 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 
   // Controls (CT_Controls, after oleObjects per XSD sequence)
   if (controls.length > 0) {
-    const ctrlParts: string[] = ["<controls>"];
-    for (const c of controls) {
-      const cAttrs: string[] = [`shapeId="${c.shapeId}"`, `r:id="${escapeXml(c.rId)}"`];
-      if (c.name) cAttrs.push(`name="${escapeXml(c.name)}"`);
-      // controlPr (optional)
-      const prAttrs: string[] = [];
-      if (c.locked === false) prAttrs.push('locked="0"');
-      if (c.uiObject) prAttrs.push('uiObject="1"');
-      if (c.recalcAlways) prAttrs.push('recalcAlways="1"');
-      if (c.linkedCell) prAttrs.push(`linkedCell="${escapeXml(c.linkedCell)}"`);
-      if (c.listFillRange) prAttrs.push(`listFillRange="${escapeXml(c.listFillRange)}"`);
-      if (c.formula) prAttrs.push(`cf="${escapeXml(c.formula)}"`);
-      if (c.defaultSize === false) prAttrs.push('defaultSize="0"');
-      if (c.autoLine === false) prAttrs.push('autoLine="0"');
-      if (c.autoPict === false) prAttrs.push('autoPict="0"');
-      if (c.iconRid) prAttrs.push(`r:id="${escapeXml(c.iconRid)}"`);
-      const anchorXml = c.anchor ? embeddedAnchorXml(c.anchor) : "";
-      const full =
-        prAttrs.length > 0 || anchorXml
-          ? `<control ${cAttrs.join(" ")}><controlPr${prAttrs.length ? " " + prAttrs.join(" ") : ""}>${anchorXml}</controlPr></control>`
-          : `<control ${cAttrs.join(" ")}/>`;
-      ctrlParts.push(
-        wrapAlternateContent(full, `<control ${cAttrs.join(" ")}/>`, c.alternateContent),
+    const controlXml: string[] = [];
+    for (const control of controls) {
+      if (control.rId === undefined) {
+        throw new Error("xl/worksheets/controls/control: r:id: control relationship is not wired");
+      }
+      const controlAttrs: string[] = [
+        `shapeId="${control.shapeId}"`,
+        `r:id="${escapeXml(control.rId)}"`,
+      ];
+      if (control.name) controlAttrs.push(`name="${escapeXml(control.name)}"`);
+      const attrsText = controlAttrs.join(" ");
+      const properties = control.properties;
+      let full: string;
+      if (properties) {
+        const controlPrAttrs: string[] = [];
+        if (properties.locked === false) controlPrAttrs.push('locked="0"');
+        if (properties.defaultSize === false) controlPrAttrs.push('defaultSize="0"');
+        if (properties.print === false) controlPrAttrs.push('print="0"');
+        if (properties.disabled) controlPrAttrs.push('disabled="1"');
+        if (properties.recalcAlways) controlPrAttrs.push('recalcAlways="1"');
+        if (properties.uiObject) controlPrAttrs.push('uiObject="1"');
+        if (properties.autoFill === false) controlPrAttrs.push('autoFill="0"');
+        if (properties.autoLine === false) controlPrAttrs.push('autoLine="0"');
+        if (properties.autoPict === false) controlPrAttrs.push('autoPict="0"');
+        if (properties.macro) controlPrAttrs.push(`macro="${escapeXml(properties.macro)}"`);
+        if (properties.altText) controlPrAttrs.push(`altText="${escapeXml(properties.altText)}"`);
+        if (properties.linkedCell)
+          controlPrAttrs.push(`linkedCell="${escapeXml(properties.linkedCell)}"`);
+        if (properties.listFillRange)
+          controlPrAttrs.push(`listFillRange="${escapeXml(properties.listFillRange)}"`);
+        if (properties.cf) controlPrAttrs.push(`cf="${escapeXml(properties.cf)}"`);
+        if (properties.iconRid) controlPrAttrs.push(`r:id="${escapeXml(properties.iconRid)}"`);
+        full = `<control ${attrsText}><controlPr ${controlPrAttrs.join(" ")}>${embeddedAnchorXml(
+          properties.anchor,
+        )}</controlPr></control>`;
+      } else {
+        full = `<control ${attrsText}/>`;
+      }
+      controlXml.push(
+        wrapAlternateContent(full, `<control ${attrsText}/>`, control.alternateContent),
       );
     }
-    ctrlParts.push("</controls>");
-    p.push(ctrlParts.join(""));
+    const controlsXml = `<controls>${controlXml.join("")}</controls>`;
+    p.push(
+      opts.controlsAlternateContent
+        ? wrapAlternateContent(controlsXml, controlsXml, true)
+        : controlsXml,
+    );
   }
 
   // Web publish items (CT_WebPublishItems, after controls per XSD sequence)
@@ -1015,16 +1028,10 @@ function buildCfvoXml(cfvo: CfvoOptions): string {
   return `<cfvo${attrs(a)}/>`;
 }
 
-/** Serialize a CT_Color by its channel — rgb is the only one with a fixed width. */
-function buildCfColorXml(color: CfColorOptions): string {
-  if (color.rgb !== undefined) return `<color rgb="FF${color.rgb}"/>`;
-  const a: Record<string, string | number | undefined> = {};
-  if (color.theme !== undefined) {
-    a.theme = color.theme;
-    if (color.tint !== undefined) a.tint = color.tint;
-  }
-  if (color.indexed !== undefined) a.indexed = color.indexed;
-  return `<color${attrs(a)}/>`;
+/** Serialize a CT_Color. */
+function buildCfColorXml(color: ColorOptions): string {
+  const a = colorAttributes(color);
+  return `<color${a ? ` ${a}` : ""}/>`;
 }
 
 function buildSheetViewAttrs(sv?: SheetViewOptions): string {
@@ -1273,6 +1280,7 @@ function buildCellString(
 
   const rawValue =
     typeof value === "number" || typeof value === "string" ? cell.valueRaw : undefined;
+  const rawPreserve = rawValue !== undefined && /^\s|\s$/.test(rawValue);
   const valueElement = (content: string, preserve = false): string =>
     `<v${preserve ? ' xml:space="preserve"' : ""}>${content}</v>`;
 
@@ -1287,10 +1295,7 @@ function buildCellString(
     let tAttr = "";
     if (typeof value === "number") {
       if (cell.typeRaw === "n") tAttr = ' t="n"';
-      vStr = valueElement(
-        rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
-        rawValue !== undefined,
-      );
+      vStr = valueElement(rawValue !== undefined ? escapeXml(rawValue) : `${value}`, rawPreserve);
     } else if (typeof value === "boolean") {
       tAttr = ' t="b"';
       vStr = `<v>${value ? 1 : 0}</v>`;
@@ -1365,7 +1370,7 @@ function buildCellString(
   if (typeof value === "number") {
     return `<c${rAttr}${sAttr}${mdAttr}${cell.typeRaw === "n" ? ' t="n"' : ""}>${valueElement(
       rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
-      rawValue !== undefined,
+      rawPreserve,
     )}</c>`;
   }
 

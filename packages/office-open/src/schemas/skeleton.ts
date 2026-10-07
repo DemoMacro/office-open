@@ -53,7 +53,6 @@ function isWrapperUnion(def: Node | undefined): boolean {
 function buildStub(name: string): Node {
   return {
     description: `${name} — use office-open-schema-lookup.`,
-    $comment: `office-open-stub:${name}`,
   };
 }
 

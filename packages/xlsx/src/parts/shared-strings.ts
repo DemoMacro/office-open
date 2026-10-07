@@ -11,7 +11,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { escapeXml, findChild, attr, attrNum, textOf } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import { parseColorHex } from "./styles/parse";
+import { colorAttributes, parseColorOptions } from "../shared/color";
 import type {
   SharedStringExtensionOptions,
   RichTextRunProperty,
@@ -80,29 +80,7 @@ export function buildRPrXml(
         ? `<sz val="${escapeXml(pr.sizeValRaw)}"/>`
         : `<sz val="${pr.size}"/>`;
   if (pr.color) {
-    // parseRPr encodes the non-rgb channels in the same string: a short bare
-    // number (≤3 digits) is the legacy palette index, "theme:N" a theme slot.
-    // Longer digit strings are hex colors ("008000" is green, not index
-    // 8000). They must go back to their own attributes — rgb accepts only 8
-    // hex chars (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
-    const colorAttrs: string[] = [];
-    if (pr.colorRgbRaw !== undefined || pr.colorThemeRaw !== undefined) {
-      // Source-faithful channels: CT_Color may carry rgb and theme together.
-      if (pr.colorRgbRaw !== undefined) colorAttrs.push(`rgb="${escapeXml(pr.colorRgbRaw)}"`);
-      if (pr.colorThemeRaw !== undefined) colorAttrs.push(`theme="${escapeXml(pr.colorThemeRaw)}"`);
-    } else if (/^\d{1,3}$/.test(pr.color)) {
-      colorAttrs.push(`indexed="${Number(pr.color)}"`);
-    } else if (pr.color.startsWith("theme:")) {
-      colorAttrs.push(`theme="${escapeXml(pr.color.slice(6))}"`);
-    } else {
-      // ST_UnsignedIntHex requires 8 hex chars (AARRGGBB).
-      // Auto-prefix FF (fully opaque) when user provides 6-char RGB.
-      const rgb = pr.color.length === 6 ? `FF${pr.color}` : pr.color;
-      colorAttrs.push(`rgb="${escapeXml(rgb)}"`);
-    }
-    if (pr.colorTintRaw !== undefined) colorAttrs.push(`tint="${pr.colorTintRaw}"`);
-    else if (pr.colorTint !== undefined) colorAttrs.push(`tint="${pr.colorTint}"`);
-    partsByTag.color = `<color ${colorAttrs.join(" ")}/>`;
+    partsByTag.color = `<color ${colorAttributes(pr.color)}/>`;
   }
   if (pr.font) partsByTag.rFont = `<rFont val="${escapeXml(pr.font)}"/>`;
   if (pr.charset !== undefined) partsByTag.charset = `<charset val="${pr.charset}"/>`;
@@ -348,7 +326,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
     const entries: (string | RichTextOptions)[] = [];
 
     for (const si of el.elements ?? []) {
-      if (si.name !== "si") continue;
+      if (si.name !== "si" && si.name !== "sstItem") continue;
       const placeholderEl = findChild(si, "w14:placeholder");
       const placeholderText = placeholderEl ? findChild(placeholderEl, "t") : undefined;
       const wordDrawingExtension: SharedStringExtensionOptions | undefined =
@@ -540,23 +518,7 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.extend = true;
         break;
       case "color": {
-        if (attr(child, "rgb") !== undefined) {
-          result.colorRgbRaw = attr(child, "rgb");
-          const rgb = parseColorHex(child);
-          if (rgb) result.color = rgb;
-          const themeAttr = attr(child, "theme");
-          if (themeAttr !== undefined) result.colorThemeRaw = themeAttr;
-        } else {
-          const indexed = attrNum(child, "indexed");
-          if (indexed !== undefined) result.color = String(indexed);
-          else {
-            const theme = attr(child, "theme");
-            if (theme !== undefined) result.color = `theme:${theme}`;
-          }
-        }
-        const tint = attr(child, "tint");
-        if (tint !== undefined && Number.isFinite(Number(tint))) result.colorTint = Number(tint);
-        if (tint !== undefined) result.colorTintRaw = tint;
+        result.color = parseColorOptions(child);
         break;
       }
       case "sz":

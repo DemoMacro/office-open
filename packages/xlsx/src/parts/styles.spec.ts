@@ -42,14 +42,16 @@ describe("Styles", () => {
 
     it("with fill returns new index", () => {
       const styles = new Styles();
-      const idx = styles.register({ fill: { type: "solid", color: "FF0000" } });
+      const idx = styles.register({
+        fill: { type: "solid", foregroundColor: { rgb: "FFFF0000" } },
+      });
       expect(idx).toBeGreaterThan(0);
     });
 
     it("with border returns new index", () => {
       const styles = new Styles();
       const idx = styles.register({
-        border: { top: { style: "thin", color: "000000" } },
+        border: { top: { style: "thin", color: { rgb: "FF000000" } } },
       });
       expect(idx).toBeGreaterThan(0);
     });
@@ -131,10 +133,10 @@ describe("Styles", () => {
   it("round-trips long font tint lexemes", () => {
     const styles = new Styles();
     styles.register({
-      font: { themeColor: 1, tint: -0.249977111117893, tintRaw: "-0.2499771111178930" },
+      font: { color: { theme: 1, tint: -0.249977111117893 } },
     });
     const xml = styles.serialize();
-    expect(xml).toContain('<color theme="1" tint="-0.2499771111178930"/>');
+    expect(xml).toContain('<color theme="1" tint="-0.249977111117893"/>');
   });
 
   it("round-trips source font size lexemes", () => {
@@ -146,9 +148,9 @@ describe("Styles", () => {
   it("round-trips source RGB color lexemes", () => {
     const styles = new Styles();
     styles.adopt({
-      fonts: [{ color: "0563C1", colorRaw: "000563C1" }],
-      fills: [{ color: "000000", fgColorRaw: "ff000000" }],
-      borders: [{ left: { color: "000000", colorRaw: "ff000000" } }],
+      fonts: [{ color: { rgb: "000563C1" } }],
+      fills: [{ foregroundColor: { rgb: "ff000000" } }],
+      borders: [{ left: { color: { rgb: "ff000000" } } }],
       cellXfs: [],
     });
     const xml = styles.serialize();
@@ -167,16 +169,14 @@ describe("Styles", () => {
           left: { style: "none" },
           bottom: {
             style: "thin",
-            legacyColorType: "theme",
-            legacyColorValue: "4",
-            tintRaw: "-0.25",
+            color: { theme: 4, tint: -0.25 },
           },
         },
       ],
       cellXfs: [],
     });
     expect(styles.serialize()).toContain('<left style="none">');
-    expect(styles.serialize()).toContain('<color type="theme" val="4" tint="-0.25"/>');
+    expect(styles.serialize()).toContain('<color theme="4" tint="-0.25"/>');
   });
 
   it("keeps an adopted empty border empty", () => {
@@ -223,14 +223,14 @@ describe("Styles", () => {
     it("returns incrementing indices starting at 0", () => {
       const styles = new Styles();
       const id1 = styles.registerDxf({ font: { bold: true } });
-      const id2 = styles.registerDxf({ fill: { color: "FF0000" } });
+      const id2 = styles.registerDxf({ fill: { backgroundColor: { rgb: "FFFF0000" } } });
       expect(id1).toBe(0);
       expect(id2).toBe(1);
     });
 
     it("outputs dxfs with count when registered", () => {
       const styles = new Styles();
-      styles.registerDxf({ font: { bold: true, color: "FF0000" } });
+      styles.registerDxf({ font: { bold: true, color: { rgb: "FFFF0000" } } });
       const xml = styles.serialize();
       expect(xml).toContain('<dxfs count="1">');
       expect(xml).toContain("<dxf>");
@@ -244,7 +244,7 @@ describe("Styles", () => {
 
     it("includes fill bgColor for dxf", () => {
       const styles = new Styles();
-      styles.registerDxf({ fill: { color: "00FF00" } });
+      styles.registerDxf({ fill: { backgroundColor: { rgb: "FF00FF00" } } });
       const xml = styles.serialize();
       expect(xml).toContain('bgColor rgb="FF00FF00"');
     });
@@ -422,8 +422,8 @@ describe("Styles", () => {
           gradientTop: 20,
           gradientBottom: 80,
           stops: [
-            { position: 0, color: "FF0000" },
-            { position: 1, color: "0000FF" },
+            { position: 0, color: { rgb: "FFFF0000" } },
+            { position: 1, color: { rgb: "FF0000FF" } },
           ],
         },
       });
@@ -436,8 +436,8 @@ describe("Styles", () => {
       expect(grad!.gradientTop).toBe(20);
       expect(grad!.gradientBottom).toBe(80);
       expect(grad!.stops).toHaveLength(2);
-      expect(grad!.stops![0]?.color).toBe("FF0000");
-      expect(grad!.stops![1]?.color).toBe("0000FF");
+      expect(grad!.stops![0]?.color).toEqual({ rgb: "FFFF0000" });
+      expect(grad!.stops![1]?.color).toEqual({ rgb: "FF0000FF" });
     });
 
     it("round-trips cellStyleXfs with a custom named style (numFmt/font/fill/applyXxx/alignment)", () => {

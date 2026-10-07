@@ -158,7 +158,7 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
     if (opts.mmClips !== undefined) p.push(`<${t("MMClips")}>${opts.mmClips}</${t("MMClips")}>`);
     if (opts.scaleCrop !== undefined)
       p.push(`<${t("ScaleCrop")}>${xsdBoolean(opts.scaleCrop)}</${t("ScaleCrop")}>`);
-    if (opts.headingPairs !== undefined && opts.headingPairs.length > 0) {
+    if (opts.headingPairs !== undefined) {
       // vt:lpstr is required here: Excel refuses to open a file whose
       // HeadingPairs variants carry lpwstr.
       const items = opts.headingPairs
@@ -173,7 +173,7 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
           `${items}</vt:vector></${t("HeadingPairs")}>`,
       );
     }
-    if (opts.titlesOfParts !== undefined && opts.titlesOfParts.length > 0) {
+    if (opts.titlesOfParts !== undefined) {
       p.push(
         `<${t("TitlesOfParts")}>${stringifyStringVector(opts.titlesOfParts)}</${t("TitlesOfParts")}>`,
       );
@@ -277,13 +277,13 @@ export const appPropertiesDesc: CustomDescriptor<AppPropertiesInput> = {
               pairs.push({ name, count });
             }
           }
-          if (pairs.length > 0) result.headingPairs = pairs;
+          result.headingPairs = pairs;
           break;
         }
         case "TitlesOfParts": {
           const vector = child.elements?.find((e) => e.name === "vt:vector");
           const titles = parseVector(vector).filter((v): v is string => typeof v === "string");
-          if (titles.length > 0) result.titlesOfParts = titles;
+          result.titlesOfParts = titles;
           break;
         }
         case "ScaleCrop":

@@ -2,7 +2,7 @@ import type { DataType } from "@office-open/core";
 import type { OcfManifestOptions } from "@office-open/odf";
 import type { PresentationOptions } from "@office-open/pptx";
 
-export interface OdpDocumentOptions extends PresentationOptions {
+export interface OdpPackageOverlayOptions {
   /** OCF manifest overlay; model-derived entries are appended when missing. */
   packageManifest?: OcfManifestOptions;
   /** Source-only OCF members retained outside modeled package content. */
@@ -10,6 +10,8 @@ export interface OdpDocumentOptions extends PresentationOptions {
   /** Source automatic-style overlays keyed by stable name. */
   styleOverlays?: OdpStyleOverlay[];
 }
+
+export type OdpRuntimeOptions = PresentationOptions & Partial<OdpPackageOverlayOptions>;
 
 /** Source-only OCF package member carried outside the canonical presentation. */
 export interface OdpPackageMemberOptions {
