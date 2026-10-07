@@ -11,6 +11,7 @@
 import type { DataType } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import type { HexColorOrAuto, UcharHexNumber } from "@office-open/core";
+import type { VmlBackgroundOptions } from "@office-open/core";
 
 /**
  * Image options for document background.
@@ -36,12 +37,8 @@ export interface DocumentBackgroundOptions {
   themeTint?: UcharHexNumber;
   /** Background image rendered as a full-page VML fill */
   image?: BackgroundImageOptions;
-  /**
-   * Verbatim `<w:background>` XML for backgrounds the structured model cannot
-   * express (e.g. VML pattern fills). `r:id` refs become `{fileName}`
-   * placeholders (media in `rawMedia`). Round-trip only — do not hand-author.
-   */
-  rawXml?: string;
+  /** Typed VML child of `w:background`; fill relationship refs use placeholders. */
+  vmlBackground?: VmlBackgroundOptions;
   /** Media referenced by `rawXml` placeholders, registered on generate. */
   rawMedia?: BackgroundRawMediaOptions[];
 }

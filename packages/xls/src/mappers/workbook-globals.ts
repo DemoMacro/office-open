@@ -43,7 +43,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
   const definedNames: DefinedNameOptions[] = [];
   const externSheetNames = new Map<number, string>();
   const styleTable = new Map<number, { fontIndex?: number; numberFormatId?: number }>();
-  const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "wmf" | "emf" }[] = [];
+  const drawingImages: { data: Uint8Array; type: "png" | "jpg" | "webp" | "wmf" | "emf" }[] = [];
   const pendingSupbooks: Supbook[] = [];
   let externSheetReferenceCount = 0;
   let codepage = 1252;

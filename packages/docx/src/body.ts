@@ -278,15 +278,18 @@ export function stringifyBodyChild(
 // ── Document background (pure function, no XmlComponent) ──
 
 function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyContext): string {
-  // Raw-XML passthrough for backgrounds that don't fit the structured model
-  // (VML pattern fills, texture images). Register each referenced media item
-  // so the compiler resolves the `{fileName}` placeholders into rIds.
-  if (opts.rawXml) {
-    // Remap into a local — the caller's options object is shared, serializable
-    // data, and writing the dedup renames back would leak this generate run's
-    // media numbering into the next run's input.
-    let xml = opts.rawXml;
+  const attrs: string[] = [];
+  if (opts.color !== undefined) attrs.push(`w:color="${hexColorValue(opts.color)}"`);
+  if (opts.themeColor !== undefined) attrs.push(`w:themeColor="${opts.themeColor}"`);
+  if (opts.themeShade !== undefined)
+    attrs.push(`w:themeShade="${uCharHexNumber(opts.themeShade)}"`);
+  if (opts.themeTint !== undefined) attrs.push(`w:themeTint="${uCharHexNumber(opts.themeTint)}"`);
+  const attrStr = attrs.join(" ");
+
+  if (opts.vmlBackground) {
+    let vml = opts.vmlBackground;
     if (opts.rawMedia) {
+      const fill = vml.fill ? { ...vml.fill } : undefined;
       for (const m of opts.rawMedia) {
         const data = toUint8Array(m.data);
         const entry = ctx.file.media.addMedia(
@@ -301,23 +304,13 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
             }) as MediaData,
           m.fileName,
         );
-        // Dedup may reuse an earlier file name; remap the placeholder so the
-        // compiler resolves it to the shared media relationship.
-        if (entry.fileName !== m.fileName) {
-          xml = xml.split(`{${m.fileName}}`).join(`{${entry.fileName}}`);
-        }
+        const placeholder = `{${m.fileName}}`;
+        if (fill?.relationshipId === placeholder) fill.relationshipId = `{${entry.fileName}}`;
       }
+      vml = fill ? { ...vml, fill } : vml;
     }
-    return xml;
+    return `<w:background ${attrStr}>${stringifyVmlBackground(vml)}</w:background>`;
   }
-
-  const attrs: string[] = [];
-  if (opts.color !== undefined) attrs.push(`w:color="${hexColorValue(opts.color)}"`);
-  if (opts.themeColor !== undefined) attrs.push(`w:themeColor="${opts.themeColor}"`);
-  if (opts.themeShade !== undefined)
-    attrs.push(`w:themeShade="${uCharHexNumber(opts.themeShade)}"`);
-  if (opts.themeTint !== undefined) attrs.push(`w:themeTint="${uCharHexNumber(opts.themeTint)}"`);
-  const attrStr = attrs.join(" ");
 
   if (opts.image) {
     const image = opts.image;
@@ -1510,8 +1503,15 @@ function parseContainerChildren(el: Element, ctx: DocxReadContext): ParagraphChi
   for (const sub of el.elements ?? []) {
     switch (sub.name) {
       case "w:r": {
-        const parsed = parseRun(sub, ctx);
-        children.push(parsedRunToOptions(parsed));
+        const run = parsedRunToOptions(parseRun(sub, ctx));
+        if (Object.keys(run).length === 0) {
+          const bareText = textOf(sub).trim();
+          if (bareText !== "") {
+            children.push({ text: bareText });
+            break;
+          }
+        }
+        children.push(run);
         break;
       }
       case "w:smartTag": {

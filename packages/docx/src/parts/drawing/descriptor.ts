@@ -497,7 +497,7 @@ const SECTION_CHILD_KEYS: ReadonlySet<string> = new Set([
   "rawXml",
 ]);
 
-function stringifyWpsTextBoxChild(
+export function stringifyWpsTextBoxChild(
   child: ShapeCoreOptions["children"][number],
   ctx: BodyContext,
 ): string {
@@ -924,6 +924,9 @@ function stringifyGraphicDataContent(
 
   if (mediaData.type === "wps") {
     const md = mediaData as ShapeMediaData;
+    const graphicDataUri = md.graphicDataUri ?? WPS_URI;
+    const wpsNamespace =
+      graphicDataUri === WPS_URI ? "" : ` xmlns:wps="${escapeXml(graphicDataUri)}"`;
     const wpsXml = stringifyWpsShape(
       {
         ...md.data,
@@ -933,7 +936,7 @@ function stringifyGraphicDataContent(
       },
       ctx,
     );
-    return `<a:graphicData uri="${WPS_URI}">${wpsXml}</a:graphicData>`;
+    return `<a:graphicData uri="${escapeXml(graphicDataUri)}"${wpsNamespace}>${wpsXml}</a:graphicData>`;
   }
 
   if (mediaData.type === "wpg") {

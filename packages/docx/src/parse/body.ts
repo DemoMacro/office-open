@@ -19,6 +19,7 @@ import {
   parseToc,
   parseTocFieldFromElements,
   selectTocEntryElements,
+  tocHeadFollowsEntryText,
 } from "@parts/table-of-contents/toc-parse";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
@@ -616,6 +617,10 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
   // re-emitted TOC does not grow a content control the source never had.
   tocOpts.bare = true;
   const entryEls = selectTocEntryElements(els);
+  const firstEntry = entryEls[0];
+  if (firstEntry?.name === "w:p" && tocHeadFollowsEntryText(firstEntry)) {
+    tocOpts.headRunsAfterText = true;
+  }
   const lastEl = els[els.length - 1]!;
   // endInBody means "the field end lives in a body paragraph after the
   // entries" — only when the closing paragraph did NOT join the entries.

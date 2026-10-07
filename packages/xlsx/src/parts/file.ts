@@ -47,13 +47,16 @@ import type {
 
 import type { CalcCell } from "./calc-chain";
 import type { ChartsheetOptions } from "./chartsheet";
+import type { ClassificationLabelListOptions } from "./classification-labels";
 import type { ConnectionOptions } from "./connection";
 import type { DialogsheetOptions } from "./dialogsheet";
 import type { ExternalLinkOptions } from "./external-link";
 import type { MetadataOptions } from "./metadata";
+import type { PersonsOptions } from "./persons";
 import type { PivotSourceData } from "./pivot";
 import type { PivotCacheDefinitionOptions, PivotCacheRecordsOptions } from "./pivot-cache";
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
+import type { RichDataPackageOptions } from "./rich-data";
 import type { RevisionPtrOptions, WorkbookExtensionOptions } from "./workbook";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
@@ -92,6 +95,16 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   revisionPtr?: RevisionPtrOptions;
   /** Trailing extension list (workbook > extLst > ext) — round-trip only. */
   extensions?: WorkbookExtensionOptions[];
+  /** Microsoft classification-label metadata part. */
+  classificationLabels?: ClassificationLabelListOptions;
+  /** Source classification-label part path; default docMetadata/LabelInfo.xml. Round-trip only. */
+  classificationLabelsPath?: string;
+  /** Threaded-comment authors part backing threaded comments. */
+  persons?: PersonsOptions;
+  /** Source persons part path; default xl/persons/person.xml. Round-trip only. */
+  personsPath?: string;
+  /** Rich-data parts backing pictures in cells and similar values. */
+  richData?: RichDataPackageOptions;
   /** Chart-only sheets (no cells, just a chart) */
   chartsheets?: ChartsheetOptions[];
   /** Legacy Excel 5.0 dialog sheets (xl/dialogSheets/sheetN.xml) */
@@ -270,6 +283,8 @@ export interface SharedWorkbookOptions {
   logs: RevisionLogOptions[];
   /** xl/users.xml (CT_Users), optional. */
   users?: UsersOptions;
+  /** Source users relationship URI; preserves legacy `usernames` spelling. */
+  usersRelationshipType?: string;
   /**
    * Source path of revisionHeaders.xml relative to xl/ (e.g.
    * "revisions/revisionHeaders.xml"). Round-trip only: fresh authoring writes

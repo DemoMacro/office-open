@@ -133,8 +133,18 @@ export interface TableColumnOptions {
 }
 
 export interface TableOptions {
+  /** Source package path; round-trip only. */
+  sourcePath?: string;
   /** Unique table id (1-based across the workbook); omit for auto-numbering */
   id?: number;
+  /**
+   * Zero-based position in the worksheet's source tableParts child sequence
+   * (round-trip only — do not hand-author). The compiler emits tablePart
+   * children in this order; the tables array itself keeps relationship pairing.
+   */
+  tablePartOrder?: number;
+  /** Source query-table package path when this table owns the relationship. */
+  queryTablePath?: string;
   /** Revision UID (CT_Table `@xr:uid`); round-trip only. */
   uid?: string;
   /** Table name (used in structured references) */

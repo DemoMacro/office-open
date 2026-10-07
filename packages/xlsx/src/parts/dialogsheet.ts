@@ -18,6 +18,7 @@ import {
   parseSheetProtectionEl,
 } from "./worksheet/descriptor";
 import {
+  buildSheetViewAttrs,
   stringifyHeaderFooterXml,
   stringifyPageSetupXml,
   stringifyPrintOptionsXml,
@@ -29,12 +30,16 @@ import type {
   PageSetupOptions,
   PrintOptions,
   SheetProtectionOptions,
+  SheetViewOptions,
+  SheetFormatPropertiesOptions,
 } from "./worksheet/types";
 
 // ── Types ──
 
 /** A legacy dialog sheet (xl/dialogsheets/sheetN.xml) — form-dialog controls. */
 export interface DialogsheetOptions {
+  /** Source package path; round-trip only. */
+  sourcePath?: string;
   /** Sheet name */
   name?: string;
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
@@ -47,6 +52,10 @@ export interface DialogsheetOptions {
   published?: boolean;
   /** VBA code name (CT_SheetPr `@codeName`) */
   codeName?: string;
+  /** Sheet view (CT_SheetView) */
+  sheetView?: SheetViewOptions;
+  /** Sheet format properties (CT_SheetFormatPr) */
+  sheetFormat?: SheetFormatPropertiesOptions;
   pageMargins?: PageMarginsOptions;
   pageSetup?: PageSetupOptions;
   sheetProtection?: SheetProtectionOptions;
@@ -89,6 +98,27 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
       if (opts.published === false) prAttrs.push(' published="0"');
       if (opts.codeName) prAttrs.push(` codeName="${escapeXml(opts.codeName)}"`);
       p.push(`<sheetPr${prAttrs.join("")}>${prChildren.join("")}</sheetPr>`);
+    }
+
+    // sheetViews (optional) — CT_SheetViews, shared with worksheet
+    if (opts.sheetView) {
+      p.push(`<sheetViews><sheetView${buildSheetViewAttrs(opts.sheetView)}/></sheetViews>`);
+    }
+
+    // sheetFormatPr (optional) — CT_SheetFormatPr, shared with worksheet
+    if (opts.sheetFormat) {
+      const sfp = opts.sheetFormat;
+      const sfpAttrs: Record<string, string | number | boolean | undefined> = {};
+      if (sfp.baseColWidth !== undefined) sfpAttrs.baseColWidth = sfp.baseColWidth;
+      if (sfp.defaultColWidth !== undefined) sfpAttrs.defaultColWidth = sfp.defaultColWidth;
+      if (sfp.defaultRowHeight !== undefined) sfpAttrs.defaultRowHeight = sfp.defaultRowHeight;
+      if (sfp.customHeight !== undefined) sfpAttrs.customHeight = sfp.customHeight ? 1 : 0;
+      if (sfp.zeroHeight !== undefined) sfpAttrs.zeroHeight = sfp.zeroHeight ? 1 : 0;
+      if (sfp.thickTop !== undefined) sfpAttrs.thickTop = sfp.thickTop ? 1 : 0;
+      if (sfp.thickBottom !== undefined) sfpAttrs.thickBottom = sfp.thickBottom ? 1 : 0;
+      if (sfp.outlineLevelRow !== undefined) sfpAttrs.outlineLevelRow = sfp.outlineLevelRow;
+      if (sfp.outlineLevelCol !== undefined) sfpAttrs.outlineLevelCol = sfp.outlineLevelCol;
+      p.push(`<sheetFormatPr${attrs(sfpAttrs)}/>`);
     }
 
     // sheetProtection (optional) — CT_SheetProtection, shared with worksheet
@@ -158,6 +188,79 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     const spEl = findChild(el, "sheetProtection");
     if (spEl?.attributes) {
       result.sheetProtection = parseSheetProtectionEl(spEl);
+    }
+
+    // sheetViews — CT_SheetViews, shared with worksheet
+    const sheetViewsEl = findChild(el, "sheetViews");
+    if (sheetViewsEl) {
+      const svEl = findChild(sheetViewsEl, "sheetView");
+      if (svEl) {
+        const sv: SheetViewOptions = {};
+        const sheetViewFlag = (name: string): boolean | undefined =>
+          attr(svEl, name) !== undefined ? parseOnOff(attr(svEl, name)) : undefined;
+        const showGridLines = sheetViewFlag("showGridLines");
+        if (showGridLines !== undefined) sv.showGridLines = showGridLines;
+        const showRowColHeaders = sheetViewFlag("showRowColHeaders");
+        if (showRowColHeaders !== undefined) sv.showRowColHeaders = showRowColHeaders;
+        const showZeros = sheetViewFlag("showZeros");
+        if (showZeros !== undefined) sv.showZeros = showZeros;
+        const zs = attrNum(svEl, "zoomScale");
+        if (zs !== undefined) sv.zoomScale = zs;
+        if (attr(svEl, "tabSelected") !== undefined)
+          sv.tabSelected = parseOnOff(attr(svEl, "tabSelected")) ?? true;
+        const rightToLeft = sheetViewFlag("rightToLeft");
+        if (rightToLeft !== undefined) sv.rightToLeft = rightToLeft;
+        const windowProtection = sheetViewFlag("windowProtection");
+        if (windowProtection !== undefined) sv.windowProtection = windowProtection;
+        const showFormulas = sheetViewFlag("showFormulas");
+        if (showFormulas !== undefined) sv.showFormulas = showFormulas;
+        const showRuler = sheetViewFlag("showRuler");
+        if (showRuler !== undefined) sv.showRuler = showRuler;
+        const showOutlineSymbols = sheetViewFlag("showOutlineSymbols");
+        if (showOutlineSymbols !== undefined) sv.showOutlineSymbols = showOutlineSymbols;
+        const defaultGridColor = sheetViewFlag("defaultGridColor");
+        if (defaultGridColor !== undefined) sv.defaultGridColor = defaultGridColor;
+        const showWhiteSpace = sheetViewFlag("showWhiteSpace");
+        if (showWhiteSpace !== undefined) sv.showWhiteSpace = showWhiteSpace;
+        const viewVal = attr(svEl, "view");
+        if (viewVal) sv.view = viewVal as SheetViewOptions["view"];
+        const topLeftCell = attr(svEl, "topLeftCell");
+        if (topLeftCell) sv.topLeftCell = topLeftCell;
+        const colorId = attrNum(svEl, "colorId");
+        if (colorId !== undefined) sv.colorId = colorId;
+        const zsn = attrNum(svEl, "zoomScaleNormal");
+        if (zsn !== undefined) sv.zoomScaleNormal = zsn;
+        const zssl = attrNum(svEl, "zoomScaleSheetLayoutView");
+        if (zssl !== undefined) sv.zoomScaleSheetLayoutView = zssl;
+        const zspl = attrNum(svEl, "zoomScalePageLayoutView");
+        if (zspl !== undefined) sv.zoomScalePageLayoutView = zspl;
+        result.sheetView = sv;
+      }
+    }
+
+    // sheetFormatPr — CT_SheetFormatPr, shared with worksheet
+    const sfpEl = findChild(el, "sheetFormatPr");
+    if (sfpEl) {
+      const sfp: SheetFormatPropertiesOptions = {};
+      const bcw = attrNum(sfpEl, "baseColWidth");
+      if (bcw !== undefined) sfp.baseColWidth = bcw;
+      const dcw = attrNum(sfpEl, "defaultColWidth");
+      if (dcw !== undefined) sfp.defaultColWidth = dcw;
+      const drh = attrNum(sfpEl, "defaultRowHeight");
+      if (drh !== undefined) sfp.defaultRowHeight = drh;
+      const ch = attr(sfpEl, "customHeight");
+      if (ch !== undefined) sfp.customHeight = parseOnOff(ch) ?? false;
+      const zh = attr(sfpEl, "zeroHeight");
+      if (zh !== undefined) sfp.zeroHeight = parseOnOff(zh) ?? false;
+      const tt = attr(sfpEl, "thickTop");
+      if (tt !== undefined) sfp.thickTop = parseOnOff(tt) ?? false;
+      const tb = attr(sfpEl, "thickBottom");
+      if (tb !== undefined) sfp.thickBottom = parseOnOff(tb) ?? false;
+      const olr = attrNum(sfpEl, "outlineLevelRow");
+      if (olr !== undefined) sfp.outlineLevelRow = olr;
+      const olc = attrNum(sfpEl, "outlineLevelCol");
+      if (olc !== undefined) sfp.outlineLevelCol = olc;
+      result.sheetFormat = sfp;
     }
 
     // pageMargins

@@ -60,6 +60,8 @@ export interface QueryTableRefreshOptions {
 
 /** Options for xl/queryTables/queryTable{n}.xml (CT_QueryTable). */
 export interface QueryTableOptions {
+  /** Source package path; round-trip only. */
+  sourcePath?: string;
   /** Query table name (required by XSD) */
   name?: string;
   /** Headers row shown (default true) */
@@ -90,6 +92,20 @@ export interface QueryTableOptions {
   connectionId: number;
   /** Auto format applied */
   autoFormat?: boolean;
+  /** Auto format ID (CT_QueryTable `@autoFormatId`, AG_AutoFormat) */
+  autoFormatId?: number;
+  /** Apply number formats from auto format (CT_QueryTable `@applyNumberFormats`) */
+  applyNumberFormats?: boolean;
+  /** Apply border formats from auto format (CT_QueryTable `@applyBorderFormats`) */
+  applyBorderFormats?: boolean;
+  /** Apply font formats from auto format (CT_QueryTable `@applyFontFormats`) */
+  applyFontFormats?: boolean;
+  /** Apply pattern formats from auto format (CT_QueryTable `@applyPatternFormats`) */
+  applyPatternFormats?: boolean;
+  /** Apply alignment formats from auto format (CT_QueryTable `@applyAlignmentFormats`) */
+  applyAlignmentFormats?: boolean;
+  /** Apply width/height formats from auto format (CT_QueryTable `@applyWidthHeightFormats`) */
+  applyWidthHeightFormats?: boolean;
   /** Intermediate rows preserved (CT_QueryTable `@intermediate`) */
   intermediate?: boolean;
   /** Refresh info (CT_QueryTableRefresh) */
@@ -117,6 +133,19 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (opts.preserveFormatting === false) attrs.push('preserveFormatting="0"');
     if (opts.adjustColumnWidth) attrs.push('adjustColumnWidth="1"');
     if (opts.autoFormat) attrs.push('autoFormat="1"');
+    if (opts.autoFormatId !== undefined) attrs.push(`autoFormatId="${opts.autoFormatId}"`);
+    if (opts.applyNumberFormats !== undefined)
+      attrs.push(`applyNumberFormats="${opts.applyNumberFormats ? 1 : 0}"`);
+    if (opts.applyBorderFormats !== undefined)
+      attrs.push(`applyBorderFormats="${opts.applyBorderFormats ? 1 : 0}"`);
+    if (opts.applyFontFormats !== undefined)
+      attrs.push(`applyFontFormats="${opts.applyFontFormats ? 1 : 0}"`);
+    if (opts.applyPatternFormats !== undefined)
+      attrs.push(`applyPatternFormats="${opts.applyPatternFormats ? 1 : 0}"`);
+    if (opts.applyAlignmentFormats !== undefined)
+      attrs.push(`applyAlignmentFormats="${opts.applyAlignmentFormats ? 1 : 0}"`);
+    if (opts.applyWidthHeightFormats !== undefined)
+      attrs.push(`applyWidthHeightFormats="${opts.applyWidthHeightFormats ? 1 : 0}"`);
     if (opts.intermediate) attrs.push('intermediate="1"');
     attrs.push(`connectionId="${opts.connectionId}"`);
 
@@ -185,6 +214,20 @@ export const queryTableDesc: CustomDescriptor<QueryTableOptions> = {
     if (String(attr(el, "preserveFormatting")) === "0") result.preserveFormatting = false;
     if (parseOnOff(attr(el, "adjustColumnWidth"))) result.adjustColumnWidth = true;
     if (parseOnOff(attr(el, "autoFormat"))) result.autoFormat = true;
+    const afi = attrNum(el, "autoFormatId");
+    if (afi !== undefined) result.autoFormatId = afi;
+    const anf = attr(el, "applyNumberFormats");
+    if (anf !== undefined) result.applyNumberFormats = parseOnOff(anf) ?? false;
+    const abf = attr(el, "applyBorderFormats");
+    if (abf !== undefined) result.applyBorderFormats = parseOnOff(abf) ?? false;
+    const aff = attr(el, "applyFontFormats");
+    if (aff !== undefined) result.applyFontFormats = parseOnOff(aff) ?? false;
+    const apf = attr(el, "applyPatternFormats");
+    if (apf !== undefined) result.applyPatternFormats = parseOnOff(apf) ?? false;
+    const aaf = attr(el, "applyAlignmentFormats");
+    if (aaf !== undefined) result.applyAlignmentFormats = parseOnOff(aaf) ?? false;
+    const awf = attr(el, "applyWidthHeightFormats");
+    if (awf !== undefined) result.applyWidthHeightFormats = parseOnOff(awf) ?? false;
     if (parseOnOff(attr(el, "intermediate"))) result.intermediate = true;
     const cid = attrNum(el, "connectionId");
     if (cid !== undefined) result.connectionId = cid;

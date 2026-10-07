@@ -346,7 +346,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const dimensionEl = findChild(el, "dimension");
     result.dimensionPresent = dimensionEl !== undefined;
     if (dimensionEl) {
-      const ref = attr(dimensionEl, "ref");
+      // Legacy templates occasionally use `@range`; the XSD attribute is `@ref`.
+      const ref = attr(dimensionEl, "ref") ?? attr(dimensionEl, "range");
       if (ref) result.dimension = ref;
     }
 
@@ -393,6 +394,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         };
         const w = attrNum(colEl, "width");
         if (w !== undefined) col.width = w;
+        // O12 templates write `@defaultWidth` in 1/256 character units.
+        const dw = attrNum(colEl, "defaultWidth");
+        if (w === undefined && dw !== undefined) {
+          col.width = Math.round((dw / 256) * 1000) / 1000;
+          col.widthRaw = attr(colEl, "defaultWidth");
+        }
         if (attr(colEl, "width") !== undefined) col.widthRaw = attr(colEl, "width");
         const hidden = parseOnOff(attr(colEl, "hidden"));
         if (hidden !== undefined) col.hidden = hidden;
@@ -1367,18 +1374,24 @@ export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
   if (scaleRaw !== undefined) hf.scaleWithDocRaw = scaleRaw;
   const alignRaw = attr(el, "alignWithMargins");
   if (alignRaw !== undefined) hf.alignWithMarginsRaw = alignRaw;
-  const oh = findChild(el, "oddHeader");
-  if (oh) hf.oddHeader = textOf(oh);
-  const of2 = findChild(el, "oddFooter");
-  if (of2) hf.oddFooter = textOf(of2);
-  const eh = findChild(el, "evenHeader");
-  if (eh) hf.evenHeader = textOf(eh);
-  const ef = findChild(el, "evenFooter");
-  if (ef) hf.evenFooter = textOf(ef);
-  const fh = findChild(el, "firstHeader");
-  if (fh) hf.firstHeader = textOf(fh);
-  const ff = findChild(el, "firstFooter");
-  if (ff) hf.firstFooter = textOf(ff);
+  const headerFooterNames = [
+    "oddHeader",
+    "oddFooter",
+    "evenHeader",
+    "evenFooter",
+    "firstHeader",
+    "firstFooter",
+  ] as const;
+  for (const name of headerFooterNames) {
+    const part = findChild(el, name);
+    if (!part) continue;
+    hf[name] = textOf(part);
+    const xmlSpace = attr(part, "xml:space");
+    if (xmlSpace !== undefined) {
+      hf.xmlSpaceByPart ??= {};
+      hf.xmlSpaceByPart[name] = xmlSpace;
+    }
+  }
   return hf;
 }
 

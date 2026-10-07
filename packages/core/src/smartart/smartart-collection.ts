@@ -37,6 +37,16 @@ export interface SmartArtRawParts {
   dataRels?: DataType;
 }
 
+/** Source package paths preserved by round-trip; compiler-only. */
+export interface SmartArtSourcePaths {
+  data?: string;
+  layout?: string;
+  quickStyle?: string;
+  colors?: string;
+  drawing?: string;
+  dataRels?: string;
+}
+
 export interface SmartArtData {
   key: string;
   dataModelXml: string;
@@ -52,6 +62,8 @@ export interface SmartArtData {
    * raw rebuilds from them.
    */
   raw?: SmartArtRawParts;
+  /** Source part locations for sparse paths; round-trip only. */
+  sourcePaths?: SmartArtSourcePaths;
 }
 
 /**

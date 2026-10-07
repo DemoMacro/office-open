@@ -275,8 +275,10 @@ export function parseChartAnchor(
     findChild(graphicFrame, "a:graphic") ?? graphicFrame,
     "a:graphicData",
   );
-  const chartEl = graphicData ? findChild(graphicData, "c:chart") : undefined;
-  const rId = chartEl?.attributes?.["r:id"] as string | undefined;
+  const chartEl = graphicData
+    ? (findChild(graphicData, "c:chart") ?? findChild(graphicData, "a:chart"))
+    : undefined;
+  const rId = (chartEl?.attributes?.["r:id"] ?? chartEl?.attributes?.relId) as string | undefined;
   if (!rId) return undefined;
 
   const result = { col: 1, row: 1, rId } as DrawingChartOptions;

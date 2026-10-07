@@ -111,6 +111,10 @@ export function parseToc(
       if (entryEls.length > 0) {
         tocOpts.entries = parseChildren(entryEls, ctx);
       }
+      const firstEntry = entryEls[0];
+      if (firstEntry?.name === "w:p" && tocHeadFollowsEntryText(firstEntry)) {
+        tocOpts.headRunsAfterText = true;
+      }
       const lastEntry = entryEls[entryEls.length - 1];
       if (lastEntry && hasTocFieldEndBeforeChildren(lastEntry)) {
         tocOpts.fieldEndBeforeChildren = true;
@@ -290,6 +294,24 @@ export function selectTocEntryElements(els: Element[]): Element[] {
     }
   }
   return entries;
+}
+
+/**
+ * Whether a TOC head paragraph carried its entry text before the field chain
+ * (`[text, begin, …, separate]`) — the head runs must re-inject after that
+ * text run, not after the pPr, to keep the source child order.
+ */
+export function tocHeadFollowsEntryText(paragraph: Element): boolean {
+  const runs = (paragraph.elements ?? []).filter(
+    (child): child is Element => child.type === "element" && child.name === "w:r",
+  );
+  const firstText = runs.findIndex((run) => findChild(run, "w:t") !== undefined);
+  const firstBegin = runs.findIndex((run) =>
+    (run.elements ?? []).some(
+      (child) => child.name === "w:fldChar" && attr(child, "w:fldCharType") === "begin",
+    ),
+  );
+  return firstText >= 0 && firstBegin >= 0 && firstText < firstBegin;
 }
 
 /**

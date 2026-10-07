@@ -54,6 +54,7 @@ import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
+import type { ShapeTextBoxChild } from "@parts/paragraph/run/wps-shape-run";
 
 const chartSourceRelationships = new WeakMap<
   object,
@@ -65,8 +66,41 @@ const chartSourceRelationships = new WeakMap<
   }[]
 >();
 
+const chartSourcePaths = new WeakMap<object, string>();
+
+interface SmartArtSourcePaths {
+  data?: string;
+  layout?: string;
+  quickStyle?: string;
+  colors?: string;
+  drawing?: string;
+  dataRels?: string;
+}
+
+const smartArtSourcePaths = new WeakMap<object, SmartArtSourcePaths>();
+
+const userShapesSourcePaths = new WeakMap<object, string>();
+
+const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
+
 export function takeChartSourceRelationships(options: object) {
   return chartSourceRelationships.get(options);
+}
+
+export function takeChartSourcePath(options: object) {
+  return chartSourcePaths.get(options);
+}
+
+export function takeSmartArtSourcePaths(options: object) {
+  return smartArtSourcePaths.get(options);
+}
+
+export function takeUserShapesSourcePath(options: object) {
+  return userShapesSourcePaths.get(options);
+}
+
+function consumePartPath(ctx: DocxReadContext, path: string): void {
+  ctx.consumedPartPaths?.add(path);
 }
 
 function readChartSourceRelationships(chartPath: string, ctx: DocxReadContext) {
@@ -102,6 +136,7 @@ import type { ContentPartOptions, NonVisualPropertiesOptions } from "@shared/med
 
 import { parseParagraph } from "../../body";
 import type { DocxReadContext } from "../../context";
+import { DocxParseError } from "../../errors";
 import type {
   DrawingExtensionIds,
   GraphicFrameLocksOptions,
@@ -770,19 +805,42 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
   }
   result.children = children;
 
-  // Word 2010 can externalize text-box content into a w14:txbx part. The part
-  // itself stays in rawParts; retain its resolved path so stringify can bind
-  // this shape to the fresh document relationship id.
+  // Word 2010 can externalize text-box content into a w14:txbx part. Parse its
+  // block children so the referenced XML part is rebuilt, not passed through.
   const txbx = findChild(wspEl, "wps:txbx");
   const textBoxRelationshipId = attr(txbx, "r:txbx");
   const textBoxPath = textBoxRelationshipId
     ? ctx.docx.partRefs.partTextBoxes.get(ctx.currentPart)?.get(textBoxRelationshipId)
     : undefined;
   if (textBoxPath) {
+    const textBoxRoot = ctx.docx.doc.get(textBoxPath);
+    if (!textBoxRoot) {
+      throw new DocxParseError(
+        `missing text-box part ${textBoxPath}`,
+        ctx.currentPart,
+        "/w:drawing/wps:txbx",
+        "missing-package-part",
+        textBoxPath,
+      );
+    }
+    const textBoxChildren: ShapeTextBoxChild[] = [];
+    ctx.withPart(textBoxPath, () => {
+      for (const child of textBoxRoot.elements ?? []) {
+        if (child.name === "w:p") {
+          textBoxChildren.push(parseParagraph(child, ctx));
+          continue;
+        }
+        const parsed = parseRegisteredBodyChild(child, ctx);
+        if (parsed) textBoxChildren.push(parsed);
+      }
+    });
     result.textBoxPart = {
       path: textBoxPath,
       sequence: attrNum(txbx, "txbxSeq") ?? 0,
+      children: textBoxChildren,
+      ignorable: attr(textBoxRoot, "mc:Ignorable"),
     };
+    ctx.consumedPartPaths?.add(textBoxPath);
   }
 
   // Linked text box chain (wps:linkedTxbx) — XSD choice partner of txbx.
@@ -1021,6 +1079,7 @@ function parseWpsShapeDrawing(
 ): { wpsShape: ShapeOptions } | undefined {
   const wsp = findFirst(el, "wps:wsp");
   if (!wsp) return undefined;
+  const graphicDataUri = attr(findFirst(el, "a:graphicData"), "uri");
 
   const info = parseAnchorOrInline(el, ctx) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
@@ -1040,6 +1099,8 @@ function parseWpsShapeDrawing(
   if (info.altText) shape.altText = info.altText;
   if (info.graphicFrameLocks !== undefined) shape.graphicFrameLocks = info.graphicFrameLocks;
   if (info.extensionIds) shape.extensionIds = info.extensionIds;
+  if (graphicDataUri !== undefined && graphicDataUri !== WPS_URI)
+    shape.graphicDataUri = graphicDataUri;
 
   return { wpsShape: shape as ShapeOptions };
 }
@@ -1158,6 +1219,14 @@ function bridgeChartExternalData(
 ): void {
   const ext = chartOpts.externalData;
   if (!ext || ext.data !== undefined) return;
+  if (!ext.relationshipId) {
+    throw new DocxParseError(
+      "chart externalData is missing its relationship id",
+      chartPath,
+      "/c:chartSpace/c:externalData",
+      "missing-required-relationship-id",
+    );
+  }
   const relsEl = ctx.docx.doc.get(partPathToRelsPath(chartPath));
   if (!relsEl) return;
   const rel = relsEl.elements?.find(
@@ -1183,7 +1252,7 @@ function bridgeChartUserShapes(
   ctx: DocxReadContext,
 ): void {
   const us = chartOpts.userShapes;
-  if (!us || us.anchors.length > 0) return;
+  if (!us) return;
   const relsEl = ctx.docx.doc.get(partPathToRelsPath(chartPath));
   if (!relsEl) return;
   const rel = relsEl.elements?.find(
@@ -1193,8 +1262,13 @@ function bridgeChartUserShapes(
       (attr(e, "Type") ?? "").endsWith("/chartUserShapes"),
   );
   const target = rel ? attr(rel, "Target") : undefined;
-  if (!target) return;
-  const bodyEl = ctx.docx.doc.get(resolveRelationshipTarget(chartPath, target));
+  const userShapesPath = target ? resolveRelationshipTarget(chartPath, target) : undefined;
+  if (userShapesPath) {
+    userShapesSourcePaths.set(us, userShapesPath);
+    consumePartPath(ctx, userShapesPath);
+  }
+  if (!userShapesPath || us.anchors.length > 0) return;
+  const bodyEl = ctx.docx.doc.get(userShapesPath);
   if (!bodyEl) return;
   us.anchors = userShapesDesc.parse(bodyEl, ctx).anchors;
 }
@@ -1251,6 +1325,9 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   // stringifies on generate) — keeps axes, externalData, spPr, dLbls, …
   const chartOpts = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartOpts.type) return undefined;
+  consumePartPath(ctx, chartPath);
+  consumePartPath(ctx, partPathToRelsPath(chartPath));
+  chartSourcePaths.set(chartOpts, chartPath);
   bridgeChartExternalData(chartPath, chartOpts as ChartSpaceOptions, ctx);
   bridgeChartUserShapes(chartPath, chartOpts as ChartSpaceOptions, ctx);
   const sourceRelationships = readChartSourceRelationships(chartPath, ctx);
@@ -1502,6 +1579,8 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   // that stringifies on generate, so every field round-trips symmetrically.
   const chartSpace = chartSpaceDesc.parse(chartXml, ctx);
   if (!chartSpace.type) return undefined;
+  consumePartPath(ctx, chartPath);
+  consumePartPath(ctx, partPathToRelsPath(chartPath));
   bridgeChartExternalData(chartPath, chartSpace as ChartSpaceOptions, ctx);
   bridgeChartUserShapes(chartPath, chartSpace as ChartSpaceOptions, ctx);
 
@@ -1520,6 +1599,7 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   };
   const sourceRelationships = readChartSourceRelationships(chartPath, ctx);
   if (sourceRelationships.length > 0) chartSourceRelationships.set(opts, sourceRelationships);
+  chartSourcePaths.set(opts, chartPath);
   if (info?.graphicFrameLocks !== undefined) {
     opts.graphicFrameLocks = info.graphicFrameLocks;
   }
@@ -1548,9 +1628,16 @@ function parseSmartArtDrawing(
 
   const opts = parseSmartArtDataXml(dataEl);
   if (!opts) return undefined;
+  consumePartPath(ctx, dataPath);
+  consumePartPath(ctx, partPathToRelsPath(dataPath));
+  const sourcePaths: SmartArtSourcePaths = {
+    data: dataPath,
+    dataRels: partPathToRelsPath(dataPath),
+  };
+  smartArtSourcePaths.set(opts, sourcePaths);
 
   // Verbatim source parts: byte-exact round-trip outranks the modeled fold.
-  const raw = readSmartArtRawParts(dataPath, ctx);
+  const raw = readSmartArtRawParts(dataPath, ctx, sourcePaths);
 
   // Custom definitions come back structured; built-in stubs fold to their id
   // string so round-tripping a built-in diagram keeps the compact form.
@@ -1559,6 +1646,8 @@ function parseSmartArtDrawing(
     const layoutEl = ctx.docx.doc.get(layoutPath);
     if (layoutEl) {
       const layout = parseLayoutDefinition(layoutEl);
+      sourcePaths.layout = layoutPath;
+      consumePartPath(ctx, layoutPath);
       const id = layout.uniqueId?.split("/").pop();
       opts.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
     }
@@ -1570,6 +1659,8 @@ function parseSmartArtDrawing(
     const styleEl = ctx.docx.doc.get(stylePath);
     if (styleEl) {
       const style = parseStyleDefinition(styleEl);
+      sourcePaths.quickStyle = stylePath;
+      consumePartPath(ctx, stylePath);
       const id = style.uniqueId?.split("/").pop();
       opts.style = id && id in STYLE_CATEGORIES ? id : style;
     }
@@ -1581,6 +1672,8 @@ function parseSmartArtDrawing(
     const colorEl = ctx.docx.doc.get(colorPath);
     if (colorEl) {
       const color = parseColorDefinition(colorEl);
+      sourcePaths.colors = colorPath;
+      consumePartPath(ctx, colorPath);
       const id = color.uniqueId?.split("/").pop();
       opts.color = id && id in COLOR_CATEGORIES ? id : color;
     }
@@ -1627,6 +1720,7 @@ function readDiagramPartPath(
 function readSmartArtRawParts(
   dataPath: string,
   ctx: DocxReadContext,
+  sourcePaths: { drawing?: string },
 ): SmartArtRawParts | undefined {
   const raw: SmartArtRawParts = {};
   const dataBytes = ctx.docx.doc.getRaw(dataPath);
@@ -1648,7 +1742,10 @@ function readSmartArtRawParts(
         // pre-rendered dsp:drawing snapshot.
         const target = attr(rel, "Target");
         if (target) {
-          const bytes = ctx.docx.doc.getRaw(resolveRelationshipTarget(dataPath, target));
+          const drawingPath = resolveRelationshipTarget(dataPath, target);
+          sourcePaths.drawing = drawingPath;
+          consumePartPath(ctx, drawingPath);
+          const bytes = ctx.docx.doc.getRaw(drawingPath);
           if (bytes) raw.drawing = bytes;
         }
         continue;
@@ -1673,6 +1770,8 @@ function readSmartArtRawParts(
       ...ctx.docx.partRefs.diagramDrawing.values(),
     ]);
     if (drawingPath) {
+      sourcePaths.drawing = drawingPath;
+      consumePartPath(ctx, drawingPath);
       const bytes = ctx.docx.doc.getRaw(drawingPath);
       if (bytes) raw.drawing = bytes;
     }

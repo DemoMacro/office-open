@@ -274,7 +274,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   // Function groups (after sheets, before externalReferences per XSD)
   const functionGroups = opts.functionGroups;
   if (functionGroups) {
-    const fgParts: string[] = [`<functionGroups builtInGroupCount="16">`];
+    const builtInGroupCount = opts.builtInGroupCount ?? 16;
+    const fgParts: string[] = [`<functionGroups builtInGroupCount="${builtInGroupCount}">`];
     for (const name of functionGroups) {
       fgParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
     }
@@ -477,8 +478,12 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
 /** Generate tableParts XML fragment for embedding in a worksheet. */
 export function buildTablePartsXml(tableParts: TablePartReference[]): string {
   if (tableParts.length === 0) return "";
+  const ordered = tableParts
+    .map((tp, index) => ({ tp, index }))
+    .sort((a, b) => (a.tp.order ?? a.index) - (b.tp.order ?? b.index))
+    .map((entry) => entry.tp);
   const p: string[] = [`<tableParts count="${tableParts.length}">`];
-  for (const tp of tableParts) {
+  for (const tp of ordered) {
     p.push(`<tablePart r:id="${tp.rId}"/>`);
   }
   p.push("</tableParts>");

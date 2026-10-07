@@ -250,6 +250,7 @@ export function deriveContentTypes(
       if (desiredType === undefined) continue;
       const ext = extensionOf(file)?.toLowerCase();
       if (ext === "xml" && sourceDefaultByExt.get("xml") === "application/xml") continue;
+      if (ext && sourceDefaultByExt.has(ext)) continue;
       if (ext && sourceDefaultByExt.get(ext) === desiredType) continue;
       if (covered.has(key)) continue;
       covered.add(key);
@@ -264,7 +265,7 @@ export function deriveContentTypes(
   }
   return {
     ...(options.source.namespace ? { namespace: options.source.namespace } : {}),
-    ...mergeSourceContentTypes(options.source, files, defaults, overrideMap, partTypes, {
+    ...mergeSourceContentTypes(options.source, files, defaults, overrideMap, {
       verbatim: options.verbatimPaths,
     }),
   };
@@ -293,7 +294,6 @@ function mergeSourceContentTypes(
   files: string[],
   derivedDefaults: ContentTypeDefault[],
   derivedOverrides: Map<string, ContentTypeOverride>,
-  partTypes: Array<{ partName: string; contentType: string }>,
   mergeOpts: { verbatim?: ReadonlySet<string> },
 ): ContentTypesInput {
   const filePaths = new Set(files.map((p) => withLeadingSlash(p).toLowerCase()));
@@ -340,20 +340,6 @@ function mergeSourceContentTypes(
     seenOverride.add(key);
     overrides.push(o);
   }
-  // Extension-typed parts (media, embeddings) whose surviving source Default
-  // disagrees with the derived type need a per-part Override — e.g. a package
-  // whose Default .bin types printer settings while an OLE .bin survives.
-  for (const { partName, contentType } of partTypes) {
-    const key = partName.toLowerCase();
-    if (derivedOverrides.has(key) || keptSourceTypeByPath.has(key)) continue;
-    if (isVerbatim(key)) continue; // source bytes, source declaration
-    const ext = partExt(key);
-    const coveringDefault = ext ? defaultTypeByExt.get(ext) : undefined;
-    if (coveringDefault === undefined || coveringDefault === contentType) continue;
-    if (seenOverride.has(key)) continue;
-    seenOverride.add(key);
-    overrides.push({ partName, contentType });
-  }
   const defaults: ContentTypeDefault[] = [];
   const seenDefault = new Set<string>();
   for (const d of source.defaults) {
@@ -396,6 +382,7 @@ export const IMAGE_MEDIA_CONTENT_TYPES: Record<string, string> = {
   wmf: "image/x-wmf",
   ico: "image/x-icon",
   svg: "image/svg+xml",
+  webp: "image/webp",
 };
 
 // ── Package finalization ──

@@ -164,6 +164,17 @@ describe("inline metadata parse", () => {
     expect(xml).toContain('<w:customXml w:element="field"><w:r/></w:customXml>');
   });
 
+  it("parses legacy bare text in a customXml run as run text", () => {
+    const opts = parseParagraphXml(
+      `<w:customXml w:element="field"><w:r>
+        legacy text
+      </w:r></w:customXml>`,
+    );
+
+    const cx = findChildByKey(opts, "customXml");
+    expect((cx!.customXml as Record<string, unknown>).children).toEqual([{ text: "legacy text" }]);
+  });
+
   it("round-trips an empty run as a paragraph child", () => {
     const opts = parseParagraphXml(`<w:r/>`);
     expect(opts.children).toEqual([{}]);

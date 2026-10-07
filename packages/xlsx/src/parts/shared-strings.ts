@@ -63,7 +63,9 @@ export function buildRPrXml(
   if (pr.bold)
     partsByTag.b = pr.boldValRaw !== undefined ? `<b val="${escapeXml(pr.boldValRaw)}"/>` : "<b/>";
   if (pr.italic) partsByTag.i = "<i/>";
-  if (pr.strike) partsByTag.strike = "<strike/>";
+  if (pr.strike)
+    partsByTag.strike =
+      pr.strikeVal !== undefined ? `<strike val="${escapeXml(pr.strikeVal)}"/>` : "<strike/>";
   if (pr.outline) partsByTag.outline = "<outline/>";
   if (pr.shadow) partsByTag.shadow = "<shadow/>";
   if (pr.condense) partsByTag.condense = "<condense/>";
@@ -503,7 +505,8 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.italic = parseOnOff(attr(child, "val")) ?? true;
         break;
       case "strike":
-        result.strike = true;
+        result.strike = parseOnOff(attr(child, "val")) ?? true;
+        if (attr(child, "val") !== undefined) result.strikeVal = attr(child, "val");
         break;
       case "outline":
         result.outline = true;

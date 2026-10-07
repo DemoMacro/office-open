@@ -695,7 +695,11 @@ function stringifyRsids(opts: RsidsOptions): string {
   const p: string[] = [];
   if (opts.rsidRoot !== undefined) p.push(attrEl("w:rsidRoot", { "w:val": opts.rsidRoot }));
   if (opts.rsids !== undefined) {
-    for (const rsid of opts.rsids) p.push(attrEl("w:rsid", { "w:val": rsid }));
+    for (const rsid of opts.rsids) {
+      // Word writes a bare <w:rsid/> when the val attribute is absent —
+      // preserve that shape instead of emitting an empty w:val.
+      p.push(rsid ? attrEl("w:rsid", { "w:val": rsid }) : "<w:rsid/>");
+    }
   }
   return `<w:rsids>${p.join("")}</w:rsids>`;
 }
@@ -1454,8 +1458,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const list: string[] = [];
       for (const child of rsidsEl.elements ?? []) {
         if (child.name !== "w:rsid") continue;
-        const val = attr(child, "w:val");
-        if (val) list.push(val);
+        list.push(attr(child, "w:val") ?? "");
       }
       if (list.length > 0) rsids.rsids = list;
       // An empty w:rsids element still round-trips as { rsids: {} } — element

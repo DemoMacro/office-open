@@ -69,6 +69,7 @@ export function compileNotesParts(
       ctx,
       ctx.comments.relationships,
       resolved.embeddingOffset + resolved.embeddingRefs.length,
+      "word/comments.xml",
     );
     result.Comments = {
       data: replaceNumberingPlaceholders(commentXml, ctx.numbering.concreteNumbering),
@@ -106,6 +107,7 @@ export function compileNotesParts(
     ctx,
     ctx.footNotes.relationships,
     footnoteResolved.embeddingOffset + footnoteResolved.embeddingRefs.length,
+    "word/footnotes.xml",
   );
   if (ctx.hasFootnotes) {
     result.FootNotes = {
@@ -151,6 +153,7 @@ export function compileNotesParts(
       ctx,
       ctx.endnotes.relationships,
       resolved.embeddingOffset + resolved.embeddingRefs.length,
+      "word/endnotes.xml",
     );
     result.Endnotes = {
       data: replaceNumberingPlaceholders(endnoteXml, ctx.numbering.concreteNumbering),

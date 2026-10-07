@@ -91,9 +91,9 @@ export function stringifyTableOfContents(
     ? // endInBody: the end marker round-trips in a following body paragraph —
       // injecting another end run here would emit the field end twice.
       options.endInBody
-      ? injectFieldHead(entriesXml, headRuns)
+      ? injectHeadRuns(entriesXml, headRuns, options)
       : injectFieldEnd(
-          injectFieldHead(entriesXml, headRuns),
+          injectHeadRuns(entriesXml, headRuns, options),
           endRun,
           options.fieldEndBeforeChildren === true,
         )
@@ -146,6 +146,24 @@ function injectFieldHead(entriesXml: string, headRuns: string): string {
     if (pPrEnd >= 0) injectAt = pPrEnd + "</w:pPr>".length;
   }
   return entriesXml.slice(0, injectAt) + headRuns + entriesXml.slice(injectAt);
+}
+
+/**
+ * Dispatch the head-run injection position: the default shares the first
+ * entry's paragraph right after its pPr; `headRunsAfterText` restores a
+ * source that carried the entry's text run before the field chain.
+ */
+function injectHeadRuns(
+  entriesXml: string,
+  headRuns: string,
+  options: Pick<TableOfContentsOptions, "headRunsAfterText">,
+): string {
+  if (options.headRunsAfterText !== true) return injectFieldHead(entriesXml, headRuns);
+  const rStart = entriesXml.search(/<w:r[ >]/);
+  const rEnd = rStart < 0 ? -1 : entriesXml.indexOf("</w:r>", rStart);
+  if (rEnd < 0) return injectFieldHead(entriesXml, headRuns);
+  const insertAt = rEnd + "</w:r>".length;
+  return entriesXml.slice(0, insertAt) + headRuns + entriesXml.slice(insertAt);
 }
 
 /**

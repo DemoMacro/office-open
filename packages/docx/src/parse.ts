@@ -5,14 +5,17 @@ import {
   decodeUriPath,
   isEncryptedContainer,
   opaquePassthroughPolicy,
+  imageTypeFromPath,
   partPathToRelsPath,
   resolveRelationshipTarget,
   toUint8Array,
   toUint8ArrayAsync,
+  parseVmlBackground,
 } from "@office-open/core";
 import type { ThemeColor } from "@office-open/core";
 import { contentTypesDesc } from "@office-open/core";
 import { themeDesc } from "@office-open/core/theme";
+import { findChild } from "@office-open/xml";
 import { attr } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { appPropertiesDesc } from "@parts/app-properties";
@@ -25,6 +28,7 @@ import { commentsIdsDesc } from "@parts/comments-ids";
 import { corePropertiesDesc } from "@parts/core-properties";
 import type { DocumentOptions } from "@parts/core-properties";
 import { customPropertiesDesc } from "@parts/custom-properties";
+import { customizationsDesc } from "@parts/customizations/descriptor";
 import { endnotesDesc } from "@parts/endnotes/descriptor";
 import { fontTableDesc } from "@parts/fonts/descriptor";
 import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
@@ -34,6 +38,7 @@ import { setNotesParseChild } from "@parts/notes/shared";
 import { parseNumberingDefinitions } from "@parts/numbering/numbering";
 import { peopleDesc } from "@parts/people";
 import { mailMergeRecipientsDesc, settingsDesc } from "@parts/settings/descriptor";
+import type { StylesOptions } from "@parts/styles/styles";
 import {
   buildStyleCache,
   buildNumberingCache,
@@ -45,9 +50,8 @@ import { webSettingsDesc } from "@parts/web-settings";
 
 import { parseParagraphProperties } from "./body";
 import { DocxReadContext } from "./context";
+import { DocxParseError } from "./errors";
 import { parseBody, parseSectionChild } from "./parse/body";
-import { replaceRelsWithPlaceholders } from "./util/replace-media-placeholders";
-import { stringifyElement } from "./util/stringify-element";
 
 export { parseArchive };
 
@@ -181,8 +185,12 @@ export interface DocxDocument {
  * Reads the binary verbatim and flags it raw so the compiler copies it as-is
  * instead of re-obfuscating (the fontKey already matches the bytes).
  */
-function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: ParsedArchive): void {
-  const relsEl = doc.get("word/_rels/fontTable.xml.rels");
+function resolveEmbeddedFontData(
+  fonts: EmbeddedFontOptionsWithKey[],
+  doc: ParsedArchive,
+  fontTablePath = "word/fontTable.xml",
+): void {
+  const relsEl = doc.get(partPathToRelsPath(fontTablePath));
   if (!relsEl) return;
   const ridToPath = new Map<string, string>();
   for (const child of relsEl.elements ?? []) {
@@ -191,7 +199,7 @@ function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: Parse
     if (!type.includes("/font")) continue;
     const id = attr(child, "Id") ?? "";
     const target = attr(child, "Target") ?? "";
-    if (id && target) ridToPath.set(id, resolveRelationshipTarget("word/fontTable.xml", target));
+    if (id && target) ridToPath.set(id, resolveRelationshipTarget(fontTablePath, target));
   }
   for (const font of fonts) {
     if (!font.embedRid) continue;
@@ -480,6 +488,22 @@ function parseDocumentFromBytes(uint8: Uint8Array): DocumentOptions {
   return parseDocumentFromDocx(parseDocx(uint8));
 }
 
+function glossaryCompanionPath(
+  glossaryPath: string,
+  rels: Element | undefined,
+  relationshipSuffix: string,
+): string | undefined {
+  const rel = rels?.elements?.find(
+    (child) =>
+      child.name === "Relationship" &&
+      (attr(child, "Type") ?? "").includes(`/${relationshipSuffix}`),
+  );
+  const target = rel ? attr(rel, "Target") : undefined;
+  if (!target) return undefined;
+  const path = resolveRelationshipTarget(glossaryPath, target);
+  return path.startsWith("word/") ? path : undefined;
+}
+
 function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   const ctx = new DocxReadContext(
     docx,
@@ -514,14 +538,50 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     const hasChildren = (docx.background.elements ?? []).some((e) => e.type === "element");
     if (hasChildren) {
       // VML/structured background (e.g. v:background/v:fill pattern with a
-      // texture image) that doesn't fit the color/theme model: carry the
-      // element verbatim, rewriting relationship refs to {fileName} placeholders
-      // so the media round-trips via the compiler's placeholder pass.
-      const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
-        stringifyElement(docx.background),
-        ctx,
-      );
-      opts.background = rawMedia.length > 0 ? { rawXml, rawMedia } : { rawXml };
+      // texture image): parse the typed core model and bridge its relationship
+      // through a {fileName} placeholder so generate re-registers the media.
+      const vmlElement = findChild(docx.background, "v:background");
+      if (vmlElement) {
+        const backgroundAttributes: Partial<NonNullable<DocumentOptions["background"]>> = {};
+        const backgroundColor = attr(docx.background, "w:color");
+        const backgroundThemeColor = attr(docx.background, "w:themeColor");
+        const backgroundThemeShade = attr(docx.background, "w:themeShade");
+        const backgroundThemeTint = attr(docx.background, "w:themeTint");
+        if (backgroundColor) backgroundAttributes.color = backgroundColor;
+        if (backgroundThemeColor)
+          backgroundAttributes.themeColor = backgroundThemeColor as ThemeColor;
+        if (backgroundThemeShade) backgroundAttributes.themeShade = backgroundThemeShade;
+        if (backgroundThemeTint) backgroundAttributes.themeTint = backgroundThemeTint;
+        const vmlBackground = parseVmlBackground(vmlElement);
+        const rawMedia: NonNullable<NonNullable<DocumentOptions["background"]>["rawMedia"]> = [];
+        const fill = vmlBackground.fill;
+        const relationshipId = fill?.relationshipId;
+        if (fill && relationshipId?.startsWith("rId")) {
+          const mediaPath = ctx.resolveRelationship(relationshipId);
+          const data = mediaPath ? ctx.getRaw(mediaPath) : undefined;
+          if (mediaPath && data) {
+            const fileName = mediaPath.split("/").pop() ?? mediaPath;
+            const type = imageTypeFromPath(mediaPath);
+            fill.relationshipId = `{${fileName}}`;
+            rawMedia.push({ fileName, data, type });
+          }
+        }
+        opts.background = {
+          ...backgroundAttributes,
+          vmlBackground,
+          ...(rawMedia.length > 0 ? { rawMedia } : {}),
+        };
+      } else {
+        const unknownChild = (docx.background.elements ?? []).find(
+          (child) => child.type === "element",
+        );
+        throw new DocxParseError(
+          `unsupported document background child: ${unknownChild?.name ?? "unknown"}`,
+          docx.primaryPartPath,
+          "/w:background",
+          "unsupported-background-child",
+        );
+      }
     } else {
       const bg: NonNullable<DocumentOptions["background"]> = {};
       const color = attr(docx.background, "w:color");
@@ -608,6 +668,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.webSettings) {
     opts.webSettings = webSettingsDesc.parse(docx.webSettings, ctx);
   }
+  const customizations = docx.doc.get("word/customizations.xml");
+  if (customizations) opts.customizations = customizationsDesc.parse(customizations, ctx);
 
   // Custom properties — presence-based: an empty docProps/custom.xml
   // round-trips as an empty part instead of being dropped.
@@ -769,17 +831,41 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     const glossaryEl = docx.doc.get(docx.partRefs.glossary);
     if (glossaryEl) {
       const glossaryRels = docx.doc.get(partPathToRelsPath(docx.partRefs.glossary));
-      const numberingRel = glossaryRels?.elements?.find(
-        (child) =>
-          child.name === "Relationship" && (attr(child, "Type") ?? "").includes("/numbering"),
+      const settingsPath = glossaryCompanionPath(docx.partRefs.glossary, glossaryRels, "settings");
+      const stylesPath = glossaryCompanionPath(docx.partRefs.glossary, glossaryRels, "styles");
+      const webSettingsPath = glossaryCompanionPath(
+        docx.partRefs.glossary,
+        glossaryRels,
+        "webSettings",
       );
-      const numberingTarget = numberingRel ? attr(numberingRel, "Target") : undefined;
-      const numberingPath = numberingTarget
-        ? resolveRelationshipTarget(docx.partRefs.glossary, numberingTarget)
-        : undefined;
+      const fontTablePath = glossaryCompanionPath(
+        docx.partRefs.glossary,
+        glossaryRels,
+        "fontTable",
+      );
+      const numberingPath = glossaryCompanionPath(
+        docx.partRefs.glossary,
+        glossaryRels,
+        "numbering",
+      );
       const numberingEl = numberingPath ? docx.doc.get(numberingPath) : undefined;
+      const stylesEl = stylesPath ? docx.doc.get(stylesPath) : undefined;
+      const settingsEl = settingsPath ? docx.doc.get(settingsPath) : undefined;
+      const webSettingsEl = webSettingsPath ? docx.doc.get(webSettingsPath) : undefined;
+      const fontTableEl = fontTablePath ? docx.doc.get(fontTablePath) : undefined;
       const previousNumberingCache = ctx.numberingCache;
       const previousNumIdCache = ctx.numIdCache;
+      const previousStyleCache = ctx.styleCache;
+      if (stylesEl) ctx.styleCache = buildStyleCache(stylesEl);
+      // Glossary styles reference the MAIN numbering space, so parse them
+      // before the glossary numbering caches are installed.
+      let glossaryStyles: { options: StylesOptions; partName: string } | undefined;
+      if (stylesEl && stylesPath) {
+        const parsed = ctx.withPart(stylesPath, () =>
+          parseStyleDefinitions(stylesEl, parseParagraphProperties, ctx),
+        ) ?? { importedStyles: [] };
+        glossaryStyles = { options: parsed, partName: stylesPath.slice("word/".length) };
+      }
       if (numberingEl) {
         ctx.numberingCache = buildNumberingCache(numberingEl);
         ctx.numIdCache = buildNumIdCache(numberingEl);
@@ -789,17 +875,38 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
         glossaryResult = ctx.withPart(docx.partRefs.glossary, () =>
           glossaryDesc.parse(glossaryEl, ctx),
         );
+        if (glossaryResult && settingsEl && settingsPath) {
+          glossaryResult.settings = ctx.withPart(settingsPath, () =>
+            settingsDesc.parse(settingsEl, ctx),
+          );
+          glossaryResult.settingsPartName = settingsPath.slice("word/".length);
+        }
+        if (glossaryResult && glossaryStyles) {
+          glossaryResult.styles = glossaryStyles.options;
+          glossaryResult.stylesPartName = glossaryStyles.partName;
+        }
+        if (glossaryResult && webSettingsEl && webSettingsPath) {
+          glossaryResult.webSettings = webSettingsDesc.parse(webSettingsEl, ctx);
+          glossaryResult.webSettingsPartName = webSettingsPath.slice("word/".length);
+        }
+        if (glossaryResult && fontTableEl && fontTablePath) {
+          const glossaryFonts = fontTableDesc.parse(fontTableEl, ctx).fonts ?? [];
+          resolveEmbeddedFontData(glossaryFonts, docx.doc, fontTablePath);
+          glossaryResult.fonts = glossaryFonts;
+          glossaryResult.fontTablePartName = fontTablePath.slice("word/".length);
+        }
+        if (glossaryResult && numberingEl && numberingPath?.startsWith("word/")) {
+          glossaryResult.numbering = ctx.withPart(numberingPath, () =>
+            parseNumberingDefinitions(numberingEl, parseParagraphProperties, ctx),
+          ) ?? { abstractNumberings: [] };
+          glossaryResult.numberingPartName = numberingPath.slice("word/".length);
+        }
       } finally {
         ctx.numberingCache = previousNumberingCache;
         ctx.numIdCache = previousNumIdCache;
+        ctx.styleCache = previousStyleCache;
       }
       opts.glossary = glossaryResult;
-      if (opts.glossary && numberingEl && numberingPath?.startsWith("word/")) {
-        opts.glossary.numbering = ctx.withPart(numberingPath, () =>
-          parseNumberingDefinitions(numberingEl, parseParagraphProperties, ctx),
-        ) ?? { abstractNumberings: [] };
-        opts.glossary.numberingPartName = numberingPath.slice("word/".length);
-      }
       if (opts.glossary && docx.partRefs.glossary.startsWith("word/")) {
         opts.glossary.partName = docx.partRefs.glossary.slice("word/".length);
       }
@@ -834,14 +941,19 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   if (docx.appProps) rebuilt.push(docx.appProps);
   if (docx.customProps) rebuilt.push(docx.customProps);
   if (docx.settings) rebuilt.push("word/settings.xml");
+  if (docx.settings) rebuilt.push(partPathToRelsPath("word/settings.xml"));
   if (docx.styles) rebuilt.push("word/styles.xml");
   if (docx.stylesWithEffects) rebuilt.push("word/stylesWithEffects.xml");
-  if (docx.numbering) rebuilt.push("word/numbering.xml");
+  if (docx.numbering) {
+    rebuilt.push("word/numbering.xml");
+    rebuilt.push(partPathToRelsPath("word/numbering.xml"));
+  }
   if (docx.fontTable) rebuilt.push("word/fontTable.xml");
   if (docx.webSettings) rebuilt.push("word/webSettings.xml");
+  if (opts.customizations) rebuilt.push("word/customizations.xml");
   if (docx.partRefs.theme) {
     rebuilt.push(docx.partRefs.theme);
-    rebuilt.push(`word/_rels/${docx.partRefs.theme.slice("word/".length)}.rels`);
+    rebuilt.push(partPathToRelsPath(docx.partRefs.theme));
   }
   if (opts.mailMergeRecipients?.length) {
     rebuilt.push("word/_rels/settings.xml.rels");
@@ -875,10 +987,36 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     rebuilt.push(docx.partRefs.endnotes!, "word/_rels/endnotes.xml.rels");
   }
   if (opts.bibliography) rebuilt.push(docx.partRefs.bibliography!);
-  if (opts.glossary) rebuilt.push(docx.partRefs.glossary!);
-  // Charts/diagrams/afChunks/subDocs are model-driven (emitted only when the
-  // model carries them) — not listed: they pass through and the compiler's
-  // output at the same path wins by assembly order.
+  if (opts.glossary) {
+    const glossaryPath = docx.partRefs.glossary;
+    if (!glossaryPath) throw new Error("glossary options present without glossary part");
+    rebuilt.push(glossaryPath);
+    rebuilt.push(partPathToRelsPath(glossaryPath));
+    for (const partName of [
+      opts.glossary.settingsPartName,
+      opts.glossary.stylesPartName,
+      opts.glossary.webSettingsPartName,
+      opts.glossary.fontTablePartName,
+      opts.glossary.numberingPartName,
+    ]) {
+      if (partName) {
+        rebuilt.push(`word/${partName}`);
+        rebuilt.push(partPathToRelsPath(`word/${partName}`));
+      }
+    }
+  }
+  // Word 2010 text-box parts are rebuilt from their typed shape references.
+  for (const textBoxPath of Object.values(docx.partRefs.partTextBoxes).flatMap((relationships) =>
+    relationships.values(),
+  )) {
+    if (docx.doc.has(textBoxPath)) rebuilt.push(textBoxPath);
+  }
+  for (const path of ctx.consumedPartPaths) {
+    rebuilt.push(path, partPathToRelsPath(path));
+  }
+  // Orphan charts/diagrams and afChunks/subDocs remain passthrough: there is
+  // no canonical instance to rebuild, while successfully parsed instances no
+  // longer overwrite or duplicate their source parts.
   const { parts: passthroughParts, relationships: passthroughRels } = collectPassthroughParts(
     docx.doc,
     rebuilt,

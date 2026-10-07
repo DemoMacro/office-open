@@ -38,6 +38,19 @@ export const embeddingRelationship = (
     ? PACKAGE_RELATIONSHIP
     : OLE_OBJECT_RELATIONSHIP;
 
+/** Relative relationship target from one package part to another. */
+export function relativePartTarget(ownerPath: string, targetPath: string): string {
+  const owner = ownerPath.split("/").slice(0, -1);
+  const target = targetPath.split("/");
+  let common = 0;
+  while (common < owner.length && common < target.length - 1 && owner[common] === target[common])
+    common++;
+  return [
+    ...Array.from({ length: owner.length - common }, () => ".."),
+    ...target.slice(common),
+  ].join("/");
+}
+
 /** Resolved media/embedding placeholders for one part, with the offsets its
  *  relationship registrations must use (ids are per-part numbering). */
 export interface PartMediaResolution {
@@ -111,6 +124,7 @@ export function resolvePartCharts(
   ctx: DocxWriteContext,
   rels: Relationships,
   relCount: number,
+  ownerPath = "word/document.xml",
 ): string {
   if (!CHART_SMARTART_PLACEHOLDER.test(xml)) return xml;
   const entries: Array<{ prefix?: string; key: string; value: string }> = [];
@@ -120,7 +134,10 @@ export function resolvePartCharts(
     rels.addRelationship(
       relCount + i,
       RELATIONSHIP_TYPES.chart,
-      `charts/chart${ctx.charts.array.indexOf(chart) + 1}.xml`,
+      relativePartTarget(
+        ownerPath,
+        chart.sourcePath ?? `word/charts/chart${ctx.charts.array.indexOf(chart) + 1}.xml`,
+      ),
     );
   });
   const referencedSmartArts = ctx.smartArts.array.filter((s) =>
@@ -135,7 +152,9 @@ export function resolvePartCharts(
   const drawingOffset = csOffset + smartArtCount;
   referencedSmartArts.forEach((smartArt, i) => {
     const fileIndex = ctx.smartArts.array.indexOf(smartArt) + 1;
-    const relsByPrefix: Array<[string, number, RelationshipType, string]> = [
+    const relsByPrefix: Array<
+      [string, number, RelationshipType, "data" | "layout" | "quickStyle" | "colors"]
+    > = [
       ["smartart:", base, RELATIONSHIP_TYPES.diagramData, "data"],
       ["smartart-lo:", loOffset, RELATIONSHIP_TYPES.diagramLayout, "layout"],
       ["smartart-qs:", qsOffset, RELATIONSHIP_TYPES.diagramQuickStyle, "quickStyle"],
@@ -143,7 +162,12 @@ export function resolvePartCharts(
     ];
     for (const [prefix, offset, type, file] of relsByPrefix) {
       entries.push({ prefix, key: smartArt.key, value: `rId${offset + i}` });
-      rels.addRelationship(offset + i, type, `diagrams/${file}${fileIndex}.xml`);
+      const sourcePath = smartArt.sourcePaths?.[file === "quickStyle" ? "quickStyle" : file];
+      rels.addRelationship(
+        offset + i,
+        type,
+        relativePartTarget(ownerPath, sourcePath ?? `word/diagrams/${file}${fileIndex}.xml`),
+      );
     }
     // The drawing part is an Office render cache, present only when the source
     // carried it — Word never emits it for a fresh SmartArt.
@@ -151,7 +175,10 @@ export function resolvePartCharts(
       rels.addRelationship(
         drawingOffset + i,
         RELATIONSHIP_TYPES.diagramDrawingMs,
-        `diagrams/drawing${fileIndex}.xml`,
+        relativePartTarget(
+          ownerPath,
+          smartArt.sourcePaths?.drawing ?? `word/diagrams/drawing${fileIndex}.xml`,
+        ),
       );
     }
   });

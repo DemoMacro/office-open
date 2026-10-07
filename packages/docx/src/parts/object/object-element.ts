@@ -26,10 +26,11 @@ import {
 import type { VmlShapetypeOptions, VmlShapeStyle, VmlTextboxOptions } from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
-import { attr, attrNum, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
+import { attr, attrMeasure, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
 import type { MediaData } from "@shared/media/data";
 
 import type { BodyContext } from "../../context";
+import type { BackgroundRawMediaOptions } from "../document/document-background/document-background";
 import { createPictureData } from "../paragraph/run/picture-run";
 
 // ── Options ──
@@ -96,14 +97,16 @@ export interface ObjectIconImageOptions {
 export interface ObjectElementOptions {
   /** Word 2010 drawing anchor id (w:object/`@w14:anchorId`). */
   w14AnchorId?: string;
-  /** Original width in twips (w:object/`@w:dxaOrig`). */
-  dxaOrig?: number;
-  /** Original height in twips (w:object/`@w:dyaOrig`). */
-  dyaOrig?: number;
+  /** Original width in twips or a universal measure (w:object/`@w:dxaOrig`). */
+  dxaOrig?: number | UniversalMeasure;
+  /** Original height in twips or a universal measure (w:object/`@w:dyaOrig`). */
+  dyaOrig?: number | UniversalMeasure;
   /** VML shape id (v:shape/`@id`). Defaults to a generated id. */
   shapeId?: string;
   /** VML fill color (v:shape/`@fillcolor`). */
   fillcolor?: string;
+  /** Paragraph mark renders as a list bullet (v:shape/`@o:bullet`). */
+  bullet?: boolean;
   /** Full VML style properties; width/height remain the sizing convenience. */
   style?: VmlShapeStyle;
   /** VML textbox child and attributes (v:textbox). */
@@ -127,6 +130,15 @@ export interface ObjectElementOptions {
   control?: ObjectControlOptions;
   /** Movie relationship id — CT_Rel (w:movie/`@r:id`). External. */
   movie?: string;
+  /** mc:AlternateContent Choice `@Requires` carried from parse (round-trip only). */
+  mcChoiceRequires?: string;
+  /**
+   * Serialized mc:Fallback element carried from parse (round-trip only — do
+   * not hand-author); stringify rebuilds the mc:AlternateContent wrapper.
+   */
+  mcFallback?: string;
+  /** Media referenced by the mcFallback `{fileName}` placeholders. */
+  mcFallbackMedia?: BackgroundRawMediaOptions[];
 }
 
 // ── Descriptor ──
@@ -180,6 +192,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         type: "#_x0000_t75",
         // o:ole marks the shape as an OLE container (Word always writes it here).
         ole: "",
+        bullet: opts.bullet,
         fillcolor: opts.fillcolor,
         style: { ...opts.style, width: styleWidth, height: styleHeight },
         textbox: opts.textbox,
@@ -233,10 +246,41 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     // w:object root attributes
     const objAttrs: string[] = [];
     if (opts.w14AnchorId) objAttrs.push(` w14:anchorId="${escapeXml(opts.w14AnchorId)}"`);
-    if (opts.dxaOrig !== undefined) objAttrs.push(` w:dxaOrig="${opts.dxaOrig}"`);
-    if (opts.dyaOrig !== undefined) objAttrs.push(` w:dyaOrig="${opts.dyaOrig}"`);
+    if (opts.dxaOrig !== undefined)
+      objAttrs.push(` w:dxaOrig="${escapeXml(String(opts.dxaOrig))}"`);
+    if (opts.dyaOrig !== undefined)
+      objAttrs.push(` w:dyaOrig="${escapeXml(String(opts.dyaOrig))}"`);
 
-    return `<w:object${objAttrs.join("")}>${inner.join("")}</w:object>`;
+    const objectXml = `<w:object${objAttrs.join("")}>${inner.join("")}</w:object>`;
+    if (opts.mcFallback === undefined) return objectXml;
+    // Rebuild the mc:AlternateContent wrapper carried from parse (structured
+    // Choice above, raw Fallback). Fallback media registers here so its
+    // {fileName} placeholders resolve to fresh rIds; dedup against the Choice
+    // media mirrors Office's one-file-per-image behavior.
+    let fallback = opts.mcFallback;
+    const renames = new Map<string, string>();
+    for (const m of opts.mcFallbackMedia ?? []) {
+      const data = toUint8Array(m.data) as Uint8Array;
+      if (data.length === 0) continue;
+      const entry = ctx.file.media.addMedia(
+        data,
+        m.type,
+        (fileName) =>
+          ({
+            type: m.type,
+            data,
+            fileName,
+            transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+          }) as MediaData,
+        m.fileName,
+      );
+      if (entry.fileName !== m.fileName) renames.set(m.fileName, entry.fileName);
+    }
+    fallback = remapRawPlaceholders(fallback, renames);
+    return (
+      `<mc:AlternateContent><mc:Choice Requires="${escapeXml(opts.mcChoiceRequires ?? "v")}">` +
+      `${objectXml}</mc:Choice>${fallback}</mc:AlternateContent>`
+    );
   },
 
   parse(el, ctx) {
@@ -244,9 +288,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const w14AnchorId = attr(el, "w14:anchorId");
     if (w14AnchorId) result.w14AnchorId = w14AnchorId;
 
-    const dxaOrig = attrNum(el, "w:dxaOrig");
+    const dxaOrig = attrMeasure(el, "w:dxaOrig") as number | UniversalMeasure | undefined;
     if (dxaOrig !== undefined) result.dxaOrig = dxaOrig;
-    const dyaOrig = attrNum(el, "w:dyaOrig");
+    const dyaOrig = attrMeasure(el, "w:dyaOrig") as number | UniversalMeasure | undefined;
     if (dyaOrig !== undefined) result.dyaOrig = dyaOrig;
 
     // v:shapetype preamble (Word's _x0000_t75 OLE shapetype)
@@ -261,6 +305,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       const id = attr(shape, "id");
       if (id) result.shapeId = id;
       if (parsedShape.fillcolor !== undefined) result.fillcolor = parsedShape.fillcolor;
+      if (parsedShape.bullet !== undefined) result.bullet = parsedShape.bullet;
       if (parsedShape.style !== undefined) result.style = parsedShape.style;
       if (parsedShape.textbox !== undefined) result.textbox = parsedShape.textbox;
       const style = attr(shape, "style");
@@ -378,6 +423,14 @@ function resolveBinary(
   const bytes = ctx.getRaw(path);
   if (!bytes) return undefined;
   return { path, bytes, relType: ctx.resolveEmbeddingType?.(rId) };
+}
+
+/** Replace `{old}` placeholders inside a raw XML string. */
+function remapRawPlaceholders(xml: string, renames: Map<string, string>): string {
+  for (const [oldName, newName] of renames) {
+    xml = xml.split(`{${oldName}}`).join(`{${newName}}`);
+  }
+  return xml;
 }
 
 /** Register an OLE embedding and return its allocated file name. */

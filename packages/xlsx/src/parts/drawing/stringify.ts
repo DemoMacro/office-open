@@ -61,6 +61,7 @@ export const DGM_URI = "http://schemas.openxmlformats.org/drawingml/2006/diagram
 export const WE_URI = "http://schemas.microsoft.com/office/webextensions/webextension/2010/11";
 const WE_NS = WE_URI;
 const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
+const A14_NS = "http://schemas.microsoft.com/office/drawing/2010/main";
 
 export const DEFAULT_EXTENT_CX = 400000;
 export const DEFAULT_EXTENT_CY = 300000;
@@ -409,7 +410,10 @@ export function stringifyShape(shape: ShapeOptions, id: number, ctx: WriteContex
     macroTextlinkAttrs(shape),
     shape.style,
   );
-  return wrapAnchor(shape, `${xml}${clientDataXml(shape)}`);
+  const content = shape.objectAlternateContent
+    ? `<mc:AlternateContent xmlns:mc="${MC_NS}"><mc:Choice xmlns:a14="${A14_NS}" Requires="a14">${xml}</mc:Choice><mc:Fallback/></mc:AlternateContent>`
+    : xml;
+  return wrapAnchor(shape, `${content}${clientDataXml(shape)}`);
 }
 
 export function stringifyConnector(conn: ConnectorOptions, id: number, ctx: WriteContext): string {

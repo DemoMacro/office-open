@@ -32,6 +32,8 @@ export interface PivotCacheReference {
 
 export interface TablePartReference {
   rId: string;
+  /** Zero-based source tableParts child position; stable-sorted before output. */
+  order?: number;
 }
 
 /** Custom workbook view for storing display preferences. */
@@ -488,6 +490,8 @@ export interface WorkbookDescriptorOptions {
   smartTagTypes?: SmartTagTypeOptions[];
   fileRecovery?: FileRecoveryPropertiesOptions;
   functionGroups?: string[];
+  /** Explicit built-in function-group count (CT_FunctionGroups `@builtInGroupCount`). */
+  builtInGroupCount?: number;
   webPublishing?: WebPublishingOptions;
   fileSharing?: FileSharingOptions;
   properties?: WorkbookPropertiesOptions;

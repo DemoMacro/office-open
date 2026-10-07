@@ -14,6 +14,10 @@ import {
 } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { documentNamespaceAttributes } from "@parts/document/document-attributes";
+import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
+import type { SettingsOptions } from "@parts/settings/settings";
+import type { StylesOptions } from "@parts/styles/styles";
+import type { WebSettingsOptions } from "@parts/web-settings";
 import type { SectionChild } from "@shared/section";
 
 /** Gallery type for building blocks (ST_DocPartGallery) */
@@ -135,6 +139,22 @@ export interface GlossaryDocumentOptions {
   numbering?: NumberingOptions;
   /** Glossary numbering path relative to word/ (round-trip only). */
   numberingPartName?: string;
+  /** Independent settings part owned by the glossary. */
+  settings?: SettingsOptions;
+  /** Glossary settings path relative to word/ (round-trip only). */
+  settingsPartName?: string;
+  /** Independent styles part owned by the glossary. */
+  styles?: StylesOptions;
+  /** Glossary styles path relative to word/ (round-trip only). */
+  stylesPartName?: string;
+  /** Independent web-settings part owned by the glossary. */
+  webSettings?: WebSettingsOptions;
+  /** Glossary web-settings path relative to word/ (round-trip only). */
+  webSettingsPartName?: string;
+  /** Independent font table owned by the glossary. */
+  fonts?: EmbeddedFontOptions[];
+  /** Glossary font-table path relative to word/ (round-trip only). */
+  fontTablePartName?: string;
   /** Building blocks */
   parts: DocPartOptions[];
 }

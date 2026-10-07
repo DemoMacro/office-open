@@ -51,26 +51,27 @@ import type { MailMergeOptions } from "@parts/settings/settings";
 import { stringifyDocumentXml, stringifyBodyChild, type BodyContext } from "./body";
 import { compileDocumentEntries } from "./compile/document";
 import { compileChartParts, compileSmartArtParts } from "./compile/drawings";
+import { compileGlossaryParts } from "./compile/glossary";
 import { compileHeaderFooterParts } from "./compile/headerfooter";
 import { compileNotesParts } from "./compile/notes";
 import { XML_DECL } from "./compile/shared";
+import { compileTextBoxParts } from "./compile/textbox";
 import { DocxWriteContext, themePartName } from "./context";
 import {
   corePropertiesDesc,
   customPropertiesDesc,
+  customizationsDesc,
   appPropertiesDesc,
   fontTableDesc,
   webSettingsDesc,
   bibliographyDesc,
   settingsDesc,
   mailMergeRecipientsDesc,
-  glossaryDesc,
   peopleDesc,
   commentsIdsDesc,
   commentsExtendedDesc,
   commentsExtensibleDesc,
 } from "./parts";
-import { Numbering } from "./parts/numbering";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -93,15 +94,6 @@ function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships)
     ids.set(fileName, id);
     return id;
   });
-}
-
-function glossarySourceMediaRids(ctx: DocxWriteContext, partPath: string): Map<string, string> {
-  const sourceRids = new Map<string, string>();
-  for (const rel of ctx._options.passthroughRelationships ?? []) {
-    if (rel.source !== partPath || !rel.target.startsWith("../media/")) continue;
-    sourceRids.set(rel.target.slice("../media/".length), rel.rId);
-  }
-  return sourceRids;
 }
 
 function withThemeRelationships(ctx: DocxWriteContext, rels: Relationships): WriteContext {
@@ -243,6 +235,20 @@ export function compileDocument(
   }
   const xmlifiedFileMapping = xmlifyContext(ctx);
   const files = compileMapping(xmlifiedFileMapping, overrides);
+  const textBoxParts = compileTextBoxParts(ctx);
+  for (const { part, relationships } of textBoxParts) {
+    files[part.path] = typeof part.data === "string" ? encoder.encode(part.data) : part.data;
+    if (relationships)
+      files[relationships.path] =
+        typeof relationships.data === "string"
+          ? encoder.encode(relationships.data)
+          : relationships.data;
+  }
+  if (ctx._options.customizations) {
+    files["word/customizations.xml"] = encoder.encode(
+      XML_DECL + (customizationsDesc.stringify(ctx._options.customizations, ctx) ?? ""),
+    );
+  }
 
   // Media + OLE embedding binaries (word/media/*, word/embeddings/*)
   addModelBinaries(files, "word", ctx.media.array, ctx.embeddings.array, mediaLevel);
@@ -255,6 +261,12 @@ export function compileDocument(
     // Pack the font part under the URI-escaped path so the ZIP item name
     // equals the escaped rel Target byte-for-byte (readers resolve the
     // Target as a URI; an unescaped part name with spaces never matches).
+    const filePath = encodeUriPath(font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`);
+    files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
+  }
+  for (const font of ctx.glossaryFontTable?.fontOptionsWithKey ?? []) {
+    if (font.data === undefined) continue;
+    const [nameWithoutExtension] = font.name.split(".");
     const filePath = encodeUriPath(font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`);
     files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
   }
@@ -299,12 +311,56 @@ export function compileDocument(
                   contentType:
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml",
                 },
-                ...(ctx.glossaryOptions.numberingPartName
+                ...(ctx.glossaryOptions.numbering
                   ? [
                       {
-                        path: `word/${ctx.glossaryOptions.numberingPartName}`,
+                        path: `word/${
+                          ctx.glossaryOptions.numberingPartName ?? "glossary/numbering.xml"
+                        }`,
                         contentType:
                           "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml",
+                      },
+                    ]
+                  : []),
+                ...(ctx.glossaryOptions.settings
+                  ? [
+                      {
+                        path: `word/${
+                          ctx.glossaryOptions.settingsPartName ?? "glossary/settings.xml"
+                        }`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml",
+                      },
+                    ]
+                  : []),
+                ...(ctx.glossaryOptions.styles
+                  ? [
+                      {
+                        path: `word/${ctx.glossaryOptions.stylesPartName ?? "glossary/styles.xml"}`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml",
+                      },
+                    ]
+                  : []),
+                ...(ctx.glossaryOptions.webSettings
+                  ? [
+                      {
+                        path: `word/${
+                          ctx.glossaryOptions.webSettingsPartName ?? "glossary/webSettings.xml"
+                        }`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml",
+                      },
+                    ]
+                  : []),
+                ...(ctx.glossaryOptions.fonts?.length
+                  ? [
+                      {
+                        path: `word/${
+                          ctx.glossaryOptions.fontTablePartName ?? "glossary/fontTable.xml"
+                        }`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml",
                       },
                     ]
                   : []),
@@ -377,11 +433,23 @@ interface XmlifyedFileMapping {
   AltChunks?: XmlifyedFile[];
   SubDocs?: XmlifyedFile[];
   Glossary?: XmlifyedFile;
+  GlossaryRelationships?: XmlifyedFile;
+  GlossaryNumbering?: XmlifyedFile;
+  GlossaryNumberingRelationships?: XmlifyedFile;
+  GlossaryStyles?: XmlifyedFile;
+  GlossarySettings?: XmlifyedFile;
+  GlossarySettingsRelationships?: XmlifyedFile;
+  GlossaryWebSettings?: XmlifyedFile;
+  GlossaryFontTable?: XmlifyedFile;
+  GlossaryFontTableRelationships?: XmlifyedFile;
   WebSettings?: XmlifyedFile;
 }
 
 function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   const mailMergeRecipients = ctx._options.mailMergeRecipients ?? [];
+  const hasSettingsRelationships = (ctx._options.passthroughRelationships ?? []).some(
+    (rel) => rel.source === "word/settings.xml",
+  );
   const hasAppProperties =
     hasSourcePart(ctx._options, "docProps/app.xml") || ctx._options.appProperties !== undefined;
   const recipientData =
@@ -418,6 +486,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
   // document rels), so per-part media registration keeps its sequencing.
   const notesParts = compileNotesParts(ctx, mkCtx);
   const headerFooterParts = compileHeaderFooterParts(ctx, mkCtx);
+  const glossaryParts = compileGlossaryParts(ctx, mkCtx);
   const documentEntries = compileDocumentEntries(ctx, documentXmlData, documentRelationshipCount);
 
   return {
@@ -572,6 +641,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       : {}),
     ...(ctx._settingsOptions.attachedTemplate !== undefined ||
     recipientData.length > 0 ||
+    hasSettingsRelationships ||
     mailMerge?.dataSource !== undefined ||
     mailMerge?.headerSource !== undefined ||
     mailMerge?.odso?.src !== undefined
@@ -655,56 +725,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
           })),
         }
       : {}),
-    ...(ctx.glossaryOptions
-      ? {
-          Glossary: {
-            data: (() => {
-              const previousNumbering = ctx.numbering;
-              const glossaryNumbering = ctx.glossaryOptions!.numbering
-                ? new Numbering(ctx.glossaryOptions!.numbering, false)
-                : undefined;
-              if (glossaryNumbering) ctx.numbering = glossaryNumbering;
-              try {
-                const glossaryCtx = mkCtx(undefined);
-                const glossaryXml = glossaryDesc.stringify(ctx.glossaryOptions!, glossaryCtx) ?? "";
-                const glossaryPartPath = `word/${
-                  ctx.glossaryOptions!.partName ?? "glossary/document.xml"
-                }`;
-                const resolvedGlossary = findAndReplaceImagePlaceholders(
-                  glossaryXml,
-                  ctx.media.array,
-                  1,
-                  "rId",
-                  glossarySourceMediaRids(ctx, glossaryPartPath),
-                );
-                return (
-                  XML_DECL +
-                  (glossaryNumbering
-                    ? replaceNumberingPlaceholders(
-                        resolvedGlossary.xml,
-                        glossaryNumbering.concreteNumbering,
-                      )
-                    : resolvedGlossary.xml)
-                );
-              } finally {
-                ctx.numbering = previousNumbering;
-              }
-            })(),
-            path: `word/${ctx.glossaryOptions!.partName ?? "glossary/document.xml"}`,
-          },
-          ...(ctx.glossaryOptions!.numbering && ctx.glossaryOptions!.numberingPartName
-            ? {
-                GlossaryNumbering: {
-                  data: (() => {
-                    const glossaryNumbering = new Numbering(ctx.glossaryOptions!.numbering!, false);
-                    return XML_DECL + glossaryNumbering.serialize(ctx);
-                  })(),
-                  path: `word/${ctx.glossaryOptions!.numberingPartName}`,
-                },
-              }
-            : {}),
-        }
-      : {}),
+    ...glossaryParts.entries,
     ...(ctx.webSettings
       ? {
           WebSettings: {

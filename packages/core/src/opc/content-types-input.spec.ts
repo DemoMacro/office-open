@@ -208,4 +208,24 @@ describe("finalizeContentTypes", () => {
     expect(input).not.toContain("<Override");
     expect(input).toContain('Extension="xml" ContentType="application/xml"');
   });
+
+  it("keeps a covering source binary default instead of adding a media override", () => {
+    const input = finalizeContentTypes(
+      { "word/media/image1.bin": new Uint8Array([1]) },
+      {
+        resolve: () => undefined,
+        mediaContentTypes: {
+          bin: "application/vnd.openxmlformats-officedocument.oleObject",
+        },
+        source: {
+          preserveSourceDeclarations: true,
+          defaults: [{ extension: "bin", contentType: "image/x-wmf" }],
+          overrides: [],
+        },
+      },
+      {} as never,
+    );
+    expect(input).not.toContain("<Override");
+    expect(input).toContain('Extension="bin" ContentType="image/x-wmf"');
+  });
 });

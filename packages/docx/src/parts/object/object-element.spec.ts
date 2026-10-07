@@ -52,6 +52,15 @@ describe("objectDesc.parse", () => {
     expect(opts.shapetype!.formulas!.equations).toEqual(["if lineDrawn pixelLineWidth 0"]);
   });
 
+  it("round-trips a universal-measure original size", () => {
+    const doc = parseXml(
+      `<w:object ${NS} w:dxaOrig="362.05pt" w:dyaOrig="146.40pt"><v:shape/></w:object>`,
+    );
+    const opts = objectDesc.parse(doc.elements![0]!, readCtx({}));
+    expect(opts.dxaOrig).toBe("362.05pt");
+    expect(opts.dyaOrig).toBe("146.40pt");
+  });
+
   it("fetches icon and OLE binaries through the part rels", () => {
     const iconBytes = new Uint8Array([1, 2, 3]);
     const oleBytes = new Uint8Array([4, 5, 6, 7]);
@@ -140,6 +149,51 @@ describe("objectDesc.stringify", () => {
   it("emits the Word 2010 anchor extension id", () => {
     const xml = objectDesc.stringify({ w14AnchorId: "291A48E0" }, writeCtx)!;
     expect(xml).toContain('w14:anchorId="291A48E0"');
+  });
+
+  it("rebuilds the mc:AlternateContent wrapper with the carried fallback", () => {
+    const xml = objectDesc.stringify(
+      {
+        shapeId: "_x0000_i1025",
+        width: "100pt",
+        height: "50pt",
+        mcChoiceRequires: "v",
+        mcFallback: "<mc:Fallback><w:object><w:drawing/></w:object></mc:Fallback>",
+        mcFallbackMedia: [{ fileName: "image1.png", data: new Uint8Array([1]), type: "png" }],
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain('<mc:AlternateContent><mc:Choice Requires="v">');
+    expect(xml).toContain(
+      "</mc:Choice><mc:Fallback><w:object><w:drawing/></w:object></mc:Fallback></mc:AlternateContent>",
+    );
+  });
+
+  it("remaps fallback media placeholders to registered file names", () => {
+    const renamingCtx = {
+      file: {
+        media: {
+          addMedia: (_data: Uint8Array, _type: string, _factory: unknown, requested?: string) => ({
+            fileName: requested === "image1.png" ? "image2.png" : requested,
+          }),
+        },
+        embeddings: {
+          addEmbedding: (_data: Uint8Array, requestedName?: string) => ({
+            fileName: requestedName ?? "oleObject1.bin",
+          }),
+        },
+      },
+    } as unknown as BodyContext;
+    const xml = objectDesc.stringify(
+      {
+        shapeId: "_x0000_i1025",
+        mcFallback: '<mc:Fallback><a:blip r:embed="{image1.png}"/></mc:Fallback>',
+        mcFallbackMedia: [{ fileName: "image1.png", data: new Uint8Array([1]), type: "png" }],
+      },
+      renamingCtx,
+    )!;
+    expect(xml).toContain("{image2.png}");
+    expect(xml).not.toContain("{image1.png}");
   });
 });
 

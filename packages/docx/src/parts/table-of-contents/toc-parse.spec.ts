@@ -199,6 +199,32 @@ describe("parseBody TOC entry preservation", () => {
     expect(tocChild?.toc.entries).toHaveLength(3);
   });
 
+  it("flags and injects head runs after entry text carried before the chain", () => {
+    // Some TOC templates carry the entry text ("Contents" heading) in the same
+    // paragraph BEFORE the begin/instr/separate chain — the head runs must
+    // re-inject after that text run to keep the source child order.
+    const xml = `<w:body>
+      <w:p><w:pPr><w:pStyle w:val="TOCHeading1"/></w:pPr><w:r><w:t>Contents</w:t></w:r>
+        <w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading One</w:t></w:r></w:p>
+      <w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = (sections[0]?.children ?? []).find((c) => "toc" in c) as
+      | { toc: Record<string, unknown> }
+      | undefined;
+    expect(tocChild?.toc.headRunsAfterText).toBe(true);
+    const entriesXml =
+      `<w:p><w:pPr><w:pStyle w:val="TOCHeading1"/></w:pPr>` +
+      `<w:r><w:t>Contents</w:t></w:r></w:p>`;
+    const out = stringifyTableOfContents(undefined, tocChild!.toc as never, entriesXml);
+    expect(out.indexOf("<w:t>Contents</w:t>")).toBeLessThan(out.indexOf('w:fldCharType="begin"'));
+  });
+
   it("keeps a nested HYPERLINK field inside an entry from fooling depth tracking", () => {
     // Real Word TOC entries wrap text+page in a nested HYPERLINK field (and
     // often a PAGEREF). The depth tracker must treat the entry paragraph as one

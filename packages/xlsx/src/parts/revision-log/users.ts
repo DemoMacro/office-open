@@ -16,15 +16,15 @@ export const usersDesc: CustomDescriptor<UsersOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    if (!opts.users || opts.users.length === 0) return undefined;
-    const users = opts.users
+    if (opts.users === undefined && opts.count === undefined) return undefined;
+    const users = (opts.users ?? [])
       .map(
         (u) =>
           `<userInfo guid="${escapeXml(u.guid)}" name="${escapeXml(u.name)}" id="${u.id}"` +
           ` dateTime="${escapeXml(u.dateTime)}"/>`,
       )
       .join("");
-    return `<users xmlns="${S_NS}" count="${opts.users.length}">${users}</users>`;
+    return `<users xmlns="${S_NS}" count="${opts.count ?? users.length}">${users}</users>`;
   },
 
   parse(el, _ctx) {
@@ -34,8 +34,9 @@ export const usersDesc: CustomDescriptor<UsersOptions> = {
       id: Number(attr(u, "id") ?? "0"),
       dateTime: attr(u, "dateTime") ?? "",
     }));
-    const result: Partial<UsersOptions> = {};
-    if (users.length > 0) result.users = users;
+    const result: Partial<UsersOptions> = { users };
+    const count = attr(el, "count");
+    if (count !== undefined) result.count = Number(count);
     return result as UsersOptions;
   },
 };

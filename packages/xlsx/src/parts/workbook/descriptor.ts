@@ -433,6 +433,8 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         }
       }
       result.functionGroups = names;
+      const builtInGroupCount = attrNum(fgEl, "builtInGroupCount");
+      if (builtInGroupCount !== undefined) result.builtInGroupCount = builtInGroupCount;
     }
 
     // Web publish objects

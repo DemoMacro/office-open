@@ -26,6 +26,7 @@ describe("opaque part policy", () => {
   });
 
   it("keeps policy prefixes in one registry per package", () => {
+    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("media/");
     expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("word/printerSettings/");
     expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("customXml/");
     expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("docProps/thumbnail.");

@@ -34,12 +34,13 @@ import {
 } from "@office-open/core";
 import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
 import type { WriteContext } from "@office-open/core/descriptor";
-import { buildThemeXml } from "@office-open/core/theme";
+import { buildThemeXml, themeOverrideDesc } from "@office-open/core/theme";
 import { escapeXml, OOXML_XML_DECLARATION } from "@office-open/xml";
 import { activeXControlDesc, type ActiveXControlOptions } from "@parts/active-x-control";
 import type { CalcCell } from "@parts/calc-chain";
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc, type ChartsheetOptions } from "@parts/chartsheet";
+import { classificationLabelsDesc } from "@parts/classification-labels";
 import { commentsDesc, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { controlPropertiesDesc } from "@parts/control-properties";
@@ -49,13 +50,21 @@ import { externalLinkDesc } from "@parts/external-link";
 import type { WorkbookOptions } from "@parts/file";
 import { metadataDesc } from "@parts/metadata";
 import type { MetadataOptions } from "@parts/metadata";
+import { personsDesc } from "@parts/persons";
 import { queryTableDesc } from "@parts/query-table";
 import { revisionHeadersDesc, revisionLogDesc, usersDesc } from "@parts/revision-log";
+import {
+  richValueDataDesc,
+  richValueRelsDesc,
+  richValueStructuresDesc,
+  richValueTypesInfoDesc,
+} from "@parts/rich-data";
 import { sharedStringsDesc } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import { createThemeXml } from "@parts/theme";
 import { buildVolTypesXml } from "@parts/vol-types";
+import { webExtensionPartDesc } from "@parts/web-extension";
 import type { TablePartReference, SheetDefinition } from "@parts/workbook";
 import { workbookDesc, buildTablePartsXml, buildExternalReferencesXml } from "@parts/workbook";
 import {
@@ -273,6 +282,28 @@ export function compileWorkbook(
     };
   }
 
+  if (options.classificationLabels) {
+    const labelsPath = options.classificationLabelsPath ?? "docMetadata/LabelInfo.xml";
+    mapping["ClassificationLabels"] = {
+      data:
+        XML_DECL + (classificationLabelsDesc.stringify(options.classificationLabels, ctx) ?? ""),
+      path: labelsPath,
+    };
+  }
+
+  if (options.persons) {
+    const personsPath = options.personsPath ?? "xl/persons/person.xml";
+    mapping["Persons"] = {
+      data: XML_DECL + (personsDesc.stringify(options.persons, ctx) ?? ""),
+      path: personsPath,
+    };
+    const target = personsPath.replace(/^xl\//, "");
+    const personsRel = RELATIONSHIP_TYPES.threadedCommentPersons;
+    if (ctx.workbookRels.idOf(personsRel, target) === undefined) {
+      ctx.workbookRels.addRelationship(ctx.workbookRels.nextRelationshipId, personsRel, target);
+    }
+  }
+
   // File-level relationships (_rels/.rels)
   const fileRels = buildRootRelationships(
     workbookPath,
@@ -286,6 +317,15 @@ export function compileWorkbook(
       appPropertiesPath: options.appPropertiesPath,
       customPropertiesPath: options.customPropertiesPath,
       namespace: relationshipNamespace,
+      additionalRelationships: options.classificationLabels
+        ? [
+            {
+              relationshipType:
+                "http://schemas.microsoft.com/office/2020/02/relationships/classificationlabels",
+              target: options.classificationLabelsPath ?? "docMetadata/LabelInfo.xml",
+            },
+          ]
+        : [],
     },
   );
   mapping["FileRelationships"] = {
@@ -335,7 +375,9 @@ export function compileWorkbook(
     ctx.workbookRels,
     worksheetRelTargets,
     chartsheetConfigs.length,
-    dialogsheetConfigs.length,
+    dialogsheetConfigs.map((config, index) =>
+      (config.sourcePath ?? `xl/dialogSheets/sheet${index + 1}.xml`).replace(/^xl\//, ""),
+    ),
     includeStyles,
     includeTheme,
     options.themePath ? options.themePath.replace(/^xl\//, "") : "theme/theme1.xml",
@@ -477,7 +519,7 @@ export function compileWorkbook(
   }
 
   compileChartsheets(chartsheetConfigs, ctx, mapping, state, options.passthroughRelationships);
-  compileDialogsheets(dialogsheetConfigs, ctx, mapping);
+  compileDialogsheets(dialogsheetConfigs, ctx, mapping, options.passthroughRelationships);
   // Workbook XML (via descriptor)
   const freshWorkbookDefaults = {
     fileVersion:
@@ -718,6 +760,29 @@ export function compileWorkbook(
         };
       }
     }
+    if (chartOptions?.themeOverridePath) {
+      const themeOverridePath = chartOptions.themeOverridePath;
+      mapping[`ChartThemeOverride${i}`] = {
+        data: XML_DECL + (themeOverrideDesc.stringify(chartOptions.themeOverride ?? {}, ctx) ?? ""),
+        path: themeOverridePath,
+      };
+      const preferredId = /^rId(\d+)$/.exec(
+        (options.passthroughRelationships ?? []).find(
+          (rel) =>
+            rel.source === chartPath &&
+            rel.relationshipType.endsWith("/themeOverride") &&
+            resolveRelationshipTarget(
+              rel.source.replace(/\/_rels\/[^/]+\.rels$/, ""),
+              rel.target,
+            ) === themeOverridePath,
+        )?.rId ?? "",
+      )?.[1];
+      chartRels.addRelationship(
+        preferredId ? Number(preferredId) : chartRels.nextRelationshipId,
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeOverride" as RelationshipType,
+        `../${themeOverridePath.replace(/^xl\//, "")}`,
+      );
+    }
     // Chart media/userShapes/externalData are modeled; lesser-known companion
     // parts still travel with the chart's source relationship topology.
     for (const sourceRel of options.passthroughRelationships ?? []) {
@@ -770,6 +835,97 @@ export function compileWorkbook(
 
   if (options.revisionLog) {
     compileRevisionLogs(options.revisionLog, ctx, mapping);
+  }
+
+  if (options.richData) {
+    const richData = options.richData;
+    const richDataDefaults = {
+      data: "xl/richData/rdrichvalue.xml",
+      structures: "xl/richData/rdrichvaluestructure.xml",
+      types: "xl/richData/rdRichValueTypes.xml",
+      relationships: "xl/richData/richValueRel.xml",
+    };
+    const richDataWorkbookRel = (
+      type: string,
+      target: string,
+      preferredId: string | undefined,
+    ): void => {
+      if (ctx.workbookRels.idOf(type as RelationshipType, target) !== undefined) return;
+      const preferred = /^rId(\d+)$/.exec(preferredId ?? "")?.[1];
+      if (preferred !== undefined && !ctx.workbookRels.hasId(`rId${preferred}`)) {
+        ctx.workbookRels.addRelationship(
+          Number(preferred),
+          type as RelationshipType,
+          target.replace(/^xl\//, ""),
+        );
+        return;
+      }
+      addWorkbookRelationship(type as RelationshipType, target.replace(/^xl\//, ""));
+    };
+    if (richData.data) {
+      const path = richData.dataPath ?? richDataDefaults.data;
+      mapping["RichValueData"] = {
+        data: XML_DECL + (richValueDataDesc.stringify(richData.data, ctx) ?? ""),
+        path,
+      };
+      richDataWorkbookRel(
+        "http://schemas.microsoft.com/office/2017/06/relationships/rdRichValue",
+        path,
+        richData.dataRelationshipId,
+      );
+    }
+    if (richData.structures) {
+      const path = richData.structuresPath ?? richDataDefaults.structures;
+      mapping["RichValueStructures"] = {
+        data: XML_DECL + (richValueStructuresDesc.stringify(richData.structures, ctx) ?? ""),
+        path,
+      };
+      richDataWorkbookRel(
+        "http://schemas.microsoft.com/office/2017/06/relationships/rdRichValueStructure",
+        path,
+        richData.structuresRelationshipId,
+      );
+    }
+    if (richData.types) {
+      const path = richData.typesPath ?? richDataDefaults.types;
+      mapping["RichValueTypes"] = {
+        data: XML_DECL + (richValueTypesInfoDesc.stringify(richData.types, ctx) ?? ""),
+        path,
+      };
+      richDataWorkbookRel(
+        "http://schemas.microsoft.com/office/2017/06/relationships/rdRichValueTypes",
+        path,
+        richData.typesRelationshipId,
+      );
+    }
+    if (richData.relationships) {
+      const path = richData.relationshipsPath ?? richDataDefaults.relationships;
+      mapping["RichValueRelationships"] = {
+        data: XML_DECL + (richValueRelsDesc.stringify(richData.relationships, ctx) ?? ""),
+        path,
+      };
+      richDataWorkbookRel(
+        "http://schemas.microsoft.com/office/2022/10/relationships/richValueRel",
+        path,
+        richData.relationshipsRelationshipId,
+      );
+      if (richData.partRelationships?.length) {
+        const richValueRels = new Relationships(path);
+        for (const relationship of richData.partRelationships) {
+          const preferred = /^rId(\d+)$/.exec(relationship.rId)?.[1];
+          richValueRels.addRelationship(
+            preferred ? Number(preferred) : richValueRels.nextRelationshipId,
+            relationship.relationshipType as RelationshipType,
+            relationship.target,
+            relationship.targetMode,
+          );
+        }
+        mapping["RichValueRelationshipRels"] = {
+          data: XML_DECL + richValueRels.serialize(),
+          path: partPathToRelsPath(path),
+        };
+      }
+    }
   }
 
   // Workbook relationships — serialized after calcChain/revision register their
@@ -1375,30 +1531,90 @@ function compileWorksheetPart(
         tableRel?.target ?? `../tables/table${tableIdx}.xml`,
       );
 
-      wsTableParts.push({ rId: tblRid });
-      state.allTableParts.push({ rId: tblRid });
+      wsTableParts.push({ rId: tblRid, order: tbl.tablePartOrder });
+      state.allTableParts.push({ rId: tblRid, order: tbl.tablePartOrder });
     }
   }
 
   // Query tables
   if (hasQueryTables) {
-    const sourceQueryTableRels = sourceWorksheetRels.filter((rel) =>
+    const allSourceQueryTableRels = (passthroughRelationships ?? []).filter((rel) =>
       rel.relationshipType.endsWith("/queryTable"),
     );
+    const worksheetSourceQueryTableRels = sourceWorksheetRels.filter((rel) =>
+      rel.relationshipType.endsWith("/queryTable"),
+    );
+    const tableOwnedQueryTables = (wsOpts.tables ?? []).filter((table) => table.queryTablePath);
+    const tableOwnedSourcePaths = new Set(
+      tableOwnedQueryTables.map((table) => table.queryTablePath!),
+    );
+    let worksheetQueryTableIdx = 0;
     for (const [queryTableIndex, qt] of queryTableOpts.entries()) {
       state.globalQueryTableIdx++;
+      const relsBaseDir = (relsPath: string): string => {
+        // "xl/tables/_rels/table1.xml.rels" → "xl/tables/table1.xml"
+        const parent = relsPath.replace(/\/_rels\/[^/]+\.rels$/, "");
+        const fileName = /_rels\/([^/]+)\.rels$/.exec(relsPath)?.[1] ?? "";
+        return `${parent}/${fileName}`;
+      };
+      const sourceRelationship = qt.sourcePath
+        ? allSourceQueryTableRels.find(
+            (rel) =>
+              resolveRelationshipTarget(relsBaseDir(rel.source), rel.target) === qt.sourcePath,
+          )
+        : undefined;
+      const queryTablePath =
+        qt.sourcePath ??
+        (sourceRelationship
+          ? resolveRelationshipTarget(
+              relsBaseDir(sourceRelationship.source),
+              sourceRelationship.target,
+            )
+          : `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`);
       mapping[`QueryTable${state.globalQueryTableIdx}`] = {
         data: XML_DECL + queryTableDesc.stringify(qt, ctx),
-        path: sourceRelationshipPath(
-          sourceQueryTableRels[queryTableIndex],
-          `xl/queryTables/queryTable${state.globalQueryTableIdx}.xml`,
-        ),
+        path: queryTablePath,
       };
-      addWorksheetRelationship(
-        RELATIONSHIP_TYPES.queryTable,
-        sourceQueryTableRels[queryTableIndex]?.target ??
-          `../queryTables/queryTable${state.globalQueryTableIdx}.xml`,
-      );
+      const target =
+        sourceRelationship?.target ?? `../queryTables/queryTable${state.globalQueryTableIdx}.xml`;
+      if (qt.sourcePath && tableOwnedSourcePaths.has(qt.sourcePath)) {
+        // Query table is table-owned: emit a table .rels that references it.
+        const ownerTable = tableOwnedQueryTables.find(
+          (table) => table.queryTablePath === qt.sourcePath,
+        );
+        const tableSourcePath = ownerTable?.sourcePath ?? "";
+        const tableRelsPath = tableSourcePath ? partPathToRelsPath(tableSourcePath) : "";
+        if (tableRelsPath) {
+          const tableRelationships = new Relationships(tableRelsPath);
+          const relTarget = `../${queryTablePath.replace(/^xl\//, "")}`;
+          tableRelationships.add(RELATIONSHIP_TYPES.queryTable, relTarget);
+          if (sourceRelationship) {
+            const preferredId = /^rId(\d+)$/.exec(sourceRelationship.rId)?.[1];
+            if (preferredId) {
+              tableRelationships.renameEntryByType(
+                RELATIONSHIP_TYPES.queryTable,
+                Number(preferredId),
+              );
+            }
+          }
+          mapping[`QueryTableOwnedRels${state.globalQueryTableIdx}`] = {
+            data: XML_DECL + tableRelationships.serialize(),
+            path: tableRelsPath,
+          };
+        }
+        // Query table relationship is table-owned — do not add a worksheet rel.
+      } else if (sourceRelationship?.source === wsPath) {
+        addWorksheetRelationship(RELATIONSHIP_TYPES.queryTable, target);
+        worksheetQueryTableIdx++;
+      } else if (worksheetSourceQueryTableRels[queryTableIndex]) {
+        addWorksheetRelationship(
+          RELATIONSHIP_TYPES.queryTable,
+          worksheetSourceQueryTableRels[queryTableIndex].target,
+        );
+        worksheetQueryTableIdx++;
+      }
+      // No worksheet-level source relationship → table .rels already owns it
+      // through passthrough; do not add a worksheet rel.
     }
   }
 
@@ -1420,6 +1636,45 @@ function compileWorksheetPart(
       RELATIONSHIP_TYPES.tableSingleCells,
       singleXmlCellRel?.target ?? `../tables/tableSingleCells${state.globalSingleXmlCellsIdx}.xml`,
     );
+  }
+
+  // WebExtension parts — typed model output with snapshot image rels
+  const emittedWebExtensionParts = new Set<string>();
+  for (const we of webExtensionOpts) {
+    const wePart = we.part;
+    if (!wePart || !wePart.sourcePath || emittedWebExtensionParts.has(wePart.sourcePath)) {
+      continue;
+    }
+    emittedWebExtensionParts.add(wePart.sourcePath);
+    const wePath = wePart.sourcePath;
+    // Emit the webextension's own rels only when the source part carried an
+    // image relationship (we:snapshot with r:embed). The part XML is always
+    // rebuilt from the typed model.
+    if (wePart.snapshotRId !== undefined) {
+      const weRels = new Relationships(wePath);
+      if (we.snapshotSourcePath) {
+        const weImageTarget = `../${we.snapshotSourcePath.replace(/^xl\//, "")}`;
+        const sourceImageRel = sourceWorksheetRels.find(
+          (rel) =>
+            rel.relationshipType.endsWith("/image") &&
+            resolveRelationshipTarget(wePath, rel.target) === we.snapshotSourcePath,
+        );
+        const preferredId = /^rId(\d+)$/.exec(sourceImageRel?.rId ?? wePart.snapshotRId)?.[1];
+        weRels.addRelationship(
+          preferredId ? Number(preferredId) : weRels.nextRelationshipId,
+          RELATIONSHIP_TYPES.image,
+          weImageTarget,
+        );
+      }
+      mapping[`WebExtensionRels${emittedWebExtensionParts.size}`] = {
+        data: XML_DECL + weRels.serialize(),
+        path: partPathToRelsPath(wePath),
+      };
+    }
+    mapping[`WebExtension${emittedWebExtensionParts.size}`] = {
+      data: XML_DECL + webExtensionPartDesc.stringify(wePart, ctx),
+      path: wePath,
+    };
   }
 
   // Pre-render pivot table data into sheetData
@@ -1659,12 +1914,37 @@ function compileDialogsheets(
   dialogsheetConfigs: DialogsheetOptions[],
   ctx: XlsxWriteContext,
   mapping: Record<string, { data: string; path: string }>,
+  passthroughRelationships?: readonly PassthroughRelationship[],
 ): void {
-  // Dialogsheets — legacy Excel 5.0 dialog sheets
+  // Dialogsheets — legacy Excel 5.0 dialog sheets. Legacy drawing relationships
+  // are rebuilt from the captured source relationship topology.
   for (const [i, dsOpts] of dialogsheetConfigs.entries()) {
+    const path = dsOpts.sourcePath ?? `xl/dialogSheets/sheet${i + 1}.xml`;
     mapping[`Dialogsheet${i}`] = {
       data: XML_DECL + dialogsheetDesc.stringify(dsOpts, ctx),
-      path: `xl/dialogSheets/sheet${i + 1}.xml`,
+      path,
+    };
+    const sourceRels = (passthroughRelationships ?? []).filter(
+      (relationship) => relationship.source === path,
+    );
+    if (sourceRels.length === 0) continue;
+    const relationships = new Relationships(path);
+    for (const relationship of sourceRels) {
+      relationships.add(
+        relationship.relationshipType as RelationshipType,
+        relationship.target,
+        relationship.targetMode,
+      );
+    }
+    for (const relationship of sourceRels) {
+      const preferredId = /^rId(\d+)$/.exec(relationship.rId)?.[1];
+      if (preferredId) {
+        relationships.renameEntryByType(relationship.relationshipType, Number(preferredId));
+      }
+    }
+    mapping[`DialogsheetRels${i}`] = {
+      data: XML_DECL + relationships.serialize(),
+      path: partPathToRelsPath(path),
     };
   }
 }
@@ -1681,7 +1961,7 @@ function compileRevisionLogs(
 ): void {
   const REV_HEADERS_REL = RELATIONSHIP_TYPES.revisionHeaders;
   const REV_LOG_REL = RELATIONSHIP_TYPES.revisionLog;
-  const USERS_REL = RELATIONSHIP_TYPES.users;
+  const USERS_REL = rl.usersRelationshipType ?? RELATIONSHIP_TYPES.users;
   const relativeTarget = (from: string, to: string): string => {
     const fromDirs = from.split("/").slice(0, -1);
     const toDirs = to.split("/");
@@ -1757,7 +2037,7 @@ function buildWorkbookRelationships(
   rels: Relationships,
   worksheetTargets: readonly string[],
   csCount: number,
-  dsCount: number = 0,
+  dialogsheetTargets: readonly string[] = [],
   includeStyles = true,
   includeTheme = true,
   themeTarget = "theme/theme1.xml",
@@ -1776,8 +2056,8 @@ function buildWorkbookRelationships(
   for (let i = 0; i < csCount; i++) {
     ids.push(add(RELATIONSHIP_TYPES.chartsheet, `chartsheets/sheet${i + 1}.xml`));
   }
-  for (let i = 0; i < dsCount; i++) {
-    ids.push(add(RELATIONSHIP_TYPES.dialogsheet, `dialogSheets/sheet${i + 1}.xml`));
+  for (const target of dialogsheetTargets) {
+    ids.push(add(RELATIONSHIP_TYPES.dialogsheet, target));
   }
   if (includeStyles) add(RELATIONSHIP_TYPES.styles, "styles.xml");
   if (includeTheme) add(RELATIONSHIP_TYPES.theme, themeTarget);

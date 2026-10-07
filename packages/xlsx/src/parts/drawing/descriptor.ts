@@ -80,6 +80,20 @@ function readAnchorShapeId(anchor: XmlElement): number | undefined {
   return Number.isNaN(id) ? undefined : id;
 }
 
+/** Find an anchored object inside an anchor-level mc:AlternateContent/mc:Choice
+ *  wrapper (Excel 2010+ a14 textboxes wrap the sp, not the anchor). */
+function findXdrObjectInChoice(anchor: XmlElement, name: string): XmlElement | undefined {
+  for (const child of anchor.elements ?? []) {
+    if (child.name !== "mc:AlternateContent") continue;
+    for (const choice of child.elements ?? []) {
+      if (choice.name !== "mc:Choice") continue;
+      const found = findXdr(choice, name);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
 interface AnchorEntry {
   el: XmlElement;
   /** Source carried the anchor inside mc:AlternateContent/mc:Choice. */
@@ -297,21 +311,31 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
         continue;
       }
 
-      const sp = findXdr(anchor, "sp");
+      const sp = findXdr(anchor, "sp") ?? findXdrObjectInChoice(anchor, "sp");
       if (sp) {
-        shapes.push(stamp(parseShapeAnchor(anchor, sp, name, ctx), anchor, wrapped));
+        const inChoice = findXdr(anchor, "sp") === undefined;
+        const shape = stamp(parseShapeAnchor(anchor, sp, name, ctx), anchor, wrapped);
+        if (inChoice) (shape as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        shapes.push(shape);
         continue;
       }
 
-      const cxnSp = findXdr(anchor, "cxnSp");
+      const cxnSp = findXdr(anchor, "cxnSp") ?? findXdrObjectInChoice(anchor, "cxnSp");
       if (cxnSp) {
-        connectors.push(stamp(parseConnectorAnchor(anchor, cxnSp, name, ctx), anchor, wrapped));
+        const inChoice = findXdr(anchor, "cxnSp") === undefined;
+        const connector = stamp(parseConnectorAnchor(anchor, cxnSp, name, ctx), anchor, wrapped);
+        if (inChoice)
+          (connector as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        connectors.push(connector);
         continue;
       }
 
-      const grpSp = findXdr(anchor, "grpSp");
+      const grpSp = findXdr(anchor, "grpSp") ?? findXdrObjectInChoice(anchor, "grpSp");
       if (grpSp) {
-        groups.push(stamp(parseGroupAnchor(anchor, grpSp, name, ctx), anchor, wrapped));
+        const inChoice = findXdr(anchor, "grpSp") === undefined;
+        const group = stamp(parseGroupAnchor(anchor, grpSp, name, ctx), anchor, wrapped);
+        if (inChoice) (group as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        groups.push(group);
         continue;
       }
 

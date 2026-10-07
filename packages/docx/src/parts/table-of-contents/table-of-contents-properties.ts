@@ -191,6 +191,13 @@ export interface TableOfContentsOptions {
   headRunsXml?: string;
 
   /**
+   * Head control runs inject after the first entry's leading text run instead
+   * of after its pPr, matching a source paragraph that carried entry text
+   * before the field chain (round-trip only).
+   */
+  headRunsAfterText?: boolean;
+
+  /**
    * Run properties of the SDT start mark — sdtPr's leading w:rPr element
    * (round-trip only; Word parks the TOC style's font overrides there).
    */

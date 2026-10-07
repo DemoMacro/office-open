@@ -11,13 +11,20 @@ import {
   archiveTagDiffs,
   classifyPackageFailure,
   type CorpusFailureKind,
+  orphanedPackageMembers,
   type SemanticPartDiff,
 } from "./semantics";
 
+const OS_JUNK_PART_PATTERNS: readonly RegExp[] = [
+  /^(?:.*\/)?\.DS_Store$/i,
+  /^(?:.*\/)?Thumbs\.db$/i,
+  /^(?:.*\/)?desktop\.ini$/i,
+];
+
 export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
-  docx: opaquePassthroughPolicy("docx").opaquePatterns,
-  xlsx: opaquePassthroughPolicy("xlsx").opaquePatterns,
-  pptx: opaquePassthroughPolicy("pptx").opaquePatterns,
+  docx: [...opaquePassthroughPolicy("docx").opaquePatterns, ...OS_JUNK_PART_PATTERNS],
+  xlsx: [...opaquePassthroughPolicy("xlsx").opaquePatterns, ...OS_JUNK_PART_PATTERNS],
+  pptx: [...opaquePassthroughPolicy("pptx").opaquePatterns, ...OS_JUNK_PART_PATTERNS],
 };
 
 export type Format = "docx" | "xlsx" | "pptx";
@@ -142,10 +149,9 @@ export async function runLibrary(
     current.total++;
     let options: unknown;
     let output: Uint8Array;
+    const source = new Uint8Array(fs.readFileSync(file));
     try {
-      options = await BY_EXT[path.extname(file).slice(1).toLowerCase()]!.parse(
-        new Uint8Array(fs.readFileSync(file)),
-      );
+      options = await BY_EXT[path.extname(file).slice(1).toLowerCase()]!.parse(source);
     } catch (error) {
       current.parseFail++;
       diagnostics.push({
@@ -187,7 +193,6 @@ export async function runLibrary(
     }
 
     if (isEncryptedPassthrough(options)) {
-      const source = new Uint8Array(fs.readFileSync(file));
       if (encryptedPassthroughMatches(source, output)) {
         current.clean++;
       } else {
@@ -220,7 +225,17 @@ export async function runLibrary(
       }
     }
     const { auditCanonicalOptions } = await import("./synthetic/raw-audit");
-    for (const blocker of auditCanonicalOptions(options, EXTERNAL_OPAQUE_PARTS[format])) {
+    const rawPartsForAudit = (options as { rawParts?: { path: string }[] }).rawParts;
+    const orphanedXmlParts =
+      (rawPartsForAudit?.some((part) => /\.xml$|\.rels$|\.vml$/i.test(part.path)) ?? false)
+        ? orphanedPackageMembers(source)
+        : undefined;
+    for (const blocker of auditCanonicalOptions(
+      options,
+      EXTERNAL_OPAQUE_PARTS[format],
+      orphanedXmlParts,
+    )) {
+      if (blocker.reason === "orphaned-independent-part") continue;
       const key = `${blocker.reason}:${blocker.part.replace(/(?:word|xl|ppt|powerpoint)[\\/]/, "")}`;
       rawBlockerMaps[format].set(key, (rawBlockerMaps[format].get(key) ?? 0) + 1);
     }
@@ -228,7 +243,6 @@ export async function runLibrary(
     let parts: string[];
     let semanticDiffs: SemanticPartDiff[] = [];
     try {
-      const source = new Uint8Array(fs.readFileSync(file));
       assertEncryptedContainerRoundTrip(source, output);
       if (strictSemantic) {
         semanticDiffs = archiveSemanticDiffDetails(source, output);

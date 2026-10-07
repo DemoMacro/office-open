@@ -476,8 +476,23 @@ describe("drawingDesc round-trip", () => {
     const relationReadCtx = {
       ...readCtx,
       currentPart: "word/document.xml",
+      withPart: (path: string, callback: () => void) => {
+        const context = relationReadCtx as unknown as { currentPart: string };
+        const previous = context.currentPart;
+        context.currentPart = path;
+        try {
+          callback();
+        } finally {
+          context.currentPart = previous;
+        }
+      },
       docx: {
         ...readContextData.docx,
+        doc: {
+          ...readContextData.docx.doc,
+          get: (path: string) =>
+            path === "word/txbx1.xml" ? parseXml("<w14:txbx><w:p/></w14:txbx>") : undefined,
+        },
         partRefs: {
           ...readContextData.docx.partRefs,
           partTextBoxes: new Map([["word/document.xml", new Map([["rId1", "word/txbx1.xml"]])]]),
@@ -485,10 +500,15 @@ describe("drawingDesc round-trip", () => {
       },
     } as unknown as ReadContext;
     const parsed = drawingDesc.parse(el, relationReadCtx) as {
-      wpsShape?: { children: unknown[]; textBoxPart?: { path: string; sequence: number } };
+      wpsShape?: {
+        children: unknown[];
+        textBoxPart?: { path: string; sequence: number; children?: unknown[] };
+      };
     };
     expect(parsed.wpsShape?.children).toEqual([]);
-    expect(parsed.wpsShape?.textBoxPart).toEqual({ path: "word/txbx1.xml", sequence: 0 });
+    expect(parsed.wpsShape?.textBoxPart?.path).toBe("word/txbx1.xml");
+    expect(parsed.wpsShape?.textBoxPart?.sequence).toBe(0);
+    expect(parsed.wpsShape?.textBoxPart?.children).toHaveLength(1);
   });
 
   it("round-trips block SDT content in a wps text box", () => {
@@ -654,6 +674,27 @@ describe("drawingDesc round-trip", () => {
       wpsShape?: { geometry?: { preset?: string } };
     };
     expect(result.wpsShape?.geometry?.preset).toBe("roundRect");
+  });
+
+  it("preserves legacy WPS graphic data namespaces", () => {
+    const legacyUri = "http://schemas.microsoft.com/office/word/2008/6/28/wordprocessingShape";
+    const xml = `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:wps="${legacyUri}"><wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/><a:graphic><a:graphicData uri="${legacyUri}"><wps:wsp><wps:cNvSpPr/><wps:spPr/></wps:wsp></a:graphicData></a:graphic></wp:inline></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const parsed = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: { graphicDataUri?: string };
+    };
+    expect(parsed.wpsShape?.graphicDataUri).toBe(legacyUri);
+
+    const output = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        data: { children: [] },
+        graphicDataUri: legacyUri,
+      },
+    });
+    expect(output).toContain(`<a:graphicData uri="${legacyUri}" xmlns:wps="${legacyUri}">`);
   });
 
   it("emits and re-reads flipH/flipV on pic:spPr/a:xfrm", () => {

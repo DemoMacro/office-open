@@ -40,6 +40,8 @@ export interface FormControlPropertiesOptions {
   objectType: FormControlObjectType;
   /** Check state, e.g. checked="Checked". */
   checked?: FormControlChecked;
+  /** True when the control is first in its form group (formControlPr @firstButton). */
+  firstButton?: boolean;
   /** Drop-down presentation, e.g. dropStyle="Combo". */
   dropStyle?: FormControlDropStyle;
   /** Linked-cell formula, e.g. fmlaLink="Sheet1!$A$1". */
@@ -233,6 +235,8 @@ function readFormControlProperties(el: Element): FormControlPropertiesOptions {
   }
   const lockText = parseOnOff(attr(el, "lockText"));
   if (lockText !== undefined) result.lockText = lockText;
+  const firstButton = parseOnOff(attr(el, "firstButton"));
+  if (firstButton !== undefined) result.firstButton = firstButton;
   const noThreeD = parseOnOff(attr(el, "noThreeD"));
   if (noThreeD !== undefined) result.noThreeD = noThreeD;
   const noThreeD2 = parseOnOff(attr(el, "noThreeD2"));
@@ -261,6 +265,8 @@ function writeFormControlProperties(options: FormControlPropertiesOptions): stri
   if (options.textAlign) attributes.push(`textAlign="${options.textAlign}"`);
   if (options.vertical) attributes.push(`vertical="${options.vertical}"`);
   if (options.lockText !== undefined) attributes.push(`lockText="${options.lockText ? 1 : 0}"`);
+  if (options.firstButton !== undefined)
+    attributes.push(`firstButton="${options.firstButton ? 1 : 0}"`);
   if (options.noThreeD !== undefined) attributes.push(`noThreeD="${options.noThreeD ? 1 : 0}"`);
   if (options.noThreeD2 !== undefined) attributes.push(`noThreeD2="${options.noThreeD2 ? 1 : 0}"`);
   const children: string[] = [];

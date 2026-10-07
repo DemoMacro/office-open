@@ -242,6 +242,11 @@ export const OOXML_CANONICAL_PREFIXES: Readonly<Record<string, string>> = {
   [`${SCHEMAS_MS}/office/powerpoint/2015/main`]: "p15",
 
   // ── Excel extensions ──
+  [`${SCHEMAS_MS}/office/2020/mipLabelMetadata`]: "clbl",
+  [`${SCHEMAS_MS}/office/spreadsheetml/2018/threadedcomments`]: "tc",
+  [`${SCHEMAS_MS}/office/spreadsheetml/2017/richdata`]: "xlrd",
+  [`${SCHEMAS_MS}/office/spreadsheetml/2017/richdata2`]: "xlrd2",
+  [`${SCHEMAS_MS}/office/spreadsheetml/2022/richvaluerel`]: "xlrvrel",
   [`${SCHEMAS_MS}/office/spreadsheetml/2009/9/main`]: "x14",
   [`${SCHEMAS_MS}/office/spreadsheetml/2009/9/ac`]: "x14ac",
   [`${SCHEMAS_MS}/office/spreadsheetml/2010/11/main`]: "x15",

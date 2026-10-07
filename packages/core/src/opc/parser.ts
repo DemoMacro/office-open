@@ -47,6 +47,8 @@ export class ParsedArchive {
   private readonly parts = new Map<string, Uint8Array>();
   private readonly modified = new Map<string, Uint8Array>();
   private readonly wrapperCache = new Map<string, Element>();
+  /** Lowercased part name → canonical stored path (OPC matching is case-insensitive). */
+  private readonly byLower = new Map<string, string>();
   /**
    * Central-directory order of every entry. keys() is ordered by this so a
    * bytes-backed archive (entries migrate index→parts as they are read) and
@@ -65,9 +67,13 @@ export class ParsedArchive {
       // all: fall back to fflate's eager full read, the reference
       // implementation — it throws on unreadable input, as before.
       const eager = unzipSync(data);
-      for (const [name, bytes] of Object.entries(eager)) this.parts.set(name, bytes);
+      for (const [name, bytes] of Object.entries(eager)) {
+        const path = name.replace(/\\/g, "/");
+        this.parts.set(path, bytes);
+        this.indexPath(path);
+      }
       this.index = new Map();
-      this.order = Object.keys(eager);
+      this.order = [...this.parts.keys()];
       return;
     }
     // OPC part names use forward slashes; a few producers emit backslash
@@ -75,6 +81,7 @@ export class ParsedArchive {
     for (const entry of entries) entry.name = entry.name.replace(/\\/g, "/");
     this.index = new Map(entries.map((e) => [e.name, e]));
     this.order = entries.map((e) => e.name);
+    for (const name of this.order) this.indexPath(name);
   }
 
   /**
@@ -109,13 +116,31 @@ export class ParsedArchive {
     archive.parts = new Map();
     archive.modified = new Map();
     archive.wrapperCache = new Map();
+    archive.byLower = new Map();
     archive.order = entries.map((e) => e.name);
+    for (const name of archive.order) archive.indexPath(name);
     await hydrateArchive(archive);
     return archive as unknown as ParsedArchive;
   }
 
+  /** Register a stored path in the case-insensitive lookup (first wins). */
+  private indexPath(path: string): void {
+    const lower = path.toLowerCase();
+    if (!this.byLower.has(lower)) this.byLower.set(lower, path);
+  }
+
+  /**
+   * Canonical stored path for `path` (OPC part names match case-insensitively:
+   * a rel may target `sharedStrings.xml` while the entry is `SharedStrings.xml`).
+   * Returns the input unchanged when no part matches.
+   */
+  public resolvePath(path: string): string {
+    return this.byLower.get(path.toLowerCase()) ?? path;
+  }
+
   /** Inflate and cache the compressed entry for `path`, if still compressed. */
   private inflate(path: string): Uint8Array | undefined {
+    path = this.resolvePath(path);
     const entry = this.index.get(path);
     if (entry === undefined) return undefined;
     // Bytes-backed archives only — a Blob-backed one drains its index during
@@ -138,6 +163,7 @@ export class ParsedArchive {
    * path — the wrapper cache is keyed by path only.
    */
   public get(path: string, parseOptions?: ParseOptions): Element | undefined {
+    path = this.resolvePath(path);
     const opts = parseOptions ? { ...XML_PARSE_OPTIONS, ...parseOptions } : XML_PARSE_OPTIONS;
     // Check modified first
     const modData = this.modified.get(path);
@@ -162,6 +188,8 @@ export class ParsedArchive {
 
   /** Write an XML part (Element → XML string). */
   public set(path: string, element: Element): void {
+    path = this.resolvePath(path);
+    this.indexPath(path);
     const wrapper = this.wrapperCache.get(path);
     const doc: Element = wrapper
       ? { ...wrapper, elements: [{ ...element, type: "element" as const }] }
@@ -172,23 +200,32 @@ export class ParsedArchive {
 
   /** Read raw binary data (images, media, etc.). */
   public getRaw(path: string): Uint8Array | undefined {
+    path = this.resolvePath(path);
     return this.modified.get(path) ?? this.parts.get(path) ?? this.inflate(path);
   }
 
   /** Write raw binary data. */
   public setRaw(path: string, data: Uint8Array): void {
+    path = this.resolvePath(path);
+    this.indexPath(path);
     this.modified.set(path, data);
     this.wrapperCache.delete(path);
   }
 
   /** Remove a part. Returns true if it existed. */
   public remove(path: string): boolean {
+    path = this.resolvePath(path);
     this.wrapperCache.delete(path);
-    return this.modified.delete(path) || this.parts.delete(path) || this.index.delete(path);
+    const removed =
+      this.modified.delete(path) || this.parts.delete(path) || this.index.delete(path);
+    if (removed && this.byLower.get(path.toLowerCase()) === path)
+      this.byLower.delete(path.toLowerCase());
+    return removed;
   }
 
   /** Check if a part exists. */
   public has(path: string): boolean {
+    path = this.resolvePath(path);
     return this.modified.has(path) || this.parts.has(path) || this.index.has(path);
   }
 
@@ -238,7 +275,9 @@ interface HydratedArchive {
   parts: Map<string, Uint8Array>;
   modified: Map<string, Uint8Array>;
   wrapperCache: Map<string, Element>;
+  byLower: Map<string, string>;
   order: string[];
+  indexPath(path: string): void;
 }
 
 /** Decompress every indexed entry (Blob-backed open — after this, sync reads). */

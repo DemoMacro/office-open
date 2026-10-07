@@ -174,6 +174,9 @@ describe("document theme part", () => {
     const parsed = parseDocumentSync(source);
     const fill = parsed.theme?.formatScheme?.backgroundFillStyles.at(-1);
     expect(fill).toMatchObject({ type: "blip", fileName: "theme-media.png" });
+    expect(parsed.rawParts?.map((part) => part.path)).not.toContain(
+      "word/theme/_rels/theme1.xml.rels",
+    );
 
     const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
     expect(output["word/media/theme-media.png"]).toEqual(new Uint8Array([1, 2, 3]));

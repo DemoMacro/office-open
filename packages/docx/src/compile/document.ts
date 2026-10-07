@@ -73,6 +73,20 @@ function sourceRelationshipFor(
   );
 }
 
+/** Convert a source package path to a target relative to word/document.xml. */
+function documentRelationshipTarget(partPath: string): string {
+  if (partPath.startsWith("/")) return partPath;
+  const owner = ["word"];
+  const target = partPath.split("/");
+  let common = 0;
+  while (common < owner.length && common < target.length - 1 && owner[common] === target[common])
+    common++;
+  return [
+    ...Array.from({ length: owner.length - common }, () => ".."),
+    ...target.slice(common),
+  ].join("/");
+}
+
 /**
  * Build a {fileName → rId} map for source rels targeting `media/` or
  * `embeddings/`. findAndReplaceImagePlaceholders consults this map to
@@ -140,7 +154,9 @@ export function compileDocumentEntries(
           // Build combined replacement entries for charts, smartart, and numbering
           const entries: Array<{ prefix?: string; key: string; value: string }> = [];
           for (const [i, key] of chartKeys.entries()) {
-            const chartTarget = `charts/chart${i + 1}.xml`;
+            const chartTarget = documentRelationshipTarget(
+              ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
+            );
             const sourceRid = sourceRidFor(
               ctx._options.passthroughRelationships,
               "word/document.xml",
@@ -210,7 +226,9 @@ export function compileDocumentEntries(
           documentMedia.referenced.length +
           documentEmbeddings.referenced.length;
         for (let i = 0; i < ctx.charts.array.length; i++) {
-          const target = `charts/chart${i + 1}.xml`;
+          const target = documentRelationshipTarget(
+            ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
+          );
           const sourceRid = sourceRidFor(
             ctx._options.passthroughRelationships,
             "word/document.xml",
@@ -237,6 +255,12 @@ export function compileDocumentEntries(
           {
             pathPrefix: "",
             styleRelType: RELATIONSHIP_TYPES.diagramQuickStyle,
+            sourceTargetFor: (key, kind) => {
+              const sourcePath = ctx.smartArts.array.find((s) => s.key === key)?.sourcePaths?.[
+                kind === "quickStyle" ? "quickStyle" : kind
+              ];
+              return sourcePath ? documentRelationshipTarget(sourcePath) : undefined;
+            },
             // The drawing part is an Office render cache, present only when the
             // source carried it — Word never emits it for a fresh SmartArt.
             hasDrawing: (key) =>

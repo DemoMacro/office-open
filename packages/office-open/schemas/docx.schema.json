@@ -51,6 +51,26 @@
       },
       "type": "object"
     },
+    "ActionDefinitionOptions": {
+      "additionalProperties": false,
+      "description": "One toolbar action definition.",
+      "properties": {
+        "argumentValue": {
+          "description": "Base64 command argument (`wne:argValue`).",
+          "type": "string"
+        },
+        "indexBasedOn": {
+          "description": "Hex index selector (`wne:fciIndexBasedOn`).",
+          "type": "string"
+        },
+        "name": {
+          "description": "Stable action identifier (`wne:acdName`).",
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
     "AdjustHandle": {
       "anyOf": [
         {
@@ -6243,10 +6263,6 @@
           },
           "type": "array"
         },
-        "rawXml": {
-          "description": "Verbatim `<w:background>` XML for backgrounds the structured model cannot express (e.g. VML pattern fills). `r:id` refs become `{fileName}` placeholders (media in `rawMedia`). Round-trip only — do not hand-author.",
-          "type": "string"
-        },
         "themeColor": {
           "$ref": "#/definitions/ThemeColor",
           "description": "Theme color name (w:themeColor, — e.g. \"accent1\", \"dark1\")"
@@ -6258,6 +6274,10 @@
         "themeTint": {
           "$ref": "#/definitions/UcharHexNumber",
           "description": "Theme tint value (lightens the theme color)"
+        },
+        "vmlBackground": {
+          "$ref": "#/definitions/VmlBackgroundOptions",
+          "description": "Typed VML child of `w:background`; fill relationship refs use placeholders."
         }
       },
       "type": "object"
@@ -6520,6 +6540,10 @@
             "$ref": "#/definitions/CustomPropertyOptions"
           },
           "type": "array"
+        },
+        "customizations": {
+          "$ref": "#/definitions/WordCustomizationsOptions",
+          "description": "Keyboard and toolbar customizations (word/customizations.xml)."
         },
         "defaultNamespace": {
           "const": true,
@@ -8425,6 +8449,17 @@
       "additionalProperties": false,
       "description": "Glossary document options",
       "properties": {
+        "fontTablePartName": {
+          "description": "Glossary font-table path relative to word/ (round-trip only).",
+          "type": "string"
+        },
+        "fonts": {
+          "description": "Independent font table owned by the glossary.",
+          "items": {
+            "$ref": "#/definitions/EmbeddedFontOptions"
+          },
+          "type": "array"
+        },
         "hasDocParts": {
           "description": "Whether source carried w:docParts (round-trip only — do not hand-author). Distinguishes an empty container from the XSD-optional container's absence.",
           "type": "boolean"
@@ -8447,6 +8482,30 @@
             "$ref": "#/definitions/DocPartOptions"
           },
           "type": "array"
+        },
+        "settings": {
+          "$ref": "#/definitions/SettingsOptions",
+          "description": "Independent settings part owned by the glossary."
+        },
+        "settingsPartName": {
+          "description": "Glossary settings path relative to word/ (round-trip only).",
+          "type": "string"
+        },
+        "styles": {
+          "$ref": "#/definitions/StylesOptions",
+          "description": "Independent styles part owned by the glossary."
+        },
+        "stylesPartName": {
+          "description": "Glossary styles path relative to word/ (round-trip only).",
+          "type": "string"
+        },
+        "webSettings": {
+          "$ref": "#/definitions/WebSettingsOptions",
+          "description": "Independent web-settings part owned by the glossary."
+        },
+        "webSettingsPartName": {
+          "description": "Glossary web-settings path relative to word/ (round-trip only).",
+          "type": "string"
         }
       },
       "required": ["parts"],
@@ -8609,6 +8668,10 @@
             },
             "fill": {
               "$ref": "#/definitions/FillOptions"
+            },
+            "graphicDataUri": {
+              "description": "Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip).",
+              "type": "string"
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
@@ -9476,6 +9539,29 @@
         }
       },
       "required": ["color"],
+      "type": "object"
+    },
+    "KeyMapOptions": {
+      "additionalProperties": false,
+      "description": "One keyboard mapping.",
+      "properties": {
+        "actionName": {
+          "description": "Bound built-in command (`wne:acd/@wne:acdName`).",
+          "type": "string"
+        },
+        "characterCode": {
+          "description": "Bound character code (`wne:wch/@wne:val`).",
+          "type": "string"
+        },
+        "primaryKeyCode": {
+          "description": "Primary key-code sequence, e.g. `\"0249\"` (`wne:kcmPrimary`).",
+          "type": "string"
+        },
+        "secondaryKeyCode": {
+          "description": "Secondary key-code sequence (`wne:kcmSecondary`).",
+          "type": "string"
+        }
+      },
       "type": "object"
     },
     "LanguageOptions": {
@@ -12629,17 +12715,35 @@
     "ObjectElementOptions": {
       "additionalProperties": false,
       "properties": {
+        "bullet": {
+          "description": "Paragraph mark renders as a list bullet (v:shape/`@o:bullet`).",
+          "type": "boolean"
+        },
         "control": {
           "$ref": "#/definitions/ObjectControlOptions",
           "description": "ActiveX control reference (w:control)."
         },
         "dxaOrig": {
-          "description": "Original width in twips (w:object/`@w:dxaOrig`).",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Original width in twips or a universal measure (w:object/`@w:dxaOrig`)."
         },
         "dyaOrig": {
-          "description": "Original height in twips (w:object/`@w:dyaOrig`).",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/UniversalMeasure"
+            }
+          ],
+          "description": "Original height in twips or a universal measure (w:object/`@w:dyaOrig`)."
         },
         "embed": {
           "$ref": "#/definitions/ObjectEmbedOptions",
@@ -12667,6 +12771,21 @@
         "link": {
           "$ref": "#/definitions/ObjectLinkOptions",
           "description": "Linked OLE object (o:OLEObject Type=\"Link\")."
+        },
+        "mcChoiceRequires": {
+          "description": "mc:AlternateContent Choice `@Requires` carried from parse (round-trip only).",
+          "type": "string"
+        },
+        "mcFallback": {
+          "description": "Serialized mc:Fallback element carried from parse (round-trip only — do not hand-author); stringify rebuilds the mc:AlternateContent wrapper.",
+          "type": "string"
+        },
+        "mcFallbackMedia": {
+          "description": "Media referenced by the mcFallback `{fileName}` placeholders.",
+          "items": {
+            "$ref": "#/definitions/BackgroundRawMediaOptions"
+          },
+          "type": "array"
         },
         "movie": {
           "description": "Movie relationship id — (w:movie/`@r:id`). External.",
@@ -18785,6 +18904,10 @@
                   "description": "The closing field-end run precedes bookmark markers in the final entry paragraph. Stringify uses this to preserve source child order instead of always appending the end run before `</w:p>` (round-trip only).",
                   "type": "boolean"
                 },
+                "headRunsAfterText": {
+                  "description": "Head control runs inject after the first entry's leading text run instead of after its pPr, matching a source paragraph that carried entry text before the field chain (round-trip only).",
+                  "type": "boolean"
+                },
                 "headRunsXml": {
                   "description": "Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs (round-trip only; Word splits the instruction across runs and the split must survive).",
                   "type": "string"
@@ -20730,7 +20853,7 @@
         },
         "textBoxPart": {
           "$ref": "#/definitions/TextBoxPartOptions",
-          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` while the part bytes remain in DocumentOptions.rawParts."
+          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` and rebuilds the referenced part from typed children."
         }
       },
       "required": ["children"],
@@ -20871,6 +20994,10 @@
           ],
           "description": "Preset geometry (a:prstGeom) — a bare string is shorthand for `{ preset: \"<name>\" }`."
         },
+        "graphicDataUri": {
+          "description": "Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip only — do not hand-author). Omit for the Word 2010 URI.",
+          "type": "string"
+        },
         "graphicFrameLocks": {
           "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
         },
@@ -20927,7 +21054,7 @@
         },
         "textBoxPart": {
           "$ref": "#/definitions/TextBoxPartOptions",
-          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` while the part bytes remain in DocumentOptions.rawParts."
+          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` and rebuilds the referenced part from typed children."
         },
         "transformation": {
           "$ref": "#/definitions/MediaTransformation"
@@ -24015,6 +24142,17 @@
       "additionalProperties": false,
       "description": "A Word 2010 text-box content part referenced by `wps:txbx/@r:txbx`.",
       "properties": {
+        "children": {
+          "description": "Block-level children from the referenced `w14:txbx` part.",
+          "items": {
+            "$ref": "#/definitions/ShapeTextBoxChild"
+          },
+          "type": "array"
+        },
+        "ignorable": {
+          "description": "`mc:Ignorable` prefixes declared by the source part root.",
+          "type": "string"
+        },
         "path": {
           "description": "Package path of the text-box part (e.g. `word/txbx1.xml`).",
           "type": "string"
@@ -25931,6 +26069,37 @@
         },
         "wrapcoords": {
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "VmlBackgroundOptions": {
+      "additionalProperties": false,
+      "description": "v:background options.",
+      "properties": {
+        "bwmode": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwnormal": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "bwpure": {
+          "$ref": "#/definitions/VmlBlackWhiteMode"
+        },
+        "fill": {
+          "$ref": "#/definitions/VmlFillOptions"
+        },
+        "fillcolor": {
+          "$ref": "#/definitions/VmlColor"
+        },
+        "filled": {
+          "$ref": "#/definitions/VmlTrueFalse"
+        },
+        "id": {
+          "type": "string"
+        },
+        "targetscreensize": {
+          "$ref": "#/definitions/VmlScreenSize"
         }
       },
       "type": "object"
@@ -29284,6 +29453,11 @@
       },
       "type": "object"
     },
+    "VmlScreenSize": {
+      "description": "(o:) — the resolution presets Office writes verbatim.",
+      "enum": ["544,376", "640,480", "720,512", "800,600", "1024,768", "1152,862"],
+      "type": "string"
+    },
     "VmlShadowOptions": {
       "additionalProperties": false,
       "description": "v:shadow options.",
@@ -31396,6 +31570,34 @@
         }
       },
       "required": ["function", "operator", "value"],
+      "type": "object"
+    },
+    "WordCustomizationsOptions": {
+      "additionalProperties": false,
+      "description": "Word keyboard and toolbar customizations (`wne:tcg`).",
+      "properties": {
+        "actionDefinitions": {
+          "description": "Command definitions from `wne:acds`.",
+          "items": {
+            "$ref": "#/definitions/ActionDefinitionOptions"
+          },
+          "type": "array"
+        },
+        "keyMaps": {
+          "description": "Keyboard mappings from `wne:keymaps`.",
+          "items": {
+            "$ref": "#/definitions/KeyMapOptions"
+          },
+          "type": "array"
+        },
+        "toolbarActionNames": {
+          "description": "Toolbar-visible action names from `wne:acdManifest`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
       "type": "object"
     },
     "WrapPolygon": {

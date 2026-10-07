@@ -193,6 +193,14 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
         const subsetted = attrBool(embedEl, "w:subsetted");
         if (subsetted !== undefined) font.subsetted = subsetted;
       }
+      // Mirror the stringify-side defaults so a round-trip of a minimal
+      // embedRegular (family/pitch/sig filled in by the writer) parses back
+      // to the same model instead of gaining explicit fields.
+      if (font.embedRid) {
+        font.family ??= "auto";
+        font.pitch ??= "variable";
+        font.sig ??= DEFAULT_SIG;
+      }
 
       fonts.push(font as EmbeddedFontOptionsWithKey);
     };

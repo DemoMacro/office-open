@@ -43,7 +43,12 @@ const UNORDERED_PART_PATHS = new Set([
   "docProps/custom.xml",
 ]);
 
-const IGNORED_ATTRIBUTES = new Set(["mc:Ignorable"]);
+const IGNORED_ATTRIBUTES = new Set([
+  "mc:Ignorable",
+  "mc:MustUnderstand",
+  "mc:PreserveAttributes",
+  "mc:ProcessContent",
+]);
 
 /** Extended/core-properties boolean elements whose text is xsd:boolean. */
 const BOOLEAN_TEXT_ELEMENTS = new Set([
@@ -122,6 +127,23 @@ const DEFAULT_ATTRIBUTES = new Map<string, Record<string, string>>([
       xlm: "0",
     },
   ],
+  [
+    "col",
+    {
+      bestFit: "0",
+      phonetic: "0",
+      outlineLevel: "0",
+      collapsed: "0",
+      hidden: "0",
+    },
+  ],
+  [
+    "sheetProtection",
+    {
+      objects: "0",
+      scenarios: "0",
+    },
+  ],
 ]);
 
 /** Container elements whose `@count` is derivable from their children — the
@@ -145,6 +167,8 @@ const TRANSITIONAL_URI_PREFIX = "http://schemas.openxmlformats.org/";
 
 const TRANSITIONAL_URI_ALIASES = new Map([
   ["docPropsApp", "officeDocument/2006/relationships/extended-properties"],
+  // O12 templates write `…/xlChart` for chart companion relationships.
+  ["officeDocument/2006/relationships/xlChart", "officeDocument/2006/relationships/chart"],
   [
     "officeDocument/2006/relationships/extendedProperties",
     "officeDocument/2006/relationships/extended-properties",
@@ -201,8 +225,23 @@ function canonicalAttributeValue(name: string, value: string, elementName?: stri
       ? value.slice(LEGACY_OFFICE_URI_PREFIX.length)
       : undefined;
     if (legacyPath !== undefined) {
+      // O12 template aliases for canonical transitional relationship types.
+      const legacyAliases: Record<string, string> = {
+        xlChart: "chart",
+        xlWorksheet: "worksheet",
+        xlSharedStrings: "sharedStrings",
+        xlStyles: "styles",
+        xlCalcChain: "calcChain",
+        xlVolatileDependencies: "volatileDependencies",
+        xlPrinterSettings: "printerSettings",
+      };
+      const aliasTarget = legacyAliases[legacyPath];
+      if (aliasTarget) {
+        return `${TRANSITIONAL_URI_PREFIX}officeDocument/2006/relationships/${aliasTarget}`;
+      }
       const alias = TRANSITIONAL_URI_ALIASES.get(legacyPath);
       if (alias) return `${TRANSITIONAL_URI_PREFIX}${alias}`;
+      return `${TRANSITIONAL_URI_PREFIX}officeDocument/2006/relationships/${legacyPath}`;
     }
     return value;
   }
@@ -235,6 +274,59 @@ function relationshipOwnerPath(relsPath: string): string {
   return ownerPath.endsWith(".rels") ? ownerPath.slice(0, -".rels".length) : ownerPath;
 }
 
+const ALWAYS_REBUILT_PARTS = new Set(["[Content_Types].xml", "_rels/.rels"]);
+
+const PACKAGE_XML_PART = /\.(?:xml|rels|vml)$/i;
+
+/**
+ * XML-shaped parts no relationship reaches, walking the closure from
+ * `_rels/.rels`. These are orphaned package members: the document model has no
+ * anchor for them, so they travel verbatim instead of masking a model gap.
+ */
+export function orphanedPackageMembers(source: Uint8Array): Set<string> {
+  let entries: Record<string, Uint8Array>;
+  try {
+    entries = unzipSync(source);
+  } catch {
+    return new Set();
+  }
+  const files = new Map<string, Uint8Array>(
+    Object.entries(entries).map(([name, bytes]) => [name.replaceAll("\\", "/"), bytes]),
+  );
+  const relsCache = new Map<string, Element | undefined>();
+  const readRels = (relsPath: string): Element | undefined => {
+    if (!relsCache.has(relsPath)) {
+      const bytes = files.get(relsPath);
+      relsCache.set(relsPath, bytes ? parseCanonicalXml(decodeXmlBytes(bytes)) : undefined);
+    }
+    return relsCache.get(relsPath);
+  };
+  const reachable = new Set<string>();
+  const queue: string[] = [""];
+  while (queue.length > 0) {
+    const owner = queue.shift()!;
+    const relsPath = owner === "" ? "_rels/.rels" : relationshipPath(owner);
+    for (const relationship of readRels(relsPath)?.elements ?? []) {
+      if (relationship.name !== "Relationship") continue;
+      if (relationship.attributes?.["TargetMode"] === "External") continue;
+      const target = relationship.attributes?.["Target"];
+      if (!target) continue;
+      const resolved = resolveRelationshipTarget(owner, target);
+      if (reachable.has(resolved)) continue;
+      reachable.add(resolved);
+      queue.push(resolved);
+    }
+  }
+  const orphaned = new Set<string>();
+  for (const partPath of files.keys()) {
+    if (ALWAYS_REBUILT_PARTS.has(partPath)) continue;
+    if (!PACKAGE_XML_PART.test(partPath)) continue;
+    const ownerPart = partPath.endsWith(".rels") ? relationshipOwnerPath(partPath) : partPath;
+    if (!reachable.has(ownerPart)) orphaned.add(partPath);
+  }
+  return orphaned;
+}
+
 /**
  * An empty relationships part carries no semantics, so a generator may omit it
  * (matching Office's normalized output) without losing package information.
@@ -252,6 +344,15 @@ function canonicalNode(
   const name = element.name ?? "";
   const childPath = `${path}/${name}`;
   const canonicalAttributeName = (attributeName: string): string => {
+    // O12 templates write `@defaultWidth` (1/256 char units); the standard
+    // `@width` is in character units.
+    if ((name === "col" || name.endsWith(":col")) && attributeName === "defaultWidth") {
+      return "width";
+    }
+    // O12 templates write `relId` for the chart relationship reference.
+    if (attributeName === "relId") return "r:id";
+    // O12 templates write `@range`; the XSD attribute is `@ref`.
+    if (name === "dimension" && attributeName === "range") return "ref";
     if (name === "sst" && attributeName === "totalCount") return "count";
     if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:char")
       return "w:char";
@@ -277,7 +378,7 @@ function canonicalNode(
   }
   if (name === "mc:Choice") {
     const content = (element.elements ?? []).find((child) => child.type === "element");
-    if (content) return canonicalNode(content, childPath);
+    if (content) return canonicalNode(content, childPath, references);
   }
   const isRelationship = name === "Relationship" && path.includes("_rels/");
   const relsPath = name === "Relationship" ? path.slice(0, path.lastIndexOf("/")) : path;
@@ -287,6 +388,12 @@ function canonicalNode(
       .filter(([attributeName]) => attributeName !== "xmlns" && !attributeName.startsWith("xmlns:"))
       .filter(([attributeName]) => !(isRelationship && attributeName === "Id"))
       .filter(([attributeName]) => !IGNORED_ATTRIBUTES.has(attributeName))
+      // O12 sheetView `@active` is an unused selection hint absent from the
+      // transitional XSD; writers never re-emit it.
+      .filter(
+        ([attributeName]) =>
+          !((name === "sheetView" || name.endsWith(":sheetView")) && attributeName === "active"),
+      )
       .map(([rawAttributeName, value]) => {
         const attributeName = canonicalAttributeName(rawAttributeName);
         return [
@@ -310,6 +417,22 @@ function canonicalNode(
   let orderedAttributes = Object.fromEntries(
     Object.entries(attributes).sort(([left], [right]) => left.localeCompare(right)),
   );
+  // O12 templates write `@defaultWidth` in 1/256 char units; normalize to the
+  // standard character-unit value so both forms compare equal.
+  if (name === "col" && orderedAttributes.width !== undefined) {
+    const width = Number(orderedAttributes.width);
+    if (Number.isFinite(width) && width > 256) {
+      orderedAttributes.width = String(Math.round((width / 256) * 1000) / 1000);
+    }
+  }
+  // O12 templates reference charts via `a:chart` inside a legacy ChartML
+  // graphicData URI; the writer emits the canonical `c:chart` form.
+  if ((name.split(":").pop() ?? name) === "graphicData") {
+    const uri = element.attributes?.uri;
+    if (typeof uri === "string" && uri.includes("ChartML")) {
+      orderedAttributes.uri = "http://schemas.openxmlformats.org/drawingml/2006/chart";
+    }
+  }
   const localName = name.split(":").pop() ?? name;
   if (localName === "color" || localName.endsWith("Color")) {
     const legacyType = orderedAttributes.type;
@@ -346,25 +469,97 @@ function canonicalNode(
             ? "1"
             : "0"
           : rawText;
+  const mappedChildren = (element.elements ?? [])
+    .filter((child): child is Element => child.type === "element")
+    // `c:lastLayout` is a render cache that Office recomputes; the
+    // transitional XSD does not model it and writers never re-emit it.
+    .filter((child) => child.name !== "c:lastLayout" && child.name !== "c:lastLayoutOuter")
+    .map((child) => {
+      const node = canonicalNode(child, childPath, references);
+      // O12 templates write `a:chart` (main DrawingML ns) instead of `c:chart`
+      // for the chart reference inside legacy ChartML graphicData.
+      if ((name.split(":").pop() ?? name) === "graphicData" && node.name?.endsWith(":chart")) {
+        return { ...node, name: "c:chart" };
+      }
+      return node;
+    });
+  // Legacy documents may carry bare text directly inside w:r. Word treats it
+  // as run text and normalizes it into w:t on save, so the digest normalizes
+  // it the same way instead of comparing structurally different encodings.
+  const bareRunText =
+    name === "w:r" && rawText.trim() !== "" && !mappedChildren.some((child) => child.name === "w:t")
+      ? rawText.trim()
+      : "";
+  if (bareRunText !== "") {
+    mappedChildren.push({ name: "w:t", attributes: {}, text: bareRunText, children: [] });
+  }
+  // CT_StrData/CT_NumData require c:ptCount; some producers omit it. The
+  // writer always emits it, so the digest fills the default when missing.
+  if (
+    localName === "strCache" ||
+    localName === "numCache" ||
+    localName === "strLit" ||
+    localName === "numLit" ||
+    localName === "multiLvlStrCache"
+  ) {
+    const pointCount = mappedChildren.find((child) => child.name === "c:ptCount");
+    if (!pointCount) {
+      const pointCountValue = mappedChildren.filter((child) =>
+        (child.name ?? "").endsWith(":pt"),
+      ).length;
+      mappedChildren.unshift({
+        name: "c:ptCount",
+        attributes: { val: String(pointCountValue) },
+        text: "",
+        children: [],
+      });
+    }
+  }
+  // Word tolerates a stray nested empty w:pPr inside w:pPr (schema-invalid
+  // legacy input) by ignoring it — normalize it out instead of comparing
+  // structurally invalid source markup against our valid output.
+  const childrenOut =
+    name === "w:pPr"
+      ? mappedChildren.filter(
+          (child) => !(child.name === "w:pPr" && child.children.length === 0 && child.text === ""),
+        )
+      : mappedChildren;
+  // Word also tolerates duplicate w:rPr children inside w:r by applying the
+  // last one — normalize to the same precedence instead of comparing the
+  // structurally invalid source markup against our valid output.
+  if (name === "w:r") {
+    const rPrIndices = mappedChildren
+      .map((child, index) => (child.name === "w:rPr" ? index : -1))
+      .filter((index) => index >= 0);
+    if (rPrIndices.length > 1) {
+      const keep = rPrIndices[rPrIndices.length - 1]!;
+      const dropped = new Set(rPrIndices.filter((index) => index !== keep));
+      const deduped = mappedChildren.filter((_, index) => !dropped.has(index));
+      childrenOut.length = 0;
+      childrenOut.push(...deduped);
+    }
+  }
   return {
     name: canonicalElementName(name, path),
     attributes: orderedAttributes,
-    text: element.attributes?.["xml:space"] === "preserve" ? text : text.trim(),
+    text:
+      bareRunText !== ""
+        ? ""
+        : element.attributes?.["xml:space"] === "preserve"
+          ? text
+          : text.trim(),
     children: (() => {
-      const mapped = (element.elements ?? [])
-        .filter((child): child is Element => child.type === "element")
-        .map((child) => canonicalNode(child, childPath, references));
       if (
         name === "text" &&
-        mapped.length === 1 &&
-        mapped[0].name === "t" &&
-        mapped[0].text === "" &&
-        mapped[0].children.length === 0 &&
-        Object.keys(mapped[0].attributes).length === 0
+        childrenOut.length === 1 &&
+        childrenOut[0].name === "t" &&
+        childrenOut[0].text === "" &&
+        childrenOut[0].children.length === 0 &&
+        Object.keys(childrenOut[0].attributes).length === 0
       ) {
         return [];
       }
-      return mapped;
+      return childrenOut;
     })(),
   };
 }
@@ -373,10 +568,11 @@ function sortUnorderedChildren(
   node: CanonicalNode,
   path: string,
   references?: Map<string, string>,
+  ignorablePrefixes?: ReadonlySet<string>,
 ): CanonicalNode {
   const childPath = `${path}/${node.name}`;
-  const children = node.children.map((child) =>
-    sortUnorderedChildren(child, childPath, references),
+  let children = node.children.map((child) =>
+    sortUnorderedChildren(child, childPath, references, ignorablePrefixes),
   );
   const unorderedRoot =
     UNORDERED_PART_PATHS.has(path) || path === "[Content_Types].xml" || path.endsWith(".rels");
@@ -394,13 +590,51 @@ function sortUnorderedChildren(
     localName === "schemeclr" ||
     localName === "ser" ||
     localName === "chart" ||
+    localName === "catax" ||
+    localName === "valax" ||
+    localName === "dataax" ||
+    localName === "serax" ||
+    localName === "dateax" ||
+    localName === "worksheet" ||
+    localName === "dialogsheet" ||
     localName === "sectpr"
   ) {
+    // Word folds a schema-invalid settings-root w:compatSetting into the
+    // w:compat element on save — normalize the stray entry the same way
+    // instead of comparing structurally invalid source markup against our
+    // valid output.
+    if (localName === "settings") {
+      const stray = children.filter((child) => child.name === "w:compatSetting");
+      if (stray.length > 0) {
+        const compatIndex = children.findIndex((child) => child.name === "w:compat");
+        if (compatIndex >= 0) {
+          const compat = children[compatIndex]!;
+          const known = new Set(
+            compat.children
+              .filter((child) => child.name === "w:compatSetting")
+              .map((child) => child.attributes["w:name"]),
+          );
+          const moved = stray.filter((child) => !known.has(child.attributes["w:name"]));
+          const remaining = children.filter((child) => child.name !== "w:compatSetting");
+          const mergedIndex = remaining.findIndex((child) => child.name === "w:compat");
+          remaining[mergedIndex] =
+            moved.length > 0 ? { ...compat, children: [...compat.children, ...moved] } : compat;
+          children = remaining;
+        }
+      }
+    }
+    children.sort(
+      (left, right) =>
+        childSortKey(left, ignorablePrefixes).localeCompare(
+          childSortKey(right, ignorablePrefixes),
+        ) ||
+        semanticChildFingerprint(left, ignorablePrefixes).localeCompare(
+          semanticChildFingerprint(right, ignorablePrefixes),
+        ),
+    );
     return {
       ...node,
-      children: [...children].sort((left, right) =>
-        childSortKey(left).localeCompare(childSortKey(right)),
-      ),
+      children,
     };
   }
   return { ...node, children };
@@ -413,13 +647,29 @@ function childFingerprint(node: CanonicalNode): string {
   return hash.digest("hex");
 }
 
+function semanticChildFingerprint(
+  node: CanonicalNode,
+  ignorablePrefixes: ReadonlySet<string> | undefined,
+): string {
+  const hash = createHash("sha256");
+  const attributes = Object.fromEntries(
+    Object.entries(node.attributes).filter(
+      ([name]) => !isIgnorableForeignAttr(name, ignorablePrefixes),
+    ),
+  );
+  hash.update(`${node.name}\0${JSON.stringify(attributes)}\0${JSON.stringify(node.text)}`);
+  for (const child of node.children)
+    hash.update(semanticChildFingerprint(child, ignorablePrefixes));
+  return hash.digest("hex");
+}
+
 /**
  * Stable ordering key for unordered containers: name + attributes + text plus
  * one level of child identity. Deep subtree differences (e.g. a missing
  * c:extLst inside a c:dPt) must not reorder the container, or the comparator
  * would pair unrelated siblings and report phantom diffs.
  */
-function childSortKey(node: CanonicalNode): string {
+function childSortKey(node: CanonicalNode, ignorablePrefixes?: ReadonlySet<string>): string {
   const localName = node.name.split(":").pop() ?? node.name;
   if (localName === "ser" || localName === "dPt") {
     const identity = node.children.find(
@@ -428,11 +678,20 @@ function childSortKey(node: CanonicalNode): string {
     if (identity) return `${node.name}:idx=${identity.attributes["val"] ?? ""}`;
   }
   const hash = createHash("sha256");
-  hash.update(`${node.name}\0${JSON.stringify(node.attributes)}\0${JSON.stringify(node.text)}`);
-  for (const child of node.children)
-    hash.update(
-      `${child.name}\0${JSON.stringify(child.attributes)}\0${JSON.stringify(child.text)}`,
+  const attributes = Object.fromEntries(
+    Object.entries(node.attributes).filter(
+      ([name]) => !isIgnorableForeignAttr(name, ignorablePrefixes),
+    ),
+  );
+  hash.update(`${node.name}\0${JSON.stringify(attributes)}\0${JSON.stringify(node.text)}`);
+  for (const child of node.children) {
+    const childAttributes = Object.fromEntries(
+      Object.entries(child.attributes).filter(
+        ([name]) => !isIgnorableForeignAttr(name, ignorablePrefixes),
+      ),
     );
+    hash.update(`${child.name}\0${JSON.stringify(childAttributes)}\0${JSON.stringify(child.text)}`);
+  }
   return hash.digest("hex");
 }
 
@@ -494,11 +753,17 @@ export function canonicalXmlNodes(
   partPath = "",
   references?: Map<string, string>,
 ): CanonicalNode | undefined {
+  const ignorablePrefixes = new Set(
+    (element?.attributes?.["mc:Ignorable"] ?? "")
+      .split(/[\s,]+/)
+      .map((prefix) => prefix.trim())
+      .filter(Boolean),
+  );
   const root =
     element && element.type === "element"
       ? canonicalNode(element, partPath, references)
       : undefined;
-  return root && sortUnorderedChildren(root, partPath, references);
+  return root && sortUnorderedChildren(root, partPath, references, ignorablePrefixes);
 }
 
 function attributeKey(node: CanonicalNode): string {
@@ -506,6 +771,12 @@ function attributeKey(node: CanonicalNode): string {
     .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
     .sort()
     .join(",");
+}
+
+function isIgnorableForeignAttr(name: string, prefixes: ReadonlySet<string> | undefined): boolean {
+  if (!prefixes || prefixes.size === 0) return false;
+  const colon = name.indexOf(":");
+  return colon > 0 && prefixes.has(name.slice(0, colon));
 }
 
 function childKey(node: CanonicalNode): string {
@@ -531,9 +802,13 @@ function compareNodes(
   path: string,
   source: CanonicalNode | undefined,
   output: CanonicalNode | undefined,
+  ignorablePrefixes?: ReadonlySet<string>,
 ): SemanticPartDiff["detail"][] {
   if (!source && !output) return [];
   const location = path || "/";
+  // Minimal source packages may omit standard companion parts that every
+  // writer emits; the generated package is a semantic superset.
+  if (!source && WRITER_DEFAULT_PARTS.has(path)) return [];
   if (!source) return [{ category: "added-part", xpath: location, detail: "output-only element" }];
   if (!output) return [{ category: "element", xpath: location, detail: "source-only element" }];
   const diffs: NonNullable<SemanticPartDiff["detail"]>[] = [];
@@ -547,7 +822,16 @@ function compareNodes(
   for (const [name, value] of Object.entries(source.attributes)) {
     const next = output.attributes[name];
     if (next === undefined) {
-      diffs.push({ category: "attribute", xpath: `${location}/@${name}`, detail: "source-only" });
+      // MCE: a consumer must ignore attributes from mc:Ignorable namespaces it
+      // does not understand — our writer legitimately drops unknown foreign
+      // attributes, so a source-only foreign attribute is not a model gap.
+      if (!isIgnorableForeignAttr(name, ignorablePrefixes)) {
+        diffs.push({
+          category: "attribute",
+          xpath: `${location}/@${name}`,
+          detail: "source-only",
+        });
+      }
     } else if (next !== value) {
       diffs.push({
         category: "attribute",
@@ -558,6 +842,13 @@ function compareNodes(
   }
   for (const name of Object.keys(output.attributes)) {
     if (!(name in source.attributes)) {
+      // Writer-side XSD defaults: a minimal source omits the attribute but
+      // the writer always emits it with its schema default value.
+      if (output.attributes[name] === WRITER_EXPLICIT_DEFAULTS.get(name)?.[name]) continue;
+      const elementDefaults = WRITER_EXPLICIT_DEFAULTS.get(
+        source.name.split(":").pop() ?? source.name,
+      );
+      if (elementDefaults && elementDefaults[name] === output.attributes[name]) continue;
       diffs.push({
         category: "attribute",
         xpath: `${location}/@${name}`,
@@ -568,8 +859,16 @@ function compareNodes(
   if (source.text !== output.text) {
     diffs.push({ category: "text", xpath: location, detail: "text mismatch" });
   }
-  const sourceChildren = source.children.map((child) => ({ key: childKey(child), child }));
-  const outputChildren = output.children.map((child) => ({ key: childKey(child), child }));
+  const visibleChild = (child: CanonicalNode): boolean =>
+    !isIgnorableForeignAttr(child.name, ignorablePrefixes);
+  const sourceChildren = source.children.filter(visibleChild).map((child) => ({
+    key: semanticChildFingerprint(child, ignorablePrefixes),
+    child,
+  }));
+  const outputChildren = output.children.filter(visibleChild).map((child) => ({
+    key: semanticChildFingerprint(child, ignorablePrefixes),
+    child,
+  }));
   const sourceCounts = new Map(sourceChildren.map(({ key }) => [key, 0]));
   for (const { key } of sourceChildren) sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   const outputCounts = new Map(outputChildren.map(({ key }) => [key, 0]));
@@ -598,6 +897,7 @@ function compareNodes(
       `${location}/${child.name}[${sourceIndex + 1}]`,
       child,
       outputChildren[outputIndex]!.child,
+      ignorablePrefixes,
     );
     if (childDiffs.length) return childDiffs;
   }
@@ -627,22 +927,55 @@ function compareNodes(
     }
   } else if (
     sourceChildren.some(
-      ({ child }, index) => childKey(child) !== childKey(outputChildren[index]!.child),
+      ({ child }, index) =>
+        semanticChildFingerprint(child, ignorablePrefixes) !==
+        semanticChildFingerprint(outputChildren[index]!.child, ignorablePrefixes),
     )
   ) {
     diffs.push({ category: "child-order", xpath: location, detail: "children reordered" });
   }
   if (diffs.length) return diffs;
-  for (let index = 0; index < source.children.length; index++) {
+  for (let index = 0; index < sourceChildren.length; index++) {
     const childDiffs = compareNodes(
-      `${location}/${source.children[index]!.name}[${index + 1}]`,
-      source.children[index],
-      output.children[index],
+      `${location}/${sourceChildren[index]!.child.name}[${index + 1}]`,
+      sourceChildren[index]!.child,
+      outputChildren[index]?.child,
+      ignorablePrefixes,
     );
     if (childDiffs.length) return childDiffs;
   }
   return [];
 }
+
+/** Parts the writers always emit even when a minimal source omits them. */
+const WRITER_DEFAULT_PARTS = new Set([
+  "docProps/app.xml",
+  "word/fontTable.xml",
+  "word/theme/theme1.xml",
+  "word/settings.xml",
+  "word/styles.xml",
+  "word/numbering.xml",
+  "word/webSettings.xml",
+  "xl/theme/theme1.xml",
+  "xl/styles.xml",
+  "xl/sharedStrings.xml",
+  "ppt/theme/theme1.xml",
+  "ppt/presProps.xml",
+  "ppt/viewProps.xml",
+  "ppt/tableStyles.xml",
+]);
+
+/**
+ * XSD defaults the writers emit explicitly on elements where the source may
+ * omit the attribute. Keyed by local element name.
+ */
+const WRITER_EXPLICIT_DEFAULTS = new Map<string, Record<string, string>>([
+  ["functionGroups", { builtInGroupCount: "16" }],
+  ["w:pgMar", { "w:header": "720", "w:footer": "720", "w:gutter": "0" }],
+  ["w:ins", { "w:date": "" }],
+  ["w:del", { "w:date": "" }],
+  ["Relationship", { TargetMode: "Internal" }],
+]);
 
 export function explainSemanticPartDiff(
   partPath: string,
@@ -665,9 +998,15 @@ export function explainSemanticPartDiff(
   }
   const sourceXml = parseCanonicalXml(decodeXmlBytes(source));
   const outputXml = parseCanonicalXml(decodeXmlBytes(output));
+  const ignorablePrefixes = new Set(
+    (sourceXml?.attributes?.["mc:Ignorable"] ?? "")
+      .split(/[\s,]+/)
+      .map((prefix) => prefix.trim())
+      .filter(Boolean),
+  );
   const sourceNode = canonicalXmlNodes(sourceXml, partPath, references?.source);
   const outputNode = canonicalXmlNodes(outputXml, partPath, references?.output);
-  const details = compareNodes(partPath, sourceNode, outputNode);
+  const details = compareNodes(partPath, sourceNode, outputNode, ignorablePrefixes);
   return details.map((detail) => ({ path: partPath, kind, ...detail }));
 }
 

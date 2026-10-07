@@ -887,7 +887,7 @@ export function stringifyChildDispatch(
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }
     if (hl.anchor) {
-      const attrs = [`w:anchor="${escapeXml(hl.anchor)}"`];
+      const attrs: string[] = [];
       pushHlAttrs(attrs);
       return `<w:hyperlink ${attrs.join(" ")}>${body}</w:hyperlink>`;
     }

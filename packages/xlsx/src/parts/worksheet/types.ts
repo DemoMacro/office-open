@@ -27,6 +27,7 @@ import type {
   SourceRectangleOptions,
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
+import type { ThemeOverrideOptions } from "@office-open/core/theme";
 
 import type { ColorOptions } from "../../shared/color";
 import type { ActiveXControlOptions } from "../active-x-control";
@@ -46,6 +47,7 @@ import type { QueryTableOptions } from "../query-table";
 import type { SharedStrings } from "../shared-strings";
 import type { Styles, StyleOptions } from "../styles";
 import type { TableOptions } from "../table";
+import type { WebExtensionPartOptions } from "../web-extension";
 import type { SingleXmlCellOptions } from "../xml-mapping";
 
 // ── Option interfaces ──
@@ -138,6 +140,8 @@ export interface RichTextRunPropertiesOptions {
   italic?: boolean;
   /** Strikethrough */
   strike?: boolean;
+  /** Source `strike/@val`; round-trip only — do not hand-author. */
+  strikeVal?: string;
   outline?: boolean;
   shadow?: boolean;
   condense?: boolean;
@@ -461,7 +465,7 @@ export interface FreezePaneOptions {
  */
 export interface PictureOptions extends Omit<BasePictureOptions, "type">, DrawingAnchorOptions {
   /** Image format of the `data` bytes; wmf/emf are Windows metafiles. */
-  type: "png" | "jpg" | "wmf" | "emf";
+  type: "png" | "jpg" | "webp" | "wmf" | "emf";
   /** Source package path of embedded bytes; round-trip only — do not hand-author. */
   sourcePath?: string;
   /** Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position). */
@@ -541,6 +545,10 @@ export interface WorksheetChartOptions
   externalDataRelationshipType?: string;
   /** Source c:externalData relationship target — round-trip only. */
   externalDataRelationshipTarget?: string;
+  /** Chart-owned theme override (xl/theme/themeOverride{n}.xml) — round-trip only. */
+  themeOverridePath?: string;
+  /** Parsed theme override content — round-trip only. */
+  themeOverride?: ThemeOverrideOptions;
 }
 
 /** Anchored external content part with its source drawing relationship. */
@@ -597,6 +605,8 @@ export interface WorksheetWebExtensionOptions
   shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+  /** Parsed webextension part content — round-trip only. */
+  part?: WebExtensionPartOptions;
 }
 
 export interface SheetViewOptions {
@@ -649,6 +659,14 @@ export interface HyperlinkOptions {
   uid?: string;
 }
 
+export type HeaderFooterPartName =
+  | "oddHeader"
+  | "oddFooter"
+  | "evenHeader"
+  | "evenFooter"
+  | "firstHeader"
+  | "firstFooter";
+
 export interface HeaderFooterOptions {
   oddHeader?: string;
   oddFooter?: string;
@@ -666,6 +684,14 @@ export interface HeaderFooterOptions {
   alignWithMargins?: boolean;
   /** Source lexical form of `alignWithMargins`; round-trip only — do not hand-author. */
   alignWithMarginsRaw?: string;
+  /**
+   * Source `xml:space` attribute per header/footer part (round-trip only —
+   * do not hand-author). Excel omits the attribute even when the text carries
+   * trailing spaces, so the writer replays the source form verbatim instead
+   * of injecting `xml:space="preserve"`.
+   */
+  /** Source `xml:space` attribute by header/footer part; round-trip only. */
+  xmlSpaceByPart?: Partial<Record<HeaderFooterPartName, string>>;
 }
 
 /** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */

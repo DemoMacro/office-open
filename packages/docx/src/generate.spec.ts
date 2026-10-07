@@ -414,7 +414,7 @@ describe("picture media dedup", () => {
     expect(targetOf.get(embeds[0]!)).toMatch(/^media\/image\d+\.png$/);
   });
 
-  it("keeps background rawXml pristine across generate runs", () => {
+  it("keeps typed VML background media pristine across generate runs", () => {
     const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
     const options = {
       sections: [
@@ -437,19 +437,28 @@ describe("picture media dedup", () => {
         },
       ],
       background: {
-        rawXml:
-          '<w:background><v:background><v:fill r:id="{bg.png}"/></v:background></w:background>',
+        vmlBackground: {
+          fill: { type: "frame", relationshipId: "{bg.png}" },
+        },
         rawMedia: [{ fileName: "bg.png", type: "png", data: bytes }],
       },
     } as Parameters<typeof compileDocument>[0];
     compileDocument(options);
     // The first run dedups bg.png against the body picture — the rename must
     // stay inside that run, never land on the caller's options object.
-    expect(options.background?.rawXml).toContain("{bg.png}");
-    expect(options.background?.rawXml).not.toContain("image");
+    expect(options.background?.vmlBackground?.fill?.relationshipId).toBe("{bg.png}");
     const second = compileDocument(options);
     const xml = new TextDecoder().decode(second["word/document.xml"] as Uint8Array);
     expect(xml).not.toMatch(/\{[a-zA-Z0-9_.]+\}/);
+
+    const generated = generateDocumentSync(options);
+    const generatedXml = new TextDecoder().decode(
+      unzipSync(generated)["word/document.xml"] as Uint8Array,
+    );
+    expect(generatedXml).not.toMatch(/\{[a-zA-Z0-9_.]+\}/);
+    const parsed = parseDocumentSync(generated);
+    expect(parsed.background?.vmlBackground?.fill?.relationshipId).toBe("{bg.png}");
+    expect(parsed.background?.rawMedia).toHaveLength(1);
   });
 
   it("re-registers group chart children on a reused options object", () => {
@@ -560,5 +569,133 @@ describe("chart and smartart placeholders in header/footer/notes parts", () => {
       expect(footerRels).toContain(`Target="diagrams/${diagram}.xml"`);
     }
     expect(files["word/diagrams/data1.xml"]).toBeDefined();
+  });
+});
+
+describe("sparse drawing part paths", () => {
+  function movePart(
+    input: Uint8Array,
+    from: string,
+    to: string,
+    ownerPath: string,
+    previousTarget: string,
+    newTarget: string,
+  ): Uint8Array {
+    const files = unzipSync(input);
+    const part = files[from];
+    expect(part, from).toBeDefined();
+    delete files[from];
+    files[to] = part!;
+    const relsPath = `word/_rels/${ownerPath.slice("word/".length)}.rels`;
+    const rels = new TextDecoder().decode(files[relsPath]!);
+    files[relsPath] = new TextEncoder().encode(
+      rels.replace(`Target="${previousTarget}"`, `Target="${newTarget}"`),
+    );
+    const contentTypes = new TextDecoder().decode(files["[Content_Types].xml"]!);
+    files["[Content_Types].xml"] = new TextEncoder().encode(
+      contentTypes.replace(`PartName="/${from}"`, `PartName="/${to}"`),
+    );
+    return zipSync(files);
+  }
+
+  function moveDocumentPart(
+    input: Uint8Array,
+    from: string,
+    to: string,
+    previousTarget: string,
+  ): Uint8Array {
+    return movePart(input, from, to, "word/document.xml", previousTarget, to.slice("word/".length));
+  }
+
+  it("keeps a consumed chart at its source package path", async () => {
+    const fresh = await generateDocument(
+      {
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    {
+                      chart: {
+                        type: "column",
+                        series: [{ values: [1, 2, 3] }],
+                        transformation: { width: 5486400, height: 3200400 },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    );
+    const source = moveDocumentPart(
+      fresh,
+      "word/charts/chart1.xml",
+      "word/custom/chart.xml",
+      "charts/chart1.xml",
+    );
+    expect(new TextDecoder().decode(unzipSync(source)["word/_rels/document.xml.rels"]!)).toContain(
+      'Target="custom/chart.xml"',
+    );
+    const parsed = parseDocumentSync(source);
+    const regenerated = await generateDocument(parsed, { type: "uint8array" });
+    const files = unzipSync(regenerated);
+    expect(files["word/custom/chart.xml"]).toBeDefined();
+    expect(files["word/charts/chart1.xml"]).toBeUndefined();
+    expect(
+      (parsed.rawParts ?? []).some((part) => part.path === "word/custom/chart.xml"),
+      JSON.stringify(parsed.rawParts),
+    ).toBe(false);
+    expect(new TextDecoder().decode(files["word/_rels/document.xml.rels"]!)).toContain(
+      'Target="custom/chart.xml"',
+    );
+  });
+
+  it("keeps consumed SmartArt data at its source package path", async () => {
+    const fresh = await generateDocument(
+      {
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  children: [
+                    {
+                      smartArt: {
+                        nodes: [{ text: "Alpha" }],
+                        transformation: { width: 5486400, height: 3200400 },
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    );
+    const source = moveDocumentPart(
+      fresh,
+      "word/diagrams/data1.xml",
+      "word/custom/data.xml",
+      "diagrams/data1.xml",
+    );
+    const parsed = parseDocumentSync(source);
+    const regenerated = await generateDocument(parsed, { type: "uint8array" });
+    const files = unzipSync(regenerated);
+    expect(files["word/custom/data.xml"]).toBeDefined();
+    expect(files["word/diagrams/data1.xml"]).toBeUndefined();
+    expect(
+      (parsed.rawParts ?? []).some((part) => part.path === "word/custom/data.xml"),
+      JSON.stringify(parsed.rawParts),
+    ).toBe(false);
+    expect(new TextDecoder().decode(files["word/_rels/document.xml.rels"]!)).toContain(
+      'Target="custom/data.xml"',
+    );
   });
 });

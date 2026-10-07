@@ -72,6 +72,7 @@ export interface PackagePartRegistry {
 export const DOCX_PARTS = {
   format: "docx",
   orphanWhitelist: [
+    "media/",
     "word/media/",
     "word/fonts/",
     "word/embeddings/",
@@ -86,12 +87,17 @@ export const DOCX_PARTS = {
     "[Content_Types].xml",
   ],
   opaquePrefixes: [
+    "media/",
     "word/media/",
     "word/embeddings/",
     "word/printerSettings/",
     "word/fonts/",
     "customXml/",
     "docProps/thumbnail.",
+    "word/charts/style",
+    "word/charts/colors",
+    "word/charts/chartEx",
+    "word/charts/_rels/chartEx",
   ],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
@@ -522,6 +528,7 @@ export const XLSX_PARTS = {
     "xl/pivotTables/_rels/",
     "xl/pivotCache/_rels/",
     "xl/externalLinks/_rels/",
+    "docMetadata/",
     "docProps/",
     "[Content_Types].xml",
   ],
@@ -562,6 +569,36 @@ export const XLSX_PARTS = {
       path: "docProps/custom.xml",
       contentType: "application/vnd.openxmlformats-officedocument.custom-properties+xml",
       presence: { kind: "conditional", flag: "has custom properties" },
+    },
+    {
+      path: "docMetadata/LabelInfo.xml",
+      contentType: "application/vnd.ms-office.classificationlabels+xml",
+      presence: { kind: "conditional", flag: "has classification labels" },
+    },
+    {
+      path: "xl/persons/person.xml",
+      contentType: "application/vnd.ms-excel.person+xml",
+      presence: { kind: "conditional", flag: "has threaded comment persons" },
+    },
+    {
+      path: "xl/richData/rdrichvalue.xml",
+      contentType: "application/vnd.ms-excel.rdrichvalue+xml",
+      presence: { kind: "conditional", flag: "has rich data" },
+    },
+    {
+      path: "xl/richData/rdrichvaluestructure.xml",
+      contentType: "application/vnd.ms-excel.rdrichvaluestructure+xml",
+      presence: { kind: "conditional", flag: "has rich data" },
+    },
+    {
+      path: "xl/richData/rdRichValueTypes.xml",
+      contentType: "application/vnd.ms-excel.rdrichvaluetypes+xml",
+      presence: { kind: "conditional", flag: "has rich data" },
+    },
+    {
+      path: "xl/richData/richValueRel.xml",
+      contentType: "application/vnd.ms-excel.richvaluerel+xml",
+      presence: { kind: "conditional", flag: "has rich data" },
     },
     {
       opaque: true,

@@ -77,7 +77,38 @@ export type { IconSetType, CfvoType } from "./worksheet";
 export type { CorePropertiesOptions } from "@office-open/core";
 export { calcChainDesc, type CalcChainOptions } from "./calc-chain";
 export { chartsheetDesc, type ChartsheetDescriptorOptions } from "./chartsheet";
+export {
+  classificationLabelsDesc,
+  ClassificationLabelsParseError,
+  type ClassificationExtensionOptions,
+  type ClassificationLabelListOptions,
+  type ClassificationLabelOptions,
+} from "./classification-labels";
+export {
+  richValueDataDesc,
+  richValueRelsDesc,
+  richValueStructuresDesc,
+  richValueTypesInfoDesc,
+  RichDataParseError,
+  type RichDataPackageOptions,
+  type RichValueDataOptions,
+  type RichValueFallbackOptions,
+  type RichValueGlobalTypeOptions,
+  type RichValueOptions,
+  type RichValueRelOptions,
+  type RichValueRelsOptions,
+  type RichValueStructureOptions,
+  type RichValueStructureKeyOptions,
+  type RichValueStructuresOptions,
+  type RichValueTypeFlagOptions,
+  type RichValueTypeKeyFlagsOptions,
+  type RichValueTypeKeyOptions,
+  type RichValueTypeOptions,
+  type RichValueTypesInfoOptions,
+  type RichValueTypesOptions,
+} from "./rich-data";
 export { commentsDesc, vmlNotesDesc, type CommentsDocOptions } from "./comments";
+export { personsDesc, PersonsParseError, type PersonOptions, type PersonsOptions } from "./persons";
 export {
   drawingDesc,
   pickAnchorOptions,
@@ -214,3 +245,10 @@ export type {
   XmlCellPropertiesOptions,
   XmlColumnPropertiesOptions,
 } from "./xml-mapping";
+export { webExtensionPartDesc } from "./web-extension";
+export type {
+  WebExtensionPartOptions,
+  WebExtensionReferenceOptions,
+  WebExtensionPropertyOptions,
+  WebExtensionBindingOptions,
+} from "./web-extension";

@@ -329,6 +329,30 @@ describe("Office 2016 symbol parse", () => {
       symbolRun: { char: "F04E", symbolFont: "Webdings", kind: "office2016" },
     });
   });
+
+  it("unwraps a strict OLE object from markup compatibility choice", () => {
+    const doc = parseXml(
+      `<w:r ${W_NS} xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" ` +
+        `xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">` +
+        `<mc:AlternateContent><mc:Choice Requires="v">` +
+        `<w:object w:dxaOrig="100" w:dyaOrig="50">` +
+        `<v:shape id="_x0000_i1025" type="#_x0000_t75" style="width:100pt;height:50pt" o:ole=""/>` +
+        `</w:object></mc:Choice>` +
+        `<mc:Fallback><w:object><w:drawing/></w:object></mc:Fallback></mc:AlternateContent></w:r>`,
+    );
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+
+    expect(parsedRunToOptions(parseRun(el, {} as never))).toMatchObject({
+      object: {
+        dxaOrig: 100,
+        dyaOrig: 50,
+        shapeId: "_x0000_i1025",
+        mcChoiceRequires: "v",
+        mcFallback: "<mc:Fallback><w:object><w:drawing/></w:object></mc:Fallback>",
+      },
+    });
+  });
 });
 
 describe("parsedRunToOptions mixed block children", () => {

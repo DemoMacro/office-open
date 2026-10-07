@@ -493,7 +493,13 @@ export function parseRun(
   deletionRsid?: LongHexNumber;
   preserveSpace?: boolean;
 } {
-  const rPr = findChild(el, "w:rPr");
+  // Duplicate rPr elements are schema-invalid, but legacy files carry them;
+  // Word applies the last one, so the parse follows the same precedence.
+  const runChildren = el.elements ?? [];
+  let rPr: Element | undefined;
+  for (const child of runChildren) {
+    if (child.type === "element" && child.name === "w:rPr") rPr = child;
+  }
   const properties = rPr ? parseRunProperties(rPr) : undefined;
   const children: ParsedRunChild[] = [];
   const rsid = attr(el, "w:rsidR");
@@ -576,6 +582,26 @@ export function parseRun(
         const choice = findChild(child, "mc:Choice");
         const pictEl = choice ? findChild(choice, "w:pict") : undefined;
         if (!pictEl) {
+          // Strict OLE object: the Choice wraps the VML w:object and the
+          // Fallback holds the DrawingML picture twin — same split as the
+          // pict MCE path (structured Choice + verbatim Fallback).
+          const objectEl = choice ? findChild(choice, "w:object") : undefined;
+          if (objectEl) {
+            const object = objectDesc.parse(objectEl, _ctx);
+            const requires = attr(choice, "Requires");
+            if (requires) object.mcChoiceRequires = requires;
+            const fallback = findChild(child, "mc:Fallback");
+            if (fallback) {
+              const { rawXml, rawMedia } = replaceRelsWithPlaceholders(
+                stringifyElement(fallback),
+                _ctx,
+              );
+              object.mcFallback = rawXml;
+              object.mcFallbackMedia = rawMedia.length > 0 ? rawMedia : undefined;
+            }
+            children.push({ object } as unknown as ParsedRunChild);
+            break;
+          }
           const symbolEl = choice
             ? (findChild(choice, "w16se:sym") ?? findChild(choice, "w16se:symEx"))
             : undefined;

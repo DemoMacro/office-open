@@ -206,6 +206,36 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("word/example.xml", source, output)).toEqual([]);
   });
 
+  it("ignores MCE extension attributes when matching unordered children", () => {
+    const namespace = 'xmlns:w="urn:w" xmlns:w14="urn:w14" xmlns:mc="urn:mc"';
+    const source = new TextEncoder().encode(
+      `<root ${namespace} mc:Ignorable="w14">` +
+        '<w:pPr><first w14:before="1"/><second/></w:pPr>' +
+        "</root>",
+    );
+    const output = new TextEncoder().encode(
+      `<root ${namespace}>` + "<w:pPr><second/><first/></w:pPr>" + "</root>",
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores source-only children from MCE-ignored namespaces", () => {
+    const namespace = 'xmlns:w14="urn:w14" xmlns:mc="urn:mc"';
+    const source = new TextEncoder().encode(
+      `<root ${namespace} mc:Ignorable="w14"><known/><w14:extension/></root>`,
+    );
+    const output = new TextEncoder().encode(`<root ${namespace}><known/></root>`);
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("ignores MCE processing directives", () => {
+    const source = new TextEncoder().encode(
+      '<drawing xmlns:mc="urn:mc" mc:MustUnderstand="wps" mc:ProcessContent="wps:wsp"><content/></drawing>',
+    );
+    const output = new TextEncoder().encode("<drawing><content/></drawing>");
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes omitted inline distances to explicit schema defaults", () => {
     const source = new TextEncoder().encode("<root><wp:inline/></root>");
     const output = new TextEncoder().encode(

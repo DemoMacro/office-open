@@ -3752,6 +3752,85 @@
       "required": ["control"],
       "type": "object"
     },
+    "ClassificationExtensionOptions": {
+      "additionalProperties": false,
+      "description": "Extension element with an `xs:any` payload.",
+      "properties": {
+        "innerXml": {
+          "description": "Foreign-namespace child XML declared by the extension registry.",
+          "type": "string"
+        },
+        "uri": {
+          "description": "Extension namespace URI (required).",
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
+    "ClassificationLabelListOptions": {
+      "additionalProperties": false,
+      "description": "Options for docMetadata/LabelInfo.xml.",
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ClassificationExtensionOptions"
+          },
+          "type": "array"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/ClassificationLabelOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ClassificationLabelOptions": {
+      "additionalProperties": false,
+      "description": "Classification label.",
+      "properties": {
+        "actionId": {
+          "description": "Action identifier (optional).",
+          "type": "string"
+        },
+        "contentBits": {
+          "description": "Content-protection bit mask (optional, unsigned 32-bit integer).",
+          "type": "number"
+        },
+        "enabled": {
+          "description": "True when the label is enabled (required).",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Label identifier (required).",
+          "type": "string"
+        },
+        "method": {
+          "description": "Assignment method (required).",
+          "type": "string"
+        },
+        "name": {
+          "description": "Display name (optional).",
+          "type": "string"
+        },
+        "removed": {
+          "description": "True when the label was removed (required).",
+          "type": "boolean"
+        },
+        "setDate": {
+          "description": "Label assignment date (optional).",
+          "type": "string"
+        },
+        "siteId": {
+          "description": "Label site identifier as a braced GUID (required).",
+          "type": "string"
+        }
+      },
+      "required": ["id", "enabled", "method", "siteId", "removed"],
+      "type": "object"
+    },
     "ColorChangeEffectOptions": {
       "additionalProperties": false,
       "description": "Options for color change effect.",
@@ -4645,7 +4724,7 @@
           "type": "boolean"
         },
         "refreshedVersion": {
-          "description": "Version of the application that last refreshed the connection (required by XSD)",
+          "description": "Version of the application that last refreshed the connection (required by XSD for freshly authored connections, but real workbooks written by older producers omit it — parse keeps the source form verbatim).",
           "type": "number"
         },
         "saveData": {
@@ -4681,7 +4760,7 @@
           "description": "Web query properties"
         }
       },
-      "required": ["id", "refreshedVersion"],
+      "required": ["id"],
       "type": "object"
     },
     "ConnectionSite": {
@@ -4796,6 +4875,9 @@
         },
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
+        },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -6436,12 +6518,24 @@
           "description": "Published to a server",
           "type": "boolean"
         },
+        "sheetFormat": {
+          "$ref": "#/definitions/SheetFormatPropertiesOptions",
+          "description": "Sheet format properties"
+        },
         "sheetId": {
           "description": "Workbook sheet id — unique but not necessarily sequential.",
           "type": "number"
         },
         "sheetProtection": {
           "$ref": "#/definitions/SheetProtectionOptions"
+        },
+        "sheetView": {
+          "$ref": "#/definitions/SheetViewOptions",
+          "description": "Sheet view"
+        },
+        "sourcePath": {
+          "description": "Source package path; round-trip only.",
+          "type": "string"
         },
         "state": {
           "description": "Visibility",
@@ -8097,6 +8191,10 @@
           "$ref": "#/definitions/FormControlDropStyle",
           "description": "Drop-down presentation, e.g. dropStyle=\"Combo\"."
         },
+        "firstButton": {
+          "description": "True when the control is first in its form group (formControlPr",
+          "type": "boolean"
+        },
         "fmlaLink": {
           "description": "Linked-cell formula, e.g. fmlaLink=\"Sheet1!$A$1\".",
           "type": "string"
@@ -8713,6 +8811,9 @@
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
           "type": "boolean"
@@ -9082,6 +9183,31 @@
         "scaleWithDocRaw": {
           "description": "Source lexical form of `scaleWithDoc`; round-trip only — do not hand-author.",
           "type": "string"
+        },
+        "xmlSpaceByPart": {
+          "additionalProperties": false,
+          "description": "Source `xml:space` attribute by header/footer part; round-trip only.",
+          "properties": {
+            "evenFooter": {
+              "type": "string"
+            },
+            "evenHeader": {
+              "type": "string"
+            },
+            "firstFooter": {
+              "type": "string"
+            },
+            "firstHeader": {
+              "type": "string"
+            },
+            "oddFooter": {
+              "type": "string"
+            },
+            "oddHeader": {
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
       },
       "type": "object"
@@ -11456,6 +11582,43 @@
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)%$",
       "type": "string"
     },
+    "PersonOptions": {
+      "additionalProperties": false,
+      "description": "Threaded-comment author.",
+      "properties": {
+        "displayName": {
+          "description": "Author display name (required).",
+          "type": "string"
+        },
+        "id": {
+          "description": "Person identifier (optional).",
+          "type": "string"
+        },
+        "providerId": {
+          "description": "Identity provider identifier (optional, default \"None\").",
+          "type": "string"
+        },
+        "userId": {
+          "description": "Author identity within the provider (optional).",
+          "type": "string"
+        }
+      },
+      "required": ["displayName"],
+      "type": "object"
+    },
+    "PersonsOptions": {
+      "additionalProperties": false,
+      "description": "Options for xl/persons/person.xml.",
+      "properties": {
+        "persons": {
+          "items": {
+            "$ref": "#/definitions/PersonOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "PhoneticPropertiesOptions": {
       "additionalProperties": false,
       "description": "Phonetic properties for CJK text",
@@ -11684,6 +11847,10 @@
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
+        "objectAlternateContent": {
+          "description": "Source wrapped the anchored object (not the anchor) in mc:AlternateContent/mc:Choice (Excel 2010+ a14 textboxes). The anchor footprint stays unwrapped; only the object is inside the wrapper.",
+          "type": "boolean"
+        },
         "preferRelativeResize": {
           "description": "Relative-resize hint (cNvPicPr/@preferRelativeResize). Absent = attribute omitted (defaults true); explicit true/false round-trips the attribute.",
           "type": "boolean"
@@ -11763,7 +11930,7 @@
         },
         "type": {
           "description": "Image format of the `data` bytes; wmf/emf are Windows metafiles.",
-          "enum": ["png", "jpg", "wmf", "emf"],
+          "enum": ["png", "jpg", "webp", "wmf", "emf"],
           "type": "string"
         },
         "useLocalDpi": {
@@ -14030,9 +14197,37 @@
           "description": "Adjust column width on refresh (default false)",
           "type": "boolean"
         },
+        "applyAlignmentFormats": {
+          "description": "Apply alignment formats from auto format",
+          "type": "boolean"
+        },
+        "applyBorderFormats": {
+          "description": "Apply border formats from auto format",
+          "type": "boolean"
+        },
+        "applyFontFormats": {
+          "description": "Apply font formats from auto format",
+          "type": "boolean"
+        },
+        "applyNumberFormats": {
+          "description": "Apply number formats from auto format",
+          "type": "boolean"
+        },
+        "applyPatternFormats": {
+          "description": "Apply pattern formats from auto format",
+          "type": "boolean"
+        },
+        "applyWidthHeightFormats": {
+          "description": "Apply width/height formats from auto format",
+          "type": "boolean"
+        },
         "autoFormat": {
           "description": "Auto format applied",
           "type": "boolean"
+        },
+        "autoFormatId": {
+          "description": "Auto format ID",
+          "type": "number"
         },
         "backgroundRefresh": {
           "description": "Background refresh (default true)",
@@ -14094,6 +14289,10 @@
         "rowNumbers": {
           "description": "Row numbers shown (default false)",
           "type": "boolean"
+        },
+        "sourcePath": {
+          "description": "Source package path; round-trip only.",
+          "type": "string"
         }
       },
       "required": ["connectionId"],
@@ -15314,6 +15513,93 @@
       "required": ["value"],
       "type": "object"
     },
+    "RichDataExtensionOptions": {
+      "additionalProperties": false,
+      "description": "Foreign extension carried by an otherwise typed rich-data container.",
+      "properties": {
+        "innerXml": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
+    "RichDataPackageOptions": {
+      "additionalProperties": false,
+      "description": "Four typed parts backing Excel pictures and other rich values.",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/RichValueDataOptions"
+        },
+        "dataPath": {
+          "description": "Source package paths; defaults follow Excel's richData layout. Round-trip only.",
+          "type": "string"
+        },
+        "dataRelationshipId": {
+          "description": "Source workbook relationship ids. Round-trip only.",
+          "type": "string"
+        },
+        "partRelationships": {
+          "description": "Source relationships owned by richValueRel.xml. Round-trip only.",
+          "items": {
+            "$ref": "#/definitions/RichDataPartRelationshipOptions"
+          },
+          "type": "array"
+        },
+        "relationships": {
+          "$ref": "#/definitions/RichValueRelsOptions"
+        },
+        "relationshipsPath": {
+          "type": "string"
+        },
+        "relationshipsRelationshipId": {
+          "type": "string"
+        },
+        "structures": {
+          "$ref": "#/definitions/RichValueStructuresOptions"
+        },
+        "structuresPath": {
+          "type": "string"
+        },
+        "structuresRelationshipId": {
+          "type": "string"
+        },
+        "types": {
+          "$ref": "#/definitions/RichValueTypesInfoOptions"
+        },
+        "typesPath": {
+          "type": "string"
+        },
+        "typesRelationshipId": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "RichDataPartRelationshipOptions": {
+      "additionalProperties": false,
+      "description": "One package relationship owned by richValueRel.xml.",
+      "properties": {
+        "rId": {
+          "type": "string"
+        },
+        "relationshipType": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "targetMode": {
+          "const": "External",
+          "type": "string"
+        }
+      },
+      "required": ["rId", "relationshipType", "target"],
+      "type": "object"
+    },
     "RichTextOptions": {
       "additionalProperties": false,
       "description": "Rich text content. Either plain text or rich runs.",
@@ -15437,6 +15723,10 @@
           "description": "Strikethrough",
           "type": "boolean"
         },
+        "strikeVal": {
+          "description": "Source `strike/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "underline": {
           "description": "Underline type",
           "enum": ["single", "double", "singleAccounting", "doubleAccounting", "none"],
@@ -15474,6 +15764,263 @@
         "scheme"
       ],
       "type": "string"
+    },
+    "RichValueDataOptions": {
+      "additionalProperties": false,
+      "description": "xl/richData/rdrichvalue.xml.",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "values": {
+          "items": {
+            "$ref": "#/definitions/RichValueOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "RichValueFallbackOptions": {
+      "additionalProperties": false,
+      "description": "A rich-value fallback.",
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "RichValueGlobalTypeOptions": {
+      "additionalProperties": false,
+      "description": "Global type metadata.",
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "keyFlags": {
+          "$ref": "#/definitions/RichValueTypeKeyFlagsOptions"
+        }
+      },
+      "type": "object"
+    },
+    "RichValueOptions": {
+      "additionalProperties": false,
+      "description": "One rich value.",
+      "properties": {
+        "fallback": {
+          "$ref": "#/definitions/RichValueFallbackOptions"
+        },
+        "structureIndex": {
+          "description": "Structure index (required).",
+          "type": "number"
+        },
+        "values": {
+          "description": "Ordered primitive values referenced by the structure keys.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["structureIndex", "values"],
+      "type": "object"
+    },
+    "RichValueRelOptions": {
+      "additionalProperties": false,
+      "description": "Relationship reference in xl/richData/richValueRel.xml.",
+      "properties": {
+        "rId": {
+          "description": "Relationship id in the richValueRel part's own .rels (required).",
+          "type": "string"
+        }
+      },
+      "required": ["rId"],
+      "type": "object"
+    },
+    "RichValueRelsOptions": {
+      "additionalProperties": false,
+      "description": "xl/richData/richValueRel.xml.",
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "relationships": {
+          "items": {
+            "$ref": "#/definitions/RichValueRelOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["relationships"],
+      "type": "object"
+    },
+    "RichValueStructureKeyOptions": {
+      "additionalProperties": false,
+      "description": "Structure key.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": ["d", "b", "e", "s", "i"],
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
+    "RichValueStructureOptions": {
+      "additionalProperties": false,
+      "description": "One rich-value structure.",
+      "properties": {
+        "keys": {
+          "items": {
+            "$ref": "#/definitions/RichValueStructureKeyOptions"
+          },
+          "type": "array"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "keys"],
+      "type": "object"
+    },
+    "RichValueStructuresOptions": {
+      "additionalProperties": false,
+      "description": "xl/richData/rdrichvaluestructure.xml.",
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "structures": {
+          "items": {
+            "$ref": "#/definitions/RichValueStructureOptions"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "RichValueTypeFlagOptions": {
+      "additionalProperties": false,
+      "description": "Reserved-key flag.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "value"],
+      "type": "object"
+    },
+    "RichValueTypeKeyFlagsOptions": {
+      "additionalProperties": false,
+      "description": "Key flags on a global or named rich-value type.",
+      "properties": {
+        "keys": {
+          "items": {
+            "$ref": "#/definitions/RichValueTypeKeyOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["keys"],
+      "type": "object"
+    },
+    "RichValueTypeKeyOptions": {
+      "additionalProperties": false,
+      "description": "Reserved key.",
+      "properties": {
+        "flags": {
+          "items": {
+            "$ref": "#/definitions/RichValueTypeFlagOptions"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "flags"],
+      "type": "object"
+    },
+    "RichValueTypeOptions": {
+      "additionalProperties": false,
+      "description": "Named rich-value type.",
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "keyFlags": {
+          "$ref": "#/definitions/RichValueTypeKeyFlagsOptions"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name"],
+      "type": "object"
+    },
+    "RichValueTypesInfoOptions": {
+      "additionalProperties": false,
+      "description": "xl/richData/rdRichValueTypes.xml.",
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/RichDataExtensionOptions"
+          },
+          "type": "array"
+        },
+        "global": {
+          "$ref": "#/definitions/RichValueGlobalTypeOptions"
+        },
+        "types": {
+          "$ref": "#/definitions/RichValueTypesOptions"
+        }
+      },
+      "type": "object"
+    },
+    "RichValueTypesOptions": {
+      "additionalProperties": false,
+      "description": "Named type collection.",
+      "properties": {
+        "types": {
+          "items": {
+            "$ref": "#/definitions/RichValueTypeOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["types"],
+      "type": "object"
     },
     "RowColumnAction": {
       "description": "Revision log — option types for shared-workbook change tracking.",
@@ -16256,6 +16803,9 @@
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
           "type": "boolean"
@@ -16769,6 +17319,10 @@
         },
         "usersPath": {
           "description": "Source path of users.xml relative to xl/. Round-trip only: fresh authoring writes xl/users.xml.",
+          "type": "string"
+        },
+        "usersRelationshipType": {
+          "description": "Source users relationship URI; preserves legacy `usernames` spelling.",
           "type": "string"
         }
       },
@@ -17990,6 +18544,10 @@
           "description": "Published to server",
           "type": "boolean"
         },
+        "queryTablePath": {
+          "description": "Source query-table package path when this table owns the relationship.",
+          "type": "string"
+        },
         "ref": {
           "description": "Data range, e.g. \"A1:D10\"",
           "type": "string"
@@ -17998,12 +18556,20 @@
           "$ref": "#/definitions/SortStateOptions",
           "description": "Sort state"
         },
+        "sourcePath": {
+          "description": "Source package path; round-trip only.",
+          "type": "string"
+        },
         "style": {
           "$ref": "#/definitions/TableStyleInfoOptions",
           "description": "Table style"
         },
         "tableBorderDxfId": {
           "description": "Table border differential format index",
+          "type": "number"
+        },
+        "tablePartOrder": {
+          "description": "Zero-based position in the worksheet's source tableParts child sequence (round-trip only — do not hand-author). The compiler emits tablePart children in this order; the tables array itself keeps relationship pairing.",
           "type": "number"
         },
         "tableType": {
@@ -19070,6 +19636,22 @@
       },
       "type": "object"
     },
+    "ThemeOverrideOptions": {
+      "additionalProperties": false,
+      "description": "Theme override (a:themeOverride /) — a per-part subset of the theme.",
+      "properties": {
+        "colorScheme": {
+          "$ref": "#/definitions/ColorSchemeOptions"
+        },
+        "fontScheme": {
+          "$ref": "#/definitions/FontSchemeOptions"
+        },
+        "formatScheme": {
+          "$ref": "#/definitions/FormatSchemeOptions"
+        }
+      },
+      "type": "object"
+    },
     "TileAlignment": {
       "description": "Tile alignment within the shape.\n\nSpecifies the anchor position of the first tile relative to the shape.",
       "enum": [
@@ -19641,6 +20223,10 @@
       "additionalProperties": false,
       "description": "Options for xl/users.xml.",
       "properties": {
+        "count": {
+          "description": "User-entry count (`@count`, optional; does not have to match entries).",
+          "type": "number"
+        },
         "users": {
           "description": "Shared-user entries (optional, ≤256).",
           "items": {
@@ -22173,6 +22759,118 @@
       },
       "type": "object"
     },
+    "WebExtensionBindingOptions": {
+      "additionalProperties": false,
+      "description": "Content binding.",
+      "properties": {
+        "id": {
+          "description": "Binding identifier (required).",
+          "type": "string"
+        },
+        "ref": {
+          "description": "Bound range reference.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Binding kind: \"table\" | \"text\" | \"matrix\".",
+          "enum": ["table", "text", "matrix"],
+          "type": "string"
+        }
+      },
+      "required": ["id", "type", "ref"],
+      "type": "object"
+    },
+    "WebExtensionPartOptions": {
+      "additionalProperties": false,
+      "description": "Options for xl/webextensions/webextension{n}.xml.",
+      "properties": {
+        "alternateReferences": {
+          "description": "Alternate store references (we:alternateReferences container).",
+          "items": {
+            "$ref": "#/definitions/WebExtensionReferenceOptions"
+          },
+          "type": "array"
+        },
+        "bindings": {
+          "description": "Content bindings (we:bindings).",
+          "items": {
+            "$ref": "#/definitions/WebExtensionBindingOptions"
+          },
+          "type": "array"
+        },
+        "extLst": {
+          "description": "Extension list preserved verbatim (we:extLst).",
+          "type": "string"
+        },
+        "id": {
+          "description": "Extension instance identifier (GUID string, required).",
+          "type": "string"
+        },
+        "properties": {
+          "description": "Named property bag (we:properties).",
+          "items": {
+            "$ref": "#/definitions/WebExtensionPropertyOptions"
+          },
+          "type": "array"
+        },
+        "reference": {
+          "$ref": "#/definitions/WebExtensionReferenceOptions",
+          "description": "Store reference (we:reference)."
+        },
+        "snapshotPresent": {
+          "description": "True when the source declared we:snapshot (even without r:embed).",
+          "type": "boolean"
+        },
+        "snapshotRId": {
+          "description": "Frozen snapshot image relationship id (we:snapshot/@r:embed).",
+          "type": "string"
+        },
+        "sourcePath": {
+          "description": "Source package path; round-trip only.",
+          "type": "string"
+        }
+      },
+      "required": ["id"],
+      "type": "object"
+    },
+    "WebExtensionPropertyOptions": {
+      "additionalProperties": false,
+      "description": "Named extension property.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "value"],
+      "type": "object"
+    },
+    "WebExtensionReferenceOptions": {
+      "additionalProperties": false,
+      "description": "Web extension store reference.",
+      "properties": {
+        "id": {
+          "description": "Extension identifier inside the store (required).",
+          "type": "string"
+        },
+        "store": {
+          "description": "Store marketplace identifier; empty string = default Office store.",
+          "type": "string"
+        },
+        "storeType": {
+          "description": "Store type URI (e.g. EXCatalog); omitted = unspecified.",
+          "type": "string"
+        },
+        "version": {
+          "description": "Extension version (required).",
+          "type": "string"
+        }
+      },
+      "required": ["id", "version"],
+      "type": "object"
+    },
     "WebPropertiesOptions": {
       "additionalProperties": false,
       "description": "Web query properties.",
@@ -22520,6 +23218,14 @@
           },
           "type": "array"
         },
+        "classificationLabels": {
+          "$ref": "#/definitions/ClassificationLabelListOptions",
+          "description": "Microsoft classification-label metadata part."
+        },
+        "classificationLabelsPath": {
+          "description": "Source classification-label part path; default docMetadata/LabelInfo.xml. Round-trip only.",
+          "type": "string"
+        },
         "colors": {
           "$ref": "#/definitions/ColorsOptions",
           "description": "Custom color palette"
@@ -22755,6 +23461,14 @@
           },
           "type": "array"
         },
+        "persons": {
+          "$ref": "#/definitions/PersonsOptions",
+          "description": "Threaded-comment authors part backing threaded comments."
+        },
+        "personsPath": {
+          "description": "Source persons part path; default xl/persons/person.xml. Round-trip only.",
+          "type": "string"
+        },
         "pivotCaches": {
           "description": "Pivot caches, either generated from source data or fully defined.",
           "items": {
@@ -22802,6 +23516,10 @@
         "revisionPtr": {
           "$ref": "#/definitions/RevisionPtrOptions",
           "description": "Coauthoring revision state (xr:revisionPtr) — round-trip only."
+        },
+        "richData": {
+          "$ref": "#/definitions/RichDataPackageOptions",
+          "description": "Rich-data parts backing pictures in cells and similar values."
         },
         "sharedStrings": {
           "description": "Shared string table (xl/sharedStrings.xml), in table order. Round-trip only: parse fills it so rich-text si entries keep their structure and index; fresh documents omit it and strings register from cell values on stringify.",
@@ -23391,6 +24109,9 @@
         "numericCategories": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/numericCategories"
         },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
           "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
@@ -23516,6 +24237,14 @@
           "$ref": "#/definitions/TextBodyOptions",
           "description": "Chart-space default text (c:txPr, a) — round-trip."
         },
+        "themeOverride": {
+          "$ref": "#/definitions/ThemeOverrideOptions",
+          "description": "Parsed theme override content — round-trip only."
+        },
+        "themeOverridePath": {
+          "description": "Chart-owned theme override (xl/theme/themeOverride{n}.xml) — round-trip only.",
+          "type": "string"
+        },
         "threeD": {
           "type": "boolean"
         },
@@ -23605,6 +24334,9 @@
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
           "type": "boolean"
+        },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -24187,6 +24919,9 @@
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
         },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
           "type": "boolean"
@@ -24301,6 +25036,13 @@
         },
         "name": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
+        },
+        "objectAlternateContent": {
+          "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
+        "part": {
+          "$ref": "#/definitions/WebExtensionPartOptions",
+          "description": "Parsed webextension part content — round-trip only."
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",

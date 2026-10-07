@@ -17,6 +17,8 @@ export * from "./table-of-contents";
 export * from "./footnotes";
 export * from "./endnotes";
 export * from "./custom-xml";
+export * from "./customizations/types";
+export * from "./customizations/descriptor";
 export * from "./sdt";
 export * from "./perm-start";
 export * from "./alt-chunk";

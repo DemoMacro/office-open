@@ -45,6 +45,8 @@ interface ChartExternalLinkOptions {
   externalLinkPath?: string;
   externalDataRelationshipType?: string;
   externalDataRelationshipTarget?: string;
+  themeOverridePath?: string;
+  themeOverride?: Record<string, unknown>;
 }
 
 export class XlsxWriteContext implements WriteContext {
@@ -156,7 +158,7 @@ export class XlsxReadContext implements ReadContext {
         const target = child.attributes?.["Target"] as string | undefined;
         if (!id || !target) continue;
         if (child.attributes?.["TargetMode"] === "External") externalById.set(id, target);
-        else byId.set(id, resolveRelationshipTarget(partPath, target));
+        else byId.set(id, this.xlsx.doc.resolvePath(resolveRelationshipTarget(partPath, target)));
       }
       this.partRels.set(partPath, byId);
       this.externalPartRels.set(partPath, externalById);
@@ -188,7 +190,8 @@ export class XlsxReadContext implements ReadContext {
       if (child.attributes?.["Id"] === rId) {
         const target = child.attributes["Target"] as string | undefined;
         if (!target) return undefined;
-        return target.startsWith("/") ? target.slice(1) : `xl/${target}`;
+        const resolved = target.startsWith("/") ? target.slice(1) : `xl/${target}`;
+        return this.xlsx.doc.resolvePath(resolved);
       }
     }
     return undefined;
@@ -226,7 +229,10 @@ export class XlsxReadContext implements ReadContext {
       const rId = child.attributes?.["Id"] as string | undefined;
       const target = child.attributes?.["Target"] as string | undefined;
       if (rId && target) {
-        result.push({ rId, target: resolveRelationshipTarget(wsPath, target) });
+        result.push({
+          rId,
+          target: this.xlsx.doc.resolvePath(resolveRelationshipTarget(wsPath, target)),
+        });
       }
     }
     return result;

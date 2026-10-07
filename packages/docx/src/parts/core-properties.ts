@@ -21,6 +21,7 @@ import type { BibliographyOptions } from "@parts/bibliography";
 import type { CommentExtendedOptions } from "@parts/comments-extended";
 import type { CommentExtensibleOptions } from "@parts/comments-extensible";
 import type { CommentIdOptions } from "@parts/comments-ids";
+import type { WordCustomizationsOptions } from "@parts/customizations/types";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
 import type { GlossaryDocumentOptions } from "@parts/glossary-document";
 import type { CommentOptions } from "@parts/paragraph/run/comment-run";
@@ -143,6 +144,8 @@ export interface DocumentOptions extends CorePropertiesOptions {
   mailMergeRecipients?: MailMergeRecipientsOptions[];
   /** Web settings for browser rendering (word/webSettings.xml) */
   webSettings?: WebSettingsOptions;
+  /** Keyboard and toolbar customizations (word/customizations.xml). */
+  customizations?: WordCustomizationsOptions;
   /** Document theme (word/theme/theme1.xml); fresh output emits the default */
   theme?: ThemeOptions;
   /** Content types from [Content_Types].xml (parse path only) */

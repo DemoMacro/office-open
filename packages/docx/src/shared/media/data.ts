@@ -160,6 +160,8 @@ export interface ShapeMediaData {
   type: "wps";
   transformation: MediaDataTransformation;
   data: ShapeCoreOptions;
+  /** Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip). */
+  graphicDataUri?: string;
 }
 
 export interface GroupCommonMediaData {

@@ -110,8 +110,8 @@ describe("revisionHeadersDesc round-trip", () => {
 });
 
 describe("usersDesc round-trip", () => {
-  it("empty users returns undefined from stringify", () => {
-    expect(usersDesc.stringify({ users: [] }, writeCtx)).toBeUndefined();
+  it("stringifies an empty users list as a valid empty part", () => {
+    expect(usersDesc.stringify({ count: 0, users: [] }, writeCtx)).toContain('count="0"');
   });
 
   it("round-trips user entries", () => {
@@ -447,7 +447,7 @@ describe("revision end-to-end round-trip", () => {
       delete archive[from];
     };
     move("xl/revisionHeaders.xml", "xl/revisions/revisionHeaders.xml");
-    move("xl/users.xml", "xl/revisions/users.xml");
+    move("xl/users.xml", "xl/revisions/userNames.xml");
     move("xl/_rels/revisionHeaders.xml.rels", "xl/revisions/_rels/revisionHeaders.xml.rels");
     const replace = (path: string, from: string, to: string): void => {
       archive[path] = new TextEncoder().encode(
@@ -466,6 +466,8 @@ describe("revision end-to-end round-trip", () => {
       'Target="revisions/revisionHeaders.xml"',
     );
     replace("xl/_rels/workbook.xml.rels", 'Target="users.xml"', 'Target="revisions/users.xml"');
+    replace("xl/_rels/workbook.xml.rels", "relationships/users", "relationships/usernames");
+    replace("xl/_rels/workbook.xml.rels", "revisions/users.xml", "revisions/userNames.xml");
     replace(
       "[Content_Types].xml",
       'PartName="/xl/revisionHeaders.xml"',
@@ -474,12 +476,13 @@ describe("revision end-to-end round-trip", () => {
     replace(
       "[Content_Types].xml",
       'PartName="/xl/users.xml"',
-      'PartName="/xl/revisions/users.xml"',
+      'PartName="/xl/revisions/userNames.xml"',
     );
 
     const parsed = parseWorkbookSync(zipSync(archive));
     expect(parsed.revisionLog?.headersPath).toBe("revisions/revisionHeaders.xml");
-    expect(parsed.revisionLog?.usersPath).toBe("revisions/users.xml");
+    expect(parsed.revisionLog?.usersPath).toBe("revisions/userNames.xml");
+    expect(parsed.revisionLog?.usersRelationshipType).toContain("relationships/usernames");
     expect(parsed.revisionLog?.logs[0]).toMatchObject({
       path: "revisions/revision1.xml",
       relationshipTarget: "revision1.xml",
@@ -489,17 +492,54 @@ describe("revision end-to-end round-trip", () => {
     const output = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
     const result = unzipSync(output);
     expect(result["xl/revisions/revisionHeaders.xml"]).toBeDefined();
+    expect(result["xl/revisions/userNames.xml"]).toBeDefined();
+    expect(new TextDecoder().decode(result["xl/_rels/workbook.xml.rels"]!)).toContain(
+      "relationships/usernames",
+    );
     const headerRels = new TextDecoder().decode(
       result["xl/revisions/_rels/revisionHeaders.xml.rels"]!,
     );
     expect(headerRels).toContain('Id="rId7"');
     expect(headerRels).toContain('Target="revision1.xml"');
-    expect(result["xl/revisions/users.xml"]).toBeDefined();
+    expect(result["xl/revisions/userNames.xml"]).toBeDefined();
     expect(result["xl/revisionHeaders.xml"]).toBeUndefined();
     expect(result["xl/_rels/revisionHeaders.xml.rels"]).toBeUndefined();
     expect(new TextDecoder().decode(result["[Content_Types].xml"]!)).toContain(
       'PartName="/xl/revisions/revisionHeaders.xml"',
     );
+  });
+
+  it("preserves an empty users part with its explicit count", async () => {
+    const options: WorkbookOptions = {
+      worksheets: [{ name: "Data" }],
+      revisionLog: {
+        headers: {
+          guid: "{HDR}",
+          revisionId: 1,
+          version: 1,
+          headers: [
+            {
+              guid: "{H1}",
+              dateTime: "2026-01-01T00:00:00Z",
+              userName: "Alice",
+              rId: "rId1",
+              maxSheetId: 1,
+              sheetIds: [1],
+            },
+          ],
+        },
+        logs: [],
+        users: { count: 0, users: [] },
+      },
+    };
+
+    const output = (await generateWorkbook(options, { type: "uint8array" })) as Uint8Array;
+    const archive = unzipSync(output);
+    expect(new TextDecoder().decode(archive["xl/users.xml"]!)).toContain('count="0"');
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.revisionLog?.users?.count).toBe(0);
+    expect(parsed.revisionLog?.users?.users).toEqual([]);
   });
 
   it("preserves revision log content-type declarations", async () => {

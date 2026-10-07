@@ -91,6 +91,12 @@ export interface DrawingAnchorOptions {
    * only when the source had it.
    */
   alternateContent?: boolean;
+  /**
+   * Source wrapped the anchored object (not the anchor) in
+   * mc:AlternateContent/mc:Choice (Excel 2010+ a14 textboxes). The anchor
+   * footprint stays unwrapped; only the object is inside the wrapper.
+   */
+  objectAlternateContent?: boolean;
   /** Print with sheet (default true) */
   printsWithSheet?: boolean;
   /**

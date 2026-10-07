@@ -56,6 +56,10 @@ export interface TextBoxPartOptions {
   path: string;
   /** Text-box sequence (`wps:txbx/@txbxSeq`). */
   sequence: number;
+  /** Block-level children from the referenced `w14:txbx` part. */
+  children?: ShapeTextBoxChild[];
+  /** `mc:Ignorable` prefixes declared by the source part root. */
+  ignorable?: string;
 }
 
 export interface ShapeCoreOptions {
@@ -84,7 +88,7 @@ export interface ShapeCoreOptions {
   style?: ShapeStyleOptions;
   /**
    * External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx`
-   * while the part bytes remain in DocumentOptions.rawParts.
+   * and rebuilds the referenced part from typed children.
    */
   textBoxPart?: TextBoxPartOptions;
   /**

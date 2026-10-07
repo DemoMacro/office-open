@@ -82,6 +82,8 @@ export interface SharedUserOptions {
 
 /** Options for xl/users.xml (CT_Users, sml.xsd:2100). */
 export interface UsersOptions {
+  /** User-entry count (`@count`, optional; does not have to match entries). */
+  count?: number;
   /** Shared-user entries (optional, ≤256). */
   users?: SharedUserOptions[];
 }

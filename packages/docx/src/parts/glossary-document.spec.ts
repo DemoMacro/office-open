@@ -287,3 +287,155 @@ describe("glossaryDesc round-trip", () => {
     expect(children[1]).toEqual({ rawXml: "<w:unknown/>" });
   });
 });
+
+describe("glossary companion parts", () => {
+  const GLOSSARY_COMPANION_REL_TYPE =
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+  const hyperlinkType = `${GLOSSARY_COMPANION_REL_TYPE}/hyperlink`;
+  const numberingType = `${GLOSSARY_COMPANION_REL_TYPE}/numbering`;
+  const settingsType = `${GLOSSARY_COMPANION_REL_TYPE}/settings`;
+  const stylesType = `${GLOSSARY_COMPANION_REL_TYPE}/styles`;
+  const webSettingsType = `${GLOSSARY_COMPANION_REL_TYPE}/webSettings`;
+  const fontTableType = `${GLOSSARY_COMPANION_REL_TYPE}/fontTable`;
+  const fontType = `${GLOSSARY_COMPANION_REL_TYPE}/font`;
+  const odttfBytes = new Uint8Array(40).fill(7);
+
+  const companionPackage = () => {
+    const enc = new TextEncoder();
+    const docPartXml =
+      '<?xml version="1.0"?>' +
+      `<w:glossaryDocument xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ` +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      "<w:docParts><w:docPart>" +
+      '<w:docPartPr><w:name w:val="Companion"/><w:category><w:gallery w:val="default"/></w:category></w:docPartPr>' +
+      '<w:docPartBody><w:p><w:hyperlink r:id="rId9"><w:r><w:t>L</w:t></w:r></w:hyperlink></w:p></w:docPartBody>' +
+      "</w:docPart></w:docParts></w:glossaryDocument>";
+    const relsXml = (rels: string) =>
+      '<?xml version="1.0"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      rels +
+      "</Relationships>";
+    return zipSync({
+      "word/document.xml": enc.encode(packageDocumentXml),
+      "word/_rels/document.xml.rels": enc.encode(
+        relsXml(
+          `<Relationship Id="rId1" Type="${GLOSSARY_RELATIONSHIP_TYPE}" Target="glossary/document.xml"/>`,
+        ),
+      ),
+      "word/glossary/document.xml": enc.encode(docPartXml),
+      "word/glossary/_rels/document.xml.rels": enc.encode(
+        relsXml(
+          `<Relationship Id="rId9" Type="${hyperlinkType}" Target="https://example.test/" TargetMode="External"/>` +
+            `<Relationship Id="rId1" Type="${numberingType}" Target="numbering.xml"/>` +
+            `<Relationship Id="rId2" Type="${settingsType}" Target="settings.xml"/>` +
+            `<Relationship Id="rId3" Type="${stylesType}" Target="styles.xml"/>` +
+            `<Relationship Id="rId4" Type="${webSettingsType}" Target="webSettings.xml"/>` +
+            `<Relationship Id="rId5" Type="${fontTableType}" Target="fontTable.xml"/>`,
+        ),
+      ),
+      "word/glossary/numbering.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          '<w:abstractNum w:abstractNumId="0"><w:multiLevelType w:val="singleLevel"/>' +
+          '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/>' +
+          '<w:lvlText w:val="%1"/><w:lvlJc w:val="left"/></w:lvl></w:abstractNum>' +
+          '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num></w:numbering>',
+      ),
+      "word/glossary/settings.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          '<w:defaultTabStop w:val="720"/></w:settings>',
+      ),
+      "word/glossary/styles.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+          "<w:docDefaults><w:rPrDefault><w:rPr/></w:rPrDefault><w:pPrDefault><w:pPr/></w:pPrDefault></w:docDefaults>" +
+          '<w:style w:type="paragraph" w:styleId="GH"><w:name w:val="Glossary Heading"/></w:style></w:styles>',
+      ),
+      "word/glossary/webSettings.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:webSettings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>',
+      ),
+      "word/glossary/fontTable.xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+          'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+          '<w:font w:name="Emb"><w:embedRegular r:id="rId1" ' +
+          'w:fontKey="{12345678-1234-1234-1234-123456789ABC}"/></w:font></w:fonts>',
+      ),
+      "word/glossary/_rels/fontTable.xml.rels": enc.encode(
+        relsXml(`<Relationship Id="rId1" Type="${fontType}" Target="fonts/emb.odttf"/>`),
+      ),
+      "word/glossary/fonts/emb.odttf": odttfBytes,
+      "[Content_Types].xml": enc.encode(
+        '<?xml version="1.0"?>' +
+          '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+          '<Default Extension="xml" ContentType="application/xml"/>' +
+          '<Default Extension="odttf" ContentType="application/vnd.openxmlformats-officedocument.obfuscatedFont"/>' +
+          '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          '<Override PartName="/word/glossary/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>' +
+          "</Types>",
+      ),
+    });
+  };
+
+  it("absorbs glossary companions into the model and rebuilds them", () => {
+    const options = parseDocumentSync(companionPackage());
+    const glossary = options.glossary;
+    expect(glossary?.numberingPartName).toBe("glossary/numbering.xml");
+    expect(glossary?.settingsPartName).toBe("glossary/settings.xml");
+    expect(glossary?.stylesPartName).toBe("glossary/styles.xml");
+    expect(glossary?.webSettingsPartName).toBe("glossary/webSettings.xml");
+    expect(glossary?.fontTablePartName).toBe("glossary/fontTable.xml");
+    expect(glossary?.settings?.defaultTabStop).toBe(720);
+    expect(glossary?.styles?.paragraphStyles?.[0]?.id).toBe("GH");
+    expect(glossary?.webSettings).toEqual({});
+    expect(glossary?.numbering?.abstractNumberings?.length).toBe(1);
+    expect(glossary?.fonts?.[0]?.name).toBe("Emb");
+    expect(glossary?.fonts?.[0]?.data).toBeDefined();
+
+    const output = unzipSync(generateDocumentSync(options, { type: "uint8array" }));
+    const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
+    expect(output["word/glossary/settings.xml"]).toBeDefined();
+    expect(output["word/glossary/styles.xml"]).toBeDefined();
+    expect(output["word/glossary/webSettings.xml"]).toBeDefined();
+    expect(output["word/glossary/fontTable.xml"]).toBeDefined();
+    expect(output["word/glossary/numbering.xml"]).toBeDefined();
+    expect(output["word/glossary/fonts/emb.odttf"]).toEqual(odttfBytes);
+
+    const glossaryRels = decode(output["word/glossary/_rels/document.xml.rels"]!);
+    expect(glossaryRels).toContain('Id="rId9"');
+    expect(glossaryRels).toContain(`Type="${hyperlinkType}"`);
+    expect(glossaryRels).toContain('Target="https://example.test/" TargetMode="External"');
+    for (const [type, target] of [
+      [numberingType, "numbering.xml"],
+      [settingsType, "settings.xml"],
+      [stylesType, "styles.xml"],
+      [webSettingsType, "webSettings.xml"],
+      [fontTableType, "fontTable.xml"],
+    ] as const) {
+      expect(glossaryRels).toContain(`Type="${type}"`);
+      expect(glossaryRels).toContain(`Target="${target}"`);
+    }
+    expect(decode(output["word/glossary/_rels/fontTable.xml.rels"]!)).toContain(
+      'Target="fonts/emb.odttf"',
+    );
+    const contentTypes = decode(output["[Content_Types].xml"]!);
+    expect(contentTypes).toContain(
+      '<Override PartName="/word/glossary/settings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>',
+    );
+    expect(contentTypes).toContain(
+      '<Override PartName="/word/glossary/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>',
+    );
+    expect(contentTypes).toContain(
+      '<Override PartName="/word/glossary/webSettings.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>',
+    );
+    expect(contentTypes).toContain(
+      '<Override PartName="/word/glossary/fontTable.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>',
+    );
+
+    const regenerated = parseDocumentSync(generateDocumentSync(options, { type: "uint8array" }));
+    expect(regenerated.glossary).toEqual(options.glossary);
+  });
+});

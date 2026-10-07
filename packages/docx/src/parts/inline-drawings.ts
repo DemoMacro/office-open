@@ -35,7 +35,12 @@ import { createTransformation } from "@shared/media";
 
 import type { BodyContext } from "../context";
 import { drawingDesc } from "./drawing";
-import { takeChartSourceRelationships } from "./drawing/drawing-parse";
+import {
+  takeChartSourcePath,
+  takeChartSourceRelationships,
+  takeSmartArtSourcePaths,
+  takeUserShapesSourcePath,
+} from "./drawing/drawing-parse";
 import { stringifyRunProperties } from "./paragraph/stringify";
 
 let nextChartId = 1;
@@ -363,10 +368,13 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
     ctx.file.charts.addChart(chartKey, {
       key: chartKey,
       chartSpaceXml: chartXml ?? "",
+      ...(takeChartSourcePath(opts) ? { sourcePath: takeChartSourcePath(opts) } : {}),
       ...(takeChartSourceRelationships(opts)
         ? { sourceRelationships: takeChartSourceRelationships(opts) }
         : {}),
-      ...(externalData?.data !== undefined && externalData.fileName
+      ...(externalData?.data !== undefined &&
+      externalData.fileName !== undefined &&
+      externalData.relationshipId !== undefined
         ? {
             embedding: {
               relationshipId: externalData.relationshipId,
@@ -375,7 +383,16 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
             },
           }
         : {}),
-      ...(chartSpace.userShapes ? { userShapes: buildUserShapesData(chartSpace.userShapes) } : {}),
+      ...(chartSpace.userShapes
+        ? {
+            userShapes: {
+              ...buildUserShapesData(chartSpace.userShapes),
+              ...(takeUserShapesSourcePath(chartSpace.userShapes)
+                ? { path: takeUserShapesSourcePath(chartSpace.userShapes) }
+                : {}),
+            },
+          }
+        : {}),
     });
 
     const drawingXml = drawingDesc.stringify(
@@ -448,6 +465,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       layout: opts.layout ?? "default",
       style: opts.style ?? "simple1",
       color: opts.color ?? "accent1_2",
+      ...(takeSmartArtSourcePaths(opts) ? { sourcePaths: takeSmartArtSourcePaths(opts) } : {}),
       // Store a shallow copy with the remapped rels — never mutate the
       // caller's Options object.
       ...(opts.raw || remappedDataRels !== undefined
@@ -481,6 +499,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       data: opts,
       transformation: createTransformation(opts.transformation),
       type: "wps",
+      graphicDataUri: opts.graphicDataUri,
     };
 
     const drawingXml = drawingDesc.stringify(
@@ -564,10 +583,15 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
             ctx.file.charts.addChart(c.chartKey, {
               key: c.chartKey,
               chartSpaceXml: chartSpaceDesc.stringify(c.chartOptions, ctx.file) ?? "",
+              ...(takeChartSourcePath(c.chartOptions)
+                ? { sourcePath: takeChartSourcePath(c.chartOptions) }
+                : {}),
               ...(takeChartSourceRelationships(c.chartOptions)
                 ? { sourceRelationships: takeChartSourceRelationships(c.chartOptions) }
                 : {}),
-              ...(externalData?.data !== undefined && externalData.fileName
+              ...(externalData?.data !== undefined &&
+              externalData.fileName !== undefined &&
+              externalData.relationshipId !== undefined
                 ? {
                     embedding: {
                       relationshipId: externalData.relationshipId,
@@ -577,7 +601,14 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
                   }
                 : {}),
               ...(c.chartOptions.userShapes
-                ? { userShapes: buildUserShapesData(c.chartOptions.userShapes) }
+                ? {
+                    userShapes: {
+                      ...buildUserShapesData(c.chartOptions.userShapes),
+                      ...(takeUserShapesSourcePath(c.chartOptions.userShapes)
+                        ? { path: takeUserShapesSourcePath(c.chartOptions.userShapes) }
+                        : {}),
+                    },
+                  }
                 : {}),
             });
           }

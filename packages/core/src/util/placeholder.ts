@@ -210,6 +210,14 @@ export interface SmartArtRelOptions {
   pathPrefix: string;
   styleRelType: RelationshipType;
   /**
+   * Source package target for a sparse or non-standard SmartArt part path;
+   * omitted kinds use the conventional generated path.
+   */
+  sourceTargetFor?: (
+    key: string,
+    kind: "data" | "layout" | "quickStyle" | "colors" | "drawing",
+  ) => string | undefined;
+  /**
    * Whether a SmartArt carries the optional diagramDrawing part (the Office
    * render cache). Unset means every SmartArt does — a fresh authoring
    * package never carries it, so round-trip callers pass the source fact.
@@ -246,7 +254,7 @@ export function addSmartArtRelationships(
   globalStartIndex: number,
   options: SmartArtRelOptions,
 ): void {
-  const { pathPrefix, styleRelType, hasDrawing } = options;
+  const { pathPrefix, styleRelType, hasDrawing, sourceTargetFor } = options;
   const count = keys.length;
   const loOffset = baseOffset + count;
   const qsOffset = loOffset + count;
@@ -257,25 +265,29 @@ export function addSmartArtRelationships(
     addRel(
       baseOffset + i,
       RELATIONSHIP_TYPES.diagramData,
-      `${pathPrefix}diagrams/data${gi + 1}.xml`,
+      sourceTargetFor?.(keys[i]!, "data") ?? `${pathPrefix}diagrams/data${gi + 1}.xml`,
     );
     addRel(
       loOffset + i,
       RELATIONSHIP_TYPES.diagramLayout,
-      `${pathPrefix}diagrams/layout${gi + 1}.xml`,
+      sourceTargetFor?.(keys[i]!, "layout") ?? `${pathPrefix}diagrams/layout${gi + 1}.xml`,
     );
-    addRel(qsOffset + i, styleRelType, `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`);
+    addRel(
+      qsOffset + i,
+      styleRelType,
+      sourceTargetFor?.(keys[i]!, "quickStyle") ?? `${pathPrefix}diagrams/quickStyle${gi + 1}.xml`,
+    );
     addRel(
       csOffset + i,
       RELATIONSHIP_TYPES.diagramColors,
-      `${pathPrefix}diagrams/colors${gi + 1}.xml`,
+      sourceTargetFor?.(keys[i]!, "colors") ?? `${pathPrefix}diagrams/colors${gi + 1}.xml`,
     );
     if (hasDrawing === undefined || hasDrawing(keys[i]!)) {
       const drOffset = csOffset + count;
       addRel(
         drOffset + i,
         RELATIONSHIP_TYPES.diagramDrawingMs,
-        `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
+        sourceTargetFor?.(keys[i]!, "drawing") ?? `${pathPrefix}diagrams/drawing${gi + 1}.xml`,
       );
     }
   }

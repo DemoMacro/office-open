@@ -30,6 +30,7 @@ import type {
   CfvoOptions,
   FormulaOptions,
   HeaderFooterOptions,
+  HeaderFooterPartName,
   PageBreakOptions,
   PageSetupOptions,
   PivotSelectionOptions,
@@ -1034,7 +1035,7 @@ function buildCfColorXml(color: ColorOptions): string {
   return `<color${a ? ` ${a}` : ""}/>`;
 }
 
-function buildSheetViewAttrs(sv?: SheetViewOptions): string {
+export function buildSheetViewAttrs(sv?: SheetViewOptions): string {
   const svMap: Record<string, string | number | boolean | undefined> = {
     workbookViewId: 0,
   };
@@ -1446,9 +1447,13 @@ export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | unde
   if (hf.alignWithMarginsRaw !== undefined) hfAttrs.alignWithMargins = hf.alignWithMarginsRaw;
   else if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
   const inner: string[] = [];
-  const headerFooterPart = (name: string, value: string | undefined): void => {
+  const headerFooterPart = (name: HeaderFooterPartName, value: string | undefined): void => {
     if (value === undefined) return;
-    const preserve = /^\s|\s$/.test(value) ? ' xml:space="preserve"' : "";
+    // Replay the source xml:space form verbatim (Excel omits the attribute
+    // even for trailing spaces); fresh authoring falls back to whitespace
+    // detection so preserved spacing still round-trips by meaning.
+    const xmlSpace = hf.xmlSpaceByPart?.[name] ?? (/^\s|\s$/.test(value) ? "preserve" : undefined);
+    const preserve = xmlSpace ? ` xml:space="${xmlSpace}"` : "";
     inner.push(`<${name}${preserve}>${escapeXml(value)}</${name}>`);
   };
   headerFooterPart("oddHeader", hf.oddHeader);

@@ -52,6 +52,10 @@ export class FontWrapper implements ViewWrapper {
   public constructor(
     public options: EmbeddedFontOptions[],
     reproducible?: ReproducibleScope,
+    /** Directory of the owning font table inside word/ ("" = word itself).
+     *  Font rel targets are relative to the owner, so a subpackage glossary
+     *  table needs "glossary" rather than the default word-level "fonts/…". */
+    ownerDirectory = "",
   ) {
     // Keep every font declaration — metadata-only fonts (no `data`) carry no
     // bytes to embed but must still round-trip into fontTable.xml. Only fonts
@@ -71,14 +75,21 @@ export class FontWrapper implements ViewWrapper {
       if (font.data === undefined) continue;
       relIdx++;
       font.embedRid = `rId${relIdx}`;
-      const target = font.odttfPath
-        ? font.odttfPath.startsWith("word/")
-          ? font.odttfPath.slice(5)
-          : font.odttfPath
-        : `fonts/${font.name}.odttf`;
+      const resolved =
+        font.odttfPath ??
+        `word/${ownerDirectory ? `${ownerDirectory}/` : ""}fonts/${font.name}.odttf`;
+      const target = relativeFontTarget(resolved, ownerDirectory);
       // A Target is a URI: escape the font part name per segment (spaces,
       // non-ASCII) so it matches the ZIP entry packed by compileDocument.
       this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, encodeUriPath(target));
     }
   }
+}
+
+/** Package path of an .odttf part → target relative to the owning font table. */
+function relativeFontTarget(partPath: string, ownerDirectory: string): string {
+  const withoutWord = partPath.startsWith("word/") ? partPath.slice("word/".length) : partPath;
+  if (!ownerDirectory) return withoutWord;
+  const prefix = `${ownerDirectory}/`;
+  return withoutWord.startsWith(prefix) ? withoutWord.slice(prefix.length) : `../${withoutWord}`;
 }

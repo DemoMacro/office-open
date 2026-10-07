@@ -228,6 +228,9 @@ export class DocxWriteContext implements WriteContext {
   declare public stylesWithEffects: Styles | undefined;
   declare public fontTable: FontWrapper;
   declare public glossaryOptions: GlossaryDocumentOptions | undefined;
+  /** Companion glossary font wrapper; assigned during the glossary compile
+   *  phase so the compiler can pack its .odttf binaries. */
+  declare public glossaryFontTable: FontWrapper | undefined;
   declare public webSettings: WebSettingsOptions | undefined;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
@@ -861,6 +864,12 @@ export class DocxReadContext implements ReadContext {
    * image relationships against that part's rels. Defaults to the document body.
    */
   public currentPart = "word/document.xml";
+
+  /**
+   * Source part paths consumed by a successful canonical parse. Rebuilt
+   * drawing parts use this set instead of the old overwrite-by-path hack.
+   */
+  public consumedPartPaths = new Set<string>();
 
   constructor(
     public docx: DocxDocument,

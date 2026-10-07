@@ -46,6 +46,11 @@ interface ShapeRunOptions {
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
   /** Word 2010 wrapper ids; round-trip only. */
   extensionIds?: DrawingExtensionIds;
+  /**
+   * Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip
+   * only — do not hand-author). Omit for the Word 2010 URI.
+   */
+  graphicDataUri?: string;
 }
 
 /**

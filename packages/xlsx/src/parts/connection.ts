@@ -176,8 +176,12 @@ export interface ConnectionOptions {
    * connection whose provider string it cannot resolve.)
    */
   type?: number;
-  /** Version of the application that last refreshed the connection (required by XSD) */
-  refreshedVersion: number;
+  /**
+   * Version of the application that last refreshed the connection (required
+   * by XSD for freshly authored connections, but real workbooks written by
+   * older producers omit it — parse keeps the source form verbatim).
+   */
+  refreshedVersion?: number;
   /** Minimum refreshable version (default 0) */
   minRefreshableVersion?: number;
   /** Refresh on load (default false) */
@@ -254,7 +258,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
       if (c.type !== undefined) cAttrs.push(`type="${c.type}"`);
       if (c.reconnectionMethod !== undefined)
         cAttrs.push(`reconnectionMethod="${c.reconnectionMethod}"`);
-      cAttrs.push(`refreshedVersion="${c.refreshedVersion}"`);
+      if (c.refreshedVersion !== undefined) cAttrs.push(`refreshedVersion="${c.refreshedVersion}"`);
       if (c.minRefreshableVersion !== undefined)
         cAttrs.push(`minRefreshableVersion="${c.minRefreshableVersion}"`);
       if (c.savePassword) cAttrs.push('savePassword="1"');

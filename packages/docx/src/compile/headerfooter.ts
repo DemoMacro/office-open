@@ -59,6 +59,7 @@ function compileHeaderFooterPart(
     ctx,
     entry.relationships,
     resolved.embeddingOffset + resolved.embeddingRefs.length,
+    `word/${partName}`,
   );
   return {
     part: {

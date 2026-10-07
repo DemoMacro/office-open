@@ -25,6 +25,7 @@ import {
 import type { DataType } from "@office-open/core";
 import { chartSpaceDesc, userShapesDesc, type ExternalDataOptions } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
+import { themeOverrideDesc, type ThemeOverrideOptions } from "@office-open/core/theme";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
 import type { ParseOptions } from "@office-open/xml";
@@ -33,6 +34,7 @@ import { ActiveXControlParseError, activeXControlDesc } from "@parts/active-x-co
 import { calcChainDesc } from "@parts/calc-chain";
 import { chartsheetDesc } from "@parts/chartsheet";
 import type { ChartsheetOptions } from "@parts/chartsheet";
+import { classificationLabelsDesc } from "@parts/classification-labels";
 import { commentsDesc, mergeNoteAnchors, vmlNotesDesc } from "@parts/comments";
 import { connectionsDesc } from "@parts/connection";
 import { ControlPropertiesParseError, controlPropertiesDesc } from "@parts/control-properties";
@@ -44,6 +46,7 @@ import type { ExternalLinkOptions } from "@parts/external-link";
 import type { SharedWorkbookOptions, WorkbookOptions } from "@parts/file";
 import type { DefinitionPivotCacheOptions } from "@parts/file";
 import { metadataDesc } from "@parts/metadata";
+import { personsDesc } from "@parts/persons";
 import { parsePivotCacheDefinition } from "@parts/pivot-cache-definition";
 import { parsePivotCacheRecords } from "@parts/pivot-cache-records";
 import { parsePivotTableDefinition } from "@parts/pivot-table";
@@ -55,11 +58,20 @@ import {
   usersDesc,
   type RevisionLogOptions,
 } from "@parts/revision-log";
+import {
+  parseRichDataPartRelationships,
+  richValueDataDesc,
+  richValueRelsDesc,
+  richValueStructuresDesc,
+  richValueTypesInfoDesc,
+  RichDataParseError,
+} from "@parts/rich-data";
 import { sharedStringsDesc } from "@parts/shared-strings";
 import { stylesDesc } from "@parts/styles";
 import { tableDesc } from "@parts/table";
 import type { TableOptions } from "@parts/table";
 import { parseVolTypesEl } from "@parts/vol-types";
+import { webExtensionPartDesc, type WebExtensionPartOptions } from "@parts/web-extension";
 import { workbookDesc } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
@@ -114,6 +126,10 @@ export interface XlsxDocument {
   appProps?: string;
   /** docProps/custom.xml path */
   customProps?: string;
+  /** Microsoft classification-label metadata part path. */
+  classificationLabelsPath?: string;
+  /** Threaded-comment persons part path. */
+  personsPath?: string;
   /** Legacy Microsoft OPC relationship namespace flavor detected in manifests. */
   packageRelationshipNamespace?: "microsoft2005";
 }
@@ -139,12 +155,27 @@ function graphicDataUris(element: Element, uris: string[] = []): string[] {
 
 function isLegacyChartDrawing(element: Element | undefined): boolean {
   if (!element) return false;
+  // Chart userShapes companion parts (c:userShapes root) are absorbed through
+  // the chart's /chartUserShapes relationship, not as standalone drawings.
+  if (element.name === "c:userShapes" || element.name === "userShapes") return true;
   const uris = graphicDataUris(element);
+  // Legacy ChartML wrappers that still reference modern chart parts via
+  // `relId` (O12 templates) are spreadsheetDrawing parts the model absorbs.
+  if (uris.length > 0 && element.elements?.some((anchor) => hasChartRelId(anchor))) {
+    return false;
+  }
   return (
     uris.some((uri) =>
       uri.startsWith("http://schemas.microsoft.com/office/excel/2005/8/ChartML"),
     ) && !uris.some((uri) => uri.includes("openxmlformats.org/drawingml/2006/chart"))
   );
+}
+
+function hasChartRelId(el: Element): boolean {
+  if (el.name?.endsWith(":chart") && (el.attributes?.relId || el.attributes?.["r:id"])) {
+    return true;
+  }
+  return (el.elements ?? []).some((child) => hasChartRelId(child as Element));
 }
 
 /**
@@ -164,6 +195,7 @@ function readChartUserShapes(
   },
   readContext: XlsxReadContext,
   doc: XlsxDocument["doc"],
+  absorbedUserShapes?: Set<string>,
 ): void {
   const rid = chart.userShapes?.relationshipId;
   if (rid === undefined || chartPath === undefined) return;
@@ -172,6 +204,7 @@ function readChartUserShapes(
     .find((r) => r.rId === rid);
   const bodyEl = rel ? doc.get(rel.target) : undefined;
   if (!bodyEl) return;
+  if (absorbedUserShapes && rel) absorbedUserShapes.add(rel.target);
   const body = userShapesDesc.parse(bodyEl, readContext);
   chart.userShapes = {
     ...chart.userShapes,
@@ -286,6 +319,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   let drawings: string[] = [];
   const media: string[] = [];
   let theme: string | undefined;
+  let personsPath: string | undefined;
 
   const wbRels = doc.get(partPathToRelsPath(workbookPath));
   let stylesPath = "xl/styles.xml";
@@ -296,15 +330,25 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
       if (!target) continue;
+      // Normalize legacy Excel relationship aliases (xlWorksheet, xlStyles…)
+      // so template workbooks with `…/xlWorksheet` resolve identically.
+      const normalizedType = type
+        .replace(/\/xlWorksheet$/, "/worksheet")
+        .replace(/\/xlSharedStrings$/, "/sharedStrings")
+        .replace(/\/xlStyles$/, "/styles")
+        .replace(/\/xlCalcChain$/, "/calcChain")
+        .replace(/\/xlVolatileDependencies$/, "/volatileDependencies");
 
-      if (type.includes("/worksheet")) {
-        worksheets.push(resolveWorkbookTarget(target, wbDir));
-      } else if (type.includes("/theme")) {
-        theme = resolveWorkbookTarget(target, wbDir);
-      } else if (type.endsWith("/styles")) {
-        stylesPath = resolveWorkbookTarget(target, wbDir);
-      } else if (type.endsWith("/sharedStrings")) {
-        sharedStringsPath = resolveWorkbookTarget(target, wbDir);
+      if (normalizedType.includes("/worksheet")) {
+        worksheets.push(doc.resolvePath(resolveWorkbookTarget(target, wbDir)));
+      } else if (normalizedType.includes("/theme")) {
+        theme = doc.resolvePath(resolveWorkbookTarget(target, wbDir));
+      } else if (normalizedType.endsWith("/styles")) {
+        stylesPath = doc.resolvePath(resolveWorkbookTarget(target, wbDir));
+      } else if (normalizedType.endsWith("/sharedStrings")) {
+        sharedStringsPath = doc.resolvePath(resolveWorkbookTarget(target, wbDir));
+      } else if (normalizedType.endsWith("/person")) {
+        personsPath = doc.resolvePath(resolveWorkbookTarget(target, wbDir));
       }
     }
   }
@@ -340,6 +384,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   let corePropertiesType: string | undefined;
   let appProps: string | undefined;
   let customProps: string | undefined;
+  let classificationLabelsPath: string | undefined;
   const rootRels = doc.get("_rels/.rels");
   const workbookRels = doc.get(partPathToRelsPath(workbookPath));
   const isLegacyRelationshipNamespace =
@@ -351,7 +396,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
       if (!target) continue;
-      const path = target.startsWith("/") ? target.slice(1) : target;
+      const path = doc.resolvePath(target.startsWith("/") ? target.slice(1) : target);
       // Transitional packages use the oclc URI form with camelCase segments
       // (…/extendedProperties); normalize case and hyphens so both resolve.
       const relType = type.toLowerCase().replaceAll("-", "");
@@ -360,6 +405,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp"))
         appProps = path;
       else if (relType.includes("/customproperties")) customProps = path;
+      else if (relType.includes("/classificationlabels")) classificationLabelsPath = path;
     }
   }
 
@@ -378,6 +424,8 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
     corePropertiesType,
     appProps,
     customProps,
+    classificationLabelsPath,
+    personsPath,
     ...(isLegacyRelationshipNamespace
       ? { packageRelationshipNamespace: "microsoft2005" as const }
       : {}),
@@ -487,6 +535,99 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   if (xlsx.customProps) {
     opts.customPropertiesPath = xlsx.customProps;
     opts.customPropertiesDeclared = true;
+  }
+  if (xlsx.classificationLabelsPath) {
+    const labelsEl = xlsx.doc.get(xlsx.classificationLabelsPath);
+    if (labelsEl) {
+      const labels = classificationLabelsDesc.parse(labelsEl, {} as ReadContext);
+      opts.classificationLabels = labels;
+      opts.classificationLabelsPath = xlsx.classificationLabelsPath;
+    }
+  }
+  if (xlsx.personsPath) {
+    const personsEl = xlsx.doc.get(xlsx.personsPath);
+    if (personsEl) {
+      const persons = personsDesc.parse(personsEl, {} as ReadContext);
+      opts.persons = persons;
+      opts.personsPath = xlsx.personsPath;
+    }
+  }
+  const workbookRelsEl = xlsx.doc.get(partPathToRelsPath(xlsx.workbookPath));
+  const richDataRelationship = (suffix: string) =>
+    (workbookRelsEl?.elements ?? []).find(
+      (element) =>
+        element.name === "Relationship" && (attr(element, "Type") ?? "").endsWith(suffix),
+    );
+  const richDataTarget = (relationship: Element | undefined) => {
+    const target = attr(relationship, "Target");
+    return target === undefined ? undefined : resolveRelationshipTarget(xlsx.workbookPath, target);
+  };
+  const richDataPaths = {
+    data: richDataTarget(richDataRelationship("/rdRichValue")),
+    structures: richDataTarget(richDataRelationship("/rdRichValueStructure")),
+    types: richDataTarget(richDataRelationship("/rdRichValueTypes")),
+    relationships: richDataTarget(richDataRelationship("/richValueRel")),
+  };
+  if (Object.values(richDataPaths).some((path) => path !== undefined)) {
+    const parseRichPart = <T>(path: string | undefined, partName: string, parse: () => T): T => {
+      if (path === undefined || !xlsx.doc.get(path)) {
+        throw new RichDataParseError(
+          "workbook",
+          "/Relationships",
+          partName,
+          "missing rich-data part",
+        );
+      }
+      return parse();
+    };
+    const richData = {
+      ...(richDataPaths.data
+        ? {
+            data: parseRichPart(richDataPaths.data, "RichValueData", () =>
+              richValueDataDesc.parse(xlsx.doc.get(richDataPaths.data!)!, {} as ReadContext),
+            ),
+            dataPath: richDataPaths.data,
+            dataRelationshipId: attr(richDataRelationship("/rdRichValue"), "Id"),
+          }
+        : {}),
+      ...(richDataPaths.structures
+        ? {
+            structures: parseRichPart(richDataPaths.structures, "RichValueStructures", () =>
+              richValueStructuresDesc.parse(
+                xlsx.doc.get(richDataPaths.structures!)!,
+                {} as ReadContext,
+              ),
+            ),
+            structuresPath: richDataPaths.structures,
+            structuresRelationshipId: attr(richDataRelationship("/rdRichValueStructure"), "Id"),
+          }
+        : {}),
+      ...(richDataPaths.types
+        ? {
+            types: parseRichPart(richDataPaths.types, "RichValueTypesInfo", () =>
+              richValueTypesInfoDesc.parse(xlsx.doc.get(richDataPaths.types!)!, {} as ReadContext),
+            ),
+            typesPath: richDataPaths.types,
+            typesRelationshipId: attr(richDataRelationship("/rdRichValueTypes"), "Id"),
+          }
+        : {}),
+      ...(richDataPaths.relationships
+        ? {
+            relationships: parseRichPart(richDataPaths.relationships, "RichValueRels", () =>
+              richValueRelsDesc.parse(
+                xlsx.doc.get(richDataPaths.relationships!)!,
+                {} as ReadContext,
+              ),
+            ),
+            relationshipsPath: richDataPaths.relationships,
+            relationshipsRelationshipId: attr(richDataRelationship("/richValueRel"), "Id"),
+            partRelationships: parseRichDataPartRelationships(
+              xlsx.doc.get(partPathToRelsPath(richDataPaths.relationships!)),
+            ),
+          }
+        : {}),
+    };
+    opts.richData = richData;
   }
 
   // Create read context for descriptor pipeline
@@ -679,6 +820,10 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const absorbedChartParts = new Set<string>();
   const absorbedCommentsParts = new Set<string>();
   const absorbedControlParts = new Set<string>();
+  const absorbedUserShapesParts = new Set<string>();
+  const absorbedChartThemeOverrides = new Set<string>();
+  const absorbedWebExtensionParts = new Set<string>();
+  const absorbedWebExtensionRels = new Set<string>();
   for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
@@ -852,7 +997,12 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           const ext = mediaPath?.split(".").pop();
           if (
             !raw ||
-            (ext !== "png" && ext !== "jpeg" && ext !== "jpg" && ext !== "wmf" && ext !== "emf")
+            (ext !== "png" &&
+              ext !== "jpeg" &&
+              ext !== "jpg" &&
+              ext !== "webp" &&
+              ext !== "wmf" &&
+              ext !== "emf")
           ) {
             // Linked-only picture (no bytes in the package): keep the URL,
             // derive the type token from it (png fallback for extension-less).
@@ -896,7 +1046,15 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           // WMF/EMF clip-art images round-trip like raster ones (the media
           // store keeps their bytes and extension verbatim).
           const type =
-            ext === "png" ? "png" : ext === "wmf" ? "wmf" : ext === "emf" ? "emf" : "jpg";
+            ext === "png"
+              ? "png"
+              : ext === "webp"
+                ? "webp"
+                : ext === "wmf"
+                  ? "wmf"
+                  : ext === "emf"
+                    ? "emf"
+                    : "jpg";
           images.push({
             data: raw,
             type,
@@ -938,7 +1096,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             chartSpaceDesc.parse(chartEl, readContext),
           );
           absorbedChartParts.add(chartPath);
-          readChartUserShapes(chartPath, chartSpace, readContext, xlsx.doc);
+          readChartUserShapes(
+            chartPath,
+            chartSpace,
+            readContext,
+            xlsx.doc,
+            absorbedUserShapesParts,
+          );
           const chartExternalLink = readChartExternalLink(
             chartPath,
             chartSpace.externalData,
@@ -946,6 +1110,15 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             xlsx.doc,
             chartExternalLinkPaths,
           );
+          const chartThemeOverrideRel = readContext
+            .getWorksheetRelsByType(chartPath, "/themeOverride")
+            .at(0);
+          let chartThemeOverride: ThemeOverrideOptions | undefined;
+          if (chartThemeOverrideRel) {
+            absorbedChartThemeOverrides.add(chartThemeOverrideRel.target);
+            const toEl = xlsx.doc.get(chartThemeOverrideRel.target);
+            if (toEl) chartThemeOverride = themeOverrideDesc.parse(toEl, readContext);
+          }
           // cNvPr @title stays unbridged (same rule as the compiler leg):
           // WorksheetChartOptions.title is the chart title, not the frame's.
           const chartCnvPr = pickNonVisualDrawingProperties(anchor);
@@ -958,6 +1131,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...(anchor.frameExtentCy !== undefined ? { frameExtentCy: anchor.frameExtentCy } : {}),
             ...(chartPath ? { sourcePath: chartPath } : {}),
             ...chartExternalLink,
+            ...(chartThemeOverrideRel ? { themeOverridePath: chartThemeOverrideRel.target } : {}),
+            ...(chartThemeOverride ? { themeOverride: chartThemeOverride } : {}),
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.fPublished !== undefined ? { fPublished: anchor.fPublished } : {}),
@@ -995,9 +1170,25 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       }
       if (drawingData.webExtensions) {
         const webExtensions: WorksheetWebExtensionOptions[] = [];
+        const seenWebExtensionParts = new Set<string>();
         for (const anchor of drawingData.webExtensions) {
           const sourcePath = readContext.resolveWorksheetRel(dr.target, anchor.rId);
           if (!sourcePath) continue;
+          let wePart: WebExtensionPartOptions | undefined;
+          if (!seenWebExtensionParts.has(sourcePath)) {
+            seenWebExtensionParts.add(sourcePath);
+            absorbedWebExtensionParts.add(sourcePath);
+            const weEl = xlsx.doc.get(sourcePath);
+            if (weEl) {
+              wePart = webExtensionPartDesc.parse(weEl, readContext);
+              wePart.sourcePath = sourcePath;
+              if (wePart.snapshotRId !== undefined) {
+                absorbedWebExtensionRels.add(partPathToRelsPath(sourcePath));
+              }
+            }
+          } else {
+            wePart = webExtensions.find((we) => we.sourcePath === sourcePath)?.part;
+          }
           const snapshotSourcePath = anchor.fallback?.rId
             ? readContext.resolveWorksheetRel(dr.target, anchor.fallback.rId)
             : undefined;
@@ -1012,6 +1203,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
             ...(anchor.shapeId !== undefined ? { shapeId: anchor.shapeId } : {}),
+            ...(wePart ? { part: wePart } : {}),
           });
         }
         if (webExtensions.length > 0) wsOpts.webExtensions = webExtensions;
@@ -1061,9 +1253,31 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         // an unmodeled part through the table descriptor.
         if (tableEl.name !== "table") continue;
         const tableData = tableDesc.parse(tableEl, readContext);
+        tableData.sourcePath = tr.target;
+        tableData.queryTablePath = readContext
+          .getWorksheetRelsByType(tr.target, "/queryTable")
+          .at(0)?.target;
         tables.push(tableData);
       }
       if (tables.length > 0) wsOpts.tables = tables;
+      // Record each table's source <tableParts> child position: relationship
+      // file order does not have to match the worksheet's tableParts sequence,
+      // and the compiler must emit tablePart children in the source order
+      // while keeping rel id/path pairing with the tables array.
+      const tablePartsEl = findChild(wsEl, "tableParts");
+      const tablePartOrder = new Map<string, number>();
+      for (const child of tablePartsEl?.elements ?? []) {
+        if (child.name !== "tablePart") continue;
+        const rid = attr(child, "r:id");
+        if (!rid) continue;
+        const target = readContext.resolveWorksheetRel(wsPath, rid);
+        if (target) tablePartOrder.set(target, tablePartOrder.size);
+      }
+      for (const [tableIndex, tr] of tableRels.entries()) {
+        const order = tablePartOrder.get(tr.target);
+        if (order !== undefined)
+          wsOpts.tables?.[tableIndex] && (wsOpts.tables[tableIndex].tablePartOrder = order);
+      }
     }
     if (!wsOpts.tables?.length && findChild(wsEl, "tableParts")) {
       wsOpts.preserveEmptyTableParts = true;
@@ -1071,12 +1285,19 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
 
     // Query tables
     const queryTableRels = readContext.getWorksheetRelsByType(wsPath, "/queryTable");
+    for (const tableRel of tableRels) {
+      queryTableRels.push(...readContext.getWorksheetRelsByType(tableRel.target, "/queryTable"));
+    }
     if (queryTableRels.length > 0) {
       const queryTables: QueryTableOptions[] = [];
+      const seenQueryTables = new Set<string>();
       for (const qtr of queryTableRels) {
         const qtEl = xlsx.doc.get(qtr.target);
-        if (!qtEl) continue;
-        queryTables.push(queryTableDesc.parse(qtEl, readContext));
+        if (!qtEl || seenQueryTables.has(qtr.target)) continue;
+        seenQueryTables.add(qtr.target);
+        const queryTable = queryTableDesc.parse(qtEl, readContext);
+        queryTable.sourcePath = qtr.target;
+        queryTables.push(queryTable);
       }
       if (queryTables.length > 0) wsOpts.queryTables = queryTables;
     }
@@ -1177,7 +1398,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           csData.chart = chartSpaceDesc.parse(chartEl, readContext);
           csData.sourceChartPath = chartPath;
           absorbedChartParts.add(chartPath);
-          readChartUserShapes(chartPath, csData.chart, readContext, xlsx.doc);
+          readChartUserShapes(
+            chartPath,
+            csData.chart,
+            readContext,
+            xlsx.doc,
+            absorbedUserShapesParts,
+          );
           Object.assign(
             csData,
             readChartExternalLink(
@@ -1211,13 +1438,16 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   }
 
   // Dialogsheets — parse legacy dialog sheet parts
-  const dialogsheetPaths = xlsx.doc.keys("xl/dialogSheets/").filter((k) => k.endsWith(".xml"));
+  const dialogsheetPaths = xlsx.doc
+    .keys()
+    .filter((path) => /^xl\/dialogsheets\/sheet\d+\.xml$/i.test(path));
   if (dialogsheetPaths.length > 0) {
     const dialogsheets: DialogsheetOptions[] = [];
     for (const dsPath of dialogsheetPaths) {
       const dsEl = xlsx.doc.get(dsPath);
       if (!dsEl) continue;
       const dsData = dialogsheetDesc.parse(dsEl, readContext);
+      dsData.sourcePath = dsPath;
       dialogsheets.push(dsData);
     }
     if (dialogsheets.length > 0) opts.dialogsheets = dialogsheets;
@@ -1278,6 +1508,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     .filter((k) => k.endsWith(".xml") && !chartExternalLinkPaths.has(k));
   if (extLinkPaths.length > 0) {
     const externalLinks: ExternalLinkOptions[] = [];
+    const wbDir = dirOf(xlsx.workbookPath);
     for (const elPath of extLinkPaths) {
       const elEl = xlsx.doc.get(elPath);
       if (!elEl) continue;
@@ -1307,6 +1538,38 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       externalLinks.push(elData);
     }
     if (externalLinks.length > 0) opts.externalLinks = externalLinks;
+    // Reorder to the workbook.xml externalReference order: the ZIP entry
+    // order of xl/externalLinks/* is arbitrary, but the r:id sequence in
+    // <externalReferences> is the source's authoritative child order.
+    const externalRefRids: string[] = [];
+    const extRefsEl = findChild(xlsx.workbook, "externalReferences");
+    for (const child of extRefsEl?.elements ?? []) {
+      if (child.name !== "externalReference") continue;
+      const rid = attr(child, "r:id");
+      if (rid) externalRefRids.push(rid);
+    }
+    if (externalRefRids.length > 1 && opts.externalLinks) {
+      const ridToPath = new Map<string, string>();
+      const wbRelsForLinks = xlsx.doc.get(partPathToRelsPath(xlsx.workbookPath));
+      for (const child of wbRelsForLinks?.elements ?? []) {
+        if (child.name !== "Relationship") continue;
+        const type = attr(child, "Type") ?? "";
+        if (!type.includes("/externalLinkPath")) continue;
+        const rid = attr(child, "Id");
+        const target = attr(child, "Target");
+        if (rid && target) ridToPath.set(rid, resolveWorkbookTarget(target, wbDir));
+      }
+      const orderIndex = new Map<string, number>();
+      for (const [index, rid] of externalRefRids.entries()) {
+        const path = ridToPath.get(rid);
+        if (path) orderIndex.set(path, index);
+      }
+      opts.externalLinks.sort((a, b) => {
+        const ai = orderIndex.get(a.sourcePath ?? "") ?? Number.MAX_SAFE_INTEGER;
+        const bi = orderIndex.get(b.sourcePath ?? "") ?? Number.MAX_SAFE_INTEGER;
+        return ai - bi;
+      });
+    }
   }
 
   // Shared-workbook revisions: workbook.xml.rels → revisionHeaders/users;
@@ -1320,7 +1583,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       const type = attr(child, "Type") ?? "";
       const target = attr(child, "Target") ?? "";
       if (type.includes("/revisionHeaders")) revHeadersTarget = target;
-      else if (type.includes("/users")) usersTarget = target;
+      else if (type.includes("/users") || type.includes("/usernames")) usersTarget = target;
     }
   }
   if (revHeadersTarget) {
@@ -1355,17 +1618,27 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       const logs = headers.headers
         .map((header) => logsByRid.get(header.rId))
         .filter((log): log is RevisionLogOptions => log !== undefined);
+      const usersRelationship = xlsx.doc
+        .get(partPathToRelsPath(xlsx.workbookPath))
+        ?.elements?.find(
+          (child) => child.name === "Relationship" && (attr(child, "Type") ?? "").includes("/user"),
+        );
       const revisionLog: SharedWorkbookOptions = {
         headers,
         logs,
         headersPath: headersRelativePath,
-        ...(usersTarget ? { usersPath: revisionHeadersPath(usersTarget) } : {}),
+        ...(usersTarget
+          ? {
+              usersPath: revisionHeadersPath(usersTarget),
+              usersRelationshipType: attr(usersRelationship, "Type"),
+            }
+          : {}),
       };
       if (usersTarget) {
         const usersEl = xlsx.doc.get(`xl/${revisionLog.usersPath}`);
         if (usersEl) {
           const users = usersDesc.parse(usersEl, readContext);
-          if (users.users) revisionLog.users = users;
+          revisionLog.users = users;
         }
       }
       opts.revisionLog = revisionLog;
@@ -1377,12 +1650,40 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // compiler always re-emits are excluded — model-driven parts (themes,
   // sharedStrings, drawings, VML, external links) pass through and yield to
   // the compiler's own output at the same path by assembly order.
+  const queryTableSourcePaths = (opts.worksheets ?? [])
+    .flatMap((ws) => (ws.queryTables ?? []).map((qt) => qt.sourcePath ?? ""))
+    .filter((path) => path !== "");
+  const tableOwnedQueryTableRelsPaths = (opts.worksheets ?? [])
+    .flatMap((ws) =>
+      (ws.tables ?? [])
+        .filter((table) => table.queryTablePath)
+        .map((table) => (table.sourcePath ? partPathToRelsPath(table.sourcePath) : "")),
+    )
+    .filter((path) => path !== "");
+  const singleXmlCellSourcePaths = (opts.worksheets ?? []).flatMap((ws) =>
+    readContext
+      .getWorksheetRelsByType(ws.sourcePath ?? "", "/tableSingleCells")
+      .map((rel) => rel.target),
+  );
   const rebuilt: string[] = [
     xlsx.workbookPath,
     partPathToRelsPath(xlsx.workbookPath),
     ...(xlsx.coreProps ? [xlsx.coreProps] : []),
     ...(xlsx.appProps ? [xlsx.appProps] : []),
     ...(xlsx.customProps ? [xlsx.customProps] : []),
+    ...(opts.classificationLabelsPath ? [opts.classificationLabelsPath] : []),
+    ...(opts.personsPath ? [opts.personsPath] : []),
+    ...(opts.richData
+      ? [
+          opts.richData.dataPath,
+          opts.richData.structuresPath,
+          opts.richData.typesPath,
+          opts.richData.relationshipsPath,
+          ...(opts.richData.relationshipsPath
+            ? [partPathToRelsPath(opts.richData.relationshipsPath)]
+            : []),
+        ].filter((path): path is string => path !== undefined)
+      : []),
     ...xlsx.worksheets,
     ...xlsx.worksheets.map((path) => partPathToRelsPath(path)),
     ...chartsheetPaths,
@@ -1395,10 +1696,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...(calcChainEl ? ["xl/calcChain.xml"] : []),
     ...(connectionsEl ? ["xl/connections.xml"] : []),
     ...(volTypesPath === "volatileDependencies.xml" ? ["xl/volatileDependencies.xml"] : []),
-    ...xlsx.partRefs.charts.filter((path) => absorbedChartParts.has(path)),
-    ...xlsx.partRefs.charts
-      .filter((path) => absorbedChartParts.has(path))
-      .map((path) => partPathToRelsPath(path)),
+    ...sortByNumber([...absorbedChartParts]),
+    ...sortByNumber([...absorbedChartParts]).map((path) => partPathToRelsPath(path)),
     ...[...chartExternalLinkPaths].flatMap((path) => [path, partPathToRelsPath(path)]),
     ...sortByNumber(
       xlsx.doc
@@ -1420,9 +1719,18 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.doc
       .keys("xl/tables/")
       .filter((path) => path.endsWith(".xml") && xlsx.doc.get(path)?.name === "table"),
+    ...queryTableSourcePaths.map((path) => path),
+    ...dialogsheetPaths.flatMap((path) => [partPathToRelsPath(path)]),
+    ...tableOwnedQueryTableRelsPaths,
+    ...singleXmlCellSourcePaths,
+    ...(opts.xmlMaps ? ["xl/xmlMaps.xml"] : []),
     ...xlsx.partRefs.drawings
       .filter((path) => absorbedDrawingParts.has(path))
       .flatMap((path) => [path, partPathToRelsPath(path)]),
+    ...absorbedUserShapesParts,
+    ...absorbedChartThemeOverrides,
+    ...absorbedWebExtensionParts,
+    ...absorbedWebExtensionRels,
     ...pivotCaches.flatMap((cache) => [
       cache.definitionPath,
       ...(cache.recordsPath ? [cache.recordsPath] : []),

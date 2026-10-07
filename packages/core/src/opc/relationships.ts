@@ -108,6 +108,7 @@ export const RELATIONSHIP_TYPES = {
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableSingleCells",
   tableStyles: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tableStyles",
   tags: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/tags",
+  threadedCommentPersons: "http://schemas.microsoft.com/office/2017/10/relationships/person",
   theme: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme",
   themeManager: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/themeManager",
   themeOverride:
@@ -418,6 +419,11 @@ export function buildRootRelationships(
     customPropertiesPath?: string;
     appPropertiesType?: string;
     namespace?: string;
+    additionalRelationships?: readonly {
+      relationshipType: string;
+      target: string;
+      targetMode?: "External";
+    }[];
   },
 ): Relationships {
   const rels = new Relationships("", options?.namespace);
@@ -454,6 +460,13 @@ export function buildRootRelationships(
       4,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
       options?.customPropertiesPath ?? "docProps/custom.xml",
+    );
+  }
+  for (const relationship of options?.additionalRelationships ?? []) {
+    rels.add(
+      relationship.relationshipType as RelationshipType,
+      relationship.target,
+      relationship.targetMode,
     );
   }
   // Root-level passthrough relationships (round-trip): the source _rels/.rels
