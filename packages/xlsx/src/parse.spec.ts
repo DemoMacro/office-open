@@ -74,6 +74,19 @@ describe("parseWorkbook round-trip", () => {
     expect(withRels).toContain("/sharedStrings");
   });
 
+  it("preserves relationship-less macro sheet definitions", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        sheetDefinitions: [{ name: "Macro", sheetId: 8, rId: "", state: "veryHidden" }],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const workbookXml = new TextDecoder().decode(unzipSync(buffer)["xl/workbook.xml"]!);
+
+    expect(workbookXml).toContain('<sheet name="Macro" sheetId="8" r:id="" state="veryHidden"/>');
+    expect(workbookXml).toContain('<sheet name="Macro" sheetId="8" r:id="" state="veryHidden"/>');
+  });
+
   it("resolves absolute root metadata relationship targets", async () => {
     const buffer = (await generateWorkbook(
       {
@@ -96,6 +109,18 @@ describe("parseWorkbook round-trip", () => {
     expect(parsed.lastModifiedBy).toBe("Editor");
     expect(parsed.appProperties?.application).toBe("Spreadsheet");
     expect(parsed.appProperties?.docSecurity).toBe(0);
+  });
+
+  it("preserves an empty shared-strings part", async () => {
+    const source = (await generateWorkbook(
+      { sharedStringsDeclared: true },
+      { type: "uint8array" },
+    )) as Uint8Array;
+    const archive = unzipSync(source);
+    expect(archive["xl/sharedStrings.xml"]).toBeDefined();
+    const parsed = parseWorkbookSync(source);
+    expect(parsed.sharedStringsDeclared).toBe(true);
+    expect(parsed.sharedStrings).toBeUndefined();
   });
 
   it("keeps worksheet hyperlink relationship ids stable across round-trip", async () => {
@@ -637,6 +662,22 @@ describe("parseWorkbook round-trip", () => {
 });
 
 describe("metadata round-trip", () => {
+  it("preserves non-default metadata part paths", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [{ name: "S", rows: [{ cells: [{ value: "x" }] }] }],
+      corePropertiesPath: "docProps/props/core.xml",
+      appPropertiesPath: "docProps/props/app.xml",
+      customPropertiesPath: "docProps/props/custom.xml",
+      customPropertiesDeclared: true,
+    };
+
+    const parsed = await roundTrip(opts);
+    expect(parsed.corePropertiesPath).toBe("docProps/props/core.xml");
+    expect(parsed.appPropertiesPath).toBe("docProps/props/app.xml");
+    expect(parsed.customPropertiesPath).toBe("docProps/props/custom.xml");
+    expect(parsed.customPropertiesDeclared).toBe(true);
+  });
+
   it("round-trips the metadata part and cell cm/vm references", async () => {
     const opts: WorkbookOptions = {
       worksheets: [

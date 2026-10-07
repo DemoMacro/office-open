@@ -114,9 +114,9 @@ export function builtinNumFmtCode(id: number): string | undefined {
  */
 interface CellStyleXfEntry {
   fontId: number;
-  fillId: number;
-  borderId: number;
-  numFmtId: number;
+  fillId?: number;
+  borderId?: number;
+  numFmtId?: number;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;
@@ -151,7 +151,7 @@ export class Styles {
   ];
   private borderKeys = new Map<string, number>();
 
-  private customNumFmts = new Map<string, number>();
+  private customNumFmts: NumFmtEntry[] = [];
   private nextCustomNumFmtId = 164; // custom numFmts start at 164
 
   private cellXfs: Array<{
@@ -159,8 +159,13 @@ export class Styles {
     fillId: number;
     borderId: number;
     numFmtId: number;
+    fontIdDeclared?: boolean;
+    fillIdDeclared?: boolean;
+    borderIdDeclared?: boolean;
+    numFmtIdDeclared?: boolean;
     /** cellStyleXfs reference from an adopted source xf; 0 = standalone. */
     xfId?: number;
+    xfIdDeclared?: boolean;
     alignment?: AlignmentOptions;
     quotePrefix?: boolean;
     pivotButton?: boolean;
@@ -200,6 +205,8 @@ export class Styles {
   private dxfsDeclared = false;
   /** True once an adopted table declared a (possibly empty) numFmts section. */
   private numFmtsDeclared = false;
+  /** True once the source declared a (possibly empty) cellStyleXfs section. */
+  private cellStyleXfsDeclared = false;
 
   public constructor() {
     // Pre-register default font/fill/border keys. These arrays are seeded
@@ -289,16 +296,35 @@ export class Styles {
    * applyXxx flags are preserved verbatim for named-style fidelity.
    */
   public setCellStyleXfs(entries: CellStyleXfOptions[]): void {
+    this.cellStyleXfsDeclared = true;
     this.cellStyleXfs = entries.map((entry) => ({
-      fontId: this.adoptedDefinitionIndex(entry.font, this.fonts) ?? this.registerFont(entry.font),
-      fillId: this.adoptedDefinitionIndex(entry.fill, this.fills) ?? this.registerFill(entry.fill),
-      borderId:
-        this.adoptedDefinitionIndex(entry.border, this.borders) ??
-        this.registerBorder(entry.border),
-      numFmtId:
-        entry.numFmt === undefined && entry.numFmtId !== undefined
-          ? entry.numFmtId
-          : this.registerNumFmt(entry.numFmt),
+      ...(entry.font !== undefined
+        ? {
+            fontId:
+              this.adoptedDefinitionIndex(entry.font, this.fonts) ?? this.registerFont(entry.font),
+          }
+        : entry.fontIdRaw !== undefined
+          ? { fontId: entry.fontIdRaw }
+          : { fontId: 0 }),
+      ...(entry.fillIdDeclared || entry.fill !== undefined
+        ? {
+            fillId:
+              this.adoptedDefinitionIndex(entry.fill, this.fills) ?? this.registerFill(entry.fill),
+          }
+        : {}),
+      ...(entry.borderIdDeclared || entry.border !== undefined
+        ? {
+            borderId:
+              this.adoptedDefinitionIndex(entry.border, this.borders) ??
+              this.registerBorder(entry.border),
+          }
+        : {}),
+      ...(entry.numFmt !== undefined || entry.numFmtId !== undefined
+        ? {
+            numFmtId:
+              entry.numFmt !== undefined ? this.registerNumFmt(entry.numFmt) : entry.numFmtId,
+          }
+        : {}),
       alignment: entry.alignment,
       protection: entry.protection,
       quotePrefix: entry.quotePrefix,
@@ -324,7 +350,7 @@ export class Styles {
    */
   public toDescriptorOptions(): StylesState {
     return {
-      customNumFmts: new Map(this.customNumFmts),
+      customNumFmts: [...this.customNumFmts],
       fonts: [...this.fonts],
       fills: [...this.fills],
       borders: [...this.borders],
@@ -375,14 +401,12 @@ export class Styles {
 
   private registerNumFmt(fmt?: string): number {
     if (!fmt) return 0;
+    const declared = this.customNumFmts.find((entry) => entry.formatCode === fmt);
+    if (declared) return declared.numFmtId;
     const builtin = BUILTIN_NUMFMTS[fmt];
     if (builtin !== undefined) return builtin;
-
-    const existing = this.customNumFmts.get(fmt);
-    if (existing !== undefined) return existing;
-
     const id = this.nextCustomNumFmtId++;
-    this.customNumFmts.set(fmt, id);
+    this.customNumFmts.push({ numFmtId: id, formatCode: fmt });
     return id;
   }
 
@@ -451,7 +475,12 @@ export class Styles {
         fillId: e.fillId ?? 0,
         borderId: e.borderId ?? 0,
         numFmtId: e.numFmtId ?? 0,
+        fontIdDeclared: e.fontIdDeclared,
+        fillIdDeclared: e.fillIdDeclared,
+        borderIdDeclared: e.borderIdDeclared,
+        numFmtIdDeclared: e.numFmtIdDeclared,
         xfId: e.xfId,
+        xfIdDeclared: e.xfIdDeclared,
         alignment: e.alignment,
         quotePrefix: e.quotePrefix,
         pivotButton: e.pivotButton,
@@ -471,9 +500,11 @@ export class Styles {
     });
     if (table.numFmts) {
       this.numFmtsDeclared = true;
-      this.customNumFmts = new Map(table.numFmts.map((e) => [e.formatCode, e.numFmtId]));
-      for (const id of this.customNumFmts.values()) {
-        if (id >= this.nextCustomNumFmtId) this.nextCustomNumFmtId = id + 1;
+      this.customNumFmts = table.numFmts.map((entry) => ({ ...entry }));
+      for (const entry of this.customNumFmts) {
+        if (entry.numFmtId >= this.nextCustomNumFmtId) {
+          this.nextCustomNumFmtId = entry.numFmtId + 1;
+        }
       }
     }
   }
@@ -492,10 +523,12 @@ export class Styles {
     ];
 
     // numFmts
-    if (this.customNumFmts.size > 0) {
-      p.push(`<numFmts count="${this.customNumFmts.size}">`);
-      for (const [fmt, id] of this.customNumFmts) {
-        p.push(`<numFmt numFmtId="${id}" formatCode="${escapeXml(fmt)}"/>`);
+    if (this.customNumFmts.length > 0) {
+      p.push(`<numFmts count="${this.customNumFmts.length}">`);
+      for (const entry of this.customNumFmts) {
+        p.push(
+          `<numFmt numFmtId="${entry.numFmtId}" formatCode="${escapeXml(entry.formatCode)}"/>`,
+        );
       }
       p.push("</numFmts>");
     } else if (this.numFmtsDeclared) {
@@ -548,10 +581,13 @@ export class Styles {
             .join("");
           p.push(`<fill><gradientFill${attrs(gfAttrs)}>${stopParts}</gradientFill></fill>`);
         } else {
+          const defaultPatternType =
+            f.patternType ??
+            (f.type === "solid" ? "solid" : f.patternTypeDeclared === false ? undefined : "solid");
           const patternAttrs =
             f.legacyPatternElement && f.legacyPatternType !== undefined
               ? ` patternType="${f.legacyPatternType}"`
-              : attrs({ patternType: f.patternType ?? "solid" });
+              : attrs({ patternType: defaultPatternType });
           const fgChannel =
             f.fgLegacyColorType !== undefined
               ? `type="${f.fgLegacyColorType}" val="${f.fgLegacyColorValue ?? ""}"`
@@ -560,7 +596,7 @@ export class Styles {
                 : f.colorIndexed !== undefined
                   ? `indexed="${f.colorIndexed}"`
                   : f.color
-                    ? `rgb="FF${f.color}"`
+                    ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
                     : f.fgAutoColor
                       ? 'auto="1"'
                       : "";
@@ -579,7 +615,7 @@ export class Styles {
                 : f.bgColorIndexed !== undefined
                   ? `indexed="${f.bgColorIndexed}"`
                   : f.bgColor
-                    ? `rgb="FF${f.bgColor}"`
+                    ? `rgb="${f.bgColorRaw ?? `FF${f.bgColor}`}"`
                     : f.bgAutoColor
                       ? 'auto="1"'
                       : "";
@@ -610,20 +646,21 @@ export class Styles {
         if (b.diagonalDown !== undefined) bAttrs.push(`diagonalDown="${b.diagonalDown ? 1 : 0}"`);
         if (b.outline !== undefined) bAttrs.push(`outline="${b.outline ? 1 : 0}"`);
         const bAttr = bAttrs.length ? ` ${bAttrs.join(" ")}` : "";
-        p.push(`<border${bAttr}>${this.borderXmlStr(b)}</border>`);
+        const requiredSides = !this.roundTrip;
+        p.push(`<border${bAttr}>${this.borderXmlStr(b, requiredSides)}</border>`);
       }
       p.push("</borders>");
     }
 
     // cellStyleXfs — named-style templates; applyXxx preserved verbatim (not derived)
-    if (this.cellStyleXfs.length > 0) {
+    if (this.cellStyleXfs.length > 0 && (this.cellStyleXfsDeclared || !this.roundTrip)) {
       p.push(`<cellStyleXfs count="${this.cellStyleXfs.length}">`);
       for (const xf of this.cellStyleXfs) {
         const xAttrs: Record<string, string | number | boolean | undefined> = {
-          numFmtId: xf.numFmtId,
+          ...(xf.numFmtId !== undefined ? { numFmtId: xf.numFmtId } : {}),
           fontId: xf.fontId,
-          fillId: xf.fillId,
-          borderId: xf.borderId,
+          ...(xf.fillId !== undefined ? { fillId: xf.fillId } : {}),
+          ...(xf.borderId !== undefined ? { borderId: xf.borderId } : {}),
         };
         if (xf.applyNumberFormat !== undefined)
           xAttrs.applyNumberFormat = xf.applyNumberFormat ? 1 : 0;
@@ -632,8 +669,8 @@ export class Styles {
         if (xf.applyBorder !== undefined) xAttrs.applyBorder = xf.applyBorder ? 1 : 0;
         if (xf.applyAlignment !== undefined) xAttrs.applyAlignment = xf.applyAlignment ? 1 : 0;
         if (xf.applyProtection !== undefined) xAttrs.applyProtection = xf.applyProtection ? 1 : 0;
-        if (xf.quotePrefix) xAttrs.quotePrefix = 1;
-        if (xf.pivotButton) xAttrs.pivotButton = 1;
+        if (xf.quotePrefix !== undefined) xAttrs.quotePrefix = xf.quotePrefix ? 1 : 0;
+        if (xf.pivotButton !== undefined) xAttrs.pivotButton = xf.pivotButton ? 1 : 0;
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
         const protStr = xf.protection ? this.protectionXmlStr(xf.protection) : "";
         const inner = alignStr + protStr;
@@ -647,11 +684,11 @@ export class Styles {
       p.push(`<cellXfs count="${this.cellXfs.length}">`);
       for (const xf of this.cellXfs) {
         const xAttrs: Record<string, string | number | boolean | undefined> = {
-          numFmtId: xf.numFmtId,
-          fontId: xf.fontId,
-          fillId: xf.fillId,
-          borderId: xf.borderId,
-          xfId: xf.xfId ?? 0,
+          numFmtId: xf.numFmtIdDeclared === false ? undefined : xf.numFmtId,
+          fontId: xf.fontIdDeclared === false ? undefined : xf.fontId,
+          fillId: xf.fillIdDeclared === false ? undefined : xf.fillId,
+          borderId: xf.borderIdDeclared === false ? undefined : xf.borderId,
+          xfId: xf.xfIdDeclared === false ? undefined : (xf.xfId ?? 0),
         };
         // Adopted xfs carry their source apply* flags verbatim; freshly
         // registered ones derive them from non-zero component ids.
@@ -668,8 +705,8 @@ export class Styles {
         if (applyBorder !== undefined) xAttrs.applyBorder = applyBorder ? 1 : 0;
         if (applyNumberFormat !== undefined) xAttrs.applyNumberFormat = applyNumberFormat ? 1 : 0;
         if (applyAlignment !== undefined) xAttrs.applyAlignment = applyAlignment ? 1 : 0;
-        if (xf.quotePrefix) xAttrs.quotePrefix = 1;
-        if (xf.pivotButton) xAttrs.pivotButton = 1;
+        if (xf.quotePrefix !== undefined) xAttrs.quotePrefix = xf.quotePrefix ? 1 : 0;
+        if (xf.pivotButton !== undefined) xAttrs.pivotButton = xf.pivotButton ? 1 : 0;
         if (applyProtection !== undefined) xAttrs.applyProtection = applyProtection ? 1 : 0;
 
         const alignStr = xf.alignment ? this.alignmentXmlStr(xf.alignment) : "";
@@ -699,9 +736,11 @@ export class Styles {
         for (const cs of this.customCellStyles) {
           const attrs: string[] = [`name="${escapeXml(cs.name)}"`, `xfId="${cs.xfId}"`];
           if (cs.builtinId !== undefined) attrs.push(`builtinId="${cs.builtinId}"`);
-          if (cs.customBuiltin) attrs.push('customBuiltin="1"');
+          if (cs.customBuiltin !== undefined)
+            attrs.push(`customBuiltin="${cs.customBuiltin ? 1 : 0}"`);
           if (cs.iLevel !== undefined) attrs.push(`iLevel="${cs.iLevel}"`);
-          if (cs.hidden) attrs.push('hidden="1"');
+          if (cs.hidden !== undefined) attrs.push(`hidden="${cs.hidden ? 1 : 0}"`);
+          if (cs.uid !== undefined) attrs.push(`xr:uid="${escapeXml(cs.uid)}"`);
           csParts.push(`<cellStyle ${attrs.join(" ")}/>`);
         }
         csParts.push("</cellStyles>");
@@ -746,8 +785,8 @@ export class Styles {
               ? `theme="${f.themeColor}"`
               : f.colorIndexed !== undefined
                 ? `indexed="${f.colorIndexed}"`
-                : f.color && hasBg
-                  ? `rgb="FF${f.color}"`
+                : f.color && (hasBg || f.fgColorRaw !== undefined)
+                  ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
                   : f.fgAutoColor
                     ? 'auto="1"'
                     : "";
@@ -764,11 +803,11 @@ export class Styles {
               : f.bgColorIndexed !== undefined
                 ? `indexed="${f.bgColorIndexed}"`
                 : f.bgColor
-                  ? `rgb="FF${f.bgColor}"`
+                  ? `rgb="${f.bgColorRaw ?? `FF${f.bgColor}`}"`
                   : f.bgAutoColor
                     ? 'auto="1"'
-                    : f.color && !hasBg
-                      ? `rgb="FF${f.color}"`
+                    : f.color && !hasBg && f.fgColorRaw === undefined
+                      ? `rgb="${f.fgColorRaw ?? `FF${f.color}`}"`
                       : "";
           const bgTint =
             f.bgTintRaw !== undefined
@@ -837,6 +876,7 @@ export class Styles {
       ];
       for (const ts of this.tableStyles.tableStyles ?? []) {
         const tsAttrs: string[] = [`name="${escapeXml(ts.name)}"`];
+        if (ts.uid !== undefined) tsAttrs.push(`xr9:uid="${escapeXml(ts.uid)}"`);
         if (ts.pivot !== undefined) tsAttrs.push(`pivot="${ts.pivot ? 1 : 0}"`);
         if (ts.table !== undefined) tsAttrs.push(`table="${ts.table ? 1 : 0}"`);
         if (ts.elements && ts.elements.length > 0) {
@@ -844,6 +884,7 @@ export class Styles {
           for (const el of ts.elements) {
             const elAttrs: string[] = [`type="${el.type}"`];
             if (el.dxfId !== undefined) elAttrs.push(`dxfId="${el.dxfId}"`);
+            if (el.size !== undefined) elAttrs.push(`size="${el.size}"`);
             tsParts.push(`<tableStyleElement ${elAttrs.join(" ")}/>`);
           }
           tsParts.push("</tableStyle>");
@@ -916,26 +957,33 @@ export class Styles {
   }
 
   private fontXmlStr(f: FontOptions): string {
-    const parts: string[] = [];
+    const parts: { name: string; xml: string }[] = [];
+    const push = (name: string, xml: string): void => {
+      parts.push({ name, xml });
+    };
     // CT_BooleanProperty val defaults to true — an explicit false round-trips
     // as val="0", an absent flag emits nothing.
-    const flag = (name: string, on: boolean | undefined): void => {
+    const flag = (name: string, on: boolean | undefined, raw?: string): void => {
       if (on === undefined) return;
-      parts.push(on ? `<${name}/>` : `<${name} val="0"/>`);
+      push(
+        name,
+        raw !== undefined ? `<${name} val="${raw}"/>` : on ? `<${name}/>` : `<${name} val="0"/>`,
+      );
     };
     // x:font child order follows Excel's writer (and the Open XML SDK particle):
     // b, i, strike, condense, extend, outline, shadow, u, vertAlign, sz, color,
     // name, family, charset, scheme — the literal ISO sequence (name/charset/
     // family leading) matches no real-world file
-    flag("b", f.bold);
-    flag("i", f.italic);
-    flag("strike", f.strike);
-    flag("condense", f.condense);
-    flag("extend", f.extend);
-    flag("outline", f.outline);
-    flag("shadow", f.shadow);
+    flag("b", f.bold, f.boldRaw);
+    flag("i", f.italic, f.italicRaw);
+    flag("strike", f.strike, f.strikeRaw);
+    flag("condense", f.condense, f.condenseRaw);
+    flag("extend", f.extend, f.extendRaw);
+    flag("outline", f.outline, f.outlineRaw);
+    flag("shadow", f.shadow, f.shadowRaw);
     if (f.underline !== undefined) {
-      parts.push(
+      push(
+        "u",
         f.underline === false
           ? '<u val="none"/>'
           : f.underline === true
@@ -943,11 +991,12 @@ export class Styles {
             : `<u val="${f.underline}"/>`,
       );
     }
-    if (f.vertAlign) parts.push(`<vertAlign val="${f.vertAlign}"/>`);
-    if (f.size) parts.push(`<sz val="${f.size}"/>`);
-    if (f.autoColor) parts.push('<color auto="1"/>');
+    if (f.vertAlign) push("vertAlign", `<vertAlign val="${f.vertAlign}"/>`);
+    if (f.size !== undefined) push("sz", `<sz val="${f.sizeRaw ?? f.size}"/>`);
+    if (f.autoColor) push("color", '<color auto="1"/>');
     else if (f.legacyColorType !== undefined)
-      parts.push(
+      push(
+        "color",
         `<color type="${f.legacyColorType}" val="${f.legacyColorValue ?? ""}"${
           f.tintRaw !== undefined
             ? ` tint="${f.tintRaw}"`
@@ -957,7 +1006,8 @@ export class Styles {
         }/>`,
       );
     else if (f.themeColor !== undefined)
-      parts.push(
+      push(
+        "color",
         `<color theme="${f.themeColor}"${
           f.tintRaw !== undefined
             ? ` tint="${f.tintRaw}"`
@@ -966,13 +1016,31 @@ export class Styles {
               : ""
         }/>`,
       );
-    else if (f.colorIndexed !== undefined) parts.push(`<color indexed="${f.colorIndexed}"/>`);
-    else if (f.color) parts.push(`<color rgb="FF${f.color}"/>`);
-    if (f.font) parts.push(`<name val="${escapeXml(f.font)}"/>`);
-    if (f.family !== undefined) parts.push(`<family val="${f.family}"/>`);
-    if (f.charset !== undefined) parts.push(`<charset val="${f.charset}"/>`);
-    if (f.scheme) parts.push(`<scheme val="${f.scheme}"/>`);
-    return parts.join("");
+    else if (f.colorIndexed !== undefined) push("color", `<color indexed="${f.colorIndexed}"/>`);
+    else if (f.color)
+      push(
+        "color",
+        `<color rgb="${f.colorRaw ?? `FF${f.color}`}"${
+          f.tintRaw !== undefined
+            ? ` tint="${f.tintRaw}"`
+            : f.tint !== undefined
+              ? ` tint="${decimalAttr(f.tint)}"`
+              : ""
+        }/>`,
+      );
+    if (f.font) push("name", `<name val="${escapeXml(f.font)}"/>`);
+    if (f.family !== undefined) push("family", `<family val="${f.family}"/>`);
+    if (f.charset !== undefined) push("charset", `<charset val="${f.charset}"/>`);
+    if (f.scheme) push("scheme", `<scheme val="${f.scheme}"/>`);
+    const order = f.childOrder;
+    if (order !== undefined) {
+      const rank = new Map(order.map((name, index) => [name, index] as const));
+      parts.sort(
+        (left, right) =>
+          (rank.get(left.name) ?? order.length) - (rank.get(right.name) ?? order.length),
+      );
+    }
+    return parts.map((part) => part.xml).join("");
   }
 
   /**
@@ -980,7 +1048,7 @@ export class Styles {
    * writes (cellXfs context); dxf borders carry only the sides present.
    */
   private borderXmlStr(b: BorderSideOptions, allSides = true): string {
-    const parts: string[] = [];
+    const parts: { name: string; xml: string }[] = [];
     const sideColorXmlStr = (side: BorderOptions): string => {
       if (side.autoColor) return '<color auto="1"/>';
       if (side.legacyColorType !== undefined)
@@ -1000,19 +1068,33 @@ export class Styles {
               : ""
         }/>`;
       if (side.colorIndexed !== undefined) return `<color indexed="${side.colorIndexed}"/>`;
-      if (side.color) return `<color rgb="FF${side.color}"/>`;
+      if (side.color) return `<color rgb="${side.colorRaw ?? `FF${side.color}`}"/>`;
       return "";
     };
     const renderSide = (name: string, opts: BorderOptions | undefined, required: boolean) => {
-      if (opts?.style) {
-        parts.push(`<${name} style="${opts.style}">${sideColorXmlStr(opts)}</${name}>`);
-      } else if (opts || required) {
-        parts.push(`<${name}/>`);
+      const sideContent = opts ? sideColorXmlStr(opts) : "";
+      if (opts?.style !== undefined) {
+        parts.push({ name, xml: `<${name} style="${opts.style}">${sideContent}</${name}>` });
+      } else if (opts) {
+        parts.push({ name, xml: `<${name}>${sideContent}</${name}>` });
+      } else if (required) {
+        parts.push({ name, xml: `<${name}/>` });
       }
     };
+    const anySidePresent = [
+      b.left,
+      b.right,
+      b.top,
+      b.bottom,
+      b.diagonal,
+      b.vertical,
+      b.horizontal,
+      b.start,
+      b.end,
+    ].some((side) => side !== undefined);
     const cellSides = ["left", "right", "top", "bottom", "diagonal"] as const;
     for (const side of cellSides) {
-      renderSide(side, b[side] as BorderOptions | undefined, allSides);
+      renderSide(side, b[side] as BorderOptions | undefined, allSides && !anySidePresent);
     }
     // vertical/horizontal/start/end: cell-range or RTL sides, only when present
     renderSide("vertical", b.vertical, false);
@@ -1020,7 +1102,15 @@ export class Styles {
     // start/end not in transitional XSD — only emit when present
     renderSide("start", b.start, false);
     renderSide("end", b.end, false);
-    return parts.join("");
+    const order = b.childOrder;
+    if (order !== undefined) {
+      const rank = new Map(order.map((name, index) => [name, index] as const));
+      parts.sort(
+        (left, right) =>
+          (rank.get(left.name) ?? order.length) - (rank.get(right.name) ?? order.length),
+      );
+    }
+    return parts.map((part) => part.xml).join("");
   }
 
   private alignmentXmlStr(a: AlignmentOptions): string {
@@ -1030,6 +1120,7 @@ export class Styles {
     if (a.wrapText !== undefined) aAttrs.wrapText = a.wrapText ? 1 : 0;
     if (a.textRotation !== undefined) aAttrs.textRotation = a.textRotation;
     if (a.indent !== undefined) aAttrs.indent = a.indent;
+    if (a.indentRaw !== undefined) aAttrs.indent = a.indentRaw;
     if (a.relativeIndent !== undefined) aAttrs.relativeIndent = a.relativeIndent;
     if (a.justifyLastLine !== undefined) aAttrs.justifyLastLine = a.justifyLastLine ? 1 : 0;
     if (a.shrinkToFit !== undefined) aAttrs.shrinkToFit = a.shrinkToFit ? 1 : 0;

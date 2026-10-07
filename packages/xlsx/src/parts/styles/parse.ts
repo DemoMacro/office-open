@@ -19,17 +19,21 @@ import type {
 
 export function parseFont(el: XmlElement): FontOptions {
   const result: Partial<FontOptions> = {};
+  const childOrder: string[] = [];
   // CT_BooleanProperty children (b/i/strike/…) default val to true, so an
   // explicit val="0" is a real "off" statement — keep it as false rather than
   // collapsing to the attribute-absent default.
   const boolProp = (prop: XmlElement): boolean | undefined => parseOnOff(attr(prop, "val")) ?? true;
   for (const child of el.elements ?? []) {
+    if (child.name !== undefined) childOrder.push(child.name);
     switch (child.name) {
       case "b":
         result.bold = boolProp(child);
+        result.boldRaw = attr(child, "val");
         break;
       case "i":
         result.italic = boolProp(child);
+        result.italicRaw = attr(child, "val");
         break;
       case "u":
         // ST_UnderlineValues: "none" is the only off spelling; every other
@@ -52,26 +56,33 @@ export function parseFont(el: XmlElement): FontOptions {
         break;
       case "strike":
         result.strike = boolProp(child);
+        result.strikeRaw = attr(child, "val");
         break;
       case "outline":
         result.outline = boolProp(child);
+        result.outlineRaw = attr(child, "val");
         break;
       case "shadow":
         result.shadow = boolProp(child);
+        result.shadowRaw = attr(child, "val");
         break;
       case "condense":
         result.condense = boolProp(child);
+        result.condenseRaw = attr(child, "val");
         break;
       case "extend":
         result.extend = boolProp(child);
+        result.extendRaw = attr(child, "val");
         break;
       case "sz":
         result.size = attrNum(child, "val");
+        result.sizeRaw = attr(child, "val");
         break;
       case "color":
         {
           const color = parseColorHex(child);
           if (color !== undefined) result.color = color;
+          result.colorRaw = attr(child, "type") === "rgb" ? attr(child, "val") : attr(child, "rgb");
         }
         readThemeColor(child, result);
         const indexed = attrNum(child, "indexed");
@@ -101,6 +112,7 @@ export function parseFont(el: XmlElement): FontOptions {
         break;
     }
   }
+  if (childOrder.length > 1) result.childOrder = childOrder;
   return result as FontOptions;
 }
 
@@ -139,11 +151,13 @@ export function parseFill(el: XmlElement): CellFillOptions {
   if (patternFill) {
     const result: CellFillOptions = {};
     const patternType = attr(patternFill, "patternType");
+    result.patternTypeDeclared = patternType !== undefined;
     if (patternType) result.patternType = patternType as CellFillOptions["patternType"];
     const fg = findChild(patternFill, "fgColor");
     if (fg) {
       const color = parseColorHex(fg);
       if (color !== undefined) result.color = color;
+      result.fgColorRaw = attr(fg, "type") === "rgb" ? attr(fg, "val") : attr(fg, "rgb");
       readThemeColor(fg, result);
       const indexed = attrNum(fg, "indexed");
       if (indexed !== undefined) result.colorIndexed = indexed;
@@ -152,6 +166,7 @@ export function parseFill(el: XmlElement): CellFillOptions {
     const bg = findChild(patternFill, "bgColor");
     if (bg) {
       result.bgColor = parseColorHex(bg);
+      result.bgColorRaw = attr(bg, "type") === "rgb" ? attr(bg, "val") : attr(bg, "rgb");
       const bgTheme = attrNum(bg, "theme");
       if (bgTheme !== undefined) result.bgThemeColor = bgTheme;
       const bgTint = attrNum(bg, "tint");
@@ -200,25 +215,32 @@ export function parseFill(el: XmlElement): CellFillOptions {
 
 export function parseBorder(el: XmlElement): BorderSideOptions {
   const result: BorderSideOptions = {};
+  const childOrder: string[] = [];
   if (attr(el, "diagonalUp") !== undefined)
     result.diagonalUp = parseOnOff(attr(el, "diagonalUp")) ?? true;
   if (attr(el, "diagonalDown") !== undefined)
     result.diagonalDown = parseOnOff(attr(el, "diagonalDown")) ?? true;
   if (attr(el, "outline") !== undefined) result.outline = parseOnOff(attr(el, "outline")) ?? true;
 
-  for (const side of [
-    "left",
-    "right",
-    "top",
-    "bottom",
-    "diagonal",
-    "start",
-    "end",
-    "vertical",
-    "horizontal",
-  ] as const) {
-    const sideEl = findChild(el, side);
-    if (sideEl) {
+  for (const sideEl of el.elements ?? []) {
+    const side = sideEl.name;
+    if (
+      side !== undefined &&
+      (
+        [
+          "left",
+          "right",
+          "top",
+          "bottom",
+          "diagonal",
+          "start",
+          "end",
+          "vertical",
+          "horizontal",
+        ] as const
+      ).includes(side as "left")
+    ) {
+      childOrder.push(side);
       // Presence-preserving: an empty <left/> stays as left: {} so stringify
       // re-emits it; Excel always writes the five cell sides, dxf adds
       // vertical/horizontal — both round-trip byte-identically.
@@ -229,6 +251,7 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
       if (color) {
         const sideColor = parseColorHex(color);
         if (sideColor !== undefined) opts.color = sideColor;
+        opts.colorRaw = attr(color, "type") === "rgb" ? attr(color, "val") : attr(color, "rgb");
         readThemeColor(color, opts);
         if (attr(color, "type") !== undefined) {
           opts.legacyColorType = attr(color, "type") as BorderOptions["legacyColorType"];
@@ -238,9 +261,22 @@ export function parseBorder(el: XmlElement): BorderSideOptions {
         const indexed = attrNum(color, "indexed");
         if (indexed !== undefined) opts.colorIndexed = indexed;
       }
-      result[side] = opts;
+      result[
+        side as
+          | "left"
+          | "right"
+          | "top"
+          | "bottom"
+          | "diagonal"
+          | "start"
+          | "end"
+          | "vertical"
+          | "horizontal"
+      ] = opts;
     }
   }
+
+  if (childOrder.length > 1) result.childOrder = childOrder;
 
   return result;
 }
@@ -257,6 +293,8 @@ export function parseAlignment(el: XmlElement): AlignmentOptions {
   if (rotation !== undefined) result.textRotation = rotation;
   const indent = attrNum(el, "indent");
   if (indent !== undefined) result.indent = indent;
+  const indentRaw = attr(el, "indent");
+  if (indentRaw !== undefined && indent === undefined) result.indentRaw = indentRaw;
   const relativeIndent = attrNum(el, "relativeIndent");
   if (relativeIndent !== undefined) result.relativeIndent = relativeIndent;
   const justifyLastLine = parseOnOff(attr(el, "justifyLastLine"));

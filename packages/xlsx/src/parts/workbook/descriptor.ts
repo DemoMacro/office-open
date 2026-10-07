@@ -104,11 +104,14 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
     // Workbook protection
     const protEl = findChild(el, "workbookProtection");
-    if (protEl?.attributes) {
+    if (protEl) {
       const prot: WorkbookProtectionOptions = {};
-      if (parseOnOff(attr(protEl, "lockStructure"))) prot.lockStructure = true;
-      if (parseOnOff(attr(protEl, "lockWindows"))) prot.lockWindows = true;
-      if (parseOnOff(attr(protEl, "lockRevision"))) prot.lockRevision = true;
+      const lockStructure = parseOnOff(attr(protEl, "lockStructure"));
+      if (lockStructure !== undefined) prot.lockStructure = lockStructure;
+      const lockWindows = parseOnOff(attr(protEl, "lockWindows"));
+      if (lockWindows !== undefined) prot.lockWindows = lockWindows;
+      const lockRevision = parseOnOff(attr(protEl, "lockRevision"));
+      if (lockRevision !== undefined) prot.lockRevision = lockRevision;
       // @workbookPassword/@revisionsPassword (legacy hashes) not read back —
       // the password fields are plaintext authoring input and stringify hashes
       // them, so carrying the hash would double-hash on round-trip. The modern
@@ -129,6 +132,10 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
         prot.revisionsSaltValue = attr(protEl, "revisionsSaltValue");
       if (attr(protEl, "revisionsSpinCount"))
         prot.revisionsSpinCount = attrNum(protEl, "revisionsSpinCount");
+      const wbPasswordHash = attr(protEl, "workbookPassword");
+      if (wbPasswordHash !== undefined) prot.workbookPasswordHashRaw = wbPasswordHash;
+      const revPasswordHash = attr(protEl, "revisionsPassword");
+      if (revPasswordHash !== undefined) prot.revisionsPasswordHashRaw = revPasswordHash;
       if (attr(protEl, "workbookPasswordCharacterSet"))
         prot.workbookPasswordCharacterSet = attr(protEl, "workbookPasswordCharacterSet");
       if (attr(protEl, "revisionsPasswordCharacterSet"))
@@ -140,7 +147,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
     const bookViewsEl = findChild(el, "bookViews");
     if (bookViewsEl) {
       const bvEl = findChild(bookViewsEl, "workbookView");
-      if (bvEl?.attributes) {
+      if (bvEl) {
         const bv: WorkbookViewOptions = {};
         const xw = attrNum(bvEl, "xWindow");
         if (xw !== undefined) bv.xWindow = xw;
@@ -180,26 +187,32 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
     // Calc properties
     const calcPrEl = findChild(el, "calcPr");
-    if (calcPrEl?.attributes) {
+    if (calcPrEl) {
       const calc: CalculationPropertiesOptions = {};
       const calcId = attrNum(calcPrEl, "calcId");
       if (calcId !== undefined) calc.calcId = calcId;
       if (attr(calcPrEl, "calcMode"))
         calc.calcMode = attr(calcPrEl, "calcMode") as CalculationPropertiesOptions["calcMode"];
-      if (parseOnOff(attr(calcPrEl, "fullCalcOnLoad"))) calc.fullCalcOnLoad = true;
-      if (String(attr(calcPrEl, "concurrentCalc")) === "0") calc.concurrentCalc = false;
+      const fullCalcOnLoad = parseOnOff(attr(calcPrEl, "fullCalcOnLoad"));
+      if (fullCalcOnLoad !== undefined) calc.fullCalcOnLoad = fullCalcOnLoad;
+      const concurrentCalc = parseOnOff(attr(calcPrEl, "concurrentCalc"));
+      if (concurrentCalc !== undefined) calc.concurrentCalc = concurrentCalc;
       if (attr(calcPrEl, "refMode"))
         calc.refMode = attr(calcPrEl, "refMode") as CalculationPropertiesOptions["refMode"];
-      if (String(attr(calcPrEl, "calcOnSave")) === "0") calc.calcOnSave = false;
-      if (parseOnOff(attr(calcPrEl, "forceFullCalc"))) calc.forceFullCalc = true;
+      const calcOnSave = parseOnOff(attr(calcPrEl, "calcOnSave"));
+      if (calcOnSave !== undefined) calc.calcOnSave = calcOnSave;
+      const forceFullCalc = parseOnOff(attr(calcPrEl, "forceFullCalc"));
+      if (forceFullCalc !== undefined) calc.forceFullCalc = forceFullCalc;
       const cmc = attrNum(calcPrEl, "concurrentManualCount");
       if (cmc !== undefined) calc.concurrentManualCount = cmc;
-      if (parseOnOff(attr(calcPrEl, "iterate"))) calc.iterate = true;
+      const iterate = parseOnOff(attr(calcPrEl, "iterate"));
+      if (iterate !== undefined) calc.iterate = iterate;
       const ic = attrNum(calcPrEl, "iterateCount");
       if (ic !== undefined) calc.iterateCount = ic;
       const id = attrNum(calcPrEl, "iterateDelta");
       if (id !== undefined) calc.iterateDelta = id;
-      if (String(attr(calcPrEl, "fullPrecision")) === "0") calc.fullPrecision = false;
+      const fullPrecision = parseOnOff(attr(calcPrEl, "fullPrecision"));
+      if (fullPrecision !== undefined) calc.fullPrecision = fullPrecision;
       if (attr(calcPrEl, "calcCompleted") !== undefined)
         calc.calcCompleted = parseOnOff(attr(calcPrEl, "calcCompleted")) ?? false;
       result.calculation = calc;
@@ -275,7 +288,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
     // Web publishing
     const webPublishingEl = findChild(el, "webPublishing");
-    if (webPublishingEl?.attributes) {
+    if (webPublishingEl) {
       const wp: WebPublishingOptions = {};
       if (String(attr(webPublishingEl, "css")) === "0") wp.css = false;
       if (String(attr(webPublishingEl, "thicket")) === "0") wp.thicket = false;
@@ -310,33 +323,47 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
 
     // Workbook properties
     const wbPrEl = findChild(el, "workbookPr");
-    if (wbPrEl?.attributes) {
+    if (wbPrEl) {
       const wbPr: WorkbookPropertiesOptions = {};
       if (attr(wbPrEl, "date1904") !== undefined)
         wbPr.date1904 = parseOnOff(attr(wbPrEl, "date1904"));
+      if (attr(wbPrEl, "dateCompatibility") !== undefined)
+        wbPr.dateCompatibility = parseOnOff(attr(wbPrEl, "dateCompatibility"));
       const dtv = attrNum(wbPrEl, "defaultThemeVersion");
       if (dtv !== undefined) wbPr.defaultThemeVersion = dtv;
       if (attr(wbPrEl, "showObjects"))
         wbPr.showObjects = attr(wbPrEl, "showObjects") as WorkbookPropertiesOptions["showObjects"];
-      if (parseOnOff(attr(wbPrEl, "hidePivotFieldList"))) wbPr.hidePivotFieldList = true;
-      if (parseOnOff(attr(wbPrEl, "allowRefreshQuery"))) wbPr.allowRefreshQuery = true;
-      if (parseOnOff(attr(wbPrEl, "filterPrivacy"))) wbPr.filterPrivacy = true;
+      const hidePivotFieldList = parseOnOff(attr(wbPrEl, "hidePivotFieldList"));
+      if (hidePivotFieldList !== undefined) wbPr.hidePivotFieldList = hidePivotFieldList;
+      const allowRefreshQuery = parseOnOff(attr(wbPrEl, "allowRefreshQuery"));
+      if (allowRefreshQuery !== undefined) wbPr.allowRefreshQuery = allowRefreshQuery;
+      const filterPrivacy = parseOnOff(attr(wbPrEl, "filterPrivacy"));
+      if (filterPrivacy !== undefined) wbPr.filterPrivacy = filterPrivacy;
       if (attr(wbPrEl, "backupFile") !== undefined)
         wbPr.backupFile = parseOnOff(attr(wbPrEl, "backupFile"));
       if (attr(wbPrEl, "codeName")) wbPr.codeName = attr(wbPrEl, "codeName");
-      if (parseOnOff(attr(wbPrEl, "showBorderUnselectedTables")))
-        wbPr.showBorderUnselectedTables = true;
-      if (parseOnOff(attr(wbPrEl, "promptedSolutions"))) wbPr.promptedSolutions = true;
-      if (String(attr(wbPrEl, "showInkAnnotation")) === "0") wbPr.showInkAnnotation = false;
-      if (String(attr(wbPrEl, "saveExternalLinkValues")) === "0")
-        wbPr.saveExternalLinkValues = false;
+      const showBorderUnselectedTables = parseOnOff(attr(wbPrEl, "showBorderUnselectedTables"));
+      if (showBorderUnselectedTables !== undefined)
+        wbPr.showBorderUnselectedTables = showBorderUnselectedTables;
+      const promptedSolutions = parseOnOff(attr(wbPrEl, "promptedSolutions"));
+      if (promptedSolutions !== undefined) wbPr.promptedSolutions = promptedSolutions;
+      const showInkAnnotation = parseOnOff(attr(wbPrEl, "showInkAnnotation"));
+      if (showInkAnnotation !== undefined) wbPr.showInkAnnotation = showInkAnnotation;
+      const saveExternalLinkValues = parseOnOff(attr(wbPrEl, "saveExternalLinkValues"));
+      if (saveExternalLinkValues !== undefined)
+        wbPr.saveExternalLinkValues = saveExternalLinkValues;
       if (attr(wbPrEl, "updateLinks"))
         wbPr.updateLinks = attr(wbPrEl, "updateLinks") as WorkbookPropertiesOptions["updateLinks"];
-      if (parseOnOff(attr(wbPrEl, "showPivotChartFilter"))) wbPr.showPivotChartFilter = true;
-      if (parseOnOff(attr(wbPrEl, "publishItems"))) wbPr.publishItems = true;
-      if (parseOnOff(attr(wbPrEl, "checkCompatibility"))) wbPr.checkCompatibility = true;
-      if (String(attr(wbPrEl, "autoCompressPictures")) === "0") wbPr.autoCompressPictures = false;
-      if (parseOnOff(attr(wbPrEl, "refreshAllConnections"))) wbPr.refreshAllConnections = true;
+      const showPivotChartFilter = parseOnOff(attr(wbPrEl, "showPivotChartFilter"));
+      if (showPivotChartFilter !== undefined) wbPr.showPivotChartFilter = showPivotChartFilter;
+      const publishItems = parseOnOff(attr(wbPrEl, "publishItems"));
+      if (publishItems !== undefined) wbPr.publishItems = publishItems;
+      const checkCompatibility = parseOnOff(attr(wbPrEl, "checkCompatibility"));
+      if (checkCompatibility !== undefined) wbPr.checkCompatibility = checkCompatibility;
+      const autoCompressPictures = parseOnOff(attr(wbPrEl, "autoCompressPictures"));
+      if (autoCompressPictures !== undefined) wbPr.autoCompressPictures = autoCompressPictures;
+      const refreshAllConnections = parseOnOff(attr(wbPrEl, "refreshAllConnections"));
+      if (refreshAllConnections !== undefined) wbPr.refreshAllConnections = refreshAllConnections;
       result.properties = wbPr;
     }
 
@@ -399,7 +426,7 @@ export const workbookDesc: CustomDescriptor<WorkbookDescriptorOptions> = {
           names.push(attr(fg, "name")!);
         }
       }
-      if (names.length > 0) result.functionGroups = names;
+      result.functionGroups = names;
     }
 
     // Web publish objects

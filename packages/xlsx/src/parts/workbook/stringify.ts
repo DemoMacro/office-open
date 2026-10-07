@@ -53,9 +53,7 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   // File version (CT_Workbook first child). Fresh compiles emit Excel 2007
   // defaults; a round-tripped source carries its own version stamp through.
   const fv = opts.fileVersion;
-  if (fv === undefined) {
-    parts.push('<fileVersion appName="xl" lastEdited="7" lowestEdited="6" rupBuild="29929"/>');
-  } else if (fv) {
+  if (fv) {
     const fvAttrs: string[] = [];
     if (fv.appName) fvAttrs.push(`appName="${fv.appName}"`);
     if (fv.codeName) fvAttrs.push(`codeName="${escapeXml(fv.codeName)}"`);
@@ -95,27 +93,43 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     const wbPr = opts.properties;
     const wbPrAttrs: string[] = [];
     if (wbPr.date1904 !== undefined) wbPrAttrs.push(`date1904="${wbPr.date1904 ? 1 : 0}"`);
+    if (wbPr.dateCompatibility !== undefined)
+      wbPrAttrs.push(`dateCompatibility="${wbPr.dateCompatibility ? 1 : 0}"`);
     if (wbPr.defaultThemeVersion !== undefined)
       wbPrAttrs.push(`defaultThemeVersion="${wbPr.defaultThemeVersion}"`);
-    if (wbPr.showObjects) wbPrAttrs.push(`showObjects="${escapeXml(wbPr.showObjects)}"`);
-    if (wbPr.hidePivotFieldList) wbPrAttrs.push('hidePivotFieldList="1"');
-    if (wbPr.allowRefreshQuery) wbPrAttrs.push('allowRefreshQuery="1"');
-    if (wbPr.filterPrivacy) wbPrAttrs.push('filterPrivacy="1"');
+    if (wbPr.showObjects !== undefined)
+      wbPrAttrs.push(`showObjects="${escapeXml(wbPr.showObjects)}"`);
+    if (wbPr.hidePivotFieldList !== undefined)
+      wbPrAttrs.push(`hidePivotFieldList="${wbPr.hidePivotFieldList ? 1 : 0}"`);
+    if (wbPr.allowRefreshQuery !== undefined)
+      wbPrAttrs.push(`allowRefreshQuery="${wbPr.allowRefreshQuery ? 1 : 0}"`);
+    if (wbPr.filterPrivacy !== undefined)
+      wbPrAttrs.push(`filterPrivacy="${wbPr.filterPrivacy ? 1 : 0}"`);
     if (wbPr.backupFile !== undefined) wbPrAttrs.push(`backupFile="${wbPr.backupFile ? 1 : 0}"`);
-    if (wbPr.codeName) wbPrAttrs.push(`codeName="${escapeXml(wbPr.codeName)}"`);
-    if (wbPr.showBorderUnselectedTables) wbPrAttrs.push('showBorderUnselectedTables="1"');
-    if (wbPr.promptedSolutions) wbPrAttrs.push('promptedSolutions="1"');
-    if (wbPr.showInkAnnotation === false) wbPrAttrs.push('showInkAnnotation="0"');
-    if (wbPr.saveExternalLinkValues === false) wbPrAttrs.push('saveExternalLinkValues="0"');
-    if (wbPr.updateLinks) wbPrAttrs.push(`updateLinks="${escapeXml(wbPr.updateLinks)}"`);
-    if (wbPr.showPivotChartFilter) wbPrAttrs.push('showPivotChartFilter="1"');
-    if (wbPr.publishItems) wbPrAttrs.push('publishItems="1"');
-    if (wbPr.checkCompatibility) wbPrAttrs.push('checkCompatibility="1"');
-    if (wbPr.autoCompressPictures === false) wbPrAttrs.push('autoCompressPictures="0"');
-    if (wbPr.refreshAllConnections) wbPrAttrs.push('refreshAllConnections="1"');
+    if (wbPr.codeName !== undefined) wbPrAttrs.push(`codeName="${escapeXml(wbPr.codeName)}"`);
+    if (wbPr.showBorderUnselectedTables !== undefined)
+      wbPrAttrs.push(`showBorderUnselectedTables="${wbPr.showBorderUnselectedTables ? 1 : 0}"`);
+    if (wbPr.promptedSolutions !== undefined)
+      wbPrAttrs.push(`promptedSolutions="${wbPr.promptedSolutions ? 1 : 0}"`);
+    if (wbPr.showInkAnnotation !== undefined)
+      wbPrAttrs.push(`showInkAnnotation="${wbPr.showInkAnnotation ? 1 : 0}"`);
+    if (wbPr.saveExternalLinkValues !== undefined)
+      wbPrAttrs.push(`saveExternalLinkValues="${wbPr.saveExternalLinkValues ? 1 : 0}"`);
+    if (wbPr.updateLinks !== undefined)
+      wbPrAttrs.push(`updateLinks="${escapeXml(wbPr.updateLinks)}"`);
+    if (wbPr.showPivotChartFilter !== undefined)
+      wbPrAttrs.push(`showPivotChartFilter="${wbPr.showPivotChartFilter ? 1 : 0}"`);
+    if (wbPr.publishItems !== undefined)
+      wbPrAttrs.push(`publishItems="${wbPr.publishItems ? 1 : 0}"`);
+    if (wbPr.checkCompatibility !== undefined)
+      wbPrAttrs.push(`checkCompatibility="${wbPr.checkCompatibility ? 1 : 0}"`);
+    if (wbPr.autoCompressPictures !== undefined)
+      wbPrAttrs.push(`autoCompressPictures="${wbPr.autoCompressPictures ? 1 : 0}"`);
+    if (wbPr.refreshAllConnections !== undefined)
+      wbPrAttrs.push(`refreshAllConnections="${wbPr.refreshAllConnections ? 1 : 0}"`);
     parts.push(`<workbookPr${wbPrAttrs.length > 0 ? ` ${wbPrAttrs.join(" ")}` : ""}/>`);
   } else {
-    parts.push("<workbookPr/>");
+    parts.push("");
   }
 
   // AbsPath rides in an mc:AlternateContent between workbookPr and bookViews
@@ -152,10 +166,14 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.protection) {
     const prot = opts.protection;
     const protAttrs: string[] = [];
-    if (prot.lockStructure) protAttrs.push('lockStructure="1"');
-    if (prot.lockWindows) protAttrs.push('lockWindows="1"');
-    if (prot.lockRevision) protAttrs.push('lockRevision="1"');
-    if (prot.workbookPassword) {
+    if (prot.lockStructure !== undefined)
+      protAttrs.push(`lockStructure="${prot.lockStructure ? 1 : 0}"`);
+    if (prot.lockWindows !== undefined) protAttrs.push(`lockWindows="${prot.lockWindows ? 1 : 0}"`);
+    if (prot.lockRevision !== undefined)
+      protAttrs.push(`lockRevision="${prot.lockRevision ? 1 : 0}"`);
+    if (prot.workbookPasswordHashRaw !== undefined) {
+      protAttrs.push(`workbookPassword="${escapeXml(prot.workbookPasswordHashRaw)}"`);
+    } else if (prot.workbookPassword) {
       protAttrs.push(`workbookPassword="${hashPassword(prot.workbookPassword)}"`);
       if (prot.workbookHashValue === undefined) {
         const wbDerived = derivePasswordHash(prot.workbookPassword);
@@ -199,17 +217,15 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
       protAttrs.push(
         `revisionsPasswordCharacterSet="${escapeXml(prot.revisionsPasswordCharacterSet)}"`,
       );
-    if (protAttrs.length > 0) {
-      parts.push(`<workbookProtection ${protAttrs.join(" ")}/>`);
-    }
+    parts.push(
+      protAttrs.length > 0
+        ? `<workbookProtection ${protAttrs.join(" ")}/>`
+        : "<workbookProtection/>",
+    );
   }
 
   // Book views
-  if (opts.bookView === undefined) {
-    parts.push(
-      '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="28800" windowHeight="12300"/></bookViews>',
-    );
-  } else if (opts.bookView) {
+  if (opts.bookView) {
     const bv = opts.bookView;
     const bvAttrs: string[] = [];
     if (bv.xWindow !== undefined) bvAttrs.push(`xWindow="${bv.xWindow}"`);
@@ -227,9 +243,13 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
     if (bv.showVerticalScroll !== undefined)
       bvAttrs.push(`showVerticalScroll="${bv.showVerticalScroll ? 1 : 0}"`);
     if (bv.tabRatio !== undefined) bvAttrs.push(`tabRatio="${bv.tabRatio}"`);
-    if (bv.visibility && bv.visibility !== "visible") bvAttrs.push(`visibility="${bv.visibility}"`);
+    if (bv.visibility !== undefined) bvAttrs.push(`visibility="${bv.visibility}"`);
     if (bv.uid !== undefined) bvAttrs.push(`xr2:uid="${bv.uid}"`);
-    parts.push(`<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`);
+    parts.push(
+      bvAttrs.length > 0
+        ? `<bookViews><workbookView ${bvAttrs.join(" ")}/></bookViews>`
+        : "<bookViews><workbookView/></bookViews>",
+    );
   }
 
   parts.push("<sheets>");
@@ -242,8 +262,8 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   parts.push("</sheets>");
 
   // Function groups (after sheets, before externalReferences per XSD)
-  const functionGroups = opts.functionGroups ?? [];
-  if (functionGroups.length > 0) {
+  const functionGroups = opts.functionGroups;
+  if (functionGroups) {
     const fgParts: string[] = [`<functionGroups builtInGroupCount="16">`];
     for (const name of functionGroups) {
       fgParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
@@ -284,23 +304,23 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   if (opts.calculation) {
     const cp = opts.calculation;
     const cpAttrs: string[] = [];
-    cpAttrs.push(`calcId="${cp.calcId ?? 191029}"`);
+    if (cp.calcId !== undefined) cpAttrs.push(`calcId="${cp.calcId}"`);
     if (cp.calcMode) cpAttrs.push(`calcMode="${escapeXml(cp.calcMode)}"`);
-    if (cp.fullCalcOnLoad) cpAttrs.push('fullCalcOnLoad="1"');
-    if (cp.calcOnSave === false) cpAttrs.push('calcOnSave="0"');
-    if (cp.forceFullCalc) cpAttrs.push('forceFullCalc="1"');
-    if (cp.concurrentCalc === false) cpAttrs.push('concurrentCalc="0"');
+    if (cp.fullCalcOnLoad !== undefined)
+      cpAttrs.push(`fullCalcOnLoad="${cp.fullCalcOnLoad ? 1 : 0}"`);
+    if (cp.calcOnSave !== undefined) cpAttrs.push(`calcOnSave="${cp.calcOnSave ? 1 : 0}"`);
+    if (cp.forceFullCalc !== undefined) cpAttrs.push(`forceFullCalc="${cp.forceFullCalc ? 1 : 0}"`);
+    if (cp.concurrentCalc !== undefined)
+      cpAttrs.push(`concurrentCalc="${cp.concurrentCalc ? 1 : 0}"`);
     if (cp.concurrentManualCount !== undefined)
       cpAttrs.push(`concurrentManualCount="${cp.concurrentManualCount}"`);
-    if (cp.iterate) cpAttrs.push('iterate="1"');
+    if (cp.iterate !== undefined) cpAttrs.push(`iterate="${cp.iterate ? 1 : 0}"`);
     if (cp.iterateCount !== undefined) cpAttrs.push(`iterateCount="${cp.iterateCount}"`);
     if (cp.iterateDelta !== undefined) cpAttrs.push(`iterateDelta="${cp.iterateDelta}"`);
     if (cp.refMode) cpAttrs.push(`refMode="${escapeXml(cp.refMode)}"`);
-    if (cp.fullPrecision === false) cpAttrs.push('fullPrecision="0"');
+    if (cp.fullPrecision !== undefined) cpAttrs.push(`fullPrecision="${cp.fullPrecision ? 1 : 0}"`);
     if (cp.calcCompleted !== undefined) cpAttrs.push(`calcCompleted="${cp.calcCompleted ? 1 : 0}"`);
-    parts.push(`<calcPr ${cpAttrs.join(" ")}/>`);
-  } else {
-    parts.push('<calcPr calcId="191029" fullCalcOnLoad="1"/>');
+    parts.push(cpAttrs.length > 0 ? `<calcPr ${cpAttrs.join(" ")}/>` : "<calcPr/>");
   }
 
   // OLE size (after calcPr, before customWorkbookViews per XSD sequence)

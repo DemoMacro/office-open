@@ -57,11 +57,11 @@ export interface PassthroughRelationship {
 }
 
 /**
- * Format-side rawParts policy. `opaquePatterns` declares parts with no
- * canonical XML equivalent (vbaProject.bin, printerSettings .bin, OLE
- * embeddings, …) that may travel verbatim. Everything else — especially
- * XML parts of rebuilt documents — must eventually be absorbed into the
- * model; the stage-0 audit only flags the gap.
+ * Format-side rawParts policy. `opaquePatterns` declares opaque binaries or
+ * standalone user-content parts (vbaProject.bin, printerSettings .bin, OLE
+ * embeddings, customXml items, …) that may travel verbatim. Everything else —
+ * especially XML parts of rebuilt documents — must eventually be absorbed into
+ * the model; the stage-0 audit only flags the gap.
  */
 export interface PassthroughPolicy {
   /** Matched (case-sensitively) against the full part path. */

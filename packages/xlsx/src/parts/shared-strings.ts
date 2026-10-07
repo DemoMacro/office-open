@@ -18,6 +18,7 @@ import type {
   RichTextOptions,
   RichTextRunOptions,
   RichTextRunPropertiesOptions,
+  PhoneticRunOptions,
 } from "./worksheet";
 
 /** String or rich text entry in the SST. */
@@ -38,6 +39,19 @@ export function tElement(text: string): string {
 }
 
 /**
+ * Serialize a `<t>` with an explicit source xml:space form. `preserve` keeps
+ * the attribute, `default` drops it even when the text has outer whitespace
+ * (matching a source that omitted the attribute), and an undefined form falls
+ * back to the derived fresh-authoring behavior of {@link tElement}.
+ */
+export function tElementRaw(text: string, spaceRaw: string | undefined): string {
+  if (spaceRaw === "default") return `<t>${escapeXml(text)}</t>`;
+  if (spaceRaw === "preserve" || /^\s|\s$/.test(text))
+    return `<t xml:space="preserve">${escapeXml(text)}</t>`;
+  return `<t>${escapeXml(text)}</t>`;
+}
+
+/**
  * Build rich text run properties XML (CT_RPrElt).
  * Exported for reuse by Comments and other components.
  */
@@ -46,7 +60,8 @@ export function buildRPrXml(
 ): string {
   if (!pr) return "";
   const partsByTag: Partial<Record<RichTextRunProperty, string>> = {};
-  if (pr.bold) partsByTag.b = "<b/>";
+  if (pr.bold)
+    partsByTag.b = pr.boldValRaw !== undefined ? `<b val="${escapeXml(pr.boldValRaw)}"/>` : "<b/>";
   if (pr.italic) partsByTag.i = "<i/>";
   if (pr.strike) partsByTag.strike = "<strike/>";
   if (pr.outline) partsByTag.outline = "<outline/>";
@@ -55,9 +70,15 @@ export function buildRPrXml(
   if (pr.extend) partsByTag.extend = "<extend/>";
   // val="none" is explicit: a bare <u/> means underline single, so omitting
   // the attribute would flip none → single on parse.
-  if (pr.underline === "single") partsByTag.u = "<u/>";
+  if (pr.underlineValRaw !== undefined)
+    partsByTag.u = `<u val="${escapeXml(pr.underlineValRaw)}"/>`;
+  else if (pr.underline === "single") partsByTag.u = "<u/>";
   else if (pr.underline) partsByTag.u = `<u val="${pr.underline}"/>`;
-  if (pr.size !== undefined) partsByTag.sz = `<sz val="${pr.size}"/>`;
+  if (pr.size !== undefined)
+    partsByTag.sz =
+      pr.sizeValRaw !== undefined
+        ? `<sz val="${escapeXml(pr.sizeValRaw)}"/>`
+        : `<sz val="${pr.size}"/>`;
   if (pr.color) {
     // parseRPr encodes the non-rgb channels in the same string: a short bare
     // number (≤3 digits) is the legacy palette index, "theme:N" a theme slot.
@@ -65,7 +86,11 @@ export function buildRPrXml(
     // 8000). They must go back to their own attributes — rgb accepts only 8
     // hex chars (AARRGGBB), and rgb="81" makes Excel refuse the whole package.
     const colorAttrs: string[] = [];
-    if (/^\d{1,3}$/.test(pr.color)) {
+    if (pr.colorRgbRaw !== undefined || pr.colorThemeRaw !== undefined) {
+      // Source-faithful channels: CT_Color may carry rgb and theme together.
+      if (pr.colorRgbRaw !== undefined) colorAttrs.push(`rgb="${escapeXml(pr.colorRgbRaw)}"`);
+      if (pr.colorThemeRaw !== undefined) colorAttrs.push(`theme="${escapeXml(pr.colorThemeRaw)}"`);
+    } else if (/^\d{1,3}$/.test(pr.color)) {
       colorAttrs.push(`indexed="${Number(pr.color)}"`);
     } else if (pr.color.startsWith("theme:")) {
       colorAttrs.push(`theme="${escapeXml(pr.color.slice(6))}"`);
@@ -111,18 +136,25 @@ export function buildRPrXml(
 /** Build a CT_Rst XML string from RichTextOptions. */
 export function buildRstXml(rst: RichTextOptions): string {
   const parts: string[] = [];
+  // CT_Rst child order: t, r*, rPh*, phoneticPr. A source-faithful entry may
+  // carry plain text and runs together.
+  if (rst.text !== undefined) parts.push(tElementRaw(rst.text, rst.textSpaceRaw));
   if (rst.runs && rst.runs.length > 0) {
     for (const run of rst.runs) {
       const rPr = buildRPrXml(run.properties);
-      parts.push(`<r>${rPr}${tElement(run.text)}</r>`);
+      parts.push(`<r>${rPr}${tElementRaw(run.text, run.textSpaceRaw)}</r>`);
     }
-  } else if (rst.text !== undefined) {
-    parts.push(tElement(rst.text));
   }
   // rPh (phonetics)
   if (rst.phonetics) {
     for (const ph of rst.phonetics) {
-      parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}">${tElement(ph.text)}</rPh>`);
+      const inner =
+        ph.runs && ph.runs.length > 0
+          ? ph.runs
+              .map((run) => `<r>${buildRPrXml(run.properties)}${tElement(run.text)}</r>`)
+              .join("")
+          : tElement(ph.text);
+      parts.push(`<rPh sb="${ph.startByte}" eb="${ph.endByte}">${inner}</rPh>`);
     }
   }
   if (rst.phoneticProperties) {
@@ -180,6 +212,8 @@ export class SharedStrings {
   private richIndexMap = new Map<RichTextOptions, number>();
   private sourceCount?: number;
   private sourceUniqueCount?: number;
+  /** Whether parsed source entries were loaded (round-trip mode). */
+  public sourceLoaded = false;
 
   /**
    * Register a plain string and return its index.
@@ -218,6 +252,7 @@ export class SharedStrings {
    * pointing at the source table instead of re-registering flattened text.
    */
   public loadEntries(entries: SharedStringsDocOptions["entries"]): void {
+    this.sourceLoaded = true;
     for (const entry of entries) {
       const idx = this.entries.length;
       this.entries.push(entry);
@@ -306,7 +341,6 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
-    if (opts.entries.length === 0) return undefined;
     return serializeSst(opts.entries, opts.count, opts.uniqueCount);
   },
 
@@ -347,19 +381,7 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
             }
           : undefined;
 
-      // Simple: <si><t>text</t></si> — phonetic children may still trail
-      // (CT_Rst allows t + rPh* + phoneticPr without any r runs), in which
-      // case the entry stays a RichTextOptions to carry them.
       const t = findChild(si, "t");
-      const hasPhonetic = (si.elements ?? []).some(
-        (e) => e.name === "rPh" || e.name === "phoneticPr",
-      );
-      if (t && !hasPhonetic && !wordDrawingExtension) {
-        entries.push(textOf(t) ?? "");
-        continue;
-      }
-
-      // Rich text: <si><r>...</r>...</si>
       const runs: RichTextRunOptions[] = [];
       for (const r of si.elements ?? []) {
         if (r.name !== "r") continue;
@@ -367,20 +389,39 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
         if (rt) {
           const rPrEl = findChild(r, "rPr");
           const run: RichTextRunOptions = { text: textOf(rt) ?? "" };
+          if (attr(rt, "xml:space") !== undefined) run.textSpaceRaw = attr(rt, "xml:space");
           if (rPrEl) run.properties = parseRPr(rPrEl);
           runs.push(run);
         }
       }
 
-      // Phonetics: <rPh sb="..." eb="..."><t>...</t></rPh> + trailing phoneticPr
-      const phonetics: { startByte: number; endByte: number; text: string }[] = [];
+      // Phonetics: <rPh sb="..." eb="...">…</rPh> + trailing phoneticPr. The
+      // XSD form wraps one <t>; Excel-compatible producers may wrap CT_RElt
+      // <r> runs instead, which parse into the phonetic `runs` field.
+      const phonetics: PhoneticRunOptions[] = [];
       let phoneticProperties: RichTextOptions["phoneticProperties"];
       for (const rPh of si.elements ?? []) {
         if (rPh.name === "rPh") {
           const sb = attrNum(rPh, "sb") ?? 0;
           const eb = attrNum(rPh, "eb") ?? 0;
           const rPhT = findChild(rPh, "t");
-          phonetics.push({ startByte: sb, endByte: eb, text: rPhT ? (textOf(rPhT) ?? "") : "" });
+          const rPhRuns: RichTextRunOptions[] = [];
+          for (const child of rPh.elements ?? []) {
+            if (child.name !== "r") continue;
+            const rt = findChild(child, "t");
+            if (!rt) continue;
+            const run: RichTextRunOptions = { text: textOf(rt) ?? "" };
+            const rPrEl = findChild(child, "rPr");
+            if (rPrEl) run.properties = parseRPr(rPrEl);
+            rPhRuns.push(run);
+          }
+          const phonetic: PhoneticRunOptions = {
+            startByte: sb,
+            endByte: eb,
+            text: rPhT ? (textOf(rPhT) ?? "") : "",
+          };
+          if (rPhRuns.length > 0) phonetic.runs = rPhRuns;
+          phonetics.push(phonetic);
         } else if (rPh.name === "phoneticPr") {
           const fontId = attrNum(rPh, "fontId");
           if (fontId !== undefined) {
@@ -397,20 +438,43 @@ export const sharedStringsDesc: CustomDescriptor<SharedStringsDocOptions> = {
         }
       }
 
-      if (runs.length > 0) {
-        const entry: RichTextOptions = { runs };
+      if (
+        t ||
+        runs.length > 0 ||
+        phonetics.length > 0 ||
+        phoneticProperties !== undefined ||
+        wordDrawingExtension !== undefined
+      ) {
+        const entry: RichTextOptions = {};
+        if (t) {
+          const text = textOf(t) ?? "";
+          entry.text = text;
+          const sourceSpace = t.attributes?.["xml:space"];
+          if (sourceSpace !== undefined) {
+            entry.textSpaceRaw = sourceSpace === "preserve" ? "preserve" : "default";
+          } else if (/^\s|\s$/.test(text)) {
+            entry.textSpaceRaw = "default";
+          }
+        }
+        if (runs.length > 0) entry.runs = runs;
         if (phonetics.length > 0) entry.phonetics = phonetics;
         if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
         if (wordDrawingExtension) entry.wordDrawingExtension = wordDrawingExtension;
-        entries.push(entry);
-      } else if (t) {
-        // Plain text with trailing phonetics — text + rPh*/phoneticPr.
-        const entry: RichTextOptions = { text: textOf(t) ?? "" };
-        if (phonetics.length > 0) entry.phonetics = phonetics;
-        if (phoneticProperties) entry.phoneticProperties = phoneticProperties;
-        if (wordDrawingExtension) entry.wordDrawingExtension = wordDrawingExtension;
-        entries.push(entry);
-      } else if (!hasPhonetic) {
+        // Fast path: unflagged plain text stays a plain string so cell values
+        // and SST value dedup keep their previous shape.
+        if (
+          entry.runs === undefined &&
+          entry.phonetics === undefined &&
+          entry.phoneticProperties === undefined &&
+          entry.wordDrawingExtension === undefined &&
+          entry.textSpaceRaw === undefined
+        ) {
+          entries.push(entry.text ?? "");
+        } else {
+          entries.push(entry);
+        }
+      } else {
+        // Empty si — keep the slot so subsequent SST indices stay aligned.
         entries.push({});
       }
     }
@@ -455,6 +519,7 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         break;
       case "b":
         result.bold = parseOnOff(attr(child, "val")) ?? true;
+        if (attr(child, "val") !== undefined) result.boldValRaw = attr(child, "val");
         break;
       case "i":
         result.italic = parseOnOff(attr(child, "val")) ?? true;
@@ -475,9 +540,12 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         result.extend = true;
         break;
       case "color": {
-        const rgb = parseColorHex(child);
-        if (rgb) {
-          result.color = rgb;
+        if (attr(child, "rgb") !== undefined) {
+          result.colorRgbRaw = attr(child, "rgb");
+          const rgb = parseColorHex(child);
+          if (rgb) result.color = rgb;
+          const themeAttr = attr(child, "theme");
+          if (themeAttr !== undefined) result.colorThemeRaw = themeAttr;
         } else {
           const indexed = attrNum(child, "indexed");
           if (indexed !== undefined) result.color = String(indexed);
@@ -493,9 +561,11 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
       }
       case "sz":
         result.size = attrNum(child, "val");
+        if (attr(child, "val") !== undefined) result.sizeValRaw = attr(child, "val");
         break;
       case "u": {
         const uVal = attr(child, "val");
+        if (uVal !== undefined) result.underlineValRaw = uVal;
         result.underline =
           (uVal as RichTextRunPropertiesOptions["underline"] | undefined) ?? "single";
         break;

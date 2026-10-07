@@ -11,7 +11,15 @@ import { parseOnOff } from "@office-open/core";
 import { xsdConsolidateFunction } from "@office-open/core";
 import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrMeasure, attrNum, findChild, stringify, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrMeasure,
+  attrNum,
+  findChild,
+  stringify,
+  stringifyElement,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { XlsxReadContext } from "../../context";
@@ -137,6 +145,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
       const outlinePr = findChild(sheetPrEl, "outlinePr");
       if (outlinePr) {
+        sp.outlinePrPresent = true;
         if (attr(outlinePr, "applyStyles") !== undefined)
           sp.outlineApplyStyles = parseOnOff(attr(outlinePr, "applyStyles"));
         if (attr(outlinePr, "showOutlineSymbols") !== undefined)
@@ -158,7 +167,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           psup.fitToPage = parseOnOff(attr(pageSetUpPr, "fitToPage")) ?? false;
         if (attr(pageSetUpPr, "autoPageBreaks") !== undefined)
           psup.autoPageBreaks = parseOnOff(attr(pageSetUpPr, "autoPageBreaks")) ?? true;
-        if (Object.keys(psup).length > 0) pageSetUpPrCache = psup;
+        psup.pageSetUpPrPresent = true;
+        pageSetUpPrCache = psup;
       }
       result.properties = sp;
 
@@ -178,6 +188,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
     // Sheet views
     const sheetViewsEl = findChild(el, "sheetViews");
+    result.sheetViewsPresent = sheetViewsEl !== undefined;
     if (sheetViewsEl) {
       const svEl = findChild(sheetViewsEl, "sheetView");
       if (svEl) {
@@ -324,6 +335,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
 
     // Dimension
     const dimensionEl = findChild(el, "dimension");
+    result.dimensionPresent = dimensionEl !== undefined;
     if (dimensionEl) {
       const ref = attr(dimensionEl, "ref");
       if (ref) result.dimension = ref;
@@ -372,15 +384,18 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         };
         const w = attrNum(colEl, "width");
         if (w !== undefined) col.width = w;
-        if (parseOnOff(attr(colEl, "hidden"))) col.hidden = true;
+        if (attr(colEl, "width") !== undefined) col.widthRaw = attr(colEl, "width");
+        const hidden = parseOnOff(attr(colEl, "hidden"));
+        if (hidden !== undefined) col.hidden = hidden;
         const customWidth = parseOnOff(attr(colEl, "customWidth"));
         if (customWidth !== undefined) col.customWidth = customWidth;
-        if (w !== undefined && customWidth === undefined) col.customWidth = false;
+        col.customWidthDeclared = attr(colEl, "customWidth") !== undefined;
         const ol = attrNum(colEl, "outlineLevel");
         if (ol !== undefined) col.outlineLevel = ol;
         const style = attrNum(colEl, "style");
         if (style !== undefined) col.style = style;
-        if (parseOnOff(attr(colEl, "collapsed"))) col.collapsed = true;
+        const collapsed = parseOnOff(attr(colEl, "collapsed"));
+        if (collapsed !== undefined) col.collapsed = collapsed;
         if (parseOnOff(attr(colEl, "bestFit"))) col.bestFit = true;
         if (parseOnOff(attr(colEl, "phonetic"))) col.phonetic = true;
         columns.push(col);
@@ -413,7 +428,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const sdAttr = attr(rEl, "securityDescriptor");
         if (sdAttr !== undefined) r.securityDescriptor = sdAttr;
         const sdEl = findChild(rEl, "securityDescriptor");
-        if (sdEl) r.securityDescriptor = textOf(sdEl) ?? undefined;
+        if (sdEl) {
+          r.securityDescriptor = textOf(sdEl) ?? undefined;
+          r.securityDescriptorElement = true;
+        }
         ranges.push(r);
       }
       if (ranges.length > 0) result.protectedRanges = ranges;
@@ -466,7 +484,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (tpVal) rule.timePeriod = tpVal as ConditionalFormatRule["timePeriod"];
           const rank = attrNum(ruleEl, "rank");
           if (rank !== undefined) rule.rank = rank;
+          const bottomAttr = attr(ruleEl, "bottom");
+          if (bottomAttr !== undefined) rule.bottomRaw = bottomAttr;
           if (parseOnOff(attr(ruleEl, "bottom"))) rule.bottom = true;
+          const percentAttr = attr(ruleEl, "percent");
+          if (percentAttr !== undefined) rule.percentRaw = percentAttr;
           if (parseOnOff(attr(ruleEl, "percent"))) rule.percent = true;
           const textVal = attr(ruleEl, "text");
           if (textVal) rule.text = textVal;
@@ -474,6 +496,9 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           if (String(attr(ruleEl, "aboveAverage")) === "0") rule.aboveAverage = false;
           const stdDev = attrNum(ruleEl, "stdDev");
           if (stdDev !== undefined) rule.stdDev = stdDev;
+          const cfExtLst = findChild(ruleEl, "extLst");
+          if (cfExtLst)
+            rule.ext = (cfExtLst.elements ?? []).map((child) => stringifyElement(child)).join("");
 
           // Color scale
           const csEl = findChild(ruleEl, "colorScale");
@@ -503,6 +528,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
               cfvo: cfvo as [CfvoOptions, CfvoOptions],
               color: color ?? { indexed: 0 },
             };
+            const showValueAttr = attr(dbEl, "showValue");
+            if (showValueAttr !== undefined) rule.dataBar.showValueRaw = showValueAttr;
             if (String(attr(dbEl, "showValue")) === "0") rule.dataBar.showValue = false;
           }
 
@@ -516,7 +543,11 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
             const iconSet: IconSetOptions = { cfvo };
             const isVal = attr(isEl, "iconSet");
             if (isVal) iconSet.iconSet = isVal as IconSetType;
+            const isShowValue = attr(isEl, "showValue");
+            if (isShowValue !== undefined) iconSet.showValueRaw = isShowValue;
             if (String(attr(isEl, "showValue")) === "0") iconSet.showValue = false;
+            const isPercent = attr(isEl, "percent");
+            if (isPercent !== undefined) iconSet.percentRaw = isPercent;
             if (String(attr(isEl, "percent")) === "0") iconSet.percent = false;
             if (parseOnOff(attr(isEl, "reverse"))) iconSet.reverse = true;
             rule.iconSet = iconSet;
@@ -548,18 +579,26 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (typeVal) dv.type = typeVal as DataValidationType;
         const opVal = attr(dEl, "operator");
         if (opVal) dv.operator = opVal as DataValidationOperator;
-        if (parseOnOff(attr(dEl, "allowBlank"))) dv.allowBlank = true;
-        if (parseOnOff(attr(dEl, "showErrorMessage"))) dv.showErrorMessage = true;
-        if (parseOnOff(attr(dEl, "showInputMessage"))) dv.showInputMessage = true;
-        if (attr(dEl, "errorTitle")) dv.errorTitle = attr(dEl, "errorTitle");
-        if (attr(dEl, "error")) dv.error = attr(dEl, "error");
-        if (attr(dEl, "promptTitle")) dv.promptTitle = attr(dEl, "promptTitle");
-        if (attr(dEl, "prompt")) dv.prompt = attr(dEl, "prompt");
+        const allowBlank = parseOnOff(attr(dEl, "allowBlank"));
+        if (allowBlank !== undefined) dv.allowBlank = allowBlank;
+        const showErrorMessage = parseOnOff(attr(dEl, "showErrorMessage"));
+        if (showErrorMessage !== undefined) dv.showErrorMessage = showErrorMessage;
+        const showInputMessage = parseOnOff(attr(dEl, "showInputMessage"));
+        if (showInputMessage !== undefined) dv.showInputMessage = showInputMessage;
+        const errorTitle = attr(dEl, "errorTitle");
+        if (errorTitle !== undefined) dv.errorTitle = errorTitle;
+        const error = attr(dEl, "error");
+        if (error !== undefined) dv.error = error;
+        const promptTitle = attr(dEl, "promptTitle");
+        if (promptTitle !== undefined) dv.promptTitle = promptTitle;
+        const prompt = attr(dEl, "prompt");
+        if (prompt !== undefined) dv.prompt = prompt;
         const esVal = attr(dEl, "errorStyle");
         if (esVal) dv.errorStyle = esVal as DataValidationOptions["errorStyle"];
         const imVal = attr(dEl, "imeMode");
         if (imVal) dv.imeMode = imVal as DataValidationOptions["imeMode"];
-        if (parseOnOff(attr(dEl, "showDropDown"))) dv.showDropDown = true;
+        const showDropDown = parseOnOff(attr(dEl, "showDropDown"));
+        if (showDropDown !== undefined) dv.showDropDown = showDropDown;
 
         const f1El = findChild(dEl, "formula1");
         if (f1El) dv.formula1 = textOf(f1El);
@@ -791,6 +830,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (refs.length > 0) dc.refs = refs;
       }
       if (Object.keys(dc).length > 0) result.dataConsolidate = dc;
+      else result.dataConsolidate = {};
     }
 
     // What-if scenarios (CT_Scenarios — current/show + scenario/inputCells)
@@ -828,6 +868,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
       }
       if (scenarios.length > 0) {
         const so: ScenarioOptions = { scenarios };
+        const scenariosSqref = attr(scenariosEl, "sqref");
+        if (scenariosSqref !== undefined) so.sqref = scenariosSqref;
         const current = attrNum(scenariosEl, "current");
         if (current !== undefined) so.current = current;
         const show = attrNum(scenariosEl, "show");
@@ -900,6 +942,10 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
           selections.push(selection);
         }
         if (selections.length > 0) view.selection = selections;
+        const rowBreaksEl = findChild(vEl, "rowBreaks");
+        if (rowBreaksEl) view.rowBreaks = parsePageBreaks(rowBreaksEl);
+        const viewColBreaksEl = findChild(vEl, "colBreaks");
+        if (viewColBreaksEl) view.colBreaks = parsePageBreaks(viewColBreaksEl);
         const pageMarginsEl = findChild(vEl, "pageMargins");
         if (pageMarginsEl) {
           const pageMargins: PageMarginsOptions = {};
@@ -923,6 +969,8 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (pageSetupEl) view.pageSetup = parsePageSetupEl(pageSetupEl);
         const headerFooterEl = findChild(vEl, "headerFooter");
         if (headerFooterEl) view.headerFooter = parseHeaderFooterEl(headerFooterEl);
+        const autoFilterEl = findChild(vEl, "autoFilter");
+        if (autoFilterEl) view.autoFilter = parseAutoFilter(autoFilterEl);
         views.push(view);
       }
       if (views.length > 0) result.customSheetViews = views;
@@ -1154,6 +1202,7 @@ export function parsePageSetupEl(
   pageSetUpPrCache?: Partial<PageSetupOptions>,
 ): PageSetupOptions {
   const ps: PageSetupOptions = {};
+  ps.pageSetupPresent = true;
   const pz = attrNum(el, "paperSize");
   if (pz !== undefined) ps.paperSize = pz;
   const ph = attrMeasure(el, "paperHeight");
@@ -1199,10 +1248,16 @@ export function parsePageSetupEl(
 /** Parse a CT_HeaderFooter element. */
 export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
   const hf: HeaderFooterOptions = {};
-  if (parseOnOff(attr(el, "differentOddEven"))) hf.differentOddEven = true;
-  if (parseOnOff(attr(el, "differentFirst"))) hf.differentFirst = true;
+  const differentOddEven = parseOnOff(attr(el, "differentOddEven"));
+  const differentFirst = parseOnOff(attr(el, "differentFirst"));
+  if (differentOddEven !== undefined) hf.differentOddEven = differentOddEven;
+  if (differentFirst !== undefined) hf.differentFirst = differentFirst;
   if (String(attr(el, "scaleWithDoc")) === "0") hf.scaleWithDoc = false;
   if (String(attr(el, "alignWithMargins")) === "0") hf.alignWithMargins = false;
+  const scaleRaw = attr(el, "scaleWithDoc");
+  if (scaleRaw !== undefined) hf.scaleWithDocRaw = scaleRaw;
+  const alignRaw = attr(el, "alignWithMargins");
+  if (alignRaw !== undefined) hf.alignWithMarginsRaw = alignRaw;
   const oh = findChild(el, "oddHeader");
   if (oh) hf.oddHeader = textOf(oh);
   const of2 = findChild(el, "oddFooter");
@@ -1246,7 +1301,11 @@ export function parseSheetProtectionEl(el: Element): SheetProtectionOptions {
   if (spin !== undefined) prot.spinCount = spin;
   if (parseOnOff(attr(el, "sheet"))) prot.sheet = true;
   if (parseOnOff(attr(el, "objects"))) prot.objects = true;
+  const scenariosAttr = attr(el, "scenarios");
+  if (scenariosAttr !== undefined) prot.scenariosRaw = scenariosAttr;
   if (parseOnOff(attr(el, "scenarios"))) prot.scenarios = true;
+  const passwordHash = attr(el, "password");
+  if (passwordHash !== undefined) prot.passwordHashRaw = passwordHash;
   if (String(attr(el, "formatCells")) === "0") prot.formatCells = false;
   if (String(attr(el, "formatColumns")) === "0") prot.formatColumns = false;
   if (String(attr(el, "formatRows")) === "0") prot.formatRows = false;

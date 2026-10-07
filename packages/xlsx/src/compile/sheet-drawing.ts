@@ -461,11 +461,13 @@ export function compileSheetDrawing(
     path: drawingPath,
   };
 
-  // Drawing relationships
-  mapping[`DrawingRels${i}`] = {
-    data: XML_DECL + drawingRels.serialize(),
-    path: drawingPath.replace(/([^/]+)$/, "_rels/$1.rels"),
-  };
+  // Drawing relationships — omitted when empty (Office strips empty rels shells).
+  if (drawingRels.relationshipCount > 0) {
+    mapping[`DrawingRels${i}`] = {
+      data: XML_DECL + drawingRels.serialize(),
+      path: drawingPath.replace(/([^/]+)$/, "_rels/$1.rels"),
+    };
+  }
 
   // Insert drawing reference at its CT_Worksheet sequence position.
   const drawingTarget = drawingRel?.target ?? `../drawings/drawing${drawingIdx}.xml`;

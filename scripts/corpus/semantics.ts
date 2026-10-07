@@ -45,6 +45,14 @@ const UNORDERED_PART_PATHS = new Set([
 
 const IGNORED_ATTRIBUTES = new Set(["mc:Ignorable"]);
 
+/** Extended/core-properties boolean elements whose text is xsd:boolean. */
+const BOOLEAN_TEXT_ELEMENTS = new Set([
+  "ScaleCrop",
+  "LinksUpToDate",
+  "SharedDoc",
+  "HyperlinksChanged",
+]);
+
 /** OOXML toggle elements whose omitted w:val means semantic true. */
 const ON_OFF_ELEMENTS = new Set([
   "w:b",
@@ -81,6 +89,54 @@ const DEFAULT_ATTRIBUTES = new Map<string, Record<string, string>>([
       distR: "0",
     },
   ],
+  [
+    "f",
+    {
+      aca: "0",
+      bx: "0",
+      ca: "0",
+      del1: "0",
+      del2: "0",
+      dt2D: "0",
+      dtr: "0",
+    },
+  ],
+  ["c", { ph: "0" }],
+  [
+    "outlinePr",
+    {
+      applyStyles: "0",
+      showOutlineSymbols: "1",
+      summaryBelow: "1",
+      summaryRight: "1",
+    },
+  ],
+  [
+    "definedName",
+    {
+      function: "0",
+      hidden: "0",
+      publishToServer: "0",
+      vbProcedure: "0",
+      workbookParameter: "0",
+      xlm: "0",
+    },
+  ],
+]);
+
+/** Container elements whose `@count` is derivable from their children — the
+ * digest compares children structurally, so the redundant attribute drops. */
+const DERIVED_COUNT_ELEMENTS = new Set([
+  "borders",
+  "cellStyles",
+  "cellStyleXfs",
+  "cellXfs",
+  "dxfs",
+  "fills",
+  "fonts",
+  "numFmts",
+  "tableStyle",
+  "tableStyles",
 ]);
 
 const LEGACY_OFFICE_URI_PREFIX = "http://schemas.microsoft.com/office/2006/relationships/";
@@ -105,6 +161,9 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
 function canonicalAttributeValue(name: string, value: string, elementName?: string): string {
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
+  if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) && Number.isFinite(Number(value))) {
+    return String(Number(value));
+  }
   if (
     (elementName === "w:pgSz" && (name === "w:w" || name === "w:h")) ||
     (elementName === "w:pgMar" && name.startsWith("w:"))
@@ -247,6 +306,7 @@ function canonicalNode(
   const orderedAttributes = Object.fromEntries(
     Object.entries(attributes).sort(([left], [right]) => left.localeCompare(right)),
   );
+  if (DERIVED_COUNT_ELEMENTS.has(name)) delete orderedAttributes.count;
   const rawText = (element.elements ?? [])
     .filter((child) => child.type === "text" || child.type === "cdata")
     .map((child) => String(child.text ?? child.cdata ?? ""))
@@ -254,14 +314,37 @@ function canonicalNode(
   const text =
     element.name === "v" && rawText !== "" && Number.isFinite(Number(rawText))
       ? String(Number(rawText))
-      : rawText;
+      : element.name?.startsWith("vt:") &&
+          /^(?:\d{4}-\d{2}-\d{2})[T ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/.test(
+            rawText,
+          )
+        ? new Date(rawText).toISOString()
+        : BOOLEAN_TEXT_ELEMENTS.has(element.name ?? "") &&
+            (rawText === "0" || rawText === "1" || rawText === "true" || rawText === "false")
+          ? rawText === "1" || rawText === "true"
+            ? "1"
+            : "0"
+          : rawText;
   return {
     name: canonicalElementName(name, path),
     attributes: orderedAttributes,
     text: element.attributes?.["xml:space"] === "preserve" ? text : text.trim(),
-    children: (element.elements ?? [])
-      .filter((child): child is Element => child.type === "element")
-      .map((child) => canonicalNode(child, childPath, references)),
+    children: (() => {
+      const mapped = (element.elements ?? [])
+        .filter((child): child is Element => child.type === "element")
+        .map((child) => canonicalNode(child, childPath, references));
+      if (
+        name === "text" &&
+        mapped.length === 1 &&
+        mapped[0].name === "t" &&
+        mapped[0].text === "" &&
+        mapped[0].children.length === 0 &&
+        Object.keys(mapped[0].attributes).length === 0
+      ) {
+        return [];
+      }
+      return mapped;
+    })(),
   };
 }
 
@@ -289,12 +372,13 @@ function sortUnorderedChildren(
     localName === "gslst" ||
     localName === "schemeclr" ||
     localName === "ser" ||
+    localName === "chart" ||
     localName === "sectpr"
   ) {
     return {
       ...node,
       children: [...children].sort((left, right) =>
-        childFingerprint(left).localeCompare(childFingerprint(right)),
+        childSortKey(left).localeCompare(childSortKey(right)),
       ),
     };
   }
@@ -305,6 +389,29 @@ function childFingerprint(node: CanonicalNode): string {
   const hash = createHash("sha256");
   hash.update(`${node.name}\0${JSON.stringify(node.attributes)}\0${JSON.stringify(node.text)}`);
   for (const child of node.children) hash.update(childFingerprint(child));
+  return hash.digest("hex");
+}
+
+/**
+ * Stable ordering key for unordered containers: name + attributes + text plus
+ * one level of child identity. Deep subtree differences (e.g. a missing
+ * c:extLst inside a c:dPt) must not reorder the container, or the comparator
+ * would pair unrelated siblings and report phantom diffs.
+ */
+function childSortKey(node: CanonicalNode): string {
+  const localName = node.name.split(":").pop() ?? node.name;
+  if (localName === "ser" || localName === "dPt") {
+    const identity = node.children.find(
+      (child) => (child.name.split(":").pop() ?? child.name) === "idx",
+    );
+    if (identity) return `${node.name}:idx=${identity.attributes["val"] ?? ""}`;
+  }
+  const hash = createHash("sha256");
+  hash.update(`${node.name}\0${JSON.stringify(node.attributes)}\0${JSON.stringify(node.text)}`);
+  for (const child of node.children)
+    hash.update(
+      `${child.name}\0${JSON.stringify(child.attributes)}\0${JSON.stringify(child.text)}`,
+    );
   return hash.digest("hex");
 }
 
@@ -629,6 +736,9 @@ export function parseCanonicalXml(xml: string): Element | undefined {
 export function semanticPartKind(path: string): SemanticPartKind {
   if (path === "[Content_Types].xml") return "content-types";
   if (path.endsWith(".rels")) return "relationship";
+  // OPC 3.0 package-level core properties are core-properties XML despite
+  // the .psmdcp extension — compare semantically, not byte-wise.
+  if (path.endsWith(".psmdcp")) return "xml";
   if (path.toLowerCase().endsWith(".xml")) return "xml";
   return "binary";
 }
@@ -653,8 +763,17 @@ export function archiveSemanticDiffDetails(
   source: Uint8Array,
   output: Uint8Array,
 ): SemanticPartDiff[] {
-  const sourceArchive = unzipSync(source);
-  const outputArchive = unzipSync(output);
+  // OPC part names use forward slashes; normalize backslash-separated entry
+  // names the same way the parser does so non-conformant producers compare
+  // against their canonical round-trip output.
+  const normalizeArchive = (data: Uint8Array): Record<string, Uint8Array> => {
+    const raw = unzipSync(data);
+    const out: Record<string, Uint8Array> = {};
+    for (const [name, bytes] of Object.entries(raw)) out[name.replace(/\\/g, "/")] = bytes;
+    return out;
+  };
+  const sourceArchive = normalizeArchive(source);
+  const outputArchive = normalizeArchive(output);
   const paths = new Set([...Object.keys(sourceArchive), ...Object.keys(outputArchive)]);
   const diffs: SemanticPartDiff[] = [];
   for (const path of [...paths].sort()) {
@@ -762,6 +881,7 @@ export type CorpusFailureKind =
 
 export function classifyPackageFailure(error: unknown): Exclude<CorpusFailureKind, "valid"> {
   const message = String(error).toLowerCase();
+  if (message.includes("crc")) return "invalid-zip";
   if (message.includes("invalid zip data") || message.includes("end of central directory"))
     return "invalid-zip";
   if (message.includes("cfb") || message.includes("compound file")) return "invalid-cfb";

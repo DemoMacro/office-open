@@ -215,6 +215,55 @@ describe("Worksheet", () => {
       expect(xml).toContain('<row r="1" x14ac:dyDescent="0.25"');
     });
 
+    it("keeps inline strings inline when a shared-string table exists", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>Not Shared</t></is></c></row></sheetData>` +
+          `</worksheet>`,
+      );
+      const sharedStrings = new SharedStrings();
+      const xml = buildWorksheetXml(result, { sharedStrings });
+      expect(result.rows?.[0]?.cells?.[0]).toMatchObject({ value: "Not Shared", inline: true });
+      expect(xml).toContain('<c r="A1" t="inlineStr"><is><t>Not Shared</t></is></c>');
+      expect(sharedStrings.count).toBe(0);
+    });
+
+    it("preserves explicit false row and column outline flags", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<cols><col min="1" max="1" width="10" hidden="0" collapsed="0"/></cols>` +
+          `<sheetData><row r="1" hidden="0" collapsed="0"/></sheetData></worksheet>`,
+      );
+      expect(result.columns?.[0]).toMatchObject({ hidden: false, collapsed: false });
+      expect(result.rows?.[0]).toMatchObject({ hidden: false, collapsed: false });
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('hidden="0"');
+      expect(xml).toContain('collapsed="0"');
+    });
+
+    it("preserves empty validation messages and explicit drop-down state", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<dataValidations><dataValidation type="list" allowBlank="0" showErrorMessage="0" ` +
+          `showInputMessage="0" errorTitle="" error="" promptTitle="" prompt="" showDropDown="0" sqref="A1">` +
+          `<formula1>A,B</formula1></dataValidation></dataValidations></worksheet>`,
+      );
+      expect(result.dataValidations?.[0]).toMatchObject({
+        allowBlank: false,
+        showErrorMessage: false,
+        showInputMessage: false,
+        errorTitle: "",
+        error: "",
+        promptTitle: "",
+        prompt: "",
+        showDropDown: false,
+      });
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('error=""');
+      expect(xml).toContain('prompt=""');
+      expect(xml).toContain('showDropDown="0"');
+    });
+
     it("round-trips explicit sheetView defaults", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
@@ -730,6 +779,23 @@ describe("Worksheet", () => {
       expect(xml).toContain('differentOddEven="1"');
       expect(xml).toContain("<evenHeader>Even</evenHeader>");
     });
+
+    it("round-trips explicit false different flags", () => {
+      const xml = buildWorksheetXml(
+        {
+          rows: [{ cells: [{ value: "A" }] }],
+          headerFooter: { differentOddEven: false, differentFirst: false },
+        },
+        {},
+      );
+      expect(xml).toContain('differentOddEven="0"');
+      expect(xml).toContain('differentFirst="0"');
+
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const result = worksheetDesc.parse(el, {} as unknown as ReadContext) as WorksheetOptions;
+      expect(result.headerFooter).toEqual({ differentOddEven: false, differentFirst: false });
+    });
   });
 
   describe("sheetView", () => {
@@ -805,7 +871,7 @@ describe("Worksheet", () => {
       expect(xml).toContain('collapsed="1"');
     });
 
-    it("outputs outlinePr when columns have outlineLevel", () => {
+    it("does not inject outlinePr for column outline levels alone", () => {
       const xml = buildWorksheetXml(
         {
           columns: [{ min: 2, max: 3, outlineLevel: 1 }],
@@ -813,7 +879,19 @@ describe("Worksheet", () => {
         },
         {},
       );
-      expect(xml).toContain('<outlinePr summaryBelow="1" summaryRight="1"/>');
+      expect(xml).not.toContain("<outlinePr");
+    });
+
+    it("outputs outlinePr only from explicit sheet properties", () => {
+      const xml = buildWorksheetXml(
+        {
+          columns: [{ min: 2, max: 3, outlineLevel: 1 }],
+          properties: { outlineSummaryBelow: false },
+          rows: [{ cells: [{ value: "A" }] }],
+        },
+        {},
+      );
+      expect(xml).toContain('<outlinePr summaryBelow="0" summaryRight="1"/>');
     });
   });
 
@@ -1177,6 +1255,7 @@ describe("Worksheet", () => {
         rows: [{ cells: [{ value: "A" }] }],
         printOptions: {
           gridLines: true,
+          gridLinesSet: true,
           headings: false,
           horizontalCentered: true,
           verticalCentered: false,
@@ -1185,6 +1264,7 @@ describe("Worksheet", () => {
 
       expect(result.printOptions).toEqual({
         gridLines: true,
+        gridLinesSet: true,
         headings: false,
         horizontalCentered: true,
         verticalCentered: false,
@@ -1207,6 +1287,7 @@ describe("Worksheet", () => {
       });
 
       expect(result.pageSetup).toEqual({
+        pageSetupPresent: true,
         orientation: "default",
         pageOrder: "downThenOver",
         useFirstPageNumber: false,
@@ -1257,6 +1338,16 @@ describe("Worksheet", () => {
 
       expect(result.pageSetup?.fitToPage).toBe(true);
     });
+
+    it("does not turn pageSetUpPr into pageSetup", () => {
+      const xml = buildWorksheetXml(
+        { rows: [{ cells: [{ value: "A" }] }], pageSetup: { pageSetUpPrPresent: true } },
+        {},
+      );
+
+      expect(xml).toContain("<pageSetUpPr/>");
+      expect(xml).not.toContain("<pageSetup");
+    });
   });
 
   describe("rowBreaks/colBreaks round-trip", () => {
@@ -1290,6 +1381,22 @@ describe("Worksheet", () => {
         { id: 10, min: 1, max: 100 },
       ]);
       expect(result.colBreaks).toEqual([{ id: 3, manual: true }]);
+    });
+
+    it("round-trips page breaks in custom sheet views", () => {
+      const result = roundTrip({
+        rows: [{ cells: [{ value: "A" }] }],
+        customSheetViews: [
+          {
+            guid: "{00000000-0000-0000-0000-000000000000}",
+            rowBreaks: [{ id: 2, manual: true }],
+            colBreaks: [{ id: 3, max: 100, manual: true }],
+          },
+        ],
+      });
+      const view = result.customSheetViews?.[0];
+      expect(view?.rowBreaks).toEqual([{ id: 2, manual: true }]);
+      expect(view?.colBreaks).toEqual([{ id: 3, max: 100, manual: true }]);
     });
 
     it("round-trips customProperties, cellWatches, legacyDrawingHF", () => {
@@ -1330,6 +1437,48 @@ describe("Worksheet", () => {
         link: true,
         refs: [{ ref: "Sheet1!A1:B2" }, { ref: "Sheet2!A1:B2" }],
       });
+    });
+
+    it("preserves an empty dataConsolidate element", () => {
+      const xml = buildWorksheetXml({ dataConsolidate: {} }, {});
+      expect(xml).toContain("<dataConsolidate/>");
+      const root = parseXml(xml).elements?.[0];
+      if (!root) throw new Error("no root");
+      expect(worksheetDesc.parse(root, readCtx).dataConsolidate).toEqual({});
+    });
+
+    it("preserves protected-range security descriptor forms", () => {
+      const attributeXml =
+        '<worksheet><protectedRanges><protectedRange sqref="A1" name="Range" ' +
+        'securityDescriptor="descriptor"/></protectedRanges></worksheet>';
+      const attributeRoot = parseXml(attributeXml).elements?.[0];
+      if (!attributeRoot) throw new Error("no root");
+      const attributeResult = worksheetDesc.parse(attributeRoot, readCtx);
+      expect(attributeResult.protectedRanges?.[0]).toEqual({
+        sqref: "A1",
+        name: "Range",
+        securityDescriptor: "descriptor",
+      });
+      const attributeOutput = buildWorksheetXml(
+        { protectedRanges: attributeResult.protectedRanges },
+        {},
+      );
+      expect(attributeOutput).toContain('securityDescriptor="descriptor"');
+      expect(attributeOutput).not.toContain("<securityDescriptor>");
+
+      const elementXml =
+        '<worksheet><protectedRanges><protectedRange sqref="A2" name="Range">' +
+        "<securityDescriptor>descriptor</securityDescriptor></protectedRange></protectedRanges></worksheet>";
+      const elementRoot = parseXml(elementXml).elements?.[0];
+      if (!elementRoot) throw new Error("no root");
+      const elementResult = worksheetDesc.parse(elementRoot, readCtx);
+      expect(elementResult.protectedRanges?.[0]?.securityDescriptorElement).toBe(true);
+      const elementOutput = buildWorksheetXml(
+        { protectedRanges: elementResult.protectedRanges },
+        {},
+      );
+      expect(elementOutput).toContain("<securityDescriptor>descriptor</securityDescriptor>");
+      expect(elementOutput).not.toContain('securityDescriptor="descriptor"');
     });
 
     it("round-trips scenarios (what-if analysis)", () => {
@@ -1392,7 +1541,7 @@ describe("Worksheet", () => {
               footer: 0.3,
             },
             printOptions: { horizontalCentered: true },
-            pageSetup: { orientation: "landscape", scale: 80 },
+            pageSetup: { pageSetupPresent: true, orientation: "landscape", scale: 80 },
             headerFooter: { oddHeader: "H", oddFooter: "F" },
           },
         ],
@@ -1418,10 +1567,20 @@ describe("Worksheet", () => {
             footer: 0.3,
           },
           printOptions: { horizontalCentered: true },
-          pageSetup: { orientation: "landscape", scale: 80 },
+          pageSetup: { pageSetupPresent: true, orientation: "landscape", scale: 80 },
           headerFooter: { oddHeader: "H", oddFooter: "F" },
         },
       ]);
+    });
+
+    it("does not invent custom sheet view pane defaults", () => {
+      const opts: WorksheetOptions = {
+        customSheetViews: [{ guid: "A1B2C3", pane: { topLeftCell: "A16" } }],
+      };
+      const xml = buildWorksheetXml(opts, {});
+      expect(xml).toContain('<pane topLeftCell="A16"/>');
+      expect(xml).not.toContain("ySplit=");
+      expect(xml).not.toContain("xSplit=");
     });
 
     it("round-trips oleObjects and controls", () => {

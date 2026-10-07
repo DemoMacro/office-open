@@ -29,6 +29,8 @@ export interface ExternalCellOptions {
   type?: "b" | "n" | "e" | "str";
   /** Cell value */
   value?: string;
+  /** Source `@xml:space` form of `<v>`; round-trip only — do not hand-author. */
+  valueSpaceRaw?: string;
   /** Value metadata index (CT_ExternalCell `@vm`) */
   valueMetadataIndex?: number;
 }
@@ -36,6 +38,9 @@ export interface ExternalCellOptions {
 export interface ExternalBookOptions {
   /** Target path of the external workbook */
   target?: string;
+  /** Source relationship type of the target (`xlPathMissing` and other
+   * producer variants exist); round-trip only. */
+  targetTypeRaw?: string;
   /** Sheet names from the external workbook */
   sheetNames?: string[];
   /** Defined names from the external workbook */
@@ -58,6 +63,8 @@ export interface ExternalSheetDataOptions {
 
 /** An external workbook link (xl/externalLinks/externalLinkN.xml). */
 export interface ExternalLinkOptions {
+  /** Source part path (xl/externalLinks/externalLink3.xml) — round-trip only. */
+  sourcePath?: string;
   /** External book configuration */
   externalBook?: ExternalBookOptions;
   /** Relationship ID for the external book (set by compiler) */
@@ -180,8 +187,10 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
                   if (cell.type !== undefined) cellAttrs.t = cell.type;
                   if (cell.valueMetadataIndex !== undefined) cellAttrs.vm = cell.valueMetadataIndex;
                   if (cell.value !== undefined) {
+                    const vSpaceAttr =
+                      cell.valueSpaceRaw === "preserve" ? ' xml:space="preserve"' : "";
                     bookParts.push(
-                      `<cell${attrs(cellAttrs)}><v>${escapeXml(cell.value)}</v></cell>`,
+                      `<cell${attrs(cellAttrs)}><v${vSpaceAttr}>${escapeXml(cell.value)}</v></cell>`,
                     );
                   } else {
                     bookParts.push(`<cell${attrs(cellAttrs)}/>`);
@@ -330,6 +339,9 @@ export const externalLinkDesc: CustomDescriptor<ExternalLinkOptions> = {
               if (cellChild.attributes?.["vm"] !== undefined)
                 cell.valueMetadataIndex = Number(cellChild.attributes["vm"]);
               const vEl = findChild(cellChild, "v");
+              if (vEl?.attributes?.["xml:space"] !== undefined) {
+                cell.valueSpaceRaw = String(vEl.attributes["xml:space"]);
+              }
               if (vEl && vEl.elements?.[0]?.text !== undefined) {
                 cell.value = String(vEl.elements[0].text);
               }

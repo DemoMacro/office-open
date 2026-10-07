@@ -287,6 +287,8 @@ export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingProp
   macro?: string;
   /** textlink attribute (CT_Shape). */
   textlink?: string;
+  /** Text-lock flag (CT_Shape `@fLocksText`); explicit value round-trips. */
+  fLocksText?: boolean;
   /** Published-object flag (sp/@fPublished); explicit true/false round-trips. */
   fPublished?: boolean;
   /** Text-box flag (cNvSpPr/@txBox) — emitted only when the source had it. */

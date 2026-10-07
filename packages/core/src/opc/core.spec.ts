@@ -42,6 +42,13 @@ describe("core properties", () => {
     expect(rebuilt).toContain("<cp:category></cp:category>");
   });
 
+  it("keeps an empty revision element as an empty element", () => {
+    const xml = `<cp:coreProperties ${NS}><cp:revision></cp:revision></cp:coreProperties>`;
+    const parsed = parseCorePropsElement(parseXml(xml).elements?.[0]);
+    expect(parsed.revision).toBeNull();
+    expect(buildCorePropertiesXmlString(parsed)).toContain("<cp:revision></cp:revision>");
+  });
+
   it("parses legacy core-property children by case-insensitive local names", () => {
     const xml =
       '<coreProperties xmlns="http://schemas.microsoft.com/package/2005/06/metadata/core-properties">' +
@@ -51,6 +58,42 @@ describe("core properties", () => {
     const parsed = parseCorePropsElement(el);
     expect(parsed.creator).toBe("Legacy");
     expect(parsed.created).toBe("2001-01-01T00:00:00Z");
+    const rebuilt = buildCorePropertiesXmlString(parsed);
+    expect(rebuilt).toContain("<Creator>Legacy</Creator>");
+    expect(rebuilt).toContain("<DateCreated>2001-01-01T00:00:00Z</DateCreated>");
+  });
+
+  it("keeps Dublin Core prefixes in the default namespace binding", () => {
+    const xml = buildCorePropertiesXmlString({
+      defaultNamespace: true,
+      title: "Title",
+      subject: "Subject",
+      creator: "Creator",
+      lastModifiedBy: "Editor",
+    });
+    expect(xml).toContain("<dc:title>Title</dc:title>");
+    expect(xml).toContain("<dc:subject>Subject</dc:subject>");
+    expect(xml).toContain("<dc:creator>Creator</dc:creator>");
+    expect(xml).toContain("<lastModifiedBy>Editor</lastModifiedBy>");
+  });
+
+  it("preserves source core-property child order", () => {
+    const xml =
+      `<cp:coreProperties ${NS}>` +
+      '<dcterms:created xsi:type="dcterms:W3CDTF">2001-01-01T00:00:00Z</dcterms:created>' +
+      "<cp:lastModifiedBy>Editor</cp:lastModifiedBy>" +
+      "<dc:creator>Creator</dc:creator>" +
+      "<dc:title>Title</dc:title>" +
+      "<cp:keywords>keywords</cp:keywords>" +
+      "<dc:description>Description</dc:description>" +
+      "<cp:category>Category</cp:category>" +
+      "<cp:contentStatus>Status</cp:contentStatus>" +
+      "</cp:coreProperties>";
+    const parsed = parseCorePropsElement(parseXml(xml).elements?.[0]);
+    const rebuilt = buildCorePropertiesXmlString(parsed);
+    expect(rebuilt.indexOf("dcterms:created")).toBeLessThan(rebuilt.indexOf("cp:lastModifiedBy"));
+    expect(rebuilt.indexOf("cp:lastModifiedBy")).toBeLessThan(rebuilt.indexOf("dc:creator"));
+    expect(rebuilt.indexOf("dc:creator")).toBeLessThan(rebuilt.indexOf("dc:title"));
   });
 
   it("omits the new fields when not supplied", () => {

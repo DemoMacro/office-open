@@ -97,6 +97,19 @@ describe("tableDesc round-trip", () => {
     expect(result.autoFilter).toBe("A1:B5");
   });
 
+  it("round-trips table sort state", () => {
+    const opts: TableOptions = {
+      id: 1,
+      displayName: "T1",
+      ref: "A1:B5",
+      sortState: { ref: "A2:B5", conditions: [{ ref: "B2:B5", descending: true }] },
+      columns: [{ name: "X" }, { name: "Y" }],
+    };
+    const result = roundTrip(opts);
+
+    expect(result.sortState).toEqual(opts.sortState);
+  });
+
   it("round-trips column with totalsRowFunction", () => {
     const opts: TableOptions = {
       id: 1,

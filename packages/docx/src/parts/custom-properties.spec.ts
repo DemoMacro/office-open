@@ -111,4 +111,15 @@ describe("customPropertiesDesc source vt spelling", () => {
     expect(parsed.properties[0]?.value).toBe(42);
     expect(parsed.properties[0]?.valueType).toBeUndefined();
   });
+
+  it("preserves boolean value lexemes", () => {
+    const parsed = parseXmlPart(
+      '<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="2" name="Hidden">' +
+        "<vt:bool>0</vt:bool></property>",
+    );
+    expect(parsed.properties[0]?.value).toBe(false);
+    expect(parsed.properties[0]?.valueLexeme).toBe("0");
+    const xml = customPropertiesDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain("<vt:bool>0</vt:bool>");
+  });
 });

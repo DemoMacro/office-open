@@ -31,6 +31,7 @@ import type {
 import type {
   WorkbookProtectionOptions,
   WorkbookViewOptions,
+  WorkbookConformance,
   CalculationPropertiesOptions,
   WorkbookPropertiesOptions,
   FileRecoveryPropertiesOptions,
@@ -59,6 +60,14 @@ import type { MapInfoOptions } from "./xml-mapping";
 
 /** Root options for a .xlsx package — maps to workbook.xml plus its satellite parts. */
 export interface WorkbookOptions extends CorePropertiesOptions {
+  /** Source primary workbook part path; default xl/workbook.xml. Round-trip only. */
+  workbookPath?: string;
+  /** Source styles part path; default xl/styles.xml. Round-trip only. */
+  stylesPath?: string;
+  /** Source sharedStrings part path; default xl/sharedStrings.xml. Round-trip only. */
+  sharedStringsPath?: string;
+  /** Source theme part path; default xl/theme/theme1.xml. Round-trip only. */
+  themePath?: string;
   worksheets?: WorksheetOptions[];
   /** Workbook <sheets> order; round-trip only. */
   sheetDefinitions?: SheetDefinition[];
@@ -177,6 +186,24 @@ export interface WorkbookOptions extends CorePropertiesOptions {
 
   /** Declared unique string count (xl/sharedStrings.xml `@uniqueCount`). Round-trip only when absent in source. */
   sharedStringsUniqueCount?: number;
+  /** True when the source declared xl/sharedStrings.xml, even with no si entries. Round-trip only. */
+  sharedStringsDeclared?: boolean;
+  /** Source core-properties part path; preserves non-default OPC layouts. Round-trip only. */
+  corePropertiesPath?: string;
+  /**
+   * Source root-rels core-properties relationship type. Both the
+   * `package/2006` and `officeDocument/2006` URI forms appear in real
+   * packages; round-trip only.
+   */
+  corePropertiesRelationshipType?: string;
+  /** Source extended-properties part path; preserves non-default OPC layouts. Round-trip only. */
+  appPropertiesPath?: string;
+  /** Workbook conformance level (CT_Workbook `@conformance`). */
+  conformance?: WorkbookConformance;
+  /** Source custom-properties part path; preserves non-default OPC layouts. Round-trip only. */
+  customPropertiesPath?: string;
+  /** True when the source declared a custom-properties part, even if it has no properties. */
+  customPropertiesDeclared?: boolean;
   /** Extended properties (docProps/app.xml) */
   appProperties?: AppPropertiesOptions;
   /** Custom properties (docProps/custom.xml); omitted from the package when empty */

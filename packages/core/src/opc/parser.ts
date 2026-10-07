@@ -70,6 +70,9 @@ export class ParsedArchive {
       this.order = Object.keys(eager);
       return;
     }
+    // OPC part names use forward slashes; a few producers emit backslash
+    // separators, which every downstream path comparison expects normalized.
+    for (const entry of entries) entry.name = entry.name.replace(/\\/g, "/");
     this.index = new Map(entries.map((e) => [e.name, e]));
     this.order = entries.map((e) => e.name);
   }
@@ -101,6 +104,7 @@ export class ParsedArchive {
     // shape of the same names would intersect them down to `never`.
     const archive = Object.create(ParsedArchive.prototype) as unknown as HydratedArchive;
     archive.source = source;
+    for (const entry of entries) entry.name = entry.name.replace(/\\/g, "/");
     archive.index = new Map(entries.map((e) => [e.name, e]));
     archive.parts = new Map();
     archive.modified = new Map();
@@ -118,15 +122,9 @@ export class ParsedArchive {
     // open(), so this never sees a ByteSource.
     const bytes = this.source as Uint8Array;
     let data: Uint8Array;
-    try {
-      data = inflateZipEntry(bytes, entry);
-    } catch {
-      // The native path verifies CRC-32; a mismatch was previously tolerated
-      // by falling back to fflate's check-free unzipSync — keep that parity
-      // per entry before giving up.
-      const raw = bytes.subarray(entry.dataStart, entry.dataStart + entry.compSize);
-      data = entry.method === 0 ? raw.slice() : inflateSync(raw);
-    }
+    // The native inflate verifies CRC-32; a corrupt entry fails the package
+    // instead of silently reading truncated bytes (Excel rejects these too).
+    data = inflateZipEntry(bytes, entry);
     if (path.endsWith(".xml")) data = stripOversizedGfxdata(data);
     this.index.delete(path);
     this.parts.set(path, data);

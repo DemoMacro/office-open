@@ -67,7 +67,7 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (nf.name !== "numFmt") continue;
         const id = attrNum(nf, "numFmtId");
         const code = attr(nf, "formatCode");
-        if (id !== undefined && code) {
+        if (id !== undefined && code !== undefined) {
           numFmtById.set(id, code);
           entries.push({ numFmtId: id, formatCode: code });
         }
@@ -120,12 +120,15 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         const fillId = attrNum(xf, "fillId");
         const borderId = attrNum(xf, "borderId");
         const numFmtId = attrNum(xf, "numFmtId");
+        if (fillId !== undefined) entry.fillIdDeclared = true;
+        if (borderId !== undefined) entry.borderIdDeclared = true;
         if (fontId !== undefined && fontId < fonts.length) entry.font = fonts[fontId];
+        else if (fontId !== undefined) entry.fontIdRaw = fontId;
         if (fillId !== undefined && fillId < fills.length) entry.fill = fills[fillId];
         if (borderId !== undefined && borderId < borders.length) entry.border = borders[borderId];
         if (numFmtId !== undefined) {
           const code = numFmtById.get(numFmtId);
-          if (code !== undefined) entry.numFmt = code;
+          if (code !== undefined && code !== "") entry.numFmt = code;
           else entry.numFmtId = numFmtId;
         }
         const alignmentEl = findChild(xf, "alignment");
@@ -144,8 +147,10 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (applyBorder !== undefined) entry.applyBorder = applyBorder;
         if (applyAlignment !== undefined) entry.applyAlignment = applyAlignment;
         if (applyProtection !== undefined) entry.applyProtection = applyProtection;
-        if (parseOnOff(attr(xf, "quotePrefix"))) entry.quotePrefix = true;
-        if (parseOnOff(attr(xf, "pivotButton"))) entry.pivotButton = true;
+        const quotePrefix = parseExplicitOnOff(attr(xf, "quotePrefix"));
+        const pivotButton = parseExplicitOnOff(attr(xf, "pivotButton"));
+        if (quotePrefix !== undefined) entry.quotePrefix = quotePrefix;
+        if (pivotButton !== undefined) entry.pivotButton = pivotButton;
         xfs.push(entry);
       }
       result.cellStyleXfs = xfs;
@@ -169,17 +174,24 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         const protection = protectionEl ? parseProtection(protectionEl) : undefined;
 
         const style: IndexedXfEntry = {};
-        if (fontId > 0) style.fontId = fontId;
-        if (fillId > 0) style.fillId = fillId;
-        if (borderId > 0) style.borderId = borderId;
-        if (numFmtId > 0) style.numFmtId = numFmtId;
+        if (fontId > 0 || attr(xf, "fontId") !== undefined) style.fontId = fontId;
+        style.fontIdDeclared = attr(xf, "fontId") !== undefined;
+        if (fillId > 0 || attr(xf, "fillId") !== undefined) style.fillId = fillId;
+        style.fillIdDeclared = attr(xf, "fillId") !== undefined;
+        if (borderId > 0 || attr(xf, "borderId") !== undefined) style.borderId = borderId;
+        style.borderIdDeclared = attr(xf, "borderId") !== undefined;
+        if (numFmtId > 0 || attr(xf, "numFmtId") !== undefined) style.numFmtId = numFmtId;
+        style.numFmtIdDeclared = attr(xf, "numFmtId") !== undefined;
         const xfId = attrNum(xf, "xfId");
-        if (xfId !== undefined && xfId > 0) style.xfId = xfId;
+        style.xfIdDeclared = xfId !== undefined;
+        if (xfId !== undefined) style.xfId = xfId;
         if (alignment) style.alignment = alignment;
         if (protection) style.protection = protection;
         // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers
-        if (parseOnOff(attr(xf, "quotePrefix"))) style.quotePrefix = true;
-        if (parseOnOff(attr(xf, "pivotButton"))) style.pivotButton = true;
+        const quotePrefix = parseExplicitOnOff(attr(xf, "quotePrefix"));
+        const pivotButton = parseExplicitOnOff(attr(xf, "pivotButton"));
+        if (quotePrefix !== undefined) style.quotePrefix = quotePrefix;
+        if (pivotButton !== undefined) style.pivotButton = pivotButton;
         // apply* flags preserved verbatim — presence distinguishes a source
         // that wrote them from one that omitted them
         const applyFont = parseExplicitOnOff(attr(xf, "applyFont"));
@@ -212,10 +224,13 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (xfId !== undefined) style.xfId = xfId;
         const builtinId = attrNum(cs, "builtinId");
         if (builtinId !== undefined) style.builtinId = builtinId;
-        if (parseOnOff(attr(cs, "customBuiltin"))) style.customBuiltin = true;
-        if (parseOnOff(attr(cs, "hidden"))) style.hidden = true;
+        const customBuiltin = parseOnOff(attr(cs, "customBuiltin"));
+        const hidden = parseOnOff(attr(cs, "hidden"));
+        if (customBuiltin !== undefined) style.customBuiltin = customBuiltin;
+        if (hidden !== undefined) style.hidden = hidden;
         const iLevel = attrNum(cs, "iLevel");
         if (iLevel !== undefined) style.iLevel = iLevel;
+        if (attr(cs, "xr:uid")) style.uid = attr(cs, "xr:uid");
         styles.push(style as CustomCellStyleOptions);
       }
       result.customCellStyles = styles;
@@ -287,6 +302,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
         if (tse.name !== "tableStyle") continue;
         const style: Partial<CustomTableStyleOptions> = {};
         if (attr(tse, "name")) style.name = attr(tse, "name");
+        const tsUid = attr(tse, "xr9:uid");
+        if (tsUid !== undefined) style.uid = tsUid;
         const pivot = parseExplicitOnOff(attr(tse, "pivot"));
         if (pivot !== undefined) style.pivot = pivot;
         const table = parseExplicitOnOff(attr(tse, "table"));
@@ -298,6 +315,8 @@ export const stylesDesc: CustomDescriptor<StylesDocOptions, WriteContext, Styles
           if (attr(tsee, "type")) elOpts.type = attr(tsee, "type") as TableStyleElementType;
           const dxfId = attrNum(tsee, "dxfId");
           if (dxfId !== undefined) elOpts.dxfId = dxfId;
+          const size = attrNum(tsee, "size");
+          if (size !== undefined) elOpts.size = size;
           elements.push(elOpts as TableStyleElementOptions);
         }
         if (elements.length > 0) style.elements = elements;

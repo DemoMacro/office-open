@@ -2914,6 +2914,10 @@
           },
           "type": "array"
         },
+        "chartExt": {
+          "description": "Raw inner XML of the c:chart trailing c:extLst — Office extension round-trip.",
+          "type": "string"
+        },
         "chartKey": {
           "description": "Pre-generated chart key (e.g. \"chart_2048\"). If omitted, auto-generated.",
           "type": "string"
@@ -3516,8 +3520,7 @@
           "description": "Per-point label override (c:dLbl); its own c:idx is included."
         },
         "ext": {
-          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/DataPointOptions/properties/ext"
         },
         "index": {
           "type": "number"
@@ -4846,6 +4849,10 @@
           "$ref": "#/definitions/VariantValue",
           "description": "The property value (as string)"
         },
+        "valueLexeme": {
+          "description": "Source lexical text of the vt:* element; round-trip only.",
+          "type": "string"
+        },
         "valueType": {
           "description": "Source vt:* element spelling (round-trip), set only when the default JS mapping would rewrite it — an integer carried as vt:r8 would otherwise re-emit as vt:i4.",
           "type": "string"
@@ -5173,6 +5180,10 @@
         "explosion": {
           "description": "Pie explosion offset for this point (c:explosion).",
           "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
+          "type": "string"
         },
         "index": {
           "description": "Point index (c:idx, required).",
@@ -6406,6 +6417,10 @@
         },
         "name": {
           "type": "string"
+        },
+        "namePresent": {
+          "description": "True when the source declared `@name`. Round-trip only: false keeps a source-absent name from gaining the fresh-authoring default.",
+          "type": "boolean"
         }
       },
       "required": ["fillStyles", "lineStyles", "effectStyles", "backgroundFillStyles"],
@@ -10136,6 +10151,31 @@
           "description": "Document category, round-tripped from cp:category.",
           "type": "string"
         },
+        "childOrder": {
+          "description": "Source child order as canonical field keys; round-trip only.",
+          "items": {
+            "enum": [
+              "title",
+              "subject",
+              "creator",
+              "keywords",
+              "description",
+              "lastModifiedBy",
+              "lastPrinted",
+              "revision",
+              "created",
+              "modified",
+              "category",
+              "contentStatus",
+              "contentType",
+              "identifier",
+              "language",
+              "version"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "colorMru": {
           "items": {
             "type": "string"
@@ -10357,7 +10397,8 @@
           "type": "boolean"
         },
         "revision": {
-          "type": "number"
+          "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring.",
+          "type": ["number", "null"]
         },
         "rtl": {
           "type": "boolean"
@@ -10618,6 +10659,10 @@
             "$ref": "#/definitions/GeometryGuide"
           },
           "type": "array"
+        },
+        "avLstOmitted": {
+          "description": "Source omitted the a:avLst child; round-trip only — do not hand-author.",
+          "type": "boolean"
         },
         "preset": {
           "$ref": "#/definitions/ShapeType",
@@ -11018,6 +11063,13 @@
       "additionalProperties": false,
       "description": "Options for RGB color.",
       "properties": {
+        "extensionAttributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`). Round-trip only — do not hand-author.",
+          "type": "object"
+        },
         "transforms": {
           "$ref": "#/definitions/ColorTransformOptions",
           "description": "Optional color transforms"
@@ -14521,6 +14573,10 @@
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "objectDefaultsPresent": {
+          "description": "Explicit false preserves a source-absent a:objectDefaults.",
+          "type": "boolean"
         },
         "rootElement": {
           "description": "Root spelling: `a:theme` (default) or legacy `a:officeStyleSheet`.",

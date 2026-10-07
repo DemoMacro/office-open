@@ -18,7 +18,9 @@ export interface CorePropertiesOptions {
   keywords?: string;
   description?: string;
   lastModifiedBy?: string;
-  revision?: number;
+  /** Revision number (cp:revision). null preserves a source element with
+   * empty text; undefined omits the element on fresh authoring. */
+  revision?: number | null;
   lastPrinted?: string;
   /**
    * Creation timestamp (W3CDTF), round-tripped from dcterms:created. null =
@@ -49,7 +51,49 @@ export interface CorePropertiesOptions {
   defaultNamespace?: true;
   /** Legacy Microsoft core-property root/element spelling; round-trip only. */
   legacyMicrosoft?: true;
+  /** Source child order as canonical field keys; round-trip only. */
+  childOrder?: CorePropertiesChild[];
 }
+
+const LEGACY_CORE_PROPERTIES_NAMESPACE =
+  "http://schemas.microsoft.com/package/2005/06/metadata/core-properties";
+
+type CorePropertiesChild =
+  | "title"
+  | "subject"
+  | "creator"
+  | "keywords"
+  | "description"
+  | "lastModifiedBy"
+  | "lastPrinted"
+  | "revision"
+  | "created"
+  | "modified"
+  | "category"
+  | "contentStatus"
+  | "contentType"
+  | "identifier"
+  | "language"
+  | "version";
+
+const CANONICAL_CORE_PROPERTIES_ORDER: CorePropertiesChild[] = [
+  "title",
+  "subject",
+  "creator",
+  "keywords",
+  "description",
+  "lastPrinted",
+  "lastModifiedBy",
+  "revision",
+  "created",
+  "modified",
+  "category",
+  "contentStatus",
+  "contentType",
+  "identifier",
+  "language",
+  "version",
+];
 
 const FIELD_MAP: Array<{ name: string; key: keyof CorePropertiesOptions }> = [
   { name: "dc:title", key: "title" },
@@ -80,8 +124,8 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
   const props: CorePropertiesOptions = {};
   // ISO/strict binds the core-properties namespace as the default — a
   // prefix-less root means stringify must re-emit that form.
-  if (el.name === "coreProperties") props.defaultNamespace = true;
-  if (el.name === "CoreProperties") props.legacyMicrosoft = true;
+  if (el.attributes?.xmlns === LEGACY_CORE_PROPERTIES_NAMESPACE) props.legacyMicrosoft = true;
+  else if (el.name === "coreProperties") props.defaultNamespace = true;
 
   for (const field of FIELD_MAP) {
     // ISO/strict files bind the core-properties namespace as the DEFAULT
@@ -117,7 +161,10 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
   );
   if (revEl) {
     const rev = textOf(revEl);
-    if (rev) {
+    if (rev === "") {
+      // Empty source element — preserve its presence without inventing a value.
+      props.revision = null;
+    } else if (rev) {
       const n = Number(rev);
       if (!Number.isNaN(n)) props.revision = n;
     }
@@ -128,6 +175,39 @@ export function parseCorePropsElement(el: Element | undefined): CorePropertiesOp
   // now, which a fresh document (undefined) still does.
   if (props.created === undefined) props.created = null;
   if (props.modified === undefined) props.modified = null;
+
+  const childOrder = el.elements
+    ?.filter((child) => child.type === "element")
+    .map((child) => {
+      const localName = child.name?.slice(child.name.indexOf(":") + 1).toLowerCase();
+      const field = FIELD_MAP.find((candidate) => {
+        const candidateLocal = candidate.name.slice(candidate.name.indexOf(":") + 1);
+        return (
+          child.name === candidate.name ||
+          child.name === candidateLocal ||
+          localName === candidateLocal.toLowerCase()
+        );
+      });
+      if (field) return field.key;
+      if (localName === "revision") return "revision" as const;
+      if (localName === "datecreated") return "created" as const;
+      if (localName === "datemodified") return "modified" as const;
+      return undefined;
+    })
+    .filter((key): key is CorePropertiesChild => key !== undefined);
+  let hasReorderedChildren = false;
+  let canonicalIndex = -1;
+  for (const key of childOrder ?? []) {
+    const index = CANONICAL_CORE_PROPERTIES_ORDER.indexOf(key);
+    if (index === -1 || index < canonicalIndex) {
+      hasReorderedChildren = true;
+      break;
+    }
+    canonicalIndex = index;
+  }
+  if (childOrder && childOrder.length > 1 && hasReorderedChildren) {
+    props.childOrder = childOrder;
+  }
 
   return props;
 }
@@ -179,8 +259,9 @@ export function buildCorePropertiesXmlString(
         return name;
     }
   };
-  const elementName = (name: string): string => (legacy ? legacyName(name) : name);
-  const p: string[] = legacy
+  const dublinCore = (name: string): string => (legacy ? legacyName(name) : `dc:${name}`);
+  const coreProperty = (name: string): string => (legacy ? legacyName(name) : cp(name));
+  const open = legacy
     ? [
         '<CoreProperties xmlns="http://schemas.microsoft.com/package/2005/06/metadata/core-properties">',
       ]
@@ -191,54 +272,107 @@ export function buildCorePropertiesXmlString(
       : [
           '<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcmitype="http://purl.org/dcmitype/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">',
         ];
-  // Empty-string values are meaningful (element present, text empty) — only
-  // undefined omits the element.
-  if (opts.title !== undefined)
-    p.push(`<${elementName("title")}>${escapeXml(opts.title)}</${elementName("title")}>`);
-  if (opts.subject !== undefined)
-    p.push(`<${elementName("subject")}>${escapeXml(opts.subject)}</${elementName("subject")}>`);
-  if (opts.creator !== undefined)
-    p.push(`<${elementName("creator")}>${escapeXml(opts.creator)}</${elementName("creator")}>`);
-  if (opts.keywords !== undefined)
-    p.push(`<${cp("keywords")}>${escapeXml(opts.keywords)}</${cp("keywords")}>`);
-  if (opts.description !== undefined)
-    p.push(`<dc:description>${escapeXml(opts.description)}</dc:description>`);
-  if (opts.lastPrinted !== undefined)
-    p.push(
-      `<${elementName("lastPrinted")}>${escapeXml(opts.lastPrinted)}</${elementName("lastPrinted")}>`,
-    );
-  if (opts.lastModifiedBy !== undefined)
-    p.push(
-      `<${elementName("lastModifiedBy")}>${escapeXml(opts.lastModifiedBy)}</${elementName("lastModifiedBy")}>`,
-    );
-  if (opts.revision !== undefined)
-    p.push(`<${cp("revision")}>${opts.revision}</${cp("revision")}>`);
-
   const now = reproducible?.date ?? new Date().toISOString();
+  const entries: Array<[CorePropertiesChild, string]> = [];
+  const add = (key: CorePropertiesChild, value: string | undefined, xml?: string): void => {
+    if (value !== undefined && value !== null) entries.push([key, xml ?? value]);
+  };
+  add(
+    "title",
+    opts.title,
+    `<${dublinCore("title")}>${escapeXml(opts.title ?? "")}</${dublinCore("title")}>`,
+  );
+  add(
+    "subject",
+    opts.subject,
+    `<${dublinCore("subject")}>${escapeXml(opts.subject ?? "")}</${dublinCore("subject")}>`,
+  );
+  add(
+    "creator",
+    opts.creator,
+    `<${dublinCore("creator")}>${escapeXml(opts.creator ?? "")}</${dublinCore("creator")}>`,
+  );
+  add(
+    "keywords",
+    opts.keywords,
+    `<${coreProperty("keywords")}>${escapeXml(opts.keywords ?? "")}</${coreProperty("keywords")}>`,
+  );
+  add(
+    "description",
+    opts.description,
+    `<${dublinCore("description")}>${escapeXml(opts.description ?? "")}</${dublinCore("description")}>`,
+  );
+  add(
+    "lastPrinted",
+    opts.lastPrinted,
+    `<${coreProperty("lastPrinted")}>${escapeXml(opts.lastPrinted ?? "")}</${coreProperty("lastPrinted")}>`,
+  );
+  add(
+    "lastModifiedBy",
+    opts.lastModifiedBy,
+    `<${coreProperty("lastModifiedBy")}>${escapeXml(opts.lastModifiedBy ?? "")}</${coreProperty("lastModifiedBy")}>`,
+  );
+  if (opts.revision !== undefined)
+    entries.push([
+      "revision",
+      `<${coreProperty("revision")}>${opts.revision ?? ""}</${coreProperty("revision")}>`,
+    ]);
   if (opts.created !== null)
-    p.push(
+    add(
+      "created",
+      opts.created ?? now,
       legacy
         ? `<DateCreated>${opts.created ?? now}</DateCreated>`
         : `<dcterms:created xsi:type="dcterms:W3CDTF">${opts.created ?? now}</dcterms:created>`,
     );
   if (opts.modified !== null)
-    p.push(
+    add(
+      "modified",
+      opts.modified ?? now,
       legacy
         ? `<DateModified>${opts.modified ?? now}</DateModified>`
         : `<dcterms:modified xsi:type="dcterms:W3CDTF">${opts.modified ?? now}</dcterms:modified>`,
     );
-  // Trailing slots mirror Word's emission order (category last in real files).
-  if (opts.category !== undefined)
-    p.push(`<${cp("category")}>${escapeXml(opts.category)}</${cp("category")}>`);
-  if (opts.contentStatus !== undefined)
-    p.push(`<${cp("contentStatus")}>${escapeXml(opts.contentStatus)}</${cp("contentStatus")}>`);
-  if (opts.contentType !== undefined)
-    p.push(`<${cp("contentType")}>${escapeXml(opts.contentType)}</${cp("contentType")}>`);
-  if (opts.identifier !== undefined)
-    p.push(`<dc:identifier>${escapeXml(opts.identifier)}</dc:identifier>`);
-  if (opts.language !== undefined) p.push(`<dc:language>${escapeXml(opts.language)}</dc:language>`);
-  if (opts.version !== undefined)
-    p.push(`<${cp("version")}>${escapeXml(opts.version)}</${cp("version")}>`);
-  p.push(legacy ? "</CoreProperties>" : `</${cp("coreProperties")}>`);
+  add(
+    "category",
+    opts.category,
+    `<${coreProperty("category")}>${escapeXml(opts.category ?? "")}</${coreProperty("category")}>`,
+  );
+  add(
+    "contentStatus",
+    opts.contentStatus,
+    `<${coreProperty("contentStatus")}>${escapeXml(opts.contentStatus ?? "")}</${coreProperty("contentStatus")}>`,
+  );
+  add(
+    "contentType",
+    opts.contentType,
+    `<${coreProperty("contentType")}>${escapeXml(opts.contentType ?? "")}</${coreProperty("contentType")}>`,
+  );
+  add(
+    "identifier",
+    opts.identifier,
+    `<dc:identifier>${escapeXml(opts.identifier ?? "")}</dc:identifier>`,
+  );
+  add("language", opts.language, `<dc:language>${escapeXml(opts.language ?? "")}</dc:language>`);
+  add(
+    "version",
+    opts.version,
+    `<${coreProperty("version")}>${escapeXml(opts.version ?? "")}</${coreProperty("version")}>`,
+  );
+  const order = opts.childOrder;
+  entries.sort((left, right) => {
+    if (!order) return 0;
+    const leftIndex = order.indexOf(left[0]);
+    const rightIndex = order.indexOf(right[0]);
+    return (
+      (leftIndex === -1 ? order.length : leftIndex) -
+      (rightIndex === -1 ? order.length : rightIndex)
+    );
+  });
+  const p: string[] = [
+    ...open,
+    ...entries.map(([, xml]) => xml),
+    legacy ? "</CoreProperties>" : `</${cp("coreProperties")}>`,
+  ];
   return p.join("");
 }

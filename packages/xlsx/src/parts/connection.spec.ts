@@ -139,6 +139,27 @@ describe("connectionsDesc", () => {
     expect(t.qualifier).toBe("doubleQuote");
     expect(t.textFields).toEqual([{ type: "text", position: 1 }]);
   });
+
+  it("round-trips the Excel 2013 model connection extension", () => {
+    const opts = {
+      connections: [
+        {
+          id: 4,
+          refreshedVersion: 6,
+          extensions: [
+            {
+              uri: "{MODEL-CONNECTION}",
+              modelConnection: { id: "", model: true },
+            },
+          ],
+        },
+      ],
+    };
+    const xml = connectionsDesc.stringify(opts, writeCtx);
+    const parsed = connectionsDesc.parse(parseRoot(xml), readCtx);
+
+    expect(parsed.connections[0]?.extensions).toEqual(opts.connections[0]!.extensions);
+  });
 });
 
 describe("queryTableDesc", () => {

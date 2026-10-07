@@ -114,6 +114,9 @@ export interface FormatSchemeOptions {
   /** Background fill style list (bgFillStyleLst, ≥3 entries). */
   backgroundFillStyles: FillOptions[];
   name?: string;
+  /** True when the source declared `@name`. Round-trip only: false keeps a
+   * source-absent name from gaining the fresh-authoring default. */
+  namePresent?: boolean;
 }
 
 /** Default shape/line/text definition (CT_DefaultShapeDefinition: spDef/lnDef/txDef). */
@@ -203,6 +206,8 @@ export interface ThemeOptions {
   fontScheme?: FontSchemeOptions;
   formatScheme?: FormatSchemeOptions;
   objectDefaults?: ObjectDefaultsOptions;
+  /** Explicit false preserves a source-absent a:objectDefaults. */
+  objectDefaultsPresent?: boolean;
   extraColorSchemes?: ExtraColorSchemeOptions[];
   /** Explicit false preserves a source-absent a:extraClrSchemeLst. */
   includeExtraColorSchemes?: boolean;

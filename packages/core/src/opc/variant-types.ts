@@ -69,11 +69,16 @@ export function defaultVariantTag(value: VariantValue): string {
  * default mapping so a source spelling the mapping would rewrite (an integer
  * carried as vt:r8, an lpstr string) round-trips unchanged.
  */
-export function stringifyVariantValue(value: VariantValue, sourceTag?: string): string {
+export function stringifyVariantValue(
+  value: VariantValue,
+  sourceTag?: string,
+  sourceText?: string,
+): string {
   const tag =
     sourceTag !== undefined && VT_TAGS.has(sourceTag) ? sourceTag : defaultVariantTag(value);
   let inner: string;
-  if (tag === "vt:bool") inner = value ? "true" : "false";
+  if (sourceText !== undefined) inner = escapeXml(sourceText);
+  else if (tag === "vt:bool") inner = value ? "true" : "false";
   else if (tag === "vt:date" || tag === "vt:filetime")
     inner = value instanceof Date ? value.toISOString() : String(value);
   else if (typeof value === "string") inner = escapeXml(value);

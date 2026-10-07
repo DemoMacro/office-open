@@ -143,8 +143,11 @@ export function stringifyFormatScheme(opts: FormatSchemeOptions, ctx: WriteConte
   const backgroundFillStyles = opts.backgroundFillStyles
     .map((f) => fillDesc.stringify(f, ctx) ?? "")
     .join("");
-  const name = opts.name ?? "Office";
-  return `<a:fmtScheme name="${name}"><a:fillStyleLst>${fillStyles}</a:fillStyleLst><a:lnStyleLst>${lineStyles}</a:lnStyleLst><a:effectStyleLst>${effectStyles}</a:effectStyleLst><a:bgFillStyleLst>${backgroundFillStyles}</a:bgFillStyleLst></a:fmtScheme>`;
+  // Fresh authoring defaults to "Office"; a parsed source without @name keeps
+  // the attribute omitted.
+  const name = opts.name ?? (opts.namePresent === false ? undefined : "Office");
+  const nameAttr = name !== undefined ? ` name="${name}"` : "";
+  return `<a:fmtScheme${nameAttr}><a:fillStyleLst>${fillStyles}</a:fillStyleLst><a:lnStyleLst>${lineStyles}</a:lnStyleLst><a:effectStyleLst>${effectStyles}</a:effectStyleLst><a:bgFillStyleLst>${backgroundFillStyles}</a:bgFillStyleLst></a:fmtScheme>`;
 }
 
 /** Parse a:fmtScheme. */
@@ -161,6 +164,7 @@ export function parseFormatScheme(
   };
   const name = el.attributes?.["name"];
   if (name) result.name = String(name);
+  result.namePresent = name !== undefined;
 
   const fillStyleLst = findChild(el, "a:fillStyleLst");
   if (fillStyleLst) {

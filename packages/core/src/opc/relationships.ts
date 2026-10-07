@@ -407,6 +407,10 @@ export function buildRootRelationships(
   options?: {
     includeCoreProperties?: boolean;
     includeAppProperties?: boolean;
+    corePropertiesPath?: string;
+    corePropertiesType?: string;
+    appPropertiesPath?: string;
+    customPropertiesPath?: string;
     appPropertiesType?: string;
     namespace?: string;
   },
@@ -425,8 +429,9 @@ export function buildRootRelationships(
       2,
       legacy
         ? LEGACY_CORE_PROPERTIES_TYPE
-        : "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
-      "docProps/core.xml",
+        : (options?.corePropertiesType ??
+            "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"),
+      options?.corePropertiesPath ?? "docProps/core.xml",
     );
   }
   if (options?.includeAppProperties !== false) {
@@ -436,14 +441,14 @@ export function buildRootRelationships(
         (legacy
           ? LEGACY_APP_PROPERTIES_TYPE
           : "http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties"),
-      "docProps/app.xml",
+      options?.appPropertiesPath ?? "docProps/app.xml",
     );
   }
   if (includeCustomProperties) {
     rels.addRelationship(
       4,
       "http://schemas.openxmlformats.org/officeDocument/2006/relationships/custom-properties",
-      "docProps/custom.xml",
+      options?.customPropertiesPath ?? "docProps/custom.xml",
     );
   }
   // Root-level passthrough relationships (round-trip): the source _rels/.rels
@@ -465,7 +470,7 @@ export function partPathToRelsPath(partPath: string): string {
   const idx = partPath.lastIndexOf("/");
   const dir = partPath.substring(0, idx);
   const file = partPath.substring(idx + 1);
-  return `${dir}/_rels/${file}.rels`;
+  return dir ? `${dir}/_rels/${file}.rels` : `_rels/${file}.rels`;
 }
 
 /**
@@ -476,6 +481,7 @@ export function partPathToRelsPath(partPath: string): string {
  */
 export function resolveRelationshipTarget(partPath: string, target: string): string {
   if (target.startsWith("/")) return target.slice(1);
+  if (target.startsWith("#")) return target;
   const dir = partPath.substring(0, partPath.lastIndexOf("/"));
   const dirParts = dir ? dir.split("/") : [];
   for (const part of target.split("/")) {

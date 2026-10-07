@@ -21,6 +21,11 @@ export interface RgbColorOptions {
   value: HexColor;
   /** Optional color transforms */
   transforms?: ColorTransformOptions;
+  /**
+   * Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`).
+   * Round-trip only — do not hand-author.
+   */
+  extensionAttributes?: Record<string, string>;
 }
 
 /**

@@ -85,7 +85,13 @@ export const DOCX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
-  opaquePrefixes: ["word/embeddings/", "word/printerSettings/", "word/fonts/"],
+  opaquePrefixes: [
+    "word/embeddings/",
+    "word/printerSettings/",
+    "word/fonts/",
+    "customXml/",
+    "docProps/thumbnail.",
+  ],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },

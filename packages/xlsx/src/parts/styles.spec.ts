@@ -74,6 +74,25 @@ describe("Styles", () => {
       const idx = styles.register({ numFmt: "0.00" });
       expect(idx).toBeGreaterThan(0);
     });
+
+    it("preserves declared number-format identity", () => {
+      const styles = new Styles();
+      styles.adopt({
+        numFmts: [
+          { numFmtId: 5, formatCode: "General" },
+          { numFmtId: 164, formatCode: "" },
+          { numFmtId: 165, formatCode: "0.00" },
+          { numFmtId: 176, formatCode: "0.00" },
+        ],
+      });
+      const xml = styles.serialize();
+      expect(xml).toContain('<numFmt numFmtId="5" formatCode="General"/>');
+      expect(xml).toContain('<numFmt numFmtId="164" formatCode=""/>');
+      expect(xml).toContain('<numFmt numFmtId="176" formatCode="0.00"/>');
+      styles.register({ numFmt: "0.00" });
+      const state = styles.toDescriptorOptions();
+      expect(state.cellXfs.at(-1)?.numFmtId).toBe(165);
+    });
   });
 
   // ── toXml path ──
@@ -118,6 +137,26 @@ describe("Styles", () => {
     expect(xml).toContain('<color theme="1" tint="-0.2499771111178930"/>');
   });
 
+  it("round-trips source font size lexemes", () => {
+    const styles = new Styles();
+    styles.register({ font: { size: 10, sizeRaw: "10.0" } });
+    expect(styles.serialize()).toContain('<sz val="10.0"/>');
+  });
+
+  it("round-trips source RGB color lexemes", () => {
+    const styles = new Styles();
+    styles.adopt({
+      fonts: [{ color: "0563C1", colorRaw: "000563C1" }],
+      fills: [{ color: "000000", fgColorRaw: "ff000000" }],
+      borders: [{ left: { color: "000000", colorRaw: "ff000000" } }],
+      cellXfs: [],
+    });
+    const xml = styles.serialize();
+    expect(xml).toContain('<color rgb="000563C1"/>');
+    expect(xml).toContain('<fgColor rgb="ff000000"/>');
+    expect(xml).toContain('<left><color rgb="ff000000"/></left>');
+  });
+
   it("preserves an explicit none border style", () => {
     const styles = new Styles();
     styles.adopt({
@@ -138,6 +177,25 @@ describe("Styles", () => {
     });
     expect(styles.serialize()).toContain('<left style="none">');
     expect(styles.serialize()).toContain('<color type="theme" val="4" tint="-0.25"/>');
+  });
+
+  it("keeps an adopted empty border empty", () => {
+    const styles = new Styles();
+    styles.adopt({ fonts: [], fills: [], borders: [{}], cellXfs: [] });
+    expect(styles.serialize()).toContain('<borders count="1"><border></border></borders>');
+  });
+
+  it("distinguishes absent and declared fill pattern types", () => {
+    const styles = new Styles();
+    styles.adopt({
+      fonts: [],
+      fills: [{ patternTypeDeclared: false }, { patternType: "none", patternTypeDeclared: true }],
+      borders: [],
+      cellXfs: [],
+    });
+    const xml = styles.serialize();
+    expect(xml).toContain("<fill><patternFill/></fill>");
+    expect(xml).toContain('<fill><patternFill patternType="none"/></fill>');
   });
 
   it("round-trips accounting underlines", () => {
@@ -286,6 +344,31 @@ describe("Styles", () => {
       const out = styles.serialize();
       expect(out).toContain("<protection locked=");
       expect(out).not.toContain("applyProtection=");
+    });
+
+    it("distinguishes explicit false xf flags and zero references", () => {
+      const xml =
+        `<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts>` +
+        `<fills count="1"><fill><patternFill patternType="none"/></fill></fills>` +
+        `<borders count="1"><border/></borders>` +
+        `<cellXfs count="2">` +
+        `<xf numFmtId="0" fontId="0" fillId="0" borderId="0" quotePrefix="0" pivotButton="0"/>` +
+        `<xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>` +
+        `</cellXfs></styleSheet>`;
+      const el = parseXml(xml, { nativeTypeAttributes: true }).elements?.[0];
+      if (!el) throw new Error("no root");
+      const parsed = stylesDesc.parse(el, undefined as unknown as ReadContext);
+      expect(parsed.cellXfs?.[0]?.quotePrefix).toBe(false);
+      expect(parsed.cellXfs?.[0]?.pivotButton).toBe(false);
+      expect(parsed.cellXfs?.[1]?.quotePrefix).toBeUndefined();
+
+      const styles = new Styles();
+      styles.adopt({ fonts: [], fills: [], borders: [], cellXfs: parsed.cellXfs! });
+      const out = styles.serialize();
+      expect(out.match(/quotePrefix="0"/g)).toHaveLength(1);
+      expect(out.match(/pivotButton="0"/g)).toHaveLength(1);
+      expect(out).toContain('numFmtId="0"');
     });
 
     it("keeps a cellStyleXfs numFmtId without a format code", () => {

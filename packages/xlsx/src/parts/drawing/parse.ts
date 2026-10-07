@@ -454,6 +454,9 @@ export function parseShapeAnchor(
   if (sp.attributes?.["macro"] !== undefined) result.macro = String(sp.attributes["macro"]);
   if (sp.attributes?.["textlink"] !== undefined)
     result.textlink = String(sp.attributes["textlink"]);
+  if (sp.attributes?.["fLocksText"] !== undefined) {
+    result.fLocksText = parseOnOff(String(sp.attributes["fLocksText"])) ?? false;
+  }
   result.fPublished = readPublishedFlag(sp);
   return result;
 }

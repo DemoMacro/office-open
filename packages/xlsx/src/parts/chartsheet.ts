@@ -88,6 +88,8 @@ export interface ChartsheetProtectionOptions {
 export interface ChartsheetOptions extends Omit<NonVisualDrawingPropertiesOptions, "name"> {
   /** Sheet name */
   name?: string;
+  /** Revision UID (CT_Chartsheet `@xr:uid`); round-trip only. */
+  uid?: string;
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
   sheetId?: number;
   /** Visibility (CT_Sheet `@state`) */
@@ -162,7 +164,9 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
   stringify(opts, _ctx) {
     const p: string[] = [
       '<chartsheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
-        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
+        (opts.uid ? ` xr:uid="${escapeXml(opts.uid)}"` : "") +
+        ">",
     ];
 
     // sheetPr (optional)
@@ -276,6 +280,8 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
 
   parse(el, _ctx) {
     const result: Partial<ChartsheetDescriptorOptions> = {};
+
+    if (attr(el, "xr:uid") !== undefined) result.uid = attr(el, "xr:uid");
 
     // nativeTypeAttributes (xlsx parse path) coerces "1"/"0" to numbers, so
     // boolean attribute checks use String() coercion.

@@ -43,7 +43,9 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
   stringify(opts, ctx) {
     const prst = opts.preset ?? "rect";
     let avXml = "";
-    if (opts.adjustmentValues) {
+    if (opts.avLstOmitted && !opts.adjustmentValues) {
+      avXml = "";
+    } else if (opts.adjustmentValues) {
       avXml = stringify(adjustmentValuesDesc, opts.adjustmentValues, ctx) ?? "<a:avLst/>";
     } else {
       avXml = "<a:avLst/>";
@@ -62,6 +64,7 @@ export const presetGeometryDesc: CustomDescriptor<PresetGeometryOptions> = {
         result.adjustmentValues = guides;
       }
     }
+    if (avLst === undefined) result.avLstOmitted = true;
     return result;
   },
 };

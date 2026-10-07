@@ -80,8 +80,9 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
       // compiler always writes (rival property systems — it reads the VML
       // shape's x:ClientData instead).
       const shapeId = entry.shapeId !== undefined ? ` shapeId="${entry.shapeId}"` : "";
+      const uidAttr = entry.uid !== undefined ? ` xr:uid="${escapeXml(entry.uid)}"` : "";
       p.push(
-        `<comment ref="${entry.cell}"${shapeId} authorId="${authorId}"><text>${textXml}</text></comment>`,
+        `<comment ref="${entry.cell}"${shapeId}${uidAttr} authorId="${authorId}"><text>${textXml}</text></comment>`,
       );
     }
 
@@ -106,6 +107,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         if (c.name !== "comment") continue;
         const ref = attr(c, "ref") ?? "";
         const shapeId = attrNum(c, "shapeId");
+        const uid = attr(c, "xr:uid");
         const authorId = Number(attr(c, "authorId") ?? 0);
         const textEl = findChild(c, "text");
         const text = textEl ? parseRst(textEl) : "";
@@ -113,6 +115,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         const comment: CommentOptions = {
           cell: ref,
           ...(shapeId !== undefined ? { shapeId } : {}),
+          ...(uid !== undefined ? { uid } : {}),
           author: authors[authorId] ?? "",
           text,
         };
@@ -443,6 +446,9 @@ function parseRst(textEl: XmlElement): string | RichTextOptions {
       hasRuns = true;
       const t = findChild(child, "t");
       const run: RichTextRunOptions = { text: t ? (textOf(t) ?? "") : "" };
+      if (t?.attributes?.["xml:space"] !== undefined) {
+        run.textSpaceRaw = String(t.attributes["xml:space"]);
+      }
       const rPr = findChild(child, "rPr");
       if (rPr) run.properties = parseRPr(rPr);
       runs.push(run);

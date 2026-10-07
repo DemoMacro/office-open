@@ -2,6 +2,7 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { compileWorkbook } from "../compiler";
 import { workbookDesc } from "./workbook";
 import type { WorkbookDescriptorOptions } from "./workbook";
 
@@ -63,8 +64,8 @@ describe("workbookDesc round-trip", () => {
 
   it("preserves legacy workbook child order", () => {
     const xml =
-      '<workbook><fileVersion/><bookViews/><sheets><sheet name="A" tabId="1" r:id="rId1"/></sheets>' +
-      '<workbookPr/><webPublishing codePage="1252"/><fileRecoveryPr autoRecover="1"/><calcPr calcId="1"/></workbook>';
+      '<workbook><fileVersion/><bookViews><workbookView/></bookViews><sheets><sheet name="A" tabId="1" r:id="rId1"/></sheets>' +
+      '<workbookPr date1904="1"/><webPublishing codePage="1252"/><fileRecoveryPr autoRecover="1"/><calcPr calcId="1"/></workbook>';
     const doc = parseXml(xml);
     const workbook = doc.elements?.[0];
     if (!workbook) throw new Error("missing workbook root");
@@ -87,6 +88,15 @@ describe("workbookDesc round-trip", () => {
       calcOnSave: false,
     });
     expect(workbookDesc.stringify(result, writeCtx)).toContain('calcCompleted="0"');
+  });
+
+  it("preserves the absence of calculation properties", () => {
+    const opts: WorkbookDescriptorOptions = {
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+    };
+    const xml = workbookDesc.stringify(opts, writeCtx)!;
+    expect(xml).not.toContain("<calcPr");
+    expect(roundTrip(opts).calculation).toBeUndefined();
   });
 
   it("round-trips fileVersion", () => {
@@ -227,13 +237,32 @@ describe("workbookDesc round-trip", () => {
     expect(bookView?.tabRatio).toBe(400);
   });
 
-  it("emits fresh-authoring workbook defaults only when state is undefined", () => {
+  it("omits absent metadata instead of injecting fresh-authoring defaults", () => {
     const xml = workbookDesc.stringify(
       { sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }] },
       writeCtx,
     )!;
-    expect(xml).toContain('lastEdited="7"');
-    expect(xml).toContain('windowWidth="28800"');
+    expect(xml).not.toContain("<workbookPr");
+    expect(xml).not.toContain("<bookViews");
+  });
+
+  it("injects fresh-authoring defaults only on the fresh compile path", () => {
+    const workbookXmlOf = (files: ReturnType<typeof compileWorkbook>): string =>
+      new TextDecoder().decode(files["xl/workbook.xml"] as Uint8Array);
+    const fresh = compileWorkbook({ worksheets: [] });
+    const freshXml = workbookXmlOf(fresh);
+    expect(freshXml).toContain('windowWidth="28800"');
+    expect(freshXml).toContain("<workbookPr/>");
+    expect(freshXml).toContain('lastEdited="7"');
+
+    const roundTrip = compileWorkbook({
+      worksheets: [],
+      contentTypes: { defaults: [], overrides: [] },
+    });
+    const roundTripXml = workbookXmlOf(roundTrip);
+    expect(roundTripXml).not.toContain("<bookViews");
+    expect(roundTripXml).not.toContain("<workbookPr");
+    expect(roundTripXml).not.toContain("<fileVersion");
   });
 
   it("preserves an explicitly empty workbook view", () => {
@@ -244,7 +273,7 @@ describe("workbookDesc round-trip", () => {
       },
       writeCtx,
     )!;
-    expect(xml).toContain("<workbookView />");
+    expect(xml).toContain("<workbookView/>");
     expect(xml).not.toContain("windowWidth");
   });
 
@@ -329,6 +358,17 @@ describe("workbookDesc round-trip", () => {
     const result = roundTrip(opts);
 
     expect(result.functionGroups).toEqual(["UDF1", "UDF2"]);
+  });
+
+  it("preserves empty functionGroups and webPublishing containers", () => {
+    const result = roundTrip({
+      sheets: [{ name: "Sheet1", sheetId: 1, rId: "rId1" }],
+      functionGroups: [],
+      webPublishing: {},
+    });
+
+    expect(result.functionGroups).toEqual([]);
+    expect(result.webPublishing).toEqual({});
   });
 
   it("round-trips file sharing", () => {

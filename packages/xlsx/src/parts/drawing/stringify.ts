@@ -476,10 +476,15 @@ export function buildGroup(
 }
 
 /** CT_Shape attribute string (macro/textlink) with leading space, or empty. */
-function macroTextlinkAttrs(shape: { macro?: string; textlink?: string }): string {
+function macroTextlinkAttrs(shape: {
+  macro?: string;
+  textlink?: string;
+  fLocksText?: boolean;
+}): string {
   const a: string[] = [];
   if (shape.macro !== undefined) a.push(`macro="${escapeXml(shape.macro)}"`);
   if (shape.textlink !== undefined) a.push(`textlink="${escapeXml(shape.textlink)}"`);
+  if (shape.fLocksText !== undefined) a.push(`fLocksText="${shape.fLocksText ? 1 : 0}"`);
   return a.length ? " " + a.join(" ") : "";
 }
 

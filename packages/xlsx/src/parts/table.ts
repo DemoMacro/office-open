@@ -20,8 +20,13 @@ import {
 } from "@office-open/xml";
 
 import { parseA1Cell } from "../util/index";
-import { parseAutoFilter, stringifyAutoFilter } from "./auto-filter";
-import type { AutoFilterOptions } from "./worksheet";
+import {
+  parseAutoFilter,
+  parseSortStateEl,
+  stringifyAutoFilter,
+  stringifySortStateXml,
+} from "./auto-filter";
+import type { AutoFilterOptions, SortStateOptions } from "./worksheet";
 import type { XmlColumnPropertiesOptions } from "./xml-mapping";
 
 // Width in columns of a table ref range ("A1:F2" → 6); undefined when the
@@ -147,6 +152,9 @@ export interface TableOptions {
   columns: TableColumnOptions[];
   /** Number of header rows (default: 1) */
   headerRowCount?: number;
+  /** True when the source declared `@headerRowCount`. Round-trip only: keeps
+   * an explicit default from being dropped. */
+  headerRowCountDeclared?: boolean;
   /** Insert row allowed (CT_Table `@insertRow`) */
   insertRow?: boolean;
   /** Number of totals rows (default: 0) */
@@ -172,6 +180,8 @@ export interface TableOptions {
   altTextSummary?: string;
   /** Auto-filter (ref shorthand or structured filter columns/sort state) */
   autoFilter?: string | AutoFilterOptions;
+  /** Sort state (CT_Table `sortState`, directly under the table) */
+  sortState?: SortStateOptions;
   /** Insert row shifts existing rows (CT_Table `@insertRowShift`) */
   insertRowShift?: boolean;
   /** Published to server (CT_Table `@published`) */
@@ -210,15 +220,15 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     const rootAttrs: Record<string, string | number | boolean | undefined> = {
       id: o.id,
       "xr:uid": o.uid,
-      name: o.name ?? o.displayName,
       displayName: o.displayName,
       ref: o.ref,
     };
+    if (o.name !== undefined) rootAttrs.name = o.name;
     if (o.comment) rootAttrs.comment = o.comment;
     if (o.tableType && o.tableType !== "worksheet") {
       rootAttrs.tableType = o.tableType;
     }
-    if (o.headerRowCount !== undefined && o.headerRowCount !== 1) {
+    if (o.headerRowCount !== undefined && (o.headerRowCount !== 1 || o.headerRowCountDeclared)) {
       rootAttrs.headerRowCount = o.headerRowCount;
     }
     if (o.insertRow) rootAttrs.insertRow = 1;
@@ -255,6 +265,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // autoFilter (optional, before tableColumns per XSD sequence)
     if (o.autoFilter !== undefined) {
       p.push(stringifyAutoFilter(o.autoFilter));
+    }
+    if (o.sortState) {
+      p.push(stringifySortStateXml(o.sortState));
     }
 
     // tableColumns (required). Pad missing declarations with Excel's default
@@ -381,6 +394,7 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     if (attr(el, "ref")) result.ref = attr(el, "ref");
     const headerRowCount = attrNum(el, "headerRowCount");
     if (headerRowCount !== undefined) result.headerRowCount = headerRowCount;
+    result.headerRowCountDeclared = attr(el, "headerRowCount") !== undefined;
     if (parseOnOff(attr(el, "insertRow"))) result.insertRow = true;
     const totalsRowCount = attrNum(el, "totalsRowCount");
     if (totalsRowCount !== undefined) result.totalsRowCount = totalsRowCount;
@@ -394,6 +408,8 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
     // Auto filter
     const afEl = findChild(el, "autoFilter");
     if (afEl) result.autoFilter = parseAutoFilter(afEl);
+    const sortStateEl = findChild(el, "sortState");
+    if (sortStateEl) result.sortState = parseSortStateEl(sortStateEl);
 
     // Table columns
     const colsEl = findChild(el, "tableColumns");

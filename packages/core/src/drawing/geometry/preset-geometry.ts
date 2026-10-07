@@ -206,6 +206,8 @@ export interface PresetGeometryOptions {
   /** Preset token (a:prstGeom `@prst`, ST_ShapeType) */
   preset?: ShapeType;
   adjustmentValues?: readonly GeometryGuide[];
+  /** Source omitted the a:avLst child; round-trip only — do not hand-author. */
+  avLstOmitted?: boolean;
 }
 
 /**

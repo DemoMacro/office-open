@@ -14,11 +14,21 @@ export type FontUnderline = boolean | "single" | "double" | "singleAccounting" |
 
 export interface FontOptions {
   bold?: boolean;
+  /** Source lexical form of `bold/@val`; round-trip only — do not hand-author. */
+  boldRaw?: string;
   italic?: boolean;
+  /** Source lexical form of `italic/@val`; round-trip only — do not hand-author. */
+  italicRaw?: string;
   underline?: FontUnderline;
   strike?: boolean;
+  /** Source lexical form of `strike/@val`; round-trip only — do not hand-author. */
+  strikeRaw?: string;
   size?: number;
+  /** Source lexical form of `size`; round-trip only — do not hand-author. */
+  sizeRaw?: string;
   color?: HexColor;
+  /** Source lexical form of `color/@rgb`; round-trip only — do not hand-author. */
+  colorRaw?: string;
   /**
    * Theme palette index (CT_Color `@theme`) — takes precedence over `color`
    * when both are set, matching the XSD's single-channel choice.
@@ -43,16 +53,27 @@ export interface FontOptions {
   family?: number;
   /** Condense (macOS, CT_Font/condense) */
   condense?: boolean;
+  /** Source lexical form of `condense/@val`; round-trip only — do not hand-author. */
+  condenseRaw?: string;
   /** Extend (macOS, CT_Font/extend) */
   extend?: boolean;
+  /** Source lexical form of `extend/@val`; round-trip only — do not hand-author. */
+  extendRaw?: string;
   /** Vertical alignment: superscript/subscript (CT_Font/vertAlign `@val`) */
   vertAlign?: "superscript" | "subscript" | "baseline";
   /** Font scheme (CT_Font/scheme `@val`) */
   scheme?: "major" | "minor" | "none";
   /** Font shadow (CT_Font/shadow) */
   shadow?: boolean;
+  /** Source lexical form of `shadow/@val`; round-trip only — do not hand-author. */
+  shadowRaw?: string;
   /** Font outline (CT_Font/outline) */
   outline?: boolean;
+  /** Source lexical form of `outline/@val`; round-trip only — do not hand-author. */
+  outlineRaw?: string;
+  /** Source child element order (CT_Font children are an unbounded choice).
+   * Round-trip only: writers emit children in this order when present. */
+  childOrder?: string[];
 }
 
 /** Gradient stop (CT_GradientStop) */
@@ -61,6 +82,8 @@ export interface CellGradientStopOptions {
   position: number;
   /** RGB color hex without alpha, e.g. "FF0000"; omitted for theme colors */
   color?: HexColor;
+  /** Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author. */
+  fgColorRaw?: string;
   /** Theme palette index (CT_Color `@theme`) */
   themeColor?: number;
   /** Tint applied to the theme color (CT_Color `@tint`) */
@@ -79,6 +102,8 @@ export interface CellFillOptions {
   type?: "solid" | "pattern" | "gradient";
   /** Foreground color hex without alpha, e.g. "C6EFCE" */
   color?: HexColor;
+  /** Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author. */
+  fgColorRaw?: string;
   /** Foreground theme palette index (CT_Color `@theme` on fgColor) */
   themeColor?: number;
   /** Foreground tint (CT_Color `@tint` on fgColor) */
@@ -116,8 +141,12 @@ export interface CellFillOptions {
   legacyPatternElement?: boolean;
   /** Source pattern kind when it is outside the modern ST_PatternType union. */
   legacyPatternType?: string;
+  /** True when the source declared `@patternType`. Round-trip only. */
+  patternTypeDeclared?: boolean;
   /** Background color for pattern fill (CT_PatternFill/bgColor) */
   bgColor?: HexColor;
+  /** Source lexical form of bgColor `@rgb`; round-trip only — do not hand-author. */
+  bgColorRaw?: string;
   /** Background theme palette index (CT_Color `@theme` on bgColor) */
   bgThemeColor?: number;
   /** Background tint (CT_Color `@tint` on bgColor) */
@@ -168,6 +197,8 @@ export interface BorderOptions {
     | "mediumDashDotDot"
     | "slantDashDot";
   color?: string;
+  /** Source lexical form of `color/@rgb`; round-trip only — do not hand-author. */
+  colorRaw?: string;
   /** Theme palette index (CT_Color `@theme`) — takes precedence over `color` */
   themeColor?: number;
   /** Legacy SpreadsheetML color channel spelling; round-trip only. */
@@ -186,6 +217,9 @@ export interface BorderOptions {
 
 /** The four sides plus diagonals of a cell border (CT_Border children). */
 export interface BorderSideOptions {
+  /** Source child element order (CT_Border children are a sequence with optional
+   * RTL extensions). Round-trip only: writers emit children in this order. */
+  childOrder?: string[];
   top?: BorderOptions;
   bottom?: BorderOptions;
   left?: BorderOptions;
@@ -223,6 +257,9 @@ export interface AlignmentOptions {
   wrapText?: boolean;
   textRotation?: number;
   indent?: number;
+  /** Source lexical form of `indent` (invalid producer values included);
+   * round-trip only — do not hand-author. */
+  indentRaw?: string;
   /** Relative indent (CT_CellAlignment `@relativeIndent`) */
   relativeIndent?: number;
   /** Justify last line (CT_CellAlignment `@justifyLastLine`) */
@@ -342,6 +379,8 @@ export interface TableStyleElementOptions {
   type: TableStyleElementType;
   /** Differential format index (dxf) */
   dxfId?: number;
+  /** Stripe/band size (CT_TableStyleElement `@size`, default 1) */
+  size?: number;
 }
 
 /** Custom table/pivot table style (CT_TableStyle). */
@@ -362,6 +401,8 @@ export interface StyleExtensionOptions {
 export interface CustomTableStyleOptions {
   /** Style name (must be unique) */
   name: string;
+  /** Revision uid (CT_TableStyle `@xr9:uid` etc.) */
+  uid?: string;
   /** Pivot style (vs table style) */
   pivot?: boolean;
   /** Applies to tables (CT_TableStyle `@table`, default true) */
@@ -383,6 +424,8 @@ export interface CustomCellStyleOptions {
   iLevel?: number;
   /** Hidden style (CT_CellStyle `@hidden`) */
   hidden?: boolean;
+  /** Revision uid (CT_CellStyle `@xr:uid`) */
+  uid?: string;
 }
 
 /** Cell XF entry exposed by Styles.toDescriptorOptions(). */
@@ -406,11 +449,19 @@ export interface CellXfEntry {
  */
 export interface CellStyleXfOptions {
   font?: FontOptions;
+  /** Source fontId when the index has no resolvable font (dangling reference);
+   * round-trip only — do not hand-author. */
+  fontIdRaw?: number;
   fill?: CellFillOptions;
   border?: BorderSideOptions;
   numFmt?: string;
   /** Raw numFmtId when the source id has no resolvable format code (round-trip only). */
   numFmtId?: number;
+  /** True when the source xf declared `@fillId`. Round-trip only: attribute
+   * presence and absence stay distinct in rebuilt styles.xml. */
+  fillIdDeclared?: boolean;
+  /** True when the source xf declared `@borderId`. Round-trip only. */
+  borderIdDeclared?: boolean;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;
@@ -431,7 +482,7 @@ export interface FontsContainerOptions {
 
 /** Snapshot of Styles internal state for descriptor-based XML generation. */
 export interface StylesState {
-  customNumFmts: ReadonlyMap<string, number>;
+  customNumFmts: readonly NumFmtEntry[];
   fonts: FontOptions[];
   fills: CellFillOptions[];
   borders: BorderSideOptions[];
@@ -453,8 +504,18 @@ export interface IndexedXfEntry {
   fillId?: number;
   borderId?: number;
   numFmtId?: number;
+  /** True when the source declared `@fontId`. Round-trip only. */
+  fontIdDeclared?: boolean;
+  /** True when the source declared `@fillId`. Round-trip only. */
+  fillIdDeclared?: boolean;
+  /** True when the source declared `@borderId`. Round-trip only. */
+  borderIdDeclared?: boolean;
+  /** True when the source declared `@numFmtId`. Round-trip only. */
+  numFmtIdDeclared?: boolean;
   /** Index into cellStyleXfs this xf derives from (CT_Xf/@xfId) */
   xfId?: number;
+  /** True when the source declared `@xfId`. Round-trip only. */
+  xfIdDeclared?: boolean;
   alignment?: AlignmentOptions;
   protection?: CellProtectionOptions;
   quotePrefix?: boolean;

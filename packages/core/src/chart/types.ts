@@ -574,6 +574,8 @@ export interface ChartSpaceOptions {
    * c14:pivotOptions' home). Round-trip only, same contract as series ext.
    */
   ext?: string;
+  /** Raw inner XML of the c:chart trailing c:extLst — Office extension round-trip. */
+  chartExt?: string;
 }
 
 /**
@@ -776,6 +778,8 @@ export interface DataPointOptions {
   /** Per-point fill/outline (c:dPt > c:spPr) — round-trip. */
   shapeProperties?: ShapePropertiesOptions;
   pictureOptions?: ChartPictureOptions;
+  /** Raw inner XML of the trailing c:extLst — Office extension round-trip. */
+  ext?: string;
 }
 
 /** Picture-fill mode (ST_PictureFormat): "stack" tile at natural size, "scale" stretch to fit, "stackScale" tile scaled by pictureStackUnit, "stretch". */

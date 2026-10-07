@@ -53,8 +53,13 @@ export interface ColumnOptions {
   /** Source cellStyleXfs index (CT_Col `@style`) — round-trip only. */
   style?: number;
   width?: number;
+  /** Source width lexical form (e.g. "10.0"); round-trip only. */
+  widthRaw?: string;
   hidden?: boolean;
   customWidth?: boolean;
+  /** True when the source declared `@customWidth`. Round-trip only: false
+   * keeps a width-only column from gaining the derived flag. */
+  customWidthDeclared?: boolean;
   outlineLevel?: number;
   collapsed?: boolean;
   /** Best-fit column width (CT_Col `@bestFit`) */
@@ -127,6 +132,8 @@ export interface RichTextRunPropertiesOptions {
   /** Font family (CT_IntProperty) */
   family?: number;
   bold?: boolean;
+  /** Source lexical form of `b/@val`; round-trip only — do not hand-author. */
+  boldValRaw?: string;
   italic?: boolean;
   /** Strikethrough */
   strike?: boolean;
@@ -140,14 +147,25 @@ export interface RichTextRunPropertiesOptions {
    * "theme:N" — the same string parse produces.
    */
   color?: RichTextColor;
+  /** Source lexical form of color `@rgb`; round-trip only — do not hand-author. */
+  colorRgbRaw?: string;
+  /**
+   * Source color `@theme` when an explicit `@rgb` is also present (CT_Color
+   * carries both). Round-trip only — theme-only colors use `color: "theme:N"`.
+   */
+  colorThemeRaw?: string;
   /** Color tint (CT_Color `@tint`, -1.0–1.0); round-trips the source value. */
   colorTint?: number;
   /** Source lexical form of `colorTint`; round-trip only — do not hand-author. */
   colorTintRaw?: string;
   /** Font size in points */
   size?: number;
+  /** Source lexical form of `sz/@val`; round-trip only — do not hand-author. */
+  sizeValRaw?: string;
   /** Underline type */
   underline?: "single" | "double" | "singleAccounting" | "doubleAccounting" | "none";
+  /** Source lexical form of `u/@val`; round-trip only — do not hand-author. */
+  underlineValRaw?: string;
   /** Vertical alignment */
   vertAlign?: "superscript" | "subscript" | "baseline";
   /** Font scheme */
@@ -162,6 +180,8 @@ export interface RichTextRunOptions {
   properties?: RichTextRunPropertiesOptions;
   /** Run text content */
   text: string;
+  /** Source xml:space lexical form of the run `t`; round-trip only. */
+  textSpaceRaw?: string;
 }
 
 /** Phonetics run for CJK (CT_PhoneticRun → rPh). */
@@ -172,6 +192,12 @@ export interface PhoneticRunOptions {
   endByte: number;
   /** Phonetic text */
   text: string;
+  /**
+   * Rich runs inside `rPh` (`<r><rPr/><t/></r>`). Not part of CT_PhoneticRun,
+   * but Excel-compatible producers emit the CT_RElt shape; round-trip only —
+   * fresh authoring writes the plain `text` form.
+   */
+  runs?: RichTextRunOptions[];
 }
 
 /** Attributes on the `t` wrapped by a legacy shared-string extension. */
@@ -201,9 +227,9 @@ export interface SharedStringExtensionOptions {
 
 /** Rich text content (CT_Rst). Either plain text or rich runs. */
 export interface RichTextOptions {
-  /** Plain text (mutually exclusive with runs) */
+  /** Plain text (CT_Rst `t`); may coexist with runs (source-faithful form) */
   text?: string;
-  /** Rich text runs (mutually exclusive with text) */
+  /** Rich text runs (CT_Rst `r`) */
   runs?: RichTextRunOptions[];
   /** Phonetic runs for CJK (CT_PhoneticRun) */
   phonetics?: PhoneticRunOptions[];
@@ -211,12 +237,39 @@ export interface RichTextOptions {
   phoneticProperties?: PhoneticPropertiesOptions;
   /** Legacy `w14` compatibility content; round-trip only. */
   wordDrawingExtension?: SharedStringExtensionOptions;
+  /**
+   * Source `<t>` xml:space lexical form (`preserve` or the `default` absent
+   * form). Round-trip only: set when the text has leading/trailing
+   * whitespace, so an omitted source attribute is not upgraded to `preserve`.
+   */
+  textSpaceRaw?: "default" | "preserve";
 }
 
 export interface CellOptions {
+  /** Source `@s` lexical form when non-numeric (e.g. an empty string); round-trip only. */
+  styleRaw?: string;
   value?: string | number | boolean | Date | RichTextOptions | null;
+  /** Inline string form (CT_Cell `t="inlineStr"`); preserves source storage. */
+  inline?: boolean;
+  /**
+   * Source `<v>` text on an `inlineStr` cell (malformed-but-readable input
+   * keeps both children); round-trip only — do not hand-author.
+   */
+  inlineValueRaw?: string;
+  /**
+   * Source shared-string table index for a `t="s"` cell. Round-trip only:
+   * duplicate si entries keep their source references stable instead of
+   * re-deduplicating to the first occurrence.
+   */
+  sharedIndex?: number;
   /** Source numeric/text lexical form for `<v xml:space="preserve">`; round-trip only. */
   valueRaw?: string;
+  /** Explicit source `@t` token that matches the defaulted form (`t="n"`).
+   * Also carries declared types with no canonical value carrier (`t="s"` and
+   * the like on empty cells). Round-trip only: do not hand-author. */
+  typeRaw?: string;
+  /** Phonetic text hint (CT_Cell `@ph`). */
+  phonetic?: boolean;
   reference?: string;
   /**
    * Cell style: either style options (resolved to an index at compile time)
@@ -319,6 +372,8 @@ export interface ScenarioDefinition {
 export interface ScenarioOptions {
   /** Named scenarios */
   scenarios: ScenarioDefinition[];
+  /** Changed-cell range (CT_Scenarios `@sqref`) */
+  sqref?: string;
   /** Current scenario index (0-based) */
   current?: number;
   /** Show scenario index (0-based) */
@@ -338,6 +393,8 @@ export interface SheetProtectionOptions {
    * below for round-trip.
    */
   password?: string;
+  /** Source legacy password hash (`@password`); round-trip only — do not hand-author. */
+  passwordHashRaw?: string;
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   algorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
@@ -350,6 +407,8 @@ export interface SheetProtectionOptions {
   sheet?: boolean;
   objects?: boolean;
   scenarios?: boolean;
+  /** Source lexical form of `@scenarios`; round-trip only — do not hand-author. */
+  scenariosRaw?: string;
   formatCells?: boolean;
   formatColumns?: boolean;
   formatRows?: boolean;
@@ -386,6 +445,8 @@ export interface ProtectedRangeOptions {
   spinCount?: number;
   /** Security descriptor (SID string, emitted as the attribute form) */
   securityDescriptor?: string;
+  /** True when the source carried `<securityDescriptor>` rather than `@securityDescriptor`. Round-trip only. */
+  securityDescriptorElement?: boolean;
 }
 
 export interface FreezePaneOptions {
@@ -612,14 +673,21 @@ export interface HeaderFooterOptions {
   differentFirst?: boolean;
   /** Scale header/footer with document (CT_HeaderFooter `@scaleWithDoc`) */
   scaleWithDoc?: boolean;
+  /** Source lexical form of `scaleWithDoc`; round-trip only — do not hand-author. */
+  scaleWithDocRaw?: string;
   /** Align with page margins (CT_HeaderFooter `@alignWithMargins`) */
   alignWithMargins?: boolean;
+  /** Source lexical form of `alignWithMargins`; round-trip only — do not hand-author. */
+  alignWithMarginsRaw?: string;
 }
 
 /** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */
 export type PageOrientation = "default" | "portrait" | "landscape";
 
 export interface PageSetupOptions {
+  /** True when the source declared `<pageSetup>`, even without attributes.
+   * Round-trip only: distinguishes an omitted element from sheetPr-only state. */
+  pageSetupPresent?: boolean;
   paperSize?: number;
   orientation?: PageOrientation;
   scale?: number;
@@ -651,6 +719,9 @@ export interface PageSetupOptions {
   copies?: number;
   /** Auto page breaks (CT_PageSetUpPr `@autoPageBreaks`) */
   autoPageBreaks?: boolean;
+  /** True when the source declared `<pageSetUpPr>`, even without attributes.
+   * Round-trip only: keeps an attribute-free element from being dropped. */
+  pageSetUpPrPresent?: boolean;
   /** Fit to page (CT_PageSetUpPr `@fitToPage`) */
   fitToPage?: boolean;
   /**
@@ -744,6 +815,8 @@ export interface CommentOptions {
    * VML note shape is modeled separately.
    */
   shapeId?: number;
+  /** Revision uid (CT_Comment `@xr:uid`) */
+  uid?: string;
   /** Author name */
   author: string;
   /** Comment text (plain string or rich text) */
@@ -870,6 +943,8 @@ export interface CfvoOptions {
   val?: string | number;
   /** Greater than or equal (default: true) */
   gte?: boolean;
+  /** Source lexical form of `gte`; round-trip only — do not hand-author. */
+  gteRaw?: string;
 }
 
 /** Icon set type (ST_IconSetType) */
@@ -929,6 +1004,8 @@ export interface DataBarOptions {
   maxLength?: number;
   /** Whether to show cell values (default: true) */
   showValue?: boolean;
+  /** Source lexical form of `showValue`; round-trip only — do not hand-author. */
+  showValueRaw?: string;
 }
 
 /** Icon set rule configuration */
@@ -939,8 +1016,12 @@ export interface IconSetOptions {
   iconSet?: IconSetType;
   /** Whether to show cell values (default: true) */
   showValue?: boolean;
+  /** Source lexical form of `showValue`; round-trip only — do not hand-author. */
+  showValueRaw?: string;
   /** Whether values are percentages (default: true) */
   percent?: boolean;
+  /** Source lexical form of `percent`; round-trip only — do not hand-author. */
+  percentRaw?: string;
   /** Whether to reverse icon order (default: false) */
   reverse?: boolean;
 }
@@ -977,8 +1058,12 @@ export interface ConditionalFormatRule {
   rank?: number;
   /** Bottom N instead of top N for top10 rules (CT_CfRule `@bottom`) */
   bottom?: boolean;
+  /** Source lexical form of `bottom`; round-trip only — do not hand-author. */
+  bottomRaw?: string;
   /** Percent instead of item count for top10 rules (CT_CfRule `@percent`) */
   percent?: boolean;
+  /** Source lexical form of `percent`; round-trip only — do not hand-author. */
+  percentRaw?: string;
   /** Search text for containsText/notContains/beginsWith/endsWith rules (CT_CfRule `@text`) */
   text?: string;
   /** Equal average flag (CT_CfRule `@equalAverage`) */
@@ -987,6 +1072,8 @@ export interface ConditionalFormatRule {
   aboveAverage?: boolean;
   /** Standard deviations for above-average rules (CT_CfRule `@stdDev`) */
   stdDev?: number;
+  /** Raw inner XML of the trailing extLst — Office extension round-trip. */
+  ext?: string;
 }
 
 export interface ConditionalFormatOptions {
@@ -1262,6 +1349,9 @@ export interface SheetPropertiesOptions {
   filterMode?: boolean;
   /** Enable format conditions calculation (CT_SheetPr `@enableFormatConditionsCalculation`, XSD default true — only false is emitted) */
   enableFormatConditionsCalculation?: boolean;
+  /** True when the source declared `<outlinePr>`, even without attributes.
+   * Round-trip only: keeps an attribute-free element from being dropped. */
+  outlinePrPresent?: boolean;
   /** Outline apply styles (CT_OutlinePr `@applyStyles`) */
   outlineApplyStyles?: boolean;
   /** Outline show symbols (CT_OutlinePr `@showOutlineSymbols`) */
@@ -1449,10 +1539,16 @@ export interface CustomSheetViewOptions {
   pageSetup?: PageSetupOptions;
   /** Header/footer (CT_CustomSheetView/headerFooter). */
   headerFooter?: HeaderFooterOptions;
+  /** Auto-filter configuration (CT_CustomSheetView/autoFilter). */
+  autoFilter?: string | AutoFilterOptions;
   /** Pane state (CT_CustomSheetView/pane) */
   pane?: FreezePaneOptions;
   /** Selections (CT_CustomSheetView/selection) */
   selection?: SelectionOptions[];
+  /** Row page breaks (CT_CustomSheetView/rowBreaks) */
+  rowBreaks?: PageBreakOptions[];
+  /** Column page breaks (CT_CustomSheetView/colBreaks) */
+  colBreaks?: PageBreakOptions[];
 }
 
 /** Cell watch entry (CT_CellWatch) */
@@ -1556,6 +1652,8 @@ export interface DrawingHfOptions {
 
 /** One worksheet (xl/worksheets/sheetN.xml) — cells, dimensions, and sheet-level parts. */
 export interface WorksheetOptions {
+  /** Source part path (xl/worksheets/sheet26.xml) — round-trip only. */
+  sourcePath?: string;
   name?: string;
   /** Revision UID (CT_Worksheet `@xr:uid`); preserved when the source emitted it. */
   uid?: string;
@@ -1602,6 +1700,8 @@ export interface WorksheetOptions {
   commentsVmlShapeType?: VmlShapetypeOptions;
   /** Exact source comments VML text; round-trip only. */
   commentsVmlSource?: string;
+  /** Source VML part carried a UTF-8 BOM; round-trip only. */
+  commentsVmlBom?: boolean;
   headerFooter?: HeaderFooterOptions;
   pageSetup?: PageSetupOptions;
   tabColor?: TabColor;
@@ -1658,6 +1758,19 @@ export interface WorksheetOptions {
    * only, same passthrough semantics as drawingRid.
    */
   legacyDrawingRid?: string;
+  /**
+   * True when the source sheet declared a drawing part, even one with no
+   * anchors (empty `<xdr:wsDr/>`). Round-trip only: keeps the part, its
+   * relationship, and its content-type override alive through a round-trip.
+   */
+  drawingPresent?: boolean;
+  /** True when the source sheet declared `<dimension>` (even with an unusable
+   * ref). Round-trip only: distinguishes an omitted element from fresh
+   * authoring that has not set one yet. */
+  dimensionPresent?: boolean;
+  /** True when the source sheet declared `<sheetViews>`. Round-trip only:
+   * distinguishes an omitted element from fresh authoring defaults. */
+  sheetViewsPresent?: boolean;
   /** Selections in sheet view (CT_Selection — one per pane, max 4) */
   selection?: SelectionOptions[];
   /** Pivot selection in sheet view (CT_PivotSelection) */

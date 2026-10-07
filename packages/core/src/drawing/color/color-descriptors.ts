@@ -93,13 +93,29 @@ export const rgbColorDesc: CustomDescriptor<RgbColorOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const transforms = opts.transforms ? stringifyTransforms(opts.transforms) : "";
+    const extensionAttrs = Object.entries(opts.extensionAttributes ?? {})
+      .map(([attributeName, value]) => ` ${attributeName}="${escapeXml(value)}"`)
+      .join("");
     if (transforms) {
-      return `<a:srgbClr val="${escapeXml(opts.value)}">${transforms}</a:srgbClr>`;
+      return `<a:srgbClr val="${escapeXml(opts.value)}"${extensionAttrs}>${transforms}</a:srgbClr>`;
     }
-    return `<a:srgbClr val="${escapeXml(opts.value)}"/>`;
+    return `<a:srgbClr val="${escapeXml(opts.value)}"${extensionAttrs}/>`;
   },
   parse(el, _ctx) {
     const result: RgbColorOptions = { value: String(el.attributes?.["val"] ?? "") };
+    const extensionAttributes: Record<string, string> = {};
+    for (const [attributeName, value] of Object.entries(el.attributes ?? {})) {
+      if (
+        attributeName === "val" ||
+        attributeName === "xmlns" ||
+        attributeName.startsWith("xmlns:")
+      )
+        continue;
+      extensionAttributes[attributeName] = String(value ?? "");
+    }
+    if (Object.keys(extensionAttributes).length > 0) {
+      result.extensionAttributes = extensionAttributes;
+    }
     const transforms = readTransforms(el);
     if (transforms) result.transforms = transforms;
     return result;

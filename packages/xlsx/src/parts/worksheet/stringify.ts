@@ -42,7 +42,10 @@ import type {
 } from "./types";
 
 /** CT_Break list under rowBreaks/colBreaks — identical shape, only the tag differs. */
-function breaksXml(tag: "rowBreaks" | "colBreaks", list: PageBreakOptions[]): string {
+export function stringifyPageBreaksXml(
+  tag: "rowBreaks" | "colBreaks",
+  list: PageBreakOptions[],
+): string {
   let manualCount = 0;
   const brkParts = list.map((b) => {
     const bAttrs: Record<string, string | number | boolean | undefined> = { id: b.id };
@@ -99,7 +102,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const hasTabColor = !!opts.tabColor;
   const sp = opts.properties;
   const hasOutline =
-    columns.some((c) => c.outlineLevel !== undefined) ||
+    sp?.outlinePrPresent === true ||
     sp?.outlineSummaryBelow !== undefined ||
     sp?.outlineSummaryRight !== undefined ||
     sp?.outlineApplyStyles !== undefined ||
@@ -116,6 +119,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       sp.filterMode !== undefined ||
       sp.enableFormatConditionsCalculation !== undefined);
   const hasPageSetUpPr =
+    opts.pageSetup?.pageSetUpPrPresent === true ||
     !!opts.pageSetup?.fitToWidth ||
     !!opts.pageSetup?.fitToHeight ||
     opts.pageSetup?.fitToPage !== undefined ||
@@ -188,7 +192,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
   if (opts.dimension) {
     p.push(`<dimension ref="${opts.dimension}"/>`);
-  } else if (maxRow > 0 && maxCol > 0) {
+  } else if (opts.dimensionPresent !== false && maxRow > 0 && maxCol > 0) {
     const dimRef = `A1:${defaultCellRef(maxRow, maxCol)}`;
     p.push(`<dimension ref="${dimRef}"/>`);
   }
@@ -218,7 +222,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       opts.pivotSelection ? buildPivotSelectionXml(opts.pivotSelection) : "",
       "</sheetView></sheetViews>",
     );
-  } else {
+  } else if (opts.sheetView !== undefined || opts.sheetViewsPresent !== false) {
     const svAttrs = buildSheetViewAttrs(opts.sheetView);
     const selections = (opts.selection ?? []).map(buildSelectionXml).join("");
     const innerXml =
@@ -258,21 +262,18 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         max: col.max,
       };
       if (col.width !== undefined) {
-        colAttrs.width = col.width;
-        if (col.customWidth === undefined) colAttrs.customWidth = 1;
+        colAttrs.width = col.widthRaw ?? col.width;
+        if (col.customWidthDeclared !== false && col.customWidth === undefined)
+          colAttrs.customWidth = 1;
       }
       // A column can carry customWidth="1" without a width (parse fills it);
       // preserve the explicit flag so round-trip does not drop the attribute.
-      if (col.customWidth) colAttrs.customWidth = 1;
-      if (col.hidden) {
-        colAttrs.hidden = 1;
-      }
+      if (col.customWidth !== undefined) colAttrs.customWidth = col.customWidth ? 1 : 0;
+      if (col.hidden !== undefined) colAttrs.hidden = col.hidden ? 1 : 0;
       if (col.outlineLevel !== undefined) {
         colAttrs.outlineLevel = col.outlineLevel;
       }
-      if (col.collapsed) {
-        colAttrs.collapsed = 1;
-      }
+      if (col.collapsed !== undefined) colAttrs.collapsed = col.collapsed ? 1 : 0;
       if (col.bestFit) {
         colAttrs.bestFit = 1;
       }
@@ -324,10 +325,14 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (pr.spinCount !== undefined) prAttrs.spinCount = pr.spinCount;
       else if (prDerived) prAttrs.spinCount = prDerived.spinCount;
       if (pr.securityDescriptor) {
+        if (pr.securityDescriptorElement) {
+          prParts.push(
+            `<protectedRange${attrs(prAttrs)}><securityDescriptor>${escapeXml(pr.securityDescriptor)}</securityDescriptor></protectedRange>`,
+          );
+          continue;
+        }
         prAttrs.securityDescriptor = pr.securityDescriptor;
-        prParts.push(
-          `<protectedRange${attrs(prAttrs)}><securityDescriptor>${escapeXml(pr.securityDescriptor)}</securityDescriptor></protectedRange>`,
-        );
+        prParts.push(`<protectedRange${attrs(prAttrs)}/>`);
       } else {
         prParts.push(selfCloseElement("protectedRange", attrs(prAttrs)));
       }
@@ -340,6 +345,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   if (opts.scenarios) {
     const scParts: string[] = ["<scenarios"];
     const scAttrs: Record<string, string | number> = {};
+    if (opts.scenarios.sqref !== undefined) scAttrs.sqref = opts.scenarios.sqref;
     if (opts.scenarios.current !== undefined) scAttrs.current = opts.scenarios.current;
     if (opts.scenarios.show !== undefined) scAttrs.show = opts.scenarios.show;
     scParts[0] = `<scenarios${attrs(scAttrs)}>`;
@@ -409,9 +415,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         })
         .join("") ?? "";
     const refsXml = refsInner ? `<dataRefs${attrs(refsAttrs)}>${refsInner}</dataRefs>` : "";
-    if (refsXml || Object.keys(dcAttrs).length > 0) {
-      p.push(`<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`);
-    }
+    p.push(
+      refsXml || Object.keys(dcAttrs).length > 0
+        ? `<dataConsolidate${attrs(dcAttrs)}>${refsXml}</dataConsolidate>`
+        : "<dataConsolidate/>",
+    );
   }
 
   // Custom sheet views (after dataConsolidate per XSD sequence)
@@ -438,9 +446,19 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (csv.showRuler === false) csvAttrs.showRuler = 0;
       if (csv.topLeftCell !== undefined) csvAttrs.topLeftCell = csv.topLeftCell;
       if (csv.colorId !== undefined) csvAttrs.colorId = csv.colorId;
-      const paneXml = csv.pane
-        ? `<pane ySplit="${csv.pane.row ?? 0}" xSplit="${csv.pane.col ?? 0}" topLeftCell="${escapeXml(csv.pane.topLeftCell ?? "")}" activePane="${csv.pane.activePane ?? "topLeft"}" state="${csv.pane.state ?? (csv.pane.split ? "split" : "frozen")}"/>`
-        : "";
+      let paneXml = "";
+      if (csv.pane) {
+        const pane = csv.pane;
+        const paneAttrs: string[] = [];
+        if (pane.row !== undefined) paneAttrs.push(`ySplit="${pane.row}"`);
+        if (pane.col !== undefined) paneAttrs.push(`xSplit="${pane.col}"`);
+        if (pane.topLeftCell !== undefined)
+          paneAttrs.push(`topLeftCell="${escapeXml(pane.topLeftCell)}"`);
+        if (pane.activePane !== undefined) paneAttrs.push(`activePane="${pane.activePane}"`);
+        if (pane.state !== undefined || pane.split)
+          paneAttrs.push(`state="${pane.state ?? (pane.split ? "split" : "frozen")}"`);
+        paneXml = `<pane${paneAttrs.length > 0 ? ` ${paneAttrs.join(" ")}` : ""}/>`;
+      }
       const selectionXml = (csv.selection ?? []).map(buildSelectionXml).join("");
       const pm = csv.pageMargins;
       const pageMarginsXml = pm
@@ -458,8 +476,19 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       const headerFooterXml = csv.headerFooter
         ? (stringifyHeaderFooterXml(csv.headerFooter) ?? "<headerFooter/>")
         : "";
+      const autoFilterXml = stringifyAutoFilter(csv.autoFilter);
+      const rowBreaksXml = csv.rowBreaks ? stringifyPageBreaksXml("rowBreaks", csv.rowBreaks) : "";
+      const colBreaksXml = csv.colBreaks ? stringifyPageBreaksXml("colBreaks", csv.colBreaks) : "";
       const csvInner =
-        paneXml + selectionXml + pageMarginsXml + printOptionsXml + pageSetupXml + headerFooterXml;
+        paneXml +
+        selectionXml +
+        rowBreaksXml +
+        colBreaksXml +
+        pageMarginsXml +
+        printOptionsXml +
+        pageSetupXml +
+        headerFooterXml +
+        autoFilterXml;
       p.push(
         csvInner
           ? `<customSheetView${attrs(csvAttrs)}>${csvInner}</customSheetView>`
@@ -503,12 +532,15 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
         if (rule.stopIfTrue) ruleAttrs.stopIfTrue = 1;
         if (rule.timePeriod) ruleAttrs.timePeriod = rule.timePeriod;
         if (rule.rank !== undefined) ruleAttrs.rank = rule.rank;
-        if (rule.bottom) ruleAttrs.bottom = 1;
-        if (rule.percent) ruleAttrs.percent = 1;
+        if (rule.bottomRaw !== undefined) ruleAttrs.bottom = rule.bottomRaw;
+        else if (rule.bottom) ruleAttrs.bottom = 1;
+        if (rule.percentRaw !== undefined) ruleAttrs.percent = rule.percentRaw;
+        else if (rule.percent) ruleAttrs.percent = 1;
         if (rule.text !== undefined) ruleAttrs.text = rule.text;
         if (rule.equalAverage) ruleAttrs.equalAverage = 1;
         if (rule.aboveAverage === false) ruleAttrs.aboveAverage = 0;
         if (rule.stdDev !== undefined) ruleAttrs.stdDev = rule.stdDev;
+        const ruleExt = rule.ext ? `<extLst>${rule.ext}</extLst>` : "";
 
         const formulaXml = rule.formulas
           ?.map(
@@ -528,7 +560,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
             inner.push(buildCfColorXml(c));
           }
           p.push(
-            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<colorScale>${inner.join("")}</colorScale></cfRule>`,
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<colorScale>${inner.join("")}</colorScale>${ruleExt}</cfRule>`,
           );
         }
         // Data bar
@@ -542,10 +574,11 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           const dbAttrs: Record<string, string | number | boolean | undefined> = {};
           if (db.minLength !== undefined && db.minLength !== 10) dbAttrs.minLength = db.minLength;
           if (db.maxLength !== undefined && db.maxLength !== 90) dbAttrs.maxLength = db.maxLength;
-          if (db.showValue === false) dbAttrs.showValue = 0;
+          if (db.showValueRaw !== undefined) dbAttrs.showValue = db.showValueRaw;
+          else if (db.showValue === false) dbAttrs.showValue = 0;
           const attrStr = Object.keys(dbAttrs).length > 0 ? attrs(dbAttrs) : "";
           p.push(
-            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<dataBar${attrStr}>${inner.join("")}</dataBar></cfRule>`,
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<dataBar${attrStr}>${inner.join("")}</dataBar>${ruleExt}</cfRule>`,
           );
         }
         // Icon set
@@ -558,20 +591,26 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           const isAttrs: Record<string, string | number | boolean | undefined> = {};
           if (is.iconSet !== undefined && is.iconSet !== "3TrafficLights1")
             isAttrs.iconSet = is.iconSet;
-          if (is.showValue === false) isAttrs.showValue = 0;
-          if (is.percent === false) isAttrs.percent = 0;
+          if (is.showValueRaw !== undefined) isAttrs.showValue = is.showValueRaw;
+          else if (is.showValue === false) isAttrs.showValue = 0;
+          if (is.percentRaw !== undefined) isAttrs.percent = is.percentRaw;
+          else if (is.percent === false) isAttrs.percent = 0;
           if (is.reverse) isAttrs.reverse = 1;
           const attrStr = Object.keys(isAttrs).length > 0 ? attrs(isAttrs) : "";
           p.push(
-            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<iconSet${attrStr}>${inner.join("")}</iconSet></cfRule>`,
+            `<cfRule${attrs(ruleAttrs)}>${formulaXml ?? ""}<iconSet${attrStr}>${inner.join("")}</iconSet>${ruleExt}</cfRule>`,
           );
         }
         // Standard rules (cellIs, containsText, expression, top10, aboveAverage)
         else {
           if (formulaXml) {
-            p.push(`<cfRule${attrs(ruleAttrs)}>${formulaXml}</cfRule>`);
+            p.push(`<cfRule${attrs(ruleAttrs)}>${formulaXml}${ruleExt}</cfRule>`);
           } else {
-            p.push(selfCloseElement("cfRule", attrs(ruleAttrs)));
+            p.push(
+              ruleExt
+                ? `<cfRule${attrs(ruleAttrs)}>${ruleExt}</cfRule>`
+                : selfCloseElement("cfRule", attrs(ruleAttrs)),
+            );
           }
         }
       }
@@ -590,18 +629,20 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     for (const dv of dataValidations) {
       const dvAttrs: Record<string, string | number | boolean | undefined> = { sqref: dv.sqref };
       if (dv.uid) dvAttrs["xr:uid"] = dv.uid;
-      if (dv.type && dv.type !== "none") dvAttrs.type = dv.type;
+      if (dv.type) dvAttrs.type = dv.type;
       if (dv.operator) dvAttrs.operator = dv.operator;
-      if (dv.allowBlank) dvAttrs.allowBlank = 1;
-      if (dv.showErrorMessage) dvAttrs.showErrorMessage = 1;
-      if (dv.showInputMessage) dvAttrs.showInputMessage = 1;
-      if (dv.errorTitle) dvAttrs.errorTitle = dv.errorTitle;
-      if (dv.error) dvAttrs.error = dv.error;
-      if (dv.promptTitle) dvAttrs.promptTitle = dv.promptTitle;
-      if (dv.prompt) dvAttrs.prompt = dv.prompt;
+      if (dv.allowBlank !== undefined) dvAttrs.allowBlank = dv.allowBlank ? 1 : 0;
+      if (dv.showErrorMessage !== undefined) dvAttrs.showErrorMessage = dv.showErrorMessage ? 1 : 0;
+      if (dv.showInputMessage !== undefined) {
+        dvAttrs.showInputMessage = dv.showInputMessage ? 1 : 0;
+      }
+      if (dv.errorTitle !== undefined) dvAttrs.errorTitle = dv.errorTitle;
+      if (dv.error !== undefined) dvAttrs.error = dv.error;
+      if (dv.promptTitle !== undefined) dvAttrs.promptTitle = dv.promptTitle;
+      if (dv.prompt !== undefined) dvAttrs.prompt = dv.prompt;
       if (dv.errorStyle) dvAttrs.errorStyle = dv.errorStyle;
       if (dv.imeMode) dvAttrs.imeMode = dv.imeMode;
-      if (dv.showDropDown) dvAttrs.showDropDown = 1;
+      if (dv.showDropDown !== undefined) dvAttrs.showDropDown = dv.showDropDown ? 1 : 0;
       const inner: string[] = [];
       if (dv.formula1 !== undefined)
         inner.push(
@@ -673,8 +714,6 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
           : { footer: 0.5 }),
       })}/>`,
     );
-  } else {
-    p.push('<pageMargins left="0.75" right="0.75" top="1" bottom="1" header="0.5" footer="0.5"/>');
   }
 
   // Page setup — fitToPage/autoPageBreaks are pageSetUpPr fields stashed on
@@ -682,7 +721,13 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   // conjure a <pageSetup> the source never had.
   if (
     opts.pageSetup &&
-    Object.keys(opts.pageSetup).some((k) => k !== "fitToPage" && k !== "autoPageBreaks")
+    Object.keys(opts.pageSetup).some(
+      (k) =>
+        k !== "fitToPage" &&
+        k !== "autoPageBreaks" &&
+        k !== "pageSetUpPrPresent" &&
+        k !== "pageSetupPresent",
+    )
   ) {
     p.push(stringifyPageSetupXml(opts.pageSetup));
   }
@@ -694,8 +739,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   }
 
   // Row breaks (after headerFooter per XSD sequence), then column breaks
-  if (rowBreaks.length > 0) p.push(breaksXml("rowBreaks", rowBreaks));
-  if (colBreaks.length > 0) p.push(breaksXml("colBreaks", colBreaks));
+  if (rowBreaks.length > 0) p.push(stringifyPageBreaksXml("rowBreaks", rowBreaks));
+  if (colBreaks.length > 0) p.push(stringifyPageBreaksXml("colBreaks", colBreaks));
 
   // Custom properties (CT_CustomProperties, after colBreaks per XSD sequence)
   if (customProperties.length > 0) {
@@ -965,7 +1010,8 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
 function buildCfvoXml(cfvo: CfvoOptions): string {
   const a: Record<string, string | number | boolean | undefined> = { type: cfvo.type };
   if (cfvo.val !== undefined) a.val = cfvo.val;
-  if (cfvo.gte === false) a.gte = 0;
+  if (cfvo.gteRaw !== undefined) a.gte = cfvo.gteRaw;
+  else if (cfvo.gte === false) a.gte = 0;
   return `<cfvo${attrs(a)}/>`;
 }
 
@@ -1096,17 +1142,21 @@ export function appendSheetDataRows(
     const rowNumber = rowOpts.rowNumber ?? startRowNumber + i;
     // Flat attribute assembly (no per-row Record + for-in) keeps young-gen
     // pressure near zero at 100k+ rows.
-    let rowAttr = ` r="${rowNumber}"`;
+    // An undefined rowNumber preserves a source row without `@r` — the row
+    // position stays implicit; fresh rows emit the computed number only when
+    // the caller set it.
+    let rowAttr = rowOpts.rowNumber === undefined ? "" : ` r="${rowNumber}"`;
     if (rowOpts.dyDescent !== undefined) {
       rowAttr += ` x14ac:dyDescent="${rowOpts.dyDescent}"`;
     }
     if (rowOpts.height !== undefined) {
       rowAttr += ` ht="${convertToPt(rowOpts.height)}"`;
-      if (rowOpts.customHeight === undefined || rowOpts.customHeight) {
-        rowAttr += ' customHeight="1"';
-      }
+      if (rowOpts.customHeight !== undefined)
+        rowAttr += ` customHeight="${rowOpts.customHeight ? 1 : 0}"`;
+    } else if (rowOpts.customHeight !== undefined) {
+      rowAttr += ` customHeight="${rowOpts.customHeight ? 1 : 0}"`;
     }
-    if (rowOpts.hidden) rowAttr += ' hidden="1"';
+    if (rowOpts.hidden !== undefined) rowAttr += ` hidden="${rowOpts.hidden ? 1 : 0}"`;
     if (rowOpts.spans) rowAttr += ` spans="${rowOpts.spans}"`;
     let hasStyle = false;
     if (typeof rowOpts.style === "number") {
@@ -1120,12 +1170,13 @@ export function appendSheetDataRows(
     // A row style only takes effect when customFormat flags it (Excel always
     // pairs @s with customFormat="1").
     if (rowOpts.customFormat === undefined && hasStyle) rowAttr += ' customFormat="1"';
-    else if (rowOpts.customFormat) rowAttr += ' customFormat="1"';
+    else if (rowOpts.customFormat !== undefined)
+      rowAttr += ` customFormat="${rowOpts.customFormat ? 1 : 0}"`;
     if (rowOpts.thickTop) rowAttr += ' thickTop="1"';
     if (rowOpts.thickBot) rowAttr += ' thickBot="1"';
     if (rowOpts.phonetic) rowAttr += ' ph="1"';
     if (rowOpts.outlineLevel !== undefined) rowAttr += ` outlineLevel="${rowOpts.outlineLevel}"`;
-    if (rowOpts.collapsed) rowAttr += ' collapsed="1"';
+    if (rowOpts.collapsed !== undefined) rowAttr += ` collapsed="${rowOpts.collapsed ? 1 : 0}"`;
 
     const cells = rowOpts.cells;
     if (cells) {
@@ -1192,9 +1243,14 @@ function buildCellString(
   // Flat attribute assembly (r → s → t, matching the former Record insertion
   // order byte-for-byte). No per-cell Record + for-in enumeration — at 2M cells
   // the dynamic-shape objects were a dominant Scavenge source.
-  const rAttr = ` r="${ref}"`;
+  // An undefined reference preserves a source cell without `@r` — position
+  // stays implicit, same as rows.
+  const rAttr = cell.reference !== undefined ? ` r="${ref}"` : "";
   let sAttr = "";
-  if (typeof cell.style === "number") {
+  if (cell.styleRaw !== undefined) {
+    // Source lexical form (e.g. an empty `s=""`); round-trip only.
+    sAttr = ` s="${escapeXml(cell.styleRaw)}"`;
+  } else if (typeof cell.style === "number") {
     // Round-trip fallback: emit the carried cellXfs index verbatim.
     sAttr = ` s="${cell.style}"`;
   } else if (cell.style !== undefined && styles) {
@@ -1203,6 +1259,7 @@ function buildCellString(
   let mdAttr = "";
   if (cell.cellMetadataId !== undefined) mdAttr += ` cm="${cell.cellMetadataId}"`;
   if (cell.valueMetadataId !== undefined) mdAttr += ` vm="${cell.valueMetadataId}"`;
+  if (cell.phonetic) mdAttr += ' ph="1"';
 
   const value = cell.value;
 
@@ -1222,12 +1279,14 @@ function buildCellString(
   // Formula path — formula takes precedence; value is the cached result.
   if (cell.formula) {
     const fStr = buildFormulaString(cell.formula);
+    const fTypeAttr = cell.typeRaw !== undefined ? ` t="${escapeXml(cell.typeRaw)}"` : "";
     if (value === null || value === undefined) {
-      return `<c${rAttr}${sAttr}${mdAttr}>${fStr}</c>`;
+      return `<c${rAttr}${sAttr}${mdAttr}${fTypeAttr}>${fStr}</c>`;
     }
     let vStr = "";
     let tAttr = "";
     if (typeof value === "number") {
+      if (cell.typeRaw === "n") tAttr = ' t="n"';
       vStr = valueElement(
         rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
         rawValue !== undefined,
@@ -1236,7 +1295,7 @@ function buildCellString(
       tAttr = ' t="b"';
       vStr = `<v>${value ? 1 : 0}</v>`;
     } else if (typeof value === "string") {
-      tAttr = ' t="str"';
+      tAttr = cell.typeRaw === "d" ? ' t="d"' : ' t="str"';
       vStr = valueElement(escapeXml(rawValue ?? value), rawValue !== undefined);
     } else if (value instanceof Date) {
       vStr = `<v>${dateToSerialNumber(value)}</v>`;
@@ -1248,14 +1307,20 @@ function buildCellString(
   }
 
   if (value === null || value === undefined) {
-    if (cell.reference !== undefined || cell.style !== undefined || mdAttr) {
-      return `<c${rAttr}${sAttr}${mdAttr}/>`;
+    const tAttr = cell.typeRaw !== undefined ? ` t="${escapeXml(cell.typeRaw)}"` : "";
+    if (cell.reference !== undefined || cell.style !== undefined || mdAttr || tAttr) {
+      return `<c${rAttr}${sAttr}${mdAttr}${tAttr}/>`;
     }
     return "";
   }
 
   // Rich text value (RichTextOptions)
   if (typeof value === "object" && !(value instanceof Date)) {
+    if (cell.inline) {
+      const inlineV =
+        cell.inlineValueRaw !== undefined ? `<v>${escapeXml(cell.inlineValueRaw)}</v>` : "";
+      return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr">${inlineV}<is>${buildRstXml(value)}</is></c>`;
+    }
     if (sharedStrings) {
       const idx = sharedStrings.registerRich(value);
       return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${idx}</v></c>`;
@@ -1263,7 +1328,32 @@ function buildCellString(
     return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is>${buildRstXml(value)}</is></c>`;
   }
 
+  // Date cell (CT_Cell `t="d"`) — the value stays its source ISO lexical form.
+  if (cell.typeRaw === "d" && typeof value === "string") {
+    return `<c${rAttr}${sAttr}${mdAttr} t="d">${valueElement(
+      escapeXml(rawValue ?? value),
+      rawValue !== undefined,
+    )}</c>`;
+  }
+
   if (typeof value === "string") {
+    if (cell.typeRaw === "str") {
+      return `<c${rAttr}${sAttr}${mdAttr} t="str">${valueElement(
+        escapeXml(rawValue ?? value),
+        rawValue !== undefined,
+      )}</c>`;
+    }
+    if (cell.inline) {
+      return `<c${rAttr}${sAttr}${mdAttr} t="inlineStr"><is>${tElement(value)}</is></c>`;
+    }
+    // Round-trip: keep the source SST reference so duplicate si entries stay
+    // stable; fresh cells register normally.
+    // A finite sharedIndex carries the source table reference verbatim —
+    // including packages whose SST part is missing, where the literal index
+    // is still the source-faithful form.
+    if (cell.sharedIndex !== undefined) {
+      return `<c${rAttr}${sAttr}${mdAttr} t="s"><v>${cell.sharedIndex}</v></c>`;
+    }
     if (sharedStrings) {
       if (value === "") return `<c${rAttr}${sAttr}${mdAttr} t="s"><v/></c>`;
       const idx = sharedStrings.register(value);
@@ -1273,7 +1363,7 @@ function buildCellString(
   }
 
   if (typeof value === "number") {
-    return `<c${rAttr}${sAttr}${mdAttr}>${valueElement(
+    return `<c${rAttr}${sAttr}${mdAttr}${cell.typeRaw === "n" ? ' t="n"' : ""}>${valueElement(
       rawValue !== undefined ? escapeXml(rawValue) : `${value}`,
       rawValue !== undefined,
     )}</c>`;
@@ -1337,20 +1427,22 @@ export function stringifyPrintOptionsXml(po: PrintOptions): string {
   if (po.verticalCentered !== undefined) poAttrs.verticalCentered = po.verticalCentered ? 1 : 0;
   if (po.headings !== undefined) poAttrs.headings = po.headings ? 1 : 0;
   if (po.gridLines !== undefined) poAttrs.gridLines = po.gridLines ? 1 : 0;
-  if (po.gridLinesSet === false) poAttrs.gridLinesSet = 0;
+  if (po.gridLinesSet !== undefined) poAttrs.gridLinesSet = po.gridLinesSet ? 1 : 0;
   return selfCloseElement("printOptions", attrs(poAttrs));
 }
 
 /** Stringify a CT_HeaderFooter element; undefined when it carries no content. */
 export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | undefined {
   const hfAttrs: Record<string, string | number | boolean | undefined> = {};
-  if (hf.differentOddEven) hfAttrs.differentOddEven = 1;
-  if (hf.differentFirst) hfAttrs.differentFirst = 1;
-  if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
-  if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
+  if (hf.differentOddEven !== undefined) hfAttrs.differentOddEven = hf.differentOddEven ? 1 : 0;
+  if (hf.differentFirst !== undefined) hfAttrs.differentFirst = hf.differentFirst ? 1 : 0;
+  if (hf.scaleWithDocRaw !== undefined) hfAttrs.scaleWithDoc = hf.scaleWithDocRaw;
+  else if (hf.scaleWithDoc === false) hfAttrs.scaleWithDoc = 0;
+  if (hf.alignWithMarginsRaw !== undefined) hfAttrs.alignWithMargins = hf.alignWithMarginsRaw;
+  else if (hf.alignWithMargins === false) hfAttrs.alignWithMargins = 0;
   const inner: string[] = [];
   const headerFooterPart = (name: string, value: string | undefined): void => {
-    if (!value) return;
+    if (value === undefined) return;
     const preserve = /^\s|\s$/.test(value) ? ' xml:space="preserve"' : "";
     inner.push(`<${name}${preserve}>${escapeXml(value)}</${name}>`);
   };
@@ -1374,10 +1466,19 @@ export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | unde
 /** Stringify a CT_SheetProtection element (worksheet + dialogsheet). */
 export function stringifySheetProtectionXml(prot: SheetProtectionOptions): string {
   const protAttrs: Record<string, string | number | boolean | undefined> = {};
-  if (prot.password) protAttrs.password = hashPassword(prot.password);
+  if (prot.passwordHashRaw !== undefined) {
+    // Source legacy hash carries through verbatim — re-hashing would corrupt it.
+    protAttrs.password = prot.passwordHashRaw;
+  } else if (prot.password) {
+    protAttrs.password = hashPassword(prot.password);
+  }
   // Auto-derive modern hash when password provided without explicit hashValue
   let derived: ReturnType<typeof derivePasswordHash> | undefined;
-  if (prot.password !== undefined && prot.hashValue === undefined) {
+  if (
+    prot.password !== undefined &&
+    prot.passwordHashRaw === undefined &&
+    prot.hashValue === undefined
+  ) {
     derived = derivePasswordHash(prot.password);
   }
   protAttrs.algorithmName = prot.algorithmName ?? derived?.algorithmName;
@@ -1387,7 +1488,8 @@ export function stringifySheetProtectionXml(prot: SheetProtectionOptions): strin
   else if (derived) protAttrs.spinCount = derived.spinCount;
   if (prot.sheet) protAttrs.sheet = 1;
   if (prot.objects) protAttrs.objects = 1;
-  if (prot.scenarios) protAttrs.scenarios = 1;
+  if (prot.scenariosRaw !== undefined) protAttrs.scenarios = prot.scenariosRaw;
+  else if (prot.scenarios) protAttrs.scenarios = 1;
   if (prot.formatCells === false) protAttrs.formatCells = 0;
   if (prot.formatColumns === false) protAttrs.formatColumns = 0;
   if (prot.formatRows === false) protAttrs.formatRows = 0;

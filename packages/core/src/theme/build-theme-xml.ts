@@ -64,7 +64,9 @@ export function buildThemeXml(options?: ThemeOptions, ctx?: WriteContext): strin
     : DEFAULT_FORMAT_SCHEME_XML;
   const objectDefaults = opts.objectDefaults
     ? stringifyObjectDefaults(opts.objectDefaults, requireCtx(ctx, "objectDefaults"))
-    : "<a:objectDefaults/>";
+    : opts.objectDefaultsPresent === false
+      ? ""
+      : "<a:objectDefaults/>";
   const extraClrSchemeLst = stringifyExtraColorSchemes(opts.extraColorSchemes, name);
   const includeExtraClrSchemeLst = opts.includeExtraColorSchemes !== false;
   const custClrLst = opts.customColors

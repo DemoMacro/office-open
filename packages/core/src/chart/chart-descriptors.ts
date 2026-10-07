@@ -880,6 +880,7 @@ function stringifyDataPoint(opts: DataPointOptions, ctx: WriteContext): string {
   if (opts.explosion !== undefined) parts.push(valEl("c:explosion", opts.explosion));
   parts.push(chartSpPr(opts.shapeProperties, ctx));
   if (opts.pictureOptions) parts.push(stringifyPictureOptions(opts.pictureOptions));
+  if (opts.ext) parts.push(`<c:extLst>${opts.ext}</c:extLst>`);
   return `<c:dPt>${parts.join("")}</c:dPt>`;
 }
 
@@ -1912,6 +1913,8 @@ function readDataPoints(serEl: XmlElement, ctx: ReadContext): DataPointOptions[]
     }
     const pictureOptions = readPictureOptions(el);
     if (pictureOptions) dp.pictureOptions = pictureOptions;
+    const extLst = findChild(el, "c:extLst");
+    if (extLst) dp.ext = (extLst.elements ?? []).map((child) => stringifyElement(child)).join("");
     return dp;
   });
 }
@@ -2739,6 +2742,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
       parts.push(valEl("c:dispBlanksAs", opts.displayBlanksAs));
     if (opts.showDataLabelsOverMax !== undefined)
       parts.push(`<c:showDLblsOverMax${boolVal(opts.showDataLabelsOverMax)}/>`);
+    if (opts.chartExt) parts.push(`<c:extLst>${opts.chartExt}</c:extLst>`);
 
     parts.push("</c:chart>");
 
@@ -3066,6 +3070,11 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
     if (dispBlanksAs) result.displayBlanksAs = dispBlanksAs as DisplayBlanksAs;
     const showDLblsOverMax = readBoolAttr(chart, "c:showDLblsOverMax");
     if (showDLblsOverMax !== undefined) result.showDataLabelsOverMax = showDLblsOverMax;
+    const chartExtLst = findChild(chart, "c:extLst");
+    if (chartExtLst)
+      result.chartExt = (chartExtLst.elements ?? [])
+        .map((child) => stringifyElement(child))
+        .join("");
 
     // CT_ChartSpace tail: spPr (chart-area shape properties), txPr, then externalData
     const spPrEl = findChild(el, "c:spPr");

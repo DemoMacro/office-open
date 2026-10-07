@@ -81,6 +81,10 @@
         "indent": {
           "type": "number"
         },
+        "indentRaw": {
+          "description": "Source lexical form of `indent` (invalid producer values included); round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "justifyLastLine": {
           "description": "Justify last line",
           "type": "boolean"
@@ -1144,6 +1148,9 @@
           "description": "Indexed color palette entry",
           "type": "number"
         },
+        "colorRaw": {
+          "$ref": "#/definitions/FontOptions/properties/colorRaw"
+        },
         "legacyColorType": {
           "$ref": "#/definitions/FontOptions/properties/legacyColorType"
         },
@@ -1191,6 +1198,13 @@
       "properties": {
         "bottom": {
           "$ref": "#/definitions/BorderOptions"
+        },
+        "childOrder": {
+          "description": "Source child element order. Round-trip only: writers emit children in this order.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "diagonal": {
           "$ref": "#/definitions/BorderOptions"
@@ -1975,6 +1989,10 @@
           "description": "Background color indexed",
           "type": "number"
         },
+        "bgColorRaw": {
+          "description": "Source lexical form of bgColor `@rgb`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "bgLegacyColorType": {
           "description": "Legacy bgColor channel spelling; round-trip only.",
           "enum": ["theme", "icv", "rgb"],
@@ -2007,6 +2025,10 @@
         "fgAutoColor": {
           "description": "Foreground automatic color",
           "type": "boolean"
+        },
+        "fgColorRaw": {
+          "description": "Source lexical form of fgColor `@rgb`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "fgLegacyColorType": {
           "description": "Legacy fgColor channel spelling; round-trip only.",
@@ -2075,6 +2097,10 @@
           ],
           "type": "string"
         },
+        "patternTypeDeclared": {
+          "description": "True when the source declared `@patternType`. Round-trip only.",
+          "type": "boolean"
+        },
         "stops": {
           "description": "Gradient stops",
           "items": {
@@ -2108,6 +2134,9 @@
         "color": {
           "$ref": "#/definitions/HexColor",
           "description": "RGB color hex without alpha, e.g. \"FF0000\"; omitted for theme colors"
+        },
+        "fgColorRaw": {
+          "$ref": "#/definitions/CellFillOptions/properties/fgColorRaw"
         },
         "position": {
           "description": "Position (0.0–1.0)",
@@ -2336,8 +2365,24 @@
           },
           "type": "array"
         },
+        "inline": {
+          "description": "Inline string form; preserves source storage.",
+          "type": "boolean"
+        },
+        "inlineValueRaw": {
+          "description": "Source `<v>` text on an `inlineStr` cell (malformed-but-readable input keeps both children); round-trip only — do not hand-author.",
+          "type": "string"
+        },
+        "phonetic": {
+          "description": "Phonetic text hint.",
+          "type": "boolean"
+        },
         "reference": {
           "type": "string"
+        },
+        "sharedIndex": {
+          "description": "Source shared-string table index for a `t=\"s\"` cell. Round-trip only: duplicate si entries keep their source references stable instead of re-deduplicating to the first occurrence.",
+          "type": "number"
         },
         "style": {
           "anyOf": [
@@ -2349,6 +2394,14 @@
             }
           ],
           "description": "Cell style: either style options (resolved to an index at compile time) or, as a round-trip fallback, the raw styles.xml cellXfs index carried from a source workbook whose style table could not be resolved."
+        },
+        "styleRaw": {
+          "description": "Source `@s` lexical form when non-numeric (e.g. an empty string); round-trip only.",
+          "type": "string"
+        },
+        "typeRaw": {
+          "description": "Explicit source `@t` token that matches the defaulted form (`t=\"n\"`). Also carries declared types with no canonical value carrier (`t=\"s\"` and the like on empty cells). Round-trip only: do not hand-author.",
+          "type": "string"
         },
         "value": {
           "anyOf": [
@@ -2487,11 +2540,23 @@
         "border": {
           "$ref": "#/definitions/BorderSideOptions"
         },
+        "borderIdDeclared": {
+          "description": "True when the source xf declared `@borderId`. Round-trip only.",
+          "type": "boolean"
+        },
         "fill": {
           "$ref": "#/definitions/CellFillOptions"
         },
+        "fillIdDeclared": {
+          "description": "True when the source xf declared `@fillId`. Round-trip only: attribute presence and absence stay distinct in rebuilt styles.xml.",
+          "type": "boolean"
+        },
         "font": {
           "$ref": "#/definitions/FontOptions"
+        },
+        "fontIdRaw": {
+          "description": "Source fontId when the index has no resolvable font (dangling reference); round-trip only — do not hand-author.",
+          "type": "number"
         },
         "numFmt": {
           "type": "string"
@@ -2557,6 +2622,10 @@
         "gte": {
           "description": "Greater than or equal (default: true)",
           "type": "boolean"
+        },
+        "gteRaw": {
+          "description": "Source lexical form of `gte`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "type": {
           "$ref": "#/definitions/CfvoType"
@@ -2769,8 +2838,7 @@
           "description": "Per-point label override (c:dLbl); its own c:idx is included."
         },
         "ext": {
-          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
-          "type": "string"
+          "$ref": "#/definitions/DataPointOptions/properties/ext"
         },
         "index": {
           "type": "number"
@@ -2962,6 +3030,10 @@
             "type": "string"
           },
           "type": "array"
+        },
+        "chartExt": {
+          "description": "Raw inner XML of the c:chart trailing c:extLst — Office extension round-trip.",
+          "type": "string"
         },
         "colorMappingOverride": {
           "additionalProperties": false,
@@ -3614,6 +3686,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "uid": {
+          "description": "Revision UID; round-trip only.",
+          "type": "string"
+        },
         "zoomScale": {
           "description": "Window zoom percent.",
           "type": "number"
@@ -4212,6 +4288,10 @@
         "customWidth": {
           "type": "boolean"
         },
+        "customWidthDeclared": {
+          "description": "True when the source declared `@customWidth`. Round-trip only: false keeps a width-only column from gaining the derived flag.",
+          "type": "boolean"
+        },
         "hidden": {
           "type": "boolean"
         },
@@ -4234,6 +4314,10 @@
         },
         "width": {
           "type": "number"
+        },
+        "widthRaw": {
+          "description": "Source width lexical form (e.g. \"10.0\"); round-trip only.",
+          "type": "string"
         }
       },
       "required": ["min", "max"],
@@ -4286,6 +4370,10 @@
             }
           ],
           "description": "Comment text (plain string or rich text)"
+        },
+        "uid": {
+          "description": "Revision uid",
+          "type": "string"
         },
         "visible": {
           "description": "Whether the note is pinned visible. Default false (hidden until hover).",
@@ -4406,6 +4494,10 @@
           "description": "Bottom N instead of top N for top10 rules",
           "type": "boolean"
         },
+        "bottomRaw": {
+          "description": "Source lexical form of `bottom`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "colorScale": {
           "$ref": "#/definitions/ColorScaleOptions",
           "description": "Color scale configuration (when type is \"colorScale\")"
@@ -4421,6 +4513,10 @@
         "equalAverage": {
           "description": "Equal average flag",
           "type": "boolean"
+        },
+        "ext": {
+          "description": "Raw inner XML of the trailing extLst — Office extension round-trip.",
+          "type": "string"
         },
         "formulas": {
           "description": "Formula(s) — up to 3",
@@ -4439,6 +4535,10 @@
         "percent": {
           "description": "Percent instead of item count for top10 rules",
           "type": "boolean"
+        },
+        "percentRaw": {
+          "description": "Source lexical form of `percent`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "priority": {
           "type": "number"
@@ -4496,6 +4596,22 @@
       ],
       "type": "string"
     },
+    "ConnectionExtensionOptions": {
+      "additionalProperties": false,
+      "description": "Typed connection extension. Unknown extensions fail parsing.",
+      "properties": {
+        "modelConnection": {
+          "$ref": "#/definitions/ModelConnectionOptions",
+          "description": "Excel 2013 model connection payload (`x15:connection`)"
+        },
+        "uri": {
+          "description": "Extension namespace URI",
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
     "ConnectionOptions": {
       "additionalProperties": false,
       "description": "Workbook connection.",
@@ -4519,6 +4635,13 @@
         "description": {
           "description": "Connection description",
           "type": "string"
+        },
+        "extensions": {
+          "description": "Typed trailing extensions",
+          "items": {
+            "$ref": "#/definitions/ConnectionExtensionOptions"
+          },
+          "type": "array"
         },
         "id": {
           "description": "Unique connection ID (required)",
@@ -4598,6 +4721,10 @@
         "type": {
           "description": "Source type code (ECMA 18.13.1; Excel-verified: 6 = text file source — Office writes it for textPr connections. Excel rejects a type-2 dbPr connection whose provider string it cannot resolve.)",
           "type": "number"
+        },
+        "uid": {
+          "description": "Revision UID; round-trip only.",
+          "type": "string"
         },
         "web": {
           "$ref": "#/definitions/WebPropertiesOptions",
@@ -5004,6 +5131,10 @@
           "description": "Style name",
           "type": "string"
         },
+        "uid": {
+          "description": "Revision uid",
+          "type": "string"
+        },
         "xfId": {
           "description": "Index into cellStyleXfs; the referenced entry holds the format.",
           "type": "number"
@@ -5130,6 +5261,10 @@
           "$ref": "#/definitions/VariantValue",
           "description": "The property value (as string)"
         },
+        "valueLexeme": {
+          "description": "Source lexical text of the vt:* element; round-trip only.",
+          "type": "string"
+        },
         "valueType": {
           "description": "Source vt:* element spelling (round-trip), set only when the default JS mapping would rewrite it — an integer carried as vt:r8 would otherwise re-emit as vt:i4.",
           "type": "string"
@@ -5158,6 +5293,20 @@
       "additionalProperties": false,
       "description": "Custom sheet view",
       "properties": {
+        "autoFilter": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/definitions/AutoFilterOptions"
+            }
+          ],
+          "description": "Auto-filter configuration."
+        },
+        "colBreaks": {
+          "$ref": "#/definitions/WorksheetOptions/properties/colBreaks"
+        },
         "colorId": {
           "description": "Color id",
           "type": "number"
@@ -5213,6 +5362,13 @@
         "printOptions": {
           "$ref": "#/definitions/PrintOptions",
           "description": "Print options."
+        },
+        "rowBreaks": {
+          "description": "Row page breaks",
+          "items": {
+            "$ref": "#/definitions/PageBreakOptions"
+          },
+          "type": "array"
         },
         "scale": {
           "description": "Zoom scale",
@@ -5293,6 +5449,10 @@
         "table": {
           "description": "Applies to tables",
           "type": "boolean"
+        },
+        "uid": {
+          "description": "Revision uid",
+          "type": "string"
         }
       },
       "required": ["name"],
@@ -5448,6 +5608,10 @@
         "showValue": {
           "description": "Whether to show cell values (default: true)",
           "type": "boolean"
+        },
+        "showValueRaw": {
+          "description": "Source lexical form of `showValue`; round-trip only — do not hand-author.",
+          "type": "string"
         }
       },
       "required": ["cfvo", "color"],
@@ -5757,6 +5921,10 @@
         "explosion": {
           "description": "Pie explosion offset for this point (c:explosion).",
           "type": "number"
+        },
+        "ext": {
+          "description": "Raw inner XML of the trailing c:extLst — Office extension round-trip.",
+          "type": "string"
         },
         "index": {
           "description": "Point index (c:idx, required).",
@@ -7054,6 +7222,10 @@
         "target": {
           "description": "Target path of the external workbook",
           "type": "string"
+        },
+        "targetTypeRaw": {
+          "description": "Source relationship type of the target (`xlPathMissing` and other producer variants exist); round-trip only.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -7077,6 +7249,10 @@
         "valueMetadataIndex": {
           "description": "Value metadata index",
           "type": "number"
+        },
+        "valueSpaceRaw": {
+          "description": "Source `@xml:space` form of `<v>`; round-trip only — do not hand-author.",
+          "type": "string"
         }
       },
       "required": ["reference"],
@@ -7142,6 +7318,10 @@
         },
         "oleRId": {
           "description": "Relationship ID for the OLE link (set by compiler)",
+          "type": "string"
+        },
+        "sourcePath": {
+          "description": "Source part path (xl/externalLinks/externalLink3.xml) — round-trip only.",
           "type": "string"
         }
       },
@@ -7722,9 +7902,20 @@
         "bold": {
           "type": "boolean"
         },
+        "boldRaw": {
+          "description": "Source lexical form of `bold/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "charset": {
           "description": "Character set",
           "type": "number"
+        },
+        "childOrder": {
+          "description": "Source child element order. Round-trip only: writers emit children in this order when present.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
         },
         "color": {
           "$ref": "#/definitions/HexColor"
@@ -7733,13 +7924,25 @@
           "description": "Indexed color palette entry",
           "type": "number"
         },
+        "colorRaw": {
+          "description": "Source lexical form of `color/@rgb`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "condense": {
           "description": "Condense (macOS, /condense)",
           "type": "boolean"
         },
+        "condenseRaw": {
+          "description": "Source lexical form of `condense/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "extend": {
           "description": "Extend (macOS, /extend)",
           "type": "boolean"
+        },
+        "extendRaw": {
+          "description": "Source lexical form of `extend/@val`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "family": {
           "description": "Font family",
@@ -7750,6 +7953,10 @@
         },
         "italic": {
           "type": "boolean"
+        },
+        "italicRaw": {
+          "description": "Source lexical form of `italic/@val`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "legacyColorType": {
           "description": "Legacy SpreadsheetML color channel spelling; round-trip only.",
@@ -7764,6 +7971,10 @@
           "description": "Font outline",
           "type": "boolean"
         },
+        "outlineRaw": {
+          "description": "Source lexical form of `outline/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "scheme": {
           "description": "Font scheme",
           "enum": ["major", "minor", "none"],
@@ -7773,11 +7984,23 @@
           "description": "Font shadow",
           "type": "boolean"
         },
+        "shadowRaw": {
+          "description": "Source lexical form of `shadow/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "size": {
           "type": "number"
         },
+        "sizeRaw": {
+          "description": "Source lexical form of `size`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "strike": {
           "type": "boolean"
+        },
+        "strikeRaw": {
+          "description": "Source lexical form of `strike/@val`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "themeColor": {
           "description": "Theme palette index — takes precedence over `color` when both are set, matching the XSD's single-channel choice.",
@@ -7943,6 +8166,10 @@
         },
         "name": {
           "type": "string"
+        },
+        "namePresent": {
+          "description": "True when the source declared `@name`. Round-trip only: false keeps a source-absent name from gaining the fresh-authoring default.",
+          "type": "boolean"
         }
       },
       "required": ["fillStyles", "lineStyles", "effectStyles", "backgroundFillStyles"],
@@ -8778,6 +9005,10 @@
           "description": "Align with page margins",
           "type": "boolean"
         },
+        "alignWithMarginsRaw": {
+          "description": "Source lexical form of `alignWithMargins`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "differentFirst": {
           "type": "boolean"
         },
@@ -8805,6 +9036,10 @@
         "scaleWithDoc": {
           "description": "Scale header/footer with document",
           "type": "boolean"
+        },
+        "scaleWithDocRaw": {
+          "description": "Source lexical form of `scaleWithDoc`; round-trip only — do not hand-author.",
+          "type": "string"
         }
       },
       "type": "object"
@@ -8937,6 +9172,9 @@
           "description": "Whether values are percentages (default: true)",
           "type": "boolean"
         },
+        "percentRaw": {
+          "$ref": "#/definitions/ConditionalFormatRule/properties/percentRaw"
+        },
         "reverse": {
           "description": "Whether to reverse icon order (default: false)",
           "type": "boolean"
@@ -8944,6 +9182,9 @@
         "showValue": {
           "description": "Whether to show cell values (default: true)",
           "type": "boolean"
+        },
+        "showValueRaw": {
+          "$ref": "#/definitions/DataBarOptions/properties/showValueRaw"
         }
       },
       "required": ["cfvo"],
@@ -9052,14 +9293,30 @@
         "borderId": {
           "type": "number"
         },
+        "borderIdDeclared": {
+          "description": "True when the source declared `@borderId`. Round-trip only.",
+          "type": "boolean"
+        },
         "fillId": {
           "type": "number"
+        },
+        "fillIdDeclared": {
+          "description": "True when the source declared `@fillId`. Round-trip only.",
+          "type": "boolean"
         },
         "fontId": {
           "type": "number"
         },
+        "fontIdDeclared": {
+          "description": "True when the source declared `@fontId`. Round-trip only.",
+          "type": "boolean"
+        },
         "numFmtId": {
           "type": "number"
+        },
+        "numFmtIdDeclared": {
+          "description": "True when the source declared `@numFmtId`. Round-trip only.",
+          "type": "boolean"
         },
         "pivotButton": {
           "type": "boolean"
@@ -9073,6 +9330,10 @@
         "xfId": {
           "description": "Index into cellStyleXfs this xf derives from",
           "type": "number"
+        },
+        "xfIdDeclared": {
+          "description": "True when the source declared `@xfId`. Round-trip only.",
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -10044,6 +10305,49 @@
       "required": ["type"],
       "type": "object"
     },
+    "ModelConnectionOptions": {
+      "additionalProperties": false,
+      "description": "Excel 2013 data-model connection extension (x15:connection).",
+      "properties": {
+        "autoDelete": {
+          "description": "Delete when no longer referenced (x15:connection `@autoDelete`)",
+          "type": "boolean"
+        },
+        "excludeFromRefreshAll": {
+          "description": "Exclude from refresh all (x15:connection `@excludeFromRefreshAll`)",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Model table/entity identifier (x15:connection `@id`)",
+          "type": "string"
+        },
+        "model": {
+          "description": "Whether the connection feeds the data model (x15:connection `@model`)",
+          "type": "boolean"
+        },
+        "rangeProperties": {
+          "$ref": "#/definitions/ModelRangePropertiesOptions",
+          "description": "Worksheet-range source (x15:connection/x15:rangePr)"
+        },
+        "usedByAddin": {
+          "description": "Reserved for add-in use (x15:connection `@usedByAddin`)",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ModelRangePropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Worksheet-range source (x15:rangePr).",
+      "properties": {
+        "sourceName": {
+          "description": "Source range name (x15:rangePr `@sourceName`)",
+          "type": "string"
+        }
+      },
+      "required": ["sourceName"],
+      "type": "object"
+    },
     "MultiLevelCategoryPoint": {
       "anyOf": [
         {
@@ -10736,6 +11040,14 @@
           "enum": ["downThenOver", "overThenDown"],
           "type": "string"
         },
+        "pageSetUpPrPresent": {
+          "description": "True when the source declared `<pageSetUpPr>`, even without attributes. Round-trip only: keeps an attribute-free element from being dropped.",
+          "type": "boolean"
+        },
+        "pageSetupPresent": {
+          "description": "True when the source declared `<pageSetup>`, even without attributes. Round-trip only: distinguishes an omitted element from sheetPr-only state.",
+          "type": "boolean"
+        },
         "paperHeight": {
           "anyOf": [
             {
@@ -11131,6 +11443,13 @@
         "endByte": {
           "description": "End byte offset in base text",
           "type": "number"
+        },
+        "runs": {
+          "description": "Rich runs inside `rPh` (`<r><rPr/><t/></r>`). Not part of, but Excel-compatible producers emit the shape; round-trip only — fresh authoring writes the plain `text` form.",
+          "items": {
+            "$ref": "#/definitions/RichTextRunOptions"
+          },
+          "type": "array"
         },
         "startByte": {
           "description": "Start byte offset in base text",
@@ -13312,6 +13631,10 @@
           },
           "type": "array"
         },
+        "avLstOmitted": {
+          "description": "Source omitted the a:avLst child; round-trip only — do not hand-author.",
+          "type": "boolean"
+        },
         "preset": {
           "$ref": "#/definitions/ShapeType",
           "description": "Preset token (a:prstGeom `@prst`)"
@@ -13551,6 +13874,10 @@
         "securityDescriptor": {
           "description": "Security descriptor (SID string, emitted as the attribute form)",
           "type": "string"
+        },
+        "securityDescriptorElement": {
+          "description": "True when the source carried `<securityDescriptor>` rather than `@securityDescriptor`. Round-trip only.",
+          "type": "boolean"
         },
         "spinCount": {
           "description": "Modern encryption: spin count",
@@ -14926,6 +15253,13 @@
       "additionalProperties": false,
       "description": "Options for RGB color.",
       "properties": {
+        "extensionAttributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Attributes from non-DrawingML namespaces (e.g. `a14:legacySpreadsheetColorIndex`). Round-trip only — do not hand-author.",
+          "type": "object"
+        },
         "transforms": {
           "$ref": "#/definitions/ColorTransformOptions",
           "description": "Optional color transforms"
@@ -14960,14 +15294,19 @@
           "type": "array"
         },
         "runs": {
-          "description": "Rich text runs (mutually exclusive with text)",
+          "description": "Rich text runs",
           "items": {
             "$ref": "#/definitions/RichTextRunOptions"
           },
           "type": "array"
         },
         "text": {
-          "description": "Plain text (mutually exclusive with runs)",
+          "description": "Plain text; may coexist with runs (source-faithful form)",
+          "type": "string"
+        },
+        "textSpaceRaw": {
+          "description": "Source `<t>` xml:space lexical form (`preserve` or the `default` absent form). Round-trip only: set when the text has leading/trailing whitespace, so an omitted source attribute is not upgraded to `preserve`.",
+          "enum": ["default", "preserve"],
           "type": "string"
         },
         "wordDrawingExtension": {
@@ -14988,6 +15327,10 @@
         "text": {
           "description": "Run text content",
           "type": "string"
+        },
+        "textSpaceRaw": {
+          "description": "Source xml:space lexical form of the run `t`; round-trip only.",
+          "type": "string"
         }
       },
       "required": ["text"],
@@ -14999,6 +15342,10 @@
         "bold": {
           "type": "boolean"
         },
+        "boldValRaw": {
+          "description": "Source lexical form of `b/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "charset": {
           "description": "Character set",
           "type": "number"
@@ -15006,6 +15353,14 @@
         "color": {
           "$ref": "#/definitions/RichTextColor",
           "description": "Font color: 6-digit RGB (\"FF0000\", FF alpha auto-prefixed on emit), 8-digit ARGB verbatim, a bare palette index (\"10\" → indexed), or \"theme:N\" — the same string parse produces."
+        },
+        "colorRgbRaw": {
+          "description": "Source lexical form of color `@rgb`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
+        "colorThemeRaw": {
+          "description": "Source color `@theme` when an explicit `@rgb` is also present. Round-trip only — theme-only colors use `color: \"theme:N\"`.",
+          "type": "string"
         },
         "colorTint": {
           "description": "Color tint; round-trips the source value.",
@@ -15054,6 +15409,10 @@
           "description": "Font size in points",
           "type": "number"
         },
+        "sizeValRaw": {
+          "description": "Source lexical form of `sz/@val`; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "strike": {
           "description": "Strikethrough",
           "type": "boolean"
@@ -15061,6 +15420,10 @@
         "underline": {
           "description": "Underline type",
           "enum": ["single", "double", "singleAccounting", "doubleAccounting", "none"],
+          "type": "string"
+        },
+        "underlineValRaw": {
+          "description": "Source lexical form of `u/@val`; round-trip only — do not hand-author.",
           "type": "string"
         },
         "vertAlign": {
@@ -15412,6 +15775,10 @@
         "show": {
           "description": "Show scenario index (0-based)",
           "type": "number"
+        },
+        "sqref": {
+          "description": "Changed-cell range",
+          "type": "string"
         }
       },
       "required": ["scenarios"],
@@ -15837,6 +16204,10 @@
         },
         "extentCy": {
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
+        },
+        "fLocksText": {
+          "description": "Text-lock flag; explicit value round-trips.",
+          "type": "boolean"
         },
         "fPublished": {
           "description": "Published-object flag (sp/@fPublished); explicit true/false round-trips.",
@@ -16501,6 +16872,10 @@
           "description": "Outline apply styles",
           "type": "boolean"
         },
+        "outlinePrPresent": {
+          "description": "True when the source declared `<outlinePr>`, even without attributes. Round-trip only: keeps an attribute-free element from being dropped.",
+          "type": "boolean"
+        },
         "outlineShowSymbols": {
           "description": "Outline show symbols",
           "type": "boolean"
@@ -16585,6 +16960,10 @@
           "description": "Plain-text password — legacy Excel hash is computed automatically on stringify. Authoring-only: not carried back by parse (the source stores a hash; re-hashing it would corrupt it). Use the algorithmName quadruplet below for round-trip.",
           "type": "string"
         },
+        "passwordHashRaw": {
+          "description": "Source legacy password hash (`@password`); round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "pivotTables": {
           "type": "boolean"
         },
@@ -16594,6 +16973,10 @@
         },
         "scenarios": {
           "type": "boolean"
+        },
+        "scenariosRaw": {
+          "description": "Source lexical form of `@scenarios`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "selectLockedCells": {
           "type": "boolean"
@@ -17584,6 +17967,10 @@
           "description": "Number of header rows (default: 1)",
           "type": "number"
         },
+        "headerRowCountDeclared": {
+          "description": "True when the source declared `@headerRowCount`. Round-trip only: keeps an explicit default from being dropped.",
+          "type": "boolean"
+        },
         "headerRowDxfId": {
           "description": "Header row differential format index",
           "type": "number"
@@ -17611,6 +17998,10 @@
         "ref": {
           "description": "Data range, e.g. \"A1:D10\"",
           "type": "string"
+        },
+        "sortState": {
+          "$ref": "#/definitions/SortStateOptions",
+          "description": "Sort state"
         },
         "style": {
           "$ref": "#/definitions/TableStyleInfoOptions",
@@ -17658,6 +18049,10 @@
       "properties": {
         "dxfId": {
           "description": "Differential format index (dxf)",
+          "type": "number"
+        },
+        "size": {
+          "description": "Stripe/band size",
           "type": "number"
         },
         "type": {
@@ -18659,6 +19054,10 @@
         },
         "objectDefaults": {
           "$ref": "#/definitions/ObjectDefaultsOptions"
+        },
+        "objectDefaultsPresent": {
+          "description": "Explicit false preserves a source-absent a:objectDefaults.",
+          "type": "boolean"
         },
         "rootElement": {
           "description": "Root spelling: `a:theme` (default) or legacy `a:officeStyleSheet`.",
@@ -21983,6 +22382,11 @@
       "description": "One web-query table selection.",
       "type": ["string", "number", "null"]
     },
+    "WorkbookConformance": {
+      "description": "Workbook conformance level",
+      "enum": ["strict", "transitional"],
+      "type": "string"
+    },
     "WorkbookExtensionOptions": {
       "additionalProperties": false,
       "description": "One workbook-level ext element (uri-keyed raw content, round-trip).",
@@ -22021,6 +22425,10 @@
         "appProperties": {
           "$ref": "#/definitions/AppPropertiesOptions",
           "description": "Extended properties (docProps/app.xml)"
+        },
+        "appPropertiesPath": {
+          "description": "Source extended-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "type": "string"
         },
         "bookView": {
           "anyOf": [
@@ -22092,9 +22500,38 @@
           },
           "type": "array"
         },
+        "childOrder": {
+          "description": "Source child order as canonical field keys; round-trip only.",
+          "items": {
+            "enum": [
+              "title",
+              "subject",
+              "creator",
+              "keywords",
+              "description",
+              "lastModifiedBy",
+              "lastPrinted",
+              "revision",
+              "created",
+              "modified",
+              "category",
+              "contentStatus",
+              "contentType",
+              "identifier",
+              "language",
+              "version"
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
         "colors": {
           "$ref": "#/definitions/ColorsOptions",
           "description": "Custom color palette"
+        },
+        "conformance": {
+          "$ref": "#/definitions/WorkbookConformance",
+          "description": "Workbook conformance level."
         },
         "connections": {
           "description": "Workbook data connections (xl/connections.xml)",
@@ -22115,6 +22552,14 @@
           "$ref": "#/definitions/ContentTypesInput",
           "description": "Content types from the source [Content_Types].xml (round-trip only). Present, generate() keeps the source Default/Override entries as the base declaration table and derives only what they leave uncovered."
         },
+        "corePropertiesPath": {
+          "description": "Source core-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "type": "string"
+        },
+        "corePropertiesRelationshipType": {
+          "description": "Source root-rels core-properties relationship type. Both the `package/2006` and `officeDocument/2006` URI forms appear in real packages; round-trip only.",
+          "type": "string"
+        },
         "created": {
           "description": "Creation timestamp (W3CDTF), round-tripped from dcterms:created. null = the source core.xml carried none — emit nothing; undefined (fresh) = default to now.",
           "type": ["string", "null"]
@@ -22128,6 +22573,14 @@
             "$ref": "#/definitions/CustomPropertyOptions"
           },
           "type": "array"
+        },
+        "customPropertiesDeclared": {
+          "description": "True when the source declared a custom-properties part, even if it has no properties.",
+          "type": "boolean"
+        },
+        "customPropertiesPath": {
+          "description": "Source custom-properties part path; preserves non-default OPC layouts. Round-trip only.",
+          "type": "string"
         },
         "customWorkbookViews": {
           "description": "Workbook-level custom view snapshots. Excel requires one entry per sheet-level customSheetViews guid (matched by guid).",
@@ -22344,7 +22797,8 @@
           "type": "string"
         },
         "revision": {
-          "type": "number"
+          "description": "Revision number (cp:revision). null preserves a source element with empty text; undefined omits the element on fresh authoring.",
+          "type": ["number", "null"]
         },
         "revisionLog": {
           "$ref": "#/definitions/SharedWorkbookOptions",
@@ -22372,6 +22826,14 @@
           "description": "Source <sst/@count>: total string-cell references; undefined on fresh authoring.",
           "type": "number"
         },
+        "sharedStringsDeclared": {
+          "description": "True when the source declared xl/sharedStrings.xml, even with no si entries. Round-trip only.",
+          "type": "boolean"
+        },
+        "sharedStringsPath": {
+          "description": "Source sharedStrings part path; default xl/sharedStrings.xml. Round-trip only.",
+          "type": "string"
+        },
         "sharedStringsUniqueCount": {
           "description": "Declared unique string count (xl/sharedStrings.xml `@uniqueCount`). Round-trip only when absent in source.",
           "type": "number"
@@ -22390,6 +22852,10 @@
           },
           "type": "array"
         },
+        "stylesPath": {
+          "description": "Source styles part path; default xl/styles.xml. Round-trip only.",
+          "type": "string"
+        },
         "subject": {
           "type": "string"
         },
@@ -22400,6 +22866,10 @@
         "theme": {
           "$ref": "#/definitions/ThemeOptions",
           "description": "Theme (xl/theme/theme1.xml) — structured round-trip; fresh default when omitted"
+        },
+        "themePath": {
+          "description": "Source theme part path; default xl/theme/theme1.xml. Round-trip only.",
+          "type": "string"
         },
         "title": {
           "type": "string"
@@ -22433,6 +22903,10 @@
         "webPublishing": {
           "$ref": "#/definitions/WebPublishingOptions",
           "description": "Web publishing properties"
+        },
+        "workbookPath": {
+          "description": "Source primary workbook part path; default xl/workbook.xml. Round-trip only.",
+          "type": "string"
         },
         "workbookProtection": {
           "$ref": "#/definitions/WorkbookProtectionOptions",
@@ -22476,6 +22950,10 @@
         },
         "date1904": {
           "description": "Use 1904 date system (default false); explicit defaults are round-trip significant.",
+          "type": "boolean"
+        },
+        "dateCompatibility": {
+          "description": "Use the 1900 date system with 1904 compatibility flagging; explicit defaults are round-trip significant.",
           "type": "boolean"
         },
         "defaultThemeVersion": {
@@ -22562,6 +23040,10 @@
           "description": "Revisions password character set",
           "type": "string"
         },
+        "revisionsPasswordHashRaw": {
+          "description": "Source legacy `@revisionsPassword` hash; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "revisionsSaltValue": {
           "$ref": "#/definitions/Base64",
           "description": "Revisions modern encryption: base64-encoded salt value"
@@ -22584,6 +23066,10 @@
         },
         "workbookPasswordCharacterSet": {
           "description": "Workbook password character set",
+          "type": "string"
+        },
+        "workbookPasswordHashRaw": {
+          "description": "Source legacy `@workbookPassword` hash; round-trip only — do not hand-author.",
           "type": "string"
         },
         "workbookSaltValue": {
@@ -22712,6 +23198,9 @@
         },
         "categoryLabels": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/categoryLabels"
+        },
+        "chartExt": {
+          "$ref": "#/definitions/ChartSpaceOptions/properties/chartExt"
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -23205,6 +23694,10 @@
           },
           "type": "array"
         },
+        "commentsVmlBom": {
+          "description": "Source VML part carried a UTF-8 BOM; round-trip only.",
+          "type": "boolean"
+        },
         "commentsVmlLayout": {
           "$ref": "#/definitions/VmlShapeLayoutOptions",
           "description": "Source comments VML o:shapelayout; round-trip only."
@@ -23276,9 +23769,17 @@
           "description": "Cell range dimension; auto-computed when omitted",
           "type": "string"
         },
+        "dimensionPresent": {
+          "description": "True when the source sheet declared `<dimension>` (even with an unusable ref). Round-trip only: distinguishes an omitted element from fresh authoring that has not set one yet.",
+          "type": "boolean"
+        },
         "drawingHF": {
           "$ref": "#/definitions/DrawingHfOptions",
           "description": "Drawing in header/footer"
+        },
+        "drawingPresent": {
+          "description": "True when the source sheet declared a drawing part, even one with no anchors (empty `<xdr:wsDr/>`). Round-trip only: keeps the part, its relationship, and its content-type override alive through a round-trip.",
+          "type": "boolean"
         },
         "drawingRid": {
           "description": "Drawing reference r:id. Round-trip only: drawing parts the bridge cannot map onto options (e.g. OLE shape representations) pass through verbatim; fresh worksheets derive the reference from images/charts/shapes.",
@@ -23444,6 +23945,10 @@
         "sheetView": {
           "$ref": "#/definitions/SheetViewOptions"
         },
+        "sheetViewsPresent": {
+          "description": "True when the source sheet declared `<sheetViews>`. Round-trip only: distinguishes an omitted element from fresh authoring defaults.",
+          "type": "boolean"
+        },
         "singleXmlCells": {
           "description": "Single-cell XML tables on this sheet (xl/tables/tableSingleCellsN.xml)",
           "items": {
@@ -23468,6 +23973,10 @@
         "sortState": {
           "$ref": "#/definitions/SortStateOptions",
           "description": "Sheet-level sort state"
+        },
+        "sourcePath": {
+          "description": "Source part path (xl/worksheets/sheet26.xml) — round-trip only.",
+          "type": "string"
         },
         "state": {
           "description": "Visibility",

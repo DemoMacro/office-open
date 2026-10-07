@@ -12,6 +12,7 @@ import { attr, attrNum, escapeXml, findChild } from "@office-open/xml";
 
 import { parseOlapPr, stringifyOlapPr } from "./pivot/pivot-utils";
 import type { OLAPPropertiesOptions } from "./pivot/pivot-utils";
+import { XlsxParseError } from "./pivot/pivot-xml";
 
 // ── Options ──
 
@@ -131,10 +132,42 @@ export interface ParameterOptions {
   cell?: string;
 }
 
+/** Excel 2013 data-model connection extension (x15:connection). */
+export interface ModelConnectionOptions {
+  /** Model table/entity identifier (x15:connection `@id`) */
+  id?: string;
+  /** Whether the connection feeds the data model (x15:connection `@model`) */
+  model?: boolean;
+  /** Exclude from refresh all (x15:connection `@excludeFromRefreshAll`) */
+  excludeFromRefreshAll?: boolean;
+  /** Delete when no longer referenced (x15:connection `@autoDelete`) */
+  autoDelete?: boolean;
+  /** Reserved for add-in use (x15:connection `@usedByAddin`) */
+  usedByAddin?: boolean;
+  /** Worksheet-range source (x15:connection/x15:rangePr) */
+  rangeProperties?: ModelRangePropertiesOptions;
+}
+
+/** Worksheet-range source (x15:rangePr). */
+export interface ModelRangePropertiesOptions {
+  /** Source range name (x15:rangePr `@sourceName`) */
+  sourceName: string;
+}
+
+/** Typed connection extension (CT_Connection/extLst). Unknown extensions fail parsing. */
+export interface ConnectionExtensionOptions {
+  /** Extension namespace URI (CT_ConnectionExtension `@uri`) */
+  uri: string;
+  /** Excel 2013 model connection payload (`x15:connection`) */
+  modelConnection?: ModelConnectionOptions;
+}
+
 /** Workbook connection (CT_Connection). */
 export interface ConnectionOptions {
   /** Unique connection ID (required) */
   id: number;
+  /** Revision UID (CT_Connection `@xr16:uid`); round-trip only. */
+  uid?: string;
   /** Connection name */
   name?: string;
   /**
@@ -187,6 +220,8 @@ export interface ConnectionOptions {
   text?: TextPropertiesOptions;
   /** Parameters (CT_Parameters) */
   parameters?: ParameterOptions[];
+  /** Typed trailing extensions (CT_Connection/extLst) */
+  extensions?: ConnectionExtensionOptions[];
 }
 
 /** Options for xl/connections.xml (CT_Connections). */
@@ -209,6 +244,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
     ];
     for (const c of opts.connections) {
       const cAttrs: string[] = [`id="${c.id}"`];
+      if (c.uid !== undefined) cAttrs.push(`xr16:uid="${escapeXml(c.uid)}"`);
       if (c.sourceFile !== undefined) cAttrs.push(`sourceFile="${escapeXml(c.sourceFile)}"`);
       if (c.odcFile !== undefined) cAttrs.push(`odcFile="${escapeXml(c.odcFile)}"`);
       if (c.keepAlive) cAttrs.push('keepAlive="1"');
@@ -331,6 +367,28 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
         pmParts.push("</parameters>");
         inner.push(pmParts.join(""));
       }
+      if (c.extensions && c.extensions.length > 0) {
+        const extParts = c.extensions.map((extension) => {
+          if (!extension.modelConnection) {
+            throw new Error(`unsupported connection extension URI: ${extension.uri}`);
+          }
+          const model = extension.modelConnection;
+          const mAttrs = [`id="${escapeXml(model.id ?? "")}"`];
+          if (model.model !== undefined) mAttrs.push(`model="${model.model ? 1 : 0}"`);
+          if (model.excludeFromRefreshAll !== undefined)
+            mAttrs.push(`excludeFromRefreshAll="${model.excludeFromRefreshAll ? 1 : 0}"`);
+          if (model.autoDelete !== undefined)
+            mAttrs.push(`autoDelete="${model.autoDelete ? 1 : 0}"`);
+          if (model.usedByAddin !== undefined)
+            mAttrs.push(`usedByAddin="${model.usedByAddin ? 1 : 0}"`);
+          const range = model.rangeProperties;
+          const rangeXml = range
+            ? `<x15:rangePr sourceName="${escapeXml(range.sourceName)}"/>`
+            : "";
+          return `<ext uri="${escapeXml(extension.uri)}" xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"><x15:connection ${mAttrs.join(" ")}>${rangeXml}</x15:connection></ext>`;
+        });
+        inner.push(`<extLst>${extParts.join("")}</extLst>`);
+      }
 
       if (inner.length > 0)
         p.push(`<connection ${cAttrs.join(" ")}>${inner.join("")}</connection>`);
@@ -345,6 +403,7 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
     for (const cEl of el.elements ?? []) {
       if (cEl.name !== "connection") continue;
       const c: Partial<ConnectionOptions> = { id: attrNum(cEl, "id") ?? 0 };
+      if (attr(cEl, "xr16:uid") !== undefined) c.uid = attr(cEl, "xr16:uid");
       if (attr(cEl, "sourceFile") !== undefined) c.sourceFile = attr(cEl, "sourceFile");
       if (attr(cEl, "odcFile") !== undefined) c.odcFile = attr(cEl, "odcFile");
       if (parseOnOff(attr(cEl, "keepAlive"))) c.keepAlive = true;
@@ -476,6 +535,73 @@ export const connectionsDesc: CustomDescriptor<ConnectionsOptions> = {
           params.push(pm);
         }
         if (params.length > 0) c.parameters = params;
+      }
+      const extListEl = findChild(cEl, "extLst");
+      if (extListEl) {
+        const extensions: ConnectionExtensionOptions[] = [];
+        for (const extEl of extListEl.elements ?? []) {
+          if (extEl.name !== "ext") continue;
+          const uri = attr(extEl, "uri");
+          if (uri === undefined) {
+            throw new XlsxParseError(
+              "xl/connections.xml",
+              "/connection/extLst",
+              "ext",
+              "missing extension URI",
+            );
+          }
+          const modelEl = findChild(extEl, "x15:connection");
+          const rangeEl = findChild(extEl, "x15:rangePr");
+          if (
+            !modelEl ||
+            rangeEl ||
+            (extEl.elements ?? []).some(
+              (child) => child.name !== "x15:connection" && child.name !== "x15:rangePr",
+            )
+          ) {
+            throw new XlsxParseError(
+              "xl/connections.xml",
+              "/connection/extLst",
+              extEl.name ?? "ext",
+              "unsupported connection extension",
+            );
+          }
+          const modelConnection: ModelConnectionOptions = {
+            id: attr(modelEl, "id") ?? "",
+          };
+          const model = parseOnOff(attr(modelEl, "model"));
+          if (model !== undefined) modelConnection.model = model;
+          const excludeFromRefreshAll = parseOnOff(attr(modelEl, "excludeFromRefreshAll"));
+          if (excludeFromRefreshAll !== undefined)
+            modelConnection.excludeFromRefreshAll = excludeFromRefreshAll;
+          const autoDelete = parseOnOff(attr(modelEl, "autoDelete"));
+          if (autoDelete !== undefined) modelConnection.autoDelete = autoDelete;
+          const usedByAddin = parseOnOff(attr(modelEl, "usedByAddin"));
+          if (usedByAddin !== undefined) modelConnection.usedByAddin = usedByAddin;
+          const modelRangeEl = findChild(modelEl, "x15:rangePr");
+          if (modelRangeEl) {
+            const sourceName = attr(modelRangeEl, "sourceName");
+            if (sourceName === undefined) {
+              throw new XlsxParseError(
+                "xl/connections.xml",
+                "/connection/extLst/x15:connection/x15:rangePr",
+                "x15:rangePr",
+                "missing source name",
+              );
+            }
+            modelConnection.rangeProperties = { sourceName };
+          }
+          if ((modelEl.elements ?? []).some((child) => child.name !== "x15:rangePr")) {
+            throw new XlsxParseError(
+              "xl/connections.xml",
+              "/connection/extLst/x15:connection",
+              modelEl.name ?? "x15:connection",
+              "unsupported model connection child",
+            );
+          }
+          extensions.push({ uri, modelConnection });
+        }
+        if (extensions.length > 0) c.extensions = extensions;
       }
       connections.push(c as ConnectionOptions);
     }

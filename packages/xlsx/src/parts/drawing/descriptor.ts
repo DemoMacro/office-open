@@ -119,17 +119,6 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const connectors = opts.connectors ?? [];
     const groups = opts.groups ?? [];
     const contentParts = opts.contentParts ?? [];
-    const total =
-      images.length +
-      charts.length +
-      webExtensions.length +
-      smartArts.length +
-      shapes.length +
-      connectors.length +
-      groups.length +
-      contentParts.length;
-    if (total === 0) return undefined;
-
     // Anchors carry their document order from parse (the z-order when objects
     // overlap). Emit in that order; fresh options without one keep the
     // per-type bucket order (stable sort).

@@ -3,9 +3,13 @@ import { describe, expect, it } from "vite-plus/test";
 import { opaquePassthroughPolicy, PART_REGISTRIES } from "./part-registry";
 
 describe("opaque part policy", () => {
-  it("allows only registry-declared opaque binaries", () => {
+  it("allows only registry-declared opaque or standalone parts", () => {
     const docx = opaquePassthroughPolicy("docx");
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/vbaProject.bin"))).toBe(true);
+    expect(docx.opaquePatterns.some((pattern) => pattern.test("customXml/item1.xml"))).toBe(true);
+    expect(docx.opaquePatterns.some((pattern) => pattern.test("docProps/thumbnail.wmf"))).toBe(
+      true,
+    );
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/embeddings/ole.bin"))).toBe(
       true,
     );
@@ -22,6 +26,8 @@ describe("opaque part policy", () => {
 
   it("keeps policy prefixes in one registry per package", () => {
     expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("word/printerSettings/");
+    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("customXml/");
+    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/embeddings/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/media/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/printerSettings/");

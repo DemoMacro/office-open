@@ -148,6 +148,44 @@ describe("xlsx relationship topology", () => {
     expect(rels.match(/Target="..\/externalLinks\/source.xml"/g)).toHaveLength(2);
   });
 
+  it("preserves duplicate external hyperlink relationships", async () => {
+    const source = (await generateWorkbook({
+      worksheets: [{ name: "Data", rows: [{ cells: [{ value: "A" }] }] }],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    replaceText(
+      archive,
+      "xl/worksheets/sheet1.xml",
+      fileText(archive, "xl/worksheets/sheet1.xml").replace(
+        "</worksheet>",
+        '<hyperlinks><hyperlink ref="A1" r:id="rId1"/><hyperlink ref="B1" r:id="rId2"/></hyperlinks></worksheet>',
+      ),
+    );
+    const relationshipType =
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink";
+    replaceText(
+      archive,
+      "xl/worksheets/_rels/sheet1.xml.rels",
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${relationshipType}" Target="file:///Book2.xlsx" TargetMode="External"/><Relationship Id="rId2" Type="${relationshipType}" Target="file:///Book2.xlsx" TargetMode="External"/></Relationships>`,
+    );
+
+    const parsed = parseWorkbookSync(zipSync(archive));
+    expect(parsed.worksheets?.[0]?.hyperlinks).toEqual([
+      expect.objectContaining({ cell: "A1", relationshipId: "rId1" }),
+      expect.objectContaining({ cell: "B1", relationshipId: "rId2" }),
+    ]);
+    const output = unzipSync(
+      (await generateWorkbook(parseWorkbookSync(zipSync(archive)))) as Uint8Array,
+    );
+    const sheetXml = fileText(output, "xl/worksheets/sheet1.xml");
+    const rels = fileText(output, "xl/worksheets/_rels/sheet1.xml.rels");
+    expect(sheetXml).toContain('<hyperlink ref="A1" r:id="rId1"/>');
+    expect(sheetXml).toContain('<hyperlink ref="B1" r:id="rId2"/>');
+    expect(rels.match(/Id="rId1"/)).toHaveLength(1);
+    expect(rels.match(/Id="rId2"/)).toHaveLength(1);
+    expect(rels.match(/Target="file:\/\/\/Book2.xlsx"/g)).toHaveLength(2);
+  });
+
   it("preserves a repair-style dangling calc chain relationship", async () => {
     const source = (await generateWorkbook({
       worksheets: [{ name: "Data", rows: [{ cells: [{ value: "A" }] }] }],

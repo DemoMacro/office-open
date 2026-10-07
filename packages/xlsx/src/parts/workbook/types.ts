@@ -100,6 +100,8 @@ export interface WorkbookProtectionOptions {
   lockRevision?: boolean;
   /** Plain-text password — legacy Excel hash computed automatically */
   workbookPassword?: string;
+  /** Source legacy `@workbookPassword` hash; round-trip only — do not hand-author. */
+  workbookPasswordHashRaw?: string;
   /** Modern encryption: algorithm name (e.g. "SHA-512") */
   workbookAlgorithmName?: string;
   /** Modern encryption: base64-encoded hash value */
@@ -110,6 +112,8 @@ export interface WorkbookProtectionOptions {
   workbookSpinCount?: number;
   /** Revisions password (legacy) */
   revisionsPassword?: string;
+  /** Source legacy `@revisionsPassword` hash; round-trip only — do not hand-author. */
+  revisionsPasswordHashRaw?: string;
   /** Revisions modern encryption: algorithm name */
   revisionsAlgorithmName?: string;
   /** Revisions modern encryption: base64-encoded hash value */
@@ -192,6 +196,10 @@ export interface FileSharingOptions {
 export interface WorkbookPropertiesOptions {
   /** Use 1904 date system (default false); explicit defaults are round-trip significant. */
   date1904?: boolean;
+  /** Use the 1900 date system with 1904 compatibility flagging
+   * (CT_WorkbookPr `@dateCompatibility`, default true); explicit defaults are
+   * round-trip significant. */
+  dateCompatibility?: boolean;
   defaultThemeVersion?: number;
   /** Object display mode (CT_WorkbookPr `@showObjects`, ST_Objects) */
   showObjects?: "all" | "placeholders" | "none";

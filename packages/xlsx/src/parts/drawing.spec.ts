@@ -29,9 +29,11 @@ function roundTrip(opts: DrawingOptions) {
 }
 
 describe("drawingDesc round-trip", () => {
-  it("returns undefined for empty images and charts", () => {
+  it("emits an empty drawing part for empty images and charts", () => {
     const xml = drawingDesc.stringify({ images: [], charts: [] }, writeCtx);
-    expect(xml).toBeUndefined();
+    expect(xml).toBe(
+      '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"></xdr:wsDr>',
+    );
   });
 
   it("round-trips single image", () => {
@@ -654,6 +656,27 @@ describe("drawing picture cNvPr — compiler passthrough", () => {
     expect(drawingXml).toContain('descr="Company logo"');
     expect(drawingXml).toContain('title="Logo title"');
     expect(drawingXml).toContain('hidden="1"');
+  });
+
+  it("round-trips worksheet picture cNvPr extensions", async () => {
+    const ext =
+      '<a:ext uri="{EXAMPLE-URI}"><example:state xmlns:example="https://example.com"/></a:ext>';
+    const buffer = (await generateWorkbook(
+      {
+        worksheets: [
+          {
+            name: "Sheet1",
+            images: [{ type: "png", data: "AAAA", col: 1, row: 1, ext }],
+          },
+        ],
+      },
+      { type: "uint8array" },
+    )) as Uint8Array;
+
+    const parsed = await import("../parse").then(({ parseWorkbook }) =>
+      parseWorkbook(new Uint8Array(buffer)),
+    );
+    expect(parsed.worksheets?.[0]?.images?.[0]?.ext).toBe(ext);
   });
 });
 

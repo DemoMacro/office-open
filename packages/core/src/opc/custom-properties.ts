@@ -7,7 +7,7 @@
  * @module
  */
 
-import { attr, escapeXml } from "@office-open/xml";
+import { attr, escapeXml, textOf } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import {
@@ -35,6 +35,8 @@ export interface CustomPropertyOptions {
    * re-emit as vt:i4.
    */
   valueType?: string;
+  /** Source lexical text of the vt:* element; round-trip only. */
+  valueLexeme?: string;
 }
 
 /** Input shape for the custom-properties descriptor. */
@@ -54,7 +56,7 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
     for (const prop of opts.properties) {
       p.push(
         `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${pid}" name="${escapeXml(prop.name)}">` +
-          stringifyVariantValue(prop.value, prop.valueType) +
+          stringifyVariantValue(prop.value, prop.valueType, prop.valueLexeme) +
           `</property>`,
       );
       pid++;
@@ -78,6 +80,7 @@ export const customPropertiesDesc: CustomDescriptor<CustomPropertiesInput> = {
           const prop: CustomPropertyOptions = { name, value };
           if (valueEl.name && valueEl.name !== defaultVariantTag(value))
             prop.valueType = valueEl.name;
+          prop.valueLexeme = textOf(valueEl);
           properties.push(prop);
         }
       }

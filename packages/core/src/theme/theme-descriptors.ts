@@ -50,6 +50,7 @@ export const themeDesc: CustomDescriptor<ThemeOptions, WriteContext, ThemeOption
 
     const objectDefaults = parseObjectDefaults(findChild(el, "a:objectDefaults"), ctx);
     if (objectDefaults) result.objectDefaults = objectDefaults;
+    result.objectDefaultsPresent = findChild(el, "a:objectDefaults") !== undefined;
 
     const extraColorSchemeList = findChild(el, "a:extraClrSchemeLst");
     const extraColorSchemes = parseExtraColorSchemes(extraColorSchemeList, ctx);

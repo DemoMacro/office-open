@@ -56,7 +56,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
     // string fields (category/contentStatus/identifier/language/version).
     // defaultNamespace/legacyMicrosoft are round-trip form flags (prefix vs
     // default-ns binding and the legacy Microsoft spelling), not content.
-    excludeFields: ["defaultNamespace", "legacyMicrosoft"],
+    excludeFields: ["childOrder", "defaultNamespace", "legacyMicrosoft"],
     interfaceFields: [
       "title",
       "subject",
@@ -115,7 +115,6 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
     ],
     sampleOptions: {
       title: "T",
-      contentType: "Document",
       subject: "S",
       creator: "C",
       keywords: "k1,k2",
@@ -127,6 +126,7 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
       modified: "2026-04-10T02:02:36Z",
       category: "cat",
       contentStatus: "draft",
+      contentType: "Document",
       identifier: "id-1",
       language: "en-US",
       version: "1.2",

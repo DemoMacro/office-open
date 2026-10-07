@@ -52,6 +52,8 @@ export function parseCfvo(el: XmlElement): CfvoOptions {
   const result: CfvoOptions = { type: (attr(el, "type") ?? "num") as CfvoType };
   const val = attr(el, "val");
   if (val !== undefined) result.val = isNaN(Number(val)) ? val : Number(val);
+  const gte = attr(el, "gte");
+  if (gte !== undefined) result.gteRaw = gte;
   if (String(attr(el, "gte")) === "0") result.gte = false;
   return result;
 }

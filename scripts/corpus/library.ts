@@ -17,6 +17,8 @@ import {
 export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
   docx: [
     /^word\/vbaProject\.bin$/i,
+    /^customXml\//i,
+    /^docProps\/thumbnail\./i,
     /^word\/media\//i,
     /^word\/embeddings\//i,
     /^word\/printerSettings\//i,

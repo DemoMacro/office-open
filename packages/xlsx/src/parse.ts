@@ -87,19 +87,27 @@ export interface XlsxPartRefs {
 
 export interface XlsxDocument {
   doc: ParsedArchive;
-  /** xl/workbook.xml root element */
+  /** Resolved primary workbook part path (xl/workbook.xml by default) */
+  workbookPath: string;
+  /** Primary workbook root element */
   workbook?: Element;
   /** Worksheet paths (xl/worksheets/sheet{n}.xml) */
   worksheets: string[];
   /** xl/styles.xml root element */
   styles?: Element;
+  /** Resolved styles part path (xl/styles.xml by default) */
+  stylesPath: string;
   /** xl/sharedStrings.xml root element */
   sharedStrings?: Element;
+  /** Resolved sharedStrings part path (xl/sharedStrings.xml by default) */
+  sharedStringsPath: string;
   /** xl/theme/theme{n}.xml path (resolved from workbook rels) */
   theme?: string;
   partRefs: XlsxPartRefs;
   /** docProps/core.xml path */
   coreProps?: string;
+  /** Root-rels core-properties relationship type (source lexical form). */
+  corePropertiesType?: string;
   /** docProps/app.xml path */
   appProps?: string;
   /** docProps/custom.xml path */
@@ -234,11 +242,41 @@ export function parseXlsx(data: DataType): XlsxDocument {
   return parseXlsxArchive(parseArchive(toUint8Array(data)));
 }
 
+/**
+ * Resolve the primary workbook part from `_rels/.rels` (OPC officeDocument
+ * relationship). Minimal hand-built packages may keep every part at the root.
+ */
+function resolveWorkbookPath(doc: ParsedArchive): string {
+  const rootRels = doc.get("_rels/.rels");
+  for (const child of rootRels?.elements ?? []) {
+    if (child.name !== "Relationship") continue;
+    if (!(attr(child, "Type") ?? "").endsWith("/officeDocument")) continue;
+    if (attr(child, "TargetMode") === "External") continue;
+    const target = attr(child, "Target") ?? "";
+    if (!target) continue;
+    const resolved = target.startsWith("/") ? target.slice(1) : target.replaceAll("\\", "/");
+    if (doc.get(resolved)) return resolved;
+  }
+  return "xl/workbook.xml";
+}
+
+/** Directory prefix of a part path ("" for root-level parts). */
+function dirOf(partPath: string): string {
+  const slash = partPath.lastIndexOf("/");
+  return slash === -1 ? "" : partPath.slice(0, slash);
+}
+
+/** Resolve a rel target relative to the workbook's directory. */
+function resolveWorkbookTarget(target: string, dir: string): string {
+  if (target.startsWith("/")) return target.slice(1);
+  return dir ? `${dir}/${target}` : target;
+}
+
 /** Archive-backed core of {@link parseXlsx} — shared with the Blob open path. */
 function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
-  const workbook = doc.get("xl/workbook.xml");
-  const styles = doc.get("xl/styles.xml");
-  const sharedStrings = doc.get("xl/sharedStrings.xml");
+  const workbookPath = resolveWorkbookPath(doc);
+  const wbDir = dirOf(workbookPath);
+  const workbook = doc.get(workbookPath);
 
   // Resolve worksheet paths from workbook rels
   let worksheets: string[] = [];
@@ -247,7 +285,9 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   const media: string[] = [];
   let theme: string | undefined;
 
-  const wbRels = doc.get("xl/_rels/workbook.xml.rels");
+  const wbRels = doc.get(partPathToRelsPath(workbookPath));
+  let stylesPath = "xl/styles.xml";
+  let sharedStringsPath = "xl/sharedStrings.xml";
   if (wbRels) {
     for (const child of wbRels.elements ?? []) {
       if (child.name !== "Relationship") continue;
@@ -256,12 +296,18 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       if (!target) continue;
 
       if (type.includes("/worksheet")) {
-        worksheets.push(target.startsWith("/") ? target.slice(1) : `xl/${target}`);
+        worksheets.push(resolveWorkbookTarget(target, wbDir));
       } else if (type.includes("/theme")) {
-        theme = target.startsWith("/") ? target.slice(1) : `xl/${target}`;
+        theme = resolveWorkbookTarget(target, wbDir);
+      } else if (type.endsWith("/styles")) {
+        stylesPath = resolveWorkbookTarget(target, wbDir);
+      } else if (type.endsWith("/sharedStrings")) {
+        sharedStringsPath = resolveWorkbookTarget(target, wbDir);
       }
     }
   }
+  const styles = doc.get(stylesPath);
+  const sharedStrings = doc.get(sharedStringsPath);
   worksheets = sortByNumber(worksheets);
 
   // Scan for drawings, charts, media
@@ -288,10 +334,11 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
 
   // Root rels → core/app props
   let coreProps: string | undefined;
+  let corePropertiesType: string | undefined;
   let appProps: string | undefined;
   let customProps: string | undefined;
   const rootRels = doc.get("_rels/.rels");
-  const workbookRels = doc.get("xl/_rels/workbook.xml.rels");
+  const workbookRels = doc.get(partPathToRelsPath(workbookPath));
   const isLegacyRelationshipNamespace =
     attr(rootRels, "xmlns") === "http://schemas.microsoft.com/package/2005/06/relationships" ||
     attr(workbookRels, "xmlns") === "http://schemas.microsoft.com/package/2005/06/relationships";
@@ -306,6 +353,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       // (…/extendedProperties); normalize case and hyphens so both resolve.
       const relType = type.toLowerCase().replaceAll("-", "");
       if (relType.includes("/coreproperties")) coreProps = path;
+      if (relType.includes("/coreproperties")) corePropertiesType = type;
       else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp"))
         appProps = path;
       else if (relType.includes("/customproperties")) customProps = path;
@@ -314,13 +362,17 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
 
   return {
     doc,
+    workbookPath,
     workbook,
     worksheets,
     styles,
+    stylesPath,
     sharedStrings,
+    sharedStringsPath,
     theme,
     partRefs: { worksheets, charts, media, drawings },
     coreProps,
+    corePropertiesType,
     appProps,
     customProps,
     ...(isLegacyRelationshipNamespace
@@ -415,9 +467,23 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     sharedStringsUniqueCount = attrNum(xlsx.sharedStrings, "uniqueCount");
   }
   if (sstEntries.length > 0) opts.sharedStrings = sstEntries;
+  if (xlsx.sharedStrings) opts.sharedStringsDeclared = true;
   if (sharedStringsCount !== undefined) opts.sharedStringsCount = sharedStringsCount;
   if (sharedStringsUniqueCount !== undefined)
     opts.sharedStringsUniqueCount = sharedStringsUniqueCount;
+  if (xlsx.coreProps) opts.corePropertiesPath = xlsx.coreProps;
+  if (
+    xlsx.corePropertiesType !== undefined &&
+    xlsx.corePropertiesType !==
+      "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"
+  ) {
+    opts.corePropertiesRelationshipType = xlsx.corePropertiesType;
+  }
+  if (xlsx.appProps) opts.appPropertiesPath = xlsx.appProps;
+  if (xlsx.customProps) {
+    opts.customPropertiesPath = xlsx.customProps;
+    opts.customPropertiesDeclared = true;
+  }
 
   // Create read context for descriptor pipeline
   const readContext = new XlsxReadContext(xlsx, sstEntries);
@@ -437,7 +503,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       ([name]) => name.replace(/^.*:/, "") === "id" && name.includes(":"),
     )?.[1];
     if (cacheId === undefined || rId === undefined) continue;
-    const target = readContext.resolveWorksheetRel("xl/workbook.xml", String(rId));
+    const target = readContext.resolveWorksheetRel(xlsx.workbookPath, String(rId));
     if (target) pivotCacheIdByPath.set(target, Number(cacheId));
   }
   for (const definitionPath of xlsx.doc.keys()) {
@@ -502,7 +568,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       ([name]) => name.replace(/^.*:/, "") === "id" && name.includes(":"),
     )?.[1];
     if (cacheId === undefined || rId === undefined) continue;
-    const definitionPath = readContext.resolveWorksheetRel("xl/workbook.xml", String(rId));
+    const definitionPath = readContext.resolveWorksheetRel(xlsx.workbookPath, String(rId));
     const cache = definitionPath ? definitionCachesByPath.get(definitionPath) : undefined;
     if (!cache || sourceOrderedCachePaths.has(definitionPath!)) continue;
     pivotCaches.push(cache);
@@ -569,7 +635,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     const wbData = workbookDesc.parse(xlsx.workbook, readContext);
     if (wbData.sheets) {
       for (const sheet of wbData.sheets) {
-        const target = readContext.resolveWorksheetRel("xl/workbook.xml", sheet.rId);
+        const target = readContext.resolveWorksheetRel(xlsx.workbookPath, sheet.rId);
         if (target) sheetInfoByPath.set(target, sheet);
       }
       opts.sheetDefinitions = wbData.sheets;
@@ -587,6 +653,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     if (wbData.webPublishing) opts.webPublishing = wbData.webPublishing;
     if (wbData.fileSharing) opts.fileSharing = wbData.fileSharing;
     if (wbData.properties) opts.properties = wbData.properties;
+    if (wbData.conformance) opts.conformance = wbData.conformance;
     if (wbData.webPublishObjects) opts.webPublishObjects = wbData.webPublishObjects;
     if (wbData.definedNames) opts.definedNames = wbData.definedNames;
     if (wbData.absPath !== undefined) opts.absPath = wbData.absPath;
@@ -601,11 +668,18 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // per-cell Element tree (the dominant allocation cost on large sheets).
   const worksheets: WorksheetOptions[] = [];
   const chartExternalLinkPaths = new Set<string>();
+  // Drawing/chart parts the canonical model actually absorbed — anything the
+  // model never reached (broken worksheet rels, missing anchors) stays a
+  // passthrough part instead of being dropped as a "rebuilt" path.
+  const absorbedDrawingParts = new Set<string>();
+  const absorbedChartParts = new Set<string>();
+  const absorbedCommentsParts = new Set<string>();
   for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
     if (!wsEl) continue;
 
     const wsOpts = readContext.withPart(wsPath, () => worksheetDesc.parse(wsEl, readContext));
+    wsOpts.sourcePath = wsPath;
     const sheetInfo = sheetInfoByPath.get(wsPath);
     if (sheetInfo) {
       wsOpts.name = sheetInfo.name;
@@ -623,6 +697,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       const commentData = commentsDesc.parse(commentEl, readContext);
       if (commentData.comments) {
         wsOpts.comments = commentData.comments;
+        absorbedCommentsParts.add(cr.target);
         break; // one comments file per worksheet
       }
     }
@@ -638,7 +713,11 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       if (vml.layout) wsOpts.commentsVmlLayout = vml.layout;
       if (vml.shapeType) wsOpts.commentsVmlShapeType = vml.shapeType;
       const source = xlsx.doc.getRaw(vr.target);
-      if (source) wsOpts.commentsVmlSource = new TextDecoder().decode(source);
+      if (source) {
+        wsOpts.commentsVmlBom =
+          source.length >= 3 && source[0] === 0xef && source[1] === 0xbb && source[2] === 0xbf;
+        wsOpts.commentsVmlSource = new TextDecoder().decode(source);
+      }
       break; // one vmlDrawing per worksheet
     }
 
@@ -647,6 +726,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     for (const dr of drawingRels) {
       const drawingEl = xlsx.doc.get(dr.target);
       if (!drawingEl) continue;
+      wsOpts.drawingPresent = true;
       // cNvPr hyperlinks (a:hlinkClick) resolve through the drawing part's own
       // rels: internal targets resolve against the part path, External ones
       // (absolute URLs) stay verbatim. Fall back to the workbook context.
@@ -684,6 +764,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         getRaw: (path) => readContext.getRaw(path),
       };
       const drawingData = drawingDesc.parse(drawingEl, drawingCtx);
+      absorbedDrawingParts.add(dr.target);
       // drawingDesc.parse yields CT-layer anchors (rId-anchored DrawingImage/
       // DrawingChart); bridge them to the user-layer shapes the compiler
       // consumes: image bytes are read back through the drawing's image
@@ -723,6 +804,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
                 description: image.description,
                 title: image.title,
                 hidden: image.hidden,
+                ...(image.creationId !== undefined ? { creationId: image.creationId } : {}),
+                ...(image.ext !== undefined ? { ext: image.ext } : {}),
                 ...(image.properties ? { properties: image.properties } : {}),
                 ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
                 ...(image.compression !== undefined ? { compression: image.compression } : {}),
@@ -755,6 +838,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             description: image.description,
             title: image.title,
             hidden: image.hidden,
+            ...(image.creationId !== undefined ? { creationId: image.creationId } : {}),
+            ...(image.ext !== undefined ? { ext: image.ext } : {}),
             ...(image.properties ? { properties: image.properties } : {}),
             ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
             ...(image.compression !== undefined ? { compression: image.compression } : {}),
@@ -783,6 +868,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           const chartSpace = readContext.withPart(chartPath, () =>
             chartSpaceDesc.parse(chartEl, readContext),
           );
+          absorbedChartParts.add(chartPath);
           readChartUserShapes(chartPath, chartSpace, readContext, xlsx.doc);
           const chartExternalLink = readChartExternalLink(
             chartPath,
@@ -1011,6 +1097,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         csData.sourceDrawingPath = drawingPath;
         csData.sourceDrawingRelationshipId = dr.rId;
         const drawingData = drawingDesc.parse(drawingEl, readContext);
+        absorbedDrawingParts.add(drawingPath);
         for (const anchor of drawingData.charts ?? []) {
           const chartPath = readContext.resolveWorksheetRel(drawingPath, anchor.rId);
           const chartEl = chartPath ? xlsx.doc.get(chartPath) : undefined;
@@ -1020,6 +1107,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           // axis/plot formatting, …) on round-trip.
           csData.chart = chartSpaceDesc.parse(chartEl, readContext);
           csData.sourceChartPath = chartPath;
+          absorbedChartParts.add(chartPath);
           readChartUserShapes(chartPath, csData.chart, readContext, xlsx.doc);
           Object.assign(
             csData,
@@ -1125,6 +1213,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       const elEl = xlsx.doc.get(elPath);
       if (!elEl) continue;
       const elData = externalLinkDesc.parse(elEl, readContext);
+      elData.sourcePath = elPath;
 
       // Resolve the external book target from the sibling rels file
       // (xl/externalLinks/_rels/externalLinkN.xml.rels), which compiler.ts writes.
@@ -1135,10 +1224,11 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           for (const child of relsEl.elements ?? []) {
             if (child.name !== "Relationship") continue;
             const type = attr(child, "Type") ?? "";
-            if (!type.includes("/externalLinkPath")) continue;
+            if (!type.toLowerCase().includes("externallinkpath")) continue;
             const target = attr(child, "Target");
             if (target) {
               elData.externalBook.target = target;
+              elData.externalBook.targetTypeRaw = type;
               break;
             }
           }
@@ -1152,7 +1242,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
 
   // Shared-workbook revisions: workbook.xml.rels → revisionHeaders/users;
   // revisionHeaders.xml.rels → per-header revision logs.
-  const wbRelsEl2 = xlsx.doc.get("xl/_rels/workbook.xml.rels");
+  const wbRelsEl2 = xlsx.doc.get(partPathToRelsPath(xlsx.workbookPath));
   let revHeadersTarget: string | undefined;
   let usersTarget: string | undefined;
   if (wbRelsEl2) {
@@ -1165,11 +1255,11 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     }
   }
   if (revHeadersTarget) {
-    const workbookPath = (target: string): string => {
-      const resolved = resolveRelationshipTarget("xl/workbook.xml", target);
+    const revisionHeadersPath = (target: string): string => {
+      const resolved = resolveRelationshipTarget(xlsx.workbookPath, target);
       return resolved.startsWith("xl/") ? resolved.slice(3) : resolved;
     };
-    const headersRelativePath = workbookPath(revHeadersTarget);
+    const headersRelativePath = revisionHeadersPath(revHeadersTarget);
     const headersPath = `xl/${headersRelativePath}`;
     const headersEl = xlsx.doc.get(headersPath);
     if (headersEl) {
@@ -1200,7 +1290,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
         headers,
         logs,
         headersPath: headersRelativePath,
-        ...(usersTarget ? { usersPath: workbookPath(usersTarget) } : {}),
+        ...(usersTarget ? { usersPath: revisionHeadersPath(usersTarget) } : {}),
       };
       if (usersTarget) {
         const usersEl = xlsx.doc.get(`xl/${revisionLog.usersPath}`);
@@ -1219,8 +1309,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   // sharedStrings, drawings, VML, external links) pass through and yield to
   // the compiler's own output at the same path by assembly order.
   const rebuilt: string[] = [
-    "xl/workbook.xml",
-    "xl/_rels/workbook.xml.rels",
+    xlsx.workbookPath,
+    partPathToRelsPath(xlsx.workbookPath),
     ...(xlsx.coreProps ? [xlsx.coreProps] : []),
     ...(xlsx.appProps ? [xlsx.appProps] : []),
     ...(xlsx.customProps ? [xlsx.customProps] : []),
@@ -1228,17 +1318,21 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.worksheets.map((path) => partPathToRelsPath(path)),
     ...chartsheetPaths,
     ...dialogsheetPaths,
-    ...(xlsx.styles ? ["xl/styles.xml", "xl/_rels/styles.xml.rels"] : []),
+    ...(xlsx.styles ? [xlsx.stylesPath, partPathToRelsPath(xlsx.stylesPath)] : []),
     ...(xlsx.theme ? [xlsx.theme, partPathToRelsPath(xlsx.theme)] : []),
-    ...(sstEntries.length > 0 ? ["xl/sharedStrings.xml"] : []),
+    ...(xlsx.sharedStrings ? [xlsx.sharedStringsPath] : []),
     ...(calcChainEl ? ["xl/calcChain.xml"] : []),
     ...(connectionsEl ? ["xl/connections.xml"] : []),
     ...(volTypesPath === "volatileDependencies.xml" ? ["xl/volatileDependencies.xml"] : []),
-    ...xlsx.partRefs.charts,
-    ...xlsx.partRefs.charts.map((path) => partPathToRelsPath(path)),
+    ...xlsx.partRefs.charts.filter((path) => absorbedChartParts.has(path)),
+    ...xlsx.partRefs.charts
+      .filter((path) => absorbedChartParts.has(path))
+      .map((path) => partPathToRelsPath(path)),
     ...[...chartExternalLinkPaths].flatMap((path) => [path, partPathToRelsPath(path)]),
     ...sortByNumber(
-      xlsx.doc.keys("xl/comments").filter((path) => /^xl\/comments\d+\.xml$/i.test(path)),
+      xlsx.doc
+        .keys("xl/comments")
+        .filter((path) => /^xl\/comments\d+\.xml$/i.test(path) && absorbedCommentsParts.has(path)),
     ).flatMap((path) => [path, partPathToRelsPath(path)]),
     ...xlsx.worksheets.flatMap((worksheetPath) => {
       if (readContext.getWorksheetRelsByType(worksheetPath, "/comments").length === 0) return [];
@@ -1251,7 +1345,9 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.doc
       .keys("xl/tables/")
       .filter((path) => path.endsWith(".xml") && xlsx.doc.get(path)?.name === "table"),
-    ...xlsx.partRefs.drawings.flatMap((path) => [path, partPathToRelsPath(path)]),
+    ...xlsx.partRefs.drawings
+      .filter((path) => absorbedDrawingParts.has(path))
+      .flatMap((path) => [path, partPathToRelsPath(path)]),
     ...pivotCaches.flatMap((cache) => [
       cache.definitionPath,
       ...(cache.recordsPath ? [cache.recordsPath] : []),
@@ -1285,6 +1381,11 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
   if (xlsx.packageRelationshipNamespace)
     opts.relationshipNamespace = xlsx.packageRelationshipNamespace;
+  if (xlsx.workbookPath !== "xl/workbook.xml") opts.workbookPath = xlsx.workbookPath;
+  if (xlsx.stylesPath !== "xl/styles.xml") opts.stylesPath = xlsx.stylesPath;
+  if (xlsx.sharedStringsPath !== "xl/sharedStrings.xml")
+    opts.sharedStringsPath = xlsx.sharedStringsPath;
+  if (xlsx.theme && xlsx.theme !== "xl/theme/theme1.xml") opts.themePath = xlsx.theme;
 
   // Source content-type declarations — the compiler keeps them as the base
   // table so round-trip preserves the Default/Override split as written.
