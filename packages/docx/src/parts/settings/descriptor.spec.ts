@@ -29,6 +29,20 @@ function roundTripXml(opts: SettingsOptions): string {
 }
 
 describe("settingsDesc round-trip", () => {
+  it("round-trips document identifier inline extension text", () => {
+    const result = roundTrip({
+      w14DocId: "646534E6",
+      w14DocIdText: "Hello World!",
+      w15DocId: "{37FF56B8-11AD-4A0A-8C3F-F4BD7E1B24BE}",
+      w15DocIdText: "metadata",
+    });
+    expect(result.w14DocIdText).toBe("Hello World!");
+    expect(result.w15DocIdText).toBe("metadata");
+    expect(roundTripXml({ w14DocId: "A", w14DocIdText: "Hello World!" })).toContain(
+      '<w14:docId w14:val="A">Hello World!</w14:docId>',
+    );
+  });
+
   it("round-trips w14:conflictMode", () => {
     const result = roundTrip({ w14ConflictMode: true });
     expect(result.w14ConflictMode).toBe(true);

@@ -40,6 +40,19 @@ describe("viewPropsDesc round-trip", () => {
     });
   });
 
+  it("round-trips notes view toggles", () => {
+    const result = roundTrip({
+      notesView: {
+        snapToGrid: true,
+        snapToObjects: false,
+      },
+    });
+    expect(result.notesView).toMatchObject({
+      snapToGrid: true,
+      snapToObjects: false,
+    });
+  });
+
   it("round-trips lastView", () => {
     const opts: ViewPropertiesOptions = {
       lastView: "slideView",
@@ -71,6 +84,11 @@ describe("viewPropsDesc round-trip", () => {
     };
     const result = roundTrip(opts);
     expect(result.lastView).toBe("slideMasterView");
+  });
+
+  it("round-trips lastView notesMasterView", () => {
+    const result = roundTrip({ lastView: "notesMasterView" });
+    expect(result.lastView).toBe("notesMasterView");
   });
 
   it("round-trips lastView notesView", () => {

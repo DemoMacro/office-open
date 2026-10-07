@@ -6,8 +6,11 @@ import type {
   EffectListOptions,
   FillOptions,
   OutlineOptions,
+  CustomGeometryOptions,
+  PresetGeometryOptions,
   Scene3DOptions,
   Shape3DOptions,
+  ShapeType,
   SourceRectangleOptions,
   TileOptions,
 } from "@office-open/core/drawing";
@@ -39,6 +42,10 @@ interface CorePictureOptions {
   outline?: OutlineOptions;
   fill?: FillOptions;
   effects?: EffectListOptions;
+  /** Preset picture geometry (pic:spPr/a:prstGeom); rect is the authoring default. */
+  geometry?: ShapeType | PresetGeometryOptions;
+  /** Custom picture geometry (pic:spPr/a:custGeom); wins over geometry. */
+  customGeometry?: CustomGeometryOptions;
   /** 3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture. */
   scene3d?: Scene3DOptions;
   /** 3D shape properties (pic:spPr/a:sp3d). */
@@ -62,6 +69,8 @@ interface CorePictureOptions {
   extensionIds?: DrawingExtensionIds;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
   useLocalDpi?: boolean;
+  /** Exact source extension URI for `useLocalDpi`; producers vary GUID spelling (round-trip). */
+  useLocalDpiUri?: string;
   /**
    * External image source URL (a:blip @r:link) — BasePictureOptions.sourceUrl
    * spelled on the docx union (which does not extend the base). Paired with
@@ -87,6 +96,8 @@ interface RegularPictureOptions {
    * source [Content_Types] Default extension. Omit for fresh authoring.
    */
   fileName?: string;
+  /** Physical source part path for non-conventional OPC locations (round-trip). */
+  partPath?: string;
 }
 
 interface SvgMediaOptions {
@@ -100,6 +111,8 @@ interface SvgMediaOptions {
   fallback: RegularPictureOptions & { data: DataType };
   /** Source vector file basename (round-trip). See RegularPictureOptions. */
   fileName?: string;
+  /** Physical source part path for non-conventional OPC locations (round-trip). */
+  partPath?: string;
 }
 
 /**

@@ -6172,7 +6172,8 @@
               "type": "string"
             }
           },
-          "required": ["type", "pattern"],
+          "required": ["type"],
+          "title": "type",
           "type": "object"
         },
         {
@@ -8607,9 +8608,18 @@
           },
           "type": "array"
         },
+        "showGuides": {
+          "type": "boolean"
+        },
+        "snapToGrid": {
+          "type": "boolean"
+        },
+        "snapToObjects": {
+          "type": "boolean"
+        },
         "view": {
           "$ref": "#/definitions/CommonViewPropertiesOptions",
-          "description": "Zoom/origin of the notes view (`p:cViewPr`)."
+          "description": "Zoom/origin of the slide view (`p:cViewPr`)."
         }
       },
       "type": "object"
@@ -9267,10 +9277,9 @@
         },
         "pattern": {
           "$ref": "#/definitions/PresetPattern",
-          "description": "Preset pattern type"
+          "description": "Preset pattern type; omitted when the source `a:pattFill` has no `@prst`."
         }
       },
-      "required": ["pattern"],
       "type": "object"
     },
     "PenAlignment": {
@@ -12439,6 +12448,10 @@
         "master": {
           "type": "string"
         },
+        "name": {
+          "description": "`p:cSld/`@name``.",
+          "type": "string"
+        },
         "notes": {
           "anyOf": [
             {
@@ -15424,6 +15437,7 @@
           "enum": [
             "slideView",
             "slideMasterView",
+            "notesMasterView",
             "notesView",
             "handoutView",
             "outlineView",

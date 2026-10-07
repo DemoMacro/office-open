@@ -48,6 +48,7 @@ export interface SlideViewOptions {
 const LAST_VIEW_XSD: Record<string, string> = {
   slideView: "sldView",
   slideMasterView: "sldMasterView",
+  notesMasterView: "notesMasterView",
   notesView: "notesView",
   handoutView: "handoutView",
   outlineView: "outlineView",
@@ -61,6 +62,7 @@ export interface ViewPropertiesOptions {
   lastView?:
     | "slideView"
     | "slideMasterView"
+    | "notesMasterView"
     | "notesView"
     | "handoutView"
     | "outlineView"
@@ -97,9 +99,7 @@ export interface ViewPropertiesOptions {
 }
 
 /** The `p:notesViewPr` payload — a CT_CommonSlideViewProperties (view + guides). */
-export interface NotesViewOptions {
-  /** Zoom/origin of the notes view (`p:cViewPr`). */
-  view?: CommonViewPropertiesOptions;
+export interface NotesViewOptions extends SlideViewOptions {
   /** Notes-view guides (`p:guideLst`); each guide is a vertical or horizontal line at `pos` (EMU). */
   guides?: {
     orient?: "vertical" | "horizontal";
@@ -236,10 +236,7 @@ export function buildViewPropsXml(opts?: ViewPropertiesOptions): string {
     parts.push(
       typeof opts.notesView === "boolean"
         ? buildCSldViewPrXml()
-        : buildCSldViewPrXml(
-            opts.notesView.view ? { view: opts.notesView.view } : undefined,
-            opts.notesView.guides,
-          ),
+        : buildCSldViewPrXml(opts.notesView, opts.notesView.guides),
     );
     parts.push("</p:notesViewPr>");
   }

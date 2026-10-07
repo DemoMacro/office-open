@@ -72,7 +72,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
     `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
   );
 
-  parts.push("<p:cSld>");
+  parts.push(`<p:cSld${slideOpts.name !== undefined ? ` name="${slideOpts.name}"` : ""}>`);
 
   if (slideOpts.background) {
     parts.push(backgroundDesc.stringify(slideOpts.background, ctx) ?? "");

@@ -29,6 +29,12 @@ export interface BaseMediaEntry {
   fileName: string;
   data: Uint8Array;
   type: string;
+  /**
+   * Physical package path from the source (round-trip only). Most media lives
+   * under the package's word/ppt/xl directory; OPC also permits package-root
+   * targets such as /media/image.png, which must not be silently relocated.
+   */
+  partPath?: string;
 }
 
 /**

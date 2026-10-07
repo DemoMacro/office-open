@@ -92,7 +92,11 @@ export function stringifyTableOfContents(
       // injecting another end run here would emit the field end twice.
       options.endInBody
       ? injectFieldHead(entriesXml, headRuns)
-      : injectFieldEnd(injectFieldHead(entriesXml, headRuns), endRun)
+      : injectFieldEnd(
+          injectFieldHead(entriesXml, headRuns),
+          endRun,
+          options.fieldEndBeforeChildren === true,
+        )
     : `<w:p>${headRuns}</w:p>` + endParagraph;
 
   // A TOC parsed from a bare field (no w:sdt wrapper) re-emits without the
@@ -145,13 +149,29 @@ function injectFieldHead(entriesXml: string, headRuns: string): string {
 }
 
 /**
- * Inject the field-end run into the last `<w:p>` of `entriesXml` (before its
- * closing `</w:p>`) so the end shares the last entry's paragraph instead of
- * occupying a standalone control-only paragraph that renders as a blank line.
+ * Inject the field-end run into the last `<w:p>` of `entriesXml` so the end
+ * shares the last entry's paragraph instead of occupying a standalone
+ * control-only paragraph that renders as a blank line. `beforeChildren`
+ * preserves the source order when bookmark markers followed the consumed run.
  * Returns `entriesXml` unchanged when no `</w:p>` is found.
  */
-function injectFieldEnd(entriesXml: string, endRun: string): string {
-  const lastClose = entriesXml.lastIndexOf("</w:p>");
-  if (lastClose < 0) return entriesXml;
-  return entriesXml.slice(0, lastClose) + endRun + entriesXml.slice(lastClose);
+function injectFieldEnd(entriesXml: string, endRun: string, beforeChildren: boolean): string {
+  const lastOpen = entriesXml.lastIndexOf("<w:p ");
+  const lastOpenBare = entriesXml.lastIndexOf("<w:p>");
+  const pTagStart = Math.max(lastOpen, lastOpenBare);
+  if (pTagStart < 0) return entriesXml;
+  const pTagEnd = entriesXml.indexOf(">", pTagStart) + 1;
+  if (entriesXml[pTagEnd - 2] === "/") {
+    return entriesXml.slice(0, pTagEnd - 2) + ">" + endRun + "</w:p>" + entriesXml.slice(pTagEnd);
+  }
+  let injectAt = entriesXml.lastIndexOf("</w:p>");
+  if (beforeChildren && injectAt >= pTagEnd) {
+    injectAt = pTagEnd;
+    if (entriesXml.slice(pTagEnd, pTagEnd + 7) === "<w:pPr>") {
+      const pPrEnd = entriesXml.indexOf("</w:pPr>", pTagEnd);
+      if (pPrEnd >= 0) injectAt = pPrEnd + "</w:pPr>".length;
+    }
+  }
+  if (injectAt < 0) return entriesXml;
+  return entriesXml.slice(0, injectAt) + endRun + entriesXml.slice(injectAt);
 }

@@ -26,8 +26,11 @@ import type {
   EffectListOptions,
   FillOptions,
   OutlineOptions,
+  CustomGeometryOptions,
+  PresetGeometryOptions,
   Scene3DOptions,
   Shape3DOptions,
+  ShapeType,
   SourceRectangleOptions,
   TileOptions,
 } from "@office-open/core/drawing";
@@ -141,6 +144,10 @@ export interface DrawingDescriptorOptions {
   fill?: FillOptions;
   /** Shape effects (shadow, glow, etc.) */
   effects?: EffectListOptions;
+  /** Preset picture geometry (pic:spPr/a:prstGeom); rect is the authoring default. */
+  geometry?: ShapeType | PresetGeometryOptions;
+  /** Custom picture geometry (pic:spPr/a:custGeom); wins over geometry. */
+  customGeometry?: CustomGeometryOptions;
   /** 3D scene (pic:spPr/a:scene3d) — camera and lighting. */
   scene3d?: Scene3DOptions;
   /** 3D shape properties (pic:spPr/a:sp3d). */
@@ -207,9 +214,9 @@ function relationshipNs(dialect: DocumentNamespaceDialect | undefined): string {
  * absent (undefined) — Word's default. val="0" (useLocalDpi=false) is the
  * common Word emission; val="1" only when explicitly set.
  */
-function buildUseLocalDpiExt(useLocalDpi?: boolean): string {
+function buildUseLocalDpiExt(useLocalDpi?: boolean, uri?: string): string {
   if (useLocalDpi === undefined) return "";
-  return `<a:ext uri="${USE_LOCAL_DPI_EXT_URI}"><a14:useLocalDpi xmlns:a14="${A14_NS}" val="${
+  return `<a:ext uri="${escapeXml(uri ?? USE_LOCAL_DPI_EXT_URI)}"><a14:useLocalDpi xmlns:a14="${A14_NS}" val="${
     useLocalDpi ? "1" : "0"
   }"/></a:ext>`;
 }
@@ -364,7 +371,7 @@ function stringifyBlipFill(
   // Both live in a single shared a:extLst; emitted only when at least one ext
   // is present so blips without extensions stay self-closing.
   const extParts: string[] = [];
-  const useLocalDpiExt = buildUseLocalDpiExt(mediaData.useLocalDpi);
+  const useLocalDpiExt = buildUseLocalDpiExt(mediaData.useLocalDpi, mediaData.useLocalDpiUri);
   if (useLocalDpiExt) extParts.push(useLocalDpiExt);
   if (mediaData.type === "svg") {
     extParts.push(
@@ -416,6 +423,8 @@ function stringifyShapeProps(
   scene3d?: Scene3DOptions,
   shape3d?: Shape3DOptions,
   blackWhiteMode?: BlackWhiteMode,
+  geometry?: ShapeType | PresetGeometryOptions,
+  customGeometry?: CustomGeometryOptions,
 ): string {
   const spPr = shapePropertiesDesc.stringify(
     {
@@ -426,8 +435,8 @@ function stringifyShapeProps(
       flipHorizontal: transform.flipHorizontal,
       flipVertical: transform.flipVertical,
       rotation: transform.rotation,
-      // Pictures always use a rect preset geometry.
-      geometry: "rect",
+      geometry: customGeometry ? undefined : (geometry ?? "rect"),
+      customGeometry,
       fill,
       outline,
       effects,
@@ -732,7 +741,7 @@ function stringifyGroupChild(
   picParts.push(stringifyNvPicPr(picData.nonVisualProperties, ctx, dialect));
   const groupBlipParts: string[] = [];
   const extParts: string[] = [];
-  const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi);
+  const useLocalDpiExt = buildUseLocalDpiExt(picData.useLocalDpi, picData.useLocalDpiUri);
   if (useLocalDpiExt) extParts.push(useLocalDpiExt);
   if (isSvg) {
     extParts.push(
@@ -890,7 +899,8 @@ function stringifyGraphicDataContent(
   opts: DrawingDescriptorOptions,
   ctx: BodyContext,
 ): string {
-  const { outline, fill, effects, scene3d, shape3d, blipEffects, tile } = opts;
+  const { outline, fill, effects, scene3d, shape3d, blipEffects, tile, geometry, customGeometry } =
+    opts;
   const dialect = opts.dialect;
   const transform = mediaData.transformation;
 
@@ -953,7 +963,17 @@ function stringifyGraphicDataContent(
     `<pic:pic xmlns:pic="${drawingmlUri(dialect, "picture")}">` +
     stringifyNvPicPr(md.nonVisualProperties, ctx, dialect) +
     stringifyBlipFill(md, blipEffects, tile, ctx) +
-    stringifyShapeProps(transform, outline, fill, effects, scene3d, shape3d, md.blackWhiteMode) +
+    stringifyShapeProps(
+      transform,
+      outline,
+      fill,
+      effects,
+      scene3d,
+      shape3d,
+      md.blackWhiteMode,
+      geometry,
+      customGeometry,
+    ) +
     `</pic:pic></a:graphicData>`
   );
 }

@@ -18,7 +18,7 @@ import {
   stringifyVmlShapeLayout,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
-import { attr, attrMeasure, escapeXml, findChild } from "@office-open/xml";
+import { attr, attrMeasure, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import {
@@ -69,6 +69,12 @@ function measureVal(tag: string, val: number | PositiveUniversalMeasure | undefi
 
 function strVal(tag: string, val: string | undefined): string {
   return val !== undefined ? `<${tag} ${valAttr(tag)}="${escapeXml(val)}"/>` : "";
+}
+
+function docIdVal(tag: string, val: string | undefined, text: string | undefined): string {
+  if (val === undefined) return "";
+  const inline = text === undefined ? "" : escapeXml(text);
+  return `<${tag} ${valAttr(tag)}="${escapeXml(val)}">${inline}</${tag}>`;
 }
 
 /** Build attribute string from key-value pairs, skipping undefined. */
@@ -1097,13 +1103,13 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Word 2010/2013 document identifiers — CT_Settings trailing sequence
     // (decimalSymbol → listSeparator → w14:docId → w15:chartTrackingRefBased → w15:docId).
     // Preserved verbatim for round-trip fidelity; val attribute is namespace-scoped.
-    p.push(strVal("w14:docId", opts.w14DocId));
+    p.push(docIdVal("w14:docId", opts.w14DocId, opts.w14DocIdText));
     p.push(onOff("w14:discardImageEditingData", opts.w14DiscardImageEditingData));
     if (opts.w14DefaultImageDpi !== undefined)
       p.push(strVal("w14:defaultImageDpi", String(opts.w14DefaultImageDpi)));
     p.push(onOff("w14:conflictMode", opts.w14ConflictMode));
     if (opts.w15ChartTrackingRefBased) p.push(`<w15:chartTrackingRefBased/>`);
-    p.push(strVal("w15:docId", opts.w15DocId));
+    p.push(docIdVal("w15:docId", opts.w15DocId, opts.w15DocIdText));
 
     const body = p.join("");
     return `<w:settings ${documentNamespaceAttributesInDialect(
@@ -1563,6 +1569,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     // Word 2010/2013 document identifiers — preserve for round-trip fidelity
     const w14DocId = readStr(findChild(el, "w14:docId"), "w14:val");
     if (w14DocId) opts.w14DocId = w14DocId;
+    const w14DocIdText = textOf(findChild(el, "w14:docId"));
+    if (w14DocIdText !== undefined && w14DocIdText !== "") opts.w14DocIdText = w14DocIdText;
     const w14Discard = findChild(el, "w14:discardImageEditingData");
     if (w14Discard)
       opts.w14DiscardImageEditingData = parseOnOff(attr(w14Discard, "w14:val")) ?? true;
@@ -1577,6 +1585,8 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (findChild(el, "w15:chartTrackingRefBased")) opts.w15ChartTrackingRefBased = true;
     const w15DocId = readStr(findChild(el, "w15:docId"), "w15:val");
     if (w15DocId) opts.w15DocId = w15DocId;
+    const w15DocIdText = textOf(findChild(el, "w15:docId"));
+    if (w15DocIdText !== undefined && w15DocIdText !== "") opts.w15DocIdText = w15DocIdText;
 
     return opts as unknown as SettingsOptions;
   },

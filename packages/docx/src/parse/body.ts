@@ -15,6 +15,7 @@ import type { SectionPropertiesOptions } from "@parts/document/body/section-prop
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import {
+  hasTocFieldEndBeforeChildren,
   parseToc,
   parseTocFieldFromElements,
   selectTocEntryElements,
@@ -638,6 +639,10 @@ function buildTocChild(els: Element[], ctx: DocxReadContext): SectionChild {
     tocOpts.entries = entryEls.map((el) =>
       el.name === "w:p" ? { paragraph: parseParagraph(el, ctx) } : parseSectionChild(el, ctx),
     );
+  }
+  const lastEntry = entryEls[entryEls.length - 1];
+  if (lastEntry && hasTocFieldEndBeforeChildren(lastEntry)) {
+    tocOpts.fieldEndBeforeChildren = true;
   }
   captureTocFieldRPr(els, tocOpts);
   return { toc: tocOpts };

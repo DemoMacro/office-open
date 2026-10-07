@@ -10,7 +10,7 @@
  */
 
 import type { ReproducibleScope } from "@office-open/core";
-import { convertToTwip } from "@office-open/core";
+import { convertToTwip, type UniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -88,6 +88,12 @@ function pageMarginXml(
   gutter: number | string,
 ): string {
   return `<w:pgMar w:top="${top}" w:right="${right}" w:bottom="${bottom}" w:left="${left}" w:header="${header}" w:footer="${footer}" w:gutter="${gutter}"/>`;
+}
+
+function attrTwips(el: Element, name: string): number | undefined {
+  const value = attrMeasure(el, name);
+  if (value === undefined) return undefined;
+  return typeof value === "number" ? value : convertToTwip(value as UniversalMeasure);
 }
 
 function headerFooterRefXml(tag: string, id: number, type: string): string {
@@ -447,8 +453,8 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   const pgSz = findChild(el, "w:pgSz");
   if (pgSz) {
     const size: PageSizeProperties = {};
-    const w = attrNum(pgSz, "w:w");
-    const h = attrNum(pgSz, "w:h");
+    const w = attrTwips(pgSz, "w:w");
+    const h = attrTwips(pgSz, "w:h");
     const orient = attr(pgSz, "w:orient");
     if (orient === "landscape" && w !== undefined && h !== undefined) {
       size.width = h;
@@ -478,7 +484,7 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
       ["w:footer", "footer"],
       ["w:gutter", "gutter"],
     ] as const) {
-      const val = attrNum(pgMar, a);
+      const val = attrTwips(pgMar, a);
       if (val !== undefined) margin[o] = val;
     }
     // Same three states as pageSize (object / false / undefined-fresh).

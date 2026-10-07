@@ -217,7 +217,7 @@ export function emitFillXml(options: FillOptions, embedPlaceholder?: string): st
 
     case "pattern": {
       const patternOpts: PatternFillOptions = {
-        pattern: options.pattern as PatternFillOptions["pattern"],
+        ...(options.pattern !== undefined && { pattern: options.pattern }),
         ...(options.foregroundColor && {
           foregroundColor:
             typeof options.foregroundColor === "string"
@@ -278,8 +278,6 @@ function emitGradientFillXml(opts: GradientFillOptions): string | undefined {
 /** Serialize a:pattFill from PatternFillOptions (descriptor emission). */
 function emitPatternFillXml(opts: PatternFillOptions): string {
   const parts: string[] = [];
-  const prst = xsdPattern.to(opts.pattern);
-
   // a:fgClr/a:bgClr expect EG_ColorChoice (direct color), NOT solidFill
   if (opts.foregroundColor) {
     const colorXml = emitColorChoice(opts.foregroundColor);
@@ -291,7 +289,9 @@ function emitPatternFillXml(opts: PatternFillOptions): string {
   }
 
   const inner = parts.join("");
-  return `<a:pattFill prst="${escapeXml(prst)}">${inner}</a:pattFill>`;
+  const prst =
+    opts.pattern === undefined ? "" : ` prst="${escapeXml(xsdPattern.to(opts.pattern))}"`;
+  return `<a:pattFill${prst}>${inner}</a:pattFill>`;
 }
 
 /** Serialize a:blipFill with the given embed reference (descriptor emission). */

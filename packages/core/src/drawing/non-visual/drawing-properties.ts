@@ -61,8 +61,8 @@ export function stringifyNonVisualDrawingProperties(
 ): string {
   const name = opts?.name ?? fallbackName;
   let attrs = `id="${id}" name="${escapeXml(name)}"`;
-  if (opts?.description) attrs += ` descr="${escapeXml(opts.description)}"`;
-  if (opts?.title) attrs += ` title="${escapeXml(opts.title)}"`;
+  if (opts?.description !== undefined) attrs += ` descr="${escapeXml(opts.description)}"`;
+  if (opts?.title !== undefined) attrs += ` title="${escapeXml(opts.title)}"`;
   if (opts?.hidden) attrs += ` hidden="1"`;
   // CT_NonVisualDrawingProps tail: hlinkClick/hover (caller innerXml) → extLst.
   // xmlns:a is declared locally: parts that host docPr without a DrawingML
@@ -79,7 +79,8 @@ export function stringifyNonVisualDrawingProperties(
 
 /**
  * Parse cNvPr/docPr attributes into NonVisualDrawingPropertiesOptions.
- * Empty descr/title are dropped (Word never round-trips them empty).
+ * Empty descr/title are preserved because OPC producers may carry the
+ * attributes explicitly even when their values are empty.
  */
 export function parseNonVisualDrawingProperties(
   el: XmlElement | undefined,
@@ -90,9 +91,9 @@ export function parseNonVisualDrawingProperties(
     const a = el.attributes;
     if (a["name"] !== undefined) result.name = String(a["name"]);
     const descr = a["descr"];
-    if (descr !== undefined && descr !== "") result.description = String(descr);
+    if (descr !== undefined) result.description = String(descr);
     const title = a["title"];
-    if (title !== undefined && title !== "") result.title = String(title);
+    if (title !== undefined) result.title = String(title);
     const hidden = a["hidden"];
     if (hidden !== undefined) result.hidden = parseOnOff(hidden) ?? false;
   }

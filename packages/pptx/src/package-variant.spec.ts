@@ -50,6 +50,16 @@ const contentTypes = (buffer: Uint8Array): string => {
 };
 
 describe("PPTX package variants", () => {
+  it("omits absent source core properties", () => {
+    const buffer = generatePresentationSync(options(), { type: "uint8array" });
+    const files = unzipSync(buffer);
+    expect(Object.keys(files)).not.toContain("docProps/core.xml");
+    expect(new TextDecoder().decode(files["_rels/.rels"]!)).not.toContain(
+      "metadata/core-properties",
+    );
+    expect(contentTypes(buffer)).not.toContain("/docProps/core.xml");
+  });
+
   it.each(PACKAGE_VARIANTS)(
     "declares $packageVariant content type and Blob MIME",
     ({ packageVariant, mimeType, mainContentType }) => {

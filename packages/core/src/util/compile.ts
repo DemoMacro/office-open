@@ -27,6 +27,7 @@ export interface MediaBinary {
   fileName: string;
   data: Uint8Array;
   type: string;
+  partPath?: string;
   fallback?: { fileName: string; data: Uint8Array };
 }
 
@@ -50,7 +51,7 @@ export function addModelBinaries(
   mediaLevel: number,
 ): void {
   for (const m of media) {
-    addBinaryFile(files, `${packageDir}/media/${m.fileName}`, m.data, mediaLevel);
+    addBinaryFile(files, m.partPath ?? `${packageDir}/media/${m.fileName}`, m.data, mediaLevel);
     if (m.type === "svg" && m.fallback) {
       addBinaryFile(
         files,

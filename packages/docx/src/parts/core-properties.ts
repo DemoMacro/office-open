@@ -66,6 +66,11 @@ import type { WebSettingsOptions } from "./web-settings";
  */
 export interface DocumentOptions extends CorePropertiesOptions {
   sections: SectionOptions[];
+  /**
+   * Primary document part path from `_rels/.rels`. Round-trip only; fresh
+   * documents use `word/document.xml`.
+   */
+  primaryPartPath?: string;
   /** Declared sequence names and numbering semantics used by sequence fields. */
   sequenceDeclarations?: SequenceDeclarationOptions[];
   /** Declared variable names and value types used by variable fields. */

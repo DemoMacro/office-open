@@ -236,6 +236,35 @@ describe("package metadata presence", () => {
     expect(contentTypesXml).not.toContain("/docProps/core.xml");
     expect(contentTypesXml).not.toContain("/docProps/app.xml");
   });
+
+  it("round-trips a non-default primary document path", () => {
+    const source = zipSync({
+      "[Content_Types].xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+          '<Override PartName="/word/document2.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+          "</Types>",
+      ),
+      "_rels/.rels": new TextEncoder().encode(
+        '<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+          '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="/word/document2.xml"/>' +
+          "</Relationships>",
+      ),
+      "word/document2.xml": new TextEncoder().encode(
+        '<?xml version="1.0"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body/></w:document>',
+      ),
+    });
+    const parsed = parseDocumentSync(source);
+    expect(parsed.primaryPartPath).toBe("word/document2.xml");
+    const output = unzipSync(generateDocumentSync(parsed, { type: "uint8array" }));
+    expect(Object.keys(output)).toContain("word/document2.xml");
+    expect(Object.keys(output)).toContain("word/_rels/document2.xml.rels");
+    expect(new TextDecoder().decode(output["_rels/.rels"]!)).toContain(
+      'Target="word/document2.xml"',
+    );
+    expect(new TextDecoder().decode(output["[Content_Types].xml"]!)).toContain(
+      'PartName="/word/document2.xml"',
+    );
+  });
 });
 
 describe("picture media dedup", () => {

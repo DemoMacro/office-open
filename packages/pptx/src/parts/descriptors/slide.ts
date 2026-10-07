@@ -52,6 +52,8 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
     // p:cSld
     const cSld = findChild(el, "p:cSld");
     if (cSld) {
+      const name = attr(cSld, "name");
+      if (name !== undefined) result.name = name;
       // Background
       const bg = findChild(cSld, "p:bg");
       if (bg) result.background = backgroundDesc.parse(bg, _ctx);

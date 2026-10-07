@@ -141,6 +141,8 @@ export interface DocxDocument {
   doc: ParsedArchive;
   /** word/document.xml → root w:document element */
   documentRoot: Element;
+  /** Primary package part path resolved from `_rels/.rels`. */
+  primaryPartPath: string;
   /** word/document.xml → w:body element */
   body: Element;
   /** word/document.xml → w:background element */
@@ -208,7 +210,7 @@ function resolveEmbeddedFontData(fonts: EmbeddedFontOptionsWithKey[], doc: Parse
   }
 }
 
-function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
+function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"): DocxPartRefs {
   const refs: DocxPartRefs = {
     headers: new Map(),
     footers: new Map(),
@@ -229,7 +231,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     partHyperlinks: new Map(),
   };
 
-  const relsEl = doc.get("word/_rels/document.xml.rels");
+  const relsEl = doc.get(partPathToRelsPath(documentPath));
   if (!relsEl) return refs;
 
   for (const child of relsEl.elements ?? []) {
@@ -239,7 +241,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
     const id = attr(child, "Id") ?? "";
     if (!target) continue;
 
-    const path = resolveRelationshipTarget("word/document.xml", target);
+    const path = resolveRelationshipTarget(documentPath, target);
 
     if (type.includes("/header")) {
       refs.headers.set(id, path);
@@ -361,6 +363,7 @@ function parseDocPartRefs(doc: ParsedArchive): DocxPartRefs {
 }
 
 function parseRootRels(doc: ParsedArchive): {
+  primaryPartPath?: string;
   coreProps?: string;
   appProps?: string;
   customProps?: string;
@@ -377,6 +380,7 @@ function parseRootRels(doc: ParsedArchive): {
   let coreProps: string | undefined;
   let appProps: string | undefined;
   let customProps: string | undefined;
+  let primaryPartPath: string | undefined;
   const capturedRelationships: {
     relationshipType: string;
     target: string;
@@ -391,6 +395,12 @@ function parseRootRels(doc: ParsedArchive): {
     if (!target) return true;
     const path = target.startsWith("/") ? target.slice(1) : target;
     const relType = type.toLowerCase().replaceAll("-", "");
+    if (relType.endsWith("/officedocument")) {
+      if (attr(child, "TargetMode")?.toLowerCase() !== "external") {
+        primaryPartPath = resolveRelationshipTarget("", target);
+      }
+      return true;
+    }
     const isCore = relType.includes("/coreproperties");
     const isApp = relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp");
     const isCustom = relType.includes("/customproperties");
@@ -415,7 +425,13 @@ function parseRootRels(doc: ParsedArchive): {
   });
   relsEl.elements = relationships;
 
-  return { coreProps, appProps, customProps, relationships: capturedRelationships };
+  return {
+    primaryPartPath,
+    coreProps,
+    appProps,
+    customProps,
+    relationships: capturedRelationships,
+  };
 }
 
 /**
@@ -484,6 +500,9 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   // Document conformance class (w:document/@w:conformance)
   const conformance = attr(docx.documentRoot, "w:conformance");
   if (conformance === "strict" || conformance === "transitional") opts.conformance = conformance;
+  if (docx.primaryPartPath !== "word/document.xml") {
+    opts.primaryPartPath = docx.primaryPartPath;
+  }
   if (
     docx.documentRoot.attributes?.["xmlns:w"] === "http://purl.oclc.org/ooxml/wordprocessingml/main"
   ) {
@@ -818,7 +837,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   // Media/embeddings/fonts are deliberately NOT listed: the compiler writes
   // them under pinned source paths and its output wins over the passthrough
   // copy by assembly order, while anything the model missed survives here.
-  const rebuilt: string[] = ["word/document.xml", "word/_rels/document.xml.rels"];
+  const rebuilt: string[] = [docx.primaryPartPath, partPathToRelsPath(docx.primaryPartPath)];
   if (docx.coreProps) rebuilt.push(docx.coreProps);
   if (docx.appProps) rebuilt.push(docx.appProps);
   if (docx.customProps) rebuilt.push(docx.customProps);
@@ -944,8 +963,10 @@ export function parseDocx(data: DataType): DocxDocument {
 
 /** Archive-backed core of {@link parseDocx} — shared with the Blob open path. */
 function parseDocxArchive(doc: ParsedArchive): DocxDocument {
-  const documentEl = doc.get("word/document.xml");
-  if (!documentEl) throw new Error("word/document.xml not found");
+  const rootRels = parseRootRels(doc);
+  const primaryPartPath = rootRels.primaryPartPath ?? "word/document.xml";
+  const documentEl = doc.get(primaryPartPath);
+  if (!documentEl) throw new Error(`primary document part not found: ${primaryPartPath}`);
   const body = documentEl.elements?.find((e) => e.name === "w:body");
   if (!body) throw new Error("w:body not found in word/document.xml");
   const background = documentEl.elements?.find((e) => e.name === "w:background");
@@ -957,13 +978,14 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
   const fontTable = doc.get("word/fontTable.xml");
   const webSettings = doc.get("word/webSettings.xml");
 
-  const partRefs = parseDocPartRefs(doc);
-  const { coreProps, appProps, customProps, relationships: rootRelationships } = parseRootRels(doc);
+  const partRefs = parseDocPartRefs(doc, primaryPartPath);
+  const { coreProps, appProps, customProps, relationships: rootRelationships } = rootRels;
 
   const contentTypes = doc.get("[Content_Types].xml");
 
   return {
     doc,
+    primaryPartPath,
     documentRoot: documentEl,
     body,
     background,

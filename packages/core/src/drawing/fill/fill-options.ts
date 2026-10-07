@@ -123,7 +123,7 @@ export type FillOptions =
   | {
       type: "pattern";
       /** Preset pattern (a:pattFill `@prst`, ST_PresetPatternVal). */
-      pattern: PresetPattern;
+      pattern?: PresetPattern;
       foregroundColor?: HexColor | SolidFillOptions;
       backgroundColor?: HexColor | SolidFillOptions;
     }

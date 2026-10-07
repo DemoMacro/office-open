@@ -61,7 +61,32 @@ function stringifySymbolRunInner(opts: SymbolRunOptions): string {
 
 /** Serialize a complex field's run chain. Inside a w:del wrapper the
  *  instruction is spelled w:delInstrText and the cached result w:delText. */
-function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): string {
+function stringifySimpleField(
+  sf: NonNullable<Extract<ParagraphChild, { simpleField: unknown }>["simpleField"]>,
+  ctx: BodyContext,
+): string {
+  const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
+  if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
+  if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
+  if (sf.cachedInstructionText !== undefined) {
+    const space = sf.cachedInstructionTextPreserveSpace ? ' xml:space="preserve"' : "";
+    return `<w:fldSimple ${sfAttrs.join(" ")}><w:r>${sf.cachedInstructionRPrXml ?? ""}<w:instrText${space}>${escapeXml(sf.cachedInstructionText)}</w:instrText></w:r></w:fldSimple>`;
+  }
+  if (sf.cachedRuns !== undefined) {
+    return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
+  }
+  if (sf.cachedValue !== undefined) {
+    const space = sf.cachedValuePreserveSpace ? ' xml:space="preserve"' : "";
+    return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t${space}>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
+  }
+  return `<w:fldSimple ${sfAttrs.join(" ")}/>`;
+}
+
+function stringifyComplexFieldRuns(
+  cf: ComplexFieldOptions,
+  isDelete = false,
+  ctx: BodyContext,
+): string {
   const instrTag = isDelete ? "w:delInstrText" : "w:instrText";
   const textTag = isDelete ? "w:delText" : "w:t";
   // Run-properties: Word writes identical rPr across a field's runs. Apply
@@ -78,7 +103,13 @@ function stringifyComplexFieldRuns(cf: ComplexFieldOptions, isDelete = false): s
   // Instruction: verbatim when the source split it across non-plain runs;
   // plain template otherwise; no instruction run at all for an empty
   // instruction (a bare begin→end field round-trips without one).
+  const mixedInstructionXml = cf.instructionMembers
+    ?.map((member) =>
+      "runXml" in member ? member.runXml : stringifySimpleField(member.simpleField, ctx),
+    )
+    .join("");
   const instrXml =
+    mixedInstructionXml ??
     cf.instrRunsXml ??
     (cf.instruction !== ""
       ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
@@ -454,7 +485,7 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "proofErr" in c) {
       parts.push(`<w:proofErr w:type="${c.proofErr}"/>`);
     } else if (typeof c !== "string" && "complexField" in c) {
-      parts.push(stringifyComplexFieldRuns(c.complexField, isDelete));
+      parts.push(stringifyComplexFieldRuns(c.complexField, isDelete, ctx));
     } else if (typeof c !== "string" && "formField" in c) {
       const xml = stringifyChildDispatch(c as ParagraphChild, ctx);
       if (typeof xml === "string") parts.push(xml);
@@ -965,27 +996,12 @@ export function stringifyChildDispatch(
 
   // ── Simple field ──
   if ("simpleField" in child) {
-    const sf = child.simpleField;
-    const sfAttrs = [`w:instr="${escapeXml(sf.instruction)}"`];
-    if (sf.fieldLock !== undefined) sfAttrs.push(`w:fldLock="${sf.fieldLock ? 1 : 0}"`);
-    if (sf.dirty !== undefined) sfAttrs.push(`w:dirty="${sf.dirty ? 1 : 0}"`);
-    if (sf.cachedInstructionText !== undefined) {
-      const space = sf.cachedInstructionTextPreserveSpace ? ' xml:space="preserve"' : "";
-      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r>${sf.cachedInstructionRPrXml ?? ""}<w:instrText${space}>${escapeXml(sf.cachedInstructionText)}</w:instrText></w:r></w:fldSimple>`;
-    }
-    if (sf.cachedRuns !== undefined) {
-      return `<w:fldSimple ${sfAttrs.join(" ")}>${serializeDispatchChildren(sf.cachedRuns, ctx)}</w:fldSimple>`;
-    }
-    if (sf.cachedValue !== undefined) {
-      const space = sf.cachedValuePreserveSpace ? ' xml:space="preserve"' : "";
-      return `<w:fldSimple ${sfAttrs.join(" ")}><w:r><w:t${space}>${escapeXml(sf.cachedValue)}</w:t></w:r></w:fldSimple>`;
-    }
-    return `<w:fldSimple ${sfAttrs.join(" ")}/>`;
+    return stringifySimpleField(child.simpleField, ctx);
   }
 
   // ── Complex field (PAGE/DATE/TOC/... — fldChar field without w:ffData) ──
   if ("complexField" in child) {
-    return stringifyComplexFieldRuns(child.complexField);
+    return stringifyComplexFieldRuns(child.complexField, false, ctx);
   }
 
   // ── Sequential identifier (SEQ field) ──

@@ -111,6 +111,10 @@ export function parseToc(
       if (entryEls.length > 0) {
         tocOpts.entries = parseChildren(entryEls, ctx);
       }
+      const lastEntry = entryEls[entryEls.length - 1];
+      if (lastEntry && hasTocFieldEndBeforeChildren(lastEntry)) {
+        tocOpts.fieldEndBeforeChildren = true;
+      }
     }
   }
 
@@ -286,6 +290,27 @@ export function selectTocEntryElements(els: Element[]): Element[] {
     }
   }
   return entries;
+}
+
+/**
+ * Whether a pure field-closing paragraph stores its consumed end run before
+ * bookmark markers. Parsing captures this order so regeneration can return the
+ * markers to the same source positions (round-trip only).
+ */
+export function hasTocFieldEndBeforeChildren(el: Element): boolean {
+  if (findFirst(el, "w:t") !== undefined) return false;
+  const children = el.elements ?? [];
+  const pPr = findChild(el, "w:pPr");
+  const contentStart = pPr ? children.indexOf(pPr) + 1 : 0;
+  const [firstChild, secondChild] = children.slice(contentStart);
+  const hasEnd =
+    firstChild?.name === "w:r" &&
+    (firstChild.elements ?? []).some(
+      (child) => child.name === "w:fldChar" && attr(child, "w:fldCharType") === "end",
+    );
+  return Boolean(
+    hasEnd && (secondChild?.name === "w:bookmarkStart" || secondChild?.name === "w:bookmarkEnd"),
+  );
 }
 
 /**

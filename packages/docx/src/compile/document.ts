@@ -46,13 +46,31 @@ function sourceRidFor(
     if (
       rel.source === ownerSource &&
       rel.relationshipType.split("/").pop() === kind &&
-      rel.target === target
+      (rel.target === target || rel.target === `/${target}`)
     ) {
       const m = /^rId(\d+)$/.exec(rel.rId);
       if (m) return Number(m[1]);
     }
   }
   return undefined;
+}
+
+function sourceRelationshipFor(
+  passthroughRelationships:
+    | readonly { source: string; relationshipType: string; target: string; rId: string }[]
+    | undefined,
+  ownerSource: string,
+  relationshipType: string,
+  target: string,
+) {
+  if (!passthroughRelationships) return undefined;
+  const kind = relationshipType.split("/").pop();
+  return passthroughRelationships.find(
+    (rel) =>
+      rel.source === ownerSource &&
+      rel.relationshipType.split("/").pop() === kind &&
+      (rel.target === target || rel.target === `/${target}`),
+  );
 }
 
 /**
@@ -73,8 +91,9 @@ function documentSourceRids(
   const prefix = `${dir}/`;
   for (const rel of ctx._options.passthroughRelationships ?? []) {
     if (rel.source !== "word/document.xml") continue;
-    if (!rel.target.startsWith(prefix)) continue;
-    map.set(rel.target.slice(prefix.length), rel.rId);
+    const normalizedTarget = rel.target.startsWith("/") ? rel.target.slice(1) : rel.target;
+    if (!normalizedTarget.startsWith(prefix)) continue;
+    map.set(normalizedTarget.slice(prefix.length), rel.rId);
   }
   return map;
 }
@@ -159,16 +178,16 @@ export function compileDocumentEntries(
       data: (() => {
         for (const [i, ref] of documentMedia.referenced.entries()) {
           const target = `media/${ref.fileName}`;
-          const sourceRid = sourceRidFor(
+          const sourceRel = sourceRelationshipFor(
             ctx._options.passthroughRelationships,
             "word/document.xml",
             RELATIONSHIP_TYPES.image,
             target,
           );
           ctx.document.relationships.addRelationship(
-            sourceRid ?? documentRelationshipCount + i,
+            sourceRel?.rId ?? documentRelationshipCount + i,
             RELATIONSHIP_TYPES.image,
-            target,
+            sourceRel?.target ?? target,
           );
         }
         for (const [i, ref] of documentEmbeddings.referenced.entries()) {

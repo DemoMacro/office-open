@@ -410,6 +410,48 @@ describe("TOC field boundary round-trip", () => {
     expect(children).toHaveLength(1);
   });
 
+  it("keeps bookmark order when the consumed field end precedes it", () => {
+    const xml = `<w:body>
+      <w:p><w:r><w:fldChar w:fldCharType="begin" w:dirty="1"/></w:r>
+        <w:r><w:instrText xml:space="preserve"> TOC \\o "1-3" \\h </w:instrText></w:r>
+        <w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>
+      <w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr>
+        <w:r><w:fldChar w:fldCharType="end"/></w:r>
+        <w:bookmarkStart w:id="7" w:name="_Ref463345912"/></w:p>
+    </w:body>`;
+    const body = parseXml(xml).elements?.[0];
+    if (!body) throw new Error("parsed document has no root element");
+    const sections = parseBody(body, readCtx);
+    const tocChild = sections[0]?.children.find((child) => "toc" in child) as
+      | { toc: { fieldEndBeforeChildren?: boolean } }
+      | undefined;
+    expect(tocChild?.toc.fieldEndBeforeChildren).toBe(true);
+
+    const entries = `<w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:bookmarkStart w:id="7" w:name="_Ref463345912"/></w:p>`;
+    const output = stringifyTableOfContents(
+      undefined,
+      { bare: true, fieldEndBeforeChildren: true },
+      entries,
+    );
+    const paragraph = output.slice(output.indexOf('<w:pStyle w:val="TOC1"/>'));
+    const endIndex = paragraph.indexOf('<w:fldChar w:fldCharType="end"/>');
+    const bookmarkIndex = paragraph.indexOf('<w:bookmarkStart w:id="7"');
+    expect(endIndex).toBeGreaterThan(-1);
+    expect(bookmarkIndex).toBeGreaterThan(endIndex);
+  });
+
+  it("injects the field end into a self-closing standalone paragraph", () => {
+    const output = stringifyTableOfContents(
+      undefined,
+      { bare: true },
+      `<w:p><w:pPr><w:pStyle w:val="TOC1"/></w:pPr><w:r><w:t>Heading</w:t></w:r></w:p>` +
+        `<w:p w:rsidR="00ED3A69"/>`,
+    );
+    expect(output).toContain(
+      `<w:p w:rsidR="00ED3A69"><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>`,
+    );
+  });
+
   it("keeps a hyperlink-wrapped closing paragraph as the last entry", () => {
     // The closing paragraph may carry a custom entry style instead of TOCn;
     // the hyperlink wrapping the entry text is what identifies it as an entry.

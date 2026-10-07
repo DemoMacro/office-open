@@ -4700,6 +4700,33 @@
       },
       "type": "object"
     },
+    "ComplexFieldInstructionMember": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "runXml": {
+              "type": "string"
+            }
+          },
+          "required": ["runXml"],
+          "title": "runXml",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "simpleField": {
+              "$ref": "#/definitions/SimpleFieldOptions"
+            }
+          },
+          "required": ["simpleField"],
+          "title": "simpleField",
+          "type": "object"
+        }
+      ],
+      "description": "One ordered member of a mixed complex-field instruction. Runs retain the existing verbatim fidelity channel; nested `w:fldSimple` fields remain canonical `SimpleFieldOptions`."
+    },
     "ComplexFieldOptions": {
       "additionalProperties": false,
       "description": "A complex field (PAGE/DATE/TOC/HYPERLINK — any fldChar field without w:ffData). `instruction` is the raw field code incl. surrounding spaces; `result` is the cached result text; `rPrXml`/`resultRPrXml` carry the control/result run properties for round-trip fidelity.",
@@ -4730,6 +4757,13 @@
         "instructionAdditionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+        },
+        "instructionMembers": {
+          "description": "Ordered members when nested simple fields occur inside a field code.",
+          "items": {
+            "$ref": "#/definitions/ComplexFieldInstructionMember"
+          },
+          "type": "array"
         },
         "instructionPreserveSpace": {
           "description": "Source `xml:space=\"preserve\"` marker on the plain instruction text.",
@@ -6626,6 +6660,10 @@
           },
           "type": "array"
         },
+        "primaryPartPath": {
+          "description": "Primary document part path from `_rels/.rels`. Round-trip only; fresh documents use `word/document.xml`.",
+          "type": "string"
+        },
         "rawParts": {
           "description": "Source parts generate() does not rebuild (word/theme/*, customXml/*, unknown extension parts), carried verbatim with bytes and content-type intact; compiler-rebuilt paths win over the passthrough copy. Round-trip only — do not hand-author.",
           "items": {
@@ -7648,7 +7686,8 @@
               "type": "string"
             }
           },
-          "required": ["type", "pattern"],
+          "required": ["type"],
+          "title": "type",
           "type": "object"
         },
         {
@@ -8564,6 +8603,10 @@
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
             },
+            "partPath": {
+              "description": "Physical package path from the source (round-trip only). Most media lives under the package's word/ppt/xl directory; OPC also permits package-root targets such as /media/image.png, which must not be silently relocated.",
+              "type": "string"
+            },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
               "description": "Source rectangle for image cropping"
@@ -8584,6 +8627,10 @@
             "useLocalDpi": {
               "description": "Blip extension `a14:useLocalDpi` (val=\"0\" = use document DPI, not a local override). Word emits this as a rendering hint on a:blip; carried verbatim for round-trip fidelity. Omitted when absent (Word's default behavior).",
               "type": "boolean"
+            },
+            "useLocalDpiUri": {
+              "description": "Exact source extension URI for `useLocalDpi`; GUID spelling varies by producer.",
+              "type": "string"
             }
           },
           "required": ["data", "fileName", "transformation", "type"],
@@ -8625,6 +8672,9 @@
                   "$ref": "#/definitions/NonVisualPropertiesOptions",
                   "description": "Picture non-visual properties (pic:cNvPr) for round-trip fidelity"
                 },
+                "partPath": {
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/partPath"
+                },
                 "sourceRectangle": {
                   "$ref": "#/definitions/SourceRectangleOptions",
                   "description": "Source rectangle for image cropping"
@@ -8642,6 +8692,9 @@
                 },
                 "useLocalDpi": {
                   "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpi"
+                },
+                "useLocalDpiUri": {
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpiUri"
                 }
               },
               "required": ["data", "fileName", "transformation", "type"],
@@ -8659,6 +8712,9 @@
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
+            },
+            "partPath": {
+              "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/partPath"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
@@ -8679,6 +8735,9 @@
             },
             "useLocalDpi": {
               "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpi"
+            },
+            "useLocalDpiUri": {
+              "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/useLocalDpiUri"
             }
           },
           "required": ["data", "fallback", "fileName", "transformation", "type"],
@@ -15646,10 +15705,9 @@
         },
         "pattern": {
           "$ref": "#/definitions/PresetPattern",
-          "description": "Preset pattern type"
+          "description": "Preset pattern type; omitted when the source `a:pattFill` has no `@prst`."
         }
       },
-      "required": ["pattern"],
       "type": "object"
     },
     "PenAlignment": {
@@ -15847,6 +15905,10 @@
               "$ref": "#/definitions/BlipCompression",
               "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
             },
+            "customGeometry": {
+              "$ref": "#/definitions/CustomGeometryOptions",
+              "description": "Custom picture geometry (pic:spPr/a:custGeom); wins over geometry."
+            },
             "data": {
               "$ref": "#/definitions/DataType",
               "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
@@ -15867,6 +15929,17 @@
             },
             "floating": {
               "$ref": "#/definitions/Floating"
+            },
+            "geometry": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ShapeType"
+                },
+                {
+                  "$ref": "#/definitions/PresetGeometryOptions"
+                }
+              ],
+              "description": "Preset picture geometry (pic:spPr/a:prstGeom); rect is the authoring default."
             },
             "graphicFrameLocks": {
               "anyOf": [
@@ -15889,6 +15962,10 @@
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
+            },
+            "partPath": {
+              "description": "Physical source part path for non-conventional OPC locations (round-trip).",
+              "type": "string"
             },
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
@@ -15926,6 +16003,10 @@
             "useLocalDpi": {
               "description": "Blip rendering hint `a14:useLocalDpi` (round-trip).",
               "type": "boolean"
+            },
+            "useLocalDpiUri": {
+              "description": "Exact source extension URI for `useLocalDpi`; producers vary GUID spelling (round-trip).",
+              "type": "string"
             }
           },
           "required": ["transformation", "type"],
@@ -15952,6 +16033,10 @@
               "$ref": "#/definitions/BlipCompression",
               "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
             },
+            "customGeometry": {
+              "$ref": "#/definitions/CustomGeometryOptions",
+              "description": "Custom picture geometry (pic:spPr/a:custGeom); wins over geometry."
+            },
             "data": {
               "$ref": "#/definitions/DataType"
             },
@@ -15973,6 +16058,9 @@
                 "fileName": {
                   "$ref": "#/definitions/PictureOptions/anyOf/0/properties/fileName"
                 },
+                "partPath": {
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/partPath"
+                },
                 "type": {
                   "enum": ["jpg", "png", "gif", "bmp", "tif", "ico", "emf", "wmf"],
                   "type": "string"
@@ -15991,6 +16079,9 @@
             "floating": {
               "$ref": "#/definitions/Floating"
             },
+            "geometry": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/geometry"
+            },
             "graphicFrameLocks": {
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
             },
@@ -16003,6 +16094,9 @@
             },
             "outline": {
               "$ref": "#/definitions/OutlineOptions"
+            },
+            "partPath": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/partPath"
             },
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
@@ -16040,6 +16134,9 @@
             "useLocalDpi": {
               "description": "Blip rendering hint `a14:useLocalDpi` (round-trip).",
               "type": "boolean"
+            },
+            "useLocalDpiUri": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/useLocalDpiUri"
             }
           },
           "required": ["data", "fallback", "transformation", "type"],
@@ -18625,6 +18722,10 @@
                   "description": "\\p option - Text in this switch's field-argument specifies a sequence of characters that separate an entry and its page number. The default is a tab with leader dots.",
                   "type": "string"
                 },
+                "fieldEndBeforeChildren": {
+                  "description": "The closing field-end run precedes bookmark markers in the final entry paragraph. Stringify uses this to preserve source child order instead of always appending the end run before `</w:p>` (round-trip only).",
+                  "type": "boolean"
+                },
                 "headRunsXml": {
                   "description": "Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs (round-trip only; Word splits the instruction across runs and the split must survive).",
                   "type": "string"
@@ -20351,12 +20452,20 @@
           "description": "Word 2010 document identifier (w14:docId/`@w14:val`, e.g. \"1A190769\")",
           "type": "string"
         },
+        "w14DocIdText": {
+          "description": "Inline text carried by w14:docId in addition to w14:val (round-trip only; some producers place non-identifier content in this extension element).",
+          "type": "string"
+        },
         "w15ChartTrackingRefBased": {
           "description": "Track chart references by document (w15:chartTrackingRefBased)",
           "type": "boolean"
         },
         "w15DocId": {
           "description": "Word 2013 document identifier (w15:docId/`@w15:val`, GUID format)",
+          "type": "string"
+        },
+        "w15DocIdText": {
+          "description": "Inline text carried by w15:docId in addition to w15:val (round-trip only; some producers place non-identifier content in this extension element).",
           "type": "string"
         },
         "writeProtection": {

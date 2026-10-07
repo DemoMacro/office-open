@@ -12,6 +12,7 @@ import {
   convertEmuToPixels,
   customGeometryDesc,
   effectListDesc,
+  extUriMatches,
   fillDesc,
   imageTypeFromPath,
   outlineDesc,
@@ -450,6 +451,7 @@ export function parsePictureRun(
       // Pin the source file name: type normalization (jpeg→jpg) would otherwise
       // rewrite the extension and drop the source [Content_Types] Default entry.
       fileName: mediaPath.split("/").pop() ?? mediaPath,
+      ...(mediaPath.startsWith("word/media/") ? {} : { partPath: mediaPath }),
       transformation,
     };
   } else {
@@ -492,6 +494,10 @@ export function parsePictureRun(
     if (bwMode) imageOpts.blackWhiteMode = bwMode;
     const fill = readShapeFill(picSpPr, ctx);
     if (fill) imageOpts.fill = fill;
+    const prstGeom = findChild(picSpPr, "a:prstGeom");
+    if (prstGeom) imageOpts.geometry = presetGeometryDesc.parse(prstGeom, ctx);
+    const custGeom = findChild(picSpPr, "a:custGeom");
+    if (custGeom) imageOpts.customGeometry = customGeometryDesc.parse(custGeom, ctx);
     const ln = findChild(picSpPr, "a:ln");
     if (ln) imageOpts.outline = outlineDesc.parse(ln, ctx);
     const effectLst = findChild(picSpPr, "a:effectLst");
@@ -547,7 +553,10 @@ export function parsePictureRun(
 
   // Blip extension: a14:useLocalDpi (rendering hint, round-trip verbatim).
   const useLocalDpi = readBlipUseLocalDpi(blip);
-  if (useLocalDpi !== undefined) imageOpts.useLocalDpi = useLocalDpi;
+  if (useLocalDpi !== undefined) {
+    imageOpts.useLocalDpi = useLocalDpi.value;
+    imageOpts.useLocalDpiUri = useLocalDpi.uri;
+  }
 
   // Blip extension: asvg:svgBlip — when present, the a:blip r:embed is the
   // raster fallback and the SVG part is referenced here. Restructure into an
@@ -577,15 +586,18 @@ export function parsePictureRun(
  * Read the `a14:useLocalDpi` blip extension (val="0" → false, "1" → true).
  * Returns undefined when the blip has no useLocalDpi extension.
  */
-function readBlipUseLocalDpi(blip: Element): boolean | undefined {
+const USE_LOCAL_DPI_EXT_URI = "{28A0092B-C50C-407E-A947-70E740481C1C}";
+
+function readBlipUseLocalDpi(blip: Element): { value: boolean; uri: string } | undefined {
   const extLst = findChild(blip, "a:extLst");
   if (!extLst) return undefined;
   for (const ext of extLst.elements ?? []) {
     if (ext.type !== "element" || ext.name !== "a:ext") continue;
+    if (!extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI)) continue;
     const useLocalDpiEl = findChild(ext, "a14:useLocalDpi");
     if (useLocalDpiEl) {
       const val = useLocalDpiEl.attributes?.["val"];
-      return parseOnOff(val) ?? true;
+      return { value: parseOnOff(val) ?? true, uri: String(attr(ext, "uri")) };
     }
   }
   return undefined;
@@ -959,6 +971,7 @@ function parsePicChildMediaData(picEl: Element, ctx: DocxReadContext): MediaData
     type: imageTypeFromPath(mediaPath),
     // fileName is the bare basename; the compiler writes it under word/media/.
     fileName: mediaPath.split("/").pop() ?? mediaPath,
+    ...(mediaPath.startsWith("word/media/") ? {} : { partPath: mediaPath }),
     data,
     transformation: readChildTransformation(spPr),
   };

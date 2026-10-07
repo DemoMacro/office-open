@@ -98,3 +98,33 @@ describe("parseChartDrawing alt text", () => {
     });
   });
 });
+
+describe("parsePictureRun blip extensions", () => {
+  it("preserves the source-specific useLocalDpi URI", () => {
+    const xml =
+      `<w:drawing ${NS} xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" ` +
+      'xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">' +
+      '<wp:inline><wp:extent cx="9525" cy="9525"/>' +
+      '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+      '<pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="Picture"/><pic:cNvPicPr/></pic:nvPicPr>' +
+      '<pic:blipFill><a:blip r:embed="rId1"><a:extLst>' +
+      '<a:ext uri="28A0092B-C50C-407e-A947-70E740481C1C">' +
+      '<a14:useLocalDpi val="0"/></a:ext></a:extLst></a:blip></pic:blipFill>' +
+      '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="9525" cy="9525"/></a:xfrm>' +
+      '<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr>' +
+      "</pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>";
+    const context = {
+      docx: {
+        doc: { getRaw: () => new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]) },
+      },
+      resolveRelationship: () => "word/media/image.png",
+    } as unknown as DocxReadContext;
+    const result = parseDrawingRun(parseXml(xml).elements![0]!, context);
+    expect(result).toMatchObject({
+      picture: {
+        useLocalDpi: false,
+        useLocalDpiUri: "28A0092B-C50C-407e-A947-70E740481C1C",
+      },
+    });
+  });
+});

@@ -177,6 +177,13 @@ export interface TableOfContentsOptions {
   endInBody?: boolean;
 
   /**
+   * The closing field-end run precedes bookmark markers in the final entry
+   * paragraph. Stringify uses this to preserve source child order instead of
+   * always appending the end run before `</w:p>` (round-trip only).
+   */
+  fieldEndBeforeChildren?: boolean;
+
+  /**
    * Verbatim `<w:r>…</w:r>` XML of the field's begin→separate control runs
    * (round-trip only; Word splits the instruction across runs and the split
    * must survive).

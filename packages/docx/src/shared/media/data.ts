@@ -100,6 +100,8 @@ export interface CoreMediaData extends BaseMediaEntry {
    * for round-trip fidelity. Omitted when absent (Word's default behavior).
    */
   useLocalDpi?: boolean;
+  /** Exact source extension URI for `useLocalDpi`; GUID spelling varies by producer. */
+  useLocalDpiUri?: string;
   /** Compression state (a:blip `@cstate`); absent = attribute omitted (schema default "none"). */
   compression?: BlipCompression;
   /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
@@ -148,6 +150,8 @@ export interface LinkedPictureMediaData {
   nonVisualProperties?: NonVisualPropertiesOptions;
   /** Blip rendering hint `a14:useLocalDpi` (round-trip). */
   useLocalDpi?: boolean;
+  /** Exact source extension URI for `useLocalDpi`; GUID spelling varies by producer. */
+  useLocalDpiUri?: string;
   /** Compression state (a:blip `@cstate`); absent = attribute omitted. */
   compression?: BlipCompression;
 }

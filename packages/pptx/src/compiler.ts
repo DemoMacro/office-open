@@ -292,13 +292,18 @@ export function compilePresentation(
       tags: { rId: `rId${tagsRId}` },
     };
   }
+  const hasCoreProperties =
+    !options.contentTypes ||
+    options.contentTypes.overrides.some(
+      (override) => override.partName.toLowerCase() === "/docprops/core.xml",
+    );
   const fileRels = buildRootRelationships(
     "ppt/presentation.xml",
     hasCustomProperties,
     options.passthroughRelationships,
     options.appPropertiesRelationshipType
       ? { appPropertiesType: options.appPropertiesRelationshipType }
-      : {},
+      : { includeCoreProperties: hasCoreProperties },
   );
   const media = descCtx.mediaCollection;
   const charts = new ChartCollection();
@@ -328,10 +333,14 @@ export function compilePresentation(
       data: XML_DECL + (appPropertiesDesc.stringify(options.appProperties ?? {}, descCtx) ?? ""),
       path: "docProps/app.xml",
     },
-    Properties: {
-      data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
-      path: "docProps/core.xml",
-    },
+    ...(hasCoreProperties
+      ? {
+          Properties: {
+            data: XML_DECL + buildCorePropertiesXmlString(options, reproducible),
+            path: "docProps/core.xml",
+          },
+        }
+      : {}),
     ...(hasCustomProperties
       ? {
           CustomProperties: {

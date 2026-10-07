@@ -318,6 +318,21 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("<pic:spPr");
   });
 
+  it("round-trips non-rect picture geometry", () => {
+    const xml = stringify({
+      mediaData: makeImageMediaData(),
+      geometry: { preset: "ellipse", adjustmentValues: [] },
+    });
+    expect(xml).toContain('prst="ellipse"');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: { geometry?: { preset?: string } };
+    };
+    expect(result.picture?.geometry?.preset).toBe("ellipse");
+  });
+
   it("stringifies wps shape with preset geometry (not hardcoded rect)", () => {
     const xml = stringify({
       mediaData: {

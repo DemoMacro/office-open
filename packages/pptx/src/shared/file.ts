@@ -136,6 +136,8 @@ export type { AnimationsOptions } from "@shared/animation/timing";
 export interface SlideOptions {
   /** Source p:sldIdLst identity (`p:sldId/@id`); defaults to 256 + slide index. */
   slideId?: number;
+  /** `p:cSld/`@name`` (CT_CommonSlideData optional display name). */
+  name?: string;
   children?: SlideChild[];
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */

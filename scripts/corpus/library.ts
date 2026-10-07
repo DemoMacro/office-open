@@ -34,6 +34,7 @@ export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
     /^ppt\/vbaProject\.bin$/i,
     /^ppt\/embeddings\//i,
     /^ppt\/media\//i,
+    /^ppt\/printerSettings\//i,
     /^docProps\/thumbnail\./i,
   ],
 };

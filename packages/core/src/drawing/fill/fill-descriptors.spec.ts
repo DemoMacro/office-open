@@ -183,6 +183,11 @@ describe("patternFillDesc", () => {
     const result = roundTripPattern(opts);
     expect(result.foregroundColor).toEqual({ hue: 0, saturation: 100, luminance: 50 });
   });
+
+  it("round-trips a pattern fill without a preset pattern", () => {
+    const result = roundTripPattern({});
+    expect(result).toEqual({});
+  });
 });
 
 describe("fillDesc blip fill (parse)", () => {

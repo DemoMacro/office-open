@@ -3,7 +3,11 @@ import * as path from "node:path";
 
 import { unzipSync } from "fflate";
 
-import { OOXML_CANONICAL_PREFIXES, type ParsedArchive } from "../../packages/core/dist/index.mjs";
+import {
+  OOXML_CANONICAL_PREFIXES,
+  convertToTwip,
+  type ParsedArchive,
+} from "../../packages/core/dist/index.mjs";
 import { parse, type Element } from "../../packages/xml/dist/index.mjs";
 
 export type SemanticPartKind = "xml" | "relationship" | "content-types" | "binary";
@@ -41,6 +45,44 @@ const UNORDERED_PART_PATHS = new Set([
 
 const IGNORED_ATTRIBUTES = new Set(["mc:Ignorable"]);
 
+/** OOXML toggle elements whose omitted w:val means semantic true. */
+const ON_OFF_ELEMENTS = new Set([
+  "w:b",
+  "w:bCs",
+  "w:i",
+  "w:iCs",
+  "w:noProof",
+  "w:vanish",
+  "w:webHidden",
+  "w:bidi",
+  "w:keepNext",
+  "w:keepLines",
+  "w:pageBreakBefore",
+  "w:widowControl",
+  "w:suppressLineNumbers",
+  "w:suppressAutoHyphens",
+  "w:kinsoku",
+  "w:wordWrap",
+  "w:overflowPunct",
+  "w:topLinePunct",
+  "w:autoSpaceDE",
+  "w:autoSpaceDN",
+  "w:snapToGrid",
+]);
+
+/** XML attributes whose XSD default is emitted explicitly by the writers. */
+const DEFAULT_ATTRIBUTES = new Map<string, Record<string, string>>([
+  [
+    "wp:inline",
+    {
+      distT: "0",
+      distB: "0",
+      distL: "0",
+      distR: "0",
+    },
+  ],
+]);
+
 const LEGACY_OFFICE_URI_PREFIX = "http://schemas.microsoft.com/office/2006/relationships/";
 const STRICT_URI_PREFIX = "http://purl.oclc.org/ooxml/";
 const TRANSITIONAL_URI_PREFIX = "http://schemas.openxmlformats.org/";
@@ -63,6 +105,16 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
 function canonicalAttributeValue(name: string, value: string, elementName?: string): string {
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
+  if (
+    (elementName === "w:pgSz" && (name === "w:w" || name === "w:h")) ||
+    (elementName === "w:pgMar" && name.startsWith("w:"))
+  ) {
+    if (/^[+-]?\d+(?:\.\d+)?(?:mm|cm|in|pt|pc|pi|px)$/.test(value)) {
+      return String(
+        convertToTwip(value as `${number}${"mm" | "cm" | "in" | "pt" | "pc" | "pi" | "px"}`),
+      );
+    }
+  }
   if (elementName === "a:buSzPct" && name === "val") {
     const percent = value.endsWith("%") ? value.slice(0, -1) : String(Number(value) / 1000);
     return Number.isFinite(Number(percent)) ? String(Number(percent)) : value;
@@ -167,7 +219,7 @@ function canonicalNode(
   const isRelationship = name === "Relationship" && path.includes("_rels/");
   const relsPath = name === "Relationship" ? path.slice(0, path.lastIndexOf("/")) : path;
   const ownerPath = relationshipOwnerPath(relsPath);
-  const attributes = Object.fromEntries(
+  const attributes: Record<string, string> = Object.fromEntries(
     Object.entries(element.attributes ?? {})
       .filter(([attributeName]) => attributeName !== "xmlns" && !attributeName.startsWith("xmlns:"))
       .filter(([attributeName]) => !(isRelationship && attributeName === "Id"))
@@ -188,6 +240,13 @@ function canonicalNode(
       })
       .sort(([left], [right]) => left.localeCompare(right)),
   );
+  if (ON_OFF_ELEMENTS.has(name) && !("w:val" in attributes)) attributes["w:val"] = "1";
+  for (const [attributeName, value] of Object.entries(DEFAULT_ATTRIBUTES.get(name) ?? {})) {
+    if (!(attributeName in attributes)) attributes[attributeName] = value;
+  }
+  const orderedAttributes = Object.fromEntries(
+    Object.entries(attributes).sort(([left], [right]) => left.localeCompare(right)),
+  );
   const rawText = (element.elements ?? [])
     .filter((child) => child.type === "text" || child.type === "cdata")
     .map((child) => String(child.text ?? child.cdata ?? ""))
@@ -198,7 +257,7 @@ function canonicalNode(
       : rawText;
   return {
     name: canonicalElementName(name, path),
-    attributes,
+    attributes: orderedAttributes,
     text: element.attributes?.["xml:space"] === "preserve" ? text : text.trim(),
     children: (element.elements ?? [])
       .filter((child): child is Element => child.type === "element")
@@ -224,6 +283,12 @@ function sortUnorderedChildren(
     localName === "endnotes" ||
     localName === "docparts" ||
     localName === "docpartpr" ||
+    localName === "settings" ||
+    localName === "ppr" ||
+    localName === "rpr" ||
+    localName === "gslst" ||
+    localName === "schemeclr" ||
+    localName === "ser" ||
     localName === "sectpr"
   ) {
     return {

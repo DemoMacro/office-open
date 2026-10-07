@@ -61,6 +61,8 @@ export interface FootnoteEndnoteReferenceOptions {
  */
 export interface ComplexFieldOptions {
   instruction: string;
+  /** Ordered members when nested simple fields occur inside a field code. */
+  instructionMembers?: ComplexFieldInstructionMember[];
   /** Source `xml:space="preserve"` marker on the plain instruction text. */
   instructionPreserveSpace?: boolean;
   result?: string;
@@ -103,6 +105,15 @@ export interface ComplexFieldOptions {
    * w:lastRenderedPageBreak + w:fldChar begin in one run). */
   lastRenderedPageBreak?: boolean;
 }
+
+/**
+ * One ordered member of a mixed complex-field instruction. Runs retain the
+ * existing verbatim fidelity channel; nested `w:fldSimple` fields remain
+ * canonical `SimpleFieldOptions`.
+ */
+export type ComplexFieldInstructionMember =
+  | { runXml: string }
+  | { simpleField: SimpleFieldOptions };
 
 /**
  * Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/

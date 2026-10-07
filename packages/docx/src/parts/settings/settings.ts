@@ -196,6 +196,11 @@ export interface SettingsOptions {
   listSeparator?: string;
   /** Word 2010 document identifier (w14:docId/`@w14:val`, e.g. "1A190769") */
   w14DocId?: string;
+  /**
+   * Inline text carried by w14:docId in addition to w14:val (round-trip only;
+   * some producers place non-identifier content in this extension element).
+   */
+  w14DocIdText?: string;
   /** Discard cropped-out image data when saving (w14:discardImageEditingData) */
   w14DiscardImageEditingData?: boolean;
   /** Default image DPI for pictures inserted in this document (w14:defaultImageDpi) */
@@ -206,6 +211,11 @@ export interface SettingsOptions {
   w15ChartTrackingRefBased?: boolean;
   /** Word 2013 document identifier (w15:docId/`@w15:val`, GUID format) */
   w15DocId?: string;
+  /**
+   * Inline text carried by w15:docId in addition to w15:val (round-trip only;
+   * some producers place non-identifier content in this extension element).
+   */
+  w15DocIdText?: string;
   /** Click and type paragraph style name */
   clickAndTypeStyle?: string;
   /** Summary length percentage (0-100) */

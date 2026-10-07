@@ -89,6 +89,7 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
       const reverseMap: Record<string, string> = {
         sldView: "slideView",
         sldMasterView: "slideMasterView",
+        notesMasterView: "notesMasterView",
         notesView: "notesView",
         handoutView: "handoutView",
         outlineView: "outlineView",
@@ -178,6 +179,10 @@ function parseViewProperties(el: XmlElement): ViewPropertiesOptions {
   if (notesViewPr) {
     const cSld = findChild(notesViewPr, "p:cSldViewPr");
     const nv: NotesViewOptions = {};
+    const snapToGrid = cSld ? parseOnOff(cSld.attributes?.["snapToGrid"]) : undefined;
+    if (snapToGrid !== undefined) nv.snapToGrid = snapToGrid;
+    const snapToObjects = cSld ? parseOnOff(cSld.attributes?.["snapToObjects"]) : undefined;
+    if (snapToObjects !== undefined) nv.snapToObjects = snapToObjects;
     const cViewPr = cSld ? findChild(cSld, "p:cViewPr") : undefined;
     if (cViewPr) nv.view = parseCommonViewProperties(cViewPr);
     const guideLst = cSld ? findChild(cSld, "p:guideLst") : undefined;

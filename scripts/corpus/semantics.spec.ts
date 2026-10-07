@@ -160,6 +160,12 @@ describe("corpus semantic comparison", () => {
     expect(canonicalXmlNodes(propertiesSource, "word/glossary/document.xml")).toEqual(
       canonicalXmlNodes(propertiesOutput, "word/glossary/document.xml"),
     );
+
+    const paragraphPropertiesSource = parseCanonicalXml("<pPr><spacing/><keepNext/></pPr>");
+    const paragraphPropertiesOutput = parseCanonicalXml("<pPr><keepNext/><spacing/></pPr>");
+    expect(canonicalXmlNodes(paragraphPropertiesSource, "word/document.xml")).toEqual(
+      canonicalXmlNodes(paragraphPropertiesOutput, "word/document.xml"),
+    );
   });
 
   it("normalizes equivalent OOXML boolean attribute tokens", () => {
@@ -168,6 +174,24 @@ describe("corpus semantic comparison", () => {
     );
     const output = new TextEncoder().encode('<root><flag w:val="0"/><math m:val="0"/></root>');
     expect(explainSemanticPartDiff("word/example.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes omitted inline distances to explicit schema defaults", () => {
+    const source = new TextEncoder().encode("<root><wp:inline/></root>");
+    const output = new TextEncoder().encode(
+      '<root><wp:inline distT="0" distB="0" distL="0" distR="0"/></root>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes page measure lexemes to twips", () => {
+    const source = new TextEncoder().encode(
+      '<root><w:pgSz w:w="612pt" w:h="792pt"/><w:pgMar w:top="72pt" w:right="72pt"/></root>',
+    );
+    const output = new TextEncoder().encode(
+      '<root><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440"/></root>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
   });
 
   it("normalizes equivalent OOXML bullet percentage lexemes", () => {

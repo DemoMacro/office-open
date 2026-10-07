@@ -146,4 +146,43 @@ describe("complex field parse", () => {
     const cf = findComplexField(opts);
     expect((cf!.complexField as Record<string, unknown>).instrRunsXml).toBeUndefined();
   });
+
+  it("preserves simple fields interleaved in a complex field code", () => {
+    const inner =
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+      '<w:r><w:instrText>tc "</w:instrText></w:r>' +
+      '<w:fldSimple w:instr="seq Appendix"><w:r><w:rPr><w:noProof/></w:rPr><w:instrText>A</w:instrText></w:r></w:fldSimple>' +
+      "<w:r><w:instrText>-</w:instrText></w:r>" +
+      '<w:fldSimple w:instr="seq Figure"><w:r><w:instrText>1</w:instrText></w:r></w:fldSimple>' +
+      "<w:r><w:instrText>&quot;</w:instrText></w:r>" +
+      '<w:r><w:fldChar w:fldCharType="end"/></w:r>';
+    const opts = parseParagraphXml(inner);
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    expect(field.instruction).toBe('tc "-"');
+    expect(field.instructionMembers).toEqual([
+      { runXml: '<w:r><w:instrText>tc "</w:instrText></w:r>' },
+      {
+        simpleField: {
+          cachedInstructionTextPreserveSpace: false,
+          cachedValue: "",
+          cachedValuePreserveSpace: false,
+          instruction: "seq Appendix",
+          cachedInstructionText: "A",
+          cachedInstructionRPrXml: "<w:rPr><w:noProof/></w:rPr>",
+        },
+      },
+      { runXml: "<w:r><w:instrText>-</w:instrText></w:r>" },
+      {
+        simpleField: {
+          cachedInstructionTextPreserveSpace: false,
+          cachedValue: "",
+          cachedValuePreserveSpace: false,
+          instruction: "seq Figure",
+          cachedInstructionText: "1",
+        },
+      },
+      { runXml: '<w:r><w:instrText>"</w:instrText></w:r>' },
+    ]);
+    expect(stringifyParagraph(opts, writeCtx)).toContain(inner.replace("&quot;", '"'));
+  });
 });

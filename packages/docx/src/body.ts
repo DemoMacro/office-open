@@ -78,6 +78,7 @@ import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
 import type {
+  ComplexFieldInstructionMember,
   ComplexFieldOptions,
   ParagraphChild,
   SdtRunOptions,
@@ -1070,6 +1071,8 @@ interface FieldRunState {
   /** Instruction-stage run elements (begin → separate/end), buffered for the
    *  plain-shape check at the closing end marker. */
   instrRunEls: Element[];
+  /** Ordered fidelity/canonical members when the stage mixes runs and fields. */
+  instructionMembers: ComplexFieldInstructionMember[];
   /** Source xml:space marker on the plain instruction text. */
   instructionPreserveSpace?: boolean;
   /** Result-stage run elements (separate → end), buffered likewise. */
@@ -1084,6 +1087,7 @@ const initialFieldRunState = (): FieldRunState => ({
   pendingResult: "",
   collectingResult: false,
   instructionPreserveSpace: false,
+  instructionMembers: [],
   resultPreserveSpace: false,
   instrRunEls: [],
   resultRunEls: [],
@@ -1156,6 +1160,7 @@ function feedFieldRun(
       state.collectingResult = false;
       state.depth = 1;
       state.instrRunEls = [];
+      state.instructionMembers = [];
       state.resultRunEls = [];
     } else if (fctype === "separate") {
       if (state.kind === "complex" && state.depth > 1) {
@@ -1222,7 +1227,11 @@ function feedFieldRun(
         if (
           !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
         ) {
-          cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
+          if (state.instructionMembers.some((member) => "simpleField" in member)) {
+            cf.instructionMembers = state.instructionMembers;
+          } else {
+            cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
+          }
         }
         // The plain result template pairs the result rPr (defaulting to the
         // control rPr) with a single text run — anything else goes verbatim.
@@ -1283,6 +1292,7 @@ function feedFieldRun(
         // Buffer the run for the verbatim channel when its shape is not what
         // the plain instruction template reproduces (per-run rPr, w:br...).
         state.instrRunEls.push(run);
+        state.instructionMembers.push({ runXml: stringifyElement(run) });
       }
     } else if (state.collectingResult && state.pendingFormField?.textInput) {
       // Capture a textInput's current value; checkbox/dropdown results are
@@ -1928,14 +1938,25 @@ function parseRunLevelChildren(
           sf.cachedValuePreserveSpace = cachedValuePreserveSpace;
           // The plain template emits one bare text run — cached runs carrying
           // rPr (Word marks field results w:noProof) go through verbatim.
-          if (!isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])) {
+          if (
+            !cachedInstructionText &&
+            !isPlainFieldRuns(cachedRunEls, undefined, ["w:t", "w:instrText"])
+          ) {
             sf.cachedRuns = cachedRunEls.map((el) => parsedRunToOptions(parseRun(el, ctx)));
           }
           const sfLock = attrBool(child, "w:fldLock");
           if (sfLock !== undefined) sf.fieldLock = sfLock;
           const sfDirty = attrBool(child, "w:dirty");
           if (sfDirty !== undefined) sf.dirty = sfDirty;
-          childList.push({ simpleField: sf });
+          if (
+            fieldState.kind === "complex" &&
+            fieldState.depth === 1 &&
+            !fieldState.collectingResult
+          ) {
+            fieldState.instructionMembers.push({ simpleField: sf });
+          } else {
+            childList.push({ simpleField: sf });
+          }
         }
         break;
       }

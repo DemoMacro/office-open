@@ -7539,7 +7539,8 @@
               "type": "string"
             }
           },
-          "required": ["type", "pattern"],
+          "required": ["type"],
+          "title": "type",
           "type": "object"
         },
         {
@@ -11085,10 +11086,9 @@
         },
         "pattern": {
           "$ref": "#/definitions/PresetPattern",
-          "description": "Preset pattern type"
+          "description": "Preset pattern type; omitted when the source `a:pattFill` has no `@prst`."
         }
       },
-      "required": ["pattern"],
       "type": "object"
     },
     "PenAlignment": {

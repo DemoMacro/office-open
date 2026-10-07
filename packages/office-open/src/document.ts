@@ -17,6 +17,7 @@ import {
 import {
   generateDocument as generateOdtDocument,
   parseDocument as parseOdtDocument,
+  type OdtDocumentOptions,
 } from "@office-open/odt";
 import {
   generateDocument as generateRtfDocument,
@@ -68,7 +69,7 @@ export async function parseDocument(
     case "rtf":
       return parseRtfDocument(typeof input === "string" ? input : new TextDecoder().decode(input));
     case "odt":
-      return parseOdtDocument(data);
+      return parseOdtDocument(data) as DocumentOptions;
     default:
       throw new Error(`${info.format} is not a document format`);
   }
@@ -87,7 +88,11 @@ export async function generateDocument<
 
   if (format === "odt") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
-    return convertOutput(generateOdtDocument(options), outputType, ODT_MIME_TYPE);
+    return convertOutput(
+      generateOdtDocument(options as OdtDocumentOptions),
+      outputType,
+      ODT_MIME_TYPE,
+    );
   }
 
   if (format === "rtf") {

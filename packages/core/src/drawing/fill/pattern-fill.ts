@@ -103,8 +103,8 @@ export type PresetPattern =
  * ```
  */
 export interface PatternFillOptions {
-  /** Preset pattern type */
-  pattern: PresetPattern;
+  /** Preset pattern type; omitted when the source `a:pattFill` has no `@prst`. */
+  pattern?: PresetPattern;
   foregroundColor?: SolidFillOptions;
   backgroundColor?: SolidFillOptions;
 }
@@ -154,5 +154,9 @@ export const createPatternFill = (options: PatternFillOptions): string => {
     children.push(element("a:bgClr", undefined, [createColorElement(options.backgroundColor)]));
   }
 
-  return element("a:pattFill", { prst: xsdPattern.to(options.pattern) }, children);
+  return element(
+    "a:pattFill",
+    { prst: options.pattern === undefined ? undefined : xsdPattern.to(options.pattern) },
+    children,
+  );
 };

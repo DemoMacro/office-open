@@ -317,7 +317,7 @@ export const PPTX_PARTS = {
     "docProps/",
     "[Content_Types].xml",
   ],
-  opaquePrefixes: ["ppt/embeddings/", "ppt/media/", "docProps/thumbnail."],
+  opaquePrefixes: ["ppt/embeddings/", "ppt/media/", "ppt/printerSettings/", "docProps/thumbnail."],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
     { path: "_rels/.rels", presence: { kind: "always" } },

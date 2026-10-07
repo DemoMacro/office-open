@@ -27,6 +27,7 @@ import {
   finalizeContentTypes,
   findAndReplaceImagePlaceholders,
   optionalRelsPart,
+  partPathToRelsPath,
   Relationships,
   TargetModeType,
   replaceNumberingPlaceholders,
@@ -73,6 +74,7 @@ import { Numbering } from "./parts/numbering";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 /** DOCX part path → content type, derived from the part registry. */
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
@@ -175,6 +177,30 @@ function hasSourcePart(options: DocumentOptions, partName: string): boolean {
       (override) => override.partName.toLowerCase() === `/${partName.toLowerCase()}`,
     );
   return result;
+}
+
+function renamePrimaryDocument(files: Zippable, sourcePath: string, targetPath: string): void {
+  if (sourcePath === targetPath) return;
+  const sourceRelsPath = partPathToRelsPath(sourcePath);
+  const targetRelsPath = partPathToRelsPath(targetPath);
+  if (files[sourcePath] !== undefined) {
+    files[targetPath] = files[sourcePath];
+    delete files[sourcePath];
+  }
+  if (files[sourceRelsPath] !== undefined) {
+    files[targetRelsPath] = files[sourceRelsPath];
+    delete files[sourceRelsPath];
+  }
+  for (const path of ["_rels/.rels", "[Content_Types].xml"]) {
+    const data = files[path];
+    if (!(data instanceof Uint8Array)) continue;
+    let xml = decoder.decode(data);
+    xml = xml
+      .replaceAll(`Target="/${sourcePath}"`, `Target="${targetPath}"`)
+      .replaceAll(`Target="${sourcePath}"`, `Target="${targetPath}"`)
+      .replaceAll(`PartName="/${sourcePath}"`, `PartName="/${targetPath}"`);
+    files[path] = encoder.encode(xml);
+  }
 }
 
 // ── Public API ──
@@ -301,6 +327,11 @@ export function compileDocument(
         relationship.relationshipType.includes("/extended-properties")),
   );
   useStrictRelationshipTypes(files, documentNamespaceDialect(ctx));
+  renamePrimaryDocument(
+    files,
+    packageFormat.mainPartPath,
+    ctx._options.primaryPartPath ?? packageFormat.mainPartPath,
+  );
 
   return files;
 }

@@ -42,6 +42,11 @@ describe("slideDesc round-trip", () => {
     expect(result).toBeDefined();
   });
 
+  it("round-trips the common slide data name", () => {
+    const result = roundTrip({ name: "Overview" });
+    expect(result.name).toBe("Overview");
+  });
+
   it("round-trips showMasterShapes=false", () => {
     const opts: SlideOptions = {
       showMasterShapes: false,
