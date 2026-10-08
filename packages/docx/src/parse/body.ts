@@ -65,6 +65,7 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
   const footerRefs: Record<string, SectionChild[]> = {};
   const headerPartNames: NonNullable<ParsedSectionProperties["parsedHeaderPartNames"]> = {};
   const footerPartNames: NonNullable<ParsedSectionProperties["parsedFooterPartNames"]> = {};
+  const referenceOrder: NonNullable<SectionPropertiesOptions["headerFooterReferenceOrder"]> = [];
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:headerReference" || child.name === "w:footerReference") {
@@ -74,6 +75,8 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
       const slot = type as "default" | "first" | "even";
       const parsed = parseHeaderFooterRef(rId, ctx);
       if (!parsed) continue;
+      const kind = child.name === "w:headerReference" ? "header" : "footer";
+      referenceOrder.push(`${kind}-${slot}`);
       if (child.name === "w:headerReference") {
         headerRefs[slot] = parsed.children;
         headerPartNames[slot] = parsed.partName;
@@ -91,6 +94,21 @@ function parseSectionProperties(el: Element, ctx: DocxReadContext): ParsedSectio
   if (Object.keys(footerRefs).length > 0) {
     opts.parsedFooters = footerRefs;
     opts.parsedFooterPartNames = footerPartNames;
+  }
+  // Canonical emission is header group (default/first/even) then footer group;
+  // anything else needs the recorded source order to round-trip verbatim.
+  const emitted = (
+    kind: "header" | "footer",
+  ): NonNullable<SectionPropertiesOptions["headerFooterReferenceOrder"]> =>
+    (["default", "first", "even"] as const)
+      .map((slot) => `${kind}-${slot}` as const)
+      .filter((entry) => referenceOrder.includes(entry));
+  const canonical = [...emitted("header"), ...emitted("footer")];
+  if (
+    referenceOrder.length > 1 &&
+    referenceOrder.some((entry, index) => entry !== canonical[index])
+  ) {
+    opts.headerFooterReferenceOrder = referenceOrder;
   }
 
   return opts;

@@ -13,6 +13,7 @@ import type {
 import type { GraphicFrameLocksOptions, GroupShapeLocksOptions } from "@parts/drawing/descriptor";
 import type { HyperlinkOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
+import type { UnsupportedGroupChildMediaData } from "@parts/paragraph/run/unsupported-drawing-run";
 
 export interface MediaDataTransformation {
   offset?: {
@@ -175,6 +176,7 @@ export type GroupChildMediaData = (
   | GroupMediaData
   | ChartMediaData
   | ContentPartMediaData
+  | UnsupportedGroupChildMediaData
 ) &
   GroupCommonMediaData;
 

@@ -16,13 +16,16 @@ import {
   findChild,
   textOf,
 } from "@office-open/xml";
+import { findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { parseDrawingRun, parseUnsupportedDrawingRun } from "@parts/drawing/drawing-parse";
 import { objectDesc } from "@parts/object";
 import type { ObjectElementOptions } from "@parts/object";
 import type { FootnoteEndnoteReferenceOptions } from "@parts/paragraph/paragraph";
 import type {
   BreakClear,
   BreakOptions,
+  RunChildOrder,
   RunPropertiesOptions,
   RunOptions,
 } from "@parts/paragraph/run";
@@ -35,6 +38,7 @@ import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeho
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
 import type { RubyContentOptions, RubyOptions, RubyPropertiesOptions } from "./ruby";
+import type { FontProperties } from "./run-fonts";
 import { parseW14RunEffect } from "./w14-effects";
 
 // On/off run properties: XML child tag → options key.
@@ -58,16 +62,26 @@ const ON_OFF_RUN_PROPS: readonly (readonly [string, keyof RunPropertiesOptions &
 ];
 const ON_OFF_RUN_PROPS_MAP: ReadonlyMap<string, string> = new Map(ON_OFF_RUN_PROPS);
 
+/** Preserve the source `w:val` spelling for an explicit on/off run toggle. */
+function setOnOffLexeme(
+  options: Record<string, unknown>,
+  key: "boldRaw" | "boldComplexScriptRaw" | "italicRaw" | "italicComplexScriptRaw",
+  element: Element,
+): void {
+  const value = attr(element, "w:val");
+  if (value !== undefined) options[key] = value as "0";
+}
+
 /**
  * Parse a w:rPr element into RunPropertiesOptions.
  *
- * Single pass over the children: rPr holds at most one of each property, so a
- * switch dispatch beats the previous per-property findChild linear scans
- * (26 properties × N children re-walked the array for every lookup).
+ * Single pass over the children: a switch dispatch beats per-property findChild
+ * scans. Duplicate `w:rFonts` elements round-trip through `fontDuplicates`.
  */
 export function parseRunProperties(el: Element): RunPropertiesOptions {
   const opts: Record<string, unknown> = {};
   let w14Parts: string[] | undefined;
+  let fontDuplicates: FontProperties[] | undefined;
 
   const children = el.elements;
   if (children !== undefined) {
@@ -106,30 +120,36 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const cstheme = attr(child, "w:cstheme");
           const hint = attr(child, "w:hint");
 
-          const fontObj: Record<string, string | undefined> = {};
+          const fontObj: FontProperties = {};
           if (ascii) fontObj.ascii = ascii;
           if (eastAsia) fontObj.eastAsia = eastAsia;
           if (hAnsi) fontObj.hAnsi = hAnsi;
           if (complexScript) fontObj.complexScript = complexScript;
-          if (asciiTheme) fontObj.asciiTheme = asciiTheme;
-          if (eastAsiaTheme) fontObj.eastAsiaTheme = eastAsiaTheme;
-          if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme;
-          if (cstheme) fontObj.complexScriptTheme = cstheme;
-          if (hint) fontObj.hint = hint;
-          opts.font = fontObj;
+          if (asciiTheme) fontObj.asciiTheme = asciiTheme as FontProperties["asciiTheme"];
+          if (eastAsiaTheme)
+            fontObj.eastAsiaTheme = eastAsiaTheme as FontProperties["eastAsiaTheme"];
+          if (hAnsiTheme) fontObj.hAnsiTheme = hAnsiTheme as FontProperties["hAnsiTheme"];
+          if (cstheme) fontObj.complexScriptTheme = cstheme as FontProperties["complexScriptTheme"];
+          if (hint) fontObj.hint = hint as FontProperties["hint"];
+          if (opts.font === undefined) opts.font = fontObj;
+          else (fontDuplicates ??= []).push(fontObj);
           break;
         }
         case "w:b":
           opts.bold = attrBool(child, "w:val") ?? true;
+          setOnOffLexeme(opts, "boldRaw", child);
           break;
         case "w:bCs":
           opts.boldComplexScript = attrBool(child, "w:val") ?? true;
+          setOnOffLexeme(opts, "boldComplexScriptRaw", child);
           break;
         case "w:i":
           opts.italic = attrBool(child, "w:val") ?? true;
+          setOnOffLexeme(opts, "italicRaw", child);
           break;
         case "w:iCs":
           opts.italicComplexScript = attrBool(child, "w:val") ?? true;
+          setOnOffLexeme(opts, "italicComplexScriptRaw", child);
           break;
         case "w:u": {
           const ul: Record<string, string | undefined> = {};
@@ -297,6 +317,7 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
   }
 
   if (w14Parts !== undefined && w14Parts.length > 0) opts.w14RawXml = w14Parts.join("");
+  if (fontDuplicates !== undefined) opts.fontDuplicates = fontDuplicates;
 
   // A bare <w:rPr/> yields no fields — mark the presence so stringify
   // re-emits the empty element.
@@ -420,7 +441,9 @@ export type ParsedRunChild =
   | { break: number | BreakOptions }
   | { footnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
-  | { text: string; preserveSpace?: boolean };
+  | { text: string; preserveSpace?: boolean }
+  | { instructionText: string; preserveSpace?: boolean }
+  | { deletedInstructionText: string; preserveSpace?: boolean };
 
 function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions {
   const children: (RunOptions | string)[] = [];
@@ -492,6 +515,7 @@ export function parseRun(
   runPropertiesRsid?: LongHexNumber;
   deletionRsid?: LongHexNumber;
   preserveSpace?: boolean;
+  childOrder?: RunChildOrder[];
 } {
   // Duplicate rPr elements are schema-invalid, but legacy files carry them;
   // Word applies the last one, so the parse follows the same precedence.
@@ -506,6 +530,17 @@ export function parseRun(
   const runPropertiesRsid = attr(el, "w:rsidRPr");
   const deletionRsid = attr(el, "w:rsidDel");
   let preserveSpace: boolean | undefined;
+  const rPrIndex = runChildren
+    .filter((child) => child.type === "element")
+    .findIndex((child) => child.name === "w:rPr");
+  const childOrder =
+    rPrIndex > 0
+      ? ([
+          ...Array.from<RunChildOrder>({ length: rPrIndex }).fill("content"),
+          "runProperties",
+          ...(rPrIndex < runChildren.length - 1 ? (["content"] as const) : []),
+        ] as RunChildOrder[])
+      : undefined;
 
   for (const child of el.elements ?? []) {
     switch (child.name) {
@@ -519,6 +554,24 @@ export function parseRun(
         if (preserve) preserveSpace = true;
         else if (needsMarker && preserveSpace === undefined) preserveSpace = false;
         children.push(needsMarker ? { text, preserveSpace: preserve } : text);
+        break;
+      }
+      case "w:instrText": {
+        const text = textOf(child);
+        const preserve = attr(child, "xml:space") === "preserve";
+        children.push({
+          instructionText: text,
+          ...(preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text) ? { preserveSpace: preserve } : {}),
+        });
+        break;
+      }
+      case "w:delInstrText": {
+        const text = textOf(child);
+        const preserve = attr(child, "xml:space") === "preserve";
+        children.push({
+          deletedInstructionText: text,
+          ...(preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text) ? { preserveSpace: preserve } : {}),
+        });
         break;
       }
       case "w:delText": {
@@ -565,10 +618,18 @@ export function parseRun(
         if (id !== undefined) children.push({ commentReference: id });
         break;
       }
-      // Drawing is handled at the paragraph level (parseSectionChild in body.ts)
-      // where the drawing is extracted and replaced as a paragraph child.
-      case "w:drawing":
+      // Single pure drawing runs are extracted by the paragraph path; mixed or
+      // multi-drawing runs keep every EG_RunInnerContent member in source order.
+      case "w:drawing": {
+        const drawingChild =
+          parseDrawingRun(child, _ctx) ??
+          (() => {
+            const graphicData = findFirst(child, "a:graphicData");
+            return graphicData ? parseUnsupportedDrawingRun(child, graphicData, _ctx) : undefined;
+          })();
+        if (drawingChild) children.push(drawingChild as unknown as ParsedRunChild);
         break;
+      }
       // VML picture — ordered shape children with imagedata media bridged
       // from the part's rels (r:id → bytes → `{fileName}` placeholder).
       case "w:pict": {
@@ -766,6 +827,7 @@ export function parseRun(
     runPropertiesRsid,
     deletionRsid,
     preserveSpace,
+    childOrder,
   };
 }
 
@@ -820,18 +882,29 @@ export function parsedRunToOptions(
   if (
     contentChildren.length === 1 &&
     (typeof first === "string" || firstUnpreservedText) &&
+    parsed.childOrder === undefined &&
     parsed.additionRsid === undefined &&
     parsed.runPropertiesRsid === undefined &&
     parsed.deletionRsid === undefined
   ) {
     const text = typeof first === "string" ? first : first.text;
-    const base = parsed.properties === undefined ? { text } : { ...parsed.properties, text };
+    const base =
+      parsed.properties === undefined
+        ? { text, ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}) }
+        : {
+            ...parsed.properties,
+            text,
+            ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
+          };
     return (
       parsed.preserveSpace === undefined ? base : { ...base, preserveSpace: parsed.preserveSpace }
     ) as RunOptions;
   }
 
-  const opts: Record<string, unknown> = { ...parsed.properties };
+  const opts: Record<string, unknown> = {
+    ...parsed.properties,
+    ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
+  };
   if (parsed.additionRsid) opts.additionRsid = parsed.additionRsid;
   if (parsed.runPropertiesRsid) opts.runPropertiesRsid = parsed.runPropertiesRsid;
   if (parsed.deletionRsid) opts.deletionRsid = parsed.deletionRsid;
@@ -858,6 +931,7 @@ export function parsedRunToOptions(
     const { additionRsid, runPropertiesRsid, deletionRsid, ...properties } = opts;
     return {
       ...ref,
+      ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
       ...(Object.keys(properties).length > 0 ? { properties } : {}),
       ...(additionRsid ? { additionRsid } : {}),
       ...(runPropertiesRsid ? { runPropertiesRsid } : {}),
@@ -934,6 +1008,18 @@ export function parsedRunToOptions(
       "preserveSpace" in child &&
       child.preserveSpace === true,
   );
+  const firstTextIndex = contentChildren.findIndex(
+    (child) =>
+      typeof child === "string" ||
+      (typeof child === "object" && child !== null && "text" in child && "preserveSpace" in child),
+  );
+  const firstBreakIndex = contentChildren.findIndex(
+    (child) =>
+      child === PARSED_LINE_BREAK ||
+      child === PARSED_PAGE_BREAK ||
+      child === PARSED_COLUMN_BREAK ||
+      (typeof child === "object" && child !== null && "break" in child),
+  );
 
   for (const child of nonRefChildren) {
     if (typeof child === "string") {
@@ -970,6 +1056,7 @@ export function parsedRunToOptions(
   const hasStructuredBreaks = structuredBreaks.length > 0;
   const useChildrenForm =
     mixedRefs ||
+    (firstTextIndex >= 0 && firstBreakIndex > firstTextIndex) ||
     (hasBlockChild && nonRefChildren.length > 1) ||
     hasMixedSymbol ||
     extraChildren.length > 0 ||

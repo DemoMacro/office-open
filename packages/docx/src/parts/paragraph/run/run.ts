@@ -76,6 +76,8 @@ export const EMPTY_RUN_ELEMENTS: Record<string, string> = {
 };
 
 interface RunOptionsBase {
+  /** Relative source position of `w:rPr` and content when not canonical; round-trip only. */
+  childOrder?: RunChildOrder[];
   /**
    * Inline content children. Empty run elements are single-key markers
    * (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures,
@@ -85,6 +87,8 @@ interface RunOptionsBase {
     | (typeof PageNumber)[keyof typeof PageNumber]
     | string
     | { text: string; preserveSpace?: boolean }
+    | { instructionText: string; preserveSpace?: boolean }
+    | { deletedInstructionText: string; preserveSpace?: boolean }
     | { tab: true }
     | { noBreakHyphen: true }
     | { softHyphen: true }
@@ -119,6 +123,9 @@ interface RunOptionsBase {
   /** Endnote reference as a top-level field (sibling of footnoteReference). */
   endnoteReference?: number | FootnoteEndnoteReferenceOptions;
 }
+
+/** Relative placement of run properties and typed run content. */
+export type RunChildOrder = "runProperties" | "content";
 
 /**
  * Options for creating a Run element (w:r).

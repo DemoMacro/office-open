@@ -14,7 +14,7 @@ import {
   remapSmartArtDrawingTarget,
   toUint8Array,
   getReferencedMedia,
-  replaceImagePlaceholders,
+  replacePlaceholders,
   resolverFromRegistry,
 } from "@office-open/core";
 import type { Zippable } from "@office-open/core";
@@ -34,6 +34,7 @@ import type { PptxWriteContext } from "../context";
 import { commentAuthorsDesc, slideCommentsDesc } from "../parts/descriptors/comments";
 import { notesSlideDesc } from "../parts/descriptors/notes-slide";
 import { slideSyncDesc } from "../parts/descriptors/slide-sync";
+import { wireEmbeddedOle } from "./masters";
 import { XML_DECL, encoder, wirePartHyperlinks } from "./shared";
 import type { SlideCompileArtifacts } from "./slides";
 
@@ -216,21 +217,37 @@ export function compileTailParts(
   for (let i = 0; i < artifacts.notesOptions.length; i++) {
     const slideIdx = notesSlideToSlide.get(i) ?? 0;
     const nsRels = new Relationships();
-    nsRels.addRelationship(1, RELATIONSHIP_TYPES.notesMaster, "../notesMasters/notesMaster1.xml");
-    nsRels.addRelationship(2, RELATIONSHIP_TYPES.slide, `../slides/slide${slideIdx + 1}.xml`);
+    const notesSourcePath =
+      artifacts.notesSourcePaths[i] ?? `ppt/notesSlides/notesSlide${i + 1}.xml`;
+    nsRels.reserveSourceRids(notesSourcePath, options.passthroughRelationships ?? []);
+    for (const rel of options.passthroughRelationships ?? []) {
+      if (rel.source === notesSourcePath) nsRels.claimSourceRel(rel);
+    }
+    if (!nsRels.hasRelationshipKind("notesMaster")) {
+      nsRels.addRelationship(1, RELATIONSHIP_TYPES.notesMaster, "../notesMasters/notesMaster1.xml");
+    }
+    if (!nsRels.hasRelationshipKind("slide")) {
+      nsRels.addRelationship(2, RELATIONSHIP_TYPES.slide, `../slides/slide${slideIdx + 1}.xml`);
+    }
     // Media referenced by notes shapes gets slide-style image wiring (notes
     // accept pictures just like slides do).
     const notesRaw = notesSlideDesc.stringify(artifacts.notesOptions[i]!, descCtx) ?? "";
     const notesMediaData = getReferencedMedia(notesRaw, descCtx.mediaCollection.array);
-    const notesImageOffset = nsRels.nextRelationshipId;
-    for (const [idx, mediaItem] of notesMediaData.entries()) {
-      nsRels.addRelationship(
-        notesImageOffset + idx,
-        RELATIONSHIP_TYPES.image,
-        `../media/${mediaItem.fileName}`,
-      );
-    }
-    let notesXml = replaceImagePlaceholders(notesRaw, notesMediaData, notesImageOffset);
+    let nextNotesImageId = nsRels.nextRelationshipId;
+    const notesImageIds = notesMediaData.map((mediaItem) => {
+      const target = `../media/${mediaItem.fileName}`;
+      const existing = nsRels.idOf(RELATIONSHIP_TYPES.image, target);
+      if (existing !== undefined) return Number(existing.slice(3));
+      const id = nextNotesImageId++;
+      nsRels.addRelationship(id, RELATIONSHIP_TYPES.image, target);
+      return id;
+    });
+    let notesXml = replacePlaceholders(
+      notesRaw,
+      new Map(
+        notesMediaData.map((mediaItem, idx) => [mediaItem.fileName, `rId${notesImageIds[idx]}`]),
+      ),
+    );
     // Hyperlinks in notes text get the same placeholder wiring slides get
     // (a jump to the host slide reuses its existing slide rel).
     notesXml = wirePartHyperlinks(
@@ -244,10 +261,9 @@ export function compileTailParts(
         return rid === undefined ? undefined : Number(rid.slice(3));
       },
     );
-    files[`ppt/notesSlides/notesSlide${i + 1}.xml`] = encoder.encode(XML_DECL + notesXml);
-    files[`ppt/notesSlides/_rels/notesSlide${i + 1}.xml.rels`] = encoder.encode(
-      XML_DECL + nsRels.serialize(),
-    );
+    notesXml = wireEmbeddedOle(notesXml, nsRels, notesSourcePath, options.passthroughRelationships);
+    files[notesSourcePath] = encoder.encode(XML_DECL + notesXml);
+    files[partPathToRelsPath(notesSourcePath)] = encoder.encode(XML_DECL + nsRels.serialize());
   }
 
   // Slide sync properties

@@ -152,6 +152,11 @@ describe("runPropertiesDesc round-trip", () => {
     expect(r.smtClean).toBe(false);
   });
 
+  it("round-trips an empty bookmark mark", () => {
+    const r = roundTrip({ bookmarkMark: "" });
+    expect(r.bookmarkMark).toBe("");
+  });
+
   it("round-trips solid fill", () => {
     const r = roundTrip({ fill: { type: "solid", color: "FF0000" } });
     const fill = r.fill! as { type: string; color: { value: string } };
@@ -200,6 +205,7 @@ describe("runPropertiesDesc round-trip", () => {
     } as unknown as ReadContext;
     const r = runPropertiesDesc.parse(el, urlReadCtx);
     expect(r.hyperlink?.url).toBe("https://example.com");
+    expect(r.hyperlink?.referenceId).toBe("rId2");
     expect(r.hyperlink?.slide).toBeUndefined();
   });
 

@@ -84,6 +84,11 @@ describe("slideCommentsDesc round-trip", () => {
     expect(result[0]?.text).toBe("Hello");
   });
 
+  it("round-trips empty comment text", () => {
+    const result = roundTrip([{ authorId: 0, idx: 2, x: 0, y: 0, text: "" }]);
+    expect(result[0]?.text).toBe("");
+  });
+
   it("round-trips comment with date", () => {
     const comments: CommentEntry[] = [
       { authorId: 0, idx: 1, date: "2024-01-15T10:30:00Z", x: 0, y: 0, text: "Dated" },

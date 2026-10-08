@@ -21771,6 +21771,10 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "description": "Source style attribute lexical form; round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "target": {
           "type": "string"
         },
@@ -22168,6 +22172,9 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapeOptions/properties/styleRaw"
         },
         "target": {
           "type": "string"

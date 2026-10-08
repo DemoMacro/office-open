@@ -25,8 +25,10 @@ import {
   documentNamespaceAttributesInDialect,
   documentNamespaceDialect,
 } from "../document/document-attributes";
+import type { OnOffLexicalValue } from "../paragraph/run/properties";
 import type {
   SettingsOptions,
+  SettingsOnOffValue,
   DocumentProtectionOptions,
   WriteProtectionOptions,
   MailMergeOptions,
@@ -54,9 +56,10 @@ function valAttr(tag: string): string {
   return `${ns}:val`;
 }
 
-function onOff(tag: string, val: boolean | undefined): string {
+function onOff(tag: string, val: SettingsOnOffValue | undefined): string {
   if (val === undefined) return "";
-  return val ? `<${tag}/>` : `<${tag} ${valAttr(tag)}="0"/>`;
+  if (typeof val === "boolean") return val ? `<${tag}/>` : `<${tag} ${valAttr(tag)}="0"/>`;
+  return `<${tag} ${valAttr(tag)}="${val}"/>`;
 }
 
 function numVal(tag: string, val: number | undefined): string {
@@ -100,10 +103,15 @@ function compatSetting(name: string, val: string | number, uri?: string): string
 // ── Parse helpers ──
 
 /** Read a CT_OnOff child as boolean (presence true unless val is explicitly false). */
-function readOnOff(el: Element | undefined): boolean | undefined {
+function readOnOffValue(el: Element | undefined): SettingsOnOffValue | undefined {
   if (!el || !el.name) return undefined;
   const v = attr(el, valAttr(el.name));
-  return parseOnOff(v) ?? true;
+  return parseOnOff(v) === undefined ? true : (v as SettingsOnOffValue);
+}
+
+function readOnOff(el: Element | undefined): boolean | undefined {
+  const value = readOnOffValue(el);
+  return typeof value === "string" ? parseOnOff(value) : value;
 }
 
 /** Read an attribute as a number, or undefined if absent/unparseable. */
@@ -537,7 +545,8 @@ const DOC_PROTECT_EDITS = ["none", "readOnly", "comments", "trackedChanges", "fo
 
 function stringifyDocProtect(opts: DocumentProtectionOptions): string {
   const derived = maybeDerive(opts.password, opts.hashValue);
-  const attrs: Record<string, string | number> = { "w:enforcement": "1" };
+  const enforcement = opts.enforcementRaw ?? (opts.enforcement === false ? "0" : "1");
+  const attrs: Record<string, string | number> = { "w:enforcement": enforcement };
   if (opts.edit !== undefined) attrs["w:edit"] = opts.edit;
   if (opts.formatting !== undefined) attrs["w:formatting"] = opts.formatting ? "1" : "0";
   if (opts.algorithmName ?? derived?.algorithmName)
@@ -1202,7 +1211,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       ["doNotEmbedSmartTags", "w:doNotEmbedSmartTags"],
     ];
     for (const [key, tag] of onOffScalar) {
-      const v = readOnOff(findChild(el, tag));
+      const v = readOnOffValue(findChild(el, tag));
       if (v !== undefined) opts[key] = v;
     }
 
@@ -1325,6 +1334,10 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
       const enforcement = attr(docProtEl, "w:enforcement");
       if (enforcement !== undefined) {
         Object.assign(prot, readPasswordAttrs(docProtEl));
+        if (parseOnOff(enforcement) !== undefined) {
+          prot.enforcementRaw = enforcement as OnOffLexicalValue;
+        }
+        prot.enforcement = parseOnOff(enforcement) ?? true;
         const formatting = attr(docProtEl, "w:formatting");
         if (formatting !== undefined) prot.formatting = parseOnOff(formatting) ?? false;
       }
@@ -1336,9 +1349,9 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     if (defaultTabStop !== undefined) opts.defaultTabStop = defaultTabStop;
 
     // hyphenation — sibling CT_Settings elements, flattened onto the root
-    const autoHyph = readOnOff(findChild(el, "w:autoHyphenation"));
+    const autoHyph = readOnOffValue(findChild(el, "w:autoHyphenation"));
     if (autoHyph !== undefined) opts.autoHyphenation = autoHyph;
-    const noHyphCaps = readOnOff(findChild(el, "w:doNotHyphenateCaps"));
+    const noHyphCaps = readOnOffValue(findChild(el, "w:doNotHyphenateCaps"));
     if (noHyphCaps !== undefined) opts.doNotHyphenateCaps = noHyphCaps;
     const consLimit = readNum(findChild(el, "w:consecutiveHyphenLimit"), "w:val");
     if (consLimit !== undefined) opts.consecutiveHyphenLimit = consLimit;

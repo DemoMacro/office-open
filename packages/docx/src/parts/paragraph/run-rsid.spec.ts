@@ -91,6 +91,60 @@ describe("run rsid round-trip", () => {
     }
   });
 
+  it("preserves instruction-run identity on form fields", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}>` +
+        '<w:r w:rsidR="00000001" w:rsidRPr="00000002"><w:fldChar w:fldCharType="begin">' +
+        "<w:ffData><w:checkBox/></w:ffData></w:fldChar></w:r>" +
+        '<w:r w:rsidR="00000003" w:rsidRPr="00000004"><w:instrText xml:space="preserve"> FORMCHECKBOX </w:instrText></w:r>' +
+        '<w:r w:rsidR="00000005" w:rsidRPr="00000006"><w:fldChar w:fldCharType="separate"/></w:r>' +
+        '<w:r w:rsidR="00000007" w:rsidRPr="00000008"><w:t>☐</w:t></w:r>' +
+        '<w:r w:rsidR="00000009" w:rsidRPr="0000000A"><w:fldChar w:fldCharType="end"/></w:r>' +
+        "</w:p>",
+    );
+    expect(firstChild(opts)).toMatchObject({
+      additionRsid: "00000001",
+      runPropertiesRsid: "00000002",
+      instructionAdditionRsid: "00000003",
+      instructionRunPropertiesRsid: "00000004",
+      separatorAdditionRsid: "00000005",
+      separatorRunPropertiesRsid: "00000006",
+      resultAdditionRsid: "00000007",
+      resultRunPropertiesRsid: "00000008",
+      endAdditionRsid: "00000009",
+      endRunPropertiesRsid: "0000000A",
+    });
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('w:rsidR="00000003" w:rsidRPr="00000004"');
+    expect(xml).toContain("FORMCHECKBOX");
+  });
+
+  it("preserves moved paragraph-mark revisions", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:pPr><w:rPr>` +
+        '<w:moveTo w:id="7" w:author="Alice" w:date="2026-01-02T03:04:05Z"/>' +
+        "</w:rPr></w:pPr><w:r><w:t>moved</w:t></w:r></w:p>",
+    );
+    expect(opts.run?.movedTo).toEqual({
+      id: 7,
+      author: "Alice",
+      date: "2026-01-02T03:04:05Z",
+    });
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('<w:moveTo w:id="7" w:author="Alice" w:date="2026-01-02T03:04:05Z"/>');
+  });
+
+  it("omits absent paragraph-mark revision dates", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:pPr><w:rPr><w:del w:id="8" w:author="Alice"/></w:rPr></w:pPr>` +
+        "<w:r><w:t>deleted mark</w:t></w:r></w:p>",
+    );
+    expect(opts.run?.deletion).toEqual({ id: 8, author: "Alice" });
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('<w:del w:id="8" w:author="Alice"/>');
+    expect(xml).not.toContain("w:date=");
+  });
+
   it("preserves w:rsidR and w:rsidRPr on hyperlink text runs", () => {
     const opts = parseParagraphXml(
       `<w:p ${NS}><w:hyperlink w:anchor="target">` +

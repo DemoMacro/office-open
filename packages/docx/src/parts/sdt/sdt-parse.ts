@@ -10,6 +10,7 @@ import type { Element } from "@office-open/xml";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
+  SdtChildOrder,
   SdtPropertiesOptions,
   SdtListItem,
   SdtDateOptions,
@@ -17,6 +18,39 @@ import type {
   SdtComboBoxOptions,
   SdtDropDownListOptions,
 } from "@parts/table-of-contents";
+
+const SDT_ELEMENT_ORDER = new Map<string, SdtChildOrder>([
+  ["w:rPr", "runProperties"],
+  ["w:alias", "alias"],
+  ["w:tag", "tag"],
+  ["w:id", "id"],
+  ["w:lock", "lock"],
+  ["w:placeholder", "placeholder"],
+  ["w:temporary", "temporary"],
+  ["w:showingPlcHdr", "showingPlaceholder"],
+  ["w:label", "label"],
+  ["w:tabIndex", "tabIndex"],
+  ["w:dataBinding", "dataBinding"],
+  ["w:equation", "equation"],
+  ["w:comboBox", "comboBox"],
+  ["w:date", "date"],
+  ["w:dropDownList", "dropDownList"],
+  ["w:picture", "picture"],
+  ["w:richText", "richText"],
+  ["w:text", "text"],
+  ["w:citation", "citation"],
+  ["w:group", "group"],
+  ["w:bibliography", "bibliography"],
+  ["w:docPartObj", "docPartObj"],
+  ["w:docPartList", "docPartList"],
+  ["w14:checkbox", "checkbox"],
+  ["w15:repeatingSection", "repeatingSection"],
+  ["w15:repeatingSectionItem", "repeatingSectionItem"],
+  ["w14:entityPicker", "entityPicker"],
+  ["w15:webExtensionLinked", "webExtensionLinked"],
+  ["w15:webExtensionCreated", "webExtensionCreated"],
+  ["w15:appearance", "appearance"],
+]);
 
 import type { DocxReadContext } from "../../context";
 
@@ -208,6 +242,11 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
       opts.appearance = val;
     }
   }
+
+  const childOrder = (el.elements ?? []).flatMap((child) =>
+    child.name === undefined ? [] : (SDT_ELEMENT_ORDER.get(child.name) ?? []),
+  );
+  if (childOrder.length > 0) opts.childOrder = childOrder;
 
   return opts as SdtPropertiesOptions;
 }

@@ -807,8 +807,11 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // the master's sldLayoutIdLst names it — fall back to that membership.
     const masterListedLayouts = new Set<string>();
     const sldLayoutIdLst = findChild(masterEl, "p:sldLayoutIdLst");
+    const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
+    const layoutRelationshipIdsByPath = new Map(
+      [...masterRelTargets].map(([relationshipId, path]) => [path, relationshipId]),
+    );
     if (sldLayoutIdLst) {
-      const masterRelTargets = parseSlideRelMap(pptx.doc, masterPath);
       for (const sldLayoutId of sldLayoutIdLst.elements ?? []) {
         if (sldLayoutId.name !== "p:sldLayoutId") continue;
         const rid = sldLayoutId.attributes?.["r:id"];
@@ -825,8 +828,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     }
     const masterLayouts: LayoutDefinition[] = [];
     for (const layoutPath of pptx.slideLayouts) {
-      if (layoutMasterPaths.get(layoutPath) !== masterPath && !masterListedLayouts.has(layoutPath))
-        continue;
+      const belongsToMaster =
+        masterListedLayouts.has(layoutPath) || layoutMasterPaths.get(layoutPath) === masterPath;
+      if (!belongsToMaster) continue;
       const layoutEl = pptx.doc.get(layoutPath);
       if (layoutEl) {
         // Fully structured def (children/background/clrMapOvr/transition/...).
@@ -836,6 +840,8 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
           new ParseContext(pptx, parseSlideRelMap(pptx.doc, layoutPath)),
         );
         const layoutDef = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
+        layoutDef.orphaned = !masterListedLayouts.has(layoutPath);
+        layoutDef.sourceRelationshipId = layoutRelationshipIdsByPath.get(layoutPath);
         const sourceLayoutId = layoutIdsByPath.get(layoutPath);
         if (sourceLayoutId !== undefined) layoutDef.layoutId = sourceLayoutId;
         layoutDef.sourceOwnRels = pptx.doc.has(partPathToRelsPath(layoutPath));
@@ -865,6 +871,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       preserve: masterOpts.preserve,
       transition: masterOpts.transition,
       animations: masterOpts.animations,
+      slideLayoutIds: masterOpts.slideLayoutIds,
       customerData: masterOpts.customerData,
       controls: masterOpts.controls,
       cSldExt: masterOpts.cSldExt,
@@ -995,7 +1002,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
           const entry: Partial<SlideCommentOptions> = { x: cm.x, y: cm.y };
           entry.authorId = cm.authorId;
           entry.idx = cm.idx;
-          if (cm.text) entry.text = cm.text;
+          entry.text = cm.text;
           if (cm.date) entry.date = cm.date;
           if (cm.modified !== undefined) entry.modified = cm.modified;
           if (cm.ext) entry.ext = cm.ext;
@@ -1017,7 +1024,14 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
       if (!relPath.includes("/notesSlides/")) continue;
       const notesEl = pptx.doc.get(relPath);
       if (!notesEl) continue;
-      const notesData = notesSlideDesc.parse(notesEl, readCtx);
+      const notesRels = parseSlideRelMap(pptx.doc, relPath);
+      const notesExternalRelIds = new Set<string>();
+      const notesEmbeddingTypes = new Map<string, EmbeddingData["relationshipType"]>();
+      parseSlideRelMap(pptx.doc, relPath, notesExternalRelIds, notesEmbeddingTypes);
+      const notesReadCtx = new PptxReadContext(
+        new ParseContext(pptx, notesRels, notesExternalRelIds, notesEmbeddingTypes),
+      );
+      const notesData = notesSlideDesc.parse(notesEl, notesReadCtx);
       if (
         notesData.children ||
         notesData.text ||
@@ -1026,6 +1040,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         notesData.cSldExt
       ) {
         slideOpts.notes = notesData;
+        slideOpts.notesSourcePath = relPath;
       }
       break;
     }

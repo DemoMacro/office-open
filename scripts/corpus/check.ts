@@ -42,7 +42,26 @@ function setup(): void {
   for (const library of LIBRARIES) {
     const destination = path.resolve(ROOT_DIR, library.dest);
     if (fs.existsSync(path.join(destination, ".git"))) {
-      const current = execSync("git rev-parse HEAD", { cwd: destination, encoding: "utf8" }).trim();
+      let head = "";
+      try {
+        head = execSync("git rev-parse --verify --quiet HEAD", {
+          cwd: destination,
+          encoding: "utf8",
+          stdio: ["ignore", "pipe", "ignore"],
+        }).trim();
+      } catch {
+        head = "";
+      }
+      if (!head) {
+        console.log(`[setup] ${library.id}: incomplete clone — fetching pinned ${library.commit}`);
+        execSync(`git fetch --depth=1 origin "${library.commit}"`, {
+          cwd: destination,
+          stdio: "inherit",
+        });
+        execSync("git checkout --quiet FETCH_HEAD", { cwd: destination, stdio: "inherit" });
+        continue;
+      }
+      const current = head;
       if (current === library.commit) {
         console.log(`[setup] ${library.id}: pinned at ${library.commit}`);
         continue;
@@ -118,6 +137,13 @@ if (only && !LIBRARIES.some((library) => library.id === only)) {
   process.exit(1);
 }
 
+const formatFilter = args.includes("--format") ? args[args.indexOf("--format") + 1] : undefined;
+if (formatFilter && !["docx", "xlsx", "pptx"].includes(formatFilter)) {
+  console.error(`unknown format "${formatFilter}" — ids: docx, xlsx, pptx`);
+  process.exit(1);
+}
+const formats = (formatFilter ? [formatFilter] : ["docx", "xlsx", "pptx"]) as Format[];
+
 const updateBaseline = args.includes("--update-baseline");
 const baseline = loadBaseline();
 const nextBaseline: Baseline = {};
@@ -125,7 +151,7 @@ let failed = false;
 const allDiagnostics: FileDiagnostic[] = [];
 const rawBlockerReport: Record<
   string,
-  Record<Format, { reason: string; part: string; count: number }[]>
+  Partial<Record<Format, { reason: string; part: string; count: number }[]>>
 > = {};
 
 console.log("\n[synthetic]");
@@ -147,21 +173,28 @@ for (const library of LIBRARIES.filter((library) => !missingLibraries.includes(l
   const result = await runLibraryWorker(library.id, library.dest);
   allDiagnostics.push(...result.diagnostics);
   rawBlockerReport[library.id] = {
-    docx: result.rawBlockers.docx.map(([key, count]) => splitRawBlocker(key, count)),
-    xlsx: result.rawBlockers.xlsx.map(([key, count]) => splitRawBlocker(key, count)),
-    pptx: result.rawBlockers.pptx.map(([key, count]) => splitRawBlocker(key, count)),
+    ...Object.fromEntries(
+      formats.map((format) => [
+        format,
+        result.rawBlockers[format].map(([key, count]) => splitRawBlocker(key, count)),
+      ]),
+    ),
   };
-  nextBaseline[library.id] = {
-    docx: result.counts.docx,
-    xlsx: result.counts.xlsx,
-    pptx: result.counts.pptx,
-  };
+  nextBaseline[library.id] = Object.fromEntries(
+    formats.map((format) => [format, result.counts[format]]),
+  ) as Partial<Record<Format, FormatCounts>>;
 
-  for (const format of ["docx", "xlsx", "pptx"] as const) {
+  for (const format of formats) {
     const current = result.counts[format];
     console.log(
       `  ${format}  total ${current.total} | clean ${current.clean} | diff ${current.diff} | parseFail ${current.parseFail} | genFail ${current.genFail}`,
     );
+    if (current.diff > 0 || current.genFail > 0) {
+      failed = true;
+      console.log(
+        `      FAIL valid corpus must round-trip cleanly (diff ${current.diff}, genFail ${current.genFail})`,
+      );
+    }
     const raw = result.rawAudit[format];
     if (raw.files > 0) {
       console.log(
@@ -223,5 +256,9 @@ if (reportPath) {
 if (failed) {
   console.error("\ncorpus gate: FAILED");
   process.exit(1);
+}
+if (missingLibraries.length > 0) {
+  console.log("\ncorpus gate: SKIPPED (external corpus incomplete)");
+  process.exit(0);
 }
 console.log("\ncorpus gate: OK");

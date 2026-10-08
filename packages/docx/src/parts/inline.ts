@@ -38,6 +38,7 @@ import {
 } from "@parts/paragraph/run/run";
 import type { SymbolRunOptions } from "@parts/paragraph/run/symbol-run";
 import { pictRunAttrs, stringifyPict, type PictOptions } from "@parts/pict";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import { autoRevisionId } from "@shared/track-revision/track-revision";
 
 import type { BodyContext } from "../context";
@@ -105,7 +106,13 @@ function stringifyComplexFieldRuns(
   // instruction (a bare begin→end field round-trips without one).
   const mixedInstructionXml = cf.instructionMembers
     ?.map((member) =>
-      "runXml" in member ? member.runXml : stringifySimpleField(member.simpleField, ctx),
+      "run" in member
+        ? stringifyRunInline(member.run, ctx)
+        : "simpleField" in member
+          ? stringifySimpleField(member.simpleField, ctx)
+          : "bookmarkStart" in member
+            ? `<w:bookmarkStart ${buildBookmarkStartAttrs(member.bookmarkStart)}/>`
+            : `<w:bookmarkEnd ${buildMarkupRangeAttrs(member.bookmarkEnd)}/>`,
     )
     .join("");
   const instrXml =
@@ -115,18 +122,31 @@ function stringifyComplexFieldRuns(
       ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
-  // result; a result-less field round-trips as begin/instrText/end. Result
-  // runs go verbatim when the source split them beyond the plain template.
+  // result or ordered result members; a result-less field round-trips as
+  // begin/instrText/end. Result runs go verbatim when the source split them
+  // beyond the plain template.
   const separatorXml =
-    cf.resultRunsXml !== undefined || cf.result !== undefined
+    cf.resultRunsXml !== undefined || cf.resultMembers !== undefined || cf.result !== undefined
       ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
       : "";
   const resultXml =
-    cf.resultRunsXml !== undefined
-      ? cf.resultRunsXml
-      : cf.result !== undefined
-        ? `<w:r${resultAttrs}>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
-        : "";
+    cf.resultMembers !== undefined
+      ? cf.resultMembers
+          .map((member) =>
+            "run" in member
+              ? stringifyRunInline(member.run, ctx)
+              : "simpleField" in member
+                ? stringifySimpleField(member.simpleField, ctx)
+                : "bookmarkStart" in member
+                  ? `<w:bookmarkStart ${buildBookmarkStartAttrs(member.bookmarkStart)}/>`
+                  : `<w:bookmarkEnd ${buildMarkupRangeAttrs(member.bookmarkEnd)}/>`,
+          )
+          .join("")
+      : cf.resultRunsXml !== undefined
+        ? cf.resultRunsXml
+        : cf.result !== undefined
+          ? `<w:r${resultAttrs}>${res}<${textTag}${cf.resultPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.result)}</${textTag}></w:r>`
+          : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   return (
     `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
@@ -240,7 +260,6 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   const runOpts =
     commentRefStyle && !opts.style ? { ...opts, style: "CommentReference" as const } : opts;
   const rPr = stringifyRunProperties(runOpts);
-  if (rPr) body += rPr;
 
   if (opts.break) body += breakXml(opts.break);
   const hasSpaceSegment =
@@ -280,6 +299,23 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         const textSegment = child as { text?: string; preserveSpace?: boolean };
         if (typeof textSegment.text === "string" && "preserveSpace" in textSegment) {
           body += textElementXml("w:t", textSegment.text, textSegment.preserveSpace);
+          continue;
+        }
+        if ("instructionText" in textSegment) {
+          const segment = textSegment as { instructionText: string; preserveSpace?: boolean };
+          body += textElementXml("w:instrText", segment.instructionText, segment.preserveSpace);
+          continue;
+        }
+        if ("deletedInstructionText" in textSegment) {
+          const segment = textSegment as {
+            deletedInstructionText: string;
+            preserveSpace?: boolean;
+          };
+          body += textElementXml(
+            "w:delInstrText",
+            segment.deletedInstructionText,
+            segment.preserveSpace,
+          );
           continue;
         }
         if ("pageBreak" in child) {
@@ -356,6 +392,20 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
           body += stringifyPict((child as { pict: PictOptions }).pict, ctx);
           continue;
         }
+        // Drawing-family members share the surrounding run when parsed from
+        // mixed/multi-drawing runs; paragraph-level dispatch would nest a run.
+        if (
+          "picture" in child ||
+          "chart" in child ||
+          "smartArt" in child ||
+          "wpsShape" in child ||
+          "wpgGroup" in child ||
+          "unsupportedDrawing" in child ||
+          "contentPart" in child
+        ) {
+          body += stringifyDrawingChild(child as ParagraphChild, ctx, { bareInRun: true });
+          continue;
+        }
         // JSON child dispatch (images, charts, hyperlinks, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
@@ -377,7 +427,17 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   if (opts.runPropertiesRsid) attr += ` w:rsidRPr="${opts.runPropertiesRsid}"`;
   if (opts.deletionRsid) attr += ` w:rsidDel="${opts.deletionRsid}"`;
 
-  return body.length === 0 ? (attr ? `<w:r${attr}/>` : "<w:r/>") : `<w:r${attr}>${body}</w:r>`;
+  const orderedBody = opts.childOrder?.some((child) => child === "runProperties")
+    ? opts.childOrder[0] === "runProperties"
+      ? [rPr, body].filter(Boolean).join("")
+      : [body, rPr].filter(Boolean).join("")
+    : [rPr, body].filter(Boolean).join("");
+
+  return orderedBody.length === 0
+    ? attr
+      ? `<w:r${attr}/>`
+      : "<w:r/>"
+    : `<w:r${attr}>${orderedBody}</w:r>`;
 }
 
 // ── JSON child dispatch ──
@@ -419,6 +479,17 @@ function buildMoveRangeStartAttrs(m: MoveRangeStartOptions): string {
   if (m.colFirst !== undefined) a.push(`w:colFirst="${m.colFirst}"`);
   if (m.colLast !== undefined) a.push(`w:colLast="${m.colLast}"`);
   return a.join(" ");
+}
+
+/** Revision wrapper attributes; an absent source date remains absent. */
+function revisionElementAttrs(
+  revision: ChangedProperties,
+  scope: BodyContext["reproducible"],
+): string {
+  const id = revision.id ?? autoRevisionId(scope);
+  const author = escapeXml(String(revision.author));
+  const date = revision.date ? ` w:date="${escapeXml(revision.date)}"` : "";
+  return ` w:id="${id}" w:author="${author}"${date}`;
 }
 
 /** Stringify inline run/text content — the `wrap` shared by every sugar child. */
@@ -467,14 +538,14 @@ function stringifyTrackChangeChildren(
     } else if (typeof c !== "string" && "insertion" in c) {
       const { id, author, date, children: nested } = c.insertion;
       parts.push(
-        `<w:ins w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+        `<w:ins${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>` +
           stringifyTrackChangeChildren(nested, ctx, false) +
           "</w:ins>",
       );
     } else if (typeof c !== "string" && "deletion" in c) {
       const { id, author, date, children: nested } = c.deletion;
       parts.push(
-        `<w:del w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">` +
+        `<w:del${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>` +
           stringifyTrackChangeChildren(nested, ctx, true) +
           "</w:del>",
       );
@@ -766,7 +837,7 @@ export function stringifyChildDispatch(
       : "";
     return (
       `<w:r${runAttrs([child.additionRsid, child.runPropertiesRsid])}>${ctrl}${createBegin(undefined, ff)}</w:r>` +
-      `<w:r><w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>` +
+      `<w:r${runAttrs([child.instructionAdditionRsid, child.instructionRunPropertiesRsid])}><w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>` +
       `<w:r${runAttrs([child.separatorAdditionRsid, child.separatorRunPropertiesRsid])}>${ctrl}${createSeparate()}</w:r>` +
       `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${resultRPr || rPr}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>` +
       `<w:r${runAttrs([child.endAdditionRsid, child.endRunPropertiesRsid])}>${endRPr}${createEnd()}</w:r>`
@@ -794,14 +865,14 @@ export function stringifyChildDispatch(
   if ("insertion" in child) {
     const { id, author, date, children } = child.insertion;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:ins w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:ins>`;
+    return `<w:ins${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:ins>`;
   }
 
   // Deleted text run(s) — w:del wraps one or more runs (delText content)
   if ("deletion" in child) {
     const { id, author, date, children } = child.deletion;
     const body = stringifyTrackChangeChildren(children, ctx, true);
-    return `<w:del w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:del>`;
+    return `<w:del${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:del>`;
   }
 
   // Hyperlink — side effect: relationship registration
@@ -937,24 +1008,24 @@ export function stringifyChildDispatch(
   if ("movedFrom" in child) {
     const { id, author, date, children } = child.movedFrom;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveFrom w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveFrom>`;
+    return `<w:moveFrom${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:moveFrom>`;
   }
   if ("movedTo" in child) {
     const { id, author, date, children } = child.movedTo;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w:moveTo w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w:moveTo>`;
+    return `<w:moveTo${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w:moveTo>`;
   }
 
   // ── Merge-conflict text runs (w14, Word 2010+) ──
   if ("conflictIns" in child) {
     const { id, author, date, children } = child.conflictIns;
     const body = stringifyTrackChangeChildren(children, ctx, false);
-    return `<w14:conflictIns w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w14:conflictIns>`;
+    return `<w14:conflictIns${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w14:conflictIns>`;
   }
   if ("conflictDel" in child) {
     const { id, author, date, children } = child.conflictDel;
     const body = stringifyTrackChangeChildren(children, ctx, true);
-    return `<w14:conflictDel w:id="${id ?? autoRevisionId(ctx.reproducible)}" w:author="${escapeXml(String(author))}" w:date="${date}">${body}</w14:conflictDel>`;
+    return `<w14:conflictDel${revisionElementAttrs({ id, author, date }, ctx.reproducible)}>${body}</w14:conflictDel>`;
   }
 
   // ── Custom XML range markers (track changes) ──

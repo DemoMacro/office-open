@@ -86,7 +86,22 @@ export interface SectionPropertiesOptionsBase {
   endnoteProperties?: EndnotePropertiesOptions;
   /** Number of columns for the section footnotes (w15:footnoteColumns, Word 2013+). */
   footnoteColumns?: number;
+  /**
+   * Source header/footer reference emission order (round-trip only). Word may
+   * interleave w:headerReference and w:footerReference; absent = canonical
+   * header group (default/first/even) then footer group.
+   */
+  headerFooterReferenceOrder?: HeaderFooterReferenceSlot[];
 }
+
+/** One w:headerReference/w:footerReference slot identified by kind and type. */
+export type HeaderFooterReferenceSlot =
+  | "header-default"
+  | "header-first"
+  | "header-even"
+  | "footer-default"
+  | "footer-first"
+  | "footer-even";
 
 export type SectionPropertiesChangeOptions = ChangedProperties & SectionPropertiesOptionsBase;
 

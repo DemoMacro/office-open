@@ -123,6 +123,16 @@ export const OOXML_PACKAGE_FORMATS: Record<OoxmlPackageFormat, OoxmlPackageForma
   },
 };
 
+/**
+ * Legacy main-part content types accepted on round-trip but never emitted
+ * fresh. O12-era spreadsheet templates declare the `ms-excel` template type
+ * instead of the current `openxmlformats` one; preserving it keeps the source
+ * declaration table semantically intact.
+ */
+const LEGACY_MAIN_CONTENT_TYPES: Partial<Record<OoxmlPackageFamily, ReadonlySet<string>>> = {
+  spreadsheet: new Set(["application/vnd.ms-excel.template.main+xml"]),
+};
+
 export function ooxmlPackageFormatInfo(
   family: OoxmlPackageFamily,
   variant: OoxmlPackageVariant = "standard",
@@ -152,8 +162,9 @@ export function resolveMainPartContentType(
     (override) => override.partName.toLowerCase() === partName,
   )?.contentType;
   if (!declared) return fallback;
-  const isFamilyMain = Object.values(OOXML_PACKAGE_FORMATS).some(
-    (format) => format.family === family && format.mainContentType === declared,
-  );
+  const isFamilyMain =
+    Object.values(OOXML_PACKAGE_FORMATS).some(
+      (format) => format.family === family && format.mainContentType === declared,
+    ) || LEGACY_MAIN_CONTENT_TYPES[family]?.has(declared) === true;
   return isFamilyMain ? declared : fallback;
 }

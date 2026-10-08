@@ -160,7 +160,7 @@ describe("complex field parse", () => {
     const field = findComplexField(opts)!.complexField as Record<string, unknown>;
     expect(field.instruction).toBe('tc "-"');
     expect(field.instructionMembers).toEqual([
-      { runXml: '<w:r><w:instrText>tc "</w:instrText></w:r>' },
+      { run: { children: [{ instructionText: 'tc "' }] } },
       {
         simpleField: {
           cachedInstructionTextPreserveSpace: false,
@@ -171,7 +171,7 @@ describe("complex field parse", () => {
           cachedInstructionRPrXml: "<w:rPr><w:noProof/></w:rPr>",
         },
       },
-      { runXml: "<w:r><w:instrText>-</w:instrText></w:r>" },
+      { run: { children: [{ instructionText: "-" }] } },
       {
         simpleField: {
           cachedInstructionTextPreserveSpace: false,
@@ -181,8 +181,68 @@ describe("complex field parse", () => {
           cachedInstructionText: "1",
         },
       },
-      { runXml: '<w:r><w:instrText>"</w:instrText></w:r>' },
+      { run: { children: [{ instructionText: '"' }] } },
     ]);
-    expect(stringifyParagraph(opts, writeCtx)).toContain(inner.replace("&quot;", '"'));
+    expect(stringifyParagraph(opts, writeCtx)).toContain("<w:instrText>tc &quot;</w:instrText>");
+  });
+
+  it("preserves typed instruction runs around bookmarks", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText>A</w:instrText></w:r>" +
+        '<w:bookmarkStart w:id="11" w:name="middle"/>' +
+        "<w:r><w:instrText>B</w:instrText></w:r>" +
+        '<w:bookmarkEnd w:id="11"/>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    expect(field.instruction).toBe("AB");
+    expect(field.instructionMembers).toEqual([
+      { run: { children: [{ instructionText: "A" }] } },
+      { bookmarkStart: { id: 11, name: "middle" } },
+      { run: { children: [{ instructionText: "B" }] } },
+      { bookmarkEnd: { id: 11 } },
+    ]);
+
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml.indexOf('w:fldCharType="begin"')).toBeLessThan(
+      xml.indexOf("<w:instrText>A</w:instrText>"),
+    );
+    expect(xml.indexOf("<w:instrText>A</w:instrText>")).toBeLessThan(
+      xml.indexOf("<w:bookmarkStart"),
+    );
+    expect(xml.indexOf("<w:bookmarkStart")).toBeLessThan(
+      xml.indexOf("<w:instrText>B</w:instrText>"),
+    );
+    expect(xml.indexOf("<w:instrText>B</w:instrText>")).toBeLessThan(xml.indexOf("<w:bookmarkEnd"));
+    expect(xml.indexOf("<w:bookmarkEnd")).toBeLessThan(xml.indexOf('w:fldCharType="end"'));
+  });
+
+  it("preserves typed result runs around bookmarks", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText> PAGE </w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        "<w:r><w:t>A</w:t></w:r>" +
+        '<w:bookmarkStart w:id="21" w:name="result"/>' +
+        "<w:r><w:t>B</w:t></w:r>" +
+        '<w:bookmarkEnd w:id="21"/>' +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const field = findComplexField(opts)!.complexField as Record<string, unknown>;
+    expect(field.result).toBe("AB");
+    expect(field.resultMembers).toEqual([
+      { run: { text: "A" } },
+      { bookmarkStart: { id: 21, name: "result" } },
+      { run: { text: "B" } },
+      { bookmarkEnd: { id: 21 } },
+    ]);
+
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml).toContain('<w:fldChar w:fldCharType="separate"/>');
+    expect(xml.indexOf("<w:t>A</w:t>")).toBeLessThan(xml.indexOf("<w:bookmarkStart"));
+    expect(xml.indexOf("<w:bookmarkStart")).toBeLessThan(xml.indexOf("<w:t>B</w:t>"));
+    expect(xml.indexOf("<w:t>B</w:t>")).toBeLessThan(xml.indexOf("<w:bookmarkEnd"));
+    expect(xml.indexOf("<w:bookmarkEnd")).toBeLessThan(xml.indexOf('w:fldCharType="end"'));
   });
 });

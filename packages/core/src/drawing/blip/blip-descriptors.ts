@@ -95,10 +95,10 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
   kind: "custom",
   stringify(opts, _ctx) {
     const attrParts: string[] = [];
-    if (opts.left !== undefined) attrParts.push(`l="${opts.left}"`);
-    if (opts.top !== undefined) attrParts.push(`t="${opts.top}"`);
-    if (opts.right !== undefined) attrParts.push(`r="${opts.right}"`);
-    if (opts.bottom !== undefined) attrParts.push(`b="${opts.bottom}"`);
+    if (opts.left !== undefined) attrParts.push(`l="${emitPercent(opts.left)}"`);
+    if (opts.top !== undefined) attrParts.push(`t="${emitPercent(opts.top)}"`);
+    if (opts.right !== undefined) attrParts.push(`r="${emitPercent(opts.right)}"`);
+    if (opts.bottom !== undefined) attrParts.push(`b="${emitPercent(opts.bottom)}"`);
     const attrStr = attrParts.length ? " " + attrParts.join(" ") : "";
     return `<a:stretch><a:fillRect${attrStr}/></a:stretch>`;
   },
@@ -106,10 +106,14 @@ export const stretchDesc: CustomDescriptor<SourceRectangleOptions> = {
     const fillRect = findChild(el, "a:fillRect");
     if (!fillRect) return {};
     const result: SourceRectangleOptions = {};
-    if (fillRect.attributes?.["l"] !== undefined) result.left = Number(fillRect.attributes["l"]);
-    if (fillRect.attributes?.["t"] !== undefined) result.top = Number(fillRect.attributes["t"]);
-    if (fillRect.attributes?.["r"] !== undefined) result.right = Number(fillRect.attributes["r"]);
-    if (fillRect.attributes?.["b"] !== undefined) result.bottom = Number(fillRect.attributes["b"]);
+    if (fillRect.attributes?.["l"] !== undefined)
+      result.left = parsePercentAttr(fillRect.attributes["l"])!;
+    if (fillRect.attributes?.["t"] !== undefined)
+      result.top = parsePercentAttr(fillRect.attributes["t"])!;
+    if (fillRect.attributes?.["r"] !== undefined)
+      result.right = parsePercentAttr(fillRect.attributes["r"])!;
+    if (fillRect.attributes?.["b"] !== undefined)
+      result.bottom = parsePercentAttr(fillRect.attributes["b"])!;
     return result;
   },
 };

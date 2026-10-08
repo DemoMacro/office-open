@@ -54,7 +54,9 @@ function stringifyBackgroundInner(opts: BackgroundOptions, ctx: WriteContext): s
   const fillXml = fillDesc.stringify(opts.fill ?? { type: "none" }, ctx) ?? "<a:noFill/>";
 
   let effectsXml = "";
-  if (opts.effects) {
+  if (opts.effectsList) {
+    effectsXml = createEffectList(opts.effectsList).replaceAll("a:effectLst", "a:effectsLst");
+  } else if (opts.effects) {
     effectsXml = createEffectList(opts.effects);
   }
 
@@ -98,6 +100,9 @@ function parseBackground(el: XmlElement, ctx: ReadContext): BackgroundOptions {
     const effectLst = findChild(bgPr, "a:effectLst");
     if (effectLst) {
       result.effects = coreParse(effectListDesc, effectLst, ctx);
+    } else {
+      const effectsList = findChild(bgPr, "a:effectsLst");
+      if (effectsList) result.effectsList = coreParse(effectListDesc, effectsList, ctx);
     }
   }
 

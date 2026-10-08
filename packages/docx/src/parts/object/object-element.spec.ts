@@ -88,6 +88,23 @@ describe("objectDesc.parse", () => {
     });
   });
 
+  it("preserves source style lexemes on w:object/v:shape", () => {
+    const styleValue = " height: 57.75pt ;width:42.75pt ;mso-height-relative:page ";
+    const el = parseObjectXml(`<v:shape id="_x0000_i1025" style="${styleValue}"/>`);
+    const opts = objectDesc.parse(el, readCtx({}));
+    expect(opts.previewShape).toMatchObject({
+      id: "_x0000_i1025",
+      style: { height: "57.75pt", width: "42.75pt" },
+      styleRaw: styleValue,
+    });
+    expect(opts.style).toEqual({ height: "57.75pt", width: "42.75pt" });
+    expect(opts.width).toBe("42.75pt");
+    expect(opts.height).toBe("57.75pt");
+    expect(objectDesc.stringify(opts, {} as never)).toBe(
+      `<w:object><v:shape id="_x0000_i1025" style="${styleValue}"/></w:object>`,
+    );
+  });
+
   it("captures the complete preview shape with source relationship ids", () => {
     const el = parseObjectXml(
       `<v:shape id="_x0000_i1025" type="#_x0000_t75" alt="preview" ` +

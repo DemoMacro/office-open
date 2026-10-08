@@ -20,6 +20,7 @@ import type { BackgroundRawMediaOptions } from "@parts/document/document-backgro
 import type { ParagraphChild } from "@parts/paragraph/paragraph";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import { stringifyUnsupportedDrawing } from "@parts/paragraph/run/unsupported-drawing-run";
 import type {
   ChartMediaData,
   CoreMediaData,
@@ -58,26 +59,30 @@ function wrapDrawingRun(
     mcChoiceRequires?: string;
     runProperties?: RunPropertiesOptions;
     additionRsid?: string;
+    deletionRsid?: string;
     runPropertiesRsid?: string;
     lastRenderedPageBreak?: boolean;
   },
   // The remapped fallback copy from registerVmlFallbackMedia — spliced in
   // place of opts.vmlFallback so the caller's options object stays untouched.
   vmlFallback: string | undefined = opts.vmlFallback,
+  bareInRun = false,
 ): string {
   const xml = drawingXml ?? "";
   const rPr = stringifyRunProperties(opts.runProperties) ?? "";
   const lrpb = opts.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   const runAttrs =
     (opts.additionRsid ? ` w:rsidR="${opts.additionRsid}"` : "") +
+    (opts.deletionRsid ? ` w:rsidDel="${opts.deletionRsid}"` : "") +
     (opts.runPropertiesRsid ? ` w:rsidRPr="${opts.runPropertiesRsid}"` : "");
   if (vmlFallback) {
     const requires = opts.mcChoiceRequires ?? "wps";
     // vmlFallback is the serialized <mc:Fallback>…</mc:Fallback> element, so
     // splice it in directly (no extra wrapper).
-    return `<w:r${runAttrs}>${rPr}${lrpb}<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${vmlFallback}</mc:AlternateContent></w:r>`;
+    const content = `<mc:AlternateContent><mc:Choice Requires="${requires}">${xml}</mc:Choice>${vmlFallback}</mc:AlternateContent>`;
+    return bareInRun ? content : `<w:r${runAttrs}>${rPr}${lrpb}${content}</w:r>`;
   }
-  return `<w:r${runAttrs}>${rPr}${lrpb}${xml}</w:r>`;
+  return bareInRun ? xml : `<w:r${runAttrs}>${rPr}${lrpb}${xml}</w:r>`;
 }
 
 /**
@@ -194,7 +199,24 @@ function hashSmartArtData(options: SmartArtOptions): number {
  *
  * Returns `undefined` when the child is not a drawing-family wrapper.
  */
-export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): string | undefined {
+export function stringifyDrawingChild(
+  child: ParagraphChild,
+  ctx: BodyContext,
+  { bareInRun = false }: { bareInRun?: boolean } = {},
+): string | undefined {
+  const wrap = (
+    drawingXml: string | undefined,
+    opts: Parameters<typeof wrapDrawingRun>[1],
+    vmlFallback?: string,
+  ): string => wrapDrawingRun(drawingXml, opts, vmlFallback, bareInRun);
+  if ("unsupportedDrawing" in child) {
+    const vmlFallback = registerVmlFallbackMedia(child.unsupportedDrawing, ctx);
+    return wrap(
+      stringifyUnsupportedDrawing(child.unsupportedDrawing, ctx),
+      child.unsupportedDrawing,
+      vmlFallback,
+    );
+  }
   // Picture — side effect: media registration (content-deduplicated via core Media)
   if ("picture" in child) {
     const opts = child.picture;
@@ -233,7 +255,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
         },
         ctx,
       );
-      return wrapDrawingRun(drawingXml, opts);
+      return wrap(drawingXml, opts);
     }
 
     // Data is required past this point: linked-only pictures returned above,
@@ -336,7 +358,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       },
       ctx,
     );
-    return wrapDrawingRun(drawingXml, opts);
+    return wrap(drawingXml, opts);
   }
 
   // Chart — side effect: chart registration
@@ -359,6 +381,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       graphicFrameLocks: _g,
       runProperties: _r,
       additionRsid: _ri,
+      deletionRsid: _rd,
       runPropertiesRsid: _rPrRsid,
       lastRenderedPageBreak: _l,
       ...chartSpace
@@ -406,7 +429,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       },
       ctx,
     );
-    return wrapDrawingRun(drawingXml, opts);
+    return wrap(drawingXml, opts);
   }
 
   // SmartArt — side effect: smartArt registration
@@ -484,9 +507,10 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       },
       ctx,
     );
-    return wrapDrawingRun(drawingXml, {
+    return wrap(drawingXml, {
       runProperties: opts.runProperties,
       additionRsid: opts.additionRsid,
+      deletionRsid: opts.deletionRsid,
       runPropertiesRsid: opts.runPropertiesRsid,
       lastRenderedPageBreak: opts.lastRenderedPageBreak,
     });
@@ -516,14 +540,16 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       ctx,
     );
     const vmlFallback = registerVmlFallbackMedia(opts, ctx);
-    return wrapDrawingRun(drawingXml, opts, vmlFallback);
+    return wrap(drawingXml, opts, vmlFallback);
   }
 
   // Content part (w:contentPart) — run-level EG_RunInnerContent element (CT_Rel).
   // Word references ink and other opaque parts this way; the richer placement
   // fields of ContentPartOptions only apply inside a wpg group child.
   if ("contentPart" in child) {
-    return `<w:r><w:contentPart r:id="${child.contentPart.referenceId}"/></w:r>`;
+    return bareInRun
+      ? `<w:contentPart r:id="${child.contentPart.referenceId}"/>`
+      : `<w:r><w:contentPart r:id="${child.contentPart.referenceId}"/></w:r>`;
   }
 
   // WPG Group (WordProcessing Group) — group of shapes/pictures
@@ -615,6 +641,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
           continue;
         }
         if (c.type === "contentPart") continue;
+        if (c.type === "unsupported") continue;
         if (c.type === "svg") {
           // Register the raster fallback first so its file name is allocated,
           // then the SVG entry referencing it. Dedup applies to each independently.
@@ -647,7 +674,7 @@ export function stringifyDrawingChild(child: ParagraphChild, ctx: BodyContext): 
       ctx,
     );
     const vmlFallback = registerVmlFallbackMedia(opts, ctx);
-    return wrapDrawingRun(drawingXml, opts, vmlFallback);
+    return wrap(drawingXml, opts, vmlFallback);
   }
 
   return undefined;

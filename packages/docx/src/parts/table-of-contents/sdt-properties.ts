@@ -229,4 +229,40 @@ export interface SdtPropertiesOptions {
    * hidden (no chrome).
    */
   appearance?: "boundingBox" | "tags" | "hidden";
+
+  /** Source order of typed `<w:sdtPr>` children; round-trip only. */
+  childOrder?: SdtChildOrder[];
 }
+
+/** Typed `<w:sdtPr>` child fields whose source order is preserved. */
+export type SdtChildOrder =
+  | "runProperties"
+  | "alias"
+  | "tag"
+  | "id"
+  | "lock"
+  | "placeholder"
+  | "temporary"
+  | "showingPlaceholder"
+  | "dataBinding"
+  | "label"
+  | "tabIndex"
+  | "appearance"
+  | "equation"
+  | "comboBox"
+  | "date"
+  | "docPartObj"
+  | "docPartList"
+  | "dropDownList"
+  | "picture"
+  | "richText"
+  | "text"
+  | "citation"
+  | "group"
+  | "bibliography"
+  | "checkbox"
+  | "repeatingSection"
+  | "repeatingSectionItem"
+  | "entityPicker"
+  | "webExtensionLinked"
+  | "webExtensionCreated";

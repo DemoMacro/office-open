@@ -6,7 +6,12 @@
  * @module
  */
 import type { ChartSpaceOptions, UniversalMeasure } from "@office-open/core";
-import { parseOnOff, partPathToRelsPath, resolveRelationshipTarget } from "@office-open/core";
+import {
+  parseOnOff,
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  resolveRelationshipTarget,
+} from "@office-open/core";
 import {
   blipDesc,
   convertEmuToPixels,
@@ -52,6 +57,10 @@ import { parseRegisteredBodyChild } from "@parts/bodychildren";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import type {
+  UnsupportedDrawingOptions,
+  XmlElementData,
+} from "@parts/paragraph/run/unsupported-drawing-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
 import type { ShapeTextBoxChild } from "@parts/paragraph/run/wps-shape-run";
@@ -82,6 +91,117 @@ const smartArtSourcePaths = new WeakMap<object, SmartArtSourcePaths>();
 const userShapesSourcePaths = new WeakMap<object, string>();
 
 const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
+
+function toXmlElementData(el: Element): XmlElementData {
+  const attributes = Object.fromEntries(
+    Object.entries(el.attributes ?? {}).map(([name, value]) => [
+      name,
+      el.attributeRawValues?.[name] ?? value,
+    ]),
+  ) as Record<string, string | number>;
+  const elementChildren = (el.elements ?? []).filter((child) => child.type === "element");
+  return {
+    name: el.name ?? "",
+    ...(Object.keys(attributes).length > 0 ? { attributes } : {}),
+    ...(el.text !== undefined || elementChildren.length === 0
+      ? { text: el.text !== undefined ? el.text : textOf(el) }
+      : {}),
+    ...(elementChildren.length > 0
+      ? { elements: elementChildren.map((child) => toXmlElementData(child)) }
+      : {}),
+  };
+}
+
+function readDrawingRelationship(
+  relationshipId: string,
+  ctx: DocxReadContext,
+): { relationshipType: string; target: string; targetMode?: "External" } | undefined {
+  const rel = ctx.docx.doc
+    .get(partPathToRelsPath(ctx.currentPart ?? "word/document.xml"))
+    ?.elements?.find((el) => el.name === "Relationship" && attr(el, "Id") === relationshipId);
+  const target =
+    attr(rel, "Target") ??
+    ctx.docx.partRefs?.partHyperlinks
+      ?.get(ctx.currentPart ?? "word/document.xml")
+      ?.get(relationshipId) ??
+    ctx.docx.partRefs?.hyperlinks?.get(relationshipId);
+  if (!target) return undefined;
+  return {
+    relationshipType: attr(rel, "Type") ?? RELATIONSHIP_TYPES.hyperlink,
+    target,
+    ...(attr(rel, "TargetMode") === "External" ? { targetMode: "External" as const } : {}),
+  };
+}
+
+function collectUnsupportedDrawingRelationships(
+  el: Element,
+  ctx: DocxReadContext,
+): UnsupportedDrawingOptions["relationships"] {
+  const relationships = new Map<
+    string,
+    NonNullable<UnsupportedDrawingOptions["relationships"]>[number]
+  >();
+  const visitSource = (source: Element): void => {
+    for (const child of source.elements ?? []) {
+      const relationshipId = attr(child, "r:id");
+      if (
+        (child.name === "a:hlinkClick" || child.name === "a:hlinkHover") &&
+        relationshipId !== undefined
+      ) {
+        const key = `${child.name}:${relationshipId}`;
+        const relationship = readDrawingRelationship(relationshipId, ctx);
+        if (relationship && !relationships.has(key)) {
+          relationships.set(key, {
+            sourceRelationshipId: relationshipId,
+            ...relationship,
+          });
+        }
+      }
+      visitSource(child);
+    }
+  };
+  visitSource(el);
+  return relationships.size > 0 ? [...relationships.values()] : undefined;
+}
+
+/**
+ * Parse an unrecognized `a:graphicData` payload into a typed canonical
+ * DrawingML fallback. The anchor and payload remain editable XML data; no
+ * rebuilt XML is stored in `rawXml`.
+ */
+export function parseUnsupportedDrawingRun(
+  el: Element,
+  graphicDataEl: Element,
+  ctx: DocxReadContext,
+): { unsupportedDrawing: UnsupportedDrawingOptions } {
+  const inline = findChild(el, "wp:inline");
+  const anchor = inline ? undefined : findChild(el, "wp:anchor");
+  const wrapper = inline ?? anchor;
+  const graphic = findChild(el, "a:graphic");
+  const graphicPayload = graphic?.elements?.find((child) => child.type === "element");
+  const anchorData = toXmlElementData(wrapper ?? { name: "wp:inline" });
+  for (const [name, value] of Object.entries(el.attributes ?? {})) {
+    if (name.startsWith("xmlns:") && value !== undefined) {
+      anchorData.attributes = { ...anchorData.attributes, [name]: value };
+    }
+  }
+  anchorData.elements = (anchorData.elements ?? []).filter((child) => child.name !== "a:graphic");
+  const payload = graphicPayload ?? graphicDataEl;
+  const graphicData = toXmlElementData(payload);
+
+  return {
+    unsupportedDrawing: {
+      anchor: anchorData,
+      anchorMode: inline ? "inline" : "anchor",
+      graphicData,
+      graphicDataUri:
+        attr(payload, "uri") ??
+        attr(findFirst(payload, "a:graphicData"), "uri") ??
+        attr(graphicDataEl, "uri"),
+      relationships: collectUnsupportedDrawingRelationships(el, ctx),
+    },
+  };
+}
 
 export function takeChartSourceRelationships(options: object) {
   return chartSourceRelationships.get(options);
@@ -167,7 +287,8 @@ export type DrawingChild =
   | { smartArt: SmartArtOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
-  | { contentPart: ContentPartOptions };
+  | { contentPart: ContentPartOptions }
+  | { unsupportedDrawing: UnsupportedDrawingOptions };
 
 /**
  * Parse a w:drawing element and dispatch to the correct parser
@@ -202,7 +323,10 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
   if (uri.includes("wordprocessingShape")) {
     return parseWpsShapeDrawing(el, ctx);
   }
-  return parsePictureRun(el, ctx);
+  if (uri.includes("/picture")) {
+    return parsePictureRun(el, ctx);
+  }
+  return parseUnsupportedDrawingRun(el, graphicData, ctx);
 }
 
 /**
@@ -1206,6 +1330,9 @@ function parseGroupChildren(groupEl: Element, ctx: DocxReadContext): GroupChildM
 }
 
 function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData | undefined {
+  if (el.name === "wpg:cNvPr" || el.name === "wpg:cNvGrpSpPr" || el.name === "wpg:grpSpPr") {
+    return undefined;
+  }
   if (el.name === "wps:wsp") return parseWpsChildMediaData(el, ctx);
   if (el.name === "pic:pic") {
     return parsePicChildMediaData(el, ctx) as GroupChildMediaData | undefined;
@@ -1213,7 +1340,11 @@ function parseGroupChild(el: Element, ctx: DocxReadContext): GroupChildMediaData
   if (el.name === "wpg:grpSp") return parseNestedGroup(el, ctx);
   if (el.name === "wpg:graphicFrame") return parseGroupGraphicFrame(el, ctx);
   if (el.name === "wpg:contentPart" || el.name === "wp:contentPart") return parseContentPart(el);
-  return undefined;
+  return {
+    type: "unsupported",
+    element: toXmlElementData(el),
+    relationships: collectUnsupportedDrawingRelationships(el, ctx),
+  };
 }
 
 /**
@@ -1296,10 +1427,13 @@ function readCnvPrHyperlink(
   ctx: DocxReadContext,
 ): HyperlinkOptions | undefined {
   const hyperlink: HyperlinkOptions = {};
+  const partHyperlink = (rId: string) =>
+    ctx.docx.partRefs?.partHyperlinks?.get(ctx.currentPart ?? "word/document.xml")?.get(rId) ??
+    ctx.docx.partRefs?.hyperlinks?.get(rId);
   const clickEl = findChild(el, "a:hlinkClick");
   const clickRid = attr(clickEl, "r:id");
   if (clickRid) {
-    hyperlink.click = ctx.docx.partRefs.hyperlinks.get(clickRid);
+    hyperlink.click = partHyperlink(clickRid);
     hyperlink.clickRelationshipId = clickRid;
     hyperlink.clickTargetMode = relationshipTargetMode(clickRid, ctx);
     const tooltip = attr(clickEl, "tooltip");
@@ -1308,7 +1442,7 @@ function readCnvPrHyperlink(
   const hoverEl = findChild(el, "a:hlinkHover");
   const hoverRid = attr(hoverEl, "r:id");
   if (hoverRid) {
-    hyperlink.hover = ctx.docx.partRefs.hyperlinks.get(hoverRid);
+    hyperlink.hover = partHyperlink(hoverRid);
     hyperlink.hoverRelationshipId = hoverRid;
     hyperlink.hoverTargetMode = relationshipTargetMode(hoverRid, ctx);
     const tooltip = attr(hoverEl, "tooltip");

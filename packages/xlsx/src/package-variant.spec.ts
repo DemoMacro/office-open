@@ -25,6 +25,8 @@ const CONTENT_TYPES: Record<Variant, string> = {
   macroTemplate: "application/vnd.ms-excel.template.macroEnabled.main+xml",
 };
 
+const LEGACY_TEMPLATE_TYPE = "application/vnd.ms-excel.template.main+xml";
+
 const BLOB_TYPES: Record<Variant, string> = {
   standard: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   macro: "application/vnd.ms-excel.sheet.macroenabled.12",
@@ -78,6 +80,25 @@ describe("workbook package variants", () => {
 
     expect(decodeContentTypes(buffer)).toContain(
       `<Override PartName="/xl/workbook.xml" ContentType="${CONTENT_TYPES[variant]}"/>`,
+    );
+  });
+});
+
+describe("workbook legacy content types", () => {
+  it("preserves the legacy template main content type on round-trip", async () => {
+    const buffer = (await generateWorkbook(
+      {
+        ...workbook,
+        contentTypes: {
+          defaults: [],
+          overrides: [{ partName: "/xl/workbook.xml", contentType: LEGACY_TEMPLATE_TYPE }],
+        },
+      },
+      { packageVariant: "template", type: "uint8array" },
+    )) as Uint8Array;
+
+    expect(decodeContentTypes(buffer)).toContain(
+      `<Override PartName="/xl/workbook.xml" ContentType="${LEGACY_TEMPLATE_TYPE}"/>`,
     );
   });
 });

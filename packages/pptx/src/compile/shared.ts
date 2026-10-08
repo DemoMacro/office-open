@@ -135,7 +135,9 @@ export function promoteLayoutToSourceId(
  * hole the round-trip then reports as drift. Kinds outside `absorbedKinds`
  * have no model counterpart (a chart part carried as a raw island beside a
  * modeled picture, say): their claims keep the source ids verbatim content
- * references, so those ids must stay free above the batch allocations. */
+ * references, so those ids must stay free above the batch allocations. Media
+ * ownership is target-specific: another target of the same kind remains an
+ * independent relationship and must reserve its captured id. */
 export function reserveClaimedSourceRids(
   rels: Relationships,
   source: string,
@@ -149,7 +151,8 @@ export function reserveClaimedSourceRids(
     if (kind === "oleObject") {
       rels.reserveId(rel.rId);
     }
-    if (absorbedKinds.has(kind) && !ownedTargets?.has(rel.target)) continue;
+    if (absorbedKinds.has(kind) && (!MEDIA_REL_KINDS.has(kind) || ownedTargets?.has(rel.target)))
+      continue;
     rels.reserveId(rel.rId);
   }
 }

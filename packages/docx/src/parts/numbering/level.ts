@@ -182,10 +182,27 @@ export const LevelSuffix = {
  * @property style - Run and paragraph style properties
  */
 export interface LevelsOptions {
-  /** Level index (0-8). */
+  /** Level index; source w:ilvl values are preserved without clamping. */
   level: number;
   /** Number format type (decimal, roman, letter, bullet, etc.). */
   format?: (typeof LevelFormat)[keyof typeof LevelFormat];
+  /** Custom number format string; set with format "custom". */
+  formatOverride?: string;
+  /**
+   * Additional source `w:numFmt` elements after the primary format; round-trip
+   * only — do not hand-author. Preserves duplicate lexical elements in order.
+   */
+  formatDuplicates?: Array<{
+    /** Number format type (`w:val`; decimal, roman, letter, bullet, etc.). */
+    format?: (typeof LevelFormat)[keyof typeof LevelFormat];
+    /** Custom number format string (`w:format`; set with format "custom"). */
+    formatOverride?: string;
+  }>;
+  /**
+   * Source order of typed `w:lvl` children; round-trip only. `format`
+   * repeats once for each source `w:numFmt`, including duplicates.
+   */
+  childOrder?: LevelChildOrder[];
   /** Level text template with placeholders like %1, %2. */
   text?: string;
   /** Whether this level emits no text (CT_LevelText `@w:null`). */
@@ -217,3 +234,18 @@ export interface LevelsOptions {
   /** Paragraph properties for the level (w:pPr). */
   paragraph?: LevelParagraphStylePropertiesOptions;
 }
+
+/** Typed `w:lvl` child fields whose source order is preserved. */
+export type LevelChildOrder =
+  | "start"
+  | "format"
+  | "levelRestart"
+  | "paragraphStyle"
+  | "isLegalNumberingStyle"
+  | "suffix"
+  | "text"
+  | "levelPictureBulletId"
+  | "legacy"
+  | "alignment"
+  | "paragraph"
+  | "run";

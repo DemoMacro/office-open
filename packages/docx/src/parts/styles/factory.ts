@@ -94,7 +94,34 @@ export interface StyleOptions {
   default?: boolean;
   /** CT_Style `@w:customStyle` — a user-defined custom style (CT_OnOff). */
   customStyle?: boolean;
+  /** Source order of typed `<w:style>` children; round-trip only. */
+  childOrder?: StyleChildOrder[];
 }
+
+/** Typed `<w:style>` child fields whose source order is preserved. */
+export type StyleChildOrder =
+  | "name"
+  | "aliases"
+  | "basedOn"
+  | "next"
+  | "link"
+  | "autoRedefine"
+  | "hidden"
+  | "uiPriority"
+  | "semiHidden"
+  | "unhideWhenUsed"
+  | "quickFormat"
+  | "locked"
+  | "personal"
+  | "personalCompose"
+  | "personalReply"
+  | "rsid"
+  | "paragraph"
+  | "run"
+  | "table"
+  | "row"
+  | "cell"
+  | "conditionalFormats";
 
 export type ParagraphStyleOptions = {
   paragraph?: ParagraphStylePropertiesOptions;
@@ -113,28 +140,76 @@ export type CharacterStyleOptions = {
  * uiPriority, semiHidden, unhideWhenUsed, qFormat, locked, personal, personalCompose,
  * personalReply, rsid.
  */
-function stringifyStyleLevelChildren(opts: StyleOptions & { id?: string }): string {
-  // Round-trip keeps a source that omitted w:name (XSD-required, but Word
-  // tolerates) without one — the styleId fallback only served fresh styles,
-  // and the factory always sets a name.
-  const parts: string[] =
-    opts.name === undefined ? [] : [`<w:name w:val="${escapeXml(opts.name)}"/>`];
-  if (opts.aliases) parts.push(`<w:aliases w:val="${escapeXml(opts.aliases)}"/>`);
-  if (opts.basedOn) parts.push(`<w:basedOn w:val="${escapeXml(opts.basedOn)}"/>`);
-  if (opts.next) parts.push(`<w:next w:val="${escapeXml(opts.next)}"/>`);
-  if (opts.link) parts.push(`<w:link w:val="${escapeXml(opts.link)}"/>`);
-  if (opts.autoRedefine) parts.push("<w:autoRedefine/>");
-  if (opts.hidden) parts.push("<w:hidden/>");
-  if (opts.uiPriority !== undefined) parts.push(`<w:uiPriority w:val="${opts.uiPriority}"/>`);
-  if (opts.semiHidden) parts.push("<w:semiHidden/>");
-  if (opts.unhideWhenUsed) parts.push("<w:unhideWhenUsed/>");
-  if (opts.quickFormat) parts.push("<w:qFormat/>");
-  if (opts.locked) parts.push("<w:locked/>");
-  if (opts.personal) parts.push("<w:personal/>");
-  if (opts.personalCompose) parts.push("<w:personalCompose/>");
-  if (opts.personalReply) parts.push("<w:personalReply/>");
-  if (opts.rsid) parts.push(`<w:rsid w:val="${opts.rsid}"/>`);
-  return parts.join("");
+const STYLE_CHILD_ORDER: StyleChildOrder[] = [
+  "name",
+  "aliases",
+  "basedOn",
+  "next",
+  "link",
+  "autoRedefine",
+  "hidden",
+  "uiPriority",
+  "semiHidden",
+  "unhideWhenUsed",
+  "quickFormat",
+  "locked",
+  "personal",
+  "personalCompose",
+  "personalReply",
+  "rsid",
+  "paragraph",
+  "run",
+  "table",
+  "row",
+  "cell",
+  "conditionalFormats",
+];
+
+function styleChildFragments(
+  opts: StyleOptions,
+  properties: Partial<Record<StyleChildOrder, string>> = {},
+  conditionalFormats: string[] = [],
+): Map<StyleChildOrder, string[]> {
+  const fragments = new Map<StyleChildOrder, string[]>();
+  const add = (child: StyleChildOrder, xml: string | undefined | false) => {
+    if (xml) fragments.set(child, [xml]);
+  };
+  add("name", opts.name === undefined ? undefined : `<w:name w:val="${escapeXml(opts.name)}"/>`);
+  add("aliases", opts.aliases && `<w:aliases w:val="${escapeXml(opts.aliases)}"/>`);
+  add("basedOn", opts.basedOn && `<w:basedOn w:val="${escapeXml(opts.basedOn)}"/>`);
+  add("next", opts.next && `<w:next w:val="${escapeXml(opts.next)}"/>`);
+  add("link", opts.link && `<w:link w:val="${escapeXml(opts.link)}"/>`);
+  add("autoRedefine", opts.autoRedefine && "<w:autoRedefine/>");
+  add("hidden", opts.hidden && "<w:hidden/>");
+  add("uiPriority", opts.uiPriority !== undefined && `<w:uiPriority w:val="${opts.uiPriority}"/>`);
+  add("semiHidden", opts.semiHidden && "<w:semiHidden/>");
+  add("unhideWhenUsed", opts.unhideWhenUsed && "<w:unhideWhenUsed/>");
+  add("quickFormat", opts.quickFormat && "<w:qFormat/>");
+  add("locked", opts.locked && "<w:locked/>");
+  add("personal", opts.personal && "<w:personal/>");
+  add("personalCompose", opts.personalCompose && "<w:personalCompose/>");
+  add("personalReply", opts.personalReply && "<w:personalReply/>");
+  add("rsid", opts.rsid && `<w:rsid w:val="${opts.rsid}"/>`);
+  for (const [child, xml] of Object.entries(properties)) {
+    add(child as StyleChildOrder, xml);
+  }
+  if (conditionalFormats.length > 0) fragments.set("conditionalFormats", conditionalFormats);
+  return fragments;
+}
+
+function orderedStyleChildren(
+  opts: StyleOptions,
+  properties: Partial<Record<StyleChildOrder, string>> = {},
+  conditionalFormats: string[] = [],
+): string[] {
+  const fragments = styleChildFragments(opts, properties, conditionalFormats);
+  if (!opts.childOrder) return STYLE_CHILD_ORDER.flatMap((child) => fragments.get(child) ?? []);
+  const ordered: string[] = [];
+  for (const child of opts.childOrder) {
+    ordered.push(...(fragments.get(child) ?? []));
+    fragments.delete(child);
+  }
+  return [...ordered, ...STYLE_CHILD_ORDER.flatMap((child) => fragments.get(child) ?? [])];
 }
 
 /**
@@ -160,12 +235,12 @@ export function stringifyParagraphStyle(
     run?: RunStylePropertiesOptions;
   },
 ): string {
-  const children: string[] = [stringifyStyleLevelChildren(opts)];
-
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
-  if (pPr) children.push(pPr);
   const rPr = stringifyRunProperties(opts.run);
-  if (rPr) children.push(rPr);
+  const children = orderedStyleChildren(opts, {
+    paragraph: pPr || undefined,
+    run: rPr || undefined,
+  });
 
   return `${styleOpenTag("paragraph", opts)}${children.join("")}</w:style>`;
 }
@@ -177,10 +252,8 @@ export function stringifyCharacterStyle(
     run?: RunStylePropertiesOptions;
   },
 ): string {
-  const children: string[] = [stringifyStyleLevelChildren(opts)];
-
   const rPr = stringifyRunProperties(opts.run);
-  if (rPr) children.push(rPr);
+  const children = orderedStyleChildren(opts, { run: rPr || undefined });
 
   return `${styleOpenTag("character", opts)}${children.join("")}</w:style>`;
 }
@@ -269,39 +342,30 @@ export function stringifyConditionalTableStyle(opts: ConditionalTableStyleOption
 
 /** Build `<w:style type="table">` XML for a table style. */
 export function stringifyTableStyle(opts: TableStyleOptions): string {
-  const children: string[] = [stringifyStyleLevelChildren(opts)];
-  // CT_Style child order: style-level, pPr, rPr, tblPr, trPr, tcPr, tblStylePr[]
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
-  if (pPr) children.push(pPr);
   const rPr = stringifyRunProperties(opts.run);
-  if (rPr) children.push(rPr);
-  if (opts.table) {
-    // includeIfEmpty mirrors the conditional-format writer — an empty table
-    // object means "keep the (empty) tblPr element".
-    children.push(stringifyTableProperties({ ...opts.table, includeIfEmpty: true }) ?? "");
-  }
-  if (opts.row) {
-    const trPr = stringifyTableRowProperties(opts.row);
-    if (trPr) children.push(trPr);
-  }
-  if (opts.cell) {
-    const tcPr = stringifyTableCellProperties(opts.cell);
-    if (tcPr) children.push(tcPr);
-  }
-  for (const cf of opts.conditionalFormats ?? []) {
-    children.push(stringifyConditionalTableStyle(cf));
-  }
+  const children = orderedStyleChildren(
+    opts,
+    {
+      paragraph: pPr || undefined,
+      run: rPr || undefined,
+      table: opts.table && stringifyTableProperties({ ...opts.table, includeIfEmpty: true }),
+      row: opts.row && stringifyTableRowProperties(opts.row),
+      cell: opts.cell && stringifyTableCellProperties(opts.cell),
+    },
+    (opts.conditionalFormats ?? []).map((format) => stringifyConditionalTableStyle(format)),
+  );
   return `${styleOpenTag("table", opts)}${children.join("")}</w:style>`;
 }
 
 /** Build `<w:style type="numbering">` XML for a numbering style. */
 export function stringifyNumberingStyle(opts: NumberingStyleOptions): string {
-  const children: string[] = [stringifyStyleLevelChildren(opts)];
-  // CT_Style child order: style-level, pPr, rPr
   const pPr = stringifyParagraphProperties(opts.paragraph).xml;
-  if (pPr) children.push(pPr);
   const rPr = stringifyRunProperties(opts.run);
-  if (rPr) children.push(rPr);
+  const children = orderedStyleChildren(opts, {
+    paragraph: pPr || undefined,
+    run: rPr || undefined,
+  });
   return `${styleOpenTag("numbering", opts)}${children.join("")}</w:style>`;
 }
 

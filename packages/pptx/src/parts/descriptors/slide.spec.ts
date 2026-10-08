@@ -74,6 +74,15 @@ describe("slideDesc round-trip", () => {
     expect(result.hidden).toBeUndefined();
   });
 
+  it("parses a hidden slide from its native-coerced lexical value", () => {
+    const xml =
+      '<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" show="0"/>';
+    const root = parseXml(xml, { nativeTypeAttributes: true }).elements![0]!;
+    const result = slideDesc.parse(root, readCtx);
+    expect(result.hidden).toBe(true);
+    expect(result.showRaw).toBe("0");
+  });
+
   it("preserves a transformless shape tree", () => {
     const xml = slideDesc.stringify({ groupTransformless: true }, writeCtx)!;
     expect(xml).toContain("<p:grpSpPr></p:grpSpPr>");

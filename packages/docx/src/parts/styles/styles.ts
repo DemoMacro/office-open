@@ -22,6 +22,7 @@ import type {
 import type { RunStylePropertiesOptions } from "@parts/paragraph/run/properties";
 import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import type {
+  StyleChildOrder,
   CharacterStyleOptions,
   ConditionalTableStyleOptions,
   DefaultStylesOptions,
@@ -292,7 +293,33 @@ interface ParsedStyle {
   row?: Partial<TableRowPropertiesOptions>;
   cell?: Partial<TableCellPropertiesOptions>;
   conditionalFormats?: ConditionalTableStyleOptions[];
+  childOrder?: StyleChildOrder[];
 }
+
+const STYLE_ELEMENT_ORDER = new Map<string, StyleChildOrder>([
+  ["w:name", "name"],
+  ["w:aliases", "aliases"],
+  ["w:basedOn", "basedOn"],
+  ["w:next", "next"],
+  ["w:link", "link"],
+  ["w:autoRedefine", "autoRedefine"],
+  ["w:hidden", "hidden"],
+  ["w:uiPriority", "uiPriority"],
+  ["w:semiHidden", "semiHidden"],
+  ["w:unhideWhenUsed", "unhideWhenUsed"],
+  ["w:qFormat", "quickFormat"],
+  ["w:locked", "locked"],
+  ["w:personal", "personal"],
+  ["w:personalCompose", "personalCompose"],
+  ["w:personalReply", "personalReply"],
+  ["w:rsid", "rsid"],
+  ["w:pPr", "paragraph"],
+  ["w:rPr", "run"],
+  ["w:tblPr", "table"],
+  ["w:trPr", "row"],
+  ["w:tcPr", "cell"],
+  ["w:tblStylePr", "conditionalFormats"],
+]);
 
 /**
  * Parse w:styles element into StylesOptions.
@@ -542,6 +569,10 @@ function parseStyleElement(
     conditionalFormats.push(cf);
   }
   if (conditionalFormats.length > 0) opts.conditionalFormats = conditionalFormats;
+  const childOrder = (el.elements ?? []).flatMap((child) =>
+    child.name === undefined ? [] : (STYLE_ELEMENT_ORDER.get(child.name) ?? []),
+  );
+  if (childOrder.length > 0) opts.childOrder = childOrder;
 
   return opts;
 }

@@ -23,6 +23,16 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("projects run language controls", () => {
+    const source = String.raw`{\rtf1{\lang1033 Word}{\lang1036 Autre}\par}`;
+    expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
+  it("projects hidden text controls", () => {
+    const source = String.raw`{\rtf1{\v hidden}visible\par}`;
+    expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
   it("projects numbering, paragraphs, tabs, breaks, bookmarks, and inline children", () => {
     const source = String.raw`{\rtf1\qc\ls1\ilvl0{\pn\pndec}First{\*\bkmkstart Mark}A{\*\bkmkend Mark}\tab\line\par}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));

@@ -55,6 +55,8 @@ export interface GroupOptions {
   runProperties?: RunPropertiesOptions;
   /** Revision save ID of the wrapping w:r (w:rsidR, round-trip). */
   additionRsid?: LongHexNumber;
+  /** Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip). */
+  deletionRsid?: LongHexNumber;
   /** Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip). */
   runPropertiesRsid?: LongHexNumber;
   /** A w:lastRenderedPageBreak shared the drawing's run (round-trip) — emitted before the drawing. */

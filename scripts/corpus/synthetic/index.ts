@@ -1,5 +1,10 @@
 import { odfManifestMatrix, odtMissingEmbeddedObject } from "./odf";
-import { docxPrinterSettings, pptxIndefiniteTiming, xlsxPivotCalculatedItems } from "./ooxml";
+import {
+  docxPrinterSettings,
+  docxRevisionIdentity,
+  pptxIndefiniteTiming,
+  xlsxPivotCalculatedItems,
+} from "./ooxml";
 import { pptNoTextShape } from "./ppt";
 import { rtfBinaryToken, rtfListtable, rtfStylesheet } from "./rtf";
 import { ProjectionError } from "./support";
@@ -31,6 +36,12 @@ const CASES: readonly SyntheticCase[] = [
     owner: "docx",
     part: "word/document.xml",
     verify: docxPrinterSettings,
+  },
+  {
+    id: "docx-revision-identity",
+    owner: "docx",
+    part: "word/document.xml",
+    verify: docxRevisionIdentity,
   },
   {
     id: "pptx-indefinite-timing",

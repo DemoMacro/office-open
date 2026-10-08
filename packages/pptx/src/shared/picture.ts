@@ -53,6 +53,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   compression?: BlipCompression;
   /** Shape-level effects on p:spPr (e.g. shadow/reflection). */
   effects?: EffectListOptions;
+  /** Raw a:extLst inner XML on p:spPr; round-trip only. */
+  shapePropertiesExt?: string;
   /** Crop rectangle (a:srcRect) — integer percent insets. */
   sourceRectangle?: SourceRectangleOptions;
   /**

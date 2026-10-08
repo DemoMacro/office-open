@@ -31,6 +31,12 @@ describe("paragraph properties measure round-trip", () => {
     expect(spacing.line).toBe("3mm");
   });
 
+  it("round-trips negative spacing.line signed twips", () => {
+    const result = roundTrip({ spacing: { line: -240 } });
+    const spacing = result.spacing as Record<string, unknown>;
+    expect(spacing.line).toBe(-240);
+  });
+
   it("round-trips indent left/firstLine UniversalMeasure verbatim", () => {
     const result = roundTrip({ indent: { left: "5mm", firstLine: "2.5mm" } });
     const indent = result.indent as Record<string, unknown>;

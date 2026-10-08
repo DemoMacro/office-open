@@ -54,6 +54,10 @@ export interface LayoutInfo {
   themeOverride?: string;
   /** Whether the source package carried the layout's own rels part. */
   sourceOwnRels?: boolean;
+  /** Source master relationship id for this layout. */
+  sourceRelationshipId?: string;
+  /** Whether the owning master lists this layout in `p:sldLayoutIdLst`. */
+  attachedToMaster: boolean;
 }
 
 export interface MasterInfo {
@@ -91,7 +95,7 @@ function bindThemeMedia(
 /** Wire embedded-OLE placeholders against the owning master/layout rels.
  * Source ids stay verbatim when the same kind+target was captured, while new
  * objects get the next available relationship id. */
-function wireEmbeddedOle(
+export function wireEmbeddedOle(
   xml: string,
   rels: Relationships,
   source: string,
@@ -196,10 +200,21 @@ export function buildMasterMap(
   for (const [mi, def] of defs.entries()) {
     const name = def.name ?? `master${mi + 1}`;
 
-    const layoutDefs = def.layouts;
+    const attachedLayoutDefs = def.layouts?.filter((layout) => layout.orphaned !== true);
+    const sourceOrderedLayoutDefs = def.slideLayoutIds
+      ?.map((layoutId) =>
+        attachedLayoutDefs?.find(
+          (layout) => layout.sourceRelationshipId === layoutId.relationshipId,
+        ),
+      )
+      .filter((layout): layout is LayoutDefinition => layout !== undefined);
+    const masterOrderedLayoutDefs =
+      sourceOrderedLayoutDefs?.length === attachedLayoutDefs?.length
+        ? sourceOrderedLayoutDefs
+        : attachedLayoutDefs;
     let layoutKeys: string[];
-    if (layoutDefs && layoutDefs.length > 0) {
-      layoutKeys = layoutDefs.map((ld) => layoutLookupKey(ld, mi, layoutDefs.indexOf(ld)));
+    if (masterOrderedLayoutDefs) {
+      layoutKeys = masterOrderedLayoutDefs.map((ld, li) => layoutLookupKey(ld, mi, li));
     } else {
       const seen = new Set<string>();
       const keys: string[] = [];
@@ -218,7 +233,7 @@ export function buildMasterMap(
     // Layout id + rId pairs — rId order matches masterRels below. Source
     // layout ids round-trip as-is; only fresh authoring renumbers.
     const layoutIdBase = 2147483648 + mi * 12 + 1;
-    const layoutDefsById = def.layouts;
+    const layoutDefsById = masterOrderedLayoutDefs;
     const slideLayoutIds = layoutKeys.map((_, li) => ({
       id: layoutDefsById?.[li]?.layoutId ?? layoutIdBase + li,
       relationshipId: `rId${li + 1}`,
@@ -237,8 +252,9 @@ export function buildMasterMap(
     const layouts: LayoutInfo[] = [];
     const layoutRels: Relationships[] = [];
 
-    for (const [li, key] of layoutKeys.entries()) {
-      const layoutDef = layoutDefs?.[li];
+    const emittedLayoutDefs = def.layouts ?? layoutKeys.map(() => undefined);
+    for (const [li, layoutDef] of emittedLayoutDefs.entries()) {
+      const key = layoutDef ? layoutLookupKey(layoutDef, mi, li) : layoutKeys[li]!;
       const slideLayoutType = (layoutDef?.type ?? key) as SlideLayoutType;
       const themeOverride = layoutDef?.themeOverride
         ? (themeOverrideDesc.stringify(layoutDef.themeOverride, ctx) ?? undefined)
@@ -253,6 +269,8 @@ export function buildMasterMap(
         key,
         index: globalLayoutIndex,
         masterIndex: mi,
+        attachedToMaster: layoutDef?.orphaned !== true,
+        sourceRelationshipId: layoutDef?.sourceRelationshipId,
         def: resolveLayoutDef(layoutDef, slideLayoutType, slideWidth),
         themeOverride,
         sourceOwnRels,
@@ -300,9 +318,24 @@ export function buildMasterMap(
       passthroughRelationships,
       masterAbsorbedKinds,
     );
-    for (const [li, layout] of layouts.entries()) {
+    const sourceOrderedLayouts = def.slideLayoutIds
+      ?.map((layoutId) =>
+        layouts.find(
+          (layout) =>
+            layout.attachedToMaster && layout.sourceRelationshipId === layoutId.relationshipId,
+        ),
+      )
+      .filter((layout): layout is LayoutInfo => layout !== undefined);
+    const masterListedLayouts =
+      sourceOrderedLayouts?.length === layouts.filter((layout) => layout.attachedToMaster).length
+        ? sourceOrderedLayouts
+        : layouts.filter((layout) => layout.attachedToMaster);
+    let attachedLayoutRelationshipIndex = 0;
+    for (const layout of masterListedLayouts) {
+      if (!layout.attachedToMaster) continue;
+      attachedLayoutRelationshipIndex += 1;
       masterRels.addRelationship(
-        li + 1,
+        attachedLayoutRelationshipIndex,
         RELATIONSHIP_TYPES.slideLayout,
         `../slideLayouts/slideLayout${layout.index + 1}.xml`,
       );
@@ -354,6 +387,7 @@ export function buildMasterMap(
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slideMasters/slideMaster${mi + 1}.xml`) continue;
       const kind = rel.relationshipType.split("/").pop()!;
+      if (kind === "slideLayout") continue;
       if (MEDIA_REL_KINDS.has(kind) && masterRels.hasRelationshipKind(kind)) continue;
       masterRels.claimSourceRel(rel);
     }
@@ -516,7 +550,7 @@ export function mapMasterAndLayoutParts(
     // re-registers) are skipped — reserving them would only open holes.
     reserveClaimedSourceRids(
       layoutRels,
-      `ppt/slideLayouts/slideLayout${li + 1}.xml`,
+      `ppt/slideLayouts/slideLayout${layoutInfo.index + 1}.xml`,
       passthroughRelationships,
       new Set([
         "slideMaster",
@@ -586,36 +620,36 @@ export function mapMasterAndLayoutParts(
     // claimSourceRel keeps the source ids when free (verbatim layout islands
     // reference them).
     for (const rel of passthroughRelationships ?? []) {
-      if (rel.source !== `ppt/slideLayouts/slideLayout${li + 1}.xml`) continue;
+      if (rel.source !== `ppt/slideLayouts/slideLayout${layoutInfo.index + 1}.xml`) continue;
       if (layoutRels.hasRelationshipKind(rel.relationshipType.split("/").pop()!)) continue;
       layoutRels.claimSourceRel(rel);
     }
     replacedLayoutXml = wireEmbeddedOle(
       replacedLayoutXml,
       layoutRels,
-      `ppt/slideLayouts/slideLayout${li + 1}.xml`,
+      `ppt/slideLayouts/slideLayout${layoutInfo.index + 1}.xml`,
       passthroughRelationships,
     );
     if (layoutInfo.sourceOwnRels || layoutRels.relationshipCount > 0) {
       mapping[`SlideLayoutRels${li}`] = {
         data: XML_DECL + layoutRels.serialize(),
-        path: `ppt/slideLayouts/_rels/slideLayout${li + 1}.xml.rels`,
+        path: `ppt/slideLayouts/_rels/slideLayout${layoutInfo.index + 1}.xml.rels`,
       };
     }
     mapping[`SlideLayout${li}`] = {
       data: XML_DECL + replacedLayoutXml,
-      path: `ppt/slideLayouts/slideLayout${li + 1}.xml`,
+      path: `ppt/slideLayouts/slideLayout${layoutInfo.index + 1}.xml`,
     };
     if (layoutInfo.themeOverride) {
       const boundThemeOverride = bindThemeMedia(layoutInfo.themeOverride, media);
       mapping[`SlideLayoutThemeOverride${li}`] = {
         data: XML_DECL + boundThemeOverride.xml,
-        path: `ppt/theme/themeOverride${li + 1}.xml`,
+        path: `ppt/theme/themeOverride${layoutInfo.index + 1}.xml`,
       };
       if (boundThemeOverride.relationships) {
         mapping[`SlideLayoutThemeOverrideRelationships${li}`] = {
           data: XML_DECL + boundThemeOverride.relationships.serialize(),
-          path: `ppt/theme/_rels/themeOverride${li + 1}.xml.rels`,
+          path: `ppt/theme/_rels/themeOverride${layoutInfo.index + 1}.xml.rels`,
         };
       }
     }
@@ -665,6 +699,8 @@ export function mapNotesAndHandoutMasters(
         descCtx.mediaCollection,
       ).xml,
       themesCount + 1,
+      "ppt/notesMasters/notesMaster1.xml",
+      options.passthroughRelationships,
     );
   }
 
@@ -691,6 +727,8 @@ export function mapNotesAndHandoutMasters(
         descCtx.mediaCollection,
       ).xml,
       themesCount + (includeNotesMasterPart ? 2 : 1),
+      "ppt/handoutMasters/handoutMaster1.xml",
+      options.passthroughRelationships,
     );
   }
 }
@@ -706,6 +744,8 @@ function mapMasterLikePart(
   xml: string,
   themeXml: string,
   themeIndex: number,
+  sourcePath?: string,
+  passthroughRelationships?: PresentationOptions["passthroughRelationships"],
 ): void {
   const boundTheme = bindThemeMedia(themeXml, descCtx.mediaCollection);
   mapping[`${key}Theme`] = {
@@ -719,18 +759,30 @@ function mapMasterLikePart(
     };
   }
   const rels = new Relationships();
-  rels.addRelationship(1, RELATIONSHIP_TYPES.theme, `../theme/theme${themeIndex}.xml`);
+  if (sourcePath) {
+    rels.reserveSourceRids(sourcePath, passthroughRelationships ?? []);
+    for (const rel of passthroughRelationships ?? []) {
+      if (rel.source === sourcePath) rels.claimSourceRel(rel);
+    }
+  }
+  if (!rels.hasRelationshipKind("theme")) {
+    rels.addRelationship(1, RELATIONSHIP_TYPES.theme, `../theme/theme${themeIndex}.xml`);
+  }
   // Media referenced by master shapes gets slide-style image wiring.
   const mediaData = getReferencedMedia(xml, descCtx.mediaCollection.array);
-  const imageOffset = rels.nextRelationshipId;
-  for (const [idx, mediaItem] of mediaData.entries()) {
-    rels.addRelationship(
-      imageOffset + idx,
-      RELATIONSHIP_TYPES.image,
-      `../media/${mediaItem.fileName}`,
-    );
-  }
-  let wiredXml = replaceImagePlaceholders(xml, mediaData, imageOffset);
+  let nextImageId = rels.nextRelationshipId;
+  const imageIds = mediaData.map((mediaItem) => {
+    const target = `../media/${mediaItem.fileName}`;
+    const existing = rels.idOf(RELATIONSHIP_TYPES.image, target);
+    if (existing !== undefined) return Number(existing.slice(3));
+    const id = nextImageId++;
+    rels.addRelationship(id, RELATIONSHIP_TYPES.image, target);
+    return id;
+  });
+  let wiredXml = replacePlaceholders(
+    xml,
+    new Map(mediaData.map((mediaItem, idx) => [mediaItem.fileName, `rId${imageIds[idx]}`])),
+  );
   // Hyperlinks on master shapes/text — same placeholder wiring slides get.
   wiredXml = wirePartHyperlinks(
     wiredXml,

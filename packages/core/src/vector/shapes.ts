@@ -173,6 +173,8 @@ export interface VmlBaseShapeFields
   extends VmlCoreAttributes, VmlOfficeCoreAttributes, VmlShapeAttributes, VmlOfficeShapeAttributes {
   /** AG_Path attribute — path data overriding the referenced shapetype's geometry. */
   path?: string;
+  /** Source style attribute lexical form; round-trip only — do not hand-author. */
+  styleRaw?: string;
   /** v:path child element — a separate XSD slot from the path attribute. */
   pathElement?: VmlPathOptions;
   formulas?: VmlFormulasOptions;
@@ -461,7 +463,8 @@ function stringifyShapeAttrs(
   let attrStr = stringifyVmlAttributes(opts, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR]);
   const style = opts.style as VmlShapeStyle | undefined;
   if (style !== undefined) {
-    attrStr += ` style="${escapeXml(stringifyVmlStyle(style))}"`;
+    const styleValue = String(opts.styleRaw ?? stringifyVmlStyle(style));
+    attrStr += ` style="${escapeXml(styleValue)}"`;
   }
   return attrStr;
 }
@@ -510,11 +513,12 @@ function parseShapeAttrs(
   const specs = [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR];
   parseVmlAttributes(el, specs, out);
   if (el.attributes?.style !== undefined) {
+    const styleValue = String(el.attributes.style);
     const styleRecord = parseVmlStyle(String(el.attributes.style));
     const style = parseVmlShapeStyle(styleRecord);
     out.style = style;
-    if (Object.keys(style).length < Object.keys(styleRecord).length) {
-      out.sourceXml = stringifyElement(el);
+    if (styleValue !== stringifyVmlStyle(style)) {
+      out.styleRaw = styleValue;
     }
   }
   const knownAttrs = new Set([...specs.map((spec) => spec.attr), "style"]);

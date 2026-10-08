@@ -11,6 +11,7 @@ export * from "./chart-run";
 export * from "./smartart-run";
 export * from "./wps-shape-run";
 export * from "./wpg-group-run";
+export * from "./unsupported-drawing-run";
 export * from "./run-fonts";
 export * from "./underline";
 export * from "./emphasis-mark";

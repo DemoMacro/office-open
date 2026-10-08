@@ -27,7 +27,7 @@ import type { DocxReadContext, DocxWriteContext } from "../../context";
 import { stringifyElement } from "../../util/stringify-element";
 import { stringifyParagraphProperties, stringifyRunProperties } from "../paragraph/stringify";
 import { LevelFormat } from "./level";
-import type { LevelsOptions } from "./level";
+import type { LevelChildOrder, LevelsOptions } from "./level";
 
 /**
  * Options for configuring numbering definitions.
@@ -102,6 +102,36 @@ const NUMBERING_NAMESPACE_KEYS = [
   "wps",
   "x",
 ] as const;
+
+const LEVEL_CHILD_ORDER: LevelChildOrder[] = [
+  "start",
+  "format",
+  "levelRestart",
+  "paragraphStyle",
+  "isLegalNumberingStyle",
+  "suffix",
+  "text",
+  "levelPictureBulletId",
+  "legacy",
+  "alignment",
+  "paragraph",
+  "run",
+];
+
+const LEVEL_SOURCE_ORDER = new Map<string, LevelChildOrder>([
+  ["w:start", "start"],
+  ["w:numFmt", "format"],
+  ["w:lvlRestart", "levelRestart"],
+  ["w:pStyle", "paragraphStyle"],
+  ["w:isLgl", "isLegalNumberingStyle"],
+  ["w:suff", "suffix"],
+  ["w:lvlText", "text"],
+  ["w:lvlPicBulletId", "levelPictureBulletId"],
+  ["w:legacy", "legacy"],
+  ["w:lvlJc", "alignment"],
+  ["w:pPr", "paragraph"],
+  ["w:rPr", "run"],
+] as const);
 
 /** Default bullet levels (9 levels: 0-8). */
 const DEFAULT_BULLET_LEVELS: LevelsOptions[] = [
@@ -425,8 +455,7 @@ export interface LevelOverrideOptions {
 export interface AbstractNumberingPropertiesOptions {
   nsid?: string;
   /**
-   * w:multiLevelType value (ST_MultiLevelType). Defaults to hybridMultilevel
-   * when omitted.
+   * w:multiLevelType value (ST_MultiLevelType). Omitted when the source omits it.
    */
   multiLevelType?: "singleLevel" | "multilevel" | "hybridMultilevel";
   /** w15:restartNumberingAfterBreak attribute on w:abstractNum. Omitted when undefined. */
@@ -466,7 +495,9 @@ function stringifyAbstractNumbering(
   if (properties?.nsid !== undefined) {
     parts.push(`<w:nsid w:val="${properties.nsid}"/>`);
   }
-  parts.push(`<w:multiLevelType w:val="${properties?.multiLevelType ?? "hybridMultilevel"}"/>`);
+  if (properties?.multiLevelType !== undefined) {
+    parts.push(`<w:multiLevelType w:val="${properties.multiLevelType}"/>`);
+  }
   if (properties?.tmpl !== undefined) {
     parts.push(`<w:tmpl w:val="${properties.tmpl}"/>`);
   }
@@ -516,51 +547,70 @@ function stringifyConcreteNumbering(cn: {
 }
 
 function stringifyLevel(opts: LevelsOptions): string {
-  const children: string[] = [];
+  const fragments = new Map<LevelChildOrder, string[]>();
+  const addFragment = (child: LevelChildOrder, xml: string) => {
+    (fragments.get(child) ?? fragments.set(child, []).get(child)!).push(xml);
+  };
 
-  // w:start is optional (defaults to 1): a source level without it must not
-  // gain an explicit element on round-trip.
-  if (opts.start !== undefined) {
-    children.push(`<w:start w:val="${decimalNumber(opts.start)}"/>`);
+  if (opts.start !== undefined)
+    addFragment("start", `<w:start w:val="${decimalNumber(opts.start)}"/>`);
+  if (opts.format !== undefined) {
+    const attrs: string[] = [`w:val="${opts.format}"`];
+    if (opts.formatOverride !== undefined) attrs.push(`w:format="${opts.formatOverride}"`);
+    addFragment("format", `<w:numFmt ${attrs.join(" ")}/>`);
   }
-  if (opts.format) children.push(`<w:numFmt w:val="${opts.format}"/>`);
+  for (const duplicate of opts.formatDuplicates ?? []) {
+    const attrs: string[] = [];
+    if (duplicate.format !== undefined) attrs.push(`w:val="${duplicate.format}"`);
+    if (duplicate.formatOverride !== undefined)
+      attrs.push(`w:format="${duplicate.formatOverride}"`);
+    addFragment("format", `<w:numFmt ${attrs.join(" ")}/>`);
+  }
   if (opts.levelRestart !== undefined)
-    children.push(`<w:lvlRestart w:val="${decimalNumber(opts.levelRestart)}"/>`);
+    addFragment("levelRestart", `<w:lvlRestart w:val="${decimalNumber(opts.levelRestart)}"/>`);
   if (opts.paragraphStyle !== undefined)
-    children.push(`<w:pStyle w:val="${opts.paragraphStyle}"/>`);
-  // CT_Lvl sequence: pStyle → isLgl → suff (XSD). isLgl must precede suff.
-  if (opts.isLegalNumberingStyle) children.push("<w:isLgl/>");
-  if (opts.suffix) children.push(`<w:suff w:val="${opts.suffix}"/>`);
+    addFragment("paragraphStyle", `<w:pStyle w:val="${opts.paragraphStyle}"/>`);
+  if (opts.isLegalNumberingStyle) addFragment("isLegalNumberingStyle", "<w:isLgl/>");
+  if (opts.suffix) addFragment("suffix", `<w:suff w:val="${opts.suffix}"/>`);
   if (opts.text !== undefined || opts.textNull) {
-    const lvlTextAttrs: string[] = [];
-    if (opts.text !== undefined) lvlTextAttrs.push(`w:val="${opts.text}"`);
-    if (opts.textNull) lvlTextAttrs.push('w:null="1"');
-    children.push(`<w:lvlText ${lvlTextAttrs.join(" ")}/>`);
+    const attrs: string[] = [];
+    if (opts.text !== undefined) attrs.push(`w:val="${opts.text}"`);
+    if (opts.textNull) attrs.push('w:null="1"');
+    addFragment("text", `<w:lvlText ${attrs.join(" ")}/>`);
   }
   if (opts.levelPictureBulletId !== undefined)
-    children.push(`<w:lvlPicBulletId w:val="${decimalNumber(opts.levelPictureBulletId)}"/>`);
+    addFragment(
+      "levelPictureBulletId",
+      `<w:lvlPicBulletId w:val="${decimalNumber(opts.levelPictureBulletId)}"/>`,
+    );
   if (opts.legacy !== undefined) {
-    const legacyAttrs: string[] = [`w:legacy="${(opts.legacy.enabled ?? true) ? 1 : 0}"`];
-    if (opts.legacy.space !== undefined) legacyAttrs.push(`w:legacySpace="${opts.legacy.space}"`);
-    if (opts.legacy.indent !== undefined)
-      legacyAttrs.push(`w:legacyIndent="${opts.legacy.indent}"`);
-    children.push(`<w:legacy ${legacyAttrs.join(" ")}/>`);
+    const attrs: string[] = [`w:legacy="${(opts.legacy.enabled ?? true) ? 1 : 0}"`];
+    if (opts.legacy.space !== undefined) attrs.push(`w:legacySpace="${opts.legacy.space}"`);
+    if (opts.legacy.indent !== undefined) attrs.push(`w:legacyIndent="${opts.legacy.indent}"`);
+    addFragment("legacy", `<w:legacy ${attrs.join(" ")}/>`);
   }
-  children.push(`<w:lvlJc w:val="${xsdJcAlignment.to(opts.alignment ?? AlignmentType.START)}"/>`);
-
-  // Paragraph/run properties — use compile-path pure string builders
+  addFragment(
+    "alignment",
+    `<w:lvlJc w:val="${xsdJcAlignment.to(opts.alignment ?? AlignmentType.START)}"/>`,
+  );
   const pPrXml = stringifyParagraphProperties(opts.paragraph).xml;
+  if (pPrXml) addFragment("paragraph", pPrXml);
   const rPrXml = stringifyRunProperties(opts.run);
-  if (pPrXml) children.push(pPrXml);
-  if (rPrXml) children.push(rPrXml);
+  if (rPrXml) addFragment("run", rPrXml);
 
-  const lvlAttrs: string[] = [`w:ilvl="${decimalNumber(Math.min(opts.level, 9))}"`];
-  // w15:tentative is optional; only emit when carried (matches sources that omit it).
+  const canonical: LevelChildOrder[] = [];
+  for (const child of LEVEL_CHILD_ORDER) {
+    for (let index = 0; index < (fragments.get(child)?.length ?? 0); index++) canonical.push(child);
+  }
+  const fragmentQueues = new Map([...fragments].map(([child, values]) => [child, [...values]]));
+  const order = opts.childOrder?.length === canonical.length ? opts.childOrder : canonical;
+  const children = order.flatMap((child) => fragmentQueues.get(child)?.shift() ?? []);
+
+  const lvlAttrs: string[] = [`w:ilvl="${decimalNumber(opts.level)}"`];
   if (opts.w15Tentative !== undefined)
     lvlAttrs.push(`w15:tentative="${opts.w15Tentative ? 1 : 0}"`);
   if (opts.templateCode !== undefined) lvlAttrs.push(`w:tplc="${opts.templateCode}"`);
   if (opts.tentative !== undefined) lvlAttrs.push(`w:tentative="${opts.tentative ? 1 : 0}"`);
-
   return `<w:lvl ${lvlAttrs.join(" ")}>${children.join("")}</w:lvl>`;
 }
 
@@ -777,6 +827,29 @@ function parseLevelEl(
   ctx: DocxReadContext,
 ): LevelsOptions | undefined {
   const opts: Partial<LevelsOptions> = {};
+  const sourceChildOrder: LevelChildOrder[] = [];
+  const canonicalChildOrder: LevelChildOrder[] = [];
+  const seenChildren = new Set<LevelChildOrder>();
+
+  for (const child of el.elements ?? []) {
+    if (child.name === undefined) continue;
+    const childOrder = LEVEL_SOURCE_ORDER.get(child.name);
+    if (childOrder === undefined) continue;
+    sourceChildOrder.push(childOrder);
+    if (childOrder !== "format" && !seenChildren.has(childOrder)) {
+      canonicalChildOrder.push(childOrder);
+    }
+    seenChildren.add(childOrder);
+  }
+  const formatCount = sourceChildOrder.filter((child) => child === "format").length;
+  canonicalChildOrder.length = 0;
+  for (const child of LEVEL_CHILD_ORDER) {
+    if (child === "format") {
+      for (let index = 0; index < formatCount; index++) canonicalChildOrder.push(child);
+    } else if (seenChildren.has(child) || child === "alignment") {
+      canonicalChildOrder.push(child);
+    }
+  }
 
   const level = attrNum(el, "w:ilvl");
   if (level !== undefined) opts.level = level;
@@ -793,10 +866,19 @@ function parseLevelEl(
     if (val !== undefined) opts.levelRestart = val;
   }
 
-  const numFmt = findChild(el, "w:numFmt");
-  if (numFmt) {
+  const numFmtElements = (el.elements ?? []).filter((child) => child.name === "w:numFmt");
+  for (const numFmt of numFmtElements) {
     const val = attr(numFmt, "w:val");
-    if (val) opts.format = val as LevelsOptions["format"];
+    const format = attr(numFmt, "w:format");
+    if (opts.format === undefined && opts.formatDuplicates === undefined) {
+      if (val) opts.format = val as LevelsOptions["format"];
+      if (format) opts.formatOverride = format;
+      continue;
+    }
+    (opts.formatDuplicates ??= []).push({
+      ...(val && { format: val as LevelsOptions["format"] }),
+      ...(format && { formatOverride: format }),
+    });
   }
 
   const suff = findChild(el, "w:suff");
@@ -872,5 +954,9 @@ function parseLevelEl(
     }
   }
 
+  if (!seenChildren.has("alignment")) sourceChildOrder.push("alignment");
+  if (JSON.stringify(sourceChildOrder) !== JSON.stringify(canonicalChildOrder)) {
+    opts.childOrder = sourceChildOrder;
+  }
   return Object.keys(opts).length > 0 ? (opts as LevelsOptions) : undefined;
 }

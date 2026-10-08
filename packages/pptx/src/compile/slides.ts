@@ -181,7 +181,7 @@ export function buildCommentData(
           name: sourceAuthor?.name ?? c.author,
           initials: sourceAuthor?.initials ?? (c.initials || deriveInitials(c.author)),
           clrIdx: sourceAuthor?.clrIdx ?? c.authorId,
-          lastIdx: c.idx ?? sourceAuthor?.lastIdx ?? 0,
+          lastIdx: sourceAuthor?.lastIdx ?? c.idx ?? 0,
           ...(sourceAuthor?.ext || c.ext ? { ext: sourceAuthor?.ext ?? c.ext } : {}),
         };
         authorMap.set(c.author, author);
@@ -253,6 +253,7 @@ function computeSmartArtGlobalStart(
 export interface SlideCompileArtifacts {
   notesOptions: NotesSlideOptions[];
   notesSlideIndexMap: Map<number, number>;
+  notesSourcePaths: (string | undefined)[];
   slideSyncOptionsList: SlideSyncOptions[];
   slideSyncIndexMap: Map<number, number>;
   commentAuthors: AuthorEntry[] | undefined;
@@ -276,11 +277,13 @@ export function compileSlideParts(
 
   const notesOptions: NotesSlideOptions[] = [];
   const notesSlideIndexMap = new Map<number, number>();
+  const notesSourcePaths: (string | undefined)[] = [];
   let notesIdx = 0;
   for (const [i, slide] of slides.entries()) {
     if (slide.notes) {
       notesOptions.push(typeof slide.notes === "string" ? { text: slide.notes } : slide.notes);
       notesSlideIndexMap.set(i, notesIdx++);
+      notesSourcePaths.push(slide.notesSourcePath);
     }
   }
 
@@ -367,18 +370,16 @@ export function compileSlideParts(
     }
 
     const notesSlideIndex = notesSlideIndexMap.get(i);
+    const notesFileName =
+      notesSourcePaths[notesSlideIndex ?? -1]?.split("/").pop() ??
+      `notesSlide${(notesSlideIndex ?? 0) + 1}.xml`;
+    const notesTarget = `../notesSlides/${notesFileName}`;
     if (
       notesSlideIndex !== undefined &&
       !currentSlideRels.hasRelationshipKind("notesSlide") &&
-      !currentSlideRels.hasRelationship(
-        RELATIONSHIP_TYPES.notesSlide,
-        `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
-      )
+      !currentSlideRels.hasRelationship(RELATIONSHIP_TYPES.notesSlide, notesTarget)
     ) {
-      currentSlideRels.add(
-        RELATIONSHIP_TYPES.notesSlide,
-        `../notesSlides/notesSlide${notesSlideIndex + 1}.xml`,
-      );
+      currentSlideRels.add(RELATIONSHIP_TYPES.notesSlide, notesTarget);
     }
 
     const slideSyncIndex = slideSyncIndexMap.get(i);
@@ -396,16 +397,33 @@ export function compileSlideParts(
     // whose kind+target the model already owns mean the source rel was
     // absorbed; different targets of the same kind are independent package
     // members (legacy VML art beside a modeled picture, for example).
+    const sourceMediaRelationshipCounts = new Map<string, number>();
+    const claimedDuplicateMediaRelationships = new Map<string, number>();
+    for (const rel of passthroughRelationships ?? []) {
+      if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
+      if (!MEDIA_REL_KINDS.has(rel.relationshipType.split("/").pop()!)) continue;
+      const key = `${rel.relationshipType.split("/").pop()}:${rel.target}`;
+      sourceMediaRelationshipCounts.set(key, (sourceMediaRelationshipCounts.get(key) ?? 0) + 1);
+      claimedDuplicateMediaRelationships.set(key, 0);
+    }
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
       const kind = rel.relationshipType.split("/").pop()!;
-      if (
-        (kind === "slideLayout" && currentSlideRels.hasRelationshipKind(kind)) ||
-        (MEDIA_REL_KINDS.has(kind) &&
-          currentSlideRels.hasRelationship(rel.relationshipType, rel.target))
-      ) {
+      if (kind === "slideLayout" && currentSlideRels.hasRelationshipKind(kind)) {
         continue;
       }
+      if (MEDIA_REL_KINDS.has(kind)) {
+        const key = `${kind}:${rel.target}`;
+        const sourceCount = sourceMediaRelationshipCounts.get(key) ?? 0;
+        const modelCount = currentSlideRels.countRelationships(rel.relationshipType, rel.target);
+        const duplicatesToClaim = Math.max(0, sourceCount - modelCount);
+        const claimedCount = claimedDuplicateMediaRelationships.get(key) ?? 0;
+        if (claimedCount >= duplicatesToClaim) continue;
+        claimedDuplicateMediaRelationships.set(key, claimedCount + 1);
+        currentSlideRels.claimSourceRel(rel, { force: true });
+        continue;
+      }
+      if (currentSlideRels.hasRelationship(rel.relationshipType, rel.target)) continue;
       currentSlideRels.claimSourceRel(rel);
     }
 
@@ -418,6 +436,7 @@ export function compileSlideParts(
   return {
     notesOptions,
     notesSlideIndexMap,
+    notesSourcePaths,
     slideSyncOptionsList,
     slideSyncIndexMap,
     commentAuthors: commentAuthorEntries,
@@ -664,10 +683,13 @@ function absorbSlideSourceKinds(
     slideAbsorbedKinds.add("diagramQuickStyle");
   }
   const media = descCtx.mediaCollection;
-  if (getMediaRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("media");
-  if (getAudioRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("audio");
+  const slideEmbeddedMediaRefs = getMediaRefs(slideXml, media.array);
+  const slideAudioRefs = getAudioRefs(slideXml, media.array);
+  const slideVideoRefs = getVideoRefs(slideXml, media.array);
+  if (slideEmbeddedMediaRefs.length > 0) slideAbsorbedKinds.add("media");
+  if (slideAudioRefs.length > 0) slideAbsorbedKinds.add("audio");
   if (collectPlaceholderKeys(slideXml, "audio-link:").length > 0) slideAbsorbedKinds.add("audio");
-  if (getVideoRefs(slideXml, media.array).length > 0) slideAbsorbedKinds.add("video");
+  if (slideVideoRefs.length > 0) slideAbsorbedKinds.add("video");
   if (
     getOleRefs(slideXml, descCtx.embeddings).length > 0 ||
     collectPlaceholderKeys(slideXml, "ole-link:").length > 0
@@ -681,6 +703,10 @@ function absorbSlideSourceKinds(
     source,
     passthroughRelationships,
     slideAbsorbedKinds,
-    new Set(slideMediaData.map((mediaItem) => `../media/${mediaItem.fileName}`)),
+    new Set(
+      [...slideMediaData, ...slideEmbeddedMediaRefs, ...slideAudioRefs, ...slideVideoRefs].map(
+        (mediaItem) => `../media/${mediaItem.fileName}`,
+      ),
+    ),
   );
 }

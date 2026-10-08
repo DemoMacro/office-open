@@ -320,6 +320,161 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     );
   });
 
+  it("round-trips a custom numFmt format override", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="custom" w:format="number-in-dash"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.abstractNumberings[0]?.levels[0]?.format).toBe(LevelFormat.CUSTOM);
+    expect(opts?.abstractNumberings[0]?.levels[0]?.formatOverride).toBe("number-in-dash");
+    expect(
+      new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx),
+    ).toContain('<w:numFmt w:val="custom" w:format="number-in-dash"/>');
+  });
+
+  it("omits multiLevelType when the source omits it", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.abstractNumberings[0]?.properties?.multiLevelType).toBeUndefined();
+    const generated = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(
+      writeCtx,
+    );
+    const generatedAbstract = generated.slice(
+      generated.indexOf("<w:abstractNum "),
+      generated.indexOf("</w:abstractNum>") + "</w:abstractNum>".length,
+    );
+    expect(generatedAbstract).not.toContain("<w:multiLevelType ");
+  });
+
+  it("preserves source w:ilvl values without clamping", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="12"><w:start w:val="1"/><w:numFmt w:val="decimal"/><w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    expect(opts?.abstractNumberings[0]?.levels[0]?.level).toBe(12);
+    const out = new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx);
+    expect(out).toContain('<w:lvl w:ilvl="12">');
+    expect(out).not.toContain('<w:lvl w:ilvl="9">');
+  });
+
+  it("preserves duplicate rFonts and numFmt children in one level", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/>' +
+      '<w:numFmt w:val="decimal"/>' +
+      '<w:numFmt w:val="upperRoman" w:format="number-in-dash"/>' +
+      '<w:numFmt w:val="custom"/>' +
+      '<w:lvlText w:val="%1."/>' +
+      '<w:rPr><w:rFonts w:ascii="Arial"/><w:rFonts w:eastAsia="SimSun"/><w:rFonts w:hAnsi="Consolas"/></w:rPr>' +
+      "</w:lvl>" +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+
+    const level = opts?.abstractNumberings[0]?.levels[0];
+    expect(level?.format).toBe(LevelFormat.DECIMAL);
+    expect(level?.formatDuplicates).toEqual([
+      { format: LevelFormat.UPPER_ROMAN, formatOverride: "number-in-dash" },
+      { format: LevelFormat.CUSTOM },
+    ]);
+    expect(level?.run?.font).toEqual({ ascii: "Arial" });
+    expect(level?.run?.fontDuplicates).toEqual([{ eastAsia: "SimSun" }, { hAnsi: "Consolas" }]);
+
+    const generatedXml = new Numbering({
+      abstractNumberings: opts!.abstractNumberings,
+    }).serialize(writeCtx);
+    expect(generatedXml.match(/<w:numFmt\b/g)).toHaveLength(3);
+    expect(generatedXml.match(/<w:rFonts\b/g)).toHaveLength(3);
+    expect(generatedXml).toContain(
+      '<w:numFmt w:val="decimal"/><w:numFmt w:val="upperRoman" w:format="number-in-dash"/>',
+    );
+    expect(generatedXml).toContain(
+      '<w:rFonts w:ascii="Arial"/><w:rFonts w:eastAsia="SimSun"/><w:rFonts w:hAnsi="Consolas"/>',
+    );
+
+    const generatedElement = parseXml(generatedXml).elements?.[0];
+    if (!generatedElement) throw new Error("generated document has no root element");
+    const reparsed = parseNumberingDefinitions(generatedElement, parseParagraphProperties, ctx);
+    const reparsedLevel = reparsed?.abstractNumberings.find(
+      (config) => config.reference === "list_1",
+    )?.levels[0];
+    expect(reparsedLevel?.format).toBe(level?.format);
+    expect(reparsedLevel?.formatDuplicates).toEqual(level?.formatDuplicates);
+    expect(reparsedLevel?.run?.font).toEqual(level?.run?.font);
+    expect(reparsedLevel?.run?.fontDuplicates).toEqual(level?.run?.fontDuplicates);
+  });
+
+  it("preserves interleaved duplicate custom numFmt child order", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/>' +
+      '<w:numFmt w:val="custom" w:format="first-format"/>' +
+      '<w:lvlText w:val="%1."/>' +
+      '<w:numFmt w:val="decimal"/>' +
+      '<w:suff w:val="tab"/><w:lvlJc w:val="start"/>' +
+      '<w:numFmt w:val="custom" w:format="last-format"/>' +
+      "</w:lvl>" +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+    const level = opts?.abstractNumberings[0]?.levels[0];
+
+    expect(level?.format).toBe(LevelFormat.CUSTOM);
+    expect(level?.formatOverride).toBe("first-format");
+    expect(level?.formatDuplicates).toEqual([
+      { format: LevelFormat.DECIMAL },
+      { format: LevelFormat.CUSTOM, formatOverride: "last-format" },
+    ]);
+
+    const generated = new Numbering({
+      abstractNumberings: opts!.abstractNumberings,
+    }).serialize(writeCtx);
+    const generatedLevel = generated.slice(
+      generated.indexOf("<w:lvl "),
+      generated.indexOf("</w:lvl>") + "</w:lvl>".length,
+    );
+    expect(generatedLevel).toBe(
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/>' +
+        '<w:numFmt w:val="custom" w:format="first-format"/>' +
+        '<w:lvlText w:val="%1."/>' +
+        '<w:numFmt w:val="decimal"/>' +
+        '<w:suff w:val="tab"/><w:lvlJc w:val="start"/>' +
+        '<w:numFmt w:val="custom" w:format="last-format"/>' +
+        "</w:lvl>",
+    );
+  });
+
   it("keeps per-instance lvlOverride/startOverride separate from the abstract level", () => {
     // abstract level 0 starts at 1; the concrete num re-pins it to 3 via
     // lvlOverride. The override stays on the instance config so the w:num

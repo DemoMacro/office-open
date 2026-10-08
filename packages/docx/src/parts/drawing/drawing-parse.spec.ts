@@ -79,6 +79,47 @@ describe("parseChartDrawing alt text", () => {
     });
   });
 
+  it("resolves drawing hover hyperlinks from the current part's rels", () => {
+    const chartEl = parseXml(`<root ${NS}>${CHART_SPACE}</root>`).elements?.[0]?.elements?.[0];
+    if (!chartEl) throw new Error("chart fixture missing");
+    const context = {
+      currentPart: "word/document.xml",
+      docx: {
+        partRefs: {
+          charts: new Map([["rId1", "word/charts/chart1.xml"]]),
+          hyperlinks: new Map(),
+          partHyperlinks: new Map([
+            [
+              "word/document.xml",
+              new Map([
+                ["rId2", "https://example.invalid/click"],
+                ["rId3", "https://example.invalid/hover"],
+              ]),
+            ],
+          ]),
+        },
+        doc: { get: () => chartEl },
+      },
+    } as unknown as DocxReadContext;
+    const el = parseXml(
+      drawingXml('id="1" name="Chart 1"', '<a:hlinkClick r:id="rId2"/><a:hlinkHover r:id="rId3"/>'),
+    ).elements?.[0];
+    if (!el) throw new Error("parsed drawing has no root element");
+    const result = parseDrawingRun(el, context);
+    expect(result).toMatchObject({
+      chart: {
+        altText: {
+          hyperlink: {
+            click: "https://example.invalid/click",
+            clickRelationshipId: "rId2",
+            hover: "https://example.invalid/hover",
+            hoverRelationshipId: "rId3",
+          },
+        },
+      },
+    });
+  });
+
   it("leaves altText undefined when the drawing carries no wp:docPr", () => {
     const result = parseDrawing();
     const chart = (result as { chart?: { altText?: unknown } } | undefined)?.chart;

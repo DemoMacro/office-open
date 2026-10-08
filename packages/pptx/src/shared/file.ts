@@ -78,6 +78,10 @@ export interface LayoutDefinition {
   shapeTreeName?: string;
   /** Whether the source package carried this layout's .rels part (round-trip only). */
   sourceOwnRels?: boolean;
+  /** Source master relationship id for this layout (round-trip only). */
+  sourceRelationshipId?: string;
+  /** Layout part exists but the owning master does not list it (round-trip only). */
+  orphaned?: boolean;
   // Structured cSld content (round-trip, mirrors SlideDescriptorOptions)
   children?: SlideChild[];
   background?: BackgroundOptions;
@@ -114,6 +118,8 @@ export interface MasterDefinition extends SlideMasterOptions {
   name?: string;
   theme?: ThemeOptions;
   layouts?: LayoutDefinition[];
+  /** Source `p:sldLayoutIdLst` order — round-trip only. */
+  slideLayoutIds?: { id: number; relationshipId: string }[];
 }
 
 export interface SlideCommentOptions {
@@ -163,6 +169,8 @@ export interface SlideOptions {
   background?: BackgroundOptions;
   /** Speaker notes — plain text shorthand, or a structured notes-slide object. */
   notes?: string | NotesSlideOptions;
+  /** Source notes-slide package path; round-trip uses it to keep part numbering and rels. */
+  notesSourcePath?: string;
   /** Form containers anchored to this slide. */
   forms?: FormContainerOptions[];
   /**

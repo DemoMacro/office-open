@@ -108,6 +108,37 @@ describe("parseStyleDefinitions (round-trip)", () => {
     });
   });
 
+  it("preserves typed w:style child order", () => {
+    const styles = new Styles({
+      characterStyles: [
+        {
+          id: "Ordered",
+          name: "Ordered",
+          aliases: "Alternate",
+          basedOn: "DefaultParagraphFont",
+          quickFormat: true,
+          run: { bold: true },
+          childOrder: ["aliases", "name", "run", "basedOn", "quickFormat"],
+        },
+      ],
+    });
+
+    const xml = styles.serialize();
+    expect(xml.indexOf("<w:aliases")).toBeLessThan(xml.indexOf("<w:name"));
+    expect(xml.indexOf("<w:rPr>")).toBeLessThan(xml.indexOf("<w:basedOn"));
+
+    const root = parseXml(xml).elements?.[0];
+    if (!root) throw new Error("parsed styles has no root element");
+    const parsed = parseStyleDefinitions(root, parseParagraphProperties, ctx);
+    expect(parsed?.characterStyles?.[0]?.childOrder).toEqual([
+      "aliases",
+      "name",
+      "run",
+      "basedOn",
+      "quickFormat",
+    ]);
+  });
+
   it("reads back custom table style with conditional formats (fully structured)", () => {
     const styles = new Styles({
       tableStyles: [

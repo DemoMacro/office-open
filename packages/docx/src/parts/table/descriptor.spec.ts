@@ -35,6 +35,13 @@ function roundTrip(opts: TableOptions) {
   return tableDesc.parse(el, readCtx);
 }
 
+function roundTripSource(source: string) {
+  const doc = parseXml(source);
+  const el = doc.elements?.[0];
+  if (!el) throw new Error("parsed document has no root element");
+  return tableDesc.parse(el, readCtx);
+}
+
 describe("tableDesc round-trip", () => {
   it("round-trips a simple table", () => {
     const result = roundTrip({
@@ -461,6 +468,20 @@ describe("tableDesc round-trip", () => {
     expect(row.widthAfter?.size).toBe(200);
     expect(row.rowAlignment).toBe("center");
     expect(row.hidden).toBe(true);
+  });
+
+  it("round-trips an empty row trPr", () => {
+    const source =
+      '<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      "<w:tblPr/>" +
+      "<w:tr><w:trPr/><w:tc><w:tcPr/><w:p/></w:tc></w:tr>" +
+      "</w:tbl>";
+    const result = roundTripSource(source);
+    const row = result.rows[0] as TableRowOptions;
+    expect(row.rowProperties).toBe(true);
+
+    const xml = tableDesc.stringify(result, writeCtx)!;
+    expect(xml).toContain("<w:tr><w:trPr/><w:tc>");
   });
 
   it("round-trips row trPrChange revision", () => {

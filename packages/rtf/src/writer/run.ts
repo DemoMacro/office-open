@@ -1,5 +1,6 @@
 import type { RunOptions } from "@office-open/docx";
 
+import { tagToLcid } from "../langs";
 import { assertAllowed, colorIndex, fontIndex, reject, type RtfGenerateContext } from "./context";
 import { control, rtfText } from "./escape";
 import { writeFieldChild } from "./field";
@@ -14,6 +15,17 @@ const RUN_PROPERTIES = [
   "font",
   "strike",
   "verticalAlign",
+  "language",
+  "characterSpacing",
+  "kern",
+  "allCaps",
+  "smallCaps",
+  "outline",
+  "shadow",
+  "vanish",
+  "emboss",
+  "scale",
+  "style",
 ] as const;
 
 export function writeRunProperties(run: RunOptions, context: RtfGenerateContext): string {
@@ -35,6 +47,59 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
         : reject("run", "run.size", String(run.size), "RTF writer supports numeric point sizes"),
     run.font === undefined ? "" : control("f", fontIndex(context, run, "run")),
     run.color === undefined ? "" : control("cf", colorIndex(context, run, "run")),
+    run.characterSpacing === undefined
+      ? ""
+      : control(
+          "expndtw",
+          typeof run.characterSpacing === "number"
+            ? run.characterSpacing
+            : reject(
+                "run",
+                "run.characterSpacing",
+                String(run.characterSpacing),
+                "RTF writer supports numeric twip spacing",
+              ),
+        ),
+    run.kern === undefined
+      ? ""
+      : control(
+          "kerning",
+          typeof run.kern === "number"
+            ? Math.round(run.kern / 10)
+            : reject(
+                "run",
+                "run.kern",
+                String(run.kern),
+                "RTF writer supports numeric twip kerning",
+              ),
+        ),
+    run.allCaps === true ? control("caps") : "",
+    run.allCaps === false ? control("caps", 0) : "",
+    run.smallCaps === true ? control("scaps") : "",
+    run.smallCaps === false ? control("scaps", 0) : "",
+    run.outline === true ? control("outl") : "",
+    run.outline === false ? control("outl", 0) : "",
+    run.shadow === true ? control("shad") : "",
+    run.shadow === false ? control("shad", 0) : "",
+    run.vanish === true ? control("v") : "",
+    run.vanish === false ? control("v", 0) : "",
+    run.emboss === true ? control("impr") : "",
+    run.emboss === false ? control("impr", 0) : "",
+    run.scale === undefined ? "" : control("charscalex", run.scale),
+    run.style === undefined
+      ? ""
+      : run.style.match(/^rtf-character-style-(\d+)$/)
+        ? control("cs", Number(run.style.match(/^rtf-character-style-(\d+)$/)![1]))
+        : reject("run", "run.style", run.style, "RTF writer only projects parsed character styles"),
+    (() => {
+      const tag = run.language?.value;
+      if (tag === undefined) return "";
+      const lcid = tagToLcid(tag);
+      if (lcid === undefined) {
+        reject("run", "run.language.value", tag, "RTF language table has no such tag");
+      }
+      return control("lang", lcid);
+    })(),
     run.verticalAlign === "superscript"
       ? control("super")
       : run.verticalAlign === "subscript"

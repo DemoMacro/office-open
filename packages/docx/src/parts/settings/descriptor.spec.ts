@@ -158,6 +158,44 @@ describe("settingsDesc round-trip", () => {
     expect(result.displayBackgroundShape).toBe(true);
   });
 
+  it("preserves noncanonical lexical values for on/off settings", () => {
+    const source =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:displayBackgroundShape w:val="on"/>' +
+      '<w:autoHyphenation w:val="t"/>' +
+      '<w:bordersDoNotSurroundFooter w:val="false"/>' +
+      "</w:settings>";
+    const el = parseXml(source).elements?.[0];
+    if (!el) throw new Error("no root");
+    const parsed = settingsDesc.parse(el, readCtx);
+    expect(parsed.displayBackgroundShape).toBe("on");
+    expect(parsed.autoHyphenation).toBe("t");
+    expect(parsed.bordersDoNotSurroundFooter).toBe("false");
+
+    const xml = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain('<w:displayBackgroundShape w:val="on"/>');
+    expect(xml).toContain('<w:autoHyphenation w:val="t"/>');
+    expect(xml).toContain('<w:bordersDoNotSurroundFooter w:val="false"/>');
+  });
+
+  it("round-trips documentProtection enforcement as false", () => {
+    const source =
+      '<w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:documentProtection w:enforcement="0" w:edit="readOnly"/>' +
+      "</w:settings>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed settings has no root element");
+    const parsed = settingsDesc.parse(element, readCtx);
+    expect(parsed.documentProtection).toEqual({
+      enforcement: false,
+      enforcementRaw: "0",
+      edit: "readOnly",
+    });
+
+    const xml = settingsDesc.stringify(parsed, writeCtx)!;
+    expect(xml).toContain('<w:documentProtection w:enforcement="0" w:edit="readOnly"/>');
+  });
+
   it("round-trips embedTrueTypeFonts", () => {
     const result = roundTrip({ embedTrueTypeFonts: true });
     expect(result.embedTrueTypeFonts).toBe(true);

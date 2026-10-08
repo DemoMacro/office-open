@@ -284,6 +284,8 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       if (sp3d) result.shape3d = shape3DDesc.parse(sp3d, ctx);
       const bwMode = spPr.attributes?.["bwMode"];
       if (bwMode !== undefined) result.blackWhiteMode = bwMode as PictureOptions["blackWhiteMode"];
+      const spProperties = shapePropertiesDesc.parse(spPr, ctx);
+      if (spProperties.ext !== undefined) result.shapePropertiesExt = spProperties.ext;
     }
 
     // p:style
@@ -632,6 +634,7 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       effects: opts.effects,
       scene3d: opts.scene3d,
       shape3d: opts.shape3d,
+      ext: opts.shapePropertiesExt,
     },
     ctx,
   );

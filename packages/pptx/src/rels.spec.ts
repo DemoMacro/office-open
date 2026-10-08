@@ -2,6 +2,7 @@ import { unzipSync } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generatePresentation } from "./generate";
+import { parsePresentation } from "./parse";
 import type { PresentationOptions } from "./shared/file";
 
 // Slide rels mix model allocations (layout, media, …) with passthrough
@@ -15,6 +16,7 @@ const CHART_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relatio
 const LAYOUT_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
 const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+const MEDIA_REL = "http://schemas.microsoft.com/office/2007/relationships/media";
 const PACKAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 const THEME_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 
@@ -118,6 +120,97 @@ describe("slide rels with passthrough source ids and a modeled picture", () => {
     expect(rels).toContain('Target="../media/kept.png"');
     expect(rels).toContain('Id="rId3"');
     expect(rels).toContain('Target="../media/legacy.wmf"');
+  });
+
+  it("keeps duplicate source image relationships to one media target", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              picture: {
+                type: "png",
+                fileName: "same.png",
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+              },
+            },
+          ],
+        },
+      ],
+      passthroughRelationships: [
+        {
+          source: "ppt/slides/slide1.xml",
+          relationshipType: IMAGE_REL,
+          target: "../media/same.png",
+          rId: "rId3",
+        },
+        {
+          source: "ppt/slides/slide1.xml",
+          relationshipType: IMAGE_REL,
+          target: "../media/same.png",
+          rId: "rId2",
+        },
+      ],
+    };
+
+    const buffer = await generatePresentation(options);
+    const rels = decodeEntry(buffer, "ppt/slides/_rels/slide1.xml.rels");
+    const imageTargets = [
+      ...rels.matchAll(/Id="(rId\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"/g),
+    ].filter((match) => match[2] === IMAGE_REL && match[3] === "../media/same.png");
+
+    expect(imageTargets.map((match) => match[1])).toEqual(["rId2", "rId3"]);
+  });
+
+  it("keeps modeled video media relationship ids stable across round-trip", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              video: {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                name: "Test Video",
+                data: new Uint8Array([0, 0, 0, 24, 102, 116, 121, 112]),
+                type: "mp4",
+                poster:
+                  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+                posterType: "png",
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const buffer = await generatePresentation(options);
+    const parsed = await parsePresentation(buffer);
+    const roundTripped = await generatePresentation(parsed);
+    const rels = decodeEntry(roundTripped, "ppt/slides/_rels/slide1.xml.rels");
+
+    const relationships = [
+      ...rels.matchAll(/Id="(rId\d+)"[^>]*Type="([^"]+)"[^>]*Target="([^"]+)"/g),
+    ].map((match) => [match[1], match[2], match[3]] as const);
+    expect(relationships).toEqual([
+      [
+        "rId1",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout",
+        "../slideLayouts/slideLayout1.xml",
+      ],
+      ["rId2", IMAGE_REL, "../media/Test_Video_poster.png"],
+      ["rId3", MEDIA_REL, "../media/Test_Video.mp4"],
+      [
+        "rId4",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/video",
+        "../media/Test_Video.mp4",
+      ],
+    ]);
   });
 });
 

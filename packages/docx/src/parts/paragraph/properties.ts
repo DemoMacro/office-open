@@ -178,7 +178,7 @@ export type ParagraphStylePropertiesOptions = {
          * form — a bare `<w:numId w:val="0"/>`).
          */
         none: true;
-        /** Level in the numbering hierarchy (0-8). */
+        /** Source w:ilvl value; preserved without clamping. */
         level?: number;
       }
     | {
@@ -220,7 +220,7 @@ export type ParagraphStylePropertiesOptions = {
          * optional). Emits `<w:numPr>` with only the w:ilvl.
          */
         levelOnly: true;
-        /** Level in the numbering hierarchy (0-8). */
+        /** Source w:ilvl value; preserved without clamping. */
         level?: number;
       }
     | {

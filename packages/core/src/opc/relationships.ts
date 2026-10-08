@@ -264,6 +264,24 @@ export class Relationships {
     if (entry) entry.type = type;
   }
 
+  /** Preserve the source Type URI when a root passthrough semantically owns a
+   * fixed canonical root relationship (legacy/strict core and app metadata). */
+  public absorbRootRelationshipType(rel: {
+    relationshipType: string;
+    target: string;
+    targetMode?: "External";
+  }): boolean {
+    const semanticKind = rel.relationshipType.split("/").pop();
+    const entry = this.entries.find(
+      (candidate) =>
+        candidate.type.split("/").pop() === semanticKind && candidate.target === rel.target,
+    );
+    if (!entry) return false;
+    entry.type = rel.relationshipType;
+    entry.targetMode = rel.targetMode;
+    return true;
+  }
+
   /** Numeric id of the first entry matching `kind` (last segment of the type
    * URI), or undefined when none is registered. */
   public idByKind(kind: string): number | undefined {
@@ -282,14 +300,17 @@ export class Relationships {
    * kind+target (the model absorbed them); falls back to an auto id for
    * non-numeric source ids.
    */
-  public claimSourceRel(rel: {
-    relationshipType: string;
-    target: string;
-    rId: string;
-    targetMode?: "External";
-  }): void {
-    if (this.hasRelationship(rel.relationshipType, rel.target)) return;
-    if (this.hasRelationshipKind(rel.relationshipType.split("/").pop() ?? "")) {
+  public claimSourceRel(
+    rel: {
+      relationshipType: string;
+      target: string;
+      rId: string;
+      targetMode?: "External";
+    },
+    options?: { force?: boolean },
+  ): void {
+    if (!options?.force && this.hasRelationship(rel.relationshipType, rel.target)) return;
+    if (!options?.force && this.hasRelationshipKind(rel.relationshipType.split("/").pop() ?? "")) {
       const semanticKind = rel.relationshipType.split("/").pop();
       const semantic = this.entries.find(
         (entry) =>
@@ -332,6 +353,16 @@ export class Relationships {
     );
   }
 
+  /** Number of registered relationships matching the semantic kind and target. */
+  public countRelationships(type: string, target: string): number {
+    const kind = type.split("/").pop()?.toLowerCase().replaceAll("-", "");
+    return this.entries.filter(
+      (e) =>
+        e.type.split("/").pop()?.toLowerCase().replaceAll("-", "") === kind &&
+        this.semanticTarget(e) === this.semanticTarget({ target }),
+    ).length;
+  }
+
   /**
    * True when any entry carries the relationship kind (last type segment).
    * Round-trip re-emission uses this as the ownership test: a rebuilt part
@@ -346,6 +377,22 @@ export class Relationships {
   /** True when an entry already occupies this exact relationship id. */
   public hasId(id: string): boolean {
     return this.entries.some((e) => e.id === id);
+  }
+
+  /** True when this exact relationship id points at the requested semantic relationship. */
+  public hasExactRelationship(
+    id: string,
+    type: string,
+    target: string,
+    targetMode?: "External",
+  ): boolean {
+    const entry = this.entries.find((candidate) => candidate.id === id);
+    return (
+      entry !== undefined &&
+      entry.type.split("/").pop() === type.split("/").pop() &&
+      this.semanticTarget(entry) === this.semanticTarget({ target, targetMode }) &&
+      (entry.targetMode ?? undefined) === targetMode
+    );
   }
 
   /**
@@ -474,6 +521,7 @@ export function buildRootRelationships(
   // all. Re-emitted as written; targets never move.
   for (const rel of passthroughRelationships ?? []) {
     if (rel.source !== "") continue;
+    if (rels.absorbRootRelationshipType(rel)) continue;
     if (rels.hasRelationship(rel.relationshipType, rel.target)) continue;
     rels.add(rel.relationshipType as RelationshipType, rel.target, rel.targetMode);
   }

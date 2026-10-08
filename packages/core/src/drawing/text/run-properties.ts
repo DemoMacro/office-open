@@ -108,6 +108,7 @@ export function readHyperlink(el: XmlElement, ctx: ReadContext): TextHyperlinkOp
         } else {
           hl.url = target;
         }
+        hl.referenceId = ridStr;
       }
       const m = ridStr.match(/^\{hlink:(.+)\}$/);
       if (m) hl.referenceId = m[1];
@@ -201,7 +202,7 @@ export function stringifyRunProperties(
   if (opts.alternateLanguage) attrParts.push(`altLang="${opts.alternateLanguage}"`);
   if (opts.normalizeHeight !== undefined)
     attrParts.push(`normalizeH="${opts.normalizeHeight ? 1 : 0}"`);
-  if (opts.bookmarkMark) attrParts.push(`bmk="${opts.bookmarkMark}"`);
+  if (opts.bookmarkMark !== undefined) attrParts.push(`bmk="${opts.bookmarkMark}"`);
   if (opts.smartTagId) attrParts.push(`smtId="${opts.smartTagId}"`);
   if (opts.err !== undefined) attrParts.push(`err="${opts.err ? 1 : 0}"`);
   if (opts.smtClean !== undefined) attrParts.push(`smtClean="${opts.smtClean ? 1 : 0}"`);

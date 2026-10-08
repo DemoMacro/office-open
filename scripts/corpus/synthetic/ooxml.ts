@@ -51,6 +51,66 @@ export async function docxPrinterSettings(): Promise<void> {
   );
 }
 
+export async function docxRevisionIdentity(): Promise<void> {
+  const part = "word/document.xml";
+  const document = `<?xml version="1.0"?><w:document xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:pPr><w:rPr><w:b w:val="0"/><w:i w:val="0"/></w:rPr></w:pPr></w:p><w:p><w:r><w:rPr><w:rPrChange w:id="1" w:author="Alice"><w:rPr><w:b w:val="1"/><w:i w:val="0"/></w:rPr></w:rPrChange></w:rPr><w:t>x</w:t></w:r></w:p><w:p><w:del w:id="2" w:author="Alice"><w:r w:rsidDel="AABBCCDD"><w:drawing><wp:inline><wp:extent cx="914400" cy="914400"/><wp:docPr id="1" name="synthetic"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="synthetic"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rId1"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="914400" cy="914400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:del></w:p></w:body></w:document>`;
+  const source = syntheticZip({
+    "[Content_Types].xml": ENCODER.encode(
+      `<?xml version="1.0"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="png" ContentType="image/png"/><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`,
+    ),
+    "_rels/.rels": ENCODER.encode(
+      `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`,
+    ),
+    "word/document.xml": ENCODER.encode(document),
+    "word/_rels/document.xml.rels": ENCODER.encode(
+      `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image.png"/></Relationships>`,
+    ),
+    "word/media/image.png": new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]),
+  });
+  const options = await parseDocument(source);
+  const [paragraphMark, revision, deletion] = options.sections[0]?.children ?? [];
+  const markRun = "paragraph" in paragraphMark ? paragraphMark.paragraph.run : undefined;
+  const revisionRun = "paragraph" in revision ? revision.paragraph.children?.[0] : undefined;
+  const deletedRun =
+    "paragraph" in deletion
+      ? deletion.paragraph.children?.find((child) => "deletion" in child)?.deletion?.children[0]
+      : undefined;
+  assertEqual(markRun?.bold, false, part, "paragraph-mark bold projection");
+  assertEqual(markRun?.boldRaw, "0", part, "paragraph-mark bold lexical projection");
+  assertEqual(markRun?.italic, false, part, "paragraph-mark italic projection");
+  assertEqual(markRun?.italicRaw, "0", part, "paragraph-mark italic lexical projection");
+  assertEqual(revisionRun?.revision?.id, 1, part, "run revision id projection");
+  assertEqual(revisionRun?.revision?.author, "Alice", part, "run revision author projection");
+  assertEqual(revisionRun?.revision?.date, undefined, part, "run revision absent date projection");
+  assertEqual(revisionRun?.revision?.bold, true, part, "run revision bold projection");
+  assertEqual(revisionRun?.revision?.italic, false, part, "run revision italic projection");
+  assertEqual(
+    "picture" in deletedRun ? deletedRun.picture.deletionRsid : undefined,
+    "AABBCCDD",
+    part,
+    "deleted drawing run identity",
+  );
+  auditSyntheticOptions(options, part);
+  const output = await generateDocument(options, { type: "uint8array" });
+  const generated = partText(output, part);
+  assert(
+    generated.includes('<w:b w:val="0"/><w:i w:val="0"/>'),
+    part,
+    "paragraph-mark toggle generation",
+  );
+  assert(
+    generated.includes('<w:rPrChange w:author="Alice" w:id="1"><w:rPr>') &&
+      !generated.includes('w:date="undefined"'),
+    part,
+    "optional run revision date generation",
+  );
+  assert(
+    generated.includes('<w:r w:rsidDel="AABBCCDD">'),
+    part,
+    "deleted drawing run identity generation",
+  );
+}
+
 export async function pptxIndefiniteTiming(): Promise<void> {
   const part = "ppt/slides/slide1.xml";
   const seed = await generatePresentation(

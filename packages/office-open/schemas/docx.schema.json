@@ -25,7 +25,7 @@
       "description": "w:abstractNum attributes + child elements + w15 restart.",
       "properties": {
         "multiLevelType": {
-          "description": "w:multiLevelType value. Defaults to hybridMultilevel when omitted.",
+          "description": "w:multiLevelType value. Omitted when the source omits it.",
           "enum": ["singleLevel", "multilevel", "hybridMultilevel"],
           "type": "string"
         },
@@ -2154,7 +2154,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -2170,7 +2170,7 @@
           "type": "string"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "ChangedProperties": {
@@ -2183,13 +2183,13 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "CharacterStyleOptions": {
@@ -2203,6 +2203,9 @@
         },
         "basedOn": {
           "type": "string"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/childOrder"
         },
         "customStyle": {
           "description": "`@w:customStyle` — a user-defined custom style.",
@@ -2443,6 +2446,10 @@
         "date1904": {
           "description": "1904 date system (c:date1904) — emitted only when the source had it.",
           "type": "boolean"
+        },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
         },
         "dialect": {
           "description": "Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict) source rejects transitional namespaces. Parse records the dialect; stringify re-declares the matching namespace set.",
@@ -4738,12 +4745,12 @@
         {
           "additionalProperties": false,
           "properties": {
-            "runXml": {
-              "type": "string"
+            "run": {
+              "$ref": "#/definitions/RunOptions"
             }
           },
-          "required": ["runXml"],
-          "title": "runXml",
+          "required": ["run"],
+          "title": "run",
           "type": "object"
         },
         {
@@ -4755,6 +4762,28 @@
           },
           "required": ["simpleField"],
           "title": "simpleField",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bookmarkStart": {
+              "$ref": "#/definitions/BookmarkStartOptions"
+            }
+          },
+          "required": ["bookmarkStart"],
+          "title": "bookmarkStart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "bookmarkEnd": {
+              "$ref": "#/definitions/MarkupRangeOptions"
+            }
+          },
+          "required": ["bookmarkEnd"],
+          "title": "bookmarkEnd",
           "type": "object"
         }
       ],
@@ -4819,6 +4848,13 @@
         "resultAdditionRsid": {
           "description": "Revision save ID of the first plain result run (w:rsidR, round-trip).",
           "type": "string"
+        },
+        "resultMembers": {
+          "description": "Ordered typed members when non-run markers interrupt the cached result.",
+          "items": {
+            "$ref": "#/definitions/ComplexFieldInstructionMember"
+          },
+          "type": "array"
         },
         "resultPreserveSpace": {
           "description": "Source `xml:space=\"preserve\"` marker on the plain result text.",
@@ -6917,6 +6953,14 @@
           "description": "Type of editing restriction",
           "enum": ["none", "readOnly", "comments", "trackedChanges", "forms"],
           "type": "string"
+        },
+        "enforcement": {
+          "description": "Whether protection is enforced; false is preserved explicitly.",
+          "type": "boolean"
+        },
+        "enforcementRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `documentProtection/@w:enforcement` lexical form; round-trip only — do not hand-author."
         },
         "formatting": {
           "description": "Whether formatting is restricted",
@@ -9157,6 +9201,34 @@
           },
           "required": ["referenceId", "transformation", "type"],
           "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "element": {
+              "$ref": "#/definitions/XmlElementData",
+              "description": "Exact source child element."
+            },
+            "fill": {
+              "$ref": "#/definitions/FillOptions"
+            },
+            "outline": {
+              "$ref": "#/definitions/OutlineOptions"
+            },
+            "relationships": {
+              "description": "Relationship references from its non-visual properties.",
+              "items": {
+                "$ref": "#/definitions/UnsupportedDrawingRelationshipOptions"
+              },
+              "type": "array"
+            },
+            "type": {
+              "const": "unsupported",
+              "type": "string"
+            }
+          },
+          "required": ["element", "type"],
+          "type": "object"
         }
       ]
     },
@@ -9192,6 +9264,10 @@
             "$ref": "#/definitions/GroupChildMediaData"
           },
           "type": "array"
+        },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
@@ -9411,6 +9487,18 @@
         }
       },
       "type": "object"
+    },
+    "HeaderFooterReferenceSlot": {
+      "description": "One w:headerReference/w:footerReference slot identified by kind and type.",
+      "enum": [
+        "header-default",
+        "header-first",
+        "header-even",
+        "footer-default",
+        "footer-first",
+        "footer-even"
+      ],
+      "type": "string"
     },
     "HeadingPairOptions": {
       "additionalProperties": false,
@@ -10071,6 +10159,24 @@
       ],
       "description": "Length value for VML style properties: \"auto\" (application-calculated), number (typically points), percentage string, explicit-unit string (\"1cm\"), or relative measure."
     },
+    "LevelChildOrder": {
+      "description": "Typed `w:lvl` child fields whose source order is preserved.",
+      "enum": [
+        "start",
+        "format",
+        "levelRestart",
+        "paragraphStyle",
+        "isLegalNumberingStyle",
+        "suffix",
+        "text",
+        "levelPictureBulletId",
+        "legacy",
+        "alignment",
+        "paragraph",
+        "run"
+      ],
+      "type": "string"
+    },
     "LevelOverrideOptions": {
       "additionalProperties": false,
       "description": "Per-instance level override: a nested w:lvl redefines the level wholesale, w:startOverride re-pins its start; both may appear together.",
@@ -10238,6 +10344,13 @@
           ],
           "type": "string"
         },
+        "childOrder": {
+          "description": "Source order of typed `w:lvl` children; round-trip only. `format` repeats once for each source `w:numFmt`, including duplicates.",
+          "items": {
+            "$ref": "#/definitions/LevelChildOrder"
+          },
+          "type": "array"
+        },
         "format": {
           "description": "Number format type (decimal, roman, letter, bullet, etc.).",
           "enum": [
@@ -10307,6 +10420,93 @@
           ],
           "type": "string"
         },
+        "formatDuplicates": {
+          "description": "Additional source `w:numFmt` elements after the primary format; round-trip only — do not hand-author. Preserves duplicate lexical elements in order.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "format": {
+                "description": "Number format type (`w:val`; decimal, roman, letter, bullet, etc.).",
+                "enum": [
+                  "decimal",
+                  "upperRoman",
+                  "lowerRoman",
+                  "upperLetter",
+                  "lowerLetter",
+                  "ordinal",
+                  "cardinalText",
+                  "ordinalText",
+                  "hex",
+                  "chicago",
+                  "ideographDigital",
+                  "japaneseCounting",
+                  "aiueo",
+                  "iroha",
+                  "decimalFullWidth",
+                  "decimalHalfWidth",
+                  "japaneseLegal",
+                  "japaneseDigitalTenThousand",
+                  "decimalEnclosedCircle",
+                  "decimalFullWidth2",
+                  "aiueoFullWidth",
+                  "irohaFullWidth",
+                  "decimalZero",
+                  "bullet",
+                  "ganada",
+                  "chosung",
+                  "decimalEnclosedFullstop",
+                  "decimalEnclosedParen",
+                  "decimalEnclosedCircleChinese",
+                  "ideographEnclosedCircle",
+                  "ideographTraditional",
+                  "ideographZodiac",
+                  "ideographZodiacTraditional",
+                  "taiwaneseCounting",
+                  "ideographLegalTraditional",
+                  "taiwaneseCountingThousand",
+                  "taiwaneseDigital",
+                  "chineseCounting",
+                  "chineseLegalSimplified",
+                  "chineseCountingThousand",
+                  "koreanDigital",
+                  "koreanCounting",
+                  "koreanLegal",
+                  "koreanDigital2",
+                  "vietnameseCounting",
+                  "russianLower",
+                  "russianUpper",
+                  "none",
+                  "numberInDash",
+                  "hebrew1",
+                  "hebrew2",
+                  "arabicAlpha",
+                  "arabicAbjad",
+                  "hindiVowels",
+                  "hindiConsonants",
+                  "hindiNumbers",
+                  "hindiCounting",
+                  "thaiLetters",
+                  "thaiNumbers",
+                  "thaiCounting",
+                  "bahtText",
+                  "dollarText",
+                  "custom"
+                ],
+                "type": "string"
+              },
+              "formatOverride": {
+                "description": "Custom number format string (`w:format`; set with format \"custom\").",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "formatOverride": {
+          "description": "Custom number format string; set with format \"custom\".",
+          "type": "string"
+        },
         "isLegalNumberingStyle": {
           "description": "Use legal numbering style (e.g., 1.1.1).",
           "type": "boolean"
@@ -10328,7 +10528,7 @@
           "type": "object"
         },
         "level": {
-          "description": "Level index (0-8).",
+          "description": "Level index; source w:ilvl values are preserved without clamping.",
           "type": "number"
         },
         "levelPictureBulletId": {
@@ -12744,6 +12944,9 @@
         "basedOn": {
           "type": "string"
         },
+        "childOrder": {
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/childOrder"
+        },
         "customStyle": {
           "description": "`@w:customStyle` — a user-defined custom style.",
           "type": "boolean"
@@ -13159,6 +13362,11 @@
     "OfPieType": {
       "description": "ofPie variant: \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
+      "type": "string"
+    },
+    "OnOffLexicalValue": {
+      "description": "Source lexical form for boolean run properties. String values round-trip verbatim — do not hand-author them.",
+      "enum": ["true", "false", "1", "0", "on", "off", "t", "f"],
       "type": "string"
     },
     "OptimizeForBrowserOptions": {
@@ -13829,13 +14037,13 @@
                 },
                 "date": {
                   "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format)"
+                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
                 },
                 "id": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
                 }
               },
-              "required": ["author", "children", "date"],
+              "required": ["author", "children"],
               "type": "object"
             }
           },
@@ -14335,6 +14543,14 @@
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
             },
+            "instructionAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+            },
+            "instructionRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
+            },
             "rPrXml": {
               "description": "Control-run properties shared by begin/separate (round-trip).",
               "type": "string"
@@ -14570,6 +14786,17 @@
           },
           "required": ["subDoc"],
           "title": "subDoc",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "unsupportedDrawing": {
+              "$ref": "#/definitions/UnsupportedDrawingOptions"
+            }
+          },
+          "required": ["unsupportedDrawing"],
+          "title": "unsupportedDrawing",
           "type": "object"
         },
         {
@@ -14890,7 +15117,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -15008,7 +15235,7 @@
           "type": "boolean"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "ParagraphRunOptions": {
@@ -15022,6 +15249,14 @@
         },
         "boldComplexScript": {
           "type": "boolean"
+        },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -15045,6 +15280,13 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "childOrder": {
+          "description": "Relative source position of `w:rPr` and content when not canonical; round-trip only.",
+          "items": {
+            "$ref": "#/definitions/RunChildOrder"
+          },
+          "type": "array"
         },
         "children": {
           "description": "Inline content children. Empty run elements are single-key markers (`{ tab: true }`, `{ noBreakHyphen: true }`, …); child shapes (pictures, charts, hyperlinks, …) dispatch through the same JSON pipeline.",
@@ -15081,6 +15323,34 @@
                 },
                 "required": ["text"],
                 "title": "text",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "instructionText": {
+                    "type": "string"
+                  },
+                  "preserveSpace": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["instructionText"],
+                "title": "instructionText",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "deletedInstructionText": {
+                    "type": "string"
+                  },
+                  "preserveSpace": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["deletedInstructionText"],
+                "title": "deletedInstructionText",
                 "type": "object"
               },
               {
@@ -15414,6 +15684,13 @@
             }
           ]
         },
+        "fontDuplicates": {
+          "description": "Additional source `w:rFonts` elements after the primary `font`; round-trip only — do not hand-author. Preserves duplicate lexical elements in order.",
+          "items": {
+            "$ref": "#/definitions/FontProperties"
+          },
+          "type": "array"
+        },
         "footnoteReference": {
           "anyOf": [
             {
@@ -15463,6 +15740,14 @@
         "italicComplexScript": {
           "type": "boolean"
         },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+        },
         "kern": {
           "anyOf": [
             {
@@ -15482,6 +15767,12 @@
         },
         "math": {
           "type": "boolean"
+        },
+        "movedFrom": {
+          "$ref": "#/definitions/ChangedProperties"
+        },
+        "movedTo": {
+          "$ref": "#/definitions/ChangedProperties"
         },
         "noProof": {
           "type": "boolean"
@@ -15647,6 +15938,9 @@
         },
         "basedOn": {
           "type": "string"
+        },
+        "childOrder": {
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/childOrder"
         },
         "customStyle": {
           "description": "`@w:customStyle` — a user-defined custom style.",
@@ -16289,6 +16583,10 @@
               "$ref": "#/definitions/DataType",
               "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
             },
+            "deletionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+            },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
             },
@@ -16415,6 +16713,10 @@
             },
             "data": {
               "$ref": "#/definitions/DataType"
+            },
+            "deletionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
             },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
@@ -17494,6 +17796,11 @@
       "required": ["alignment", "fontSize", "raise", "baseFontSize", "languageId"],
       "type": "object"
     },
+    "RunChildOrder": {
+      "description": "Relative placement of run properties and typed run content.",
+      "enum": ["runProperties", "content"],
+      "type": "string"
+    },
     "RunFont": {
       "anyOf": [
         {
@@ -17537,6 +17844,14 @@
         "boldComplexScript": {
           "type": "boolean"
         },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+        },
         "border": {
           "$ref": "#/definitions/BorderOptions"
         },
@@ -17559,6 +17874,9 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "childOrder": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/childOrder"
         },
         "children": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/children"
@@ -17614,6 +17932,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "fontDuplicates": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/fontDuplicates"
+        },
         "footnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
@@ -17631,6 +17952,14 @@
         },
         "italicComplexScript": {
           "type": "boolean"
+        },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -17763,6 +18092,14 @@
         "boldComplexScript": {
           "type": "boolean"
         },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+        },
         "border": {
           "$ref": "#/definitions/BorderOptions"
         },
@@ -17798,7 +18135,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "doubleStrike": {
           "type": "boolean"
@@ -17824,6 +18161,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "fontDuplicates": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/fontDuplicates"
+        },
         "glow": {
           "$ref": "#/definitions/W14GlowOptions"
         },
@@ -17842,6 +18182,14 @@
         },
         "italicComplexScript": {
           "type": "boolean"
+        },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -17944,7 +18292,7 @@
           "type": "boolean"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "RunPropertiesOptions": {
@@ -17959,6 +18307,14 @@
         },
         "boldComplexScript": {
           "type": "boolean"
+        },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -18017,6 +18373,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "fontDuplicates": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/fontDuplicates"
+        },
         "glow": {
           "$ref": "#/definitions/W14GlowOptions"
         },
@@ -18031,6 +18390,14 @@
         },
         "italicComplexScript": {
           "type": "boolean"
+        },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -18148,6 +18515,14 @@
         "boldComplexScript": {
           "type": "boolean"
         },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+        },
         "border": {
           "$ref": "#/definitions/BorderOptions"
         },
@@ -18205,6 +18580,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "fontDuplicates": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/fontDuplicates"
+        },
         "glow": {
           "$ref": "#/definitions/W14GlowOptions"
         },
@@ -18219,6 +18597,14 @@
         },
         "italicComplexScript": {
           "type": "boolean"
+        },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -18590,6 +18976,42 @@
       "required": ["val"],
       "type": "object"
     },
+    "SdtChildOrder": {
+      "description": "Typed `<w:sdtPr>` child fields whose source order is preserved.",
+      "enum": [
+        "runProperties",
+        "alias",
+        "tag",
+        "id",
+        "lock",
+        "placeholder",
+        "temporary",
+        "showingPlaceholder",
+        "dataBinding",
+        "label",
+        "tabIndex",
+        "appearance",
+        "equation",
+        "comboBox",
+        "date",
+        "docPartObj",
+        "docPartList",
+        "dropDownList",
+        "picture",
+        "richText",
+        "text",
+        "citation",
+        "group",
+        "bibliography",
+        "checkbox",
+        "repeatingSection",
+        "repeatingSectionItem",
+        "entityPicker",
+        "webExtensionLinked",
+        "webExtensionCreated"
+      ],
+      "type": "string"
+    },
     "SdtComboBoxOptions": {
       "additionalProperties": false,
       "description": "Options for comboBox SDT type.",
@@ -18709,6 +19131,13 @@
         "checkbox": {
           "$ref": "#/definitions/SdtCheckboxOptions",
           "description": "Checkbox content control SDT (Word 2010+, w14:checkbox)"
+        },
+        "childOrder": {
+          "description": "Source order of typed `<w:sdtPr>` children; round-trip only.",
+          "items": {
+            "$ref": "#/definitions/SdtChildOrder"
+          },
+          "type": "array"
         },
         "citation": {
           "description": "Citation SDT",
@@ -19543,7 +19972,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "level": {
-                          "description": "Level in the numbering hierarchy (0-8).",
+                          "description": "Source w:ilvl value; preserved without clamping.",
                           "type": "number"
                         },
                         "none": {
@@ -19612,7 +20041,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "level": {
-                          "description": "Level in the numbering hierarchy (0-8).",
+                          "description": "Source w:ilvl value; preserved without clamping.",
                           "type": "number"
                         },
                         "levelOnly": {
@@ -20000,7 +20429,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "deletionRsid": {
           "$ref": "#/definitions/LongHexNumber"
@@ -20019,6 +20448,9 @@
         },
         "grid": {
           "$ref": "#/definitions/SectionPropertiesOptions/properties/grid"
+        },
+        "headerFooterReferenceOrder": {
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/headerFooterReferenceOrder"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -20071,7 +20503,7 @@
           "$ref": "#/definitions/SectionVerticalAlign"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "SectionPropertiesOptions": {
@@ -20113,6 +20545,13 @@
             }
           ],
           "description": "Document grid. Omitted = fresh generation emits Word's CJK default line grid (linePitch 312, type \"lines\"); a DocGridProperties object emits the provided values; false = explicit off (emit nothing)."
+        },
+        "headerFooterReferenceOrder": {
+          "description": "Source header/footer reference emission order (round-trip only). Word may interleave w:headerReference and w:footerReference; absent = canonical header group (default/first/even) then footer group.",
+          "items": {
+            "$ref": "#/definitions/HeaderFooterReferenceSlot"
+          },
+          "type": "array"
         },
         "lineNumberType": {
           "$ref": "#/definitions/LineNumberProperties"
@@ -20224,6 +20663,46 @@
       "required": ["name"],
       "type": "object"
     },
+    "SettingsOnOffValue": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "const": "true",
+          "type": "string"
+        },
+        {
+          "const": "false",
+          "type": "string"
+        },
+        {
+          "const": "1",
+          "type": "string"
+        },
+        {
+          "const": "0",
+          "type": "string"
+        },
+        {
+          "const": "on",
+          "type": "string"
+        },
+        {
+          "const": "off",
+          "type": "string"
+        },
+        {
+          "const": "t",
+          "type": "string"
+        },
+        {
+          "const": "f",
+          "type": "string"
+        }
+      ],
+      "description": "Boolean or its source lexical form (`\"true\"`, `\"1\"`, `\"on\"`). String values round-trip verbatim - do not hand-author them."
+    },
     "SettingsOptions": {
       "additionalProperties": false,
       "description": "Options for configuring document settings.",
@@ -20257,15 +20736,15 @@
           "type": "array"
         },
         "alignBordersAndEdges": {
-          "description": "Align document borders and edges with page edges",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Align document borders and edges with page edges"
         },
         "alwaysMergeEmptyNamespace": {
           "type": "boolean"
         },
         "alwaysShowPlaceholderText": {
-          "description": "Always show placeholder text for custom XML",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Always show placeholder text for custom XML"
         },
         "attachedSchema": {
           "description": "Attached schema references",
@@ -20279,32 +20758,32 @@
           "type": "string"
         },
         "autoFormatOverride": {
-          "description": "Allow auto-format overrides",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Allow auto-format overrides"
         },
         "autoHyphenation": {
-          "description": "Automatically hyphenate words as they are typed (w:autoHyphenation)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Automatically hyphenate words as they are typed (w:autoHyphenation)"
         },
         "bookFoldPrinting": {
-          "description": "Enable book fold printing",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Enable book fold printing"
         },
         "bookFoldPrintingSheets": {
           "description": "Number of sheets per booklet in book fold printing",
           "type": "number"
         },
         "bookFoldRevPrinting": {
-          "description": "Enable book fold reverse printing",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Enable book fold reverse printing"
         },
         "bordersDoNotSurroundFooter": {
-          "description": "Page borders do not surround footer content",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Page borders do not surround footer content"
         },
         "bordersDoNotSurroundHeader": {
-          "description": "Page borders do not surround header content",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Page borders do not surround header content"
         },
         "captions": {
           "$ref": "#/definitions/CaptionsOptions",
@@ -20398,8 +20877,8 @@
           "type": "string"
         },
         "displayBackgroundShape": {
-          "description": "Whether to display the background shape in print layout",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Whether to display the background shape in print layout"
         },
         "displayHorizontalDrawingGridEvery": {
           "description": "Display horizontal gridlines every N units",
@@ -20410,45 +20889,45 @@
           "type": "number"
         },
         "doNotAutoCompressPictures": {
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue"
         },
         "doNotDemarcateInvalidXml": {
-          "description": "Do not demarcate invalid XML regions",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Do not demarcate invalid XML regions"
         },
         "doNotDisplayPageBoundaries": {
-          "description": "Whether to display page boundaries between pages",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Whether to display page boundaries between pages"
         },
         "doNotEmbedSmartTags": {
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue"
         },
         "doNotHyphenateCaps": {
-          "description": "Hyphenate words in all capital letters (w:doNotHyphenateCaps)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Hyphenate words in all capital letters (w:doNotHyphenateCaps)"
         },
         "doNotIncludeSubdocsInStats": {
-          "description": "Do not include subdocuments in word count",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Do not include subdocuments in word count"
         },
         "doNotShadeFormData": {
           "description": "Do not shade form data fields",
           "type": "boolean"
         },
         "doNotTrackFormatting": {
-          "description": "Do not track formatting changes when trackRevisions is on",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Do not track formatting changes when trackRevisions is on"
         },
         "doNotTrackMoves": {
-          "description": "Do not track move changes when trackRevisions is on",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Do not track move changes when trackRevisions is on"
         },
         "doNotUseMarginsForDrawingGridOrigin": {
           "type": "boolean"
         },
         "doNotValidateAgainstSchema": {
-          "description": "Do not validate custom XML against schema",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Do not validate custom XML against schema"
         },
         "docVars": {
           "description": "Document variables (key-value pairs stored in the document)",
@@ -20493,20 +20972,20 @@
           "type": "number"
         },
         "embedSystemFonts": {
-          "description": "Whether to embed system fonts in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Whether to embed system fonts in the document"
         },
         "embedTrueTypeFonts": {
-          "description": "Whether to embed TrueType fonts in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Whether to embed TrueType fonts in the document"
         },
         "endnoteProperties": {
           "$ref": "#/definitions/DocumentEndnotePropertiesOptions",
           "description": "Document-level endnote properties"
         },
         "evenAndOddHeaders": {
-          "description": "Enable different headers/footers for even and odd pages",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Enable different headers/footers for even and odd pages"
         },
         "footnoteProperties": {
           "$ref": "#/definitions/DocumentFootnotePropertiesOptions",
@@ -20517,36 +20996,36 @@
           "type": "boolean"
         },
         "formsDesign": {
-          "description": "Document is in forms design mode",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Document is in forms design mode"
         },
         "gutterAtTop": {
-          "description": "Position gutter at top of page",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Position gutter at top of page"
         },
         "hdrShapeDefaults": {
           "$ref": "#/definitions/ShapeDefaultsOptions",
           "description": "Header shape defaults (w:hdrShapeDefaults)"
         },
         "hideGrammaticalErrors": {
-          "description": "Hide grammatical errors in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Hide grammatical errors in the document"
         },
         "hideSpellingErrors": {
-          "description": "Hide spelling errors in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Hide spelling errors in the document"
         },
         "hyphenationZone": {
           "description": "Distance from the margin within which hyphenation is avoided, in twips (w:hyphenationZone)",
           "type": "number"
         },
         "ignoreMixedContent": {
-          "description": "Ignore mixed content in custom XML",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Ignore mixed content in custom XML"
         },
         "linkStyles": {
-          "description": "Link styles from attached template",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Link styles from attached template"
         },
         "listSeparator": {
           "description": "List separator character",
@@ -20561,8 +21040,8 @@
           "description": "Math properties (m:mathPr)"
         },
         "mirrorMargins": {
-          "description": "Use mirror margins for facing pages",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Use mirror margins for facing pages"
         },
         "noLineBreaksAfter": {
           "additionalProperties": false,
@@ -20591,24 +21070,24 @@
           "type": "object"
         },
         "noPunctuationKerning": {
-          "description": "Disable punctuation kerning (CJK)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Disable punctuation kerning (CJK)"
         },
         "printFormsData": {
-          "description": "Print only form field data",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Print only form field data"
         },
         "printFractionalCharacterWidth": {
-          "description": "Print using fractional character widths",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Print using fractional character widths"
         },
         "printPostScriptOverText": {
-          "description": "Print PostScript codes over text",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Print PostScript codes over text"
         },
         "printTwoOnOne": {
-          "description": "Print two pages on one sheet",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Print two pages on one sheet"
         },
         "proofState": {
           "additionalProperties": false,
@@ -20630,12 +21109,12 @@
           "description": "Reading mode ink lock-down settings"
         },
         "removeDateAndTime": {
-          "description": "Remove date and time metadata when saving",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Remove date and time metadata when saving"
         },
         "removePersonalInformation": {
-          "description": "Remove personal information when saving",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Remove personal information when saving"
         },
         "revisionView": {
           "$ref": "#/definitions/RevisionViewOptions",
@@ -20646,20 +21125,20 @@
           "description": "Document revision save IDs"
         },
         "saveFormsData": {
-          "description": "Save only form field data",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Save only form field data"
         },
         "saveInvalidXml": {
-          "description": "Save invalid XML markup",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Save invalid XML markup"
         },
         "savePreviewPicture": {
-          "description": "Save a preview picture in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Save a preview picture in the document"
         },
         "saveSubsetFonts": {
-          "description": "Whether to save only a subset of the embedded fonts",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Whether to save only a subset of the embedded fonts"
         },
         "saveThroughXslt": {
           "additionalProperties": false,
@@ -20675,16 +21154,16 @@
           "type": "object"
         },
         "saveXmlDataOnly": {
-          "description": "Save only XML data (no formatting)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Save only XML data (no formatting)"
         },
         "shapeDefaults": {
           "$ref": "#/definitions/ShapeDefaultsOptions",
           "description": "Shape defaults (w:shapeDefaults)"
         },
         "showEnvelope": {
-          "description": "Show envelope content in the document",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Show envelope content in the document"
         },
         "showXMLTags": {
           "description": "Show XML tags in document",
@@ -20713,16 +21192,16 @@
           "type": "array"
         },
         "strictFirstAndLastChars": {
-          "description": "Enforce strict first and last character rules (CJK)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Enforce strict first and last character rules (CJK)"
         },
         "styleLockQFSet": {
-          "description": "Lock quick format style set",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Lock quick format style set"
         },
         "styleLockTheme": {
-          "description": "Lock document theme styles",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Lock document theme styles"
         },
         "stylePaneFormatFilter": {
           "additionalProperties": false,
@@ -20819,19 +21298,19 @@
           "type": "object"
         },
         "trackRevisions": {
-          "description": "Enable track changes (revision marking)",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Enable track changes (revision marking)"
         },
         "uiCompat97To2003": {
           "description": "Emulate Word 97-2003 UI behavior (w:uiCompat97To2003, Word 2010+). Absent from the ISO transitional schema but written by Word and declared in the Open XML SDK schema data — kept for round-trip fidelity.",
           "type": "boolean"
         },
         "updateFields": {
-          "description": "Update fields when document is opened",
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue",
+          "description": "Update fields when document is opened"
         },
         "useXSLTWhenSaving": {
-          "type": "boolean"
+          "$ref": "#/definitions/SettingsOnOffValue"
         },
         "view": {
           "description": "Default document view mode",
@@ -21179,6 +21658,10 @@
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
+        },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
         },
         "effectDag": {
           "$ref": "#/definitions/EffectDagOptions"
@@ -21769,6 +22252,10 @@
           ],
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+        },
         "extensionIds": {
           "$ref": "#/definitions/DrawingExtensionIds",
           "description": "Word 2010 wrapper ids; round-trip only."
@@ -22214,6 +22701,34 @@
       "enum": ["singleStrike", "doubleStrike", "noStrike"],
       "type": "string"
     },
+    "StyleChildOrder": {
+      "description": "Typed `<w:style>` child fields whose source order is preserved.",
+      "enum": [
+        "name",
+        "aliases",
+        "basedOn",
+        "next",
+        "link",
+        "autoRedefine",
+        "hidden",
+        "uiPriority",
+        "semiHidden",
+        "unhideWhenUsed",
+        "quickFormat",
+        "locked",
+        "personal",
+        "personalCompose",
+        "personalReply",
+        "rsid",
+        "paragraph",
+        "run",
+        "table",
+        "row",
+        "cell",
+        "conditionalFormats"
+      ],
+      "type": "string"
+    },
     "StyleDefinitionOptions": {
       "additionalProperties": false,
       "description": "dgm:styleDef — the quickStyle part root.",
@@ -22335,6 +22850,9 @@
               "basedOn": {
                 "type": "string"
               },
+              "childOrder": {
+                "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/childOrder"
+              },
               "customStyle": {
                 "description": "`@w:customStyle` — a user-defined custom style.",
                 "type": "boolean"
@@ -22446,6 +22964,13 @@
               },
               "basedOn": {
                 "type": "string"
+              },
+              "childOrder": {
+                "description": "Source order of typed `<w:style>` children; round-trip only.",
+                "items": {
+                  "$ref": "#/definitions/StyleChildOrder"
+                },
+                "type": "array"
               },
               "customStyle": {
                 "description": "`@w:customStyle` — a user-defined custom style.",
@@ -22596,6 +23121,14 @@
         "boldComplexScript": {
           "type": "boolean"
         },
+        "boldComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "boldRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+        },
         "border": {
           "$ref": "#/definitions/BorderOptions"
         },
@@ -22622,6 +23155,9 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ]
+        },
+        "childOrder": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/childOrder"
         },
         "children": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/children"
@@ -22677,6 +23213,9 @@
         "font": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/font"
         },
+        "fontDuplicates": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/fontDuplicates"
+        },
         "footnoteReference": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/footnoteReference"
         },
@@ -22694,6 +23233,14 @@
         },
         "italicComplexScript": {
           "type": "boolean"
+        },
+        "italicComplexScriptRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+        },
+        "italicRaw": {
+          "$ref": "#/definitions/OnOffLexicalValue",
+          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -23145,7 +23692,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "deletion": {
           "$ref": "#/definitions/ChangedProperties"
@@ -23205,7 +23752,7 @@
           "description": "Width specification for the cell"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "TableCellPropertiesOptions": {
@@ -23584,7 +24131,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "description": {
           "description": "Table description for accessibility (tblDescription)",
@@ -23632,7 +24179,7 @@
           "$ref": "#/definitions/TableWidthProperties"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "TablePropertiesOptions": {
@@ -23706,13 +24253,13 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "TablePropertyExOptions": {
@@ -23940,6 +24487,10 @@
           ],
           "type": "string"
         },
+        "rowProperties": {
+          "description": "Marks a source `<w:trPr/>` so an empty element round-trips.",
+          "type": "boolean"
+        },
         "runPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID for row properties (w:rsidRPr, hex string)."
@@ -23989,7 +24540,7 @@
         },
         "date": {
           "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format)"
+          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
         },
         "divId": {
           "description": "div ID for HTML compatibility (divId)",
@@ -24028,7 +24579,7 @@
           "description": "Preferred width before the row (wBefore)"
         }
       },
-      "required": ["author", "date"],
+      "required": ["author"],
       "type": "object"
     },
     "TableRowPropertiesOptions": {
@@ -24108,6 +24659,9 @@
         "cell": {
           "$ref": "#/definitions/TableCellPropertiesOptions",
           "description": "Table cell properties."
+        },
+        "childOrder": {
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/childOrder"
         },
         "conditionalFormats": {
           "description": "Conditional formats per region.",
@@ -25389,6 +25943,14 @@
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
             },
+            "instructionAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+            },
+            "instructionRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
+            },
             "rPrXml": {
               "description": "Control-run properties shared by begin/separate (round-trip).",
               "type": "string"
@@ -25659,6 +26221,90 @@
       "examples": ["1.5cm", "0.75in", "12pt"],
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
       "type": "string"
+    },
+    "UnsupportedDrawingOptions": {
+      "additionalProperties": false,
+      "description": "Typed fallback for an unrecognized `a:graphicData` payload. Round-trip only — modelable drawing families have dedicated options.",
+      "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping `w:r` (`w:rsidR`, round-trip)."
+        },
+        "anchor": {
+          "$ref": "#/definitions/XmlElementData",
+          "description": "Exact `wp:inline` or `wp:anchor` wrapper, without its `a:graphic`."
+        },
+        "anchorMode": {
+          "description": "Anchor mode, mirroring the source `wp:inline` or `wp:anchor` element.",
+          "enum": ["inline", "anchor"],
+          "type": "string"
+        },
+        "graphicData": {
+          "$ref": "#/definitions/XmlElementData",
+          "description": "Exact unsupported `a:graphicData` child subtree."
+        },
+        "graphicDataUri": {
+          "description": "Exact `a:graphicData` URI; empty only for malformed legacy sources.",
+          "type": "string"
+        },
+        "lastRenderedPageBreak": {
+          "description": "A `w:lastRenderedPageBreak` shared with the drawing run (round-trip).",
+          "type": "boolean"
+        },
+        "mcChoiceRequires": {
+          "description": "mc:Choice Requires attribute (e.g. \"cx1\") used to regenerate the AlternateContent wrapper.",
+          "type": "string"
+        },
+        "relationships": {
+          "description": "Hyperlink relationships referenced from DrawingML non-visual properties.",
+          "items": {
+            "$ref": "#/definitions/UnsupportedDrawingRelationshipOptions"
+          },
+          "type": "array"
+        },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Structured run properties of the wrapping `w:r` (round-trip)."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping `w:r` properties (round-trip)."
+        },
+        "vmlFallback": {
+          "description": "Raw XML of the wrapping mc:AlternateContent's mc:Fallback (VML or picture equivalent) — carried verbatim so the full wrapper round-trips. Round-trip channel: captured from a parsed source document — do not hand-author.",
+          "type": "string"
+        },
+        "vmlFallbackMedia": {
+          "$ref": "#/definitions/ShapeOptions/properties/vmlFallbackMedia"
+        }
+      },
+      "required": ["anchor", "anchorMode", "graphicData"],
+      "type": "object"
+    },
+    "UnsupportedDrawingRelationshipOptions": {
+      "additionalProperties": false,
+      "description": "A source relationship referenced by unsupported DrawingML content. Round-trip only — do not hand-author.",
+      "properties": {
+        "relationshipType": {
+          "description": "Full OPC relationship Type.",
+          "type": "string"
+        },
+        "sourceRelationshipId": {
+          "description": "Source relationship id; stringify restores it when available.",
+          "type": "string"
+        },
+        "target": {
+          "description": "OPC target URI or package-relative target.",
+          "type": "string"
+        },
+        "targetMode": {
+          "const": "External",
+          "description": "OPC target mode; absent = internal.",
+          "type": "string"
+        }
+      },
+      "required": ["sourceRelationshipId", "relationshipType", "target"],
+      "type": "object"
     },
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
@@ -26313,6 +26959,9 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
         },
         "target": {
           "type": "string"
@@ -27049,6 +27698,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "target": {
           "type": "string"
         },
@@ -27654,6 +28306,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "tablelimits": {
           "type": "string"
         },
@@ -28113,6 +28768,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "target": {
           "type": "string"
         },
@@ -28402,6 +29060,9 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
         },
         "target": {
           "type": "string"
@@ -28736,6 +29397,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "target": {
           "type": "string"
         },
@@ -29059,6 +29723,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "target": {
           "type": "string"
         },
@@ -29317,6 +29984,9 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
         },
         "target": {
           "type": "string"
@@ -29608,6 +30278,9 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
         },
         "target": {
           "type": "string"
@@ -30272,6 +30945,9 @@
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
         },
+        "styleRaw": {
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/styleRaw"
+        },
         "target": {
           "type": "string"
         },
@@ -30676,6 +31352,10 @@
         },
         "style": {
           "$ref": "#/definitions/VmlShapeStyle"
+        },
+        "styleRaw": {
+          "description": "Source style attribute lexical form; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "target": {
           "type": "string"
@@ -32150,6 +32830,36 @@
         }
       },
       "required": ["position", "type"],
+      "type": "object"
+    },
+    "XmlElementData": {
+      "additionalProperties": false,
+      "description": "Canonical DrawingML node retained when no format-specific model exists.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": ["string", "number"]
+          },
+          "description": "Qualified attributes, including namespace declarations when present.",
+          "type": "object"
+        },
+        "elements": {
+          "description": "Child elements in source order.",
+          "items": {
+            "$ref": "#/definitions/XmlElementData"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Qualified source name (for example, `wps:wsp`).",
+          "type": "string"
+        },
+        "text": {
+          "description": "Character content at this node.",
+          "type": ["string", "number", "boolean"]
+        }
+      },
+      "required": ["name"],
       "type": "object"
     }
   },

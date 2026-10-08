@@ -20,6 +20,7 @@ import {
   type ReproducibleScope,
   universalMeasureValue,
   uCharHexNumber,
+  signedTwipsMeasureValue,
   twipsMeasureValue,
   xsdJcAlignment,
   xsdShadingPattern,
@@ -48,15 +49,17 @@ import { w14RunEffectsXml } from "@parts/paragraph/run/w14-effects";
 import type { BorderOptions } from "@shared/border";
 import { BorderStyle } from "@shared/border";
 import type { ShadingProperties } from "@shared/shading";
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
 import { autoRevisionId } from "@shared/track-revision/track-revision";
 
 // ── Inline helpers ──
 
 /** On/off: `<w:name/>` for true, `<w:name w:val="0"/>` for false */
-export function onOff(name: string, val: boolean): string {
+export function onOff(name: string, val: boolean, raw?: string): string {
   // "off" is the only negative spelling both validators accept: ISO's
   // s:ST_OnOff allows all six spellings, but tblHeader/cantSplit bind
   // CT_OnOffOnly in the SDK's stricter schema (enumeration: on/off only).
+  if (raw !== undefined) return `<${name} w:val="${raw}"/>`;
   return val ? `<${name}/>` : `<${name} w:val="off"/>`;
 }
 
@@ -126,7 +129,7 @@ function spacingStr(opts: SpacingProperties): string {
     "w:beforeAutospacing":
       opts.beforeAutoSpacing !== undefined ? (opts.beforeAutoSpacing ? 1 : 0) : undefined,
     "w:beforeLines": opts.beforeLines !== undefined ? decimalNumber(opts.beforeLines) : undefined,
-    "w:line": opts.line !== undefined ? twipsMeasureValue(opts.line) : undefined,
+    "w:line": opts.line !== undefined ? signedTwipsMeasureValue(opts.line) : undefined,
     "w:lineRule": opts.lineRule,
   });
   return `<w:spacing${a}/>`;
@@ -272,7 +275,7 @@ function numPrStr(
     parts =
       indentLevel === undefined
         ? [`<w:numId w:val="${idVal}"/>`]
-        : [`<w:ilvl w:val="${Math.min(indentLevel, 9)}"/>`, `<w:numId w:val="${idVal}"/>`];
+        : [`<w:ilvl w:val="${indentLevel}"/>`, `<w:numId w:val="${idVal}"/>`];
   }
   if (numberingChange) {
     const a = attrsRaw({
@@ -433,7 +436,7 @@ export function stringifyParagraphProperties(
   // built-in bullet list (numId 1).
   if (options.numbering) {
     if ("levelOnly" in options.numbering) {
-      s += `<w:numPr><w:ilvl w:val="${Math.min(options.numbering.level ?? 0, 9)}"/></w:numPr>`;
+      s += `<w:numPr><w:ilvl w:val="${options.numbering.level ?? 0}"/></w:numPr>`;
     } else if ("none" in options.numbering) {
       // numId=0 cancels style-inherited numbering, keeping a pinned w:ilvl.
       s += numPrStr(0, options.numbering.level);
@@ -566,20 +569,25 @@ export function stringifyParagraphProperties(
   if (options.run) {
     const inner = stringifyRunPropertiesInner(options.run, scope);
     const runOpts = options.run as ParagraphRunPropertiesOptions;
-    if (inner !== undefined || runOpts.insertion || runOpts.deletion || runOpts.emptyProperties) {
+    if (
+      inner !== undefined ||
+      runOpts.insertion ||
+      runOpts.deletion ||
+      runOpts.movedFrom ||
+      runOpts.movedTo ||
+      runOpts.emptyProperties
+    ) {
       const extra: string[] = [];
+      const revisionAttrs = ({ id, author, date }: ChangedProperties) =>
+        ` w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}"${date ? ` w:date="${escapeXml(String(date))}"` : ""}`;
       if (runOpts.insertion) {
-        const { id, author, date } = runOpts.insertion;
-        extra.push(
-          `<w:ins w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
-        );
+        extra.push(`<w:ins${revisionAttrs(runOpts.insertion)}/>`);
       }
       if (runOpts.deletion) {
-        const { id, author, date } = runOpts.deletion;
-        extra.push(
-          `<w:del w:id="${id ?? autoRevisionId(scope)}" w:author="${escapeXml(author)}" w:date="${date}"/>`,
-        );
+        extra.push(`<w:del${revisionAttrs(runOpts.deletion)}/>`);
       }
+      if (runOpts.movedFrom) extra.push(`<w:moveFrom${revisionAttrs(runOpts.movedFrom)}/>`);
+      if (runOpts.movedTo) extra.push(`<w:moveTo${revisionAttrs(runOpts.movedTo)}/>`);
       // CT_ParaRPr sequence: ins/del/moveFrom/moveTo lead, then EG_RPrBase.
       const body = extra.join("") + (inner ?? "");
       s += body ? `<w:rPr>${body}</w:rPr>` : "<w:rPr/>";
@@ -593,7 +601,8 @@ export function stringifyParagraphProperties(
     // serializing the pre-change properties.
     const { author: _a, date: _d, id: _i, run: _r, ...originalProps } = rev;
     const inner = stringifyParagraphProperties({ ...originalProps, includeIfEmpty: true }, scope);
-    s += `<w:pPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId(scope)}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
+    const date = rev.date ? ` w:date="${escapeXml(rev.date)}"` : "";
+    s += `<w:pPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}">${inner.xml ?? "<w:pPr/>"}</w:pPrChange>`;
   }
 
   const body = s;
@@ -641,16 +650,21 @@ export function stringifyRunPropertiesInner(
       s += runFontsStr(opts.font);
     }
   }
+  for (const fontDuplicate of opts.fontDuplicates ?? []) {
+    s += runFontsStr(fontDuplicate);
+  }
 
   // Bold — w:b and w:bCs are independent toggle properties (Latin vs complex
   // script, per ISO/IEC 29500). Emit each only when explicitly set so round-trip
   // is field-faithful (source <w:b/> stays <w:b/>, not inflated to <w:b/><w:bCs/>).
-  if (opts.bold !== undefined) s += onOff("w:b", opts.bold);
-  if (opts.boldComplexScript !== undefined) s += onOff("w:bCs", opts.boldComplexScript);
+  if (opts.bold !== undefined) s += onOff("w:b", opts.bold, opts.boldRaw);
+  if (opts.boldComplexScript !== undefined)
+    s += onOff("w:bCs", opts.boldComplexScript, opts.boldComplexScriptRaw);
 
   // Italic — w:i and w:iCs are independent (same rationale as bold).
-  if (opts.italic !== undefined) s += onOff("w:i", opts.italic);
-  if (opts.italicComplexScript !== undefined) s += onOff("w:iCs", opts.italicComplexScript);
+  if (opts.italic !== undefined) s += onOff("w:i", opts.italic, opts.italicRaw);
+  if (opts.italicComplexScript !== undefined)
+    s += onOff("w:iCs", opts.italicComplexScript, opts.italicComplexScriptRaw);
 
   // Caps — EG_RPrBase order is caps then smallCaps
   // w:smallCaps and w:caps are independent EG_RPrBase siblings — both can
@@ -756,7 +770,8 @@ export function stringifyRunPropertiesInner(
     const rev = opts.revision as RunPropertiesChangeOptions;
     const { author: _a, date: _d, id: _i, ...originalProps } = rev;
     const inner = stringifyRunPropertiesInner(originalProps as RunPropertiesOptions, scope);
-    s += `<w:rPrChange w:author="${escapeXml(rev.author)}" w:date="${rev.date}" w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
+    const date = rev.date ? ` w:date="${escapeXml(rev.date)}"` : "";
+    s += `<w:rPrChange w:author="${escapeXml(rev.author)}"${date} w:id="${rev.id ?? autoRevisionId(scope)}"><w:rPr>${inner ?? ""}</w:rPr></w:rPrChange>`;
   }
 
   // w14:* text effects — typed emission first (EG_RPrTextEffects +

@@ -20,6 +20,7 @@ import type {
 import { NumberRestartType } from "@parts/document/body/section-properties/properties/footnote-endnote-properties";
 import type { NumberFormat } from "@shared/constants";
 
+import type { OnOffLexicalValue } from "../paragraph/run/properties";
 import type { CompatibilityOptions } from "./compatibility";
 export type { CompatibilityOptions, CompatSettingOptions } from "./compatibility";
 
@@ -37,23 +38,29 @@ export interface ShapeDefaultsOptions {
 }
 
 /**
+ * Boolean or its source ST_OnOff lexical form (`"true"`, `"1"`, `"on"`).
+ * String values round-trip verbatim - do not hand-author them.
+ */
+export type SettingsOnOffValue = boolean | "true" | "false" | "1" | "0" | "on" | "off" | "t" | "f";
+
+/**
  * Options for configuring document settings.
  *
  * @see {@link Settings}
  */
 export interface SettingsOptions {
   /** Enable different headers/footers for even and odd pages */
-  evenAndOddHeaders?: boolean;
+  evenAndOddHeaders?: SettingsOnOffValue;
   /** Enable track changes (revision marking) */
-  trackRevisions?: boolean;
+  trackRevisions?: SettingsOnOffValue;
   /** Do not track formatting changes when trackRevisions is on */
-  doNotTrackFormatting?: boolean;
+  doNotTrackFormatting?: SettingsOnOffValue;
   /** Do not track move changes when trackRevisions is on */
-  doNotTrackMoves?: boolean;
+  doNotTrackMoves?: SettingsOnOffValue;
   /** Controls which types of revisions are visible */
   revisionView?: RevisionViewOptions;
   /** Update fields when document is opened */
-  updateFields?: boolean;
+  updateFields?: SettingsOnOffValue;
   /**
    * Compatibility settings for older Word versions.
    *
@@ -65,13 +72,13 @@ export interface SettingsOptions {
   /** Default distance between tab stops in twips (`720`) or verbatim `"36pt"` */
   defaultTabStop?: number | PositiveUniversalMeasure;
   /** Automatically hyphenate words as they are typed (w:autoHyphenation) */
-  autoHyphenation?: boolean;
+  autoHyphenation?: SettingsOnOffValue;
   /** Maximum number of consecutive lines ending with a hyphenated word (w:consecutiveHyphenLimit) */
   consecutiveHyphenLimit?: number;
   /** Distance from the margin within which hyphenation is avoided, in twips (w:hyphenationZone) */
   hyphenationZone?: number;
   /** Hyphenate words in all capital letters (w:doNotHyphenateCaps) */
-  doNotHyphenateCaps?: boolean;
+  doNotHyphenateCaps?: SettingsOnOffValue;
   /** Controls whether punctuation is compressed at line ends */
   characterSpacingControl?:
     | "compressPunctuation"
@@ -89,15 +96,15 @@ export interface SettingsOptions {
   /** Write protection recommendation (not enforcement) */
   writeProtection?: WriteProtectionOptions;
   /** Whether to display the background shape in print layout */
-  displayBackgroundShape?: boolean;
+  displayBackgroundShape?: SettingsOnOffValue;
   /** Whether to display page boundaries between pages */
-  doNotDisplayPageBoundaries?: boolean;
+  doNotDisplayPageBoundaries?: SettingsOnOffValue;
   /** Whether to embed TrueType fonts in the document */
-  embedTrueTypeFonts?: boolean;
+  embedTrueTypeFonts?: SettingsOnOffValue;
   /** Whether to embed system fonts in the document */
-  embedSystemFonts?: boolean;
+  embedSystemFonts?: SettingsOnOffValue;
   /** Whether to save only a subset of the embedded fonts */
-  saveSubsetFonts?: boolean;
+  saveSubsetFonts?: SettingsOnOffValue;
   /** Document variables (key-value pairs stored in the document) */
   docVars?: { name: string; val: string }[];
   /** Mail merge configuration */
@@ -122,72 +129,72 @@ export interface SettingsOptions {
   /** Theme font languages (CT_Language): latin, eastAsian, and complex-script BCP-47 tags */
   themeFontLang?: { val?: string; eastAsia?: string; bidi?: string };
   /** Hide spelling errors in the document */
-  hideSpellingErrors?: boolean;
+  hideSpellingErrors?: SettingsOnOffValue;
   /** Hide grammatical errors in the document */
-  hideGrammaticalErrors?: boolean;
+  hideGrammaticalErrors?: SettingsOnOffValue;
   /** Disable punctuation kerning (CJK) */
-  noPunctuationKerning?: boolean;
+  noPunctuationKerning?: SettingsOnOffValue;
   /** Remove personal information when saving */
-  removePersonalInformation?: boolean;
+  removePersonalInformation?: SettingsOnOffValue;
   /** Remove date and time metadata when saving */
-  removeDateAndTime?: boolean;
+  removeDateAndTime?: SettingsOnOffValue;
   /** Print PostScript codes over text */
-  printPostScriptOverText?: boolean;
+  printPostScriptOverText?: SettingsOnOffValue;
   /** Print using fractional character widths */
-  printFractionalCharacterWidth?: boolean;
+  printFractionalCharacterWidth?: SettingsOnOffValue;
   /** Print only form field data */
-  printFormsData?: boolean;
+  printFormsData?: SettingsOnOffValue;
   /** Save only form field data */
-  saveFormsData?: boolean;
+  saveFormsData?: SettingsOnOffValue;
   /** Use mirror margins for facing pages */
-  mirrorMargins?: boolean;
+  mirrorMargins?: SettingsOnOffValue;
   /** Align document borders and edges with page edges */
-  alignBordersAndEdges?: boolean;
+  alignBordersAndEdges?: SettingsOnOffValue;
   /** Page borders do not surround header content */
-  bordersDoNotSurroundHeader?: boolean;
+  bordersDoNotSurroundHeader?: SettingsOnOffValue;
   /** Page borders do not surround footer content */
-  bordersDoNotSurroundFooter?: boolean;
+  bordersDoNotSurroundFooter?: SettingsOnOffValue;
   /** Position gutter at top of page */
-  gutterAtTop?: boolean;
+  gutterAtTop?: SettingsOnOffValue;
   /** Document is in forms design mode */
-  formsDesign?: boolean;
+  formsDesign?: SettingsOnOffValue;
   /** Link styles from attached template */
-  linkStyles?: boolean;
+  linkStyles?: SettingsOnOffValue;
   /** Allow auto-format overrides */
-  autoFormatOverride?: boolean;
+  autoFormatOverride?: SettingsOnOffValue;
   /** Lock document theme styles */
-  styleLockTheme?: boolean;
+  styleLockTheme?: SettingsOnOffValue;
   /** Lock quick format style set */
-  styleLockQFSet?: boolean;
+  styleLockQFSet?: SettingsOnOffValue;
   /** Show envelope content in the document */
-  showEnvelope?: boolean;
+  showEnvelope?: SettingsOnOffValue;
   /** Print two pages on one sheet */
-  printTwoOnOne?: boolean;
+  printTwoOnOne?: SettingsOnOffValue;
   /** Enforce strict first and last character rules (CJK) */
-  strictFirstAndLastChars?: boolean;
+  strictFirstAndLastChars?: SettingsOnOffValue;
   /** Save a preview picture in the document */
-  savePreviewPicture?: boolean;
+  savePreviewPicture?: SettingsOnOffValue;
   /** Do not validate custom XML against schema */
-  doNotValidateAgainstSchema?: boolean;
+  doNotValidateAgainstSchema?: SettingsOnOffValue;
   /** Save invalid XML markup */
-  saveInvalidXml?: boolean;
+  saveInvalidXml?: SettingsOnOffValue;
   /** Ignore mixed content in custom XML */
-  ignoreMixedContent?: boolean;
+  ignoreMixedContent?: SettingsOnOffValue;
   /** Always show placeholder text for custom XML */
-  alwaysShowPlaceholderText?: boolean;
+  alwaysShowPlaceholderText?: SettingsOnOffValue;
   /** Do not demarcate invalid XML regions */
-  doNotDemarcateInvalidXml?: boolean;
+  doNotDemarcateInvalidXml?: SettingsOnOffValue;
   /** Save only XML data (no formatting) */
-  saveXmlDataOnly?: boolean;
-  useXSLTWhenSaving?: boolean;
-  doNotEmbedSmartTags?: boolean;
-  doNotAutoCompressPictures?: boolean;
+  saveXmlDataOnly?: SettingsOnOffValue;
+  useXSLTWhenSaving?: SettingsOnOffValue;
+  doNotEmbedSmartTags?: SettingsOnOffValue;
+  doNotAutoCompressPictures?: SettingsOnOffValue;
   /** Do not include subdocuments in word count */
-  doNotIncludeSubdocsInStats?: boolean;
+  doNotIncludeSubdocsInStats?: SettingsOnOffValue;
   /** Enable book fold printing */
-  bookFoldPrinting?: boolean;
+  bookFoldPrinting?: SettingsOnOffValue;
   /** Enable book fold reverse printing */
-  bookFoldRevPrinting?: boolean;
+  bookFoldRevPrinting?: SettingsOnOffValue;
   /** Default table style name */
   defaultTableStyle?: string;
   /** Decimal symbol for numeric fields */
@@ -361,6 +368,10 @@ export interface DocumentProtectionOptions {
   edit?: "none" | "readOnly" | "comments" | "trackedChanges" | "forms";
   /** Whether formatting is restricted */
   formatting?: boolean;
+  /** Whether protection is enforced; false is preserved explicitly. */
+  enforcement?: boolean;
+  /** Source `documentProtection/@w:enforcement` lexical form; round-trip only — do not hand-author. */
+  enforcementRaw?: OnOffLexicalValue;
   /** Plaintext password — automatically hashed to hashValue/saltValue when provided */
   password?: string;
   /** Password hash (SHA-512 base64) */

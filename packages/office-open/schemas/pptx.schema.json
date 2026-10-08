@@ -1851,6 +1851,10 @@
         "effects": {
           "$ref": "#/definitions/EffectListOptions"
         },
+        "effectsList": {
+          "$ref": "#/definitions/EffectListOptions",
+          "description": "Compatibility spelling `a:effectsLst` used by some producers; round-trip only."
+        },
         "fill": {
           "$ref": "#/definitions/FillOptions"
         },
@@ -7233,6 +7237,10 @@
         "name": {
           "type": "string"
         },
+        "orphaned": {
+          "description": "Layout part exists but the owning master does not list it (round-trip only).",
+          "type": "boolean"
+        },
         "placeholders": {
           "$ref": "#/definitions/LayoutPlaceholderOptions"
         },
@@ -7256,6 +7264,10 @@
         "sourceOwnRels": {
           "description": "Whether the source package carried this layout's .rels part (round-trip only).",
           "type": "boolean"
+        },
+        "sourceRelationshipId": {
+          "description": "Source master relationship id for this layout (round-trip only).",
+          "type": "string"
         },
         "themeOverride": {
           "$ref": "#/definitions/ThemeOverrideOptions",
@@ -8278,6 +8290,23 @@
         "preserve": {
           "description": "`@preserve` — keep this master even when no slide references it.",
           "type": "boolean"
+        },
+        "slideLayoutIds": {
+          "description": "Source `p:sldLayoutIdLst` order — round-trip only.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "number"
+              },
+              "relationshipId": {
+                "type": "string"
+              }
+            },
+            "required": ["id", "relationshipId"],
+            "type": "object"
+          },
+          "type": "array"
         },
         "textStyles": {
           "$ref": "#/definitions/TextStylesOptions",
@@ -9626,6 +9655,10 @@
         "shape3d": {
           "$ref": "#/definitions/Shape3DOptions",
           "description": "3D shape properties (a:sp3d) inside p:spPr."
+        },
+        "shapePropertiesExt": {
+          "description": "Raw a:extLst inner XML on p:spPr; round-trip only.",
+          "type": "string"
         },
         "sourceRectangle": {
           "$ref": "#/definitions/SourceRectangleOptions",
@@ -12630,6 +12663,10 @@
             }
           ],
           "description": "Speaker notes — plain text shorthand, or a structured notes-slide object."
+        },
+        "notesSourcePath": {
+          "description": "Source notes-slide package path; round-trip uses it to keep part numbering and rels.",
+          "type": "string"
         },
         "section": {
           "description": "Section name — slides sharing a name form one p14:section in presentation.xml.",

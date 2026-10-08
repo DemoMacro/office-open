@@ -51,6 +51,8 @@ export interface TableRowOptions
       | TableRowMarkerChild
     >,
     TableRowPropertiesOptions {
+  /** Marks a source `<w:trPr/>` so an empty element round-trips. */
+  rowProperties?: boolean;
   /** Table property exceptions for this row (override table-level properties) */
   propertyExceptions?: TablePropertyExOptions;
   /** Revision save ID for row properties (w:rsidRPr, hex string). */

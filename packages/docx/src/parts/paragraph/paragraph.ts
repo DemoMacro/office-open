@@ -34,6 +34,7 @@ import type { PositionalTabOptions } from "./run/positional-tab";
 import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
+import type { UnsupportedDrawingOptions } from "./run/unsupported-drawing-run";
 import type { GroupOptions } from "./run/wpg-group-run";
 import type { ShapeOptions } from "./run/wps-shape-run";
 
@@ -101,6 +102,8 @@ export interface ComplexFieldOptions {
    *  the cached value across runs with per-run properties — e.g. Word's
    *  locale-mixed date results where every segment carries its own rFonts. */
   resultRunsXml?: string;
+  /** Ordered typed members when non-run markers interrupt the cached result. */
+  resultMembers?: ComplexFieldInstructionMember[];
   /** A pagination hint Word parked on the begin run itself (w:r >
    * w:lastRenderedPageBreak + w:fldChar begin in one run). */
   lastRenderedPageBreak?: boolean;
@@ -112,8 +115,10 @@ export interface ComplexFieldOptions {
  * canonical `SimpleFieldOptions`.
  */
 export type ComplexFieldInstructionMember =
-  | { runXml: string }
-  | { simpleField: SimpleFieldOptions };
+  | { run: RunOptions }
+  | { simpleField: SimpleFieldOptions }
+  | { bookmarkStart: BookmarkStartOptions }
+  | { bookmarkEnd: MarkupRangeOptions };
 
 /**
  * Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/
@@ -141,6 +146,10 @@ export type TrackChangeChild =
       separatorAdditionRsid?: LongHexNumber;
       /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
       separatorRunPropertiesRsid?: LongHexNumber;
+      /** Revision save ID of the instruction run (w:rsidR, round-trip). */
+      instructionAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
+      instructionRunPropertiesRsid?: LongHexNumber;
       /** Revision save ID of the result run (w:rsidR, round-trip). */
       resultAdditionRsid?: LongHexNumber;
       /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
@@ -299,6 +308,10 @@ export type ParagraphChild =
       separatorAdditionRsid?: LongHexNumber;
       /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
       separatorRunPropertiesRsid?: LongHexNumber;
+      /** Revision save ID of the instruction run (w:rsidR, round-trip). */
+      instructionAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
+      instructionRunPropertiesRsid?: LongHexNumber;
       /** Revision save ID of the result run (w:rsidR, round-trip). */
       resultAdditionRsid?: LongHexNumber;
       /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
@@ -341,8 +354,8 @@ export type ParagraphChild =
   // Sub-document insertion point (w:subDoc, CT_Rel — EG_PContent member like
   // hyperlink, never a body-level child)
   | { subDoc: SubDocOptions }
-  // Verbatim run-level XML captured on parse for shapes without a structured
-  // form (unrecognized drawings, future graphicData payloads)
+  | { unsupportedDrawing: UnsupportedDrawingOptions }
+  // Verbatim run-level XML for non-DrawingML constructs without a typed model.
   | { rawXml: string }
   // Text run
   | RunOptions;

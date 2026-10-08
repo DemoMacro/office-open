@@ -114,6 +114,16 @@ describe("stringifyPict", () => {
     expect(stringifyPict({}, writeCtx().ctx)).toBe("<w:pict/>");
   });
 
+  it("preserves source style lexemes on w:pict/v:rect", () => {
+    const styleValue = " width: 6pt ; height: 9pt ;mso-height-relative:page ";
+    const inner = `<v:rect id="_x0000_s1027" style="${styleValue}"/>`;
+    const opts = parsePict(parsePictXml(inner), readCtx({}));
+    expect(opts.children?.[0]).toMatchObject({
+      rect: { id: "_x0000_s1027", style: { width: "6pt", height: "9pt" }, styleRaw: styleValue },
+    });
+    expect(stringifyPict(opts, writeCtx().ctx)).toBe(`<w:pict>${inner}</w:pict>`);
+  });
+
   it("round-trips w14:anchorId on a plain pict", () => {
     const doc = parseXml(`<w:pict ${NS} w14:anchorId="1A2B3C4D"><v:rect/></w:pict>`);
     const opts = parsePict(doc.elements![0]!, readCtx({}));

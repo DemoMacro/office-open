@@ -528,6 +528,40 @@ describe("raw fidelity fallbacks", () => {
     );
   });
 
+  it("keeps an unlisted layout without attaching it to the master", async () => {
+    const source = await generatePresentation(minimalOptions);
+    const mutatedArchive = unzipSync(source);
+    mutatedArchive["ppt/slideLayouts/slideLayout2.xml"] =
+      mutatedArchive["ppt/slideLayouts/slideLayout1.xml"]!;
+    mutatedArchive["ppt/slideLayouts/_rels/slideLayout2.xml.rels"] =
+      mutatedArchive["ppt/slideLayouts/_rels/slideLayout1.xml.rels"]!;
+    const layoutOverride =
+      /<Override PartName="\/ppt\/slideLayouts\/slideLayout1\.xml" ContentType="([^"]+)"\/>/.exec(
+        decodeEntry(source, "[Content_Types].xml"),
+      );
+    expect(layoutOverride).toBeDefined();
+    mutatedArchive["[Content_Types].xml"] = new TextEncoder().encode(
+      decodeEntry(source, "[Content_Types].xml").replace(
+        "</Types>",
+        `<Override PartName="/ppt/slideLayouts/slideLayout2.xml" ContentType="${layoutOverride?.[1]}"/></Types>`,
+      ),
+    );
+
+    const parsed = parsePresentationSync(zipSync(mutatedArchive));
+    expect(parsed.masters?.[0]?.layouts?.map((layout) => layout.orphaned)).toEqual([false, true]);
+
+    const regenerated = await generatePresentation(parsed);
+    const archive = unzipSync(regenerated);
+    const masterRels = decodeEntry(regenerated, "ppt/slideMasters/_rels/slideMaster1.xml.rels");
+    expect(archive["ppt/slideLayouts/slideLayout1.xml"]).toBeDefined();
+    expect(archive["ppt/slideLayouts/slideLayout2.xml"]).toBeDefined();
+    expect(masterRels).toContain("slideLayout1.xml");
+    expect(masterRels).not.toContain("slideLayout2.xml");
+    expect(
+      decodeEntry(regenerated, "ppt/slideMasters/slideMaster1.xml").match(/<p:sldLayoutId /g),
+    ).toHaveLength(1);
+  });
+
   it("preserves layout drawing identity and shape 3D", async () => {
     const buffer = await generatePresentation(minimalOptions);
     const mutatedArchive = unzipSync(buffer);

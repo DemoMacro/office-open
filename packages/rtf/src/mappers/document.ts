@@ -26,6 +26,7 @@ import {
   type GroupFrame,
 } from "../destinations";
 import { RtfParseError } from "../errors";
+import { lcidToTag } from "../langs";
 import { type RtfToken } from "../tokenizer";
 import { numberingFromParsed, parseListOverrides, parseListTable } from "./numbering";
 import { parseRtfShape } from "./shape";
@@ -447,6 +448,39 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       return;
     }
 
+    switch (word) {
+      case "endash":
+        appendText("–");
+        return;
+      case "emdash":
+        appendText("—");
+        return;
+      case "bullet":
+        appendText("•");
+        return;
+      case "lquote":
+        appendText("‘");
+        return;
+      case "rquote":
+        appendText("’");
+        return;
+      case "ldblquote":
+        appendText("“");
+        return;
+      case "rdblquote":
+        appendText("”");
+        return;
+      case "enspace":
+        appendText(" ");
+        return;
+      case "emspace":
+        appendText(" ");
+        return;
+      case "qmspace":
+        appendText(" ");
+        return;
+    }
+
     if (destination === "font-table" && parseFontTableControl(word, token.param)) return;
     if (destination === "color-table" && parseColorControl(word, token.param)) return;
 
@@ -469,6 +503,51 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         return;
       case "uc":
         unicodeByteCount = token.param ?? 1;
+        return;
+      case "lang":
+        if (token.param !== undefined) {
+          const tag = lcidToTag(token.param);
+          if (tag !== undefined) format.language = { value: tag };
+        }
+        return;
+      case "expnd":
+        if (token.param !== undefined && token.param > 0) format.characterSpacing = token.param * 5;
+        return;
+      case "expndtw":
+        format.characterSpacing = token.param;
+        return;
+      case "kerning":
+        format.kern = token.param !== undefined ? token.param * 10 : undefined;
+        return;
+      case "caps":
+        format.allCaps = token.param !== 0;
+        return;
+      case "scaps":
+        format.smallCaps = token.param !== 0;
+        return;
+      case "outl":
+        format.outline = token.param !== 0;
+        return;
+      case "shad":
+        format.shadow = token.param !== 0;
+        return;
+      case "v":
+        format.vanish = token.param !== 0;
+        return;
+      case "impr":
+        format.emboss = token.param !== 0;
+        return;
+      case "charscalex":
+        format.scale = token.param;
+        return;
+      case "sub":
+        format.verticalAlign = "subscript";
+        return;
+      case "super":
+        format.verticalAlign = "superscript";
+        return;
+      case "nosupersub":
+        format.verticalAlign = "baseline";
         return;
       case "plain":
         format = {};
@@ -505,6 +584,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         if (token.param === undefined)
           throw new RtfParseError("\\s requires a style number", token.position, source);
         ensureParagraph().options.style = `rtf-style-${token.param}`;
+        return;
+      case "cs":
+        if (token.param !== undefined) format.style = `rtf-character-style-${token.param}`;
         return;
       case "pard":
         setAlignment(undefined);

@@ -49,6 +49,7 @@ import {
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
 import type { ParagraphOptions } from "@parts/paragraph/paragraph";
+import { stringifyUnsupportedXmlElementData } from "@parts/paragraph/run/unsupported-drawing-run";
 import type {
   ChartMediaData,
   ContentPartMediaData,
@@ -240,7 +241,14 @@ function registerHyperlinks(
     targetMode: "External" | undefined,
   ) => {
     if (relationshipId && /^rId\d+$/.test(relationshipId)) {
-      if (!ctx.viewWrapper.relationships.hasId(relationshipId)) {
+      if (
+        !ctx.viewWrapper.relationships.hasExactRelationship(
+          relationshipId,
+          HYPERLINK_REL,
+          url,
+          targetMode,
+        )
+      ) {
         ctx.viewWrapper.relationships.addRelationship(
           relationshipId,
           HYPERLINK_REL,
@@ -709,6 +717,9 @@ function stringifyGroupChild(
   ctx: BodyContext,
   dialect?: DocumentNamespaceDialect,
 ): string {
+  if (child.type === "unsupported") {
+    return stringifyUnsupportedXmlElementData(child.element, child.relationships, ctx);
+  }
   if (child.type === "wps") {
     const wpsData = child as ShapeMediaData & { outline?: OutlineOptions; fill?: FillOptions };
     return stringifyWpsShape(

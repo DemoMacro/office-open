@@ -24,7 +24,11 @@ import { parseRunProperties } from "@parts/paragraph/run/run-parse";
 import { onOff, stringifyRunPropertiesInner } from "@parts/paragraph/stringify";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import type { SubDocOptions } from "@parts/sub-doc/sub-doc";
-import type { SdtCheckboxOptions, SdtPropertiesOptions } from "@parts/table-of-contents";
+import type {
+  SdtCheckboxOptions,
+  SdtChildOrder,
+  SdtPropertiesOptions,
+} from "@parts/table-of-contents";
 import type { BlockContentChild, SectionChild } from "@shared/section";
 
 import type { BodyContext, DocxReadContext } from "../context";
@@ -292,72 +296,89 @@ export function checkboxSymbolRunInner(cb: SdtCheckboxOptions): string {
   return `<w:r><w:rPr><w:rFonts w:ascii="${font}" w:hAnsi="${font}"/></w:rPr><w:t>${char}</w:t></w:r>`;
 }
 
-export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleScope): string {
-  const parts: string[] = [];
+const SDT_CHILD_ORDER: SdtChildOrder[] = [
+  "runProperties",
+  "alias",
+  "tag",
+  "id",
+  "lock",
+  "placeholder",
+  "temporary",
+  "showingPlaceholder",
+  "dataBinding",
+  "label",
+  "tabIndex",
+  "appearance",
+  "equation",
+  "comboBox",
+  "date",
+  "docPartObj",
+  "docPartList",
+  "dropDownList",
+  "picture",
+  "richText",
+  "text",
+  "citation",
+  "group",
+  "bibliography",
+  "checkbox",
+  "repeatingSection",
+  "repeatingSectionItem",
+  "entityPicker",
+  "webExtensionLinked",
+  "webExtensionCreated",
+];
 
-  // rPr — the SDT start mark's run properties (CT_SdtPr's leading element)
+function sdtChildFragments(
+  opts: SdtPropertiesOptions,
+  scope?: ReproducibleScope,
+): Map<SdtChildOrder, string> {
+  const fragments = new Map<SdtChildOrder, string>();
+  const set = (child: SdtChildOrder, xml: string | undefined | false) => {
+    if (xml) fragments.set(child, xml);
+  };
+
   if (opts.runProperties) {
     const rPrInner = stringifyRunPropertiesInner(opts.runProperties, scope);
-    if (rPrInner) parts.push(`<w:rPr>${rPrInner}</w:rPr>`);
+    set("runProperties", rPrInner && `<w:rPr>${rPrInner}</w:rPr>`);
   }
-
-  if (opts.alias !== undefined) parts.push(`<w:alias w:val="${escapeXml(opts.alias)}"/>`);
-  if (opts.tag !== undefined) parts.push(`<w:tag w:val="${escapeXml(opts.tag)}"/>`);
-  if (opts.id !== undefined) parts.push(`<w:id w:val="${opts.id}"/>`);
-  if (opts.lock !== undefined) parts.push(`<w:lock w:val="${opts.lock}"/>`);
-
-  // CT_Placeholder requires its w:docPart child — skip the element entirely
-  // when no building block is referenced instead of writing the illegal bare
-  // <w:placeholder/>.
-  if (opts.placeholder?.docPart !== undefined) {
-    parts.push(
+  set("alias", opts.alias !== undefined && `<w:alias w:val="${escapeXml(opts.alias)}"/>`);
+  set("tag", opts.tag !== undefined && `<w:tag w:val="${escapeXml(opts.tag)}"/>`);
+  set("id", opts.id !== undefined && `<w:id w:val="${opts.id}"/>`);
+  set("lock", opts.lock !== undefined && `<w:lock w:val="${opts.lock}"/>`);
+  set(
+    "placeholder",
+    opts.placeholder?.docPart !== undefined &&
       `<w:placeholder><w:docPart w:val="${escapeXml(opts.placeholder.docPart)}"/></w:placeholder>`,
-    );
-  }
-
-  if (opts.temporary !== undefined) parts.push(onOff("w:temporary", opts.temporary));
+  );
+  set("temporary", opts.temporary !== undefined && onOff("w:temporary", opts.temporary));
   const effectiveShowingPlcHdr = opts.showingPlaceholder ?? false;
-  if (opts.showingPlaceholder !== undefined || effectiveShowingPlcHdr) {
-    parts.push(onOff("w:showingPlcHdr", effectiveShowingPlcHdr));
-  }
-  if (opts.dataBinding) parts.push(sdtDataBindingXml(opts.dataBinding));
-  if (opts.label !== undefined) parts.push(`<w:label w:val="${opts.label}"/>`);
-  if (opts.tabIndex !== undefined) parts.push(`<w:tabIndex w:val="${opts.tabIndex}"/>`);
+  set(
+    "showingPlaceholder",
+    (opts.showingPlaceholder !== undefined || effectiveShowingPlcHdr) &&
+      onOff("w:showingPlcHdr", effectiveShowingPlcHdr),
+  );
+  set("dataBinding", opts.dataBinding && sdtDataBindingXml(opts.dataBinding));
+  set("label", opts.label !== undefined && `<w:label w:val="${opts.label}"/>`);
+  set("tabIndex", opts.tabIndex !== undefined && `<w:tabIndex w:val="${opts.tabIndex}"/>`);
+  set("appearance", opts.appearance && `<w15:appearance w15:val="${opts.appearance}"/>`);
 
-  // w15:appearance — Word writes it after the flag group and before the
-  // xsd:choice type element.
-  if (opts.appearance) parts.push(`<w15:appearance w15:val="${opts.appearance}"/>`);
-
-  // Type discriminator (xsd:choice)
-  if (opts.equation) {
-    parts.push("<w:equation/>");
-  } else if (opts.comboBox) {
-    parts.push(sdtListTypeXml("w:comboBox", opts.comboBox));
-  } else if (opts.date) {
-    parts.push(sdtDateXml(opts.date));
-  } else if (opts.docPartObj) {
-    parts.push(sdtDocPartXml("w:docPartObj", opts.docPartObj));
-  } else if (opts.docPartList) {
-    parts.push(sdtDocPartXml("w:docPartList", opts.docPartList));
-  } else if (opts.dropDownList) {
-    parts.push(sdtListTypeXml("w:dropDownList", opts.dropDownList));
-  } else if (opts.picture) {
-    parts.push("<w:picture/>");
-  } else if (opts.richText) {
-    parts.push("<w:richText/>");
-  } else if (opts.text !== undefined) {
-    // w:multiLine defaults to false (ST_OnOff) — Office omits the attribute
-    // for the default, so only the true case carries it.
-    parts.push(opts.text.multiLine === true ? `<w:text w:multiLine="1"/>` : `<w:text/>`);
-  } else if (opts.citation) {
-    parts.push("<w:citation/>");
-  } else if (opts.group) {
-    parts.push("<w:group/>");
-  } else if (opts.bibliography) {
-    parts.push("<w:bibliography/>");
-  } else if (opts.checkbox) {
-    parts.push(sdtCheckboxXml(opts.checkbox));
-  } else if (opts.repeatingSection) {
+  if (opts.equation) set("equation", "<w:equation/>");
+  else if (opts.comboBox) set("comboBox", sdtListTypeXml("w:comboBox", opts.comboBox));
+  else if (opts.date) set("date", sdtDateXml(opts.date));
+  else if (opts.docPartObj) set("docPartObj", sdtDocPartXml("w:docPartObj", opts.docPartObj));
+  else if (opts.docPartList) set("docPartList", sdtDocPartXml("w:docPartList", opts.docPartList));
+  else if (opts.dropDownList)
+    set("dropDownList", sdtListTypeXml("w:dropDownList", opts.dropDownList));
+  else if (opts.picture) set("picture", "<w:picture/>");
+  else if (opts.richText) set("richText", "<w:richText/>");
+  else if (opts.text !== undefined)
+    set("text", opts.text.multiLine === true ? `<w:text w:multiLine="1"/>` : `<w:text/>`);
+  else if (opts.citation) set("citation", "<w:citation/>");
+  else if (opts.group) set("group", "<w:group/>");
+  else if (opts.bibliography) set("bibliography", "<w:bibliography/>");
+  else if (opts.checkbox) set("checkbox", sdtCheckboxXml(opts.checkbox));
+  else if (opts.repeatingSection) {
     const inner =
       (opts.repeatingSection.sectionTitle !== undefined
         ? `<w15:sectionTitle w:val="${escapeXml(opts.repeatingSection.sectionTitle)}"/>`
@@ -368,18 +389,42 @@ export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleS
             opts.repeatingSection.doNotAllowInsertDeleteSection,
           )
         : "");
-    parts.push(`<w15:repeatingSection>${inner}</w15:repeatingSection>`);
-  } else if (opts.repeatingSectionItem) {
-    parts.push("<w15:repeatingSectionItem/>");
-  } else if (opts.entityPicker) {
-    parts.push("<w14:entityPicker/>");
-  }
+    set("repeatingSection", `<w15:repeatingSection>${inner}</w15:repeatingSection>`);
+  } else if (opts.repeatingSectionItem) set("repeatingSectionItem", "<w15:repeatingSectionItem/>");
+  else if (opts.entityPicker) set("entityPicker", "<w14:entityPicker/>");
 
-  // Word 2013+ extension flags (CT_OnOff) — siblings outside the type choice.
-  if (opts.webExtensionLinked !== undefined)
-    parts.push(onOff("w15:webExtensionLinked", opts.webExtensionLinked));
-  if (opts.webExtensionCreated !== undefined)
-    parts.push(onOff("w15:webExtensionCreated", opts.webExtensionCreated));
+  set(
+    "webExtensionLinked",
+    opts.webExtensionLinked !== undefined &&
+      onOff("w15:webExtensionLinked", opts.webExtensionLinked),
+  );
+  set(
+    "webExtensionCreated",
+    opts.webExtensionCreated !== undefined &&
+      onOff("w15:webExtensionCreated", opts.webExtensionCreated),
+  );
+  return fragments;
+}
+
+export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleScope): string {
+  const fragments = sdtChildFragments(opts, scope);
+  const ordered = opts.childOrder
+    ? [
+        ...(() => {
+          const ordered: string[] = [];
+          for (const child of opts.childOrder!) {
+            const xml = fragments.get(child);
+            if (xml) {
+              ordered.push(xml);
+              fragments.delete(child);
+            }
+          }
+          return ordered;
+        })(),
+        ...SDT_CHILD_ORDER.flatMap((child) => fragments.get(child) ?? []),
+      ]
+    : SDT_CHILD_ORDER.flatMap((child) => fragments.get(child) ?? []);
+  const parts = ordered;
 
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
 }

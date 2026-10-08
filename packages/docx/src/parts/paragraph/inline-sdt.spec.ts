@@ -124,6 +124,22 @@ describe("SDT properties fidelity (CT_SdtPr)", () => {
     });
   });
 
+  it("preserves typed sdtPr child order", () => {
+    const opts = parseParagraphXml(
+      '<w:sdt><w:sdtPr><w:id w:val="42"/><w:alias w:val="Ordered"/><w:text/></w:sdtPr>' +
+        "<w:sdtContent><w:r><w:t>x</w:t></w:r></w:sdtContent></w:sdt>",
+    );
+    const sdt = findInlineSdt(opts)!.sdt as Record<string, unknown>;
+    expect(sdt.properties).toMatchObject({
+      id: 42,
+      alias: "Ordered",
+      childOrder: ["id", "alias", "text"],
+    });
+    const xml = stringifyParagraph(opts as never, writeCtx);
+    expect(xml.indexOf("<w:id")).toBeLessThan(xml.indexOf("<w:alias"));
+    expect(xml.indexOf("<w:alias")).toBeLessThan(xml.indexOf("<w:text"));
+  });
+
   it("round-trips w:docPartUnique inside docPartObj", () => {
     const opts = parseParagraphXml(
       "<w:sdt><w:sdtPr><w:docPartObj>" +

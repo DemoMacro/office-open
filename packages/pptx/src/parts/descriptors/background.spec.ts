@@ -155,4 +155,19 @@ describe("backgroundDesc round-trip", () => {
     expect(shadow.distance).toBe(30000);
     expect(shadow.direction).toBe(45);
   });
+
+  it("round-trips the compatibility effectsLst spelling", () => {
+    const opts: BackgroundOptions = {
+      fill: { type: "none" },
+      effectsList: {},
+    };
+    const xml = backgroundDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain("<a:effectsLst/>");
+
+    const document = parseXml(xml);
+    const element = document.elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    const result = backgroundDesc.parse(element, readCtx);
+    expect(result.effectsList).toEqual({});
+  });
 });

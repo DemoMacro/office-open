@@ -179,6 +179,18 @@ describe("v:shape", () => {
     expect(stringifyVmlShape({ id: "s1" })).toBe('<v:shape id="s1"/>');
   });
 
+  it("preserves style token order and lexical form without sourceXml", () => {
+    const styleValue = " width: 6pt ; height: 9pt ;mso-height-relative:page ";
+    const xml = `<v:shape id="r1" style="${styleValue}"/>`;
+    const el = parseXml(`<carrier>${xml}</carrier>`).elements?.[0]?.elements?.[0];
+    if (!el) throw new Error("test XML has no v:shape");
+    const opts = parseVmlShape(el);
+    expect(opts.style).toEqual({ width: "6pt", height: "9pt" });
+    expect(opts.styleRaw).toBe(styleValue);
+    expect(opts.sourceXml).toBeUndefined();
+    expect(stringifyVmlShape(opts)).toBe(xml);
+  });
+
   it("preserves source attribute order and unmodeled extension attributes", () => {
     const xml =
       '<v:rect unknown="kept" style="width:6pt;height:9pt;z-index:7" id="r1">' +

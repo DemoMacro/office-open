@@ -25,6 +25,7 @@ import {
   textOf,
 } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+import { findFirst } from "@office-open/xml";
 import { sectionPropertiesDesc } from "@parts/document/body/section-properties/descriptor";
 import {
   documentNamespaceAttributesInDialect,
@@ -34,7 +35,7 @@ import type {
   BackgroundRawMediaOptions,
   DocumentBackgroundOptions,
 } from "@parts/document/document-background";
-import { parseDrawingRun } from "@parts/drawing/drawing-parse";
+import { parseDrawingRun, parseUnsupportedDrawingRun } from "@parts/drawing/drawing-parse";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
 import type { BordersOptions } from "@parts/paragraph/formatting/border";
 import type { IndentProperties } from "@parts/paragraph/formatting/indent";
@@ -881,7 +882,7 @@ export function parseParagraphProperties(
       run.insertion = {
         id: attrNum(ins, "w:id") ?? 0,
         author: attr(ins, "w:author") ?? "",
-        date: attr(ins, "w:date") ?? "",
+        date: attr(ins, "w:date"),
       };
     }
     const del = findChild(rPr, "w:del");
@@ -889,7 +890,23 @@ export function parseParagraphProperties(
       run.deletion = {
         id: attrNum(del, "w:id") ?? 0,
         author: attr(del, "w:author") ?? "",
-        date: attr(del, "w:date") ?? "",
+        date: attr(del, "w:date"),
+      };
+    }
+    const movedFrom = findChild(rPr, "w:moveFrom");
+    if (movedFrom) {
+      run.movedFrom = {
+        id: attrNum(movedFrom, "w:id") ?? 0,
+        author: attr(movedFrom, "w:author") ?? "",
+        date: attr(movedFrom, "w:date"),
+      };
+    }
+    const movedTo = findChild(rPr, "w:moveTo");
+    if (movedTo) {
+      run.movedTo = {
+        id: attrNum(movedTo, "w:id") ?? 0,
+        author: attr(movedTo, "w:author") ?? "",
+        date: attr(movedTo, "w:date"),
       };
     }
     opts.run = run;
@@ -1069,6 +1086,7 @@ interface FieldRunState {
   instrRunEls: Element[];
   /** Ordered fidelity/canonical members when the stage mixes runs and fields. */
   instructionMembers: ComplexFieldInstructionMember[];
+  resultMembers: ComplexFieldInstructionMember[];
   /** Source xml:space marker on the plain instruction text. */
   instructionPreserveSpace?: boolean;
   /** Result-stage run elements (separate → end), buffered likewise. */
@@ -1084,6 +1102,7 @@ const initialFieldRunState = (): FieldRunState => ({
   collectingResult: false,
   instructionPreserveSpace: false,
   instructionMembers: [],
+  resultMembers: [],
   resultPreserveSpace: false,
   instrRunEls: [],
   resultRunEls: [],
@@ -1124,6 +1143,7 @@ function isPlainFieldRuns(
 function feedFieldRun(
   run: Element,
   state: FieldRunState,
+  ctx: DocxReadContext,
 ): { consumed: boolean; child?: ParagraphChild } {
   const fldCharEl = findChild(run, "w:fldChar");
   if (fldCharEl) {
@@ -1157,6 +1177,7 @@ function feedFieldRun(
       state.depth = 1;
       state.instrRunEls = [];
       state.instructionMembers = [];
+      state.resultMembers = [];
       state.resultRunEls = [];
     } else if (fctype === "separate") {
       if (state.kind === "complex" && state.depth > 1) {
@@ -1189,6 +1210,14 @@ function feedFieldRun(
         if (separatorRsid) formChild.separatorAdditionRsid = separatorRsid;
         if (separatorRunPropertiesRsid)
           formChild.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
+        const instructionRun = state.instrRunEls.length === 1 ? state.instrRunEls[0] : undefined;
+        const instructionRsid = instructionRun ? attr(instructionRun, "w:rsidR") : undefined;
+        const instructionRunPropertiesRsid = instructionRun
+          ? attr(instructionRun, "w:rsidRPr")
+          : undefined;
+        if (instructionRsid) formChild.instructionAdditionRsid = instructionRsid;
+        if (instructionRunPropertiesRsid)
+          formChild.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
         const resultRunEl = state.resultRunEls.at(-1);
         const resultRsid = resultRunEl ? attr(resultRunEl, "w:rsidR") : undefined;
         const resultRPrRsid = resultRunEl ? attr(resultRunEl, "w:rsidRPr") : undefined;
@@ -1249,17 +1278,24 @@ function feedFieldRun(
         const endRunPropertiesRsid = attr(run, "w:rsidRPr");
         if (endRsid) cf.endAdditionRsid = endRsid;
         if (endRunPropertiesRsid) cf.endRunPropertiesRsid = endRunPropertiesRsid;
-        if (
+        const hasInstructionMarkers = state.instructionMembers.some(
+          (member) =>
+            "simpleField" in member || "bookmarkStart" in member || "bookmarkEnd" in member,
+        );
+        if (hasInstructionMarkers) {
+          cf.instructionMembers = state.instructionMembers;
+        } else if (
           !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
         ) {
-          if (state.instructionMembers.some((member) => "simpleField" in member)) {
-            cf.instructionMembers = state.instructionMembers;
-          } else {
-            cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
-          }
+          cf.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
         }
         // The plain result template pairs the result rPr (defaulting to the
         // control rPr) with a single text run — anything else goes verbatim.
+        const hasResultMarkers = state.resultMembers.some(
+          (member) =>
+            "simpleField" in member || "bookmarkStart" in member || "bookmarkEnd" in member,
+        );
+        if (hasResultMarkers) cf.resultMembers = state.resultMembers;
         if (
           !isPlainFieldRuns(state.resultRunEls, state.resultRPr ?? state.controlRPr, [
             "w:t",
@@ -1307,6 +1343,9 @@ function feedFieldRun(
         }
         state.pendingResult += collectRunText(run);
         state.resultRunEls.push(run);
+        state.resultMembers.push({
+          run: parsedRunToOptions(parseRun(run, ctx)) as RunOptions,
+        });
       } else {
         // Deleted fields spell the instruction w:delInstrText instead.
         const instrEl = findChild(run, "w:instrText") ?? findChild(run, "w:delInstrText");
@@ -1317,15 +1356,25 @@ function feedFieldRun(
         // Buffer the run for the verbatim channel when its shape is not what
         // the plain instruction template reproduces (per-run rPr, w:br...).
         state.instrRunEls.push(run);
-        state.instructionMembers.push({ runXml: stringifyElement(run) });
+        state.instructionMembers.push({
+          run: parsedRunToOptions(parseRun(run, ctx)) as RunOptions,
+        });
       }
-    } else if (state.collectingResult && state.pendingFormField?.textInput) {
-      // Capture a textInput's current value; checkbox/dropdown results are
-      // discarded (their state is in w:ffData).
-      const text = collectRunText(run);
-      if (text) {
-        const ti = state.pendingFormField.textInput;
-        ti.value = (ti.value ?? "") + text;
+    } else if (state.kind === "form") {
+      if (state.collectingResult) {
+        // Capture a textInput's current value; checkbox/dropdown results are
+        // discarded (their state is in w:ffData), but all result runs stay in
+        // the identity buffer so their rsids survive generation.
+        if (state.pendingFormField?.textInput) {
+          const text = collectRunText(run);
+          if (text) {
+            const ti = state.pendingFormField.textInput;
+            ti.value = (ti.value ?? "") + text;
+          }
+        }
+        state.resultRunEls.push(run);
+      } else {
+        state.instrRunEls.push(run);
       }
     }
     return { consumed: true };
@@ -1342,6 +1391,16 @@ function feedFieldRun(
  * run has no drawing (caller falls back to the plain-run path).
  */
 function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphChild | undefined {
+  const innerContent = (child.elements ?? []).filter(
+    (element) =>
+      element.type === "element" &&
+      element.name !== "w:rPr" &&
+      element.name !== "w:lastRenderedPageBreak",
+  );
+  const drawingElements = innerContent.filter((element) => element.name === "w:drawing");
+  if (drawingElements.length > 1 || (drawingElements.length === 1 && innerContent.length > 1)) {
+    return parsedRunToOptions(parseRun(child, ctx));
+  }
   let drawingEl = findChild(child, "w:drawing");
   let altFallback: string | undefined;
   let altFallbackMedia: BackgroundRawMediaOptions[] | undefined;
@@ -1366,20 +1425,42 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     }
   }
   if (!drawingEl) return undefined;
-  const drawingChild = parseDrawingRun(drawingEl, ctx);
-  if (!drawingChild) {
-    // Unrecognized drawing payload (lockedCanvas, future graphicData URIs) —
-    // keep the whole run verbatim instead of dropping the drawing.
-    return { rawXml: stringifyElement(child) };
-  }
   // Parse the wrapping run's rPr into structured fields so round-trip stays
   // editable (drawings/shapes can be wrapped in <w:r><w:rPr>…</w:rPr>…).
   const rPrEl = findChild(child, "w:rPr");
   const runProperties = rPrEl ? parseRunProperties(rPrEl) : undefined;
   const additionRsid = attr(child, "w:rsidR");
+  const deletionRsid = attr(child, "w:rsidDel");
   const runPropertiesRsid = attr(child, "w:rsidRPr");
+  const lastRenderedPageBreak = findChild(child, "w:lastRenderedPageBreak") !== undefined;
   // Attach the VML fallback + Choice Requires so stringify can rebuild the
   // mc:AlternateContent wrapper (Choice structured + Fallback raw).
+  const attachAlternateContent = (
+    target:
+      | {
+          vmlFallback?: string;
+          vmlFallbackMedia?: BackgroundRawMediaOptions[];
+          mcChoiceRequires?: string;
+        }
+      | undefined,
+  ): void => {
+    if (!target || !altFallback) return;
+    target.vmlFallback = altFallback;
+    target.vmlFallbackMedia = altFallbackMedia;
+    if (altRequires) target.mcChoiceRequires = altRequires;
+  };
+  const drawingChild = parseDrawingRun(drawingEl, ctx);
+  if (!drawingChild) {
+    const graphicData = findFirst(drawingEl, "a:graphicData");
+    if (!graphicData) return undefined;
+    const unsupported = parseUnsupportedDrawingRun(drawingEl, graphicData, ctx);
+    attachAlternateContent(unsupported.unsupportedDrawing);
+    if (runProperties) unsupported.unsupportedDrawing.runProperties = runProperties;
+    if (additionRsid) unsupported.unsupportedDrawing.additionRsid = additionRsid;
+    if (runPropertiesRsid) unsupported.unsupportedDrawing.runPropertiesRsid = runPropertiesRsid;
+    if (lastRenderedPageBreak) unsupported.unsupportedDrawing.lastRenderedPageBreak = true;
+    return unsupported;
+  }
   if (altFallback) {
     if ("wpsShape" in drawingChild) {
       drawingChild.wpsShape.vmlFallback = altFallback;
@@ -1389,6 +1470,10 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpgGroup.vmlFallback = altFallback;
       drawingChild.wpgGroup.vmlFallbackMedia = altFallbackMedia;
       if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
+    } else if ("unsupportedDrawing" in drawingChild) {
+      drawingChild.unsupportedDrawing.vmlFallback = altFallback;
+      drawingChild.unsupportedDrawing.vmlFallbackMedia = altFallbackMedia;
+      if (altRequires) drawingChild.unsupportedDrawing.mcChoiceRequires = altRequires;
     }
   }
   if (runProperties) {
@@ -1402,6 +1487,8 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.chart.runProperties = runProperties;
     } else if ("smartArt" in drawingChild) {
       drawingChild.smartArt.runProperties = runProperties;
+    } else if ("unsupportedDrawing" in drawingChild) {
+      drawingChild.unsupportedDrawing.runProperties = runProperties;
     }
   }
   if (additionRsid) {
@@ -1410,6 +1497,15 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     else if ("wpgGroup" in drawingChild) drawingChild.wpgGroup.additionRsid = additionRsid;
     else if ("chart" in drawingChild) drawingChild.chart.additionRsid = additionRsid;
     else if ("smartArt" in drawingChild) drawingChild.smartArt.additionRsid = additionRsid;
+    else if ("unsupportedDrawing" in drawingChild)
+      drawingChild.unsupportedDrawing.additionRsid = additionRsid;
+  }
+  if (deletionRsid) {
+    if ("picture" in drawingChild) drawingChild.picture.deletionRsid = deletionRsid;
+    else if ("wpsShape" in drawingChild) drawingChild.wpsShape.deletionRsid = deletionRsid;
+    else if ("wpgGroup" in drawingChild) drawingChild.wpgGroup.deletionRsid = deletionRsid;
+    else if ("chart" in drawingChild) drawingChild.chart.deletionRsid = deletionRsid;
+    else if ("smartArt" in drawingChild) drawingChild.smartArt.deletionRsid = deletionRsid;
   }
   if (runPropertiesRsid) {
     if ("picture" in drawingChild) drawingChild.picture.runPropertiesRsid = runPropertiesRsid;
@@ -1420,10 +1516,12 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     else if ("chart" in drawingChild) drawingChild.chart.runPropertiesRsid = runPropertiesRsid;
     else if ("smartArt" in drawingChild)
       drawingChild.smartArt.runPropertiesRsid = runPropertiesRsid;
+    else if ("unsupportedDrawing" in drawingChild)
+      drawingChild.unsupportedDrawing.runPropertiesRsid = runPropertiesRsid;
   }
   // A run-level empty element (Word's pagination hint) sharing the drawing's
   // run — carried on the drawing options and emitted before the drawing.
-  if (findChild(child, "w:lastRenderedPageBreak")) {
+  if (lastRenderedPageBreak) {
     if ("picture" in drawingChild) {
       drawingChild.picture.lastRenderedPageBreak = true;
     } else if ("wpsShape" in drawingChild) {
@@ -1434,6 +1532,8 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.chart.lastRenderedPageBreak = true;
     } else if ("smartArt" in drawingChild) {
       drawingChild.smartArt.lastRenderedPageBreak = true;
+    } else if ("unsupportedDrawing" in drawingChild) {
+      drawingChild.unsupportedDrawing.lastRenderedPageBreak = true;
     }
   }
   return drawingChild;
@@ -1451,7 +1551,7 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
   const fieldState = initialFieldRunState();
   for (const sub of el.elements ?? []) {
     if (sub.name === "w:r") {
-      const fed = feedFieldRun(sub, fieldState);
+      const fed = feedFieldRun(sub, fieldState, ctx);
       if (fed.consumed) {
         if (fed.child) out.push(fed.child as TrackChangeChild);
         continue;
@@ -1500,7 +1600,7 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
         const meta = {
           id: attrNum(sub, "w:id") ?? 0,
           author: attr(sub, "w:author") ?? "",
-          date: attr(sub, "w:date") ?? "",
+          date: attr(sub, "w:date"),
         };
         out.push(
           sub.name === "w:ins"
@@ -1730,7 +1830,7 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
   const fieldState = initialFieldRunState();
   for (const sub of child.elements ?? []) {
     if (sub.name === "w:r") {
-      const fed = feedFieldRun(sub, fieldState);
+      const fed = feedFieldRun(sub, fieldState, ctx);
       if (fed.consumed) {
         if (fed.child) linkRuns.push(fed.child);
         continue;
@@ -1791,7 +1891,7 @@ function parseRunLevelChildren(
         break;
       case "w:r": {
         // Field: fldChar markers + the instrText/result runs between them.
-        const fed = feedFieldRun(child, fieldState);
+        const fed = feedFieldRun(child, fieldState, ctx);
         if (fed.consumed) {
           if (fed.child) childList.push(fed.child);
           break;
@@ -1819,12 +1919,24 @@ function parseRunLevelChildren(
       }
       case "w:bookmarkStart": {
         const bookmarkStart = parseBookmarkStartOptions(child);
-        if (bookmarkStart) childList.push({ bookmarkStart });
+        if (bookmarkStart) {
+          const members = fieldState.collectingResult
+            ? fieldState.resultMembers
+            : fieldState.instructionMembers;
+          if (fieldState.kind === "complex") members.push({ bookmarkStart });
+          else childList.push({ bookmarkStart });
+        }
         break;
       }
       case "w:bookmarkEnd": {
         const bookmarkEnd = parseBookmarkEndOptions(child);
-        if (bookmarkEnd) childList.push({ bookmarkEnd });
+        if (bookmarkEnd) {
+          const members = fieldState.collectingResult
+            ? fieldState.resultMembers
+            : fieldState.instructionMembers;
+          if (fieldState.kind === "complex") members.push({ bookmarkEnd });
+          else childList.push({ bookmarkEnd });
+        }
         break;
       }
       case "w:commentRangeStart": {
@@ -1871,7 +1983,7 @@ function parseRunLevelChildren(
             insertion: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -1885,7 +1997,7 @@ function parseRunLevelChildren(
             deletion: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -1899,7 +2011,7 @@ function parseRunLevelChildren(
             movedFrom: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -1913,7 +2025,7 @@ function parseRunLevelChildren(
             movedTo: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -2164,7 +2276,7 @@ function parseRunLevelChildren(
             conflictIns: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -2178,7 +2290,7 @@ function parseRunLevelChildren(
             conflictDel: {
               id: attrNum(child, "w:id") ?? 0,
               author: attr(child, "w:author") ?? "",
-              date: attr(child, "w:date") ?? "",
+              date: attr(child, "w:date"),
               children,
             },
           });
@@ -2215,7 +2327,7 @@ function parseRunLevelChildren(
   if (fieldState.kind === "complex" && fieldState.resultRunEls.length > 0) {
     const sub = initialFieldRunState();
     for (const el of fieldState.resultRunEls) {
-      const fed = feedFieldRun(el, sub);
+      const fed = feedFieldRun(el, sub, ctx);
       if (fed.consumed) {
         if (fed.child) childList.push(fed.child);
         continue;

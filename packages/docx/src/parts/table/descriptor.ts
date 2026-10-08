@@ -1107,7 +1107,9 @@ function parseTableRowEl(el: Element, ctx: DocxReadContext): TableRowOptions {
 
   const trPr = findChild(el, "w:trPr");
   if (trPr) {
-    Object.assign(opts, parseTableRowPropertiesEl(trPr));
+    const props = parseTableRowPropertiesEl(trPr);
+    Object.assign(opts, props);
+    if (Object.keys(props).length === 0) opts.rowProperties = true;
   }
 
   // w:tblPrEx (CT_TblPrEx) — per-row table-property exceptions

@@ -95,6 +95,48 @@ describe("Relationships", () => {
     );
   });
 
+  it("buildRootRelationships preserves a source Type for the same semantic root rel", () => {
+    const xml = buildRootRelationships("word/document.xml", false, [
+      {
+        source: "",
+        relationshipType: "urn:example:metadata/core-properties",
+        target: "docProps/core.xml",
+      },
+    ]).serialize();
+    expect(xml.match(/docProps\/core\.xml/g)).toHaveLength(1);
+    expect(xml).toContain('Type="urn:example:metadata/core-properties"');
+  });
+
+  it("does not treat an occupied relationship id as a semantic match", () => {
+    const rels = new Relationships("word/document.xml");
+    rels.add(
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+      "media/image.png",
+    );
+    expect(
+      rels.hasExactRelationship(
+        "rId1",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        "https://example.invalid/",
+        "External",
+      ),
+    ).toBe(false);
+    rels.addRelationship(
+      "rId2",
+      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+      "https://example.invalid/",
+      "External",
+    );
+    expect(
+      rels.hasExactRelationship(
+        "rId2",
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
+        "https://example.invalid/",
+        "External",
+      ),
+    ).toBe(true);
+  });
+
   it("serialize() escapes special characters in target and id", () => {
     const rels = new Relationships();
     rels.add(

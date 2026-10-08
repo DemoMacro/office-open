@@ -61,6 +61,33 @@ describe("shapeDesc round-trip", () => {
     expect(emitted).toContain('uri="{TEST}"');
   });
 
+  it("preserves an empty picture shape-property extension list", () => {
+    const xml =
+      '<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">' +
+      '<p:nvPicPr><p:cNvPr id="1" name="P"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>' +
+      '<p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1" cy="1"/></a:xfrm>' +
+      "<a:extLst/></p:spPr>" +
+      "<p:blipFill><a:blip/><a:stretch><a:fillRect/></a:stretch></p:blipFill></p:pic>";
+    const element = parseXml(xml).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    const parsed = pictureDesc.parse(element, readCtx);
+    expect(parsed.shapePropertiesExt).toBe("");
+
+    const emitted = pictureDesc.stringify(
+      {
+        type: "png",
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        shapePropertiesExt: parsed.shapePropertiesExt,
+      },
+      new MockWriteContext() as unknown as WriteContext,
+    )!;
+    expect(emitted).toContain("<a:extLst></a:extLst></p:spPr>");
+  });
+
   it("round-trips basic shape with position", () => {
     const result = roundTrip({ x: 100, y: 200, width: 400, height: 300 });
     expect(result.x).toBe(100);

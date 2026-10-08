@@ -124,15 +124,32 @@ export const HIGHLIGHT_PALETTE_RGB = {
 >;
 
 /**
+ * Source ST_OnOff lexical form for boolean run properties.
+ * String values round-trip verbatim — do not hand-author them.
+ */
+export type OnOffLexicalValue = "true" | "false" | "1" | "0" | "on" | "off" | "t" | "f";
+
+/** Runtime membership set for safe lexical round-trip narrowing. */
+export const ON_OFF_LEXICAL_VALUES = ["true", "false", "1", "0", "on", "off", "t", "f"] as const;
+
+/**
  * Run style properties — character formatting for a run of text: font, size,
  * bold/italic, underline, color, and other character formatting.
  */
 export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
   noProof?: boolean;
   bold?: boolean;
+  /** Source `bold/@w:val` lexical form; round-trip only — do not hand-author. */
+  boldRaw?: OnOffLexicalValue;
   boldComplexScript?: boolean;
+  /** Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author. */
+  boldComplexScriptRaw?: OnOffLexicalValue;
   italic?: boolean;
+  /** Source `italic/@w:val` lexical form; round-trip only — do not hand-author. */
+  italicRaw?: OnOffLexicalValue;
   italicComplexScript?: boolean;
+  /** Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author. */
+  italicComplexScriptRaw?: OnOffLexicalValue;
   /** Underline: "words" underlines words only, "dashLong"/"dashLongHeavy" long dashes, "*Heavy" variants thicken the pattern. */
   underline?: {
     color?: HexColorOrAuto;
@@ -171,6 +188,11 @@ export interface RunStylePropertiesOptions extends W14RunEffectsOptions {
    */
   verticalAlign?: "baseline" | "subscript" | "superscript";
   font?: string | RunFontReference | FontProperties;
+  /**
+   * Additional source `w:rFonts` elements after the primary `font`; round-trip
+   * only — do not hand-author. Preserves duplicate lexical elements in order.
+   */
+  fontDuplicates?: FontProperties[];
   /** Fixed text highlight palette (w:highlight); "lightGray"/"darkGray" etc., not arbitrary colors. */
   highlight?: (typeof HighlightColor)[keyof typeof HighlightColor];
   characterSpacing?: number | UniversalMeasure;
@@ -226,4 +248,6 @@ export type RunPropertiesChangeOptions = {} & RunPropertiesOptions & ChangedProp
 export type ParagraphRunPropertiesOptions = {
   insertion?: ChangedProperties;
   deletion?: ChangedProperties;
+  movedFrom?: ChangedProperties;
+  movedTo?: ChangedProperties;
 } & RunPropertiesOptions;

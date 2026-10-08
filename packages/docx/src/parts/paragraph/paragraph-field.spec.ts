@@ -139,6 +139,14 @@ describe("paragraph-properties field consistency", () => {
     expect(ilvlOnly.bullet).toBeUndefined();
   });
 
+  it("preserves the source w:ilvl value without conversion", () => {
+    const opts = parsePPr('<w:numPr><w:ilvl w:val="12"/></w:numPr>');
+    expect(opts.numbering).toEqual({ levelOnly: true, level: 12 });
+    expect(stringifyParagraphProperties(opts as ParagraphPropertiesOptions).xml).toBe(
+      '<w:pPr><w:numPr><w:ilvl w:val="12"/></w:numPr></w:pPr>',
+    );
+  });
+
   it("declared F3 parse-loss matches the live parse gap (regression guard)", () => {
     // If parseParagraphProperties gains a findChild for any of these, the
     // field set above must be updated too — this keeps FIELD_SPECS honest.

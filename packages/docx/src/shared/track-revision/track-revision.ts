@@ -30,8 +30,8 @@ export interface ChangedProperties {
   id?: number;
   /** Name of the author who made the change */
   author: string;
-  /** Date and time when the change was made (ISO 8601 format) */
-  date: DateTime;
+  /** Date and time when the change was made (ISO 8601 format); omitted when absent at source */
+  date?: DateTime;
 }
 
 // Revision ids only need to be document-unique (nothing references them), so a

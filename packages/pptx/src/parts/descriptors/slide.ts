@@ -46,9 +46,11 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
       if (el.attributes["showMasterPhAnim"] !== undefined)
         result.showMasterPlaceholderAnimations =
           parseOnOff(el.attributes["showMasterPhAnim"]) ?? true;
-      if (el.attributes["show"] !== undefined) {
-        result.showRaw = el.attributes["show"] === "0" ? "0" : "1";
-        if (el.attributes["show"] === "0") result.hidden = true;
+      const show = el.attributeRawValues?.["show"] ?? el.attributes?.["show"];
+      if (show !== undefined) {
+        const isHidden = show === "0" || parseOnOff(show) === false;
+        result.showRaw = isHidden ? "0" : "1";
+        if (isHidden) result.hidden = true;
       }
     }
 

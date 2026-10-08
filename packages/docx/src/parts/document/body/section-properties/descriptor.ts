@@ -11,7 +11,6 @@
 
 import type { ReproducibleScope } from "@office-open/core";
 import { convertToTwip, type UniversalMeasure } from "@office-open/core";
-import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -79,22 +78,16 @@ function pageSizeXml(
   return `<w:pgSz ${attrs.join(" ")}/>`;
 }
 
-function pageMarginXml(margin: PageMarginProperties, fresh: boolean): string {
-  const optional = (
-    value: number | PositiveUniversalMeasure | undefined,
-    fallback: number,
-    attr: string,
-  ): string =>
-    fresh || value !== undefined ? ` ${attr}="${convertToTwip(value ?? fallback)}"` : "";
+function pageMarginXml(margin: PageMarginProperties): string {
   return `<w:pgMar w:top="${convertToTwip(margin.top ?? sectionMarginDefaults.TOP)}" w:right="${convertToTwip(
     margin.right ?? sectionMarginDefaults.RIGHT,
   )}" w:bottom="${convertToTwip(margin.bottom ?? sectionMarginDefaults.BOTTOM)}" w:left="${convertToTwip(
     margin.left ?? sectionMarginDefaults.LEFT,
-  )}"${optional(margin.header, sectionMarginDefaults.HEADER, "w:header")}${optional(
-    margin.footer,
-    sectionMarginDefaults.FOOTER,
-    "w:footer",
-  )}${optional(margin.gutter, sectionMarginDefaults.GUTTER, "w:gutter")}/>`;
+  )}" w:header="${convertToTwip(
+    margin.header ?? sectionMarginDefaults.HEADER,
+  )}" w:footer="${convertToTwip(
+    margin.footer ?? sectionMarginDefaults.FOOTER,
+  )}" w:gutter="${convertToTwip(margin.gutter ?? sectionMarginDefaults.GUTTER)}"/>`;
 }
 
 function attrTwips(el: Element, name: string): number | undefined {
@@ -228,6 +221,21 @@ function appendHeaderFooterRefs(
   if (group.even) parts.push(headerFooterRefXml(type, group.even.referenceId, "even"));
 }
 
+/** Emit references in the recorded source order (interleaved sectPr round-trip). */
+function appendOrderedHeaderFooterRefs(
+  parts: string[],
+  order: NonNullable<SectionPropertiesOptions["headerFooterReferenceOrder"]>,
+  opts: SectionPropertiesDescriptorOptions,
+): void {
+  for (const slot of order) {
+    const kind = slot.startsWith("header") ? "w:headerReference" : "w:footerReference";
+    const type = slot.slice(slot.indexOf("-") + 1) as "default" | "first" | "even";
+    const group = kind === "w:headerReference" ? opts.headerReferences : opts.footerReferences;
+    const entry = group?.[type];
+    if (entry) parts.push(headerFooterRefXml(kind, entry.referenceId, type));
+  }
+}
+
 // ── sectPrChange (recursive) ──
 
 function stringifySectionPropertiesChange(
@@ -241,7 +249,8 @@ function stringifySectionPropertiesChange(
   const innerXml = stringifySectionPropertiesInner(inner, true, scope);
   // The snapshot's own rsid attributes round-trip too (CT_SectPrChange's
   // inner CT_SectPr carries them just like the top-level element).
-  return `<w:sectPrChange w:author="${escapeXml(author)}" w:date="${escapeXml(date)}" w:id="${id ?? autoRevisionId(scope)}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
+  const dateAttr = date ? ` w:date="${escapeXml(date)}"` : "";
+  return `<w:sectPrChange w:author="${escapeXml(author)}"${dateAttr} w:id="${id ?? autoRevisionId(scope)}"><w:sectPr${sectPrRsidAttrs(inner)}>${innerXml}</w:sectPr></w:sectPrChange>`;
 }
 
 // ── Core XML builder ──
@@ -254,8 +263,12 @@ function stringifySectionPropertiesInner(
   const parts: string[] = [];
 
   // Header/footer references
-  appendHeaderFooterRefs(parts, "w:headerReference", opts.headerReferences);
-  appendHeaderFooterRefs(parts, "w:footerReference", opts.footerReferences);
+  if (opts.headerFooterReferenceOrder) {
+    appendOrderedHeaderFooterRefs(parts, opts.headerFooterReferenceOrder, opts);
+  } else {
+    appendHeaderFooterRefs(parts, "w:headerReference", opts.headerReferences);
+    appendHeaderFooterRefs(parts, "w:footerReference", opts.footerReferences);
+  }
 
   // Page options with defaults (false = parsed source omitted the element —
   // keep the fresh defaults out of the emission decision below)
@@ -265,7 +278,6 @@ function stringifySectionPropertiesInner(
     orientation,
     code,
   } = typeof opts.pageSize === "object" ? opts.pageSize : {};
-  const {} = typeof opts.pageMargin === "object" ? opts.pageMargin : {};
   const { pageNumberType = {}, pageBorders: borders, textDirection } = opts;
 
   const {
@@ -302,12 +314,7 @@ function stringifySectionPropertiesInner(
   // ("2.5cm") normalizes to plain twip numbers, matching w:pgSz above (the
   // destructured defaults above keep every argument non-undefined).
   if (opts.pageMargin !== false && (!omitDefaults || opts.pageMargin !== undefined)) {
-    parts.push(
-      pageMarginXml(
-        typeof opts.pageMargin === "object" ? opts.pageMargin : {},
-        opts.pageMargin === undefined,
-      ),
-    );
+    parts.push(pageMarginXml(typeof opts.pageMargin === "object" ? opts.pageMargin : {}));
   }
 
   // Paper source — EG_SectPrContents order: … pgMar, paperSrc, pgBorders …

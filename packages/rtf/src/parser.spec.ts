@@ -53,6 +53,19 @@ describe("parseDocument RTF text and formatting", () => {
     expect(runs(paragraph)).toEqual([{ bold: true, text: "Bold" }, { text: " plain" }]);
   });
 
+  it("maps run language controls to canonical run languages", () => {
+    const paragraph = firstParagraph(String.raw`{\rtf1{\lang1033 Word}{\lang1036 Autre}\par}`);
+    expect(runs(paragraph)).toEqual([
+      { language: { value: "en-US" }, text: "Word" },
+      { language: { value: "fr-FR" }, text: "Autre" },
+    ]);
+  });
+
+  it("maps hidden text control to canonical vanish run property", () => {
+    const paragraph = firstParagraph(String.raw`{\rtf1{\v hidden}visible\par}`);
+    expect(runs(paragraph)).toEqual([{ vanish: true, text: "hidden" }, { text: "visible" }]);
+  });
+
   it("parses tabs, hexadecimal, Unicode, and common character controls", () => {
     const children =
       parseDocument(String.raw`{\rtf1\tab A\'42\u9786?}`).sections[0]?.children ?? [];

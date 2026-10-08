@@ -79,6 +79,19 @@ describe("stretchDesc", () => {
     expect(result.right).toBe(5);
     expect(result.bottom).toBe(5);
   });
+
+  it("scales fill rectangle percentages in both directions", () => {
+    const xml = stringify(stretchDesc, { top: -48, bottom: -48 }, {} as WriteContext);
+    if (!xml) throw new Error("stringify returned undefined");
+    expect(xml).toContain('t="-48000"');
+    expect(xml).toContain('b="-48000"');
+
+    const document = parseXml(xml);
+    const element = document.elements?.[0];
+    if (!element) throw new Error("parsed document has no root element");
+    const result = parse(stretchDesc, element, {} as ReadContext);
+    expect(result).toEqual({ top: -48, bottom: -48 });
+  });
 });
 
 describe("blipDesc", () => {

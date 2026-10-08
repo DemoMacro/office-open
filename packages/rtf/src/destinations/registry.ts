@@ -35,6 +35,7 @@ export const DESTINATION_DISPOSITIONS = {
   subject: "canonical",
   author: "canonical",
   keywords: "canonical",
+  lang: "canonical",
   doccomm: "canonical",
   category: "canonical",
   creatim: "structural-noop",

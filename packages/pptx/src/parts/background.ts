@@ -9,6 +9,8 @@ export interface BackgroundOptions {
   reference?: StyleMatrixReferenceOptions;
   fill?: FillOptions;
   effects?: EffectListOptions;
+  /** Compatibility spelling `a:effectsLst` used by some producers; round-trip only. */
+  effectsList?: EffectListOptions;
   shadeToTitle?: boolean;
   /** `@bwMode` (ST_BlackWhiteMode) — unprefixed attribute on `p:bg`. */
   blackWhiteMode?: BlackWhiteMode;

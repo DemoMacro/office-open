@@ -22,6 +22,32 @@ function roundTrip(opts: RunPropertiesOptions): RunPropertiesOptions {
 }
 
 describe("parseRunProperties round-trip", () => {
+  it("preserves duplicate rFonts elements in order", () => {
+    const sourceXml =
+      `<w:rPr ${W_NS}>` +
+      '<w:rFonts w:ascii="Arial"/>' +
+      '<w:rFonts w:eastAsia="SimSun"/>' +
+      '<w:rFonts w:hAnsi="Consolas"/>' +
+      "</w:rPr>";
+    const sourceElement = parseXml(sourceXml).elements?.[0];
+    if (!sourceElement) throw new Error("parsed document has no root element");
+
+    const first = parseRunProperties(sourceElement);
+    expect(first.font).toEqual({ ascii: "Arial" });
+    expect(first.fontDuplicates).toEqual([{ eastAsia: "SimSun" }, { hAnsi: "Consolas" }]);
+
+    const generatedXml = stringifyRunProperties(first)!;
+    expect(generatedXml.match(/<w:rFonts\b/g)).toHaveLength(3);
+    expect(generatedXml).toContain('<w:rFonts w:ascii="Arial"/><w:rFonts w:eastAsia="SimSun"/>');
+
+    const generatedElement = parseXml(`<w:r ${W_NS}>${generatedXml}</w:r>`).elements?.[0]
+      ?.elements?.[0];
+    if (!generatedElement) throw new Error("generated run has no rPr element");
+    const second = parseRunProperties(generatedElement);
+    expect(second).toEqual(first);
+    expect(stringifyRunProperties(second)).toBe(generatedXml);
+  });
+
   it("round-trips color with themeColor/themeTint/themeShade", () => {
     const result = roundTrip({
       color: { val: "FF0000", themeColor: "text1", themeTint: "99", themeShade: "BF" },
@@ -32,6 +58,26 @@ describe("parseRunProperties round-trip", () => {
       themeTint: "99",
       themeShade: "BF",
     });
+  });
+
+  it("preserves source order when text precedes a break", () => {
+    const source = `<w:r ${W_NS}><w:t>after</w:t><w:br/></w:r>`;
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.children).toEqual(["after", { break: 1 }]);
+    expect(stringifyRunInline(opts, {} as never)).toBe("<w:r><w:t>after</w:t><w:br/></w:r>");
+  });
+
+  it("preserves source order when run properties follow content", () => {
+    const source = `<w:r ${W_NS}><w:t>after</w:t><w:rPr><w:b/></w:rPr></w:r>`;
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed run has no root element");
+    const opts = parsedRunToOptions(parseRun(element, {} as never)) as RunOptions;
+    expect(opts.childOrder).toEqual(["content", "runProperties"]);
+    expect(stringifyRunInline(opts, {} as never)).toBe(
+      "<w:r><w:t>after</w:t><w:rPr><w:b/></w:rPr></w:r>",
+    );
   });
 
   it("parses fallback run properties when a compatibility choice is empty", () => {
@@ -146,6 +192,31 @@ describe("parseRunProperties round-trip", () => {
     const result = roundTrip({ bold: true });
     expect(result.bold).toBe(true);
     expect(result.boldComplexScript).toBeUndefined();
+  });
+
+  it("preserves explicit false-valued toggle spellings", () => {
+    const source =
+      `<w:rPr ${W_NS}>` +
+      '<w:b w:val="false"/><w:bCs w:val="0"/><w:i w:val="off"/><w:iCs w:val="f"/>' +
+      "</w:rPr>";
+    const element = parseXml(source).elements?.[0];
+    if (!element) throw new Error("parsed rPr has no root element");
+    const parsed = parseRunProperties(element);
+    expect(parsed).toMatchObject({
+      bold: false,
+      boldRaw: "false",
+      boldComplexScript: false,
+      boldComplexScriptRaw: "0",
+      italic: false,
+      italicRaw: "off",
+      italicComplexScript: false,
+      italicComplexScriptRaw: "f",
+    });
+    const xml = stringifyRunProperties(parsed)!;
+    expect(xml).toContain('<w:b w:val="false"/>');
+    expect(xml).toContain('<w:bCs w:val="0"/>');
+    expect(xml).toContain('<w:i w:val="off"/>');
+    expect(xml).toContain('<w:iCs w:val="f"/>');
   });
 
   it("does not auto-pair iCs when only italic is set", () => {
