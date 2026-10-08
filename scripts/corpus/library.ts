@@ -19,6 +19,8 @@ const OS_JUNK_PART_PATTERNS: readonly RegExp[] = [
   /^(?:.*\/)?\.DS_Store$/i,
   /^(?:.*\/)?Thumbs\.db$/i,
   /^(?:.*\/)?desktop\.ini$/i,
+  // Producer-created junk folders inside the package (ZIP inspection debris).
+  /^\[trash\]\//i,
 ];
 
 export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
@@ -28,6 +30,29 @@ export const EXTERNAL_OPAQUE_PARTS: Record<Format, readonly RegExp[]> = {
 };
 
 export type Format = "docx" | "xlsx" | "pptx";
+
+/**
+ * Model-absorbed opaque content parts: altChunk payloads keep their source
+ * path in the options tree, and the binary part itself is opaque independent
+ * data that travels via rawParts.
+ */
+function allowedOpaquePaths(options: unknown, format: Format): ReadonlySet<string> {
+  const allowed = new Set<string>();
+  if (format !== "docx") return allowed;
+  const prefix = (path: string): void => {
+    allowed.add(`word/${path}`);
+    allowed.add(path);
+  };
+  const sections =
+    (options as { sections?: { children?: { altChunk?: { sourcePath?: string } }[] }[] })
+      .sections ?? [];
+  for (const section of sections) {
+    for (const child of section.children ?? []) {
+      if (child.altChunk?.sourcePath !== undefined) prefix(child.altChunk.sourcePath);
+    }
+  }
+  return allowed;
+}
 export type PackageFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
 const BY_EXT: Record<
@@ -234,6 +259,7 @@ export async function runLibrary(
       options,
       EXTERNAL_OPAQUE_PARTS[format],
       orphanedXmlParts,
+      allowedOpaquePaths(options, format),
     )) {
       if (blocker.reason === "orphaned-independent-part") continue;
       const key = `${blocker.reason}:${blocker.part.replace(/(?:word|xl|ppt|powerpoint)[\\/]/, "")}`;

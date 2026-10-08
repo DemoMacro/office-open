@@ -516,8 +516,8 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
       {
         x: transform.offset?.emus?.x ?? 0,
         y: transform.offset?.emus?.y ?? 0,
-        width: transform.emus.x,
-        height: transform.emus.y,
+        width: transform.shapeExtent?.x ?? transform.emus.x,
+        height: transform.shapeExtent?.y ?? transform.emus.y,
         flipHorizontal: transform.flipHorizontal,
         flipVertical: transform.flipVertical,
         rotation: transform.rotation,

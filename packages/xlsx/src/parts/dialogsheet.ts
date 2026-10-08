@@ -303,7 +303,7 @@ export const dialogsheetDesc: CustomDescriptor<DialogsheetOptions> = {
     // headerFooter — CT_HeaderFooter, shared with worksheet
     const hfEl = findChild(el, "headerFooter");
     if (hfEl) {
-      result.headerFooter = parseHeaderFooterEl(hfEl);
+      result.headerFooter = parseHeaderFooterEl(hfEl, "xl/dialogsheets/dialogsheet.xml");
     }
 
     // drawing / legacyDrawing — r:id passthrough

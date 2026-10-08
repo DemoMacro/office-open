@@ -5,6 +5,7 @@
  */
 
 import type {
+  BlipCompression,
   DataType,
   GraphicFrameLockingOptions,
   NonVisualDrawingPropertiesOptions,
@@ -19,6 +20,8 @@ export interface OleEmbedOptions {
   data: DataType;
   /** Source embedding file name (ppt/embeddings/*) — round-trip only. */
   fileName?: string;
+  /** Source embedding relationship kind; undefined (fresh authoring) = oleObject. */
+  relationshipType?: "oleObject" | "package";
   /** Follow color scheme (p:embed `@followColorScheme`) */
   followColorScheme?: "none" | "full" | "textAndBackground";
 }
@@ -38,6 +41,8 @@ export interface OleIconImageOptions {
   data: DataType;
   /** Image type / extension (e.g. "png", "emf"). */
   type: string;
+  /** Compression state (a:blip `@cstate`); absent = attribute omitted. */
+  compression?: BlipCompression;
 }
 
 /**

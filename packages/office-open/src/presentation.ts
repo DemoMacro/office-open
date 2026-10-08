@@ -19,7 +19,7 @@ import {
   type PresentationOptions,
 } from "@office-open/pptx";
 
-import { detectOffice } from "./formats";
+import { detectOffice, withRequestedPackageVariant } from "./formats";
 
 /** Password accepted by the legacy PPT parser. */
 export interface PresentationParseOptions {
@@ -88,11 +88,14 @@ export async function generatePresentation<
     return convertOutput(generateOdpPresentation(options), outputType, ODP_MIME_TYPE);
   }
 
-  return generatePptxPresentation(options, {
-    type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
-    reproducible,
-  } as PackerOptions<T>);
+  return generatePptxPresentation(
+    withRequestedPackageVariant(format as keyof typeof OOXML_PACKAGE_FORMATS, options),
+    {
+      type: outputType,
+      packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
+      reproducible,
+    } as PackerOptions<T>,
+  );
 }
 
 export async function patchPresentation<T extends OutputType = OutputType>(

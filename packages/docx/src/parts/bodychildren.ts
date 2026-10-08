@@ -10,6 +10,7 @@
 import {
   type ReproducibleScope,
   RELATIONSHIP_TYPES,
+  TargetModeType,
   toUint8Array,
   uniqueId,
 } from "@office-open/core";
@@ -43,25 +44,34 @@ export const altChunkDesc: CustomDescriptor<AltChunkOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    const relId = ctx.reproducible?.nextId() ?? uniqueId();
     const extension = opts.extension;
-    const partPath = `afchunks/afchunk${relId}.${extension}`;
+    const sourceRid = opts.sourceRid;
+    const sourcePath = opts.sourcePath;
+    // Round-trip keeps the source part path and relationship id — including
+    // custom ids like "htmlDoc" — so the package, rels table, and body
+    // reference stay byte-stable.
+    const reuseSource =
+      sourceRid !== undefined &&
+      sourcePath !== undefined &&
+      !ctx.fileData.document.relationships.hasId(sourceRid);
+    const freshId = ctx.reproducible?.nextId() ?? uniqueId();
+    const rId = reuseSource ? sourceRid : `rId${freshId}`;
+    const partPath = reuseSource ? sourcePath : `afchunks/afchunk${freshId}.${extension}`;
     const rawData = typeof opts.data === "string" ? toUint8Array(opts.data) : opts.data;
     const data =
       opts.contentType === "text/html" && typeof opts.data === "string"
         ? toUint8Array(wrapHtmlDocument(opts.data))
         : rawData;
 
-    ctx.fileData.document.relationships.addRelationship(`rId${relId}`, ALTCHUNK_REL_TYPE, partPath);
-    ctx.fileData.altChunks.addAltChunk(relId, {
-      key: relId,
+    ctx.fileData.document.relationships.addRelationship(rId, ALTCHUNK_REL_TYPE, partPath);
+    ctx.fileData.altChunks.addAltChunk(rId, {
+      key: rId,
       data,
       path: partPath,
       extension,
       contentType: opts.contentType,
     });
 
-    const rId = `rId${relId}`;
     if (opts.matchSource) {
       return `<w:altChunk r:id="${rId}"><w:altChunkPr><w:matchSrc/></w:altChunkPr></w:altChunk>`;
     }
@@ -117,9 +127,20 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
+    // Externally linked sub-documents keep the verbatim relationship id and
+    // target URL — no embedded part is registered.
+    if (opts.sourceUrl !== undefined) {
+      const relationships = ctx.fileData.document.relationships;
+      const rid =
+        opts.sourceRid !== undefined && !relationships.hasId(opts.sourceRid)
+          ? opts.sourceRid
+          : `rId${ctx.reproducible?.nextId() ?? uniqueId()}`;
+      relationships.addRelationship(rid, SUBDOC_REL_TYPE, opts.sourceUrl, TargetModeType.EXTERNAL);
+      return `<w:subDoc r:id="${rid}"/>`;
+    }
     const relId = ctx.reproducible?.nextId() ?? uniqueId();
     const partPath = `subdocs/subdoc${relId}.docx`;
-    const data = toUint8Array(opts.data);
+    const data = toUint8Array(opts.data!);
 
     ctx.fileData.document.relationships.addRelationship(`rId${relId}`, SUBDOC_REL_TYPE, partPath);
     ctx.fileData.subDocs.addSubDoc(relId, {
@@ -134,6 +155,10 @@ export const subDocDesc: CustomDescriptor<SubDocOptions, BodyContext> = {
     const rId = attr(el, "r:id");
     const dctx = ctx as DocxReadContext;
     if (rId) {
+      const externalUrl = dctx.docx.partRefs.externalSubDocs.get(rId);
+      if (externalUrl !== undefined) {
+        return { sourceRid: rId, sourceUrl: externalUrl } as SubDocOptions;
+      }
       const path = dctx.resolveRelationship(rId);
       if (path) {
         const data = dctx.getRaw(path);
@@ -299,6 +324,10 @@ export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleS
   if (opts.label !== undefined) parts.push(`<w:label w:val="${opts.label}"/>`);
   if (opts.tabIndex !== undefined) parts.push(`<w:tabIndex w:val="${opts.tabIndex}"/>`);
 
+  // w15:appearance — Word writes it after the flag group and before the
+  // xsd:choice type element.
+  if (opts.appearance) parts.push(`<w15:appearance w15:val="${opts.appearance}"/>`);
+
   // Type discriminator (xsd:choice)
   if (opts.equation) {
     parts.push("<w:equation/>");
@@ -351,9 +380,6 @@ export function stringifySdtPr(opts: SdtPropertiesOptions, scope?: ReproducibleS
     parts.push(onOff("w15:webExtensionLinked", opts.webExtensionLinked));
   if (opts.webExtensionCreated !== undefined)
     parts.push(onOff("w15:webExtensionCreated", opts.webExtensionCreated));
-
-  // w15:appearance (Word 2013+) trails the CT_SdtPr sequence.
-  if (opts.appearance) parts.push(`<w15:appearance w15:val="${opts.appearance}"/>`);
 
   return parts.length ? `<w:sdtPr>${parts.join("")}</w:sdtPr>` : "<w:sdtPr/>";
 }

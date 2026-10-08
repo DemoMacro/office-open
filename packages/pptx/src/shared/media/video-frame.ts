@@ -1,4 +1,4 @@
-import type { DataType } from "@office-open/core";
+import type { BlipCompression, DataType } from "@office-open/core";
 
 import type { MediaFrameBaseOptions } from "./media-frame-base";
 
@@ -11,6 +11,8 @@ export interface VideoFrameOptions extends MediaFrameBaseOptions {
   type: VideoType;
   poster?: DataType;
   posterType?: PosterType;
+  /** Compression state of the poster blip; absent = attribute omitted. */
+  posterCompression?: BlipCompression;
   /** Source poster media file name (round-trip only). */
   posterFileName?: string;
   /** MIME content type of the linked video (CT_VideoFile `@contentType`) */

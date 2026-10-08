@@ -24,7 +24,7 @@ import {
   parseDocument as parseRtfDocument,
 } from "@office-open/rtf";
 
-import { detectOffice } from "./formats";
+import { detectOffice, withRequestedPackageVariant } from "./formats";
 
 /** Password accepted by the legacy DOC parser. */
 export interface DocumentParseOptions {
@@ -99,11 +99,14 @@ export async function generateDocument<
     return convertOutput(generateRtfDocument(options), outputType, RTF_MIME_TYPE);
   }
 
-  return generateDocxDocument(options, {
-    type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
-    reproducible,
-  } as PackerOptions<T>);
+  return generateDocxDocument(
+    withRequestedPackageVariant(format as keyof typeof OOXML_PACKAGE_FORMATS, options),
+    {
+      type: outputType,
+      packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
+      reproducible,
+    } as PackerOptions<T>,
+  );
 }
 
 export async function patchDocument<T extends OutputType = OutputType>(

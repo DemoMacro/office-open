@@ -53,6 +53,16 @@ function stringifyMediaLocking(
     : '<a:picLocks noChangeAspect="1"/>';
 }
 
+function stringifyPosterBlip(
+  opts: { posterCompression?: PictureOptions["compression"] },
+  posterFileName: string,
+): string {
+  return (
+    `<a:blip r:embed="{${posterFileName}}"` +
+    `${opts.posterCompression ? ` cstate="${opts.posterCompression}"` : ""}/>`
+  );
+}
+
 function readMediaLocking(el: Element, ctx: ReadContext): PictureLockingOptions | undefined {
   const locks = findChild(findChild(el, "p:nvPicPr") ?? el, "p:cNvPicPr");
   const picLocks = locks ? findChild(locks, "a:picLocks") : undefined;
@@ -157,7 +167,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
         opts.posterType ?? "png",
         opts.posterFileName ?? `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
       );
-      if (posterFileName) posterAttr = `<a:blip r:embed="{${posterFileName}}"/>`;
+      if (posterFileName) posterAttr = stringifyPosterBlip(opts, posterFileName);
     }
     parts.push(`<p:blipFill>${posterAttr}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
 
@@ -288,7 +298,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
         opts.posterType ?? "png",
         opts.posterFileName ?? `${name.replace(/\s+/g, "_")}_poster.${opts.posterType ?? "png"}`,
       );
-      if (posterFileName) posterAttr = `<a:blip r:embed="{${posterFileName}}"/>`;
+      if (posterFileName) posterAttr = stringifyPosterBlip(opts, posterFileName);
     }
     parts.push(`<p:blipFill>${posterAttr}<a:stretch><a:fillRect/></a:stretch></p:blipFill>`);
 
@@ -407,6 +417,7 @@ function readPoster(
   result: {
     poster?: DataType;
     posterType?: PictureOptions["type"];
+    posterCompression?: PictureOptions["compression"];
     posterFileName?: string;
   },
   ctx: ReadContext,
@@ -423,6 +434,10 @@ function readPoster(
     if (data) result.poster = data;
     const posterType = imageTypeFromPath(posterPath);
     result.posterType = posterType;
+    const posterCompression = attr(blip, "cstate");
+    if (posterCompression !== undefined) {
+      result.posterCompression = posterCompression as PictureOptions["compression"];
+    }
     result.posterFileName = posterPath.split("/").pop();
   }
 }

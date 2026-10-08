@@ -114,7 +114,11 @@ export type CharacterStyleOptions = {
  * personalReply, rsid.
  */
 function stringifyStyleLevelChildren(opts: StyleOptions & { id?: string }): string {
-  const parts: string[] = [`<w:name w:val="${escapeXml(opts.name ?? opts.id ?? "")}"/>`];
+  // Round-trip keeps a source that omitted w:name (XSD-required, but Word
+  // tolerates) without one — the styleId fallback only served fresh styles,
+  // and the factory always sets a name.
+  const parts: string[] =
+    opts.name === undefined ? [] : [`<w:name w:val="${escapeXml(opts.name)}"/>`];
   if (opts.aliases) parts.push(`<w:aliases w:val="${escapeXml(opts.aliases)}"/>`);
   if (opts.basedOn) parts.push(`<w:basedOn w:val="${escapeXml(opts.basedOn)}"/>`);
   if (opts.next) parts.push(`<w:next w:val="${escapeXml(opts.next)}"/>`);

@@ -16,6 +16,8 @@ export interface WebFrameOptions {
   title?: string;
   /** Source file link rId (round-trip only; the id refers to a relationship in the source package). */
   sourceRId?: string;
+  /** Source file name or URL (w:sourceFileName/@w:val, round-trip). */
+  sourceFileName?: string;
   /** Margin width in pixels */
   marginWidth?: number;
   /** Margin height in pixels */
@@ -26,6 +28,8 @@ export interface WebFrameOptions {
   linkedToFile?: boolean;
   /** Long description relationship ID (round-trip only). */
   longDescRId?: string;
+  /** Long description file name or URL (w:longDesc/@w:val, round-trip). */
+  longDesc?: string;
 }
 
 export interface FramesetSplitbarOptions {

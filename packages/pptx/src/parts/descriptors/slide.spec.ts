@@ -65,6 +65,24 @@ describe("slideDesc round-trip", () => {
     expect(result.showMasterPlaceholderAnimations).toBe(false);
   });
 
+  it("preserves explicit slide show attributes", () => {
+    const xml = slideDesc.stringify({ showRaw: "1" }, writeCtx)!;
+    expect(xml).toContain(' show="1"');
+
+    const result = roundTrip({ showRaw: "1" });
+    expect(result.showRaw).toBe("1");
+    expect(result.hidden).toBeUndefined();
+  });
+
+  it("preserves a transformless shape tree", () => {
+    const xml = slideDesc.stringify({ groupTransformless: true }, writeCtx)!;
+    expect(xml).toContain("<p:grpSpPr></p:grpSpPr>");
+    expect(xml).not.toContain("<a:xfrm>");
+
+    const result = roundTrip({ groupTransformless: true });
+    expect(result.groupTransformless).toBe(true);
+  });
+
   it("round-trips background with solid fill", () => {
     const opts: SlideOptions = {
       background: { fill: { type: "solid", color: "FF5733" } },

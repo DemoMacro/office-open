@@ -11,6 +11,7 @@
 
 import type { ReproducibleScope } from "@office-open/core";
 import { convertToTwip, type UniversalMeasure } from "@office-open/core";
+import type { PositiveUniversalMeasure } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrMeasure, attrNum, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -78,16 +79,22 @@ function pageSizeXml(
   return `<w:pgSz ${attrs.join(" ")}/>`;
 }
 
-function pageMarginXml(
-  top: number | string,
-  right: number | string,
-  bottom: number | string,
-  left: number | string,
-  header: number | string,
-  footer: number | string,
-  gutter: number | string,
-): string {
-  return `<w:pgMar w:top="${top}" w:right="${right}" w:bottom="${bottom}" w:left="${left}" w:header="${header}" w:footer="${footer}" w:gutter="${gutter}"/>`;
+function pageMarginXml(margin: PageMarginProperties, fresh: boolean): string {
+  const optional = (
+    value: number | PositiveUniversalMeasure | undefined,
+    fallback: number,
+    attr: string,
+  ): string =>
+    fresh || value !== undefined ? ` ${attr}="${convertToTwip(value ?? fallback)}"` : "";
+  return `<w:pgMar w:top="${convertToTwip(margin.top ?? sectionMarginDefaults.TOP)}" w:right="${convertToTwip(
+    margin.right ?? sectionMarginDefaults.RIGHT,
+  )}" w:bottom="${convertToTwip(margin.bottom ?? sectionMarginDefaults.BOTTOM)}" w:left="${convertToTwip(
+    margin.left ?? sectionMarginDefaults.LEFT,
+  )}"${optional(margin.header, sectionMarginDefaults.HEADER, "w:header")}${optional(
+    margin.footer,
+    sectionMarginDefaults.FOOTER,
+    "w:footer",
+  )}${optional(margin.gutter, sectionMarginDefaults.GUTTER, "w:gutter")}/>`;
 }
 
 function attrTwips(el: Element, name: string): number | undefined {
@@ -258,15 +265,7 @@ function stringifySectionPropertiesInner(
     orientation,
     code,
   } = typeof opts.pageSize === "object" ? opts.pageSize : {};
-  const {
-    top = sectionMarginDefaults.TOP,
-    right = sectionMarginDefaults.RIGHT,
-    bottom = sectionMarginDefaults.BOTTOM,
-    left = sectionMarginDefaults.LEFT,
-    header = sectionMarginDefaults.HEADER,
-    footer = sectionMarginDefaults.FOOTER,
-    gutter = sectionMarginDefaults.GUTTER,
-  } = typeof opts.pageMargin === "object" ? opts.pageMargin : {};
+  const {} = typeof opts.pageMargin === "object" ? opts.pageMargin : {};
   const { pageNumberType = {}, pageBorders: borders, textDirection } = opts;
 
   const {
@@ -305,13 +304,8 @@ function stringifySectionPropertiesInner(
   if (opts.pageMargin !== false && (!omitDefaults || opts.pageMargin !== undefined)) {
     parts.push(
       pageMarginXml(
-        convertToTwip(top),
-        convertToTwip(right),
-        convertToTwip(bottom),
-        convertToTwip(left),
-        convertToTwip(header),
-        convertToTwip(footer),
-        convertToTwip(gutter),
+        typeof opts.pageMargin === "object" ? opts.pageMargin : {},
+        opts.pageMargin === undefined,
       ),
     );
   }

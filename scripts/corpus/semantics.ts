@@ -865,10 +865,26 @@ function compareNodes(
     key: semanticChildFingerprint(child, ignorablePrefixes),
     child,
   }));
-  const outputChildren = output.children.filter(visibleChild).map((child) => ({
+  let outputChildren = output.children.filter(visibleChild).map((child) => ({
     key: semanticChildFingerprint(child, ignorablePrefixes),
     child,
   }));
+  if (path === "[Content_Types].xml") {
+    // The writer adds standard companion parts a minimal source omits (see
+    // WRITER_DEFAULT_PARTS); their Override declarations are required for OPC
+    // validity and are not table drift when the source lacked the part.
+    outputChildren = outputChildren.filter(({ child }) => {
+      if (child.name !== "Override") return true;
+      const partName = (child.attributes?.PartName ?? "").replace(/^\//, "");
+      if (!WRITER_DEFAULT_PARTS.has(partName)) return true;
+      return sourceChildren.some(({ child: sourceChild }) => {
+        return (
+          sourceChild.name === "Override" &&
+          sourceChild.attributes?.PartName === child.attributes?.PartName
+        );
+      });
+    });
+  }
   const sourceCounts = new Map(sourceChildren.map(({ key }) => [key, 0]));
   for (const { key } of sourceChildren) sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
   const outputCounts = new Map(outputChildren.map(({ key }) => [key, 0]));

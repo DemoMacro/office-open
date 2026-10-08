@@ -314,7 +314,8 @@ describe("hyperlink relationships", () => {
     } as unknown as DocxReadContext;
     const opts = parseParagraphXml(
       `<w:hyperlink r:id="rId1" w:anchor="section" w:history="1">` +
-        `<w:r><w:t>Link</w:t></w:r></w:hyperlink>`,
+        `<w:proofErr w:type="spellStart"/><w:r><w:t>Link</w:t></w:r>` +
+        `<w:proofErr w:type="spellEnd"/></w:hyperlink>`,
       hyperlinkReadCtx,
     );
 
@@ -324,11 +325,13 @@ describe("hyperlink relationships", () => {
       sourceRelationshipId: 1,
       anchor: "section",
       history: true,
-      children: [{ text: "Link" }],
+      children: [{ proofErr: "spellStart" }, { text: "Link" }, { proofErr: "spellEnd" }],
     });
 
     const xml = stringifyParagraph(opts as never, hlWriteCtx);
     expect(xml).toContain('<w:hyperlink r:id="rId1" w:history="1" w:anchor="section">');
+    expect(xml).toContain('<w:proofErr w:type="spellStart"/><w:r><w:t>Link</w:t></w:r>');
+    expect(xml).toContain('<w:proofErr w:type="spellEnd"/></w:hyperlink>');
     expect(relationships).toHaveLength(0);
   });
 });

@@ -22,4 +22,8 @@ export interface AltChunkOptions {
   extension: "html" | "rtf" | "txt";
   /** Whether to match source formatting (w:matchSrc) */
   matchSource?: boolean;
+  /** Source part sub-path within word/ (round-trip). */
+  sourcePath?: string;
+  /** Source relationship id in word/_rels/document.xml.rels (round-trip). */
+  sourceRid?: string;
 }

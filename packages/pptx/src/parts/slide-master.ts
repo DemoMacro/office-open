@@ -153,6 +153,8 @@ function copyFacets(src: PlaceholderDefinition, dst: Partial<PlaceholderDefiniti
   if (src.effects !== undefined) dst.effects = src.effects;
   if (src.scene3d !== undefined) dst.scene3d = src.scene3d;
   if (src.shape3d !== undefined) dst.shape3d = src.shape3d;
+  if (src.extensions !== undefined) dst.extensions = src.extensions;
+  if (src.ext !== undefined) dst.ext = src.ext;
   if (src.textBody !== undefined) dst.textBody = src.textBody;
   if (src.style !== undefined) dst.style = src.style;
 }
@@ -182,6 +184,8 @@ function phSp(
       effects: def.effects,
       scene3d: def.scene3d,
       shape3d: def.shape3d,
+      extensions: def.extensions,
+      ext: def.ext,
     } as ShapePropertiesOptions,
     ctx,
   );

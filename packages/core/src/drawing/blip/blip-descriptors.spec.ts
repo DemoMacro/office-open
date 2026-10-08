@@ -159,6 +159,17 @@ describe("blipDesc", () => {
     expect(result.useLocalDpi).toBeUndefined();
   });
 
+  it("preserves an empty blip extension list", () => {
+    const xml =
+      '<a:blip xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" r:embed="rId1">' +
+      "<a:extLst/></a:blip>";
+    const result = parse(blipDesc, parseXml(xml).elements![0]!, {} as ReadContext);
+    expect(result.ext).toBe("");
+
+    const output = stringify(blipDesc, result, {} as WriteContext);
+    expect(output).toContain("<a:extLst></a:extLst>");
+  });
+
   it("round-trips embed + link with compression", () => {
     const xml = stringify(
       blipDesc,

@@ -749,6 +749,47 @@ describe("drawingDesc round-trip", () => {
     expect(output).toContain('<a:ext cx="300" cy="400"/>');
   });
 
+  it("keeps wp extent and WPS shape extent independent", () => {
+    const xml =
+      `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ` +
+      `xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ` +
+      `xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ` +
+      `xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+      `<wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Shape"/>` +
+      `<a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape">` +
+      `<wps:wsp><wps:cNvSpPr/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="300" cy="400"/></a:xfrm>` +
+      `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></wps:spPr></wps:wsp>` +
+      `</a:graphicData></a:graphic></wp:inline></w:drawing>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      wpsShape?: {
+        transformation?: {
+          width?: number;
+          height?: number;
+          shapeExtent?: { x?: number; y?: number };
+        };
+      };
+    };
+    expect(result.wpsShape?.transformation?.width).toBe(100);
+    expect(result.wpsShape?.transformation?.height).toBe(200);
+    expect(result.wpsShape?.transformation?.shapeExtent).toEqual({ x: 300, y: 400 });
+
+    const output = stringify({
+      mediaData: {
+        type: "wps" as const,
+        transformation: {
+          pixels: { x: 0, y: 0 },
+          emus: { x: 100, y: 200 },
+          shapeExtent: { x: 300, y: 400 },
+        },
+        data: { children: [] },
+      },
+    });
+    expect(output).toContain('<wp:extent cx="100" cy="200"/>');
+    expect(output).toContain('<a:ext cx="300" cy="400"/>');
+  });
+
   it("parses picture tile fills without substituting stretch", () => {
     const xml = `<?xml version="1.0"?><w:drawing xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><wp:inline><wp:extent cx="100" cy="200"/><wp:docPr id="1" name="Image"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="1" name="Image"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="{image1.png}"/><a:tile sx="50000" sy="50000"/></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="300" cy="400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`;
     const el = parseXml(xml).elements?.[0];

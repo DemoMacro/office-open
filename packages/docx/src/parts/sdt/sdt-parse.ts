@@ -35,8 +35,8 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
 
   const tag = findChild(el, "w:tag");
   if (tag) {
-    const val = attr(tag, "w:val");
-    if (val) opts.tag = val;
+    // CT_Tag requires w:val; an empty string is legal and must round-trip.
+    opts.tag = attr(tag, "w:val") ?? "";
   }
 
   const id = findChild(el, "w:id");

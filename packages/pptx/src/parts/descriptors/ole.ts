@@ -11,7 +11,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrBool, attrNum, escapeXml, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
-import type { OleOptions } from "../ole-frame";
+import type { OleIconImageOptions, OleOptions } from "../ole-frame";
 import {
   readGraphicFrameLocking,
   readGraphicFrameHyperlink,
@@ -75,6 +75,7 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         toUint8Array(opts.embed.data) as Uint8Array,
         opts.progId,
         opts.embed.fileName,
+        opts.embed.relationshipType,
       );
       oleAttrs.push(`r:id="${ref}"`);
       const fcs = opts.embed.followColorScheme
@@ -105,7 +106,9 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
       );
       oleChildren.push(
         `<p:pic><p:nvPicPr><p:cNvPr id="0" name=""/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>` +
-          `<p:blipFill><a:blip r:embed="${imageRef}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
+          `<p:blipFill><a:blip r:embed="${imageRef}"` +
+          `${opts.iconImage.compression ? ` cstate="${opts.iconImage.compression}"` : ""}/>` +
+          `<a:stretch><a:fillRect/></a:stretch></p:blipFill>` +
           `<p:spPr><a:xfrm><a:off x="${x}" y="${y}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm>` +
           `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`,
       );
@@ -179,9 +182,11 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
           | undefined;
         const sourceFileName = mediaPath?.split("/").pop();
         if (raw) {
+          const relationshipType = rId ? ctx.resolveEmbeddingType?.(rId) : undefined;
           result.embed = {
             data: raw,
             ...(sourceFileName !== undefined ? { fileName: sourceFileName } : {}),
+            ...(relationshipType !== undefined ? { relationshipType } : {}),
             ...(followCS !== undefined ? { followColorScheme: followCS } : {}),
           };
         }
@@ -207,7 +212,16 @@ export const oleDesc: CustomDescriptor<OleOptions> = {
         const imagePath = blipRId ? ctx.resolveRelationship(blipRId) : undefined;
         const raw = imagePath ? ctx.getRaw(imagePath) : undefined;
         const type = imagePath?.split(".").pop();
-        if (raw && type && result.iconImage === undefined) result.iconImage = { data: raw, type };
+        const compression = blip ? attr(blip, "cstate") : undefined;
+        if (raw && type && result.iconImage === undefined) {
+          result.iconImage = {
+            data: raw,
+            type,
+            ...(compression !== undefined
+              ? { compression: compression as OleIconImageOptions["compression"] }
+              : {}),
+          };
+        }
       }
     }
 

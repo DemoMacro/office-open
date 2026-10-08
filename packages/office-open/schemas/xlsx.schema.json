@@ -9186,31 +9186,36 @@
         },
         "xmlSpaceByPart": {
           "additionalProperties": false,
-          "description": "Source `xml:space` attribute by header/footer part; round-trip only.",
+          "description": "Source `xml:space` state per header/footer part; round-trip only — do not hand-author. `\"absent\"` suppresses fresh-authoring whitespace fallback.",
           "properties": {
             "evenFooter": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             },
             "evenHeader": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             },
             "firstFooter": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             },
             "firstHeader": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             },
             "oddFooter": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             },
             "oddHeader": {
-              "type": "string"
+              "$ref": "#/definitions/HeaderFooterXmlSpace"
             }
           },
           "type": "object"
         }
       },
       "type": "object"
+    },
+    "HeaderFooterXmlSpace": {
+      "description": "Round-trip state of a header/footer part's `xml:space` attribute.",
+      "enum": ["default", "preserve", "absent"],
+      "type": "string"
     },
     "HeadingPairOptions": {
       "additionalProperties": false,

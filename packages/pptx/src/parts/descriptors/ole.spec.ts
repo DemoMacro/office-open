@@ -32,6 +32,7 @@ const readCtxWithEmbedding = {
     if (rId === "{image1.png}") return "../media/image1.png";
     return undefined;
   },
+  resolveEmbeddingType: () => "package",
   getPart: () => undefined,
   getRaw: (path: string) => {
     if (path === "../embeddings/oleObject1.bin") return OLE_BYTES;
@@ -85,14 +86,14 @@ describe("oleDesc round-trip", () => {
       height: 150,
       progId: "Excel.Sheet.12",
       embed: { data: OLE_BYTES, followColorScheme: "full" },
-      iconImage: { data: PNG_BYTES, type: "png" },
+      iconImage: { data: PNG_BYTES, type: "png", compression: "print" },
     };
     const { parsed, xml } = roundTrip(opts, readCtxWithEmbedding);
 
     expect(xml).toContain('r:id="{ole:oleObject1.bin}"');
     // followColorScheme lives on p:embed, not on p:oleObj
     expect(xml).toContain('<p:embed followColorScheme="full"/>');
-    expect(xml).toContain('<a:blip r:embed="{image1.png}"/>');
+    expect(xml).toContain('<a:blip r:embed="{image1.png}" cstate="print"/>');
     expect(parsed.id).toBe(100);
     expect(parsed.name).toBe("Test OLE");
     expect(parsed.x).toBe(50);
@@ -103,9 +104,11 @@ describe("oleDesc round-trip", () => {
     expect(parsed.embed).toBeDefined();
     expect(parsed.embed!.data).toEqual(OLE_BYTES);
     expect(parsed.embed!.followColorScheme).toBe("full");
+    expect(parsed.embed!.relationshipType).toBe("package");
     expect(parsed.iconImage).toBeDefined();
     expect(parsed.iconImage!.data).toEqual(PNG_BYTES);
     expect(parsed.iconImage!.type).toBe("png");
+    expect(parsed.iconImage!.compression).toBe("print");
   });
 
   it("reads the canonical embedded branch without its fallback picture", () => {

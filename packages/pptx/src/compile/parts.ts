@@ -267,7 +267,8 @@ export function compileTailParts(
   // Slide comments
   for (let i = 0; i < artifacts.slideComments.length; i++) {
     if (artifacts.slideComments[i]) {
-      files[`ppt/comments/comment${i + 1}.xml`] = encoder.encode(
+      const commentPath = artifacts.slideCommentPaths[i] ?? `ppt/comments/comment${i + 1}.xml`;
+      files[commentPath] = encoder.encode(
         XML_DECL + (slideCommentsDesc.stringify(artifacts.slideComments[i]!, descCtx) ?? ""),
       );
     }

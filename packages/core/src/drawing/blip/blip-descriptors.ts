@@ -431,6 +431,7 @@ export const blipDesc: CustomDescriptor<BlipDescriptorOptions> = {
         const inner = (extLst.elements ?? []).map((e) => stringifyElement(e)).join("");
         if (inner) result.ext = inner;
       } else {
+        if ((extLst.elements ?? []).length === 0) result.ext = "";
         for (const ext of extLst.elements ?? []) {
           if (ext.name !== "a:ext" || !extUriMatches(attr(ext, "uri"), USE_LOCAL_DPI_EXT_URI))
             continue;

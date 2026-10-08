@@ -511,3 +511,17 @@ export function resolveRelationshipTarget(partPath: string, target: string): str
   }
   return dirParts.join("/");
 }
+
+/** Relative relationship target from one package part to another — the
+ *  inverse of {@link resolveRelationshipTarget} for registration targets. */
+export function relativePartTarget(ownerPath: string, targetPath: string): string {
+  const owner = ownerPath.split("/").slice(0, -1);
+  const target = targetPath.split("/");
+  let common = 0;
+  while (common < owner.length && common < target.length - 1 && owner[common] === target[common])
+    common++;
+  return [
+    ...Array.from({ length: owner.length - common }, () => ".."),
+    ...target.slice(common),
+  ].join("/");
+}

@@ -26,6 +26,7 @@ import type { XlsxReadContext } from "../../context";
 import { parseColorOptions, type ColorOptions } from "../../shared/color";
 import { parseAutoFilter, parseSortStateEl } from "../auto-filter";
 import { parsePivotArea } from "../pivot-table/parse";
+import { XlsxParseError } from "../pivot/pivot-xml";
 import { parseCfColor, parseCfvo, parsePageBreaks } from "./parse";
 import { parseSheetDataRows } from "./sheet-data";
 import type {
@@ -663,7 +664,7 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     // Header/footer
     const hfEl = findChild(el, "headerFooter");
     if (hfEl) {
-      result.headerFooter = parseHeaderFooterEl(hfEl);
+      result.headerFooter = parseHeaderFooterEl(hfEl, "xl/worksheets/worksheet.xml");
     }
 
     // Ignored errors
@@ -984,7 +985,12 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         const pageSetupEl = findChild(vEl, "pageSetup");
         if (pageSetupEl) view.pageSetup = parsePageSetupEl(pageSetupEl);
         const headerFooterEl = findChild(vEl, "headerFooter");
-        if (headerFooterEl) view.headerFooter = parseHeaderFooterEl(headerFooterEl);
+        if (headerFooterEl) {
+          view.headerFooter = parseHeaderFooterEl(
+            headerFooterEl,
+            "xl/worksheets/worksheet.xml/customSheetViews",
+          );
+        }
         const autoFilterEl = findChild(vEl, "autoFilter");
         if (autoFilterEl) view.autoFilter = parseAutoFilter(autoFilterEl);
         views.push(view);
@@ -1362,7 +1368,7 @@ export function parsePageSetupEl(
 }
 
 /** Parse a CT_HeaderFooter element. */
-export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
+export function parseHeaderFooterEl(el: Element, partPath: string): HeaderFooterOptions {
   const hf: HeaderFooterOptions = {};
   const differentOddEven = parseOnOff(attr(el, "differentOddEven"));
   const differentFirst = parseOnOff(attr(el, "differentFirst"));
@@ -1387,9 +1393,19 @@ export function parseHeaderFooterEl(el: Element): HeaderFooterOptions {
     if (!part) continue;
     hf[name] = textOf(part);
     const xmlSpace = attr(part, "xml:space");
-    if (xmlSpace !== undefined) {
+    if (xmlSpace === "default" || xmlSpace === "preserve") {
       hf.xmlSpaceByPart ??= {};
       hf.xmlSpaceByPart[name] = xmlSpace;
+    } else if (xmlSpace !== undefined) {
+      throw new XlsxParseError(
+        partPath,
+        `headerFooter/${name}`,
+        name,
+        `invalid xml:space "${xmlSpace}"; expected "default" or "preserve"`,
+      );
+    } else if (/^\s|\s$/.test(hf[name] ?? "")) {
+      hf.xmlSpaceByPart ??= {};
+      hf.xmlSpaceByPart[name] = "absent";
     }
   }
   return hf;

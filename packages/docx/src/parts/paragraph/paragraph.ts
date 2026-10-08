@@ -129,7 +129,31 @@ export type TrackChangeChild =
   | { pageBreak: true }
   | { columnBreak: true }
   | { complexField: ComplexFieldOptions }
-  | { formField: FormFieldOptions }
+  | {
+      formField: FormFieldOptions;
+      /** Revision save ID of the begin run (w:rsidR, round-trip). */
+      additionRsid?: LongHexNumber;
+      /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
+      runPropertiesRsid?: LongHexNumber;
+      /** Control-run properties shared by begin/separate (round-trip). */
+      rPrXml?: string;
+      /** Revision save ID of the separator run (w:rsidR, round-trip). */
+      separatorAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
+      separatorRunPropertiesRsid?: LongHexNumber;
+      /** Revision save ID of the result run (w:rsidR, round-trip). */
+      resultAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
+      resultRunPropertiesRsid?: LongHexNumber;
+      /** Result-run properties (round-trip; differs from the control rPr). */
+      resultRPrXml?: string;
+      /** Revision save ID of the end run (w:rsidR, round-trip). */
+      endAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
+      endRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim run-properties of the end fldChar run (round-trip). */
+      endRPrXml?: string;
+    }
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
   // Drawings inserted as revisions (w:ins around the drawing's w:r)
   | { picture: PictureOptions }
@@ -261,8 +285,33 @@ export type ParagraphChild =
   | { conflictDel: ChangedProperties & { children: TrackChangeChild[] } }
   // Simple field
   | { simpleField: SimpleFieldOptions }
-  // Form field (checkbox, dropdown list, text input)
-  | { formField: FormFieldOptions }
+  // Form field (checkbox, dropdown list, text input) — control-run rsids and
+  // run properties round-trip like ComplexFieldOptions.
+  | {
+      formField: FormFieldOptions;
+      /** Revision save ID of the begin run (w:rsidR, round-trip). */
+      additionRsid?: LongHexNumber;
+      /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
+      runPropertiesRsid?: LongHexNumber;
+      /** Control-run properties shared by begin/separate (round-trip). */
+      rPrXml?: string;
+      /** Revision save ID of the separator run (w:rsidR, round-trip). */
+      separatorAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
+      separatorRunPropertiesRsid?: LongHexNumber;
+      /** Revision save ID of the result run (w:rsidR, round-trip). */
+      resultAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
+      resultRunPropertiesRsid?: LongHexNumber;
+      /** Result-run properties (round-trip; differs from the control rPr). */
+      resultRPrXml?: string;
+      /** Revision save ID of the end run (w:rsidR, round-trip). */
+      endAdditionRsid?: LongHexNumber;
+      /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
+      endRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim run-properties of the end fldChar run (round-trip). */
+      endRPrXml?: string;
+    }
   // Complex field (PAGE/DATE/TOC/HYPERLINK... — see ComplexFieldOptions)
   | { complexField: ComplexFieldOptions }
   // Sequential identifier (SEQ field)

@@ -175,6 +175,8 @@ export interface SlideOptions {
   /** p:clrMapOvr — override the master color mapping for this slide. */
   colorMappingOverride?: ColorMappingOverrideOptions;
   comments?: SlideCommentOptions[];
+  /** Source comments package path; round-trip uses it to keep part numbering. */
+  commentSourcePath?: string;
   layout?: SlideLayoutType | string;
   /** Stable layout lookup key — round-trip uses the source p:sldLayoutId @id when present. */
   layoutKey?: string;
@@ -183,6 +185,10 @@ export interface SlideOptions {
   showMasterPlaceholderAnimations?: boolean;
   /** Hidden slide — excluded from slideshow (emits p:sld/`@show`="0"). */
   hidden?: boolean;
+  /** Source lexical form of p:sld/`@show`; round-trip only — do not hand-author. */
+  showRaw?: "0" | "1";
+  /** Omit `p:spTree/p:grpSpPr/a:xfrm` to preserve a transformless source shape tree. */
+  groupTransformless?: boolean;
   controls?: ControlOptions[];
   customerData?: SlideCustomerDataReferenceOptions[];
   slideSync?: SlideSyncOptions;

@@ -863,6 +863,26 @@ describe("Worksheet", () => {
       const result = worksheetDesc.parse(el, {} as unknown as ReadContext) as WorksheetOptions;
       expect(result.headerFooter).toEqual({ differentOddEven: false, differentFirst: false });
     });
+
+    it("preserves absent xml:space on whitespace-only edges", () => {
+      const source =
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        "<sheetData/><headerFooter><oddHeader>Page </oddHeader></headerFooter></worksheet>";
+      const el = parseXml(source).elements?.[0];
+      if (!el) throw new Error("parsed document has no root element");
+      const parsed = worksheetDesc.parse(el, {} as unknown as ReadContext) as WorksheetOptions;
+      expect(parsed.headerFooter?.oddHeader).toBe("Page ");
+      expect(parsed.headerFooter?.xmlSpaceByPart?.oddHeader).toBe("absent");
+
+      const generated = buildWorksheetXml({ ...parsed, rows: [] }, {});
+      expect(generated).toContain("<oddHeader>Page </oddHeader>");
+      expect(generated).not.toContain('xml:space="preserve"');
+    });
+
+    it("adds xml:space for fresh authoring with edge whitespace", () => {
+      const xml = buildWorksheetXml({ rows: [], headerFooter: { oddHeader: "Page " } }, {});
+      expect(xml).toContain('<oddHeader xml:space="preserve">Page </oddHeader>');
+    });
   });
 
   describe("sheetView", () => {

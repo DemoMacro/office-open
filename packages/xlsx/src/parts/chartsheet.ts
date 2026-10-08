@@ -371,7 +371,7 @@ export const chartsheetDesc: CustomDescriptor<ChartsheetDescriptorOptions> = {
     // headerFooter — CT_HeaderFooter, shared with worksheet
     const headerFooterEl = findChild(el, "headerFooter");
     if (headerFooterEl) {
-      result.headerFooter = parseHeaderFooterEl(headerFooterEl);
+      result.headerFooter = parseHeaderFooterEl(headerFooterEl, "xl/chartsheets/chartsheet.xml");
     }
 
     return result as ChartsheetDescriptorOptions;

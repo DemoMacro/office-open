@@ -34,7 +34,7 @@ import { SmartArtCollection } from "@office-open/core/smartart";
 import type { AuthorEntry, CommentEntry } from "@parts/comment";
 import { stringifyControls, stringifyCustDataLst } from "@parts/slide/c-sld";
 import type { SlideSyncOptions } from "@parts/slide/slide-sync-properties";
-import { SP_TREE_HEADER } from "@shared/constants";
+import { stringifySpTreeHeader } from "@shared/constants";
 import type { PresentationOptions, SlideOptions } from "@shared/file";
 import { buildHeaderFooterShapes } from "@shared/header-footer";
 
@@ -67,7 +67,8 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   const sldAttrs: string[] = [];
   if (slideOpts.showMasterShapes === false) sldAttrs.push(' showMasterSp="0"');
   if (slideOpts.showMasterPlaceholderAnimations === false) sldAttrs.push(' showMasterPhAnim="0"');
-  if (slideOpts.hidden) sldAttrs.push(' show="0"');
+  if (slideOpts.showRaw) sldAttrs.push(` show="${slideOpts.showRaw}"`);
+  else if (slideOpts.hidden) sldAttrs.push(' show="0"');
   parts.push(
     `<p:sld xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"${sldAttrs.join("")}>`,
   );
@@ -79,7 +80,7 @@ export function stringifySlide(slideOpts: SlideOptions, ctx: PptxWriteContext): 
   }
 
   parts.push("<p:spTree>");
-  parts.push(SP_TREE_HEADER);
+  parts.push(stringifySpTreeHeader(1, "", undefined, slideOpts.groupTransformless));
 
   if (slideOpts.children) {
     for (const child of slideOpts.children) {
@@ -195,7 +196,7 @@ export function buildCommentData(
         };
         authorMap.set(c.author, author);
       }
-      author.lastIdx = c.idx ?? author.lastIdx + 1;
+      author.lastIdx = c.idx === undefined ? author.lastIdx + 1 : Math.max(author.lastIdx, c.idx);
 
       commentEntries.push({
         authorId: c.authorId ?? author.id,
@@ -256,6 +257,7 @@ export interface SlideCompileArtifacts {
   slideSyncIndexMap: Map<number, number>;
   commentAuthors: AuthorEntry[] | undefined;
   slideComments: (CommentEntry[] | undefined)[];
+  slideCommentPaths: (string | undefined)[];
 }
 
 /** Run the per-slide compile: map every slide's XML and relationships and
@@ -296,6 +298,7 @@ export function compileSlideParts(
     slides,
     existingAuthors,
   );
+  const slideCommentPaths = slides.map((slide) => slide.commentSourcePath);
 
   // Group passthrough rels by source part once — the per-slide loop below
   // looks its own slice up instead of re-filtering the full list each time.
@@ -353,15 +356,14 @@ export function compileSlideParts(
       path: `ppt/slides/slide${i + 1}.xml`,
     };
 
+    const commentFileName = slideCommentPaths[i]?.split("/").pop() ?? `comment${i + 1}.xml`;
+    const commentTarget = `../comments/${commentFileName}`;
     if (
       slideCommentEntries[i] &&
       !currentSlideRels.hasRelationshipKind("comments") &&
-      !currentSlideRels.hasRelationship(
-        RELATIONSHIP_TYPES.comments,
-        `../comments/comment${i + 1}.xml`,
-      )
+      !currentSlideRels.hasRelationship(RELATIONSHIP_TYPES.comments, commentTarget)
     ) {
-      currentSlideRels.add(RELATIONSHIP_TYPES.comments, `../comments/comment${i + 1}.xml`);
+      currentSlideRels.add(RELATIONSHIP_TYPES.comments, commentTarget);
     }
 
     const notesSlideIndex = notesSlideIndexMap.get(i);
@@ -391,15 +393,16 @@ export function compileSlideParts(
     // registration so the ownership test sees them all. claimSourceRel keeps
     // the source id when its slot is free — verbatim slide islands reference
     // the source rIds and renumbering would dangle them. Media-targeted rels
-    // whose kind the model already owns mean the source rel was absorbed
-    // under a renamed target — skip on kind alone or the stale target would
-    // re-emit dangling.
+    // whose kind+target the model already owns mean the source rel was
+    // absorbed; different targets of the same kind are independent package
+    // members (legacy VML art beside a modeled picture, for example).
     for (const rel of passthroughRelationships ?? []) {
       if (rel.source !== `ppt/slides/slide${i + 1}.xml`) continue;
       const kind = rel.relationshipType.split("/").pop()!;
       if (
-        (MEDIA_REL_KINDS.has(kind) || kind === "slideLayout") &&
-        currentSlideRels.hasRelationshipKind(kind)
+        (kind === "slideLayout" && currentSlideRels.hasRelationshipKind(kind)) ||
+        (MEDIA_REL_KINDS.has(kind) &&
+          currentSlideRels.hasRelationship(rel.relationshipType, rel.target))
       ) {
         continue;
       }
@@ -419,6 +422,7 @@ export function compileSlideParts(
     slideSyncIndexMap,
     commentAuthors: commentAuthorEntries,
     slideComments: slideCommentEntries,
+    slideCommentPaths,
   };
 }
 
@@ -597,8 +601,12 @@ function wireSlidePlaceholderBatches(
     const sourceOleIds = new Map<string, string>();
     for (const oleRef of slideOleRefs) {
       const target = `../embeddings/${oleRef.fileName}`;
+      const relationshipType =
+        descCtx.embeddings.find((entry) => entry.fileName === oleRef.fileName)?.relationshipType ??
+        "oleObject";
+      const relationshipUri = oleRelationshipUri(relationshipType);
       const sourceRel = sourceRelationships?.find(
-        (rel) => rel.relationshipType.split("/").pop() === "oleObject" && rel.target === target,
+        (rel) => rel.relationshipType === relationshipUri && rel.target === target,
       );
       if (!sourceRel) continue;
       rels.claimSourceRel(sourceRel);
@@ -613,13 +621,21 @@ function wireSlidePlaceholderBatches(
       if (sourceOleIds.has(`ole:${oleRef.fileName}`)) continue;
       rels.addRelationship(
         oleOffset + oi,
-        RELATIONSHIP_TYPES.oleObject,
+        oleRelationshipUri(
+          descCtx.embeddings.find((entry) => entry.fileName === oleRef.fileName)?.relationshipType,
+        ),
         `../embeddings/${oleRef.fileName}`,
       );
     }
   }
 
   return replacedSlideXml;
+}
+
+function oleRelationshipUri(
+  relationshipType?: "oleObject" | "package",
+): typeof RELATIONSHIP_TYPES.oleObject | typeof RELATIONSHIP_TYPES.package {
+  return relationshipType === "package" ? RELATIONSHIP_TYPES.package : RELATIONSHIP_TYPES.oleObject;
 }
 
 /** Reserve the slide's captured ids whose rels a claim will re-emit — the
@@ -660,5 +676,11 @@ function absorbSlideSourceKinds(
   if (collectPlaceholderKeys(slideXml, "hlink:").length > 0) slideAbsorbedKinds.add("hyperlink");
   if (slide.notes) slideAbsorbedKinds.add("notesSlide");
   if (slide.comments) slideAbsorbedKinds.add("comments");
-  reserveClaimedSourceRids(rels, source, passthroughRelationships, slideAbsorbedKinds);
+  reserveClaimedSourceRids(
+    rels,
+    source,
+    passthroughRelationships,
+    slideAbsorbedKinds,
+    new Set(slideMediaData.map((mediaItem) => `../media/${mediaItem.fileName}`)),
+  );
 }

@@ -133,6 +133,8 @@ export interface DocxPartRefs {
   afChunks: Map<string, string>;
   /** Sub-documents (word/subdocs/subdocN.docx) keyed by rId */
   subDocs: Map<string, string>;
+  /** Externally referenced sub-documents (w:subDoc/@r:id → target URL). */
+  externalSubDocs: Map<string, string>;
   /** Per-part Word 2010 text-box relationships, partPath → (rId → partPath). */
   partTextBoxes: Map<string, Map<string, string>>;
   /** word/bibliography.xml */
@@ -235,6 +237,7 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     partExternalImages: new Map(),
     afChunks: new Map(),
     subDocs: new Map(),
+    externalSubDocs: new Map(),
     partTextBoxes: new Map(),
     partHyperlinks: new Map(),
   };
@@ -286,7 +289,11 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
     } else if (type.includes("/aFChunk")) {
       refs.afChunks.set(id, path);
     } else if (type.includes("/subDocument")) {
-      refs.subDocs.set(id, path);
+      if (attr(child, "TargetMode") === "External") {
+        refs.externalSubDocs.set(id, target);
+      } else {
+        refs.subDocs.set(id, path);
+      }
     } else if (type.includes("/bibliography")) {
       refs.bibliography = path;
     } else if (type.endsWith("/theme")) {
@@ -832,6 +839,12 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     if (glossaryEl) {
       const glossaryRels = docx.doc.get(partPathToRelsPath(docx.partRefs.glossary));
       const settingsPath = glossaryCompanionPath(docx.partRefs.glossary, glossaryRels, "settings");
+      const footnotesPath = glossaryCompanionPath(
+        docx.partRefs.glossary,
+        glossaryRels,
+        "footnotes",
+      );
+      const endnotesPath = glossaryCompanionPath(docx.partRefs.glossary, glossaryRels, "endnotes");
       const stylesPath = glossaryCompanionPath(docx.partRefs.glossary, glossaryRels, "styles");
       const webSettingsPath = glossaryCompanionPath(
         docx.partRefs.glossary,
@@ -851,6 +864,8 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       const numberingEl = numberingPath ? docx.doc.get(numberingPath) : undefined;
       const stylesEl = stylesPath ? docx.doc.get(stylesPath) : undefined;
       const settingsEl = settingsPath ? docx.doc.get(settingsPath) : undefined;
+      const footnotesEl = footnotesPath ? docx.doc.get(footnotesPath) : undefined;
+      const endnotesEl = endnotesPath ? docx.doc.get(endnotesPath) : undefined;
       const webSettingsEl = webSettingsPath ? docx.doc.get(webSettingsPath) : undefined;
       const fontTableEl = fontTablePath ? docx.doc.get(fontTablePath) : undefined;
       const previousNumberingCache = ctx.numberingCache;
@@ -900,6 +915,40 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
             parseNumberingDefinitions(numberingEl, parseParagraphProperties, ctx),
           ) ?? { abstractNumberings: [] };
           glossaryResult.numberingPartName = numberingPath.slice("word/".length);
+        }
+        if (glossaryResult && footnotesEl && footnotesPath) {
+          const fnResult = ctx.withPart(footnotesPath, () => footnotesDesc.parse(footnotesEl, ctx));
+          const glossaryFootnotes: NonNullable<DocumentOptions["footnotes"]> = [];
+          for (const [id, paragraphs] of fnResult.notes) {
+            glossaryFootnotes.push({ id, children: paragraphs });
+          }
+          if (glossaryFootnotes.length > 0) glossaryResult.footnotes = glossaryFootnotes;
+          glossaryResult.footnoteSeparators = {
+            separator: fnResult.separator ?? null,
+            continuationSeparator: fnResult.continuationSeparator ?? null,
+            ...(fnResult.continuationNotice
+              ? { continuationNotice: fnResult.continuationNotice }
+              : {}),
+          };
+          glossaryResult.footnotesPartName = footnotesPath.slice("word/".length);
+          ctx.consumedPartPaths.add(footnotesPath);
+        }
+        if (glossaryResult && endnotesEl && endnotesPath) {
+          const enResult = ctx.withPart(endnotesPath, () => endnotesDesc.parse(endnotesEl, ctx));
+          const glossaryEndnotes: NonNullable<DocumentOptions["endnotes"]> = [];
+          for (const [id, paragraphs] of enResult.notes) {
+            glossaryEndnotes.push({ id, children: paragraphs });
+          }
+          if (glossaryEndnotes.length > 0) glossaryResult.endnotes = glossaryEndnotes;
+          glossaryResult.endnoteSeparators = {
+            separator: enResult.separator ?? null,
+            continuationSeparator: enResult.continuationSeparator ?? null,
+            ...(enResult.continuationNotice
+              ? { continuationNotice: enResult.continuationNotice }
+              : {}),
+          };
+          glossaryResult.endnotesPartName = endnotesPath.slice("word/".length);
+          ctx.consumedPartPaths.add(endnotesPath);
         }
       } finally {
         ctx.numberingCache = previousNumberingCache;
@@ -1041,6 +1090,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     return ids;
   };
   for (const partPath of [
+    "word/document.xml",
     "word/settings.xml",
     "word/footnotes.xml",
     "word/endnotes.xml",
@@ -1077,7 +1127,11 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     }
   }
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
-  if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;
+  // altChunk relationships are modeled (AltChunkOptions.sourceRid/sourcePath
+  // round-trip the id and target), so the passthrough copy would duplicate
+  // the rel the writer re-emits.
+  const modeledRels = passthroughRels.filter((rel) => !rel.relationshipType.includes("/aFChunk"));
+  if (modeledRels.length > 0) opts.passthroughRelationships = modeledRels;
   if (docx.rootRelationships.length > 0)
     opts.passthroughRelationships = [
       ...(opts.passthroughRelationships ?? []),

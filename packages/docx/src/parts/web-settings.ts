@@ -226,8 +226,10 @@ function parseFrameEl(el: Element): WebFrameOptions {
 
   const source = findChild(el, "w:sourceFileName");
   if (source) {
-    const val = attr(source, "r:id");
-    if (val) opts.sourceRId = val;
+    const rid = attr(source, "r:id");
+    if (rid) opts.sourceRId = rid;
+    const val = attr(source, "w:val");
+    if (val) opts.sourceFileName = val;
   }
 
   const marW = findChild(el, "w:marW");
@@ -253,8 +255,10 @@ function parseFrameEl(el: Element): WebFrameOptions {
 
   const longDesc = findChild(el, "w:longDesc");
   if (longDesc) {
-    const val = attr(longDesc, "r:id");
-    if (val) opts.longDescRId = val;
+    const rid = attr(longDesc, "r:id");
+    if (rid) opts.longDescRId = rid;
+    const val = attr(longDesc, "w:val");
+    if (val) opts.longDesc = val;
   }
 
   return opts as WebFrameOptions;
@@ -435,12 +439,14 @@ export function frameXml(f: WebFrameOptions): string {
   if (f.name !== undefined) parts.push(wsStringVal("w:name", f.name));
   if (f.title !== undefined) parts.push(wsStringVal("w:title", f.title));
   if (f.sourceRId !== undefined) parts.push(`<w:sourceFileName r:id="${escapeXml(f.sourceRId)}"/>`);
+  if (f.sourceFileName !== undefined) parts.push(wsStringVal("w:sourceFileName", f.sourceFileName));
   if (f.marginWidth !== undefined) parts.push(wsNumVal("w:marW", f.marginWidth));
   if (f.marginHeight !== undefined) parts.push(wsNumVal("w:marH", f.marginHeight));
   if (f.scrollbar !== undefined) parts.push(`<w:scrollbar w:val="${f.scrollbar}"/>`);
   if (f.noResizeAllowed) parts.push("<w:noResizeAllowed/>");
   if (f.linkedToFile) parts.push("<w:linkedToFile/>");
   if (f.longDescRId !== undefined) parts.push(`<w:longDesc r:id="${escapeXml(f.longDescRId)}"/>`);
+  if (f.longDesc !== undefined) parts.push(wsStringVal("w:longDesc", f.longDesc));
   parts.push("</w:frame>");
   return parts.join("");
 }

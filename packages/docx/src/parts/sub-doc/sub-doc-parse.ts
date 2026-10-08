@@ -20,6 +20,12 @@ export function parseSubDoc(el: Element, ctx: DocxReadContext): SubDocOptions {
   if (!rId) {
     throw new Error("w:subDoc missing r:id attribute");
   }
+  // Externally linked sub-documents keep the verbatim relationship id and
+  // target URL — there is no embedded part to read.
+  const externalUrl = ctx.docx.partRefs.externalSubDocs.get(rId);
+  if (externalUrl !== undefined) {
+    return { sourceRid: rId, sourceUrl: externalUrl };
+  }
 
   const path = ctx.docx.partRefs.subDocs.get(rId);
   if (!path) {
@@ -31,5 +37,5 @@ export function parseSubDoc(el: Element, ctx: DocxReadContext): SubDocOptions {
     throw new Error(`SubDoc data not found at ${path}`);
   }
 
-  return { data };
+  return { data, sourceRid: rId };
 }

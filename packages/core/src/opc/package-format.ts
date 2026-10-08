@@ -133,3 +133,27 @@ export function ooxmlPackageFormatInfo(
   if (!match) throw new Error(`Unknown OOXML package variant: ${family}/${variant}`);
   return match;
 }
+
+/**
+ * Main-part Override content type for the output package. The preserved
+ * source declaration wins so a dotx round-trip keeps template.main; callers
+ * re-typing a package (aggregate dispatch to an explicit format) rewrite the
+ * declaration before compiling. Fresh compiles without a source table fall
+ * back to the requested variant's main content type.
+ */
+export function resolveMainPartContentType(
+  family: OoxmlPackageFamily,
+  source: { overrides: ReadonlyArray<{ partName: string; contentType: string }> } | undefined,
+  mainPartPath: string,
+  fallback: string,
+): string {
+  const partName = `/${mainPartPath}`.toLowerCase();
+  const declared = source?.overrides.find(
+    (override) => override.partName.toLowerCase() === partName,
+  )?.contentType;
+  if (!declared) return fallback;
+  const isFamilyMain = Object.values(OOXML_PACKAGE_FORMATS).some(
+    (format) => format.family === family && format.mainContentType === declared,
+  );
+  return isFamilyMain ? declared : fallback;
+}

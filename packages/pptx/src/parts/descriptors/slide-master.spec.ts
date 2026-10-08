@@ -249,6 +249,19 @@ describe("slide-master placeholder facets round-trip", () => {
     expect(body.fill?.color?.value).toBe("FF0000");
   });
 
+  it("round-trips raw shape-property extensions on a placeholder", () => {
+    const extension = '<x:payload xmlns:x="urn:x"/>';
+    const result = roundTrip({
+      placeholders: {
+        date: { x: 100, y: 100, width: 200, height: 200, ext: extension },
+      },
+    });
+    const date = result.placeholders?.date as {
+      ext?: string;
+    };
+    expect(date.ext).toBe(extension);
+  });
+
   it("does not carry the default rect geometry as a facet", () => {
     // rect is the placeholder default — extraction omits it so the fresh emit
     // path stays byte-equivalent with MS Office's master output.

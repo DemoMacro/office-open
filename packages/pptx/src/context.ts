@@ -30,6 +30,8 @@ export class ParseContext {
     public slideRels: Map<string, string>,
     /** Relationship IDs explicitly marked TargetMode="External". */
     public externalRelIds: ReadonlySet<string> = new Set(),
+    /** Embedding relationship ID → OPC embedding kind. */
+    public embeddingTypes: ReadonlyMap<string, EmbeddingData["relationshipType"]> = new Map(),
   ) {}
 }
 
@@ -166,8 +168,13 @@ export class PptxWriteContext implements WriteContext {
    * `{ole:oleObjectN.bin}` placeholder. The compiler rewrites the placeholder
    * to a real relationship id and adds the oleObject relationship per slide.
    */
-  public addOle(data: Uint8Array, progId?: string, fileName?: string): string {
-    const entry = this._embeddings.addEmbedding(data, fileName, progId);
+  public addOle(
+    data: Uint8Array,
+    progId?: string,
+    fileName?: string,
+    relationshipType?: EmbeddingData["relationshipType"],
+  ): string {
+    const entry = this._embeddings.addEmbedding(data, fileName, progId, relationshipType);
     return `{ole:${entry.fileName}}`;
   }
 
@@ -353,6 +360,10 @@ export class PptxReadContext implements ReadContext {
 
   public isExternalRelationship(rId: string): boolean {
     return this._parseCtx.externalRelIds.has(rId);
+  }
+
+  public resolveEmbeddingType(rId: string): EmbeddingData["relationshipType"] {
+    return this._parseCtx.embeddingTypes.get(rId);
   }
 
   public getPart(path: string) {

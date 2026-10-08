@@ -7,14 +7,26 @@
  * @module
  */
 
-import { parseOnOff } from "@office-open/core";
+import {
+  parseOnOff,
+  partPathToRelsPath,
+  RELATIONSHIP_TYPES,
+  relativePartTarget,
+  Relationships,
+  resolveRelationshipTarget,
+} from "@office-open/core";
 import {
   parseSectionPropertiesEl,
   sectionPropertiesDesc,
+  type SectionPropertiesDescriptorOptions,
 } from "@parts/document/body/section-properties/descriptor";
+import type { HeaderFooterGroup } from "@parts/document/body/section-properties/section-properties";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { documentNamespaceAttributes } from "@parts/document/document-attributes";
+import type { EndnoteOptions, EndnoteSeparator } from "@parts/endnotes/descriptor";
 import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
+import type { FootnoteOptions, FootnoteSeparator } from "@parts/footnotes/descriptor";
+import type { HeaderFooterReference } from "@parts/header-footer";
 import type { SettingsOptions } from "@parts/settings/settings";
 import type { StylesOptions } from "@parts/styles/styles";
 import type { WebSettingsOptions } from "@parts/web-settings";
@@ -87,12 +99,26 @@ export const DocPartBehavior = {
 
 export type DocPartBehavior = (typeof DocPartBehavior)[keyof typeof DocPartBehavior];
 
+/** Header/footer content slots referenced by one docPart section. Round-trip
+ *  pins the source part names; fresh authoring auto-numbers. */
+export interface DocPartHeaderFooterOptions {
+  default?: SectionChild[];
+  first?: SectionChild[];
+  even?: SectionChild[];
+  /** Source part name per slot relative to word/ (round-trip only). */
+  partNames?: { default?: string; first?: string; even?: string };
+}
+
 /** A section within a building block body (CT_Body section boundary). */
 export interface DocPartSectionOptions {
   /** Block-level content in this section. */
   children: SectionChild[];
   /** Section properties carried by w:pPr/w:sectPr or terminal w:sectPr. */
   properties?: SectionPropertiesOptions;
+  /** Headers referenced by this section's w:headerReference elements. */
+  headers?: DocPartHeaderFooterOptions;
+  /** Footers referenced by this section's w:footerReference elements. */
+  footers?: DocPartHeaderFooterOptions;
 }
 
 /** A single building block (CT_DocPart) */
@@ -155,6 +181,26 @@ export interface GlossaryDocumentOptions {
   fonts?: EmbeddedFontOptions[];
   /** Glossary font-table path relative to word/ (round-trip only). */
   fontTablePartName?: string;
+  /** Independent footnotes part owned by the glossary. */
+  footnotes?: FootnoteOptions[];
+  /** Glossary footnotes path relative to word/ (round-trip only). */
+  footnotesPartName?: string;
+  /** Glossary footnote separators — round-tripped verbatim from the source. */
+  footnoteSeparators?: {
+    separator?: FootnoteSeparator | null;
+    continuationSeparator?: FootnoteSeparator | null;
+    continuationNotice?: FootnoteSeparator;
+  };
+  /** Independent endnotes part owned by the glossary. */
+  endnotes?: EndnoteOptions[];
+  /** Glossary endnotes path relative to word/ (round-trip only). */
+  endnotesPartName?: string;
+  /** Glossary endnote separators — round-tripped verbatim from the source. */
+  endnoteSeparators?: {
+    separator?: EndnoteSeparator | null;
+    continuationSeparator?: EndnoteSeparator | null;
+    continuationNotice?: EndnoteSeparator;
+  };
   /** Building blocks */
   parts: DocPartOptions[];
 }
@@ -167,7 +213,7 @@ import type { Element } from "@office-open/xml";
 
 import { stringifyBodyChild } from "../body";
 import type { BodyContext, DocxReadContext } from "../context";
-import { parseSectionChild } from "../parse/body";
+import { parseHeaderFooterPartChildren, parseSectionChild } from "../parse/body";
 import type { NumberingOptions } from "../parts/numbering/numbering";
 
 const GLOSSARY_NS = documentNamespaceAttributes([
@@ -188,13 +234,98 @@ const GLOSSARY_NS = documentNamespaceAttributes([
   "wps",
 ]);
 
+/** Claim a glossary header/footer relationship id from the source package
+ *  rels, falling back to the next fresh id. */
+function claimDocPartReferenceId(
+  ctx: BodyContext,
+  glossaryPartPath: string,
+  type: string,
+  partName: string,
+  rels: Relationships,
+): number {
+  const source = (ctx.fileData._options.passthroughRelationships ?? []).find(
+    (rel) =>
+      rel.source === glossaryPartPath &&
+      rel.relationshipType === type &&
+      (rel.target === partName || rel.target.endsWith(`/${partName}`)),
+  );
+  const claimed = source ? /^rId(\d+)$/.exec(source.rId) : undefined;
+  if (claimed && !rels.hasId(claimed[0]!)) return Number(claimed[1]!);
+  return rels.nextRelationshipId;
+}
+
+/** Register one section's header/footer parts on the glossary rels and
+ *  collect the entries for the compile phase to serialize. Two slots may
+ *  share one part — its relationship and entry are registered once. */
+function buildDocPartHeaderFooterRefs(
+  section: DocPartSectionOptions,
+  kind: "header" | "footer",
+  glossaryPartPath: string,
+  ctx: BodyContext,
+): HeaderFooterGroup<HeaderFooterReference> | undefined {
+  const slots = kind === "header" ? section.headers : section.footers;
+  if (!slots) return undefined;
+  const rels = ctx.viewWrapper.relationships;
+  const type = kind === "header" ? RELATIONSHIP_TYPES.header : RELATIONSHIP_TYPES.footer;
+  const entries =
+    kind === "header" ? ctx.fileData.glossaryHeaderParts : ctx.fileData.glossaryFooterParts;
+  const refs: HeaderFooterGroup<HeaderFooterReference> = {};
+  for (const slot of ["default", "first", "even"] as const) {
+    const children = slots[slot];
+    if (!children) continue;
+    let partName = slots.partNames?.[slot];
+    if (!partName) {
+      let n = entries.length + 1;
+      partName = `glossary/${kind}${n}.xml`;
+      while (entries.some((entry) => entry.partName === partName)) {
+        n++;
+        partName = `glossary/${kind}${n}.xml`;
+      }
+    }
+    const target = relativePartTarget(glossaryPartPath, `word/${partName}`);
+    let referenceId: number;
+    const existing = rels.idOf(type, target);
+    const existingMatch = existing ? /^rId(\d+)$/.exec(existing) : undefined;
+    if (existingMatch) {
+      referenceId = Number(existingMatch[1]!);
+    } else {
+      referenceId = claimDocPartReferenceId(ctx, glossaryPartPath, type, partName, rels);
+      rels.addRelationship(referenceId, type, target);
+    }
+    if (!entries.some((entry) => entry.partName === partName)) {
+      entries.push({ children, relationships: new Relationships(), referenceId, partName });
+    }
+    refs[slot] = { referenceId };
+  }
+  return Object.keys(refs).length > 0 ? refs : undefined;
+}
+
+/** Build the sectPr XML for one docPart section, registering header/footer
+ *  content on the glossary rels so the compiler emits the parts. */
+function stringifyDocPartSectPr(
+  section: DocPartSectionOptions,
+  glossaryPartPath: string,
+  ctx: BodyContext,
+): string {
+  if (!section.properties && !section.headers && !section.footers) return "";
+  const descriptorOptions: SectionPropertiesDescriptorOptions = {
+    ...section.properties,
+    headerReferences: section.headers
+      ? buildDocPartHeaderFooterRefs(section, "header", glossaryPartPath, ctx)
+      : undefined,
+    footerReferences: section.footers
+      ? buildDocPartHeaderFooterRefs(section, "footer", glossaryPartPath, ctx)
+      : undefined,
+  };
+  return sectionPropertiesDesc.stringify(descriptorOptions, ctx) ?? "";
+}
+
 function stringifyDocPartBody(part: DocPartOptions, ctx: BodyContext): string {
+  const glossaryPartPath = ctx.viewWrapper?.partName ?? "word/glossary/document.xml";
   const parts: string[] = [];
   for (let sectionIndex = 0; sectionIndex < part.sections.length; sectionIndex++) {
     const section = part.sections[sectionIndex]!;
-    const sectPrXml = section.properties
-      ? (sectionPropertiesDesc.stringify(section.properties, ctx) ?? "")
-      : "";
+    const sectPrXml = stringifyDocPartSectPr(section, glossaryPartPath, ctx);
     const isLast = sectionIndex === part.sections.length - 1;
     let sectPrHosted = isLast || !sectPrXml;
 
@@ -245,6 +376,7 @@ function parseDocPartBody(body: Element, ctx: DocxReadContext): DocPartSectionOp
         .slice(start, boundary.index)
         .map((child) => parseSectionChild(child, ctx)),
       properties: parseSectionPropertiesEl(boundary.sectPr),
+      ...parseDocPartHeaderFooterSlots(boundary.sectPr, ctx),
     });
     start = boundary.index;
   }
@@ -256,6 +388,56 @@ function parseDocPartBody(body: Element, ctx: DocxReadContext): DocPartSectionOp
   return sections;
 }
 
+/** Resolve one r:id against the current part's own .rels file. */
+function resolveCurrentPartRelationship(ctx: DocxReadContext, rId: string): string | undefined {
+  const rels = ctx.docx.doc.get(partPathToRelsPath(ctx.currentPart));
+  for (const rel of rels?.elements ?? []) {
+    if (rel.name !== "Relationship" || attr(rel, "Id") !== rId) continue;
+    const target = attr(rel, "Target");
+    return target ? resolveRelationshipTarget(ctx.currentPart, target) : undefined;
+  }
+  return undefined;
+}
+
+/** Header/footer content slots referenced by one docPart w:sectPr. Part
+ *  names are package paths relative to word/ so rebuild lands in the source
+ *  files (word/glossary/header3.xml). */
+function parseDocPartHeaderFooterSlots(
+  sectPr: Element,
+  ctx: DocxReadContext,
+): { headers?: DocPartHeaderFooterOptions; footers?: DocPartHeaderFooterOptions } {
+  const parsed = {
+    header: {} as Record<string, SectionChild[]>,
+    footer: {} as Record<string, SectionChild[]>,
+  };
+  const partNames = {
+    header: {} as Record<string, string>,
+    footer: {} as Record<string, string>,
+  };
+  for (const child of sectPr.elements ?? []) {
+    if (child.name !== "w:headerReference" && child.name !== "w:footerReference") continue;
+    const rId = attr(child, "r:id");
+    const slot = attr(child, "w:type");
+    if (!rId || !slot) continue;
+    const kind = child.name === "w:headerReference" ? "header" : "footer";
+    const path = resolveCurrentPartRelationship(ctx, rId);
+    if (!path?.startsWith("word/")) continue;
+    const children = parseHeaderFooterPartChildren(path, ctx);
+    if (children.length === 0) continue;
+    ctx.consumedPartPaths.add(path);
+    parsed[kind][slot] = children;
+    partNames[kind][slot] = path.slice("word/".length);
+  }
+  const result: { headers?: DocPartHeaderFooterOptions; footers?: DocPartHeaderFooterOptions } = {};
+  if (Object.keys(parsed.header).length > 0) {
+    result.headers = { ...parsed.header, partNames: partNames.header };
+  }
+  if (Object.keys(parsed.footer).length > 0) {
+    result.footers = { ...parsed.footer, partNames: partNames.footer };
+  }
+  return result;
+}
+
 function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   const prParts: string[] = [];
   prParts.push(
@@ -263,6 +445,9 @@ function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
       part.decorated !== undefined ? ` w:decorated="${part.decorated ? 1 : 0}"` : ""
     }/>`,
   );
+  if (part.style) {
+    prParts.push(`<w:style w:val="${escapeXml(part.style)}"/>`);
+  }
   if (part.category || part.gallery) {
     const catParts: string[] = [];
     if (part.category) {
@@ -285,9 +470,6 @@ function docPartPrXml(part: GlossaryDocumentOptions["parts"][number]): string {
   }
   if (part.guid) {
     prParts.push(`<w:guid w:val="${escapeXml(part.guid)}"/>`);
-  }
-  if (part.style) {
-    prParts.push(`<w:style w:val="${escapeXml(part.style)}"/>`);
   }
   return `<w:docPartPr>${prParts.join("")}</w:docPartPr>`;
 }

@@ -5,6 +5,7 @@ export {
   buildRootRelationships,
   optionalRelsPart,
   partPathToRelsPath,
+  relativePartTarget,
   resolveRelationshipTarget,
 } from "./relationships";
 export type { RelationshipType } from "./relationships";
@@ -51,6 +52,7 @@ export {
 export {
   OOXML_PACKAGE_FORMATS,
   ooxmlPackageFormatInfo,
+  resolveMainPartContentType,
   type OoxmlPackageFamily,
   type OoxmlPackageFormat,
   type OoxmlPackageFormatInfo,

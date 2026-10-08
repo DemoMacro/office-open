@@ -46,7 +46,10 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
       if (el.attributes["showMasterPhAnim"] !== undefined)
         result.showMasterPlaceholderAnimations =
           parseOnOff(el.attributes["showMasterPhAnim"]) ?? true;
-      if (el.attributes["show"] === "0") result.hidden = true;
+      if (el.attributes["show"] !== undefined) {
+        result.showRaw = el.attributes["show"] === "0" ? "0" : "1";
+        if (el.attributes["show"] === "0") result.hidden = true;
+      }
     }
 
     // p:cSld
@@ -61,6 +64,10 @@ export const slideDesc: CustomDescriptor<SlideOptions> = {
       // Shape tree
       const spTree = findChild(cSld, "p:spTree");
       if (spTree) {
+        const spTreeGroupProperties = findChild(spTree, "p:grpSpPr");
+        if (spTreeGroupProperties && findChild(spTreeGroupProperties, "a:xfrm") === undefined) {
+          result.groupTransformless = true;
+        }
         const children: SlideChild[] = [];
         if (spTree.elements) {
           for (const child of spTree.elements) {

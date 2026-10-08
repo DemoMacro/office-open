@@ -24,6 +24,7 @@ import {
   partPathToRelsPath,
   resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
+  resolveMainPartContentType,
   resolverFromRegistry,
   XLSX_PARTS,
   customPropertiesDesc,
@@ -985,11 +986,12 @@ export function compileWorkbook(
             })),
           {
             path: workbookPath,
-            contentType:
-              options.contentTypes?.overrides.find(
-                (override) => override.partName.toLowerCase() === `/${workbookPath.toLowerCase()}`,
-              )?.contentType ??
+            contentType: resolveMainPartContentType(
+              "spreadsheet",
+              options.contentTypes,
+              workbookPath,
               ooxmlPackageFormatInfo("spreadsheet", packageVariant).mainContentType,
+            ),
           },
         ],
       },

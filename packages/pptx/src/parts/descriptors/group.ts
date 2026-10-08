@@ -44,24 +44,29 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
 
     const grpSpPrContent =
       groupShapePropertiesDesc.stringify(
-        {
-          x,
-          y,
-          width: w,
-          height: h,
-          ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
-          ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
-          ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
-          // chOff/chExt default to off/ext when the child coordinate system is unchanged.
-          childOffsetX: opts.childOffsetX !== undefined ? convertToEmu(opts.childOffsetX) : x,
-          childOffsetY: opts.childOffsetY !== undefined ? convertToEmu(opts.childOffsetY) : y,
-          childExtentWidth:
-            opts.childExtentWidth !== undefined ? convertToEmu(opts.childExtentWidth) : w,
-          childExtentHeight:
-            opts.childExtentHeight !== undefined ? convertToEmu(opts.childExtentHeight) : h,
-          ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
-          ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
-        },
+        opts.transformless
+          ? {
+              ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
+              ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
+            }
+          : {
+              x,
+              y,
+              width: w,
+              height: h,
+              ...(opts.flipHorizontal !== undefined ? { flipHorizontal: opts.flipHorizontal } : {}),
+              ...(opts.flipVertical !== undefined ? { flipVertical: opts.flipVertical } : {}),
+              ...(opts.rotation !== undefined ? { rotation: opts.rotation } : {}),
+              // chOff/chExt default to off/ext when the child coordinate system is unchanged.
+              childOffsetX: opts.childOffsetX !== undefined ? convertToEmu(opts.childOffsetX) : x,
+              childOffsetY: opts.childOffsetY !== undefined ? convertToEmu(opts.childOffsetY) : y,
+              childExtentWidth:
+                opts.childExtentWidth !== undefined ? convertToEmu(opts.childExtentWidth) : w,
+              childExtentHeight:
+                opts.childExtentHeight !== undefined ? convertToEmu(opts.childExtentHeight) : h,
+              ...(opts.fill !== undefined ? { fill: opts.fill } : {}),
+              ...(opts.effects !== undefined ? { effects: opts.effects } : {}),
+            },
         descCtx,
       ) ?? "";
 
@@ -117,6 +122,7 @@ export const groupShapeDesc: CustomDescriptor<GroupOptions> = {
     const grpSpPr = findChild(el, "p:grpSpPr");
     if (grpSpPr) {
       const props = groupShapePropertiesDesc.parse(grpSpPr, ctx);
+      if (findChild(grpSpPr, "a:xfrm") === undefined) result.transformless = true;
       if (props.x !== undefined) result.x = props.x;
       if (props.y !== undefined) result.y = props.y;
       if (props.width !== undefined) result.width = props.width;

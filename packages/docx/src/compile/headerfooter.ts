@@ -31,7 +31,7 @@ import { XML_DECL, registerPartMedia, resolvePartCharts, resolvePartMedia } from
  * SmartArt relationships. Images get per-part relationship IDs starting at
  * nextRelationshipId, mirroring the document part; the placeholder pass uses
  * referenced-local positions, so body r:embed and .rels stay aligned. */
-function compileHeaderFooterPart(
+export function compileHeaderFooterPart(
   kind: "header" | "footer",
   entry: HeaderFooterEntry,
   index: number,

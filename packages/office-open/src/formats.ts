@@ -71,6 +71,41 @@ export function detectOffice(input: Uint8Array | string): OfficeFormatInfo {
   throw new Error("Unable to detect office format");
 }
 
+/**
+ * Rewrite the primary part's Override declaration when the caller re-types a
+ * parsed package (the requested format differs from the source table);
+ * otherwise the preserved source declaration wins the content-type output.
+ */
+export function withRequestedPackageVariant<
+  T extends {
+    contentTypes?: { overrides: ReadonlyArray<{ partName: string; contentType: string }> };
+  },
+>(format: keyof typeof OOXML_PACKAGE_FORMATS, options: T): T {
+  const info = OOXML_PACKAGE_FORMATS[format];
+  const overrides = options.contentTypes?.overrides;
+  if (!overrides) return options;
+  const partName = `/${info.mainPartPath}`.toLowerCase();
+  const declared = overrides.find(
+    (override) => override.partName.toLowerCase() === partName,
+  )?.contentType;
+  if (declared === undefined || declared === info.mainContentType) return options;
+  const isFamilyMain = Object.values(OOXML_PACKAGE_FORMATS).some(
+    (candidate) => candidate.family === info.family && candidate.mainContentType === declared,
+  );
+  if (!isFamilyMain) return options;
+  return {
+    ...options,
+    contentTypes: {
+      ...options.contentTypes,
+      overrides: overrides.map((override) =>
+        override.partName.toLowerCase() === partName
+          ? { ...override, contentType: info.mainContentType }
+          : override,
+      ),
+    },
+  };
+}
+
 function detectCfbFormat(data: Uint8Array): OfficeFormatInfo {
   const reader = new CompoundFileReader(data);
   const paths = new Set(reader.entries.map((entry) => entry.path.toLowerCase()));

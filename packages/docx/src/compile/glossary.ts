@@ -20,17 +20,33 @@ import {
   type RelationshipType,
   type XmlifyedFile,
 } from "@office-open/core";
+import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { documentNamespaceDialect } from "@parts/document/document-attributes";
 import { FontWrapper } from "@parts/fonts/font-wrapper";
+import type { NoteChild, NotesData } from "@parts/notes/shared";
 import { DefaultStylesFactory, stringifyDocDefaults } from "@parts/styles/factory";
 import type { StylesOptions } from "@parts/styles/styles";
 
 import type { PartCtxFactory } from "../compiler";
-import type { DocxWriteContext } from "../context";
-import { fontTableDesc, glossaryDesc, settingsDesc, webSettingsDesc } from "../parts";
+import type { BodyContext, DocxWriteContext } from "../context";
+import {
+  endnotesDesc,
+  fontTableDesc,
+  footnotesDesc,
+  glossaryDesc,
+  settingsDesc,
+  webSettingsDesc,
+} from "../parts";
 import { Numbering } from "../parts/numbering";
 import { Styles } from "../parts/styles/styles";
-import { XML_DECL, relativePartTarget } from "./shared";
+import { compileHeaderFooterPart } from "./headerfooter";
+import {
+  XML_DECL,
+  registerPartMedia,
+  relativePartTarget,
+  resolvePartCharts,
+  resolvePartMedia,
+} from "./shared";
 
 /** Default companion paths relative to word/ when the round-trip name is absent. */
 const DEFAULT_PART_NAMES = {
@@ -39,6 +55,8 @@ const DEFAULT_PART_NAMES = {
   styles: "glossary/styles.xml",
   webSettings: "glossary/webSettings.xml",
   fontTable: "glossary/fontTable.xml",
+  footnotes: "glossary/footnotes.xml",
+  endnotes: "glossary/endnotes.xml",
 } as const;
 
 /** {fileName → source rId} for glossary media rels, so the body XML's
@@ -117,6 +135,14 @@ export interface GlossaryCompileResult {
     GlossaryWebSettings?: XmlifyedFile;
     GlossaryFontTable?: XmlifyedFile;
     GlossaryFontTableRelationships?: XmlifyedFile;
+    GlossaryFootnotes?: XmlifyedFile;
+    GlossaryFootnotesRelationships?: XmlifyedFile;
+    GlossaryEndnotes?: XmlifyedFile;
+    GlossaryEndnotesRelationships?: XmlifyedFile;
+    GlossaryHeaders?: XmlifyedFile[];
+    GlossaryHeaderRelationships?: XmlifyedFile[];
+    GlossaryFooters?: XmlifyedFile[];
+    GlossaryFooterRelationships?: XmlifyedFile[];
   };
   /** Font wrapper whose embedded .odttf binaries the compiler packs. */
   fontTable?: FontWrapper;
@@ -131,6 +157,8 @@ export function compileGlossaryParts(
   const glossaryPartPath = `word/${glossary.partName ?? "glossary/document.xml"}`;
   const entries: GlossaryCompileResult["entries"] = {};
   ctx.glossaryFontTable = undefined;
+  ctx.glossaryHeaderParts = [];
+  ctx.glossaryFooterParts = [];
 
   // Companion font table: pre-assign an odttf path that cannot collide with
   // the main font table's fresh slots, then wrap so stringify sees the
@@ -214,6 +242,18 @@ export function compileGlossaryParts(
     if (stylesPartName) addCompanionRel(RELATIONSHIP_TYPES.styles, stylesPartName);
     if (webSettingsPartName) addCompanionRel(RELATIONSHIP_TYPES.webSettings, webSettingsPartName);
     if (fontTablePartName) addCompanionRel(RELATIONSHIP_TYPES.fontTable, fontTablePartName);
+    if (glossary.footnotes || glossary.footnoteSeparators) {
+      addCompanionRel(
+        RELATIONSHIP_TYPES.footnotes,
+        glossary.footnotesPartName ?? DEFAULT_PART_NAMES.footnotes,
+      );
+    }
+    if (glossary.endnotes || glossary.endnoteSeparators) {
+      addCompanionRel(
+        RELATIONSHIP_TYPES.endnotes,
+        glossary.endnotesPartName ?? DEFAULT_PART_NAMES.endnotes,
+      );
+    }
 
     entries.Glossary = {
       data:
@@ -293,6 +333,102 @@ export function compileGlossaryParts(
         partPathToRelsPath(fontTablePath),
       );
     }
+
+    // Glossary notes parts: the same wiring shape as the main notes parts,
+    // scoped to the glossary paths and the glossary numbering space.
+    const compileGlossaryNotesPart = (
+      desc: CustomDescriptor<NotesData, BodyContext>,
+      partPath: string,
+      data: NotesData,
+      partKey: "GlossaryFootnotes" | "GlossaryEndnotes",
+      relsKey: "GlossaryFootnotesRelationships" | "GlossaryEndnotesRelationships",
+    ): void => {
+      const rels = new Relationships();
+      const notesCtx = mkCtx({ relationships: rels, partName: partPath });
+      const xmlData = XML_DECL + (desc.stringify(data, notesCtx) ?? "");
+      const relCount = rels.nextRelationshipId;
+      const resolved = resolvePartMedia(xmlData, ctx, relCount);
+      registerPartMedia(rels, ctx, resolved);
+      const resolvedXml = resolvePartCharts(
+        resolved.xml,
+        ctx,
+        rels,
+        resolved.embeddingOffset + resolved.embeddingRefs.length,
+        partPath,
+      );
+      // Orphaned externals (rel entries no note content references) have no
+      // model field; claim them so the rebuilt rels keeps the source entries.
+      for (const rel of ctx._options.passthroughRelationships ?? []) {
+        if (rel.source === partPath) rels.claimSourceRel(rel);
+      }
+      entries[partKey] = {
+        data: replaceNumberingPlaceholders(resolvedXml, ctx.numbering.concreteNumbering),
+        path: partPath,
+      };
+      if (rels.relationshipCount > 0) {
+        entries[relsKey] = optionalRelsPart(
+          rels,
+          XML_DECL,
+          partPathToRelsPath(partPath),
+        ) as XmlifyedFile;
+      }
+    };
+    if (glossary.footnotes || glossary.footnoteSeparators) {
+      const footnotes = glossary.footnotes ?? [];
+      const notes = new Map<number, NoteChild[]>();
+      let nextId = 1;
+      for (const note of footnotes) {
+        const id = note.id ?? nextId;
+        nextId = Math.max(nextId, id) + 1;
+        notes.set(id, note.children);
+      }
+      compileGlossaryNotesPart(
+        footnotesDesc,
+        `word/${glossary.footnotesPartName ?? DEFAULT_PART_NAMES.footnotes}`,
+        {
+          notes,
+          separator: glossary.footnoteSeparators?.separator ?? undefined,
+          continuationSeparator: glossary.footnoteSeparators?.continuationSeparator ?? undefined,
+          continuationNotice: glossary.footnoteSeparators?.continuationNotice,
+        },
+        "GlossaryFootnotes",
+        "GlossaryFootnotesRelationships",
+      );
+    }
+    if (glossary.endnotes || glossary.endnoteSeparators) {
+      const endnotes = glossary.endnotes ?? [];
+      const notes = new Map<number, NoteChild[]>();
+      let nextId = 1;
+      for (const note of endnotes) {
+        const id = note.id ?? nextId;
+        nextId = Math.max(nextId, id) + 1;
+        notes.set(id, note.children);
+      }
+      compileGlossaryNotesPart(
+        endnotesDesc,
+        `word/${glossary.endnotesPartName ?? DEFAULT_PART_NAMES.endnotes}`,
+        {
+          notes,
+          separator: glossary.endnoteSeparators?.separator ?? undefined,
+          continuationSeparator: glossary.endnoteSeparators?.continuationSeparator ?? undefined,
+          continuationNotice: glossary.endnoteSeparators?.continuationNotice,
+        },
+        "GlossaryEndnotes",
+        "GlossaryEndnotesRelationships",
+      );
+    }
+
+    // Headers/footers registered during glossary body stringification.
+    ctx.glossaryHeaderParts.forEach((entry, index) => {
+      const compiled = compileHeaderFooterPart("header", entry, index, ctx, mkCtx);
+      (entries.GlossaryHeaders ??= []).push(compiled.part);
+      if (compiled.rels) (entries.GlossaryHeaderRelationships ??= []).push(compiled.rels);
+    });
+    ctx.glossaryFooterParts.forEach((entry, index) => {
+      const compiled = compileHeaderFooterPart("footer", entry, index, ctx, mkCtx);
+      (entries.GlossaryFooters ??= []).push(compiled.part);
+      if (compiled.rels) (entries.GlossaryFooterRelationships ??= []).push(compiled.rels);
+    });
   } finally {
     ctx.numbering = previousNumbering;
   }

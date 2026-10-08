@@ -11,6 +11,7 @@ import {
   type RelationshipType,
   type Relationships,
   findAndReplaceImagePlaceholders,
+  relativePartTarget,
   replaceAllPlaceholders,
 } from "@office-open/core";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
@@ -39,17 +40,7 @@ export const embeddingRelationship = (
     : OLE_OBJECT_RELATIONSHIP;
 
 /** Relative relationship target from one package part to another. */
-export function relativePartTarget(ownerPath: string, targetPath: string): string {
-  const owner = ownerPath.split("/").slice(0, -1);
-  const target = targetPath.split("/");
-  let common = 0;
-  while (common < owner.length && common < target.length - 1 && owner[common] === target[common])
-    common++;
-  return [
-    ...Array.from({ length: owner.length - common }, () => ".."),
-    ...target.slice(common),
-  ].join("/");
-}
+export { relativePartTarget };
 
 /** Resolved media/embedding placeholders for one part, with the offsets its
  *  relationship registrations must use (ids are per-part numbering). */

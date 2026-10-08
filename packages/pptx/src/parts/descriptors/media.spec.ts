@@ -149,11 +149,12 @@ describe("audioDesc round-trip", () => {
         name: "Sound",
         poster,
         posterType: "gif",
+        posterCompression: "print",
         posterFileName: "speaker.gif",
       },
       writeCtx,
     );
-    expect(xml).toContain('<a:blip r:embed="{speaker.gif}"/>');
+    expect(xml).toContain('<a:blip r:embed="{speaker.gif}" cstate="print"/>');
 
     const posterCtx = {
       resolveRelationship: (rId: string) =>
@@ -164,6 +165,7 @@ describe("audioDesc round-trip", () => {
     const result = audioDesc.parse(parseRoot(xml), posterCtx);
     expect(result.poster).toBe(poster);
     expect(result.posterType).toBe("gif");
+    expect(result.posterCompression).toBe("print");
     expect(result.posterFileName).toBe("speaker.gif");
   });
 

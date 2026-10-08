@@ -667,6 +667,9 @@ export type HeaderFooterPartName =
   | "firstHeader"
   | "firstFooter";
 
+/** Round-trip state of a header/footer part's `xml:space` attribute. */
+export type HeaderFooterXmlSpace = "default" | "preserve" | "absent";
+
 export interface HeaderFooterOptions {
   oddHeader?: string;
   oddFooter?: string;
@@ -685,13 +688,10 @@ export interface HeaderFooterOptions {
   /** Source lexical form of `alignWithMargins`; round-trip only — do not hand-author. */
   alignWithMarginsRaw?: string;
   /**
-   * Source `xml:space` attribute per header/footer part (round-trip only —
-   * do not hand-author). Excel omits the attribute even when the text carries
-   * trailing spaces, so the writer replays the source form verbatim instead
-   * of injecting `xml:space="preserve"`.
+   * Source `xml:space` state per header/footer part; round-trip only — do not
+   * hand-author. `"absent"` suppresses fresh-authoring whitespace fallback.
    */
-  /** Source `xml:space` attribute by header/footer part; round-trip only. */
-  xmlSpaceByPart?: Partial<Record<HeaderFooterPartName, string>>;
+  xmlSpaceByPart?: Partial<Record<HeaderFooterPartName, HeaderFooterXmlSpace>>;
 }
 
 /** Print orientation (ST_Orientation): "default" keeps the printer's own setting. */

@@ -14,6 +14,8 @@ import type { PresentationOptions } from "./shared/file";
 const CHART_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart";
 const LAYOUT_REL =
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout";
+const IMAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+const PACKAGE_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
 const THEME_REL = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme";
 
 const decodeEntry = (buffer: Uint8Array, path: string): string => {
@@ -73,6 +75,50 @@ describe("slide rels with passthrough source ids and a modeled picture", () => {
     const imageId = Number(/Id="rId(\d+)"[^>]*relationships\/image"/.exec(rels)?.[1]);
     expect(imageId).toBeGreaterThan(2);
   });
+
+  it("keeps media relationships with different targets of the same kind", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              picture: {
+                type: "png",
+                fileName: "kept.png",
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+              },
+            },
+          ],
+        },
+      ],
+      passthroughRelationships: [
+        {
+          source: "ppt/slides/slide1.xml",
+          relationshipType: IMAGE_REL,
+          target: "../media/kept.png",
+          rId: "rId2",
+        },
+        {
+          source: "ppt/slides/slide1.xml",
+          relationshipType: IMAGE_REL,
+          target: "../media/legacy.wmf",
+          rId: "rId3",
+        },
+      ],
+      rawParts: [{ path: "ppt/media/legacy.wmf", data: "legacy" }],
+    };
+
+    const buffer = await generatePresentation(options);
+    const rels = decodeEntry(buffer, "ppt/slides/_rels/slide1.xml.rels");
+
+    expect(rels).toContain('Target="../media/kept.png"');
+    expect(rels).toContain('Id="rId3"');
+    expect(rels).toContain('Target="../media/legacy.wmf"');
+  });
 });
 
 // Captured rels whose kind the model re-registers (the master theme, say)
@@ -102,5 +148,55 @@ describe("captured rels absorbed by the model", () => {
     // rId2 hole pushing it to rId3
     expect(rels).toMatch(new RegExp(`Id="rId2"[^>]*Type="${THEME_REL}"`));
     expect(rels).not.toMatch(/Id="rId3"/);
+  });
+});
+
+describe("OLE embeddings owned by the model", () => {
+  it("reserves package-embedding source ids before media allocation", async () => {
+    const options: PresentationOptions = {
+      slides: [
+        {
+          children: [
+            {
+              picture: {
+                type: "png",
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                data: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+              },
+            },
+            {
+              ole: {
+                x: 0,
+                y: 0,
+                width: 100,
+                height: 100,
+                progId: "Word.Document.12",
+                embed: { data: "Zm9v", relationshipType: "package" },
+              },
+            },
+          ],
+        },
+      ],
+      passthroughRelationships: [
+        {
+          source: "ppt/slides/slide1.xml",
+          relationshipType: PACKAGE_REL,
+          target: "../embeddings/oleObject1.bin",
+          rId: "rId2",
+        },
+      ],
+    };
+
+    const buffer = await generatePresentation(options);
+    const slide = decodeEntry(buffer, "ppt/slides/slide1.xml");
+    const rels = decodeEntry(buffer, "ppt/slides/_rels/slide1.xml.rels");
+
+    expect(slide).toContain('r:id="rId2"');
+    expect(rels).toMatch(new RegExp(`Id="rId2"[^>]*Type="${PACKAGE_REL}"`));
+    const imageId = Number(/Id="rId(\d+)"[^>]*relationships\/image"/.exec(rels)?.[1]);
+    expect(imageId).toBeGreaterThan(2);
   });
 });

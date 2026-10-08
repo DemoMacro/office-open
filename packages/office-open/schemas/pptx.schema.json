@@ -1493,6 +1493,10 @@
           "$ref": "#/definitions/DataType",
           "description": "Poster image bytes (a:blip inside p:blipFill) — the frame's speaker art."
         },
+        "posterCompression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state of the poster blip; absent = attribute omitted."
+        },
         "posterFileName": {
           "description": "Source poster media file name (round-trip only).",
           "type": "string"
@@ -6763,6 +6767,10 @@
           "description": "XSD `@title`.",
           "type": "string"
         },
+        "transformless": {
+          "description": "Omit `p:grpSpPr/a:xfrm` to preserve source groups without a transform.",
+          "type": "boolean"
+        },
         "userDrawn": {
           "description": "p:nvPr `@userDrawn` — preserve presentation-authored group marking.",
           "type": "boolean"
@@ -8748,6 +8756,11 @@
           "description": "Follow color scheme (p:embed `@followColorScheme`)",
           "enum": ["none", "full", "textAndBackground"],
           "type": "string"
+        },
+        "relationshipType": {
+          "description": "Source embedding relationship kind; undefined (fresh authoring) = oleObject.",
+          "enum": ["oleObject", "package"],
+          "type": "string"
         }
       },
       "required": ["data"],
@@ -8756,6 +8769,10 @@
     "OleIconImageOptions": {
       "additionalProperties": false,
       "properties": {
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state (a:blip `@cstate`); absent = attribute omitted."
+        },
         "data": {
           "$ref": "#/definitions/DataType",
           "description": "Icon/preview image bytes (binary or base64 data URL)."
@@ -9712,7 +9729,10 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "ext": {
-          "$ref": "#/definitions/ShapeOptions/properties/ext"
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/ext"
+        },
+        "extensions": {
+          "$ref": "#/definitions/ShapeOptions/properties/properties/properties/extensions"
         },
         "fill": {
           "anyOf": [
@@ -12536,6 +12556,10 @@
           "$ref": "#/definitions/ColorMappingOverrideOptions",
           "description": "p:clrMapOvr — override the master color mapping for this slide."
         },
+        "commentSourcePath": {
+          "description": "Source comments package path; round-trip uses it to keep part numbering.",
+          "type": "string"
+        },
         "comments": {
           "items": {
             "$ref": "#/definitions/SlideCommentOptions"
@@ -12563,6 +12587,10 @@
             "$ref": "#/definitions/FormContainerOptions"
           },
           "type": "array"
+        },
+        "groupTransformless": {
+          "description": "Omit `p:spTree/p:grpSpPr/a:xfrm` to preserve a transformless source shape tree.",
+          "type": "boolean"
         },
         "headerFooter": {
           "$ref": "#/definitions/SlideHeaderFooterOptions"
@@ -12612,6 +12640,11 @@
         },
         "showMasterShapes": {
           "type": "boolean"
+        },
+        "showRaw": {
+          "description": "Source lexical form of p:sld/`@show`; round-trip only — do not hand-author.",
+          "enum": ["0", "1"],
+          "type": "string"
         },
         "slideId": {
           "description": "Source p:sldIdLst identity (`p:sldId/@id`); defaults to 256 + slide index.",
@@ -15470,6 +15503,10 @@
         },
         "poster": {
           "$ref": "#/definitions/DataType"
+        },
+        "posterCompression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state of the poster blip; absent = attribute omitted."
         },
         "posterFileName": {
           "description": "Source poster media file name (round-trip only).",

@@ -231,6 +231,10 @@ export class DocxWriteContext implements WriteContext {
   /** Companion glossary font wrapper; assigned during the glossary compile
    *  phase so the compiler can pack its .odttf binaries. */
   declare public glossaryFontTable: FontWrapper | undefined;
+  /** Glossary header/footer entries registered during glossary
+   *  stringification; serialized by the glossary compile phase. */
+  public glossaryHeaderParts: HeaderFooterEntry[] = [];
+  public glossaryFooterParts: HeaderFooterEntry[] = [];
   declare public webSettings: WebSettingsOptions | undefined;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
@@ -427,7 +431,7 @@ export class DocxWriteContext implements WriteContext {
         const docDefaults =
           s.default?.document !== undefined
             ? stringifyDocDefaults(s.default.document, false)
-            : (s.docDefaultsXml ?? f.importedStyles?.[0] ?? "");
+            : (s.docDefaultsXml ?? "");
         // A source without w:latentStyles stays without it — falling back to
         // the factory table would inject lsdException entries the source
         // never carried.
@@ -466,7 +470,7 @@ export class DocxWriteContext implements WriteContext {
       const docDefaults =
         s.default?.document !== undefined
           ? stringifyDocDefaults(s.default.document, false)
-          : (s.docDefaultsXml ?? f.importedStyles?.[0] ?? "");
+          : (s.docDefaultsXml ?? "");
       this.stylesWithEffects = new Styles({
         importedStyles: [docDefaults, s.latentStylesXml ?? ""],
         initialAttributes: s.initialAttributes ?? f.initialAttributes,
@@ -765,16 +769,18 @@ export class DocxWriteContext implements WriteContext {
       this.registerDocumentRel(RELATIONSHIP_TYPES.bibliography, "bibliography.xml");
     }
 
-    // Theme — always present: fresh-compile generates a default theme, round-trip
-    // passes the source theme through rawParts. Word needs the document→theme
-    // relationship to resolve theme colors/fonts.
+    // Theme — always present on fresh compile (default theme); a round-trip
+    // keeps the source relationship only, because some producers ship the
+    // theme part without a document→theme relationship.
     const themeRel = (this._options.passthroughRelationships ?? []).find(
       (r) => r.source === "word/document.xml" && r.relationshipType.endsWith("/theme"),
     );
-    this.registerDocumentRel(
-      RELATIONSHIP_TYPES.theme,
-      themeRel ? themeRel.target : "theme/theme1.xml",
-    );
+    if (themeRel || !this._options.contentTypes) {
+      this.registerDocumentRel(
+        RELATIONSHIP_TYPES.theme,
+        themeRel ? themeRel.target : "theme/theme1.xml",
+      );
+    }
     if (
       this.hasSourcePart("word/fontTable.xml") &&
       this.hasSourceDocumentRelationship("fontTable")

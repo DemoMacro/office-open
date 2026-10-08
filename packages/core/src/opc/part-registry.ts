@@ -85,6 +85,7 @@ export const DOCX_PARTS = {
     "word/_rels/",
     "docProps/",
     "[Content_Types].xml",
+    "_xmlsignatures/",
   ],
   opaquePrefixes: [
     "media/",
@@ -98,6 +99,13 @@ export const DOCX_PARTS = {
     "word/charts/colors",
     "word/charts/chartEx",
     "word/charts/_rels/chartEx",
+    // AltChunk payload folders, digital-signature stores, and the VBA
+    // project's companion data — opaque independent package members.
+    "word/afchunks/",
+    "_xmlsignatures/",
+    "word/vbaData.xml",
+    "_rels/vbaProject",
+    "word/_rels/vbaProject",
   ],
   parts: [
     { path: "[Content_Types].xml", presence: { kind: "always" } },
@@ -322,6 +330,7 @@ export const PPTX_PARTS = {
   orphanWhitelist: [
     "ppt/media/",
     "ppt/embeddings/",
+    "ppt/ink/",
     "ppt/drawings/",
     "ppt/printerSettings/",
     "_rels/",
@@ -339,6 +348,7 @@ export const PPTX_PARTS = {
   opaquePrefixes: [
     "ppt/embeddings/",
     "ppt/media/",
+    "ppt/ink/",
     "ppt/printerSettings/",
     "ppt/drawings/vmlDrawing",
     "ppt/drawings/_rels/vmlDrawing",
@@ -364,6 +374,14 @@ export const PPTX_PARTS = {
       contentType:
         "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
       presence: { kind: "always" },
+    },
+    {
+      // PowerPoint 2015+ standalone revision metadata; no canonical Office
+      // options surface, so the foreign XML part is retained verbatim.
+      opaque: true,
+      path: "ppt/revisionInfo.xml",
+      contentType: "application/vnd.ms-powerpoint.revisioninfo+xml",
+      presence: { kind: "conditional", flag: "coauthoring revision metadata" },
     },
     {
       path: "docProps/core.xml",

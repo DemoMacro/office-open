@@ -1085,6 +1085,9 @@ function parseWpsShapeDrawing(
   const data = parseWpsShapeCore(wsp, ctx);
   const shapeXfrm = findChild(findChild(wsp, "wps:spPr"), "a:xfrm");
   const shapeFlipVertical = attrBool(shapeXfrm, "flipV");
+  const shapeExtentEl = findChild(shapeXfrm, "a:ext");
+  const shapeExtentWidth = attrNum(shapeExtentEl, "cx");
+  const shapeExtentHeight = attrNum(shapeExtentEl, "cy");
 
   const shape: ShapeOptions = {
     ...data,
@@ -1094,6 +1097,13 @@ function parseWpsShapeDrawing(
       ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
     },
   };
+  if (
+    shapeExtentWidth !== undefined &&
+    shapeExtentHeight !== undefined &&
+    (shapeExtentWidth !== Number(info.width) || shapeExtentHeight !== Number(info.height))
+  ) {
+    shape.transformation.shapeExtent = { x: shapeExtentWidth, y: shapeExtentHeight };
+  }
   if (shapeFlipVertical !== undefined) shape.transformation.flipVertical = shapeFlipVertical;
   if (info.floating) shape.floating = info.floating;
   if (info.altText) shape.altText = info.altText;

@@ -23,7 +23,12 @@ import {
   parseVmlShapetype,
   parseVmlShape,
 } from "@office-open/core";
-import type { VmlShapetypeOptions, VmlShapeStyle, VmlTextboxOptions } from "@office-open/core";
+import type {
+  VmlShapetypeOptions,
+  VmlShapeOptions,
+  VmlShapeStyle,
+  VmlTextboxOptions,
+} from "@office-open/core";
 import { parseVmlImageData, type VmlImageDataOptions } from "@office-open/core";
 import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
 import { attr, attrMeasure, escapeXml, findChild, textOf, type Element } from "@office-open/xml";
@@ -120,6 +125,8 @@ export interface ObjectElementOptions {
    * formula table) before the preview v:shape; round-tripped verbatim.
    */
   shapetype?: VmlShapetypeOptions;
+  /** Complete parsed preview shape; preserves VML attributes outside the convenience fields. */
+  previewShape?: VmlShapeOptions;
   /** Preview icon image (v:imagedata). */
   iconImage?: ObjectIconImageOptions;
   /** Embedded OLE object (o:OLEObject Type="Embed"). */
@@ -186,19 +193,33 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       }
     }
     if (opts.shapetype) inner.push(stringifyVmlShapetype(opts.shapetype));
-    inner.push(
-      stringifyVmlShape({
-        id: shapeId,
-        type: "#_x0000_t75",
-        // o:ole marks the shape as an OLE container (Word always writes it here).
-        ole: "",
-        bullet: opts.bullet,
-        fillcolor: opts.fillcolor,
-        style: { ...opts.style, width: styleWidth, height: styleHeight },
-        textbox: opts.textbox,
-        imagedata: imagedataOptions,
-      }),
-    );
+    if (opts.previewShape) {
+      const sourceRelationshipId = opts.previewShape.imagedata?.relationshipId;
+      const previewShape = { ...opts.previewShape };
+      if (previewShape.sourceXml !== undefined && sourceRelationshipId) {
+        previewShape.sourceXml = previewShape.sourceXml.replaceAll(
+          `"${sourceRelationshipId}"`,
+          `"${imagedataOptions?.relationshipId ?? sourceRelationshipId}"`,
+        );
+      } else {
+        previewShape.imagedata = imagedataOptions;
+      }
+      inner.push(stringifyVmlShape(previewShape));
+    } else {
+      inner.push(
+        stringifyVmlShape({
+          id: shapeId,
+          type: "#_x0000_t75",
+          // o:ole marks the shape as an OLE container (Word always writes it here).
+          ole: "",
+          bullet: opts.bullet,
+          fillcolor: opts.fillcolor,
+          style: { ...opts.style, width: styleWidth, height: styleHeight },
+          textbox: opts.textbox,
+          imagedata: imagedataOptions,
+        }),
+      );
+    }
 
     // Choice: o:OLEObject (embed/link) | w:control | w:movie
     if (opts.embed || opts.link) {
@@ -302,6 +323,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const shape = findChild(el, "v:shape");
     if (shape) {
       const parsedShape = parseVmlShape(shape);
+      result.previewShape = parsedShape;
       const id = attr(shape, "id");
       if (id) result.shapeId = id;
       if (parsedShape.fillcolor !== undefined) result.fillcolor = parsedShape.fillcolor;

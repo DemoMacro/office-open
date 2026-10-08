@@ -17,7 +17,7 @@ describe("opaque part policy", () => {
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/theme/theme1.xml"))).toBe(
       false,
     );
-    expect(docx.opaquePatterns.some((pattern) => pattern.test("word/vbaData.xml"))).toBe(false);
+    expect(docx.opaquePatterns.some((pattern) => pattern.test("word/vbaData.xml"))).toBe(true);
   });
 
   it("expands repeated opaque part templates", () => {
@@ -33,8 +33,15 @@ describe("opaque part policy", () => {
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/embeddings/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/media/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/printerSettings/");
+    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/ink/");
     expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
     expect(PART_REGISTRIES.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
+  });
+
+  it("allows standalone PowerPoint revision metadata", () => {
+    const pptx = opaquePassthroughPolicy("pptx");
+    expect(pptx.opaquePatterns.some((pattern) => pattern.test("ppt/revisionInfo.xml"))).toBe(true);
+    expect(pptx.opaquePatterns.some((pattern) => pattern.test("ppt/ink/ink1.xml"))).toBe(true);
   });
 
   it("resolves printer settings parts to their family content types", () => {

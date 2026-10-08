@@ -32,9 +32,11 @@ export function parseAltChunk(el: Element, ctx: DocxReadContext): AltChunkOption
   if (!data) {
     throw new Error(`AltChunk data not found at ${path}`);
   }
+  // sourcePath is relative to word/ (AltChunkData/compiler convention).
+  const sourcePath = path.replace(/^word\//, "");
 
   // Determine content type from extension
-  const ext = path.split(".").pop() ?? "txt";
+  const ext = sourcePath.split(".").pop() ?? "txt";
   let contentType: "text/html" | "application/rtf" | "text/plain";
   let extension: "html" | "rtf" | "txt";
 
@@ -57,5 +59,7 @@ export function parseAltChunk(el: Element, ctx: DocxReadContext): AltChunkOption
     data,
     contentType,
     extension,
+    sourcePath,
+    sourceRid: rId,
   };
 }

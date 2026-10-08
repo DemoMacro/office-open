@@ -88,6 +88,20 @@ describe("objectDesc.parse", () => {
     });
   });
 
+  it("captures the complete preview shape with source relationship ids", () => {
+    const el = parseObjectXml(
+      `<v:shape id="_x0000_i1025" type="#_x0000_t75" alt="preview" ` +
+        `style="width:100pt;height:50pt">` +
+        `<v:imagedata r:id="rId8" o:title=""/></v:shape>`,
+    );
+    const opts = objectDesc.parse(
+      el,
+      readCtx({ rId8: { path: "word/media/image1.emf", bytes: new Uint8Array([1]) } }),
+    );
+    expect(opts.previewShape).toMatchObject({ alt: "preview" });
+    expect(opts.previewShape!.imagedata).toMatchObject({ relationshipId: "rId8" });
+  });
+
   it("round-trips OLE VML fillcolor, full style, and textbox", () => {
     const el = parseObjectXml(
       `<v:shape id="_x0000_i1025" type="#_x0000_t75" fillcolor="#ff0000" ` +
@@ -194,6 +208,23 @@ describe("objectDesc.stringify", () => {
     )!;
     expect(xml).toContain("{image2.png}");
     expect(xml).not.toContain("{image1.png}");
+  });
+
+  it("remaps preview media relationships inside source VML", () => {
+    const xml = objectDesc.stringify(
+      {
+        iconImage: { data: new Uint8Array([1]), type: "emf", fileName: "image1.emf" },
+        previewShape: {
+          alt: "preview",
+          imagedata: { relationshipId: "rId8" },
+          sourceXml: '<v:shape alt="preview"><v:imagedata r:id="rId8" o:title=""/></v:shape>',
+        },
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain('alt="preview"');
+    expect(xml).toContain('r:id="{image1.png}"');
+    expect(xml).not.toContain('r:id="rId8"');
   });
 });
 

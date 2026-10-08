@@ -73,7 +73,7 @@ import type { SectionChild } from "@shared/section";
 import { parseShading } from "@shared/shading";
 
 import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
-import { tableDesc, altChunkDesc, sdtBlockDesc, customXmlBlockDesc } from "./parts";
+import { tableDesc, altChunkDesc, sdtBlockDesc, customXmlBlockDesc, subDocDesc } from "./parts";
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
 import { parseMathChildren } from "./parts/paragraph/math/stringify";
@@ -250,6 +250,9 @@ export function stringifyBodyChild(
   }
   if ("altChunk" in child) {
     return altChunkDesc.stringify(child.altChunk, ctx) ?? "";
+  }
+  if ("subDoc" in child) {
+    return subDocDesc.stringify(child.subDoc, ctx) ?? "";
   }
   if ("customXml" in child) {
     return customXmlBlockDesc.stringify(child.customXml, ctx) ?? "";
@@ -1171,7 +1174,36 @@ function feedFieldRun(
       }
       let child: ParagraphChild | undefined;
       if (state.kind === "form" && state.pendingFormField) {
-        child = { formField: state.pendingFormField };
+        const formChild: ParagraphChild = { formField: state.pendingFormField };
+        const beginRsid = attr(state.beginRunEl ?? run, "w:rsidR");
+        if (beginRsid) formChild.additionRsid = beginRsid;
+        const beginRunPropertiesRsid = attr(state.beginRunEl ?? run, "w:rsidRPr");
+        if (beginRunPropertiesRsid) formChild.runPropertiesRsid = beginRunPropertiesRsid;
+        if (state.controlRPr) formChild.rPrXml = state.controlRPr;
+        const separatorRsid = state.separatorRunEl
+          ? attr(state.separatorRunEl, "w:rsidR")
+          : undefined;
+        const separatorRunPropertiesRsid = state.separatorRunEl
+          ? attr(state.separatorRunEl, "w:rsidRPr")
+          : undefined;
+        if (separatorRsid) formChild.separatorAdditionRsid = separatorRsid;
+        if (separatorRunPropertiesRsid)
+          formChild.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
+        const resultRunEl = state.resultRunEls.at(-1);
+        const resultRsid = resultRunEl ? attr(resultRunEl, "w:rsidR") : undefined;
+        const resultRPrRsid = resultRunEl ? attr(resultRunEl, "w:rsidRPr") : undefined;
+        if (resultRsid) formChild.resultAdditionRsid = resultRsid;
+        if (resultRPrRsid) formChild.resultRunPropertiesRsid = resultRPrRsid;
+        const resultRPrXml = resultRunEl ? runRPrXml(resultRunEl) : undefined;
+        if (resultRPrXml && resultRPrXml !== state.controlRPr)
+          formChild.resultRPrXml = resultRPrXml;
+        const endRPr = runRPrXml(run);
+        if (endRPr && endRPr !== state.controlRPr) formChild.endRPrXml = endRPr;
+        const endRsid = attr(run, "w:rsidR");
+        const endRunPropertiesRsid = attr(run, "w:rsidRPr");
+        if (endRsid) formChild.endAdditionRsid = endRsid;
+        if (endRunPropertiesRsid) formChild.endRunPropertiesRsid = endRunPropertiesRsid;
+        child = formChild;
       } else if (state.kind === "complex") {
         const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
         // Pagination hint parked on the begin run — re-emit it on the begin run.
@@ -1728,6 +1760,9 @@ function parseHyperlinkChild(child: Element, ctx: DocxReadContext): ParagraphChi
     } else if (sub.name === "w:bookmarkEnd") {
       const bookmarkEnd = parseBookmarkEndOptions(sub);
       if (bookmarkEnd) linkRuns.push({ bookmarkEnd });
+    } else if (sub.name === "w:proofErr") {
+      const type = attr(sub, "w:type");
+      if (type) linkRuns.push({ proofErr: type } as ParagraphChild);
     }
   }
   if (linkRuns.length === 0) return null;

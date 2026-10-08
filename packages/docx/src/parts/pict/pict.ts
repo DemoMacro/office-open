@@ -11,7 +11,12 @@
  *
  * @module
  */
-import { stringifyVmlShapeChild, parseVmlShapeChild } from "@office-open/core";
+import {
+  RELATIONSHIP_TYPES,
+  stringifyVmlShapeChild,
+  parseVmlShapeChild,
+  TargetModeType,
+} from "@office-open/core";
 import type { VmlBaseShapeFields, VmlShapeChild } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 import type { MediaData } from "@shared/media";
@@ -32,6 +37,15 @@ export interface PictMediaOptions {
   type: string;
 }
 
+/** Externally linked imagedata source (v:imagedata r:id resolving to an
+ *  External image relationship). The relationship id round-trips verbatim. */
+export interface PictLinkedMediaOptions {
+  /** Source relationship id referenced by the shape's r:id. */
+  relationshipId: string;
+  /** External target URL of the image relationship. */
+  sourceUrl: string;
+}
+
 export interface PictOptions {
   /** Ordered shape elements — shapetype preambles, shapes, groups, … */
   children?: VmlShapeChild[];
@@ -40,6 +54,9 @@ export interface PictOptions {
    *  textbox content (round-trip; authoring supplies media entries and
    *  matching placeholders). */
   media?: PictMediaOptions[];
+  /** Externally linked imagedata sources (round-trip; authoring supplies
+   *  entries and matching r:id references). */
+  linkedMedia?: PictLinkedMediaOptions[];
   /** Serialized mc:Fallback element carried when the source wrapped this pict
    *  in mc:AlternateContent. Round-trips verbatim (wrapper rebuilt on
    *  stringify); round-trip only — do not hand-author. */
@@ -68,6 +85,18 @@ export interface PictOptions {
  */
 export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">): string {
   const renames = new Map<string, string>();
+  const relationships = ctx.file?.document?.relationships;
+  if (relationships !== undefined) {
+    for (const linked of opts.linkedMedia ?? []) {
+      if (relationships.hasId(linked.relationshipId)) continue;
+      relationships.addRelationship(
+        linked.relationshipId,
+        RELATIONSHIP_TYPES.image,
+        linked.sourceUrl,
+        TargetModeType.EXTERNAL,
+      );
+    }
+  }
   for (const m of opts.media ?? []) {
     // Skip empty/extensionless entries — they would register a 0-byte part
     // with no covering [Content_Types] entry (an OPC violation).
@@ -148,12 +177,14 @@ export function parsePict(el: Element, ctx: DocxReadContext): PictOptions {
     if (shapeChild !== undefined) children.push(shapeChild);
   }
   const media: PictMediaOptions[] = [];
-  bridgeImagedata(children, ctx, media);
+  const linkedMedia: PictLinkedMediaOptions[] = [];
+  bridgeImagedata(children, ctx, media, linkedMedia);
   bridgeTxbxContent(children, ctx, media);
   const anchorId = el.attributes?.["w14:anchorId"];
   return {
     ...(children.length > 0 ? { children } : {}),
     ...(media.length > 0 ? { media } : {}),
+    ...(linkedMedia.length > 0 ? { linkedMedia } : {}),
     ...(anchorId !== undefined ? { w14AnchorId: String(anchorId) } : {}),
     ...(el.attributes?.["w:rsidR"] !== undefined
       ? { runAdditionRsid: String(el.attributes["w:rsidR"]) }
@@ -215,17 +246,31 @@ function bridgeImagedata(
   children: VmlShapeChild[],
   ctx: DocxReadContext,
   media: PictMediaOptions[],
+  linkedMedia: PictLinkedMediaOptions[],
 ): void {
   for (const child of children) {
     const fields = shapeFieldsOf(child);
     const img = fields.imagedata;
     const rid = img?.relationshipId;
+    const hrefRid = img?.hrefRelationshipId;
+    if (hrefRid !== undefined) {
+      const hrefUrl = ctx.resolveExternalImage?.(hrefRid);
+      if (hrefUrl !== undefined) {
+        linkedMedia.push({ relationshipId: hrefRid, sourceUrl: hrefUrl });
+      }
+    }
     if (rid !== undefined) {
       const path = ctx.resolveRelationship(rid);
       const bytes = path ? ctx.getRaw(path) : undefined;
+      const sourceUrl = path !== undefined ? undefined : ctx.resolveExternalImage?.(rid);
+      // Externally linked imagedata keep the verbatim r:id; stringify
+      // re-registers the External relationship at the same id.
+      if (sourceUrl !== undefined) {
+        linkedMedia.push({ relationshipId: rid, sourceUrl });
+      }
       // Unresolvable references (dangling rel, empty part) stay verbatim —
       // registering a nameless 0-byte media part would violate OPC.
-      if (path && bytes && bytes.length > 0) {
+      else if (path && bytes && bytes.length > 0) {
         let fileName = path.slice(path.lastIndexOf("/") + 1);
         // Placeholders key by file name — two rels pointing at different bytes
         // under the same basename must not collapse onto one placeholder.
@@ -234,7 +279,7 @@ function bridgeImagedata(
         img!.relationshipId = `{${fileName}}`;
       }
     }
-    if ("group" in child) bridgeImagedata(child.group.children ?? [], ctx, media);
+    if ("group" in child) bridgeImagedata(child.group.children ?? [], ctx, media, linkedMedia);
   }
 }
 

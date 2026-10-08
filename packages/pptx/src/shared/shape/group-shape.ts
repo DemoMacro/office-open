@@ -16,6 +16,8 @@ import type { SlideChild } from "@parts/slide/slide-child";
 export interface GroupOptions extends BaseGroupOptions, GroupTransform2DOptions {
   /** Group id (p:cNvPr `@id`). Auto-generated if omitted. */
   id?: number;
+  /** Omit `p:grpSpPr/a:xfrm` to preserve source groups without a transform. */
+  transformless?: boolean;
   /** p:nvPr `@userDrawn` — preserve presentation-authored group marking. */
   userDrawn?: boolean;
   /** Group-level fill (EG_FillProperties on grpSpPr). */

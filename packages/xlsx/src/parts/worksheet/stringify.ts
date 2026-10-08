@@ -1452,7 +1452,11 @@ export function stringifyHeaderFooterXml(hf: HeaderFooterOptions): string | unde
     // Replay the source xml:space form verbatim (Excel omits the attribute
     // even for trailing spaces); fresh authoring falls back to whitespace
     // detection so preserved spacing still round-trips by meaning.
-    const xmlSpace = hf.xmlSpaceByPart?.[name] ?? (/^\s|\s$/.test(value) ? "preserve" : undefined);
+    const recordedSpace = hf.xmlSpaceByPart?.[name];
+    const xmlSpace =
+      recordedSpace === "absent"
+        ? undefined
+        : (recordedSpace ?? (/^\s|\s$/.test(value) ? "preserve" : undefined));
     const preserve = xmlSpace ? ` xml:space="${xmlSpace}"` : "";
     inner.push(`<${name}${preserve}>${escapeXml(value)}</${name}>`);
   };

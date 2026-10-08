@@ -34,6 +34,7 @@ import {
   IMAGE_MEDIA_CONTENT_TYPES,
   resolverFromRegistry,
   ooxmlPackageFormatInfo,
+  resolveMainPartContentType,
 } from "@office-open/core";
 import type { RelationshipType } from "@office-open/core";
 import type { ReproducibleScope, XmlifyedFile, Zippable } from "@office-open/core";
@@ -298,12 +299,24 @@ export function compileDocument(
         forcedOverrides: [
           {
             path: packageFormat.mainPartPath,
-            contentType: packageFormat.mainContentType,
+            contentType: resolveMainPartContentType(
+              "wordprocessing",
+              ctx._options.contentTypes,
+              packageFormat.mainPartPath,
+              packageFormat.mainContentType,
+            ),
           },
-          {
-            path: themePartName(ctx._options),
-            contentType: DOCX_THEME_CONTENT_TYPE,
-          },
+          // Only forced when the source declared it (or fresh compile): some
+          // producers cover the theme part with the Default `xml` entry, and
+          // re-declaring it as an Override drifts from the source table.
+          ...(hasSourcePart(ctx._options, themePartName(ctx._options))
+            ? [
+                {
+                  path: themePartName(ctx._options),
+                  contentType: DOCX_THEME_CONTENT_TYPE,
+                },
+              ]
+            : []),
           ...(ctx.glossaryOptions
             ? [
                 {
@@ -364,6 +377,38 @@ export function compileDocument(
                       },
                     ]
                   : []),
+                ...(ctx.glossaryOptions.footnotes
+                  ? [
+                      {
+                        path: `word/${
+                          ctx.glossaryOptions.footnotesPartName ?? "glossary/footnotes.xml"
+                        }`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml",
+                      },
+                    ]
+                  : []),
+                ...(ctx.glossaryOptions.endnotes
+                  ? [
+                      {
+                        path: `word/${
+                          ctx.glossaryOptions.endnotesPartName ?? "glossary/endnotes.xml"
+                        }`,
+                        contentType:
+                          "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml",
+                      },
+                    ]
+                  : []),
+                ...ctx.glossaryHeaderParts.map((header) => ({
+                  path: `word/${header.partName}`,
+                  contentType:
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml",
+                })),
+                ...ctx.glossaryFooterParts.map((footer) => ({
+                  path: `word/${footer.partName}`,
+                  contentType:
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml",
+                })),
               ]
             : []),
         ],
@@ -442,6 +487,14 @@ interface XmlifyedFileMapping {
   GlossaryWebSettings?: XmlifyedFile;
   GlossaryFontTable?: XmlifyedFile;
   GlossaryFontTableRelationships?: XmlifyedFile;
+  GlossaryFootnotes?: XmlifyedFile;
+  GlossaryFootnotesRelationships?: XmlifyedFile;
+  GlossaryEndnotes?: XmlifyedFile;
+  GlossaryEndnotesRelationships?: XmlifyedFile;
+  GlossaryHeaders?: XmlifyedFile[];
+  GlossaryHeaderRelationships?: XmlifyedFile[];
+  GlossaryFooters?: XmlifyedFile[];
+  GlossaryFooterRelationships?: XmlifyedFile[];
   WebSettings?: XmlifyedFile;
 }
 

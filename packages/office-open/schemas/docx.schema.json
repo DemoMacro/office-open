@@ -392,6 +392,13 @@
         "matchSource": {
           "description": "Whether to match source formatting (w:matchSrc)",
           "type": "boolean"
+        },
+        "sourcePath": {
+          "description": "Source part sub-path within word/ (round-trip).",
+          "type": "string"
+        },
+        "sourceRid": {
+          "$ref": "#/definitions/SubDocOptions/properties/sourceRid"
         }
       },
       "required": ["data", "contentType", "extension"],
@@ -6123,6 +6130,47 @@
       ],
       "type": "string"
     },
+    "DocPartHeaderFooterOptions": {
+      "additionalProperties": false,
+      "description": "Header/footer content slots referenced by one docPart section. Round-trip pins the source part names; fresh authoring auto-numbers.",
+      "properties": {
+        "default": {
+          "items": {
+            "$ref": "#/definitions/SectionChild"
+          },
+          "type": "array"
+        },
+        "even": {
+          "items": {
+            "$ref": "#/definitions/SectionChild"
+          },
+          "type": "array"
+        },
+        "first": {
+          "items": {
+            "$ref": "#/definitions/SectionChild"
+          },
+          "type": "array"
+        },
+        "partNames": {
+          "additionalProperties": false,
+          "description": "Source part name per slot relative to word/ (round-trip only).",
+          "properties": {
+            "default": {
+              "type": "string"
+            },
+            "even": {
+              "type": "string"
+            },
+            "first": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
     "DocPartOptions": {
       "additionalProperties": false,
       "description": "A single building block",
@@ -6193,6 +6241,14 @@
             "$ref": "#/definitions/SectionChild"
           },
           "type": "array"
+        },
+        "footers": {
+          "$ref": "#/definitions/DocPartHeaderFooterOptions",
+          "description": "Footers referenced by this section's w:footerReference elements."
+        },
+        "headers": {
+          "$ref": "#/definitions/DocPartHeaderFooterOptions",
+          "description": "Headers referenced by this section's w:headerReference elements."
         },
         "properties": {
           "$ref": "#/definitions/SectionPropertiesOptions",
@@ -8449,6 +8505,47 @@
       "additionalProperties": false,
       "description": "Glossary document options",
       "properties": {
+        "endnoteSeparators": {
+          "additionalProperties": false,
+          "description": "Glossary endnote separators — round-tripped verbatim from the source.",
+          "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/EndnoteSeparator"
+            },
+            "continuationSeparator": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/EndnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "separator": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/EndnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "endnotes": {
+          "description": "Independent endnotes part owned by the glossary.",
+          "items": {
+            "$ref": "#/definitions/EndnoteOptions"
+          },
+          "type": "array"
+        },
+        "endnotesPartName": {
+          "description": "Glossary endnotes path relative to word/ (round-trip only).",
+          "type": "string"
+        },
         "fontTablePartName": {
           "description": "Glossary font-table path relative to word/ (round-trip only).",
           "type": "string"
@@ -8459,6 +8556,47 @@
             "$ref": "#/definitions/EmbeddedFontOptions"
           },
           "type": "array"
+        },
+        "footnoteSeparators": {
+          "additionalProperties": false,
+          "description": "Glossary footnote separators — round-tripped verbatim from the source.",
+          "properties": {
+            "continuationNotice": {
+              "$ref": "#/definitions/FootnoteSeparator"
+            },
+            "continuationSeparator": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/FootnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "separator": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/FootnoteSeparator"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object"
+        },
+        "footnotes": {
+          "description": "Independent footnotes part owned by the glossary.",
+          "items": {
+            "$ref": "#/definitions/FootnoteOptions"
+          },
+          "type": "array"
+        },
+        "footnotesPartName": {
+          "description": "Glossary footnotes path relative to word/ (round-trip only).",
+          "type": "string"
         },
         "hasDocParts": {
           "description": "Whether source carried w:docParts (round-trip only — do not hand-author). Distinguishes an empty container from the XSD-optional container's absence.",
@@ -12791,6 +12929,10 @@
           "description": "Movie relationship id — (w:movie/`@r:id`). External.",
           "type": "string"
         },
+        "previewShape": {
+          "$ref": "#/definitions/VmlShapeOptions",
+          "description": "Complete parsed preview shape; preserves VML attributes outside the convenience fields."
+        },
         "shapeId": {
           "description": "VML shape id (v:shape/`@id`). Defaults to a generated id.",
           "type": "string"
@@ -14174,8 +14316,52 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the begin run (w:rsidR, round-trip)."
+            },
+            "endAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the end run (w:rsidR, round-trip)."
+            },
+            "endRPrXml": {
+              "description": "Verbatim run-properties of the end fldChar run (round-trip).",
+              "type": "string"
+            },
+            "endRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
+            },
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
+            },
+            "rPrXml": {
+              "description": "Control-run properties shared by begin/separate (round-trip).",
+              "type": "string"
+            },
+            "resultAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the result run (w:rsidR, round-trip)."
+            },
+            "resultRPrXml": {
+              "description": "Result-run properties (round-trip; differs from the control rPr).",
+              "type": "string"
+            },
+            "resultRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
+            },
+            "separatorAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+            },
+            "separatorRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
             }
           },
           "required": ["formField"],
@@ -15931,6 +16117,22 @@
       },
       "type": "object"
     },
+    "PictLinkedMediaOptions": {
+      "additionalProperties": false,
+      "description": "Externally linked imagedata source (v:imagedata r:id resolving to an External image relationship). The relationship id round-trips verbatim.",
+      "properties": {
+        "relationshipId": {
+          "description": "Source relationship id referenced by the shape's r:id.",
+          "type": "string"
+        },
+        "sourceUrl": {
+          "description": "External target URL of the image relationship.",
+          "type": "string"
+        }
+      },
+      "required": ["relationshipId", "sourceUrl"],
+      "type": "object"
+    },
     "PictMediaOptions": {
       "additionalProperties": false,
       "description": "Binary backing one `{fileName}` placeholder in the pict (imagedata or raw passthrough XML — fallback copies, textbox content).",
@@ -15957,6 +16159,13 @@
           "description": "Ordered shape elements — shapetype preambles, shapes, groups, …",
           "items": {
             "$ref": "#/definitions/VmlShapeChild"
+          },
+          "type": "array"
+        },
+        "linkedMedia": {
+          "description": "Externally linked imagedata sources (round-trip; authoring supplies entries and matching r:id references).",
+          "items": {
+            "$ref": "#/definitions/PictLinkedMediaOptions"
           },
           "type": "array"
         },
@@ -19622,6 +19831,17 @@
         {
           "additionalProperties": false,
           "properties": {
+            "subDoc": {
+              "$ref": "#/definitions/SubDocOptions"
+            }
+          },
+          "required": ["subDoc"],
+          "title": "subDoc",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "customXml": {
               "$ref": "#/definitions/CustomXmlBlockOptions"
             }
@@ -22317,10 +22537,17 @@
       "properties": {
         "data": {
           "$ref": "#/definitions/DataType",
-          "description": "The sub-document data: raw .docx bytes, ArrayBuffer, or a base64 data URL."
+          "description": "The sub-document data: raw .docx bytes, ArrayBuffer, or a base64 data URL. Required for embedded sub-documents; omit when `sourceUrl` is set."
+        },
+        "sourceRid": {
+          "description": "Source relationship id in word/_rels/document.xml.rels (round-trip).",
+          "type": "string"
+        },
+        "sourceUrl": {
+          "description": "External target URL. When set the sub-document is linked, not embedded.",
+          "type": "string"
         }
       },
-      "required": ["data"],
       "type": "object"
     },
     "SupplementalFontOptions": {
@@ -25143,8 +25370,52 @@
         {
           "additionalProperties": false,
           "properties": {
+            "additionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the begin run (w:rsidR, round-trip)."
+            },
+            "endAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the end run (w:rsidR, round-trip)."
+            },
+            "endRPrXml": {
+              "description": "Verbatim run-properties of the end fldChar run (round-trip).",
+              "type": "string"
+            },
+            "endRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
+            },
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
+            },
+            "rPrXml": {
+              "description": "Control-run properties shared by begin/separate (round-trip).",
+              "type": "string"
+            },
+            "resultAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the result run (w:rsidR, round-trip)."
+            },
+            "resultRPrXml": {
+              "description": "Result-run properties (round-trip; differs from the control rPr).",
+              "type": "string"
+            },
+            "resultRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
+            },
+            "runPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
+            },
+            "separatorAdditionRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+            },
+            "separatorRunPropertiesRsid": {
+              "$ref": "#/definitions/LongHexNumber",
+              "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
             }
           },
           "required": ["formField"],
@@ -31396,6 +31667,10 @@
         "linkedToFile": {
           "type": "boolean"
         },
+        "longDesc": {
+          "description": "Long description file name or URL (w:longDesc/@w:val, round-trip).",
+          "type": "string"
+        },
         "longDescRId": {
           "description": "Long description relationship ID (round-trip only).",
           "type": "string"
@@ -31422,6 +31697,10 @@
         },
         "size": {
           "description": "Frame size (e.g., \"50%\")",
+          "type": "string"
+        },
+        "sourceFileName": {
+          "description": "Source file name or URL (w:sourceFileName/@w:val, round-trip).",
           "type": "string"
         },
         "sourceRId": {

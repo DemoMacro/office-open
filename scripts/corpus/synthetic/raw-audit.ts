@@ -43,11 +43,13 @@ export function auditCanonicalOptions(
   options: unknown,
   allowedOpaqueParts: readonly RegExp[],
   orphanedXmlParts?: ReadonlySet<string>,
+  allowedOpaquePaths?: ReadonlySet<string>,
 ): RawAuditBlocker[] {
   const blockers = findRawXml(options, new Set(), "");
   const rawParts = (options as { rawParts?: readonly RawPartLike[] }).rawParts ?? [];
   for (const part of rawParts) {
     if (allowedOpaqueParts.some((pattern) => pattern.test(part.path))) continue;
+    if (allowedOpaquePaths?.has(part.path)) continue;
     if (orphanedXmlParts?.has(part.path)) {
       blockers.push({ part: part.path, reason: "orphaned-independent-part" });
       continue;

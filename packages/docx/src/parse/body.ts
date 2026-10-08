@@ -13,6 +13,7 @@ import { parseCustomXmlBlock } from "@parts/custom-xml/custom-xml-parse";
 import { parseSectionPropertiesEl } from "@parts/document/body/section-properties/descriptor";
 import type { SectionPropertiesOptions } from "@parts/document/body/section-properties/section-properties";
 import { parseSdtBlock } from "@parts/sdt/sdt-parse";
+import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import type { TableOfContentsOptions } from "@parts/table-of-contents/table-of-contents-properties";
 import {
   hasTocFieldEndBeforeChildren,
@@ -138,11 +139,21 @@ function parseHeaderFooterRef(
   const path = ctx.docx.partRefs.headers.get(rId) ?? ctx.docx.partRefs.footers.get(rId);
   if (!path) return undefined;
 
-  const partEl = ctx.docx.doc.get(path);
-  if (!partEl) return undefined;
+  const children = parseHeaderFooterPartChildren(path, ctx);
+  if (children.length === 0) return undefined;
+  const partName = path.split("/").pop() ?? path;
+  return { children, partName };
+}
 
-  // The header/footer XML root element contains w:p, w:tbl, etc. Parse under
-  // the part's own relationship scope so its drawings resolve images correctly.
+/**
+ * Parse a header/footer part's root children. The header/footer XML root
+ * element contains w:p, w:tbl, etc.; parsing runs under the part's own
+ * relationship scope so its drawings resolve images correctly. Shared by the
+ * main document flow and the glossary body flow.
+ */
+export function parseHeaderFooterPartChildren(path: string, ctx: DocxReadContext): SectionChild[] {
+  const partEl = ctx.docx.doc.get(path);
+  if (!partEl) return [];
   const children: SectionChild[] = [];
   ctx.withPart(path, () => {
     for (const child of partEl.elements ?? []) {
@@ -153,10 +164,7 @@ function parseHeaderFooterRef(
       }
     }
   });
-
-  if (children.length === 0) return undefined;
-  const partName = path.split("/").pop() ?? path;
-  return { children, partName };
+  return children;
 }
 
 // ── Section child dispatch ───────────────────────────────────────────────────
@@ -285,6 +293,8 @@ export function parseSectionChild(el: Element, ctx: DocxReadContext): SectionChi
     }
     case "w:altChunk":
       return { altChunk: parseAltChunk(el, ctx) };
+    case "w:subDoc":
+      return { subDoc: parseSubDoc(el, ctx) };
     case "w:customXml":
       return { customXml: parseCustomXmlBlock(el, ctx, parseSectionChild) };
     case "w:bookmarkStart": {

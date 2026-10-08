@@ -104,7 +104,8 @@ export function wirePartHyperlinks(
     if (hlink.slide !== undefined) continue;
     const id = cursor++;
     idByKey.set(hlink.key, id);
-    add(id, RELATIONSHIP_TYPES.hyperlink, hlink.url ?? "", "External");
+    const target = hlink.url ?? "";
+    add(id, RELATIONSHIP_TYPES.hyperlink, target, target.startsWith("#") ? undefined : "External");
   }
   const replacement = new Map<string, string>();
   for (const [key, id] of idByKey) replacement.set(`hlink:${key}`, `rId${id}`);
@@ -140,10 +141,15 @@ export function reserveClaimedSourceRids(
   source: string,
   passthroughRelationships: PresentationOptions["passthroughRelationships"],
   absorbedKinds: ReadonlySet<string>,
+  ownedTargets?: ReadonlySet<string>,
 ): void {
   for (const rel of passthroughRelationships ?? []) {
     if (rel.source !== source) continue;
-    if (absorbedKinds.has(rel.relationshipType.split("/").pop()!)) continue;
+    const kind = rel.relationshipType.split("/").pop()!;
+    if (kind === "oleObject") {
+      rels.reserveId(rel.rId);
+    }
+    if (absorbedKinds.has(kind) && !ownedTargets?.has(rel.target)) continue;
     rels.reserveId(rel.rId);
   }
 }

@@ -57,6 +57,14 @@ describe("presentationPropertiesDesc round-trip", () => {
     expect(result.show?.showNarration).toBe(false);
   });
 
+  it("round-trips a preset laser-pointer color", () => {
+    const result = roundTrip({
+      show: { penColor: { value: "black" } },
+    });
+
+    expect(result.show?.penColor).toEqual({ value: "black" });
+  });
+
   it("round-trips empty options", () => {
     const xml = presentationPropertiesDesc.stringify(
       {} as PresentationPropertiesOptions,
@@ -67,5 +75,10 @@ describe("presentationPropertiesDesc round-trip", () => {
     if (!el) throw new Error("parsed document has no root element");
     const result = presentationPropertiesDesc.parse(el, readCtx);
     expect(result).toBeDefined();
+  });
+
+  it("preserves an empty print properties element", () => {
+    const result = roundTrip({ print: {} });
+    expect(result.print).toEqual({});
   });
 });

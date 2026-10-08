@@ -1,4 +1,4 @@
-import type { PassthroughRelationship } from "@office-open/core";
+import type { EmbeddingData, PassthroughRelationship } from "@office-open/core";
 import {
   RELATIONSHIP_TYPES,
   appPropertiesDesc,
@@ -360,6 +360,7 @@ function parseSlideRelMap(
   doc: ParsedArchive,
   slidePath: string,
   externalRelIds?: Set<string>,
+  embeddingTypes?: Map<string, EmbeddingData["relationshipType"]>,
 ): Map<string, string> {
   const rels = new Map<string, string>();
   const relsPath = partPathToRelsPath(slidePath);
@@ -369,6 +370,7 @@ function parseSlideRelMap(
 
   for (const child of relsEl.elements ?? []) {
     if (child.name !== "Relationship") continue;
+    const relationshipType = attr(child, "Type") ?? "";
     const id = attr(child, "Id") ?? "";
     const target = attr(child, "Target") ?? "";
     if (!id || !target) continue;
@@ -378,6 +380,13 @@ function parseSlideRelMap(
       rels.set(id, target);
     } else {
       rels.set(id, resolveRelationshipTarget(slidePath, target));
+      if (embeddingTypes && id) {
+        if (relationshipType === RELATIONSHIP_TYPES.package) {
+          embeddingTypes.set(id, "package");
+        } else if (relationshipType === RELATIONSHIP_TYPES.oleObject) {
+          embeddingTypes.set(id, "oleObject");
+        }
+      }
     }
   }
 
@@ -936,8 +945,9 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
 
     const slideRels = parseSlideRelMap(pptx.doc, slidePath);
     const externalRelIds = new Set<string>();
-    parseSlideRelMap(pptx.doc, slidePath, externalRelIds);
-    const ctx = new ParseContext(pptx, slideRels, externalRelIds);
+    const embeddingTypes = new Map<string, EmbeddingData["relationshipType"]>();
+    parseSlideRelMap(pptx.doc, slidePath, externalRelIds, embeddingTypes);
+    const ctx = new ParseContext(pptx, slideRels, externalRelIds, embeddingTypes);
     const readCtx = new PptxReadContext(ctx);
     // slideDesc.parse returns the slide-part fields of SlideOptions (children/
     // background/transition/animations/…). The public-API-only fields (layout,
@@ -997,6 +1007,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
           comments.push(entry);
         }
         if (comments.length > 0) slideOpts.comments = comments as SlideCommentOptions[];
+        slideOpts.commentSourcePath = relPath;
       }
       break;
     }

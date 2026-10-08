@@ -23,6 +23,7 @@ import {
   partPathToRelsPath,
   resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
+  resolveMainPartContentType,
   replaceImagePlaceholders,
 } from "@office-open/core";
 import type {
@@ -524,7 +525,12 @@ export function compilePresentation(
         forcedOverrides: [
           {
             path: packageFormat.mainPartPath,
-            contentType: packageFormat.mainContentType,
+            contentType: resolveMainPartContentType(
+              "presentation",
+              options.contentTypes,
+              packageFormat.mainPartPath,
+              packageFormat.mainContentType,
+            ),
           },
         ],
       },

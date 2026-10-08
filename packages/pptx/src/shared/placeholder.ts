@@ -117,6 +117,8 @@ export interface PlaceholderFacets {
   effects?: ShapePropertiesOptions["effects"];
   scene3d?: ShapePropertiesOptions["scene3d"];
   shape3d?: ShapePropertiesOptions["shape3d"];
+  extensions?: ShapePropertiesOptions["extensions"];
+  ext?: ShapePropertiesOptions["ext"];
   textBody?: TextBodyOptions;
   style?: ShapeStyleOptions;
 }
@@ -175,6 +177,8 @@ function pickFacets(def: PlaceholderDefinition | undefined): PlaceholderFacets |
   if (def.effects !== undefined) facets.effects = def.effects;
   if (def.scene3d !== undefined) facets.scene3d = def.scene3d;
   if (def.shape3d !== undefined) facets.shape3d = def.shape3d;
+  if (def.extensions !== undefined) facets.extensions = def.extensions;
+  if (def.ext !== undefined) facets.ext = def.ext;
   if (def.textBody !== undefined) facets.textBody = def.textBody;
   if (def.style !== undefined) facets.style = def.style;
   return Object.keys(facets).length > 0 ? facets : undefined;
@@ -318,6 +322,8 @@ export function extractPlaceholderDefinition(
       if (spPrOpts.effects !== undefined) def.effects = spPrOpts.effects;
       if (spPrOpts.scene3d !== undefined) def.scene3d = spPrOpts.scene3d;
       if (spPrOpts.shape3d !== undefined) def.shape3d = spPrOpts.shape3d;
+      if (spPrOpts.extensions !== undefined) def.extensions = spPrOpts.extensions;
+      if (spPrOpts.ext !== undefined) def.ext = spPrOpts.ext;
     }
   }
 

@@ -16,6 +16,11 @@ import type { DataType } from "@office-open/core";
  * Options for creating a SubDoc element.
  */
 export interface SubDocOptions {
-  /** The sub-document data: raw .docx bytes, ArrayBuffer, or a base64 data URL. */
-  data: DataType;
+  /** The sub-document data: raw .docx bytes, ArrayBuffer, or a base64 data
+   *  URL. Required for embedded sub-documents; omit when `sourceUrl` is set. */
+  data?: DataType;
+  /** Source relationship id in word/_rels/document.xml.rels (round-trip). */
+  sourceRid?: string;
+  /** External target URL. When set the sub-document is linked, not embedded. */
+  sourceUrl?: string;
 }

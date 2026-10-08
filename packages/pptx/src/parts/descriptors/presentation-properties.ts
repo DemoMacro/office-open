@@ -5,8 +5,8 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import type { CustomDescriptor } from "@office-open/core/descriptor";
-import type { SolidFillOptions } from "@office-open/core/drawing";
+import type { CustomDescriptor, ReadContext } from "@office-open/core/descriptor";
+import { parseColorChoiceElement } from "@office-open/core/drawing";
 import { attr, attrNum, findChild, stringify as stringifyXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import {
@@ -26,8 +26,8 @@ export const presentationPropertiesDesc: CustomDescriptor<PresentationProperties
     return buildPresentationPropertiesXml(opts);
   },
 
-  parse(el, _ctx) {
-    return parsePresentationProperties(el);
+  parse(el, ctx) {
+    return parsePresentationProperties(el, ctx);
   },
 };
 
@@ -39,7 +39,10 @@ const COLOR_MODE_FROM_XSD: Record<string, PrintPropertiesOptions["colorMode"]> =
   clr: "color",
 };
 
-function parsePresentationProperties(el: XmlElement): PresentationPropertiesOptions {
+function parsePresentationProperties(
+  el: XmlElement,
+  ctx: ReadContext,
+): PresentationPropertiesOptions {
   const result: Partial<PresentationPropertiesOptions> = {};
 
   // show (p:showPr in real PPTX files, or p:show for round-trip compat)
@@ -75,15 +78,10 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
     }
     const penClr = findChild(showPr, "p:penClr");
     if (penClr) {
-      const srgb = findChild(penClr, "a:srgbClr");
-      if (srgb) {
-        const val = attr(srgb, "val");
-        if (val) showOpts.penColor = val;
-      } else {
-        const schemeClr = findChild(penClr, "a:schemeClr");
-        const val = schemeClr ? attr(schemeClr, "val") : undefined;
-        if (val) showOpts.penColor = { value: val } as SolidFillOptions;
-      }
+      const color = (penClr.elements ?? [])
+        .map((child) => parseColorChoiceElement(child, ctx))
+        .find(Boolean);
+      if (color) showOpts.penColor = color;
     }
     const showPrExt = findChild(showPr, "p:extLst");
     if (showPrExt) showOpts.ext = stringifyXml(showPrExt);
@@ -120,7 +118,7 @@ function parsePresentationProperties(el: XmlElement): PresentationPropertiesOpti
     if (parseOnOff(prnPr.attributes?.["hiddenSlides"])) print.hiddenSlides = true;
     if (parseOnOff(prnPr.attributes?.["scaleToFitPaper"])) print.scaleToFitPaper = true;
     if (parseOnOff(prnPr.attributes?.["frameSlides"])) print.frameSlides = true;
-    if (Object.keys(print).length > 0) result.print = print as PrintPropertiesOptions;
+    result.print = (Object.keys(print).length > 0 ? print : {}) as PrintPropertiesOptions;
   }
 
   // htmlPublish (p:htmlPubPr)

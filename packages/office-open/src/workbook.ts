@@ -19,7 +19,7 @@ import {
   type WorkbookOptions,
 } from "@office-open/xlsx";
 
-import { detectOffice } from "./formats";
+import { detectOffice, withRequestedPackageVariant } from "./formats";
 
 /** Password accepted by the legacy XLS parser. */
 export interface WorkbookParseOptions {
@@ -83,11 +83,14 @@ export async function generateWorkbook<
     return convertOutput(generateOdsWorkbook(options), outputType, ODS_MIME_TYPE);
   }
 
-  return generateXlsxWorkbook(options, {
-    type: outputType,
-    packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
-    reproducible,
-  } as PackerOptions<T>);
+  return generateXlsxWorkbook(
+    withRequestedPackageVariant(format as keyof typeof OOXML_PACKAGE_FORMATS, options),
+    {
+      type: outputType,
+      packageVariant: OOXML_PACKAGE_FORMATS[format as keyof typeof OOXML_PACKAGE_FORMATS].variant,
+      reproducible,
+    } as PackerOptions<T>,
+  );
 }
 
 export async function patchWorkbook<T extends OutputType = OutputType>(

@@ -35,6 +35,15 @@ describe("groupShapeDesc round-trip", () => {
     expect(result).toBeDefined();
   });
 
+  it("preserves a group without a transform element", () => {
+    const xml = groupShapeDesc.stringify({ children: [], transformless: true }, writeCtx)!;
+    expect(xml).toContain("<p:grpSpPr></p:grpSpPr>");
+    expect(xml).not.toContain("<a:xfrm>");
+
+    const result = roundTrip({ children: [], transformless: true });
+    expect(result.transformless).toBe(true);
+  });
+
   it("round-trips group position and size", () => {
     const opts: GroupOptions = {
       children: [],

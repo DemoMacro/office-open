@@ -740,6 +740,9 @@ export function stringifyChildDispatch(
   // recognize the field type and render its result.
   if ("formField" in child) {
     const ff = child.formField;
+    const ctrl = child.rPrXml ?? "";
+    const resultRPr = child.resultRPrXml ?? "";
+    const endRPr = child.endRPrXml ?? ctrl;
     let result = "";
     let instrCode = "";
     let symbolFont = false;
@@ -762,11 +765,11 @@ export function stringifyChildDispatch(
       ? '<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic"/></w:rPr>'
       : "";
     return (
-      `<w:r>${createBegin(false, ff)}</w:r>` +
+      `<w:r${runAttrs([child.additionRsid, child.runPropertiesRsid])}>${ctrl}${createBegin(undefined, ff)}</w:r>` +
       `<w:r><w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>` +
-      `<w:r>${createSeparate()}</w:r>` +
-      `<w:r>${rPr}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>` +
-      `<w:r>${createEnd()}</w:r>`
+      `<w:r${runAttrs([child.separatorAdditionRsid, child.separatorRunPropertiesRsid])}>${ctrl}${createSeparate()}</w:r>` +
+      `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${resultRPr || rPr}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>` +
+      `<w:r${runAttrs([child.endAdditionRsid, child.endRunPropertiesRsid])}>${endRPr}${createEnd()}</w:r>`
     );
   }
 
