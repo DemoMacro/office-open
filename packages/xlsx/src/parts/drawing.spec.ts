@@ -510,6 +510,120 @@ describe("drawingDesc — group child identity", () => {
   });
 });
 
+describe("drawingDesc — non-visual extension fidelity", () => {
+  it("round-trips group locking", () => {
+    const result = roundTrip({
+      groups: [
+        {
+          col: 1,
+          row: 1,
+          name: "Locked Group",
+          locking: { noGrp: true, noUngrp: true },
+          properties: {},
+        },
+      ],
+    });
+    const group = result.groups![0]!;
+    expect(group.locking).toEqual({ noGrp: true, noUngrp: true });
+    const xml = drawingDesc.stringify(
+      { groups: [{ ...group, locking: null }] } as DrawingOptions,
+      writeCtx,
+    );
+    expect(xml).toContain("<xdr:cNvGrpSpPr><a:grpSpLocks/></xdr:cNvGrpSpPr>");
+  });
+
+  it("round-trips a nested group picture before its child shape", () => {
+    const opts: DrawingOptions = {
+      groups: [
+        {
+          col: 1,
+          row: 1,
+          properties: {
+            childOffsetX: 0,
+            childOffsetY: 0,
+            childExtentWidth: 2160,
+            childExtentHeight: 1215,
+          },
+          images: [{ rId: "rId1", shapeId: 3, name: "Picture 2" }],
+          shapes: [{ properties: {}, shapeId: 4, name: "Text Box 3" }],
+        },
+      ],
+    };
+    const result = roundTrip(opts);
+    const group = result.groups![0]!;
+    expect(group.images).toHaveLength(1);
+    expect(group.images![0]).toMatchObject({ rId: "rId1", name: "Picture 2", shapeId: 3 });
+    expect(group.shapes![0]?.name).toBe("Text Box 3");
+  });
+
+  it("round-trips group and connector black-white modes", () => {
+    const result = roundTrip({
+      groups: [
+        {
+          col: 1,
+          row: 1,
+          name: "G",
+          blackWhiteMode: "auto",
+          properties: {},
+          shapes: [{ name: "S", properties: { geometry: "rect" }, blackWhiteMode: "auto" }],
+        },
+      ],
+      connectors: [
+        {
+          col: 1,
+          row: 1,
+          name: "C",
+          blackWhiteMode: "auto",
+          properties: { geometry: "line" },
+        },
+      ],
+    });
+    expect(result.groups![0]!.blackWhiteMode).toBe("auto");
+    expect(result.groups![0]!.shapes![0]!.blackWhiteMode).toBe("auto");
+    expect(result.connectors![0]!.blackWhiteMode).toBe("auto");
+    const xml = drawingDesc.stringify(result, writeCtx)!;
+    expect(xml).toContain('<xdr:grpSpPr bwMode="auto">');
+    expect((xml.match(/bwMode="auto"/g) ?? []).length).toBe(3);
+  });
+
+  it("round-trips cNvPicPr extension lists", () => {
+    const rawExt =
+      '<a:ext uri="{84589F7E-364E-4C9E-8A38-B11213B215E9}">' +
+      '<a14:cameraTool xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main" ' +
+      'cellRange="$A$1" spid="_x0000_s1"/></a:ext>';
+    const result = roundTrip({
+      images: [{ col: 1, row: 1, rId: "rId1", cNvPicPrExt: rawExt }],
+    });
+    expect(result.images![0]!.cNvPicPrExt).toBe(rawExt);
+  });
+
+  it("round-trips anchors wrapped in a legacy VML-compat fallback", () => {
+    const xml =
+      '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+      'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">' +
+      "<mc:AlternateContent>" +
+      '<mc:Choice xmlns:v="urn:schemas-microsoft-com:vml" Requires="v"/>' +
+      "<mc:Fallback>" +
+      '<xdr:twoCellAnchor editAs="absolute"><xdr:from><xdr:col>1</xdr:col><xdr:colOff>0</xdr:colOff>' +
+      "<xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>" +
+      "<xdr:to><xdr:col>2</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>2</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>" +
+      '<xdr:sp><xdr:nvSpPr><xdr:cNvPr id="7" name="Bubble"/></xdr:nvSpPr><xdr:spPr/></xdr:sp>' +
+      "<xdr:clientData/></xdr:twoCellAnchor>" +
+      "</mc:Fallback></mc:AlternateContent></xdr:wsDr>";
+    const doc = parseXml(xml);
+    const parsed = drawingDesc.parse(doc.elements![0]!, readCtx);
+    const shape = parsed.shapes![0]!;
+    expect(shape.alternateContent).toBe("fallback");
+    const regenerated = drawingDesc.stringify(parsed, writeCtx)!;
+    expect(regenerated).toContain(
+      '<mc:Choice xmlns:v="urn:schemas-microsoft-com:vml" Requires="v"/>',
+    );
+    expect(regenerated).toContain("<mc:Fallback><xdr:twoCellAnchor editAs=");
+  });
+});
+
 describe("drawingDesc — anchored content parts", () => {
   it("round-trips a content part reference", () => {
     const opts: DrawingOptions = {

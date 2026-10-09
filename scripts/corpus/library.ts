@@ -53,6 +53,67 @@ function allowedOpaquePaths(options: unknown, format: Format): ReadonlySet<strin
   }
   return allowed;
 }
+
+/**
+ * Lowercased rebuilt XML paths for rawParts audit: an XML raw part colliding
+ * with a rebuilt part under OPC case-insensitive matching is a policy
+ * violation; unmodeled standalone XML members legitimately pass through.
+ */
+function rebuiltXmlPaths(options: unknown, format: Format): ReadonlySet<string> | undefined {
+  const o = options as Record<string, unknown>;
+  const paths = new Set<string>();
+  const add = (value: unknown): void => {
+    if (typeof value === "string" && value !== "") paths.add(value.toLowerCase());
+  };
+  if (format === "xlsx") {
+    add(o.workbookPath);
+    add(o.stylesPath);
+    add(o.sharedStringsPath);
+    add(o.themePath);
+    add(o.corePropertiesPath);
+    add(o.classificationLabelsPath);
+    add(o.personsPath);
+    add(o.volTypesPath);
+    for (const ws of (o.worksheets as { sourcePath?: string }[] | undefined) ?? []) {
+      add(ws?.sourcePath);
+    }
+    for (const cs of (o.chartsheets as { sourcePath?: string }[] | undefined) ?? []) {
+      add(cs?.sourcePath);
+    }
+    for (const ds of (o.dialogsheets as { sourcePath?: string }[] | undefined) ?? []) {
+      add(ds?.sourcePath);
+    }
+    for (const ms of (o.macrosheets as { sourcePath?: string }[] | undefined) ?? []) {
+      add(ms?.sourcePath);
+    }
+    for (const cache of (o.pivotCaches as
+      | { mode?: string; definitionPath?: string; recordsPath?: string }[]
+      | undefined) ?? []) {
+      if (cache?.mode === "definition") {
+        add(cache.definitionPath);
+        add(cache.recordsPath);
+      }
+    }
+    for (const ws of (o.worksheets as { pivotTables?: { sourcePath?: string }[] }[] | undefined) ??
+      []) {
+      for (const pt of ws?.pivotTables ?? []) add(pt?.sourcePath);
+    }
+    const rl = o.revisionLog as
+      | { headersPath?: string; usersPath?: string; logs?: { path?: string }[] }
+      | undefined;
+    if (rl) {
+      add(rl.headersPath === undefined ? undefined : `xl/${rl.headersPath}`);
+      add(rl.usersPath === undefined ? undefined : `xl/${rl.usersPath}`);
+      for (const log of rl.logs ?? []) add(log?.path === undefined ? undefined : `xl/${log.path}`);
+    }
+    return paths;
+  }
+  if (format === "docx") {
+    add(o.primaryPartPath);
+    return paths;
+  }
+  return undefined;
+}
 export type PackageFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 
 const BY_EXT: Record<
@@ -260,6 +321,7 @@ export async function runLibrary(
       EXTERNAL_OPAQUE_PARTS[format],
       orphanedXmlParts,
       allowedOpaquePaths(options, format),
+      rebuiltXmlPaths(options, format),
     )) {
       if (blocker.reason === "orphaned-independent-part") continue;
       const key = `${blocker.reason}:${blocker.part.replace(/(?:word|xl|ppt|powerpoint)[\\/]/, "")}`;

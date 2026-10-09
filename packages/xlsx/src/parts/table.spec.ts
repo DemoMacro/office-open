@@ -186,6 +186,8 @@ describe("tableDesc round-trip", () => {
     expect(style.name).toBe("TableStyleMedium2");
     expect(style.showFirstColumn).toBe(true);
     expect(style.showRowStripes).toBe(true);
+    expect(style.showLastColumn).toBe(false);
+    expect(style.showColumnStripes).toBe(false);
   });
 
   it("round-trips styleless table as style=undefined", () => {

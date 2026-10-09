@@ -232,6 +232,29 @@ describe("Worksheet", () => {
       expect(xml).toContain('<c r="B1" t="n"><f>SQRT(A1)</f><v>1E-4</v></c>');
     });
 
+    it("round-trips explicit inline xml:space without edge whitespace", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+          `<sheetData><row r="1">` +
+          `<c r="A1" t="inlineStr"><is><t xml:space="preserve">A</t></is></c>` +
+          `<c r="B1" t="inlineStr"><is><t xml:space="preserve">B</t>` +
+          `<r><rPr><b/></rPr><t xml:space="preserve">C</t></r></is></c>` +
+          `</row></sheetData></worksheet>`,
+      );
+      expect(result.rows?.[0]?.cells?.[0]?.value).toEqual({
+        text: "A",
+        textSpaceRaw: "preserve",
+      });
+      expect(result.rows?.[0]?.cells?.[1]?.value).toMatchObject({
+        text: "B",
+        textSpaceRaw: "preserve",
+        runs: [{ text: "C", textSpaceRaw: "preserve", properties: { bold: true } }],
+      });
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain('<c r="A1" t="inlineStr"><is><t xml:space="preserve">A</t></is></c>');
+      expect(xml).toContain('<r><rPr><b/></rPr><t xml:space="preserve">C</t></r>');
+    });
+
     it("round-trips data table formula attributes", () => {
       const result = parseSource(
         `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
@@ -328,6 +351,26 @@ describe("Worksheet", () => {
       expect(xml).toContain('error=""');
       expect(xml).toContain('prompt=""');
       expect(xml).toContain('showDropDown="0"');
+    });
+
+    it("round-trips the x12ac explicit list extension", () => {
+      const result = parseSource(
+        `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ` +
+          `xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+          `<dataValidations><dataValidation type="list" operator="equal" allowBlank="1" ` +
+          `showErrorMessage="1" sqref="A1">` +
+          `<mc:AlternateContent xmlns:x12ac="http://schemas.microsoft.com/office/spreadsheetml/2011/1/ac">` +
+          `<mc:Choice Requires="x12ac"><x12ac:list>1,"2,3",4</x12ac:list></mc:Choice>` +
+          `<mc:Fallback><formula1>"1,2,3,4"</formula1></mc:Fallback>` +
+          `</mc:AlternateContent></dataValidation></dataValidations></worksheet>`,
+      );
+      expect(result.dataValidations?.[0]).toMatchObject({
+        explicitList: '1,"2,3",4',
+        formula1: '"1,2,3,4"',
+      });
+      const xml = buildWorksheetXml(result, {});
+      expect(xml).toContain("<x12ac:list>1,&quot;2,3&quot;,4</x12ac:list>");
+      expect(xml).toContain("<mc:Fallback><formula1>&quot;1,2,3,4&quot;</formula1></mc:Fallback>");
     });
 
     it("round-trips explicit sheetView defaults", () => {

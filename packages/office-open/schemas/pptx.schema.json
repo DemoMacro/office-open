@@ -8325,6 +8325,18 @@
     "MasterPlaceholderOptions": {
       "$ref": "#/definitions/PlaceholderMapOptions"
     },
+    "MathParagraphOptions": {
+      "additionalProperties": false,
+      "description": "A14 math paragraph (a14:m). Content is the m:oMathPara subtree.",
+      "properties": {
+        "content": {
+          "description": "Verbatim DrawingML Math content (m:oMathPara). Round-trip channel for the A14 foreign extension; do not hand-author.",
+          "type": "string"
+        }
+      },
+      "required": ["content"],
+      "type": "object"
+    },
     "MediaAnimationType": {
       "description": "Media playback action: playAudio, playVideo, or \"play\" (media-type-agnostic).",
       "enum": ["playAudio", "playVideo", "play"],
@@ -9169,6 +9181,9 @@
               },
               {
                 "$ref": "#/definitions/TextBreakOptions"
+              },
+              {
+                "$ref": "#/definitions/MathParagraphOptions"
               },
               {
                 "type": "string"

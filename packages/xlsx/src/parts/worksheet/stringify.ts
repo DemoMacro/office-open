@@ -69,7 +69,11 @@ export function stringifyPageBreaksXml(
  * Zero-allocation fast path: directly concatenates XML string,
  * bypassing the intermediate object tree entirely.
  */
-export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext): string {
+export function stringifyWorksheet(
+  opts: WorksheetOptions,
+  ctx: WorksheetContext,
+  part?: { rootElement?: "worksheet" | "macrosheet" },
+): string {
   const sharedStrings = ctx.sharedStrings;
   const styles = ctx.styles;
 
@@ -88,16 +92,27 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
   const webPublishItems = opts.webPublishItems ?? [];
 
   const p: string[] = [
-    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
-      ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
-      ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"' +
-      ' mc:Ignorable="x14ac xr xr2 xr3"' +
-      ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
-      ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
-      ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
-      ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
-      (opts.uid ? ` xr:uid="${escapeXml(opts.uid)}"` : "") +
-      ">",
+    part?.rootElement === "macrosheet"
+      ? '<xm:macrosheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+        ' xmlns:xm="http://schemas.microsoft.com/office/excel/2006/main"' +
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
+        ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"' +
+        ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
+        ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
+        ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
+        ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
+        (opts.uid ? ` ${opts.uidPrefix ?? "xr"}:uid="${escapeXml(opts.uid)}"` : "") +
+        ">"
+      : '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"' +
+        ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"' +
+        ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"' +
+        ' mc:Ignorable="x14ac xr xr2 xr3"' +
+        ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"' +
+        ' xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision"' +
+        ' xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2"' +
+        ' xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3"' +
+        (opts.uid ? ` ${opts.uidPrefix ?? "xr"}:uid="${escapeXml(opts.uid)}"` : "") +
+        ">",
   ];
 
   // Sheet properties (tabColor, outlinePr go here)
@@ -637,7 +652,15 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
       if (dv.imeMode) dvAttrs.imeMode = dv.imeMode;
       if (dv.showDropDown !== undefined) dvAttrs.showDropDown = dv.showDropDown ? 1 : 0;
       const inner: string[] = [];
-      if (dv.formula1 !== undefined)
+      if (dv.explicitList !== undefined)
+        inner.push(
+          `<mc:AlternateContent xmlns:x12ac="http://schemas.microsoft.com/office/spreadsheetml/2011/1/ac" ` +
+            `xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">` +
+            `<mc:Choice Requires="x12ac"><x12ac:list>${escapeXml(dv.explicitList)}</x12ac:list></mc:Choice>` +
+            `<mc:Fallback><formula1>${escapeXml(dv.formula1 ?? "")}</formula1></mc:Fallback>` +
+            `</mc:AlternateContent>`,
+        );
+      else if (dv.formula1 !== undefined)
         inner.push(
           `<formula1${/^\s|\s$/.test(dv.formula1) ? ' xml:space="preserve"' : ""}>${escapeXml(dv.formula1)}</formula1>`,
         );
@@ -1015,7 +1038,7 @@ export function stringifyWorksheet(opts: WorksheetOptions, ctx: WorksheetContext
     p.push(`<extLst>${opts.ext}</extLst>`);
   }
 
-  p.push("</worksheet>");
+  p.push(part?.rootElement === "macrosheet" ? "</xm:macrosheet>" : "</worksheet>");
   return p.join("");
 }
 

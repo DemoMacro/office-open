@@ -136,7 +136,17 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
     const result: Partial<WorksheetOptions> = {};
     let pageSetUpPrCache: Partial<PageSetupOptions> | undefined;
 
-    if (attr(el, "xr:uid")) result.uid = attr(el, "xr:uid");
+    const uid =
+      attr(el, "xr:uid") ?? attr(el, "xr2:uid") ?? attr(el, "xr3:uid") ?? attr(el, "xr6:uid");
+    if (uid) {
+      result.uid = uid;
+      for (const prefix of ["xr2", "xr3", "xr6"] as const) {
+        if (attr(el, `${prefix}:uid`) !== undefined) {
+          result.uidPrefix = prefix;
+          break;
+        }
+      }
+    }
 
     // Resolve shared strings from context (XlsxReadContext). Rich-text
     // entries arrive as RichTextOptions objects and flow into cell.value.
@@ -621,6 +631,19 @@ export const worksheetDesc: CustomDescriptor<WorksheetOptions> = {
         if (f1El) dv.formula1 = textOf(f1El);
         const f2El = findChild(dEl, "formula2");
         if (f2El) dv.formula2 = textOf(f2El);
+        // Excel 2010+ explicit list: the x12ac:list Choice preserves per-item
+        // quoting, while the Fallback formula1 stays the canonical plain form.
+        const dvAltContent = dEl.elements?.find((c) => c.name === "mc:AlternateContent");
+        if (dvAltContent) {
+          const choice = dvAltContent.elements?.find((c) => c.name === "mc:Choice");
+          const listEl = choice ? findChild(choice, "x12ac:list") : undefined;
+          if (listEl) dv.explicitList = textOf(listEl);
+          if (dv.formula1 === undefined) {
+            const fallback = dvAltContent.elements?.find((c) => c.name === "mc:Fallback");
+            const fbFormula1 = fallback ? findChild(fallback, "formula1") : undefined;
+            if (fbFormula1) dv.formula1 = textOf(fbFormula1);
+          }
+        }
 
         dvs.push(dv);
       }

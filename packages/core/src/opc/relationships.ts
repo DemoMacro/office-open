@@ -70,6 +70,7 @@ export const RELATIONSHIP_TYPES = {
   header: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header",
   hyperlink: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink",
   image: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image",
+  macrosheet: "http://schemas.microsoft.com/office/2006/relationships/xlMacrosheet",
   metadata: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/metadata",
   notesMaster: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster",
   notesSlide: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide",

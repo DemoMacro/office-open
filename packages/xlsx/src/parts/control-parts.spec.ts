@@ -296,4 +296,23 @@ describe("worksheet control parts", () => {
       }),
     ).toThrow(/xl\/ctrlProps\/formControlPr: unknown: unsupported element/);
   });
+
+  it("round-trips the CheckBox spelling and firstButton flag", () => {
+    const xml =
+      XML_DECL +
+      `<x14:formControlPr xmlns:x14="http://schemas.microsoft.com/office/spreadsheetml/2009/9/main" ` +
+      `objectType="CheckBox" checked="Checked" firstButton="1" lockText="1" noThreeD="1"/>`;
+    const el = parseXml(xml).elements![0]!;
+    const readContext = {
+      resolveRelationship: () => undefined,
+      getPart: () => undefined,
+      getRaw: () => undefined,
+    };
+    const parsed = controlPropertiesDesc.parse(el, readContext);
+    expect(parsed.objectType).toBe("CheckBox");
+    expect(parsed.firstButton).toBe(true);
+    const output = controlPropertiesDesc.stringify(parsed, {} as WriteContext);
+    expect(output).toContain('objectType="CheckBox"');
+    expect(output).toContain('firstButton="1"');
+  });
 });

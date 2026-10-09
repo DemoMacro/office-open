@@ -554,6 +554,8 @@ export const XLSX_PARTS = {
     "xl/embeddings/",
     "xl/printerSettings/",
     "xl/media/",
+    "ddp/",
+    "xl/model/",
     "xl/customProperty",
     "customXml/",
     "xl/drawings/vmlDrawing",

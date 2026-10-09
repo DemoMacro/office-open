@@ -12,6 +12,7 @@ import type { Element } from "@office-open/xml";
 export type FormControlObjectType =
   | "Button"
   | "Checkbox"
+  | "CheckBox"
   | "Radio"
   | "Drop"
   | "Edit"
@@ -94,6 +95,7 @@ const FORM_CONTROL_CHILDREN = new Set(["fmlaLink", "fmlaRange", "fmlaMacro", "it
 const FORM_CONTROL_OBJECT_TYPES = new Set([
   "Button",
   "Checkbox",
+  "CheckBox",
   "Radio",
   "Drop",
   "Edit",
@@ -111,6 +113,7 @@ const FORM_CONTROL_VERTICAL_ALIGN = new Set(["Top", "Center", "Bottom"]);
 const FORM_CONTROL_OPTIONS = new Set([
   "objectType",
   "checked",
+  "firstButton",
   "dropStyle",
   "fmlaLink",
   "fmlaRange",

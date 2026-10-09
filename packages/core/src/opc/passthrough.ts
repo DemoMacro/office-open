@@ -54,6 +54,12 @@ export interface PassthroughRelationship {
   rId: string;
   /** External target mode, retained only for package-root relationships. */
   targetMode?: "External";
+  /**
+   * The internal package-root target was already absent from the source
+   * archive. Preserve this source declaration despite the assembled-package
+   * dangling-relationship guard.
+   */
+  sourceTargetMissing?: boolean;
 }
 
 /**
@@ -72,12 +78,15 @@ export interface PassthroughResult {
   parts: PassthroughPart[];
   relationships: PassthroughRelationship[];
   /**
-   * Stage-0 rawParts audit: XML/.rels parts collected under a policy that
-   * did not declare them opaque. These are candidate modeled-XML absorption
-   * gaps; the strict policy will reject them once packages migrate. Kept
-   * out of PassthroughPart so public `rawParts` options stay schema-clean.
+   * rawParts audit for XML/.rels parts collected under a policy that did not
+   * declare them opaque. `modeled-xml-passthrough` marks a part whose path
+   * collides with a rebuilt part under OPC case-insensitive matching — the
+   * strict policy rejects it. `independent-xml-part` marks an unmodeled
+   * standalone member (Dell DDP companions, second core-properties parts)
+   * that legitimately travels verbatim. Kept out of PassthroughPart so
+   * public `rawParts` options stay schema-clean.
    */
-  audit: { path: string; reason: "modeled-xml-requires-absorption" }[];
+  audit: { path: string; reason: "modeled-xml-passthrough" | "independent-xml-part" }[];
 }
 
 // ── Collection ──
@@ -107,6 +116,7 @@ export function collectPassthroughParts(
 ): PassthroughResult {
   const rebuilt = new Set<string>(ALWAYS_REBUILT);
   for (const p of rebuiltPaths) rebuilt.add(p);
+  const rebuiltLower = new Set([...rebuilt].map((path) => path.toLowerCase()));
 
   // Borrowed content-type resolution: Override by part name first, then the
   // extension's Default (both case-insensitive, matching OPC matching rules).
@@ -157,8 +167,14 @@ export function collectPassthroughParts(
     const isXmlPart = path.endsWith(".xml") || path.endsWith(".rels");
     const part: PassthroughPart = { path, data };
     if (contentType !== undefined) part.contentType = contentType;
-    if (isXmlPart && !policy?.opaquePatterns?.some((p) => p.test(path)))
-      auditEntries.push({ path, reason: "modeled-xml-requires-absorption" });
+    if (isXmlPart && !policy?.opaquePatterns?.some((p) => p.test(path))) {
+      auditEntries.push({
+        path,
+        reason: rebuiltLower.has(path.toLowerCase())
+          ? "modeled-xml-passthrough"
+          : "independent-xml-part",
+      });
+    }
     parts.push(part);
   }
 
@@ -189,8 +205,16 @@ export function collectPassthroughParts(
       // (presProps/viewProps/theme/tableStyles all fit): the compiler's
       // pre-claim pass needs the source id to slot structure re-emissions in
       // after, preserving the source rId ordering on round-trip.
-      if (kept.has(resolveRelationshipTarget(source, target).toLowerCase()) || source !== "") {
+      if (source !== "") {
         relationships.push({ source, relationshipType, target, rId });
+      } else if (kept.has(resolveRelationshipTarget(source, target).toLowerCase())) {
+        relationships.push({ source, relationshipType, target, rId });
+      } else if (!archive.getRaw(resolveRelationshipTarget(source, target))) {
+        // Dangling root declaration: the source _rels/.rels references a part
+        // that does not exist. Root rels have no owner XML to remap, so keep
+        // the relationship verbatim — dropping it would lose the source
+        // declaration on rebuild.
+        relationships.push({ source, relationshipType, target, rId, sourceTargetMissing: true });
       }
     }
   };
@@ -260,6 +284,7 @@ export function dropDanglingPassthroughRels(
     // Legacy Office theme blips use Target="NULL" as an explicit unresolved
     // placeholder; preserve the relationship and its r:embed verbatim.
     if (rel.target.toUpperCase() === "NULL") continue;
+    if (rel.sourceTargetMissing) continue;
     if (keepDangling?.(rel)) continue;
     if (paths.has(resolved.toLowerCase())) continue;
     // A Target is a URI: a part whose name carries spaces/non-ASCII is

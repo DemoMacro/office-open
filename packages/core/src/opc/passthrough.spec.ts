@@ -149,6 +149,27 @@ describe("collectPassthroughParts", () => {
     expect(rootRels.map((r) => r.relationshipType.split("/").pop())).toContain("thumbnail");
   });
 
+  it("captures a dangling package-root relationship without capturing rebuilt targets", () => {
+    const files = basePackage();
+    files["_rels/.rels"] =
+      `<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">` +
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+      `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>` +
+      `</Relationships>`;
+
+    const result = collectPassthroughParts(archiveOf(files), ["word/document.xml"]);
+    expect(result.relationships.filter((r) => r.source === "")).toEqual([
+      {
+        source: "",
+        relationshipType:
+          "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+        target: "docProps/core.xml",
+        rId: "rId2",
+        sourceTargetMissing: true,
+      },
+    ]);
+  });
+
   it("keeps a rebuilt-target relationship captured for source-id pre-claim", () => {
     // image1.png absorbed into the model this time — the part no longer passes
     // through, but its source rel stays captured: the compiler's pre-claim
@@ -360,6 +381,28 @@ describe("dropDanglingPassthroughRels", () => {
     const root = decoder.decode(files["_rels/.rels"]);
     expect(root).not.toContain("thumbnail");
     expect(root).toContain("officeDocument");
+  });
+
+  it("keeps a source-declared dangling package-root relationship", () => {
+    const files = assembled();
+    files["_rels/.rels"] = encoder.encode(
+      `<Relationships>` +
+        `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>` +
+        `<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>` +
+        `</Relationships>`,
+    );
+    const dropped = dropDanglingPassthroughRels(files, [
+      {
+        source: "",
+        relationshipType:
+          "http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties",
+        target: "docProps/core.xml",
+        rId: "rId2",
+        sourceTargetMissing: true,
+      },
+    ]);
+    expect(dropped).toBe(0);
+    expect(decoder.decode(files["_rels/.rels"])).toContain('Target="docProps/core.xml"');
   });
 
   it("resolves targets case-insensitively (OPC part-name matching)", () => {

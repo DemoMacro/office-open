@@ -4369,7 +4369,7 @@
         },
         "properties": {
           "$ref": "#/definitions/CommentPropertiesOptions",
-          "description": "Comment properties — parsed but never re-emitted (see CommentPropertiesOptions)"
+          "description": "Comment properties."
         },
         "shapeId": {
           "description": "Source note shape id. Round-trip only: the live VML note shape is modeled separately.",
@@ -4418,7 +4418,7 @@
     },
     "CommentPropertiesOptions": {
       "additionalProperties": false,
-      "description": "Comment property. Parsed but never re-emitted: commentPr beside the sheet's VML note drawing makes Excel refuse to open the file (rival property systems; Excel reads note properties from the shape's x:ClientData). Fields survive parse for inspection; stringify drops them.",
+      "description": "Comment property. Preserved beside the sheet's VML note drawing so third-party package properties round-trip without raw fallback.",
       "properties": {
         "altText": {
           "type": "string"
@@ -4434,6 +4434,10 @@
           "type": "boolean"
         },
         "autoScale": {
+          "type": "boolean"
+        },
+        "colHidden": {
+          "description": "Keep the note width when its column is hidden (v2 extension).",
           "type": "boolean"
         },
         "defaultSize": {
@@ -4453,6 +4457,10 @@
           "type": "boolean"
         },
         "print": {
+          "type": "boolean"
+        },
+        "rowHidden": {
+          "description": "Keep the note height when its row is hidden (v2 extension).",
           "type": "boolean"
         },
         "textHAlign": {
@@ -6090,6 +6098,10 @@
         "errorTitle": {
           "type": "string"
         },
+        "explicitList": {
+          "description": "Verbatim explicit list from the x12ac:list extension (Excel 2010+ mc:Choice form, e.g. `1,\"2,3\",4`), preserving per-item quoting that the plain formula1 fallback would corrupt. Round-trip only — do not hand-author.",
+          "type": "string"
+        },
         "formula1": {
           "type": "string"
         },
@@ -6671,6 +6683,9 @@
         "blipExt": {
           "description": "Verbatim a:blip a:extLst inner XML for unmodeled extensions.",
           "type": "string"
+        },
+        "cNvPicPrExt": {
+          "$ref": "#/definitions/PictureOptions/properties/cNvPicPrExt"
         },
         "compression": {
           "$ref": "#/definitions/BlipCompression",
@@ -8162,6 +8177,7 @@
       "enum": [
         "Button",
         "Checkbox",
+        "CheckBox",
         "Radio",
         "Drop",
         "Edit",
@@ -8759,6 +8775,10 @@
           "$ref": "#/definitions/AnchorType",
           "description": "Anchor type (default \"twoCell\")."
         },
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (grpSpPr/@bwMode); absent = attribute omitted."
+        },
         "col": {
           "description": "1-based column (from marker)",
           "type": "number"
@@ -8800,6 +8820,13 @@
         "hyperlink": {
           "$ref": "#/definitions/TextHyperlinkOptions",
           "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
+        "images": {
+          "description": "Nested pictures.",
+          "items": {
+            "$ref": "#/definitions/GroupPictureChildOptions"
+          },
+          "type": "array"
         },
         "locking": {
           "anyOf": [
@@ -8871,6 +8898,98 @@
         }
       },
       "required": ["col", "properties", "row"],
+      "type": "object"
+    },
+    "GroupPictureChildOptions": {
+      "additionalProperties": false,
+      "description": "Picture nested inside a group (no worksheet anchor, but size/id survive).",
+      "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+        },
+        "blipEffects": {
+          "$ref": "#/definitions/BlipEffectsOptions",
+          "description": "Image adjustment effects carried inside a:blip (a:lum, a:duotone, …)."
+        },
+        "blipExt": {
+          "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi (a14 imgProps artistic effects, …). Round-trip only; subsumes `useLocalDpi` when the source list carries both. Named blipExt to avoid colliding with the inherited cNvPr `ext` channel.",
+          "type": "string"
+        },
+        "cNvPicPrExt": {
+          "$ref": "#/definitions/PictureOptions/properties/cNvPicPrExt"
+        },
+        "compression": {
+          "$ref": "#/definitions/BlipCompression",
+          "description": "Compression state (a:blip/@cstate); absent = attribute omitted."
+        },
+        "creationId": {
+          "$ref": "#/definitions/Guid",
+          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+        },
+        "description": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
+        },
+        "ext": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
+        },
+        "extentCx": {
+          "$ref": "#/definitions/PictureOptions/properties/extentCx"
+        },
+        "extentCy": {
+          "$ref": "#/definitions/PictureOptions/properties/extentCy"
+        },
+        "fPublished": {
+          "description": "Published-object flag (pic/@fPublished); explicit true/false round-trips.",
+          "type": "boolean"
+        },
+        "hidden": {
+          "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+          "type": "boolean"
+        },
+        "hyperlink": {
+          "$ref": "#/definitions/TextHyperlinkOptions",
+          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+        },
+        "linkRId": {
+          "description": "Relationship ID for the linked source (a:blip",
+          "type": "string"
+        },
+        "locking": {
+          "$ref": "#/definitions/PictureLockingOptions",
+          "description": "Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr."
+        },
+        "name": {
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/name"
+        },
+        "preferRelativeResize": {
+          "$ref": "#/definitions/PictureOptions/properties/preferRelativeResize"
+        },
+        "properties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "Round-tripped pic/spPr — carries rotation/flip/bwMode/fill that the position-only default emission would drop. When absent, stringify emits the standard xfrm + rect geometry."
+        },
+        "rId": {
+          "description": "Relationship ID for the embedded image (a:blip",
+          "type": "string"
+        },
+        "shapeId": {
+          "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
+          "type": "number"
+        },
+        "sourceRectangle": {
+          "$ref": "#/definitions/SourceRectangleOptions",
+          "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
+        },
+        "title": {
+          "description": "XSD `@title`.",
+          "type": "string"
+        },
+        "useLocalDpi": {
+          "$ref": "#/definitions/PictureOptions/properties/useLocalDpi"
+        }
+      },
+      "required": ["rId"],
       "type": "object"
     },
     "GroupShapeChildOptions": {
@@ -9984,6 +10103,18 @@
         "x"
       ],
       "type": "string"
+    },
+    "MathParagraphOptions": {
+      "additionalProperties": false,
+      "description": "A14 math paragraph (a14:m). Content is the m:oMathPara subtree.",
+      "properties": {
+        "content": {
+          "description": "Verbatim DrawingML Math content (m:oMathPara). Round-trip channel for the A14 foreign extension; do not hand-author.",
+          "type": "string"
+        }
+      },
+      "required": ["content"],
+      "type": "object"
     },
     "MdxFunctionType": {
       "description": "the MDX function discriminator on mdx `@f`.",
@@ -11303,6 +11434,9 @@
                 "$ref": "#/definitions/TextBreakOptions"
               },
               {
+                "$ref": "#/definitions/MathParagraphOptions"
+              },
+              {
                 "type": "string"
               }
             ]
@@ -11763,8 +11897,9 @@
           "description": "Absolute Y in EMU (absoluteAnchor)."
         },
         "alternateContent": {
-          "description": "Source wrapped the anchor in mc:AlternateContent (Excel 2010+ form: Choice carries the full anchor, Fallback empty). Re-emit the wrapper only when the source had it.",
-          "type": "boolean"
+          "description": "Source wrapped the anchor in mc:AlternateContent. `\"choice\"`: the Choice carries the full anchor and the Fallback is empty (Excel 2010+ a14 form). `\"fallback\"`: the Choice is an empty `Requires=\"v\"` marker and the Fallback carries the full anchor (legacy VML-compat comment form).",
+          "enum": ["choice", "fallback"],
+          "type": "string"
         },
         "anchorType": {
           "$ref": "#/definitions/AnchorType",
@@ -11780,6 +11915,10 @@
         },
         "blipExt": {
           "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond the useLocalDpi hint (a14 imgProps artistic effects, …). Round-trip only; when the source list carries both, this element subsumes the hint.",
+          "type": "string"
+        },
+        "cNvPicPrExt": {
+          "description": "Verbatim cNvPicPr `a:extLst` inner XML for unmodeled extensions (a14:cameraTool, …). Round-trip only — do not hand-author.",
           "type": "string"
         },
         "col": {
@@ -15640,7 +15779,7 @@
           "type": "string"
         },
         "textSpaceRaw": {
-          "description": "Source `<t>` xml:space lexical form (`preserve` or the `default` absent form). Round-trip only: set when the text has leading/trailing whitespace, so an omitted source attribute is not upgraded to `preserve`.",
+          "description": "Source `<t>` xml:space lexical form when explicitly present, or `default` for whitespace-edged text with an omitted attribute. Round-trip only: an omitted attribute without edge whitespace is not upgraded.",
           "enum": ["default", "preserve"],
           "type": "string"
         },

@@ -575,6 +575,20 @@ describe("textBodyDesc round-trip", () => {
     expect(inner).toContain("<a:t>A</a:t>");
     expect(inner).toContain("<a:t>B</a:t>");
   });
+
+  it("round-trips an A14 math paragraph child", () => {
+    const content = '<m:oMathPara xmlns:m="urn:m"><m:oMath/></m:oMathPara>';
+    const inner = textBodyDesc.stringify({ paragraphs: [{ children: [{ content }] }] }, writeCtx)!;
+    expect(inner).toContain(
+      `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">${content}</a14:m>`,
+    );
+    const el = parseXml(`<a:txBody>${inner}</a:txBody>`).elements?.[0];
+    if (!el) throw new Error("no root");
+    expect(textBodyDesc.parse(el, readCtx).paragraphs?.[0]).toEqual({
+      children: [{ content }],
+      endParagraphProperties: { lang: "en-US" },
+    });
+  });
 });
 
 // ── textListStyleDesc / textStylesDesc ──

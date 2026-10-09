@@ -58,6 +58,7 @@ import type { PivotCacheDefinitionOptions, PivotCacheRecordsOptions } from "./pi
 import type { RevisionHeadersOptions, RevisionLogOptions, UsersOptions } from "./revision-log";
 import type { RichDataPackageOptions } from "./rich-data";
 import type { RevisionPtrOptions, WorkbookExtensionOptions } from "./workbook";
+import type { MacrosheetOptions } from "./worksheet";
 import type { RichTextOptions, WorksheetOptions } from "./worksheet";
 import type { MapInfoOptions } from "./xml-mapping";
 
@@ -109,6 +110,8 @@ export interface WorkbookOptions extends CorePropertiesOptions {
   chartsheets?: ChartsheetOptions[];
   /** Legacy Excel 5.0 dialog sheets (xl/dialogSheets/sheetN.xml) */
   dialogsheets?: DialogsheetOptions[];
+  /** Excel 4.0 macro sheets (xl/macrosheets/sheetN.xml, XLM formulas preserved verbatim). */
+  macrosheets?: MacrosheetOptions[];
   /** Pre-defined differential formats for conditional formatting */
   dxfs?: DxfOptions[];
   /**

@@ -274,8 +274,13 @@ export function stringifyWorkbook(opts: WorkbookDescriptorOptions): string {
   // Function groups (after sheets, before externalReferences per XSD)
   const functionGroups = opts.functionGroups;
   if (functionGroups) {
-    const builtInGroupCount = opts.builtInGroupCount ?? 16;
-    const fgParts: string[] = [`<functionGroups builtInGroupCount="${builtInGroupCount}">`];
+    // builtInGroupCount defaults to 16 per CT_FunctionGroups — omit the
+    // attribute on the default so a source without it round-trips verbatim.
+    const builtInGroupCountAttr =
+      opts.builtInGroupCount === undefined || opts.builtInGroupCount === 16
+        ? ""
+        : ` builtInGroupCount="${opts.builtInGroupCount}"`;
+    const fgParts: string[] = [`<functionGroups${builtInGroupCountAttr}>`];
     for (const name of functionGroups) {
       fgParts.push(`<functionGroup name="${escapeXml(name)}"/>`);
     }

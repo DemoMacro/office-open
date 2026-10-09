@@ -9,7 +9,12 @@
  * @module
  */
 
-import { findChild, escapeXml, stringify as stringifyXml } from "@office-open/xml";
+import {
+  findChild,
+  escapeXml,
+  stringify as stringifyXml,
+  stringifyElement,
+} from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
@@ -34,13 +39,20 @@ import type {
   TextTabAlignment,
   TextFieldOptions,
   TextBreakOptions,
+  MathParagraphOptions,
 } from "./types";
 
 /** Descriptor-layer paragraph accumulator (a:p). */
 export interface ParagraphDescriptorOptions {
   text?: string;
   properties?: TextParagraphPropertiesOptions;
-  children?: (TextRunOptions | TextFieldOptions | TextBreakOptions | string)[];
+  children?: (
+    | TextRunOptions
+    | TextFieldOptions
+    | TextBreakOptions
+    | MathParagraphOptions
+    | string
+  )[];
   /**
    * End-paragraph run properties (a:endParaRPr). Fresh paragraphs emit a
    * default lang marker; a parsed source preserves its value; false omits it.
@@ -451,6 +463,10 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
           parts.push(stringifyTextField(child, ctx));
         } else if (isBreak(child)) {
           parts.push(stringifyBreak(child, ctx));
+        } else if (isMath(child)) {
+          parts.push(
+            `<a14:m xmlns:a14="http://schemas.microsoft.com/office/drawing/2010/main">${child.content}</a14:m>`,
+          );
         } else {
           parts.push(textRunDesc.stringify(child, ctx) ?? "");
         }
@@ -480,7 +496,12 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
     }
 
     // Collect runs, fields, and breaks in document order.
-    const children: (TextRunOptions | TextFieldOptions | TextBreakOptions)[] = [];
+    const children: (
+      | TextRunOptions
+      | TextFieldOptions
+      | TextBreakOptions
+      | MathParagraphOptions
+    )[] = [];
     for (const child of el.elements ?? []) {
       if (child.name === "a:r") {
         children.push(textRunDesc.parse(child, ctx) as TextRunOptions);
@@ -488,6 +509,10 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
         children.push(readTextField(child, ctx));
       } else if (child.name === "a:br") {
         children.push(readBreak(child, ctx));
+      } else if (child.name === "a14:m") {
+        children.push({
+          content: (child.elements ?? []).map((element) => stringifyElement(element)).join(""),
+        });
       }
     }
 
@@ -496,6 +521,7 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
       onlyRun !== undefined &&
       !isTextField(onlyRun) &&
       !isBreak(onlyRun) &&
+      !isMath(onlyRun) &&
       children.length === 1 &&
       !result.properties &&
       onlyRun.text !== undefined &&
@@ -526,15 +552,21 @@ export const paragraphDesc: CustomDescriptor<ParagraphDescriptorOptions> = {
 // ── Text field (a:fld) + break (a:br) helpers ──
 
 function isTextField(
-  child: TextRunOptions | TextFieldOptions | TextBreakOptions,
+  child: TextRunOptions | TextFieldOptions | TextBreakOptions | MathParagraphOptions,
 ): child is TextFieldOptions {
   return typeof (child as TextFieldOptions).type === "string";
 }
 
 function isBreak(
-  child: TextRunOptions | TextFieldOptions | TextBreakOptions,
+  child: TextRunOptions | TextFieldOptions | TextBreakOptions | MathParagraphOptions,
 ): child is TextBreakOptions {
   return (child as TextBreakOptions).break === true;
+}
+
+function isMath(
+  child: TextRunOptions | TextFieldOptions | TextBreakOptions | MathParagraphOptions,
+): child is MathParagraphOptions {
+  return typeof (child as MathParagraphOptions).content === "string";
 }
 
 function stringifyBreak(opts: TextBreakOptions, ctx: WriteContext): string {

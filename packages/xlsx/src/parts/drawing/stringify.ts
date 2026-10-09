@@ -14,6 +14,7 @@ import {
   graphicFrameLockingDesc,
   registerHyperlink,
   pictureLockingDesc,
+  groupLockingDesc,
   groupShapePropertiesDesc,
   shapeLockingDesc,
   shapePropertiesDesc,
@@ -42,6 +43,7 @@ import type {
   DrawingContentPartOptions,
   ConnectorOptions,
   GroupOptions,
+  GroupPictureChildOptions,
   DrawingPictureOptions,
   DrawingChartOptions,
   DrawingWebExtensionOptions,
@@ -123,7 +125,7 @@ export function wrapAnchor(opts: DrawingAnchorOptions, inner: string): string {
 }
 
 function picXml(
-  img: DrawingPictureOptions,
+  img: DrawingPictureOptions | GroupPictureChildOptions,
   id: number,
   cx: number,
   cy: number,
@@ -145,9 +147,11 @@ function picXml(
       ? ""
       : ` preferRelativeResize="${img.preferRelativeResize ? "true" : "false"}"`;
   const locks = img.locking ? (pictureLockingDesc.stringify(img.locking, ctx) ?? "") : "";
-  const cNvPicPr = locks
-    ? `<xdr:cNvPicPr${prAttr}>${locks}</xdr:cNvPicPr>`
-    : `<xdr:cNvPicPr${prAttr}/>`;
+  const prExt = img.cNvPicPrExt ? `<a:extLst>${img.cNvPicPrExt}</a:extLst>` : "";
+  const cNvPicPr =
+    locks || prExt
+      ? `<xdr:cNvPicPr${prAttr}>${locks}${prExt}</xdr:cNvPicPr>`
+      : `<xdr:cNvPicPr${prAttr}/>`;
   const effects = img.blipEffects ? stringifyBlipEffects(img.blipEffects, ctx) : "";
   // The blip extension list: the verbatim channel subsumes useLocalDpi.
   const extLst = img.blipExt
@@ -442,6 +446,19 @@ export function buildGroup(
   const grpSpPrXml = groupShapePropertiesDesc.stringify(grp.properties, ctx) ?? "";
   let nextChildId = id + 1;
   const children: string[] = [];
+  for (const childImage of grp.images ?? []) {
+    const childId = childImage.shapeId ?? nextChildId;
+    nextChildId = childId + 1;
+    children.push(
+      picXml(
+        childImage,
+        childId,
+        convertToEmu(childImage.extentCx ?? DEFAULT_EXTENT_CX),
+        convertToEmu(childImage.extentCy ?? DEFAULT_EXTENT_CY),
+        ctx,
+      ),
+    );
+  }
   for (const childShape of grp.shapes ?? []) {
     const childId = childShape.shapeId ?? nextChildId;
     nextChildId = childId + 1;
@@ -474,8 +491,14 @@ export function buildGroup(
     );
   }
   const xml =
-    `<xdr:grpSp><xdr:nvGrpSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, grp, `Group ${id}`, hlinkClickXml(grp.hyperlink, ctx))}<xdr:cNvGrpSpPr/></xdr:nvGrpSpPr>` +
-    `<xdr:grpSpPr>${grpSpPrXml}</xdr:grpSpPr>${children.join("")}</xdr:grpSp>`;
+    `<xdr:grpSp><xdr:nvGrpSpPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, grp, `Group ${id}`, hlinkClickXml(grp.hyperlink, ctx))}` +
+    (grp.locking === null
+      ? "<xdr:cNvGrpSpPr><a:grpSpLocks/></xdr:cNvGrpSpPr>"
+      : grp.locking
+        ? `<xdr:cNvGrpSpPr>${groupLockingDesc.stringify(grp.locking, ctx) ?? ""}</xdr:cNvGrpSpPr>`
+        : "<xdr:cNvGrpSpPr/>") +
+    `</xdr:nvGrpSpPr>` +
+    `<xdr:grpSpPr${grp.blackWhiteMode ? ` bwMode="${grp.blackWhiteMode}"` : ""}>${grpSpPrXml}</xdr:grpSpPr>${children.join("")}</xdr:grpSp>`;
   return { xml, nextId: nextChildId };
 }
 

@@ -74,7 +74,7 @@ import {
   stripWorksheetPlaceholders,
   type WorksheetContext,
 } from "@parts/worksheet";
-import type { WorksheetOptions } from "@parts/worksheet";
+import type { MacrosheetOptions, WorksheetOptions } from "@parts/worksheet";
 import { mapInfoDesc, singleXmlCellsDesc } from "@parts/xml-mapping";
 import { columnToLetter } from "@util/index";
 
@@ -214,6 +214,7 @@ export function compileWorkbook(
 
   const chartsheetConfigs = options.chartsheets ?? [];
   const dialogsheetConfigs = options.dialogsheets ?? [];
+  const macrosheetConfigs = options.macrosheets ?? [];
   const hasCustomProperties = !!options.customProperties && options.customProperties.length > 0;
   const includeCustomProperties = hasCustomProperties || options.customPropertiesDeclared === true;
   const isRoundTrip = options.contentTypes !== undefined;
@@ -379,6 +380,9 @@ export function compileWorkbook(
     dialogsheetConfigs.map((config, index) =>
       (config.sourcePath ?? `xl/dialogSheets/sheet${index + 1}.xml`).replace(/^xl\//, ""),
     ),
+    macrosheetConfigs.map((config, index) =>
+      (config.sourcePath ?? `xl/macrosheets/sheet${index + 1}.xml`).replace(/^xl\//, ""),
+    ),
     includeStyles,
     includeTheme,
     options.themePath ? options.themePath.replace(/^xl\//, "") : "theme/theme1.xml",
@@ -420,13 +424,42 @@ export function compileWorkbook(
       rId: sheetRelationshipIds[sheetRelationshipIndex++] ?? `rId${sheetRelationshipIndex}`,
     });
   }
+  for (const ms of macrosheetConfigs) {
+    sheets.push({
+      name: ms.name ?? `Macro${sheetId}`,
+      sheetId: nextSheetId(ms.sheetId),
+      state: ms.state,
+      rId: sheetRelationshipIds[sheetRelationshipIndex++] ?? `rId${sheetRelationshipIndex}`,
+    });
+  }
   if (options.sheetDefinitions?.length === sheets.length) {
     const knownDefinitions =
       options.sheetDefinitions?.length === sheets.length &&
       options.sheetDefinitions.every((definition) =>
         sheets.some((sheet) => sheetIdentity(sheet) === sheetIdentity(definition)),
       );
-    if (knownDefinitions && options.sheetDefinitions) sheets = [...options.sheetDefinitions];
+    // Preserve the source tab order while keeping the freshly assigned rIds —
+    // the rebuilt workbook.xml.rels numbers relationships in model order, so
+    // reusing the source r:id strings would leave the sheet entries pointing
+    // at the wrong parts.
+    if (knownDefinitions && options.sheetDefinitions) {
+      const ordered = options.sheetDefinitions
+        .map((definition) => {
+          const sheet = sheets.find(
+            (candidate) => sheetIdentity(candidate) === sheetIdentity(definition),
+          );
+          if (!sheet) return undefined;
+          // An empty source r:id declares an unreferenced sheet entry — keep
+          // it verbatim instead of wiring it to a rebuilt part.
+          return {
+            ...sheet,
+            ...definition,
+            rId: definition.rId === "" ? "" : sheet.rId,
+          };
+        })
+        .filter((sheet): sheet is SheetDefinition => sheet !== undefined);
+      if (ordered.length === sheets.length) sheets = ordered;
+    }
   }
   // Sheets whose parts the model does not rebuild (Excel 4 macro sheets, …)
   // still need their <sheet> entry: the part travels as passthrough at its
@@ -521,6 +554,7 @@ export function compileWorkbook(
 
   compileChartsheets(chartsheetConfigs, ctx, mapping, state, options.passthroughRelationships);
   compileDialogsheets(dialogsheetConfigs, ctx, mapping, options.passthroughRelationships);
+  compileMacrosheets(macrosheetConfigs, ctx, mapping, options.passthroughRelationships);
   // Workbook XML (via descriptor)
   const freshWorkbookDefaults = {
     fileVersion:
@@ -1963,6 +1997,44 @@ function compileDialogsheets(
   }
 }
 
+/** Compile Excel 4.0 macro sheets: CT_Worksheet content in a `xm:macrosheet` part. */
+function compileMacrosheets(
+  macrosheetConfigs: MacrosheetOptions[],
+  ctx: XlsxWriteContext,
+  mapping: Record<string, { data: string; path: string }>,
+  passthroughRelationships?: readonly PassthroughRelationship[],
+): void {
+  for (const [i, msOpts] of macrosheetConfigs.entries()) {
+    const path = msOpts.sourcePath ?? `xl/macrosheets/sheet${i + 1}.xml`;
+    mapping[`Macrosheet${i}`] = {
+      data: XML_DECL + buildWorksheetXml(msOpts, ctx, { rootElement: "macrosheet" }),
+      path,
+    };
+    const sourceRels = (passthroughRelationships ?? []).filter(
+      (relationship) => relationship.source === path,
+    );
+    if (sourceRels.length === 0) continue;
+    const relationships = new Relationships(path);
+    for (const relationship of sourceRels) {
+      relationships.add(
+        relationship.relationshipType as RelationshipType,
+        relationship.target,
+        relationship.targetMode,
+      );
+    }
+    for (const relationship of sourceRels) {
+      const preferredId = /^rId(\d+)$/.exec(relationship.rId)?.[1];
+      if (preferredId) {
+        relationships.renameEntryByType(relationship.relationshipType, Number(preferredId));
+      }
+    }
+    mapping[`MacrosheetRels${i}`] = {
+      data: XML_DECL + relationships.serialize(),
+      path: partPathToRelsPath(path),
+    };
+  }
+}
+
 /**
  * Compile shared-workbook revisions (xl/revisionHeaders.xml +
  * xl/revisions/revisionN.xml + xl/users.xml). CT_Workbook has no revision
@@ -2052,6 +2124,7 @@ function buildWorkbookRelationships(
   worksheetTargets: readonly string[],
   csCount: number,
   dialogsheetTargets: readonly string[] = [],
+  macrosheetTargets: readonly string[] = [],
   includeStyles = true,
   includeTheme = true,
   themeTarget = "theme/theme1.xml",
@@ -2072,6 +2145,9 @@ function buildWorkbookRelationships(
   }
   for (const target of dialogsheetTargets) {
     ids.push(add(RELATIONSHIP_TYPES.dialogsheet, target));
+  }
+  for (const target of macrosheetTargets) {
+    ids.push(add(RELATIONSHIP_TYPES.macrosheet, target));
   }
   if (includeStyles) add(RELATIONSHIP_TYPES.styles, "styles.xml");
   if (includeTheme) add(RELATIONSHIP_TYPES.theme, themeTarget);

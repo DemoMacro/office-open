@@ -48,6 +48,42 @@ describe("xlsx relationship topology", () => {
     expect(result).toContain('Target="../media/image1.jpeg"');
   });
 
+  it("preserves internal drawing hyperlink targets without TargetMode", async () => {
+    const source = (await generateWorkbook({
+      worksheets: [
+        {
+          name: "Data",
+          rows: [{ cells: [{ value: "A" }] }],
+          shapes: [
+            {
+              col: 1,
+              row: 1,
+              name: "Shape",
+              properties: { geometry: "rect" },
+              hyperlink: { url: "#Sheet2!A1" },
+            },
+          ],
+        },
+      ],
+    })) as Uint8Array;
+    const archive = unzipSync(source);
+    replaceText(
+      archive,
+      "xl/drawings/_rels/drawing1.xml.rels",
+      fileText(archive, "xl/drawings/_rels/drawing1.xml.rels").replace(
+        ' TargetMode="External"',
+        "",
+      ),
+    );
+
+    const output = unzipSync(
+      (await generateWorkbook(parseWorkbookSync(zipSync(archive)))) as Uint8Array,
+    );
+    const result = fileText(output, "xl/drawings/_rels/drawing1.xml.rels");
+    expect(result).toContain('Target="#Sheet2!A1"');
+    expect(result).not.toContain("TargetMode");
+  });
+
   it("preserves chartsheet drawing and chart paths", async () => {
     const source = (await generateWorkbook({
       chartsheets: [

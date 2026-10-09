@@ -44,6 +44,7 @@ export function auditCanonicalOptions(
   allowedOpaqueParts: readonly RegExp[],
   orphanedXmlParts?: ReadonlySet<string>,
   allowedOpaquePaths?: ReadonlySet<string>,
+  modeledXmlPaths?: ReadonlySet<string>,
 ): RawAuditBlocker[] {
   const blockers = findRawXml(options, new Set(), "");
   const rawParts = (options as { rawParts?: readonly RawPartLike[] }).rawParts ?? [];
@@ -55,7 +56,9 @@ export function auditCanonicalOptions(
       continue;
     }
     if (XML_PART.test(part.path)) {
-      blockers.push({ part: part.path, reason: "modeled-xml-passthrough" });
+      if (!modeledXmlPaths || modeledXmlPaths.has(part.path.toLowerCase())) {
+        blockers.push({ part: part.path, reason: "modeled-xml-passthrough" });
+      }
       continue;
     }
     blockers.push({ part: part.path, reason: "opaque-binary-not-allowed" });

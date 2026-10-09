@@ -338,6 +338,15 @@ export interface TextBreakOptions {
   properties?: TextCharacterPropertiesOptions;
 }
 
+/** A14 math paragraph (a14:m). Content is the m:oMathPara subtree. */
+export interface MathParagraphOptions {
+  /**
+   * Verbatim DrawingML Math content (m:oMathPara). Round-trip channel for
+   * the A14 foreign extension; do not hand-author.
+   */
+  content: string;
+}
+
 // ── Defaults ──
 
 /** Default outline width: 1pt = 12700 EMU. */

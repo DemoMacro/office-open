@@ -75,14 +75,11 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
       const authorId = authors.indexOf(entry.author);
       const textXml =
         typeof entry.text === "string" ? tElement(entry.text) : buildRstXml(entry.text);
-      // commentPr is parsed but never re-emitted: Excel refuses to open a
-      // third-party file carrying commentPr beside the VML note drawing this
-      // compiler always writes (rival property systems — it reads the VML
-      // shape's x:ClientData instead).
+      const propertiesXml = entry.properties ? buildCommentPrXml(entry.properties) : "";
       const shapeId = entry.shapeId !== undefined ? ` shapeId="${entry.shapeId}"` : "";
       const uidAttr = entry.uid !== undefined ? ` xr:uid="${escapeXml(entry.uid)}"` : "";
       p.push(
-        `<comment ref="${entry.cell}"${shapeId}${uidAttr} authorId="${authorId}"><text>${textXml}</text></comment>`,
+        `<comment ref="${entry.cell}"${shapeId}${uidAttr} authorId="${authorId}"><text>${textXml}</text>${propertiesXml}</comment>`,
       );
     }
 
@@ -111,7 +108,7 @@ export const commentsDesc: CustomDescriptor<CommentsDocOptions> = {
         const authorId = Number(attr(c, "authorId") ?? 0);
         const textEl = findChild(c, "text");
         const text = textEl ? parseRst(textEl) : "";
-        const commentPrEl = findChild(c, "commentPr");
+        const commentPrEl = findCommentPrElement(c);
         const comment: CommentOptions = {
           cell: ref,
           ...(shapeId !== undefined ? { shapeId } : {}),
@@ -365,7 +362,29 @@ function collectAuthors(comments: CommentOptions[]): string[] {
   return result.length > 0 ? result : [""];
 }
 
-// ── Comment properties (CT_CommentPr) parse — stringify never emits it (see above) ──
+// ── Comment properties (CT_CommentPr) ──
+
+/**
+ * Modern producers may wrap CT_CommentPr in mc:AlternateContent. The
+ * transitional comments schema models the direct/fallback element; unknown
+ * Choice extensions are used only when no canonical property element exists.
+ */
+function findCommentPrElement(comment: XmlElement): XmlElement | undefined {
+  return (
+    findChild(comment, "commentPr") ??
+    (comment.elements ?? [])
+      .flatMap((alternate) => {
+        if (alternate.name !== "mc:AlternateContent") return [];
+        const fallback = findChild(alternate, "mc:Fallback");
+        const choice = findChild(alternate, "mc:Choice");
+        return [
+          fallback ? findChild(fallback, "commentPr") : undefined,
+          choice ? findChild(choice, "commentPr") : undefined,
+        ];
+      })
+      .find((element) => element !== undefined)
+  );
+}
 
 function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   const pr: CommentPropertiesOptions = {};
@@ -381,6 +400,10 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   if (autoFill !== undefined) pr.autoFill = parseOnOff(autoFill) ?? false;
   const autoLine = attr(el, "autoLine");
   if (autoLine !== undefined) pr.autoLine = parseOnOff(autoLine) ?? false;
+  const colHidden = attr(el, "colHidden");
+  if (colHidden !== undefined) pr.colHidden = parseOnOff(colHidden) ?? false;
+  const rowHidden = attr(el, "rowHidden");
+  if (rowHidden !== undefined) pr.rowHidden = parseOnOff(rowHidden) ?? false;
   const altText = attr(el, "altText");
   if (altText !== undefined) pr.altText = altText;
   const textHAlign = attr(el, "textHAlign");
@@ -403,12 +426,54 @@ function parseCommentPr(el: XmlElement): CommentPropertiesOptions {
   return pr;
 }
 
+/** Serialize CT_CommentPr with XSD attribute order and required anchor. */
+function buildCommentPrXml(pr: CommentPropertiesOptions): string {
+  const attrs: string[] = [];
+  const bool = (name: string, value: boolean | undefined): void => {
+    if (value !== undefined) attrs.push(` ${name}="${value ? 1 : 0}"`);
+  };
+  bool("locked", pr.locked);
+  bool("defaultSize", pr.defaultSize);
+  bool("print", pr.print);
+  bool("disabled", pr.disabled);
+  bool("autoFill", pr.autoFill);
+  bool("autoLine", pr.autoLine);
+  bool("colHidden", pr.colHidden);
+  bool("rowHidden", pr.rowHidden);
+  if (pr.altText !== undefined) attrs.push(` altText="${escapeXml(pr.altText)}"`);
+  if (pr.textHAlign !== undefined) attrs.push(` textHAlign="${pr.textHAlign}"`);
+  if (pr.textVAlign !== undefined) attrs.push(` textVAlign="${pr.textVAlign}"`);
+  bool("lockText", pr.lockText);
+  bool("justLastX", pr.justLastX);
+  bool("autoScale", pr.autoScale);
+  const anchor = pr.anchor;
+  const anchorXml = anchor
+    ? `<anchor${boolAttr("moveWithCells", anchor.moveWithCells)}${boolAttr(
+        "sizeWithCells",
+        anchor.sizeWithCells,
+      )}>${markerXml("xdr:from", anchor.from)}${markerXml("xdr:to", anchor.to)}</anchor>`
+    : "";
+  return `<commentPr${attrs.join("")}>${anchorXml}</commentPr>`;
+}
+
+function boolAttr(name: string, value: boolean | undefined): string {
+  return value !== undefined ? ` ${name}="${value ? 1 : 0}"` : "";
+}
+
+function markerXml(name: string, marker: AnchorMarkerOptions): string {
+  const offset = (tag: string, value: number | undefined): string =>
+    value !== undefined ? `<${tag}>${value}</${tag}>` : "";
+  return (
+    `<${name}><xdr:col>${marker.col}</xdr:col>${offset("xdr:colOff", marker.colOff)}` +
+    `<xdr:row>${marker.row}</xdr:row>${offset("xdr:rowOff", marker.rowOff)}</${name}>`
+  );
+}
+
 // CT_ObjectAnchor's from/to are required in the XSD; a malformed element
-// missing either corner yields undefined (commentPr is parse-only, so an
-// unparseable anchor simply drops instead of failing the part).
+// missing either corner yields undefined.
 function parseAnchor(el: XmlElement): ObjectAnchorOptions | undefined {
-  const from = findChild(el, "xdr:from");
-  const to = findChild(el, "xdr:to");
+  const from = findChild(el, "xdr:from") ?? findChild(el, "from");
+  const to = findChild(el, "xdr:to") ?? findChild(el, "to");
   if (!from || !to) return undefined;
   return {
     moveWithCells: parseOnOff(attr(el, "moveWithCells")),
@@ -421,9 +486,9 @@ function parseAnchor(el: XmlElement): ObjectAnchorOptions | undefined {
 function parseMarker(el: XmlElement): AnchorMarkerOptions {
   const num = (tag: string) => Number(textOf(findChild(el, tag)!) ?? 0);
   return {
-    col: num("xdr:col"),
+    col: num("xdr:col") ?? 0,
     colOff: num("xdr:colOff"),
-    row: num("xdr:row"),
+    row: num("xdr:row") ?? 0,
     rowOff: num("xdr:rowOff"),
   };
 }

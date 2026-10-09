@@ -85,6 +85,11 @@ const ON_OFF_ELEMENTS = new Set([
   "w:cantSplit",
   "w:tblHeader",
   "w:hidden",
+  "m:grow",
+  "m:subHide",
+  "m:supHide",
+  "m:aln",
+  "m:plcHide",
 ]);
 
 /** XML attributes whose XSD default is emitted explicitly by the writers. */
@@ -289,7 +294,7 @@ const LEGACY_CORE_PROPERTY_NAMES = new Map([
 
 function relationshipOwnerPath(relsPath: string): string {
   if (relsPath === "_rels/.rels" || relsPath.startsWith("_rels/")) return "";
-  const ownerPath = relsPath.replace(/\/_rels\//, "/");
+  const ownerPath = relsPath.replace(/\/_rels\/(?=[^/]+\.rels$)/, "/").replace(/\/_rels$/, "");
   return ownerPath.endsWith(".rels") ? ownerPath.slice(0, -".rels".length) : ownerPath;
 }
 
@@ -428,7 +433,7 @@ function canonicalNode(
   }
   const isRelationship = name === "Relationship" && path.includes("_rels/");
   const relsPath = name === "Relationship" ? path.slice(0, path.lastIndexOf("/")) : path;
-  const ownerPath = relationshipOwnerPath(relsPath);
+  const ownerPath = isRelationship ? relationshipOwnerPath(relsPath) : path;
   const attributes: Record<string, string> = Object.fromEntries(
     Object.entries(element.attributes ?? {})
       .filter(([attributeName]) => attributeName !== "xmlns" && !attributeName.startsWith("xmlns:"))
@@ -456,7 +461,10 @@ function canonicalNode(
       })
       .sort(([left], [right]) => left.localeCompare(right)),
   );
-  if (ON_OFF_ELEMENTS.has(name) && !("w:val" in attributes)) attributes["w:val"] = "1";
+  if (ON_OFF_ELEMENTS.has(name)) {
+    const valueAttribute = name.startsWith("m:") ? "m:val" : "w:val";
+    if (!(valueAttribute in attributes)) attributes[valueAttribute] = "1";
+  }
   for (const [attributeName, value] of Object.entries(DEFAULT_ATTRIBUTES.get(name) ?? {})) {
     if (!(attributeName in attributes)) attributes[attributeName] = value;
   }
@@ -523,6 +531,14 @@ function canonicalNode(
       // for the chart reference inside legacy ChartML graphicData.
       if ((name.split(":").pop() ?? name) === "graphicData" && node.name?.endsWith(":chart")) {
         return { ...node, name: "c:chart" };
+      }
+      // Comment-pr compatibility fallbacks omit the spreadsheetDrawing prefix
+      // on anchor corners; the canonical CT_ObjectAnchor uses xdr:from/to.
+      if ((name.split(":").pop() ?? name) === "anchor") {
+        const localChildName = node.name?.split(":").pop() ?? node.name;
+        if (localChildName === "from" || localChildName === "to") {
+          return { ...node, name: `xdr:${localChildName}` };
+        }
       }
       return node;
     });
@@ -617,13 +633,120 @@ function sortUnorderedChildren(
   let children = node.children.map((child) =>
     sortUnorderedChildren(child, childPath, references, ignorablePrefixes),
   );
+  const localName = (node.name.split(":").pop() ?? node.name).toLowerCase();
+  // OPC relationships are a set of graph edges. Distinct ids are an XML
+  // addressing detail; two edges with the same type, mode, and target are
+  // semantically redundant and may be normalized to one shared relationship.
+  if (path.endsWith(".rels") && localName === "relationships") {
+    const seen = new Set(
+      children.map((child) => semanticChildFingerprint(child, ignorablePrefixes)),
+    );
+    if (seen.size < children.length) {
+      const kept = new Set<string>();
+      children = children.filter((child) => {
+        const fingerprint = semanticChildFingerprint(child, ignorablePrefixes);
+        if (kept.has(fingerprint)) return false;
+        kept.add(fingerprint);
+        return true;
+      });
+    }
+  }
+  // Workbook and stylesheet roots are strict XSD sequences. Normalize legacy
+  // producer order before comparison; child identity and content still differ.
+  if (localName === "workbook" || localName === "styles" || localName === "stylesheet") {
+    const order =
+      localName === "workbook"
+        ? [
+            "fileVersion",
+            "fileSharing",
+            "workbookPr",
+            "workbookProtection",
+            "bookViews",
+            "sheets",
+            "functionGroups",
+            "externalReferences",
+            "definedNames",
+            "calcPr",
+            "oleSize",
+            "customWorkbookViews",
+            "pivotCaches",
+            "smartTagPr",
+            "smartTagTypes",
+            "webPublishing",
+            "fileRecoveryPr",
+            "webPublishObjects",
+            "extLst",
+          ]
+        : [
+            "numFmts",
+            "fonts",
+            "fills",
+            "borders",
+            "cellStyleXfs",
+            "cellXfs",
+            "cellStyles",
+            "dxfs",
+            "tableStyles",
+            "colors",
+            "extLst",
+          ];
+    const orderIndex = new Map(order.map((name, index) => [name, index]));
+    children = [...children].sort((left, right) => {
+      const leftName = left.name.split(":").pop() ?? left.name;
+      const rightName = right.name.split(":").pop() ?? right.name;
+      return (orderIndex.get(leftName) ?? 99) - (orderIndex.get(rightName) ?? 99);
+    });
+    return { ...node, children };
+  }
+  // Some producers emit CT_DPr children in a schema-invalid order. The XSD
+  // order is semantic for OOXML, so compare against its canonical sequence.
+  if (localName === "dpr") {
+    const order = new Map([
+      ["m:begChr", 0],
+      ["m:sepChr", 1],
+      ["m:endChr", 2],
+      ["m:grow", 3],
+      ["m:shp", 4],
+      ["m:ctrlPr", 5],
+    ]);
+    children = [...children].sort(
+      (left, right) => (order.get(left.name) ?? 99) - (order.get(right.name) ?? 99),
+    );
+    return { ...node, children };
+  }
+  // Style and numbering roots are ordered containers, but duplicate keyed
+  // definitions are replacement semantics rather than distinct list items.
+  if (localName === "styles" || localName === "numbering") {
+    const identityByChildName = new Map([
+      ["w:style", "w:styleId"],
+      ["w:abstractNum", "w:abstractNumId"],
+      ["w:num", "w:numId"],
+      ["w:numPicBullet", "w:numPicBulletId"],
+    ]);
+    const keepLastIndex = new Map<string, number>();
+    children.forEach((child, index) => {
+      const identity = identityByChildName.get(child.name);
+      const value = identity === undefined ? undefined : child.attributes[identity];
+      if (identity === undefined || value === undefined) return;
+      keepLastIndex.set(`${child.name}\0${value}`, index);
+    });
+    if (keepLastIndex.size > 0) {
+      children = children.filter((child, index) => {
+        const identity = identityByChildName.get(child.name);
+        const value = identity === undefined ? undefined : child.attributes[identity];
+        if (identity === undefined || value === undefined) return true;
+        return keepLastIndex.get(`${child.name}\0${value}`) === index;
+      });
+    }
+    return { ...node, children };
+  }
   const unorderedRoot =
     UNORDERED_PART_PATHS.has(path) || path === "[Content_Types].xml" || path.endsWith(".rels");
-  const localName = (node.name.split(":").pop() ?? node.name).toLowerCase();
   if (
     unorderedRoot ||
     localName === "footnotes" ||
     localName === "endnotes" ||
+    localName === "styles" ||
     localName === "docparts" ||
     localName === "docpartpr" ||
     localName === "settings" ||
@@ -657,6 +780,29 @@ function sortUnorderedChildren(
       if (keepLastIndex.size < children.length) {
         children = children.filter(
           (child, index) => child.name !== undefined && keepLastIndex.get(child.name) === index,
+        );
+      }
+    }
+    // Pandoc (and other producers) can emit the same w:style twice with the
+    // same type + styleId; Word applies the last definition. Normalize the
+    // duplicate tail the same way instead of comparing the unreferenced
+    // earlier copies as unmatched source entries.
+    if (localName === "styles") {
+      const keepLastIndex = new Map<string, number>();
+      children.forEach((child, index) => {
+        if (child.name !== "w:style") return;
+        keepLastIndex.set(
+          `${child.attributes["w:type"] ?? ""}\0${child.attributes["w:styleId"] ?? ""}`,
+          index,
+        );
+      });
+      if (keepLastIndex.size < children.filter((child) => child.name === "w:style").length) {
+        children = children.filter(
+          (child, index) =>
+            child.name !== "w:style" ||
+            keepLastIndex.get(
+              `${child.attributes["w:type"] ?? ""}\0${child.attributes["w:styleId"] ?? ""}`,
+            ) === index,
         );
       }
     }
@@ -708,7 +854,7 @@ function childFingerprint(node: CanonicalNode): string {
   return hash.digest("hex");
 }
 
-function semanticChildFingerprint(
+export function semanticChildFingerprint(
   node: CanonicalNode,
   ignorablePrefixes: ReadonlySet<string> | undefined,
 ): string {
@@ -922,7 +1068,7 @@ function compareNodes(
   }
   const visibleChild = (child: CanonicalNode): boolean =>
     !isIgnorableForeignAttr(child.name, ignorablePrefixes);
-  const sourceChildren = source.children.filter(visibleChild).map((child) => ({
+  let sourceChildren = source.children.filter(visibleChild).map((child) => ({
     key: semanticChildFingerprint(child, ignorablePrefixes),
     child,
   }));
@@ -930,6 +1076,32 @@ function compareNodes(
     key: semanticChildFingerprint(child, ignorablePrefixes),
     child,
   }));
+  // Producers (pandoc) can emit the same w:style twice with the same
+  // type + styleId; Word applies the last definition. Drop the superseded
+  // copies on both sides so the unreferenced duplicates do not compare as
+  // unmatched entries.
+  if ((source.name.split(":").pop() ?? source.name) === "styles") {
+    const keepLastIndex = new Map<string, number>();
+    sourceChildren.forEach(({ child }, index) => {
+      if (child.name !== "w:style") return;
+      keepLastIndex.set(
+        `${child.attributes["w:type"] ?? ""}\0${child.attributes["w:styleId"] ?? ""}`,
+        index,
+      );
+    });
+    if (
+      keepLastIndex.size < sourceChildren.filter(({ child }) => child.name === "w:style").length
+    ) {
+      sourceChildren = sourceChildren.filter(({ child }, index) => {
+        if (child.name !== "w:style") return true;
+        return (
+          keepLastIndex.get(
+            `${child.attributes["w:type"] ?? ""}\0${child.attributes["w:styleId"] ?? ""}`,
+          ) === index
+        );
+      });
+    }
+  }
   if (path === "[Content_Types].xml") {
     // The writer adds standard companion parts a minimal source omits (see
     // WRITER_DEFAULT_PARTS); their Override declarations are required for OPC

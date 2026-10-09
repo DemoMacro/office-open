@@ -65,6 +65,16 @@ function wrapMarkupCompatibility(xml: string): string {
   );
 }
 
+/** Re-emit the legacy VML-compat wrapper: an empty Requires="v" Choice and the anchor inside Fallback. */
+function wrapFallbackMarkupCompatibility(xml: string): string {
+  return (
+    `<mc:AlternateContent xmlns:mc="${MC_NS}">` +
+    `<mc:Choice xmlns:v="urn:schemas-microsoft-com:vml" Requires="v"/>` +
+    `<mc:Fallback>${xml}</mc:Fallback>` +
+    `</mc:AlternateContent>`
+  );
+}
+
 function readAnchorShapeId(anchor: XmlElement): number | undefined {
   const firstCnvPr = (el: XmlElement): XmlElement | undefined => {
     for (const child of el.elements ?? []) {
@@ -97,7 +107,7 @@ function findXdrObjectInChoice(anchor: XmlElement, name: string): XmlElement | u
 interface AnchorEntry {
   el: XmlElement;
   /** Source carried the anchor inside mc:AlternateContent/mc:Choice. */
-  wrapped: boolean;
+  wrapped?: "choice" | "fallback";
 }
 
 function readAnchorEntries(el: XmlElement): AnchorEntry[] {
@@ -106,16 +116,28 @@ function readAnchorEntries(el: XmlElement): AnchorEntry[] {
     const rawName = child.name ?? "";
     const name = rawName.startsWith("xdr:") ? rawName.slice(4) : rawName;
     if (name === "mc:AlternateContent") {
+      const choiceEntries: AnchorEntry[] = [];
       for (const choice of child.elements ?? []) {
-        if ((choice.name ?? "") !== "mc:Choice") continue;
-        for (const nested of readAnchorEntries(choice)) {
-          entries.push({ el: nested.el, wrapped: true });
+        if ((choice.name ?? "") === "mc:Choice") choiceEntries.push(...readAnchorEntries(choice));
+      }
+      if (choiceEntries.length > 0) {
+        for (const nested of choiceEntries) {
+          entries.push({ el: nested.el, wrapped: "choice" });
+        }
+      } else {
+        // Legacy VML-compat form: the Choice is an empty Requires="v" marker
+        // and the anchor travels inside the Fallback.
+        for (const fallback of child.elements ?? []) {
+          if ((fallback.name ?? "") !== "mc:Fallback") continue;
+          for (const nested of readAnchorEntries(fallback)) {
+            entries.push({ el: nested.el, wrapped: "fallback" });
+          }
         }
       }
       continue;
     }
     if (name === "twoCellAnchor" || name === "oneCellAnchor" || name === "absoluteAnchor") {
-      entries.push({ el: child, wrapped: false });
+      entries.push({ el: child });
     }
   }
   return entries;
@@ -140,7 +162,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       order: number | undefined;
       shapeId: number | undefined;
       emit: (id: number) => string;
-      alternateContent?: boolean;
+      alternateContent?: "choice" | "fallback";
     }
     const emissions: Emission[] = [];
     for (const img of images)
@@ -217,7 +239,13 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
           return next;
         })();
       const xml = e.emit(id);
-      p.push(e.alternateContent ? wrapMarkupCompatibility(xml) : xml);
+      p.push(
+        e.alternateContent === "fallback"
+          ? wrapFallbackMarkupCompatibility(xml)
+          : e.alternateContent === "choice"
+            ? wrapMarkupCompatibility(xml)
+            : xml,
+      );
     }
 
     p.push("</xdr:wsDr>");
@@ -242,12 +270,14 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     const stamp = <T extends { zOrder?: number; shapeId?: number }>(
       obj: T,
       anchor: XmlElement,
-      wrapped?: boolean,
+      wrapped?: "choice" | "fallback",
     ): T => {
       obj.zOrder = order++;
       const shapeId = readAnchorShapeId(anchor);
       if (shapeId !== undefined) obj.shapeId = shapeId;
-      if (wrapped) (obj as { alternateContent?: boolean }).alternateContent = true;
+      if (wrapped) {
+        (obj as { alternateContent?: "choice" | "fallback" }).alternateContent = wrapped;
+      }
       return obj;
     };
 

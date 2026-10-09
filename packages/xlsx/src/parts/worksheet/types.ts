@@ -230,9 +230,9 @@ export interface RichTextOptions {
   /** Legacy `w14` compatibility content; round-trip only. */
   wordDrawingExtension?: SharedStringExtensionOptions;
   /**
-   * Source `<t>` xml:space lexical form (`preserve` or the `default` absent
-   * form). Round-trip only: set when the text has leading/trailing
-   * whitespace, so an omitted source attribute is not upgraded to `preserve`.
+   * Source `<t>` xml:space lexical form when explicitly present, or `default`
+   * for whitespace-edged text with an omitted attribute. Round-trip only: an
+   * omitted attribute without edge whitespace is not upgraded.
    */
   textSpaceRaw?: "default" | "preserve";
 }
@@ -493,6 +493,11 @@ export interface PictureOptions extends Omit<BasePictureOptions, "type">, Drawin
    * list carries both, this element subsumes the hint.
    */
   blipExt?: string;
+  /**
+   * Verbatim cNvPicPr `a:extLst` inner XML for unmodeled extensions
+   * (a14:cameraTool, …). Round-trip only — do not hand-author.
+   */
+  cNvPicPrExt?: string;
   /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
   locking?: PictureLockingOptions;
   /**
@@ -784,10 +789,8 @@ export interface ObjectAnchorOptions {
 }
 
 /**
- * Comment property (CT_CommentPr). Parsed but never re-emitted: commentPr
- * beside the sheet's VML note drawing makes Excel refuse to open the file
- * (rival property systems; Excel reads note properties from the shape's
- * x:ClientData). Fields survive parse for inspection; stringify drops them.
+ * Comment property (CT_CommentPr). Preserved beside the sheet's VML note
+ * drawing so third-party package properties round-trip without raw fallback.
  */
 export interface CommentPropertiesOptions {
   locked?: boolean;
@@ -796,6 +799,10 @@ export interface CommentPropertiesOptions {
   disabled?: boolean;
   autoFill?: boolean;
   autoLine?: boolean;
+  /** Keep the note width when its column is hidden (v2 extension). */
+  colHidden?: boolean;
+  /** Keep the note height when its row is hidden (v2 extension). */
+  rowHidden?: boolean;
   altText?: string;
   /** Text horizontal alignment */
   textHAlign?: "left" | "center" | "right" | "justify" | "distributed";
@@ -823,7 +830,7 @@ export interface CommentOptions {
   author: string;
   /** Comment text (plain string or rich text) */
   text: string | RichTextOptions;
-  /** Comment properties (CT_CommentPr) — parsed but never re-emitted (see CommentPropertiesOptions) */
+  /** Comment properties (CT_CommentPr). */
   properties?: CommentPropertiesOptions;
   /**
    * Note shape anchor (x:Anchor in the VML part): from/to cell corners,
@@ -909,6 +916,13 @@ export interface DataValidationOptions {
     | "halfHangul";
   /** Show drop-down (CT_DataValidation `@showDropDown` — note inverted semantics in OOXML) */
   showDropDown?: boolean;
+  /**
+   * Verbatim explicit list from the x12ac:list extension (Excel 2010+
+   * mc:Choice form, e.g. `1,"2,3",4`), preserving per-item quoting that the
+   * plain formula1 fallback would corrupt. Round-trip only — do not
+   * hand-author.
+   */
+  explicitList?: string;
 }
 
 /** Conditional-format rule kind (ST_CfType): "cellIs" value comparison (see operator), "expression" formula trigger, "top10" ranked values, "containsText" substring match. */
@@ -1642,6 +1656,12 @@ export interface WorksheetOptions {
   name?: string;
   /** Revision UID (CT_Worksheet `@xr:uid`); preserved when the source emitted it. */
   uid?: string;
+  /**
+   * Root uid attribute namespace prefix when the source spelled it with a
+   * revision-prefixed binding (`xr2:`/`xr3:`/`xr6:`) — round-trip only; the
+   * writer defaults to `xr:`.
+   */
+  uidPrefix?: "xr2" | "xr3" | "xr6";
   /** Workbook sheet id (CT_Sheet `@sheetId`) — unique but not necessarily sequential. */
   sheetId?: number;
   /** Visibility (CT_Sheet `@state`) */
@@ -1785,6 +1805,13 @@ export interface WorksheetOptions {
   /** Cell range dimension (CT_Dimension ref); auto-computed when omitted */
   dimension?: string;
 }
+
+/**
+ * One Excel 4.0 macro sheet (`xl/macrosheets/sheetN.xml`). The content model
+ * is CT_Worksheet (same descriptor pipeline); only the part root element,
+ * content type, and workbook relationship differ.
+ */
+export type MacrosheetOptions = WorksheetOptions;
 
 /** Page margins in inches (CT_PageMargins). Numbers are inches; strings are UniversalMeasure. */
 export interface PageMarginsOptions {

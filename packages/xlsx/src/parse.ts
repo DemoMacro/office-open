@@ -76,6 +76,7 @@ import { workbookDesc } from "@parts/workbook";
 import type { RichTextOptions } from "@parts/worksheet";
 import { worksheetDesc } from "@parts/worksheet";
 import type {
+  MacrosheetOptions,
   WorksheetChartOptions,
   WorksheetWebExtensionOptions,
   WorksheetSmartArtOptions,
@@ -107,6 +108,8 @@ export interface XlsxDocument {
   workbook?: Element;
   /** Worksheet paths (xl/worksheets/sheet{n}.xml) */
   worksheets: string[];
+  /** Excel 4.0 macro sheet paths (xl/macrosheets/sheet{n}.xml) */
+  macrosheets: string[];
   /** xl/styles.xml root element */
   styles?: Element;
   /** Resolved styles part path (xl/styles.xml by default) */
@@ -315,6 +318,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
 
   // Resolve worksheet paths from workbook rels
   let worksheets: string[] = [];
+  let macrosheets: string[] = [];
   let charts: string[] = [];
   let drawings: string[] = [];
   const media: string[] = [];
@@ -341,6 +345,8 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
 
       if (normalizedType.includes("/worksheet")) {
         worksheets.push(doc.resolvePath(resolveWorkbookTarget(target, wbDir)));
+      } else if (normalizedType.endsWith("/xlMacrosheet")) {
+        macrosheets.push(doc.resolvePath(resolveWorkbookTarget(target, wbDir)));
       } else if (normalizedType.includes("/theme")) {
         theme = doc.resolvePath(resolveWorkbookTarget(target, wbDir));
       } else if (normalizedType.endsWith("/styles")) {
@@ -355,6 +361,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   const styles = doc.get(stylesPath);
   const sharedStrings = doc.get(sharedStringsPath);
   worksheets = sortByNumber(worksheets);
+  macrosheets = sortByNumber(macrosheets);
 
   // Scan for drawings, charts, media
   drawings.push(...doc.keys("xl/drawings/").filter((k) => k.endsWith(".xml")));
@@ -382,6 +389,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
   // Root rels → core/app props
   let coreProps: string | undefined;
   let corePropertiesType: string | undefined;
+  let corePropertiesTypeIsIso = false;
   let appProps: string | undefined;
   let customProps: string | undefined;
   let classificationLabelsPath: string | undefined;
@@ -400,9 +408,16 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
       // Transitional packages use the oclc URI form with camelCase segments
       // (…/extendedProperties); normalize case and hyphens so both resolve.
       const relType = type.toLowerCase().replaceAll("-", "");
-      if (relType.includes("/coreproperties")) coreProps = path;
-      if (relType.includes("/coreproperties")) corePropertiesType = type;
-      else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp"))
+      if (relType.includes("/coreproperties")) {
+        // Packages may declare both the ISO/IEC 29500 form and the ECMA-376
+        // 1st edition alias; the ISO `package/2006` form is canonical and wins.
+        const isIsoForm = type.toLowerCase().includes("/package/2006/");
+        if (coreProps === undefined || (isIsoForm && !corePropertiesTypeIsIso)) {
+          coreProps = path;
+          corePropertiesType = type;
+          corePropertiesTypeIsIso = isIsoForm;
+        }
+      } else if (relType.includes("/extendedproperties") || relType.endsWith("/docpropsapp"))
         appProps = path;
       else if (relType.includes("/customproperties")) customProps = path;
       else if (relType.includes("/classificationlabels")) classificationLabelsPath = path;
@@ -414,6 +429,7 @@ function parseXlsxArchive(doc: ParsedArchive): XlsxDocument {
     workbookPath,
     workbook,
     worksheets,
+    macrosheets,
     styles,
     stylesPath,
     sharedStrings,
@@ -523,7 +539,10 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   if (sharedStringsCount !== undefined) opts.sharedStringsCount = sharedStringsCount;
   if (sharedStringsUniqueCount !== undefined)
     opts.sharedStringsUniqueCount = sharedStringsUniqueCount;
-  if (xlsx.coreProps) opts.corePropertiesPath = xlsx.coreProps;
+  // A root rels entry may dangle (declared part missing) — only pin the path
+  // when the part exists, so generation does not materialize a part the
+  // source never had.
+  if (xlsx.coreProps && xlsx.doc.get(xlsx.coreProps)) opts.corePropertiesPath = xlsx.coreProps;
   if (
     xlsx.corePropertiesType !== undefined &&
     xlsx.corePropertiesType !==
@@ -1035,6 +1054,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
                 ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
                 ...(image.useLocalDpi !== undefined ? { useLocalDpi: image.useLocalDpi } : {}),
                 ...(image.blipExt !== undefined ? { blipExt: image.blipExt } : {}),
+                ...(image.cNvPicPrExt !== undefined ? { cNvPicPrExt: image.cNvPicPrExt } : {}),
                 ...(image.locking ? { locking: image.locking } : {}),
                 ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
                 ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),
@@ -1077,6 +1097,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...(image.blipEffects ? { blipEffects: image.blipEffects } : {}),
             ...(image.useLocalDpi !== undefined ? { useLocalDpi: image.useLocalDpi } : {}),
             ...(image.blipExt !== undefined ? { blipExt: image.blipExt } : {}),
+            ...(image.cNvPicPrExt !== undefined ? { cNvPicPrExt: image.cNvPicPrExt } : {}),
             ...(image.locking ? { locking: image.locking } : {}),
             ...(image.hyperlink ? { hyperlink: image.hyperlink } : {}),
             ...(image.zOrder !== undefined ? { zOrder: image.zOrder } : {}),
@@ -1448,9 +1469,36 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       if (!dsEl) continue;
       const dsData = dialogsheetDesc.parse(dsEl, readContext);
       dsData.sourcePath = dsPath;
+      const sheetInfo = sheetInfoByPath.get(dsPath);
+      if (sheetInfo) {
+        dsData.name = sheetInfo.name;
+        dsData.sheetId = sheetInfo.sheetId ?? sheetInfo.tabId;
+        if (sheetInfo.state) dsData.state = sheetInfo.state;
+      }
       dialogsheets.push(dsData);
     }
     if (dialogsheets.length > 0) opts.dialogsheets = dialogsheets;
+  }
+
+  // Macrosheets — parse Excel 4.0 XLM macro sheet parts. The content model is
+  // CT_Worksheet, so the worksheet descriptor pipeline reads them directly.
+  const macrosheetPaths = xlsx.macrosheets.length > 0 ? xlsx.macrosheets : [];
+  if (macrosheetPaths.length > 0) {
+    const macrosheets: MacrosheetOptions[] = [];
+    for (const msPath of macrosheetPaths) {
+      const msEl = xlsx.doc.get(msPath);
+      if (!msEl) continue;
+      const msData = worksheetDesc.parse(msEl, readContext) as MacrosheetOptions;
+      msData.sourcePath = msPath;
+      const sheetInfo = sheetInfoByPath.get(msPath);
+      if (sheetInfo) {
+        msData.name = sheetInfo.name;
+        msData.sheetId = sheetInfo.sheetId ?? sheetInfo.tabId;
+        if (sheetInfo.state) msData.state = sheetInfo.state;
+      }
+      macrosheets.push(msData);
+    }
+    if (macrosheets.length > 0) opts.macrosheets = macrosheets;
   }
 
   const pivotTablePaths = xlsx.worksheets.flatMap((worksheetPath) =>
@@ -1568,7 +1616,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
       for (const child of wbRelsForLinks?.elements ?? []) {
         if (child.name !== "Relationship") continue;
         const type = attr(child, "Type") ?? "";
-        if (!type.includes("/externalLinkPath")) continue;
+        if (!type.endsWith("/externalLink")) continue;
         const rid = attr(child, "Id");
         const target = attr(child, "Target");
         if (rid && target) ridToPath.set(rid, resolveWorkbookTarget(target, wbDir));
@@ -1702,6 +1750,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...xlsx.worksheets.map((path) => partPathToRelsPath(path)),
     ...chartsheetPaths,
     ...dialogsheetPaths,
+    ...xlsx.macrosheets,
     ...extLinkPaths,
     ...extLinkPaths.map((path) => partPathToRelsPath(path)),
     ...(xlsx.styles ? [xlsx.stylesPath, partPathToRelsPath(xlsx.stylesPath)] : []),
@@ -1730,6 +1779,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     }),
     ...(metadataEl ? ["xl/metadata.xml"] : []),
     ...chartsheetPaths.map((path) => partPathToRelsPath(path)),
+    ...xlsx.macrosheets.map((path) => partPathToRelsPath(path)),
     ...xlsx.doc
       .keys("xl/tables/")
       .filter((path) => path.endsWith(".xml") && xlsx.doc.get(path)?.name === "table"),
@@ -1767,12 +1817,6 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     // Stage-0 rawParts policy: XML parts not listed here are flagged by the
     // audit as modeled-XML absorption gaps (strict policy rejects them).
     opaquePassthroughPolicy("xlsx"),
-  );
-  passthroughParts.push(
-    ...xlsx.doc
-      .keys()
-      .filter((path) => /^xl\/(?:pivotCache|pivotTables)(?:\/_rels)?\/$/i.test(path))
-      .map((path) => ({ path, data: new Uint8Array(0) })),
   );
   if (passthroughParts.length > 0) opts.rawParts = passthroughParts;
   if (passthroughRels.length > 0) opts.passthroughRelationships = passthroughRels;

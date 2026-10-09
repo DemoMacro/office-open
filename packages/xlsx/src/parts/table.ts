@@ -359,10 +359,9 @@ export const tableDesc: CustomDescriptor<TableOptions> = {
       const s = o.style;
       const styleAttrs: Record<string, string | number | boolean | undefined> = {};
       if (s.name !== undefined) styleAttrs.name = s.name;
-      // Emit each flag only when explicitly set: the XSD defaults (false for
-      // first/last/column stripes, true for row stripes) already cover an
-      // omitted attr, and forcing "1" on undefined would flip a round-tripped
-      // showRowStripes="0" back on (parse drops the explicit false).
+      // Emit each flag only when explicitly set: an omitted attribute means
+      // the source omitted it, and parse keeps explicit false values so a
+      // round-tripped showRowStripes="0" stays off.
       if (s.showFirstColumn !== undefined) styleAttrs.showFirstColumn = s.showFirstColumn ? 1 : 0;
       if (s.showLastColumn !== undefined) styleAttrs.showLastColumn = s.showLastColumn ? 1 : 0;
       if (s.showRowStripes !== undefined) styleAttrs.showRowStripes = s.showRowStripes ? 1 : 0;

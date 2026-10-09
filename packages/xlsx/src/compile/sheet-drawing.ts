@@ -227,6 +227,7 @@ export function compileSheetDrawing(
       ...(img.blipEffects ? { blipEffects: img.blipEffects } : {}),
       ...(img.useLocalDpi !== undefined ? { useLocalDpi: img.useLocalDpi } : {}),
       ...(blipExt !== undefined ? { blipExt } : {}),
+      ...(img.cNvPicPrExt !== undefined ? { cNvPicPrExt: img.cNvPicPrExt } : {}),
       ...(img.locking ? { locking: img.locking } : {}),
       ...(img.hyperlink ? { hyperlink: img.hyperlink } : {}),
       ...(img.zOrder !== undefined ? { zOrder: img.zOrder } : {}),
@@ -335,7 +336,9 @@ export function compileSheetDrawing(
       rId,
       ...(contentPart.zOrder !== undefined ? { zOrder: contentPart.zOrder } : {}),
       ...(contentPart.shapeId !== undefined ? { shapeId: contentPart.shapeId } : {}),
-      ...(contentPart.alternateContent ? { alternateContent: true } : {}),
+      ...(contentPart.alternateContent !== undefined
+        ? { alternateContent: contentPart.alternateContent }
+        : {}),
     });
   }
 
@@ -416,7 +419,11 @@ export function compileSheetDrawing(
           sourceHlinkRel,
           RELATIONSHIP_TYPES.hyperlink,
           h.url,
-          "External",
+          sourceHlinkRel
+            ? sourceHlinkRel.targetMode === "External"
+              ? "External"
+              : undefined
+            : "External",
         ).replace(/^rId/, ""),
       );
       hlinkRidByUrl.set(h.url, hlinkRid);

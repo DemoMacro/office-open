@@ -130,8 +130,10 @@ describe("usersDesc round-trip", () => {
 });
 
 describe("revisionLogDesc round-trip", () => {
-  it("empty revisions returns undefined from stringify", () => {
-    expect(revisionLogDesc.stringify({ revisions: [] }, writeCtx)).toBeUndefined();
+  it("emits an explicit empty revisions root", () => {
+    expect(revisionLogDesc.stringify({ revisions: [] }, writeCtx)).toBe(
+      `<revisions xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"/>`,
+    );
   });
 
   it("round-trips cellChange with raw new-cell XML", () => {

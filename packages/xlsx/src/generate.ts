@@ -33,7 +33,8 @@ function hasSheetContent(options: WorkbookOptions): boolean {
   return (
     (options.worksheets?.length ?? 0) > 0 ||
     (options.chartsheets?.length ?? 0) > 0 ||
-    (options.dialogsheets?.length ?? 0) > 0
+    (options.dialogsheets?.length ?? 0) > 0 ||
+    (options.macrosheets?.length ?? 0) > 0
   );
 }
 

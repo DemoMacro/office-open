@@ -137,12 +137,12 @@ function inlineStringText(
 ):
   | {
       text?: string;
-      preserve?: boolean;
+      spaceRaw?: "default" | "preserve";
       runs?: RichTextRunOptions[];
     }
   | undefined {
   let text: string | undefined;
-  let preserve = false;
+  let spaceRaw: "default" | "preserve" | undefined;
   let runs: RichTextRunOptions[] | undefined;
   let q = from;
   while (q < to) {
@@ -164,7 +164,9 @@ function inlineStringText(
         nameEnd,
         src.charCodeAt(tEnd - 1) === 0x2f ? tEnd - 1 : tEnd,
         (aName, value) => {
-          if (aName === "xml:space" && value === "preserve") preserve = true;
+          if (aName === "xml:space" && (value === "preserve" || value === "default")) {
+            spaceRaw = value;
+          }
         },
       );
       if (src.charCodeAt(tEnd - 1) === 0x2f) {
@@ -204,7 +206,11 @@ function inlineStringText(
     q = tEnd + 1;
   }
   if (text === undefined && runs === undefined) return undefined;
-  return { ...(text !== undefined ? { text } : {}), preserve, ...(runs ? { runs } : {}) };
+  return {
+    ...(text !== undefined ? { text } : {}),
+    ...(spaceRaw !== undefined ? { spaceRaw } : {}),
+    ...(runs ? { runs } : {}),
+  };
 }
 
 // ── Row scanner ──
@@ -388,7 +394,7 @@ export function parseSheetDataRows(
           let inline:
             | {
                 text?: string;
-                preserve?: boolean;
+                spaceRaw?: "default" | "preserve";
                 runs?: RichTextRunOptions[];
               }
             | undefined;
@@ -550,17 +556,19 @@ export function parseSheetDataRows(
               const entry: RichTextOptions = { runs: inline.runs };
               if (inline.text !== undefined) {
                 entry.text = inline.text;
-                if (/^\s|\s$/.test(inline.text)) {
-                  entry.textSpaceRaw = inline.preserve ? "preserve" : "default";
-                }
+                if (inline.spaceRaw !== undefined) entry.textSpaceRaw = inline.spaceRaw;
+                else if (/^\s|\s$/.test(inline.text)) entry.textSpaceRaw = "default";
               }
               cell.value = entry;
             } else {
               const text = inline?.text ?? "";
-              // Outer whitespace makes the source xml:space form significant;
-              // carry it on a rich-text value so stringify mirrors the source.
-              if (/^\s|\s$/.test(text)) {
-                cell.value = { text, textSpaceRaw: inline?.preserve ? "preserve" : "default" };
+              // The explicit source xml:space form is significant even without
+              // outer whitespace (producers emit it unconditionally); carry it
+              // so stringify mirrors the source attribute.
+              const spaceRaw =
+                inline?.spaceRaw ?? (/^\s|\s$/.test(text) ? ("default" as const) : undefined);
+              if (spaceRaw !== undefined) {
+                cell.value = { text, textSpaceRaw: spaceRaw };
               } else {
                 cell.value = text;
               }

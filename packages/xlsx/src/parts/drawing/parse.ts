@@ -13,6 +13,7 @@ import {
   connectorLockingDesc,
   graphicFrameLockingDesc,
   pictureLockingDesc,
+  groupLockingDesc,
   parseEndpointConnection,
   groupShapePropertiesDesc,
   parseNonVisualDrawingProperties,
@@ -29,7 +30,7 @@ import type {
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { parseShapeStyle } from "@office-open/core/theme";
-import { findChild } from "@office-open/xml";
+import { findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type {
@@ -44,6 +45,7 @@ import type {
   DrawingPictureOptions,
   ShapeOptions,
   GroupConnectorChildOptions,
+  GroupPictureChildOptions,
   GroupShapeChildOptions,
 } from "./types";
 import { ANCHOR_TYPES } from "./types";
@@ -190,10 +192,19 @@ export function parseImageAnchor(
   name: string,
   ctx: ReadContext,
 ): DrawingPictureOptions {
-  const refs = readPicRefs(pic);
-  const result: DrawingPictureOptions = {
+  const result = {
     col: 1,
     row: 1,
+    ...parsePictureContent(pic, ctx),
+  } as DrawingPictureOptions;
+  readAnchorFields(anchor, name, result);
+  return result;
+}
+
+/** Parse xdr:pic content without its worksheet anchor. */
+function parsePictureContent(pic: XmlElement, ctx: ReadContext): GroupPictureChildOptions {
+  const refs = readPicRefs(pic);
+  const result: GroupPictureChildOptions = {
     rId: refs.embed ?? "",
     ...(refs.link ? { linkRId: refs.link } : {}),
   };
@@ -211,6 +222,10 @@ export function parseImageAnchor(
   if (cNvPicPr) {
     const locks = findChild(cNvPicPr, "a:picLocks");
     if (locks) result.locking = pictureLockingDesc.parse(locks, ctx);
+    const prExtLst = findChild(cNvPicPr, "a:extLst");
+    if (prExtLst) {
+      result.cNvPicPrExt = (prExtLst.elements ?? []).map((e) => stringifyElement(e)).join("");
+    }
   }
   const blip = blipFill ? findChild(blipFill, "a:blip") : undefined;
   if (blip) {
@@ -236,8 +251,6 @@ export function parseImageAnchor(
   const ext = readPicExtent(pic);
   if (ext.cx !== undefined) result.extentCx = ext.cx;
   if (ext.cy !== undefined) result.extentCy = ext.cy;
-
-  readAnchorFields(anchor, name, result);
   return result;
 }
 
@@ -409,6 +422,7 @@ function parseWebExtensionFallback(
     "blipEffects",
     "useLocalDpi",
     "blipExt",
+    "cNvPicPrExt",
     "locking",
     "preferRelativeResize",
     "fPublished",
@@ -507,6 +521,8 @@ export function parseConnectorAnchor(
 
   const spPr = findXdr(cxnSp, "spPr");
   if (spPr) result.properties = shapePropertiesDesc.parse(spPr, ctx);
+  const bwMode = spPr?.attributes?.["bwMode"];
+  if (bwMode !== undefined) result.blackWhiteMode = bwMode as BlackWhiteMode;
 
   if (cxnSp.attributes?.["macro"] !== undefined) result.macro = String(cxnSp.attributes["macro"]);
   result.fPublished = readPublishedFlag(cxnSp);
@@ -530,13 +546,23 @@ export function parseGroupAnchor(
   readAnchorFields(anchor, name, result);
 
   Object.assign(result, readCNvPr(grpSp, "nvGrpSpPr", ctx));
+  const nvGrpSpPr = findXdr(grpSp, "nvGrpSpPr");
+  const cNvGrpSpPr = nvGrpSpPr ? findXdr(nvGrpSpPr, "cNvGrpSpPr") : undefined;
+  const lockEl = cNvGrpSpPr ? findChild(cNvGrpSpPr, "a:grpSpLocks") : undefined;
+  if (lockEl) {
+    const locks = groupLockingDesc.parse(lockEl, ctx);
+    result.locking = locks && Object.keys(locks).length > 0 ? locks : null;
+  }
 
   const grpSpPrEl = findXdr(grpSp, "grpSpPr");
   if (grpSpPrEl) {
     result.properties = groupShapePropertiesDesc.parse(grpSpPrEl, ctx);
+    const grpBwMode = grpSpPrEl.attributes?.["bwMode"];
+    if (grpBwMode !== undefined) result.blackWhiteMode = grpBwMode as BlackWhiteMode;
   }
 
   const shapes: GroupShapeChildOptions[] = [];
+  const childImages: GroupPictureChildOptions[] = [];
   const childConnectors: GroupConnectorChildOptions[] = [];
   for (const child of grpSp.elements ?? []) {
     // Group children appear in the default namespace (our own output) or with
@@ -571,6 +597,12 @@ export function parseGroupAnchor(
       if (childBwMode !== undefined) childShape.blackWhiteMode = childBwMode as BlackWhiteMode;
       childShape.fPublished = readPublishedFlag(child);
       shapes.push(childShape);
+    } else if (local === "pic") {
+      const childImage = parsePictureContent(child, ctx);
+      Object.assign(childImage, readCNvPr(child, "nvPicPr", ctx));
+      const childImageId = readShapeId(child);
+      if (childImageId !== undefined) childImage.shapeId = childImageId;
+      childImages.push(childImage);
     } else if (local === "cxnSp") {
       const spPr = findXdr(child, "spPr");
       const childConn = {
@@ -595,6 +627,7 @@ export function parseGroupAnchor(
     }
   }
   if (shapes.length > 0) result.shapes = shapes;
+  if (childImages.length > 0) result.images = childImages;
   if (childConnectors.length > 0) result.connectors = childConnectors;
   return result;
 }

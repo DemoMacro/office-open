@@ -336,6 +336,47 @@ describe("corpus semantic comparison", () => {
     expect(archiveSemanticDiffDetails(zip(files), zip(output))).toEqual([]);
   });
 
+  it("normalizes relationship targets against their owning part", () => {
+    const relationships =
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>' +
+      "</Relationships>";
+    const source = new TextEncoder().encode(relationships);
+    const output = new TextEncoder().encode(relationships.replace("../media", "/xl/media"));
+    expect(explainSemanticPartDiff("xl/drawings/_rels/drawing1.xml.rels", source, output)).toEqual(
+      [],
+    );
+  });
+
+  it("normalizes redundant identical relationship edges", () => {
+    const relationship =
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>';
+    const relationships =
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+    const source = new TextEncoder().encode(
+      `${relationships}${relationship}${relationship}</Relationships>`,
+    );
+    const output = new TextEncoder().encode(`${relationships}${relationship}</Relationships>`);
+    expect(explainSemanticPartDiff("xl/drawings/_rels/drawing1.xml.rels", source, output)).toEqual(
+      [],
+    );
+  });
+
+  it("normalizes unprefixed comment anchor corners from compatibility fallbacks", () => {
+    const marker = (prefix: string): string =>
+      `<${prefix === "xdr:" ? prefix : ""}from>` +
+      `<xdr:col>1</xdr:col><xdr:row>1</xdr:row></${prefix === "xdr:" ? `${prefix}from` : "from"}>`;
+    const source = new TextEncoder().encode(
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<commentList><comment ref="A1"><commentPr><anchor>${marker("")}</anchor></commentPr></comment></commentList></comments>`,
+    );
+    const output = new TextEncoder().encode(
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">` +
+        `<commentList><comment ref="A1"><commentPr><anchor>${marker("xdr:")}</anchor></commentPr></comment></commentList></comments>`,
+    );
+    expect(explainSemanticPartDiff("xl/comments1.xml", source, output)).toEqual([]);
+  });
+
   it("reports duplicate children even when their semantic payloads match", () => {
     const source = new TextEncoder().encode("<root><item/></root>");
     const output = new TextEncoder().encode("<root><item/><item/></root>");

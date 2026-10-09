@@ -86,11 +86,12 @@ export interface DrawingAnchorOptions {
   /** Lock anchor with sheet (default true) */
   locksWithSheet?: boolean;
   /**
-   * Source wrapped the anchor in mc:AlternateContent (Excel 2010+ form:
-   * Choice carries the full anchor, Fallback empty). Re-emit the wrapper
-   * only when the source had it.
+   * Source wrapped the anchor in mc:AlternateContent. `"choice"`: the Choice
+   * carries the full anchor and the Fallback is empty (Excel 2010+ a14 form).
+   * `"fallback"`: the Choice is an empty `Requires="v"` marker and the
+   * Fallback carries the full anchor (legacy VML-compat comment form).
    */
-  alternateContent?: boolean;
+  alternateContent?: "choice" | "fallback";
   /**
    * Source wrapped the anchored object (not the anchor) in
    * mc:AlternateContent/mc:Choice (Excel 2010+ a14 textboxes). The anchor
@@ -187,6 +188,11 @@ export interface DrawingPictureOptions
    * avoid colliding with the inherited cNvPr `ext` channel.
    */
   blipExt?: string;
+  /**
+   * Verbatim cNvPicPr `a:extLst` inner XML for unmodeled extensions
+   * (a14:cameraTool, …). Round-trip only — do not hand-author.
+   */
+  cNvPicPrExt?: string;
 }
 
 export interface DrawingChartOptions
@@ -227,6 +233,11 @@ export interface DrawingWebExtensionFallbackOptions {
   useLocalDpi?: boolean;
   /** Verbatim a:blip a:extLst inner XML for unmodeled extensions. */
   blipExt?: string;
+  /**
+   * Verbatim cNvPicPr `a:extLst` inner XML for unmodeled extensions
+   * (a14:cameraTool, …). Round-trip only — do not hand-author.
+   */
+  cNvPicPrExt?: string;
   /** Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr. */
   locking?: PictureLockingOptions;
   /** Relative-resize hint (cNvPicPr/@preferRelativeResize). */
@@ -375,11 +386,19 @@ export interface GroupOptions extends DrawingAnchorOptions, BaseGroupOptions {
   hyperlink?: TextHyperlinkOptions;
   /** Group shape properties (a:CT_GroupShapeProperties: group xfrm + fill/ln). */
   properties: GroupTransform2DOptions;
+  /** Black/white mode (grpSpPr/@bwMode); absent = attribute omitted. */
+  blackWhiteMode?: BlackWhiteMode;
   /** Nested shapes. */
   shapes?: GroupShapeChildOptions[];
+  /** Nested pictures. */
+  images?: GroupPictureChildOptions[];
   /** Nested connectors. */
   connectors?: GroupConnectorChildOptions[];
 }
+
+/** Picture nested inside a group (no worksheet anchor, but size/id survive). */
+export type GroupPictureChildOptions = Omit<DrawingPictureOptions, keyof DrawingAnchorOptions> &
+  Pick<DrawingPictureOptions, "extentCx" | "extentCy" | "shapeId">;
 
 /** Anchored external content reference (xdr:contentPart, r:id only). */
 export interface DrawingContentPartOptions extends DrawingAnchorOptions {

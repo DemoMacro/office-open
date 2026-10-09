@@ -832,6 +832,26 @@ describe("dialogsheet round-trip", () => {
     expect(ds.pageMargins?.left).toBe(0.5);
     expect(ds.pageSetup).toMatchObject({ paperSize: 9, orientation: "portrait" });
   });
+
+  it("attaches workbook sheet identity so regeneration does not duplicate entries", async () => {
+    const opts: WorkbookOptions = {
+      worksheets: [
+        { name: "Data", sheetId: 1, rows: [{ cells: [{ value: 1 }] }] },
+        { name: "Pivot", sheetId: 3, rows: [{ cells: [{ value: 2 }] }] },
+      ],
+      dialogsheets: [{ name: "Dialog", sheetId: 2 }],
+    };
+
+    const parsed = await roundTrip(opts);
+    expect(parsed.dialogsheets![0]).toMatchObject({ name: "Dialog", sheetId: 2 });
+
+    const buffer = (await generateWorkbook(parsed, { type: "uint8array" })) as Uint8Array;
+    const workbookXml = new TextDecoder().decode(unzipSync(buffer)["xl/workbook.xml"]);
+    expect(workbookXml.match(/<sheet\b/g)).toHaveLength(3);
+    expect(workbookXml).toContain('<sheet name="Dialog" sheetId="2"');
+    expect(workbookXml).not.toContain('name="Dialog3"');
+    expect(workbookXml).not.toContain('name="Dialog4"');
+  });
 });
 
 describe("scattered attribute round-trip", () => {

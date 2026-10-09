@@ -151,9 +151,7 @@ describe("commentsDesc round-trip", () => {
     expect(props1.strike).toBe(true);
   });
 
-  it("parses commentPr but never re-emits it", () => {
-    // stringify drops commentPr: Excel refuses to open it beside the VML note
-    // drawing the compiler always writes. Parse keeps the fields for inspection.
+  it("round-trips commentPr", () => {
     const emitted = commentsDesc.stringify(
       {
         comments: [
@@ -167,7 +165,7 @@ describe("commentsDesc round-trip", () => {
       },
       writeCtx,
     )!;
-    expect(emitted).not.toContain("commentPr");
+    expect(emitted).toContain('commentPr locked="0" print="0" textHAlign="center"');
 
     const xml =
       `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
@@ -191,6 +189,31 @@ describe("commentsDesc round-trip", () => {
     // parseMarker normalizes omitted offsets to 0
     expect(pr.anchor?.from).toEqual({ col: 1, row: 1, colOff: 0, rowOff: 0 });
     expect(pr.anchor?.to).toEqual({ col: 3, row: 4, colOff: 0, rowOff: 0 });
+  });
+
+  it("parses commentPr from compatibility fallback before unknown choice extensions", () => {
+    const xml =
+      `<comments xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"` +
+      ` xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"` +
+      ` xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing">` +
+      `<authors><author>Alice</author></authors><commentList>` +
+      `<comment ref="A1" authorId="0"><text><t>note</t></text>` +
+      `<mc:AlternateContent><mc:Choice Requires="v2"/><mc:Fallback>` +
+      `<commentPr autoFill="0" defaultSize="0" autoLine="0"><anchor>` +
+      `<from><xdr:col>1</xdr:col><xdr:row>1</xdr:row></from>` +
+      `<to><xdr:col>3</xdr:col><xdr:row>4</xdr:row></to></anchor></commentPr>` +
+      `</mc:Fallback></mc:AlternateContent></comment></commentList></comments>`;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    expect(commentsDesc.parse(el, readCtx).comments[0]?.properties).toEqual({
+      autoFill: false,
+      defaultSize: false,
+      autoLine: false,
+      anchor: {
+        from: { col: 1, row: 1, colOff: 0, rowOff: 0 },
+        to: { col: 3, row: 4, colOff: 0, rowOff: 0 },
+      },
+    });
   });
 
   it("round-trips source note shape ids", () => {
