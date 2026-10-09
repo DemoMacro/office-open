@@ -507,29 +507,37 @@ function textElementXml(tag: string, text: string, preserve?: boolean): string {
   return `<${tag}${attr}>${escapeXml(text)}</${tag}>`;
 }
 
-// Revision markers carry document-unique @w:id values (the SDK enforces
-// uniqueness). Hand-written options may repeat an id across the markers of one
-// logical edit; renumber only the duplicates so round-tripped sources keep
-// their original ids byte-for-byte.
+// Revision markers carry @w:id values unique per marker kind (Word pairs a
+// move with shared moveFrom/moveTo ids, and producers reuse ids across kinds).
+// Hand-written options may repeat an id within one kind; renumber only those
+// duplicates so round-tripped sources keep their original ids byte-for-byte.
 const REVISION_ID_TAGS =
   /(<w:(?:ins|del|moveFrom|moveTo|cellIns|cellDel|cellMerge|cellSplit|rPrChange|pPrChange|trPrChange|tcPrChange|sectPrChange|tblPrChange|tblGridChange)\b[^>]*w:id=")(\d+)(")/g;
 
 function dedupeRevisionIds(xml: string): string {
-  const seen = new Set<string>();
+  const counts = new Map<string, Map<string, number>>();
   let hasDup = false;
   for (const m of xml.matchAll(REVISION_ID_TAGS)) {
-    if (seen.has(m[2]!)) hasDup = true;
-    seen.add(m[2]!);
+    const tag = /w:(\w+)\b/.exec(m[1]!)?.[1] ?? "";
+    const ids = counts.get(tag) ?? new Map<string, number>();
+    const seenCount = (ids.get(m[2]!) ?? 0) + 1;
+    ids.set(m[2]!, seenCount);
+    counts.set(tag, ids);
+    if (seenCount > 1) hasDup = true;
   }
   if (!hasDup) return xml;
-  const taken = new Set(seen);
+  const emitted = new Map<string, Set<string>>();
   return xml.replace(REVISION_ID_TAGS, (m, pre: string, id: string, post: string) => {
-    const first = !seen.has(id);
-    seen.add(id);
-    if (first) return m;
+    const tag = /w:(\w+)\b/.exec(pre)?.[1] ?? "";
+    const used = emitted.get(tag) ?? new Set<string>();
+    emitted.set(tag, used);
+    if (!used.has(id)) {
+      used.add(id);
+      return m;
+    }
     let n = 0;
-    while (taken.has(String(n))) n++;
-    taken.add(String(n));
+    while (used.has(String(n))) n++;
+    used.add(String(n));
     return `${pre}${n}${post}`;
   });
 }
@@ -1235,6 +1243,11 @@ function feedFieldRun(
         child = formChild;
       } else if (state.kind === "complex") {
         const cf: ComplexFieldOptions = { instruction: state.pendingInstruction };
+        const beginFieldLock = attrBool(
+          findChild(state.beginRunEl ?? run, "w:fldChar"),
+          "w:fldLock",
+        );
+        if (beginFieldLock !== undefined) cf.fieldLock = beginFieldLock;
         // Pagination hint parked on the begin run — re-emit it on the begin run.
         if (findChild(state.beginRunEl ?? run, "w:lastRenderedPageBreak")) {
           cf.lastRenderedPageBreak = true;

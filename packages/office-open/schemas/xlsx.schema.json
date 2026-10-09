@@ -7372,6 +7372,14 @@
           "description": "Relationship ID for the OLE link (set by compiler)",
           "type": "string"
         },
+        "oleTarget": {
+          "description": "Target URL/path for `oleLink`, resolved from the external link rels.",
+          "type": "string"
+        },
+        "oleTargetTypeRaw": {
+          "description": "Source relationship type of the OLE target; round-trip only.",
+          "type": "string"
+        },
         "sourcePath": {
           "description": "Source part path (xl/externalLinks/externalLink3.xml) — round-trip only.",
           "type": "string"
@@ -15697,6 +15705,10 @@
         },
         "italic": {
           "type": "boolean"
+        },
+        "italicValRaw": {
+          "description": "Source lexical form of `i/@val`; round-trip only — do not hand-author.",
+          "type": "string"
         },
         "outline": {
           "type": "boolean"

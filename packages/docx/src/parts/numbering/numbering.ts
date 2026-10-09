@@ -650,23 +650,28 @@ export function parseNumberingDefinitions(
   for (const child of el.elements ?? []) {
     if (child.name !== "w:abstractNum") continue;
     const id = attr(child, "w:abstractNumId");
-    if (id !== undefined) abstractNums.set(id, child);
+    if (id !== undefined) {
+      abstractNums.delete(id);
+      abstractNums.set(id, child);
+    }
   }
 
   // Concrete num instances: numId → abstractId + the num element. The element
   // is kept so its lvlOverride/startOverride can be read — a concrete num may
   // re-pin a level's start, and dropping the override silently reverts the
   // list's restart numbering on round-trip.
-  const numEntries: { numId: string; abstractId: string; numEl: Element }[] = [];
+  const numEntriesById = new Map<string, { numId: string; abstractId: string; numEl: Element }>();
   for (const child of el.elements ?? []) {
     if (child.name !== "w:num") continue;
     const numId = attr(child, "w:numId");
     const abstractRef = findChild(child, "w:abstractNumId");
     const abstractId = abstractRef ? attr(abstractRef, "w:val") : undefined;
     if (numId !== undefined && abstractId !== undefined) {
-      numEntries.push({ numId, abstractId, numEl: child });
+      numEntriesById.delete(numId);
+      numEntriesById.set(numId, { numId, abstractId, numEl: child });
     }
   }
+  const numEntries = [...numEntriesById.values()];
 
   const configs: NumberingOptions["abstractNumberings"] = [];
 

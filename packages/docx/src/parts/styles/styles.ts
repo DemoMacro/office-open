@@ -340,7 +340,8 @@ export function parseStyleDefinitions(
   const characterStyles: (CharacterStyleOptions & { id: string })[] = [];
   const tableStyles: TableStyleOptions[] = [];
   const numberingStyles: NumberingStyleOptions[] = [];
-  const styleOrder: string[] = [];
+  const stylesById = new Map<string, { type: string; style: ParsedStyle }>();
+  const styleOrderById = new Map<string, undefined>();
 
   for (const child of el.elements ?? []) {
     if (child.name === "w:docDefaults") {
@@ -357,23 +358,29 @@ export function parseStyleDefinitions(
       const styleOpts = parseStyleElement(child, parseParagraphProperties, ctx);
       // Skip styles without a type or styleId — both are required to be useful.
       if (!styleOpts?._type || !styleOpts.id) continue;
-      styleOrder.push(styleOpts.id);
-      // All styles (builtin + custom) round-trip structured so HTML renderers
-      // can consume style attributes directly. Builtin verbatim _raw is gone —
-      // a customized builtin (e.g. recolored Heading1) round-trips losslessly
-      // via parseStyleElement ↔ stringify*Style field symmetry.
-      const type = styleOpts._type;
-      delete styleOpts._type;
+      styleOrderById.delete(styleOpts.id);
+      styleOrderById.set(styleOpts.id, undefined);
+      stylesById.set(styleOpts.id, { type: styleOpts._type, style: styleOpts });
+    }
+  }
 
-      if (type === "table") {
-        tableStyles.push(styleOpts as TableStyleOptions);
-      } else if (type === "numbering") {
-        numberingStyles.push(styleOpts as NumberingStyleOptions);
-      } else if (type === "paragraph") {
-        paragraphStyles.push(styleOpts as ParagraphStyleOptions & { id: string });
-      } else if (type === "character") {
-        characterStyles.push(styleOpts as CharacterStyleOptions & { id: string });
-      }
+  for (const id of styleOrderById.keys()) {
+    const styleEntry = stylesById.get(id)!;
+    const styleOpts = styleEntry.style;
+    // All styles (builtin + custom) round-trip structured so HTML renderers
+    // can consume style attributes directly. Builtin verbatim _raw is gone —
+    // a customized builtin (e.g. recolored Heading1) round-trips losslessly
+    // via parseStyleElement ↔ stringify*Style field symmetry.
+    delete styleOpts._type;
+
+    if (styleEntry.type === "table") {
+      tableStyles.push(styleOpts as TableStyleOptions);
+    } else if (styleEntry.type === "numbering") {
+      numberingStyles.push(styleOpts as NumberingStyleOptions);
+    } else if (styleEntry.type === "paragraph") {
+      paragraphStyles.push(styleOpts as ParagraphStyleOptions & { id: string });
+    } else if (styleEntry.type === "character") {
+      characterStyles.push(styleOpts as CharacterStyleOptions & { id: string });
     }
   }
 
@@ -384,7 +391,7 @@ export function parseStyleDefinitions(
   // Mark round-trip origin so context.ts consumes parsed structured styles
   // directly instead of rebuilding builtins via the factory.
   opts.roundTripped = true;
-  if (styleOrder.length > 0) opts.styleOrder = styleOrder;
+  if (styleOrderById.size > 0) opts.styleOrder = [...styleOrderById.keys()];
 
   return Object.keys(opts).length > 0 ? opts : undefined;
 }

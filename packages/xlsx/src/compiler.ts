@@ -630,15 +630,27 @@ export function compileWorkbook(
         externalLinkRelTarget,
       );
       let bookRId: string | undefined;
+      let oleRId: string | undefined;
+      const elRels = new Relationships();
       if (elOpts.externalBook?.target) {
-        const elRels = new Relationships();
+        bookRId = elOpts.bookRId ?? "rId1";
         elRels.addRelationship(
-          1,
+          bookRId,
           elOpts.externalBook.targetTypeRaw ?? RELATIONSHIP_TYPES.externalLinkPath,
           elOpts.externalBook.target,
           TargetModeType.EXTERNAL,
         );
-        bookRId = "rId1";
+      }
+      if (elOpts.oleLink && elOpts.oleTarget) {
+        oleRId = elOpts.oleRId ?? "rId1";
+        elRels.addRelationship(
+          oleRId,
+          (elOpts.oleTargetTypeRaw ?? RELATIONSHIP_TYPES.oleObject) as RelationshipType,
+          elOpts.oleTarget,
+          TargetModeType.EXTERNAL,
+        );
+      }
+      if (elRels.relationshipCount > 0) {
         mapping[`ExternalLinkRels${elIdx}`] = {
           data: XML_DECL + elRels.serialize(),
           path: partPathToRelsPath(externalLinkPartPath),
@@ -647,7 +659,7 @@ export function compileWorkbook(
 
       // Generate the external link XML
       mapping[`ExternalLink${elIdx}`] = {
-        data: XML_DECL + externalLinkDesc.stringify({ ...elOpts, bookRId }, ctx),
+        data: XML_DECL + externalLinkDesc.stringify({ ...elOpts, bookRId, oleRId }, ctx),
         path: externalLinkPartPath,
       };
 

@@ -81,7 +81,12 @@ const IMAGEDATA_ATTRS: readonly VmlAttrSpec[] = [
   { field: "officeAltHref", attr: "o:althref", kind: "string" },
   { field: "officeTitle", attr: "o:title", kind: "string" },
   { field: "oleid", attr: "o:oleid", kind: "number" },
-  { field: "detectmouseclick", attr: "o:detectmouseclick", kind: "trueFalse" },
+  {
+    field: "detectmouseclick",
+    attr: "o:detectmouseclick",
+    parseAliases: ["detectmouseclick"],
+    kind: "trueFalse",
+  },
   { field: "movie", attr: "o:movie", kind: "number" },
   { field: "officeRelationshipId", attr: "o:relid", kind: "string" },
 ];

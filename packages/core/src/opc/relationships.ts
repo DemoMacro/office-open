@@ -400,12 +400,12 @@ export class Relationships {
    * as {@link hasRelationship}), or undefined when absent. Round-trip legs use
    * this to point a reference element at an already-registered relationship.
    */
-  public idOf(type: string, target: string): string | undefined {
+  public idOf(type: string, target: string, targetMode?: "External"): string | undefined {
     const kind = type.split("/").pop();
     return this.entries.find(
       (e) =>
         e.type.split("/").pop() === kind &&
-        this.semanticTarget(e) === this.semanticTarget({ target }),
+        this.semanticTarget(e) === this.semanticTarget({ target, targetMode }),
     )?.id;
   }
 

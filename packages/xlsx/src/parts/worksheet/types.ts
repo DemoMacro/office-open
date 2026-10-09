@@ -138,6 +138,8 @@ export interface RichTextRunPropertiesOptions {
   /** Source lexical form of `b/@val`; round-trip only — do not hand-author. */
   boldValRaw?: string;
   italic?: boolean;
+  /** Source lexical form of `i/@val`; round-trip only — do not hand-author. */
+  italicValRaw?: string;
   /** Strikethrough */
   strike?: boolean;
   /** Source `strike/@val`; round-trip only — do not hand-author. */

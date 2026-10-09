@@ -212,6 +212,7 @@ export function compileDocument(
   packageVariant: OoxmlPackageVariant = "standard",
 ): Zippable {
   const packageFormat = ooxmlPackageFormatInfo("wordprocessing", packageVariant);
+  const mainPartPath = options.primaryPartPath ?? packageFormat.mainPartPath;
   const ctx = new DocxWriteContext(options, reproducible);
   if (options.mailMergeRecipients) {
     const settings = ctx._settingsOptions;
@@ -298,11 +299,11 @@ export function compileDocument(
         ],
         forcedOverrides: [
           {
-            path: packageFormat.mainPartPath,
+            path: mainPartPath,
             contentType: resolveMainPartContentType(
               "wordprocessing",
               ctx._options.contentTypes,
-              packageFormat.mainPartPath,
+              mainPartPath,
               packageFormat.mainContentType,
             ),
           },
@@ -428,11 +429,7 @@ export function compileDocument(
         relationship.relationshipType.includes("/extended-properties")),
   );
   useStrictRelationshipTypes(files, documentNamespaceDialect(ctx));
-  renamePrimaryDocument(
-    files,
-    packageFormat.mainPartPath,
-    ctx._options.primaryPartPath ?? packageFormat.mainPartPath,
-  );
+  renamePrimaryDocument(files, packageFormat.mainPartPath, mainPartPath);
 
   return files;
 }

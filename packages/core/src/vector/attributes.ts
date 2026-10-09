@@ -102,6 +102,8 @@ export interface VmlAttrSpec {
   field: string;
   /** XML attribute name including its prefix ("o:title", "r:id"). */
   attr: string;
+  /** Additional source spellings accepted on parse (canonical attr wins). */
+  parseAliases?: string[];
   kind: VmlAttrKind;
 }
 
@@ -288,7 +290,11 @@ export function parseVmlAttributes(
   out: Record<string, unknown>,
 ): void {
   for (const spec of specs) {
-    const raw = el.attributes?.[spec.attr];
+    const raw =
+      el.attributes?.[spec.attr] ??
+      spec.parseAliases
+        ?.map((alias) => el.attributes?.[alias])
+        .find((value) => value !== undefined);
     if (raw === undefined) continue;
     out[spec.field] =
       spec.kind === "trueFalse"

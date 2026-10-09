@@ -121,10 +121,10 @@ export function parseRunProperties(el: Element): RunPropertiesOptions {
           const hint = attr(child, "w:hint");
 
           const fontObj: FontProperties = {};
-          if (ascii) fontObj.ascii = ascii;
-          if (eastAsia) fontObj.eastAsia = eastAsia;
-          if (hAnsi) fontObj.hAnsi = hAnsi;
-          if (complexScript) fontObj.complexScript = complexScript;
+          if (ascii !== undefined) fontObj.ascii = ascii;
+          if (eastAsia !== undefined) fontObj.eastAsia = eastAsia;
+          if (hAnsi !== undefined) fontObj.hAnsi = hAnsi;
+          if (complexScript !== undefined) fontObj.complexScript = complexScript;
           if (asciiTheme) fontObj.asciiTheme = asciiTheme as FontProperties["asciiTheme"];
           if (eastAsiaTheme)
             fontObj.eastAsiaTheme = eastAsiaTheme as FontProperties["eastAsiaTheme"];

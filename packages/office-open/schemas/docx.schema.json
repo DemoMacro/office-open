@@ -4809,6 +4809,10 @@
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
         },
+        "fieldLock": {
+          "description": "Field lock (w:fldChar/`@w:fldLock` on the begin marker).",
+          "type": "boolean"
+        },
         "instrRunsXml": {
           "description": "Verbatim XML of the instruction runs (begin → separate/end) when the source split them across runs with per-run properties or line breaks — shapes the plain instruction template cannot reproduce.",
           "type": "string"
@@ -12009,6 +12013,14 @@
           "description": "Whether the operator grows to content height (m:grow).",
           "type": "boolean"
         },
+        "hideSubscript": {
+          "description": "Hide the subscript placeholder (m:subHide).",
+          "type": "boolean"
+        },
+        "hideSuperscript": {
+          "description": "Hide the superscript placeholder (m:supHide).",
+          "type": "boolean"
+        },
         "limitLocation": {
           "$ref": "#/definitions/MathNaryLimitLocation",
           "description": "Limit location relative to the operator (m:limLoc)."
@@ -13197,6 +13209,10 @@
           "description": "Source embeddings file basename (round-trip, e.g. \"Microsoft_Excel_Worksheet1.xlsx\"). Pinning it keeps the original extension and its [Content_Types] Default entry instead of renaming everything to oleObjectN.bin.",
           "type": "string"
         },
+        "linkType": {
+          "description": "Link type (o:OLEObject/o:LinkType child, e.g. \"EnhancedMetaFile\").",
+          "type": "string"
+        },
         "objectId": {
           "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
           "type": "string"
@@ -13252,7 +13268,15 @@
       "additionalProperties": false,
       "properties": {
         "data": {
-          "$ref": "#/definitions/ObjectEmbedOptions/properties/data"
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DataType"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "description": "Embedded payload — absent on an external link, which carries sourceUrl instead of bytes in the package."
         },
         "drawAspect": {
           "description": "Draw aspect — how the object displays.",
@@ -13265,6 +13289,9 @@
         },
         "fileName": {
           "$ref": "#/definitions/ObjectEmbedOptions/properties/fileName"
+        },
+        "linkType": {
+          "$ref": "#/definitions/ObjectEmbedOptions/properties/linkType"
         },
         "lockedField": {
           "description": "Whether the field is locked.",
@@ -13283,13 +13310,17 @@
         "shapeId": {
           "$ref": "#/definitions/ObjectEmbedOptions/properties/shapeId"
         },
+        "sourceUrl": {
+          "description": "External link target URL (relationship TargetMode=\"External\").",
+          "type": "string"
+        },
         "updateMode": {
           "description": "Update mode (required for links).",
           "enum": ["always", "onCall"],
           "type": "string"
         }
       },
-      "required": ["data", "updateMode"],
+      "required": ["updateMode"],
       "type": "object"
     },
     "OdsoFieldMapDataOptions": {

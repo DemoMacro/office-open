@@ -261,7 +261,7 @@ describe("hyperlink relationships", () => {
     viewWrapper: {
       relationships: {
         hasId: (id: string) => id === "rId1",
-        idOf: () => 1,
+        idOf: () => "rId1",
         addRelationship: (_id: number, type: string, target: string, mode: string) => {
           relationships.push({ type, target, mode });
         },

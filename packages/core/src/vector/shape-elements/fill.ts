@@ -101,7 +101,12 @@ const FILL_ATTRS: readonly VmlAttrSpec[] = [
   { field: "relationshipId", attr: "r:id", kind: "string" },
   { field: "officeHref", attr: "o:href", kind: "string" },
   { field: "officeAltHref", attr: "o:althref", kind: "string" },
-  { field: "detectmouseclick", attr: "o:detectmouseclick", kind: "trueFalse" },
+  {
+    field: "detectmouseclick",
+    attr: "o:detectmouseclick",
+    parseAliases: ["detectmouseclick"],
+    kind: "trueFalse",
+  },
   { field: "officeTitle", attr: "o:title", kind: "string" },
   { field: "opacity2", attr: "o:opacity2", kind: "string" },
   { field: "officeRelationshipId", attr: "o:relid", kind: "string" },

@@ -60,12 +60,12 @@ export function buildRPrXml(
 ): string {
   if (!pr) return "";
   const partsByTag: Partial<Record<RichTextRunProperty, string>> = {};
-  if (pr.bold)
-    partsByTag.b = pr.boldValRaw !== undefined ? `<b val="${escapeXml(pr.boldValRaw)}"/>` : "<b/>";
-  if (pr.italic) partsByTag.i = "<i/>";
-  if (pr.strike)
-    partsByTag.strike =
-      pr.strikeVal !== undefined ? `<strike val="${escapeXml(pr.strikeVal)}"/>` : "<strike/>";
+  if (pr.boldValRaw !== undefined) partsByTag.b = `<b val="${escapeXml(pr.boldValRaw)}"/>`;
+  else if (pr.bold) partsByTag.b = "<b/>";
+  if (pr.italicValRaw !== undefined) partsByTag.i = `<i val="${escapeXml(pr.italicValRaw)}"/>`;
+  else if (pr.italic) partsByTag.i = "<i/>";
+  if (pr.strikeVal !== undefined) partsByTag.strike = `<strike val="${escapeXml(pr.strikeVal)}"/>`;
+  else if (pr.strike) partsByTag.strike = "<strike/>";
   if (pr.outline) partsByTag.outline = "<outline/>";
   if (pr.shadow) partsByTag.shadow = "<shadow/>";
   if (pr.condense) partsByTag.condense = "<condense/>";
@@ -503,6 +503,7 @@ export function parseRPr(el: XmlElement): RichTextRunPropertiesOptions {
         break;
       case "i":
         result.italic = parseOnOff(attr(child, "val")) ?? true;
+        if (attr(child, "val") !== undefined) result.italicValRaw = attr(child, "val");
         break;
       case "strike":
         result.strike = parseOnOff(attr(child, "val")) ?? true;

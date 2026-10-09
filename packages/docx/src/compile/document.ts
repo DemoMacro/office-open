@@ -18,6 +18,7 @@ import {
   findAndReplaceImagePlaceholders,
   formatId,
   hasPlaceholders,
+  partPathToRelsPath,
   replaceAllPlaceholders,
   replaceNumberingPlaceholders,
 } from "@office-open/core";
@@ -74,9 +75,9 @@ function sourceRelationshipFor(
 }
 
 /** Convert a source package path to a target relative to word/document.xml. */
-function documentRelationshipTarget(partPath: string): string {
+function documentRelationshipTarget(partPath: string, ownerPath: string): string {
   if (partPath.startsWith("/")) return partPath;
-  const owner = ["word"];
+  const owner = ownerPath.split("/").slice(0, -1);
   const target = partPath.split("/");
   let common = 0;
   while (common < owner.length && common < target.length - 1 && owner[common] === target[common])
@@ -104,7 +105,7 @@ function documentSourceRids(
   const map = new Map<string, string>();
   const prefix = `${dir}/`;
   for (const rel of ctx._options.passthroughRelationships ?? []) {
-    if (rel.source !== "word/document.xml") continue;
+    if (rel.source !== ctx.primaryDocumentPath) continue;
     const normalizedTarget = rel.target.startsWith("/") ? rel.target.slice(1) : rel.target;
     if (!normalizedTarget.startsWith(prefix)) continue;
     map.set(normalizedTarget.slice(prefix.length), rel.rId);
@@ -121,6 +122,7 @@ export function compileDocumentEntries(
   documentXmlData: string,
   documentRelationshipCount: number,
 ): { Document: XmlifyedFile; Relationships: XmlifyedFile } {
+  const documentPath = ctx.primaryDocumentPath;
   const documentMedia = findAndReplaceImagePlaceholders(
     documentXmlData,
     ctx.media.array,
@@ -156,10 +158,11 @@ export function compileDocumentEntries(
           for (const [i, key] of chartKeys.entries()) {
             const chartTarget = documentRelationshipTarget(
               ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
+              documentPath,
             );
             const sourceRid = sourceRidFor(
               ctx._options.passthroughRelationships,
-              "word/document.xml",
+              documentPath,
               RELATIONSHIP_TYPES.chart,
               chartTarget,
             );
@@ -188,7 +191,7 @@ export function compileDocumentEntries(
         }
         return xmlData;
       })(),
-      path: "word/document.xml",
+      path: documentPath,
     },
     Relationships: {
       data: (() => {
@@ -196,7 +199,7 @@ export function compileDocumentEntries(
           const target = `media/${ref.fileName}`;
           const sourceRel = sourceRelationshipFor(
             ctx._options.passthroughRelationships,
-            "word/document.xml",
+            documentPath,
             RELATIONSHIP_TYPES.image,
             target,
           );
@@ -210,7 +213,7 @@ export function compileDocumentEntries(
           const target = `embeddings/${ref.fileName}`;
           const sourceRid = sourceRidFor(
             ctx._options.passthroughRelationships,
-            "word/document.xml",
+            documentPath,
             embeddingRelationship(ctx.embeddings, ref.fileName),
             target,
           );
@@ -228,10 +231,11 @@ export function compileDocumentEntries(
         for (let i = 0; i < ctx.charts.array.length; i++) {
           const target = documentRelationshipTarget(
             ctx.charts.array[i]?.sourcePath ?? `word/charts/chart${i + 1}.xml`,
+            documentPath,
           );
           const sourceRid = sourceRidFor(
             ctx._options.passthroughRelationships,
-            "word/document.xml",
+            documentPath,
             RELATIONSHIP_TYPES.chart,
             target,
           );
@@ -259,7 +263,7 @@ export function compileDocumentEntries(
               const sourcePath = ctx.smartArts.array.find((s) => s.key === key)?.sourcePaths?.[
                 kind === "quickStyle" ? "quickStyle" : kind
               ];
-              return sourcePath ? documentRelationshipTarget(sourcePath) : undefined;
+              return sourcePath ? documentRelationshipTarget(sourcePath, documentPath) : undefined;
             },
             // The drawing part is an Office render cache, present only when the
             // source carried it — Word never emits it for a fresh SmartArt.
@@ -273,7 +277,7 @@ export function compileDocumentEntries(
 
         return XML_DECL + ctx.document.relationships.serialize();
       })(),
-      path: "word/_rels/document.xml.rels",
+      path: partPathToRelsPath(documentPath),
     },
   };
 }

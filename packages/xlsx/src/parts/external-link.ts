@@ -75,6 +75,10 @@ export interface ExternalLinkOptions {
   oleLink?: OleLinkOptions;
   /** Relationship ID for the OLE link (set by compiler) */
   oleRId?: string;
+  /** Target URL/path for `oleLink`, resolved from the external link rels. */
+  oleTarget?: string;
+  /** Source relationship type of the OLE target; round-trip only. */
+  oleTargetTypeRaw?: string;
 }
 
 /** One cached DDE value (CT_DdeValue — val element + type attribute). */

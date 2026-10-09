@@ -15,6 +15,7 @@
  * @module
  */
 import { toUint8Array, parseOnOff } from "@office-open/core";
+import { RELATIONSHIP_TYPES } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import { parseVmlStyle } from "@office-open/core";
 import {
@@ -64,11 +65,20 @@ export interface ObjectEmbedOptions {
   shapeId?: string;
   /** OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id. */
   objectId?: string;
+  /** Link type (o:OLEObject/o:LinkType child, e.g. "EnhancedMetaFile"). */
+  linkType?: string;
   /** Field codes (o:OLEObject/o:FieldCodes child). */
   fieldCodes?: string;
 }
 
-export interface ObjectLinkOptions extends ObjectEmbedOptions {
+export interface ObjectLinkOptions extends Omit<ObjectEmbedOptions, "data"> {
+  /**
+   * Embedded payload — absent on an external link, which carries sourceUrl
+   * instead of bytes in the package.
+   */
+  data?: Uint8Array | string;
+  /** External link target URL (relationship TargetMode="External"). */
+  sourceUrl?: string;
   /** Update mode (required for links). */
   updateMode: "always" | "onCall";
   /** Whether the field is locked. */
@@ -151,7 +161,6 @@ export interface ObjectElementOptions {
 // ── Descriptor ──
 
 let objectShapeCounter = 1025;
-let objectOleCounter = 1;
 
 export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
   kind: "custom",
@@ -225,7 +234,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     if (opts.embed || opts.link) {
       const link = opts.link;
       const payload = opts.embed ?? link!;
-      const fileName = registerEmbedding(payload, ctx);
+      // An external link relates a URL, not package bytes — no embedding part.
+      const externalLink = link?.sourceUrl !== undefined;
+      const fileName = externalLink ? undefined : registerEmbedding(payload, ctx);
       const attrs: string[] = [` Type="${link ? "Link" : "Embed"}"`];
       if (payload.progId) attrs.push(` ProgID="${payload.progId}"`);
       // Word ties the OLE object to its preview shape via ShapeID.
@@ -233,18 +244,24 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
       if (payload.drawAspect) {
         attrs.push(` DrawAspect="${payload.drawAspect === "icon" ? "Icon" : "Content"}"`);
       }
+      if (payload.objectId) attrs.push(` ObjectID="${payload.objectId}"`);
       attrs.push(
-        ` ObjectID="${payload.objectId ?? `_${ctx.reproducible?.nextDrawingId() ?? objectOleCounter++}`}"`,
+        link?.sourceUrl !== undefined
+          ? ` r:id="${ctx.addRelationship(RELATIONSHIP_TYPES.oleObject, link.sourceUrl, "External")}"`
+          : ` r:id="{${fileName}}"`,
       );
-      attrs.push(` r:id="{${fileName}}"`);
       let children = "";
       {
         const innerEls: string[] = [];
         if (link) {
           attrs.push(` UpdateMode="${link.updateMode === "onCall" ? "OnCall" : "Always"}"`);
-          if (link.lockedField !== undefined) {
-            innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
-          }
+        }
+        // CT_OLEObject child order: o:LinkType, o:LockedField, o:FieldCodes.
+        if (payload.linkType) {
+          innerEls.push(`<o:LinkType>${escapeXml(payload.linkType)}</o:LinkType>`);
+        }
+        if (link?.lockedField !== undefined) {
+          innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
         }
         // CT_OLEObject children apply to the embed form too — an embedded
         // chart carries o:FieldCodes for its field switches.
@@ -358,7 +375,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const oleEl = findChild(el, "o:OLEObject");
     if (oleEl) {
       const common = parseOleObject(oleEl);
-      const payload = resolveBinary(attr(oleEl, "r:id"), ctx);
+      const oleRId = attr(oleEl, "r:id");
+      const oleSourceUrl = oleRId ? ctx.resolveExternalImage?.(oleRId) : undefined;
+      const payload = oleSourceUrl === undefined ? resolveBinary(oleRId, ctx) : undefined;
       if (payload) {
         common.data = payload.bytes;
         common.fileName = payload.path.split("/").pop() ?? payload.path;
@@ -371,7 +390,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
           ...common,
           updateMode: updateMode === "OnCall" ? "onCall" : "always",
           ...(lockedFieldEl ? { lockedField: parseOnOff(textOf(lockedFieldEl)) ?? false } : {}),
-        };
+          ...(oleSourceUrl !== undefined ? { sourceUrl: oleSourceUrl } : {}),
+        } as ObjectLinkOptions;
+        if (oleSourceUrl !== undefined) delete result.link.data;
       } else {
         result.embed = common;
       }
@@ -392,7 +413,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
     const linkEl = findChild(el, "w:objectLink");
     if (linkEl) {
       const base = parseEmbed(linkEl);
-      const payload = resolveBinary(attr(linkEl, "r:id"), ctx);
+      const linkRId = attr(linkEl, "r:id");
+      const linkSourceUrl = linkRId ? ctx.resolveExternalImage?.(linkRId) : undefined;
+      const payload = linkSourceUrl === undefined ? resolveBinary(linkRId, ctx) : undefined;
       if (payload) {
         base.data = payload.bytes;
         base.fileName = payload.path.split("/").pop() ?? payload.path;
@@ -404,7 +427,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         ...base,
         ...(updateMode ? { updateMode: updateMode as "always" | "onCall" } : {}),
         ...(lockedField !== undefined ? { lockedField: parseOnOff(lockedField) ?? false } : {}),
+        ...(linkSourceUrl !== undefined ? { sourceUrl: linkSourceUrl } : {}),
       } as ObjectLinkOptions;
+      if (linkSourceUrl !== undefined) delete result.link.data;
     }
 
     const controlEl = findChild(el, "w:control");
@@ -456,12 +481,12 @@ function remapRawPlaceholders(xml: string, renames: Map<string, string>): string
 }
 
 /** Register an OLE embedding and return its allocated file name. */
-function registerEmbedding(opts: ObjectEmbedOptions, ctx: BodyContext): string {
+function registerEmbedding(opts: ObjectEmbedOptions | ObjectLinkOptions, ctx: BodyContext): string {
   // Round-tripped payloads keep their source name (extension + Default entry);
   // fresh authoring gets the sequential oleObjectN.bin name. A source name
   // claimed by different bytes is reallocated rather than overwritten.
   const entry = ctx.file.embeddings.addEmbedding(
-    toUint8Array(opts.data) as Uint8Array,
+    toUint8Array(opts.data ?? new Uint8Array()) as Uint8Array,
     opts.fileName,
     opts.progId,
     opts.relationshipType,
@@ -481,6 +506,8 @@ function parseOleObject(el: Element): ObjectEmbedOptions {
   if (shapeId) opts.shapeId = shapeId;
   const objectId = attr(el, "ObjectID");
   if (objectId) opts.objectId = objectId;
+  const linkTypeEl = findChild(el, "o:LinkType");
+  if (linkTypeEl) opts.linkType = textOf(linkTypeEl);
   const fieldCodesEl = findChild(el, "o:FieldCodes");
   if (fieldCodesEl) opts.fieldCodes = textOf(fieldCodesEl);
   // Placeholder until the caller resolves r:id against the part's rels.

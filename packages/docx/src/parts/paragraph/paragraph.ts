@@ -62,6 +62,8 @@ export interface FootnoteEndnoteReferenceOptions {
  */
 export interface ComplexFieldOptions {
   instruction: string;
+  /** Field lock (w:fldChar/`@w:fldLock` on the begin marker). */
+  fieldLock?: boolean;
   /** Ordered members when nested simple fields occur inside a field code. */
   instructionMembers?: ComplexFieldInstructionMember[];
   /** Source `xml:space="preserve"` marker on the plain instruction text. */

@@ -551,6 +551,11 @@ export function parseSectionPropertiesEl(el: Element): SectionPropertiesOptions 
   if (type) {
     const val = attr(type, "w:val");
     if (val) opts.type = val as SectionPropertiesOptions["type"];
+  } else {
+    // Lenient producers write the type as a schema-invalid @w:type attribute;
+    // Word reads it the same as the child element.
+    const attrType = attr(el, "w:type");
+    if (attrType) opts.type = attrType as SectionPropertiesOptions["type"];
   }
 
   // Title page

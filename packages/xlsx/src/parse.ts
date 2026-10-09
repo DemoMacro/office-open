@@ -1534,6 +1534,20 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           }
         }
       }
+      if (elData.oleLink) {
+        const relsEl = xlsx.doc.get(partPathToRelsPath(elPath));
+        const oleRel = relsEl?.elements?.find(
+          (child) =>
+            child.name === "Relationship" &&
+            (attr(child, "Id") === elData.oleRId ||
+              (attr(child, "Type") ?? "").endsWith("/oleObject")),
+        );
+        const target = oleRel ? attr(oleRel, "Target") : undefined;
+        if (target) {
+          elData.oleTarget = target;
+          elData.oleTargetTypeRaw = oleRel ? attr(oleRel, "Type") : undefined;
+        }
+      }
 
       externalLinks.push(elData);
     }

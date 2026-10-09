@@ -94,28 +94,28 @@ export function stringifyMathInput(value: MathInput): string {
     const pr =
       opts.alignScript || ctrl
         ? `<m:sSubSupPr>${opts.alignScript ? `<m:alnScr m:val="${onOff(true)}"/>` : ""}${ctrl}</m:sSubSupPr>`
-        : "<m:sSubSupPr/>";
+        : "";
     return `<m:sSubSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
   }
 
   if ("preSubSuperScript" in value) {
     const opts = value.preSubSuperScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
-    const pr = ctrl ? `<m:sPrePr>${ctrl}</m:sPrePr>` : "<m:sPrePr/>";
+    const pr = ctrl ? `<m:sPrePr>${ctrl}</m:sPrePr>` : "";
     return `<m:sPre>${pr}<m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup><m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e></m:sPre>`;
   }
 
   if ("superScript" in value) {
     const opts = value.superScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
-    const pr = ctrl ? `<m:sSupPr>${ctrl}</m:sSupPr>` : "<m:sSupPr/>";
+    const pr = ctrl ? `<m:sSupPr>${ctrl}</m:sSupPr>` : "";
     return `<m:sSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
   }
 
   if ("subScript" in value) {
     const opts = value.subScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
-    const pr = ctrl ? `<m:sSubPr>${ctrl}</m:sSubPr>` : "<m:sSubPr/>";
+    const pr = ctrl ? `<m:sSubPr>${ctrl}</m:sSubPr>` : "";
     return `<m:sSub>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
   }
 
@@ -217,19 +217,19 @@ export function stringifyMathInput(value: MathInput): string {
   // Bracket types
   if ("roundBrackets" in value) {
     const spec = bracketSpec(value.roundBrackets);
-    return stringifyDelimiters(spec, "(", ")");
+    return stringifyDelimiters(spec);
   }
   if ("curlyBrackets" in value) {
     const spec = bracketSpec(value.curlyBrackets);
-    return stringifyDelimiters(spec, "{", "}");
+    return stringifyDelimiters(spec);
   }
   if ("angledBrackets" in value) {
     const spec = bracketSpec(value.angledBrackets);
-    return stringifyDelimiters(spec, "〈", "〉");
+    return stringifyDelimiters(spec);
   }
   if ("squareBrackets" in value) {
     const spec = bracketSpec(value.squareBrackets);
-    return stringifyDelimiters(spec, "[", "]");
+    return stringifyDelimiters(spec);
   }
 
   if ("borderBox" in value) {
@@ -348,8 +348,10 @@ function stringifyNAry(
     prParts.push(`<m:limLoc m:val="${opts.properties.limitLocation}"/>`);
   if (opts.properties?.grow !== undefined)
     prParts.push(`<m:grow m:val="${onOff(opts.properties.grow)}"/>`);
-  if (!hasSub) prParts.push(`<m:subHide m:val="${onOff(true)}"/>`);
-  if (!hasSup) prParts.push(`<m:supHide m:val="${onOff(true)}"/>`);
+  if (opts.properties?.hideSubscript !== undefined || !hasSub)
+    prParts.push(`<m:subHide m:val="${onOff(opts.properties?.hideSubscript ?? true)}"/>`);
+  if (opts.properties?.hideSuperscript !== undefined || !hasSup)
+    prParts.push(`<m:supHide m:val="${onOff(opts.properties?.hideSuperscript ?? true)}"/>`);
   prParts.push(ctrlPrXml(opts.controlProperties));
   const pr = `<m:naryPr>${prParts.join("")}</m:naryPr>`;
   const sub = hasSub ? `<m:sub>${stringifyChildren(opts.subScript!)}</m:sub>` : "<m:sub/>";
@@ -359,28 +361,24 @@ function stringifyNAry(
 
 // ── Delimiters (brackets) ──
 
-function stringifyDelimiters(
-  spec: {
-    children?: MathInput[];
-    elements?: MathInput[][];
-    properties?: MathDelimiterProperties;
-  },
-  begChr: string,
-  endChr: string,
-): string {
+function stringifyDelimiters(spec: {
+  children?: MathInput[];
+  elements?: MathInput[][];
+  properties?: MathDelimiterProperties;
+}): string {
   // CT_D holds e+ — one m:e per separator-split group; a bare children array
   // is a single group.
   const groups = spec.elements ?? (spec.children ? [spec.children] : []);
   const eXml = groups.map((g) => `<m:e>${stringifyChildren(g)}</m:e>`).join("");
   // begChr/endChr are optional with XSD defaults "(" / ")" — omit when default
   // (Office writes bare <m:dPr> for round brackets).
-  const beg = spec.properties?.beginCharacter ?? begChr;
-  const end = spec.properties?.endCharacter ?? endChr;
+  const beg = spec.properties?.beginCharacter;
+  const end = spec.properties?.endCharacter;
   const prParts: string[] = [];
-  if (beg !== "(") prParts.push(`<m:begChr m:val="${escapeXml(beg)}"/>`);
-  if (spec.properties?.separatorCharacter)
+  if (beg !== undefined) prParts.push(`<m:begChr m:val="${escapeXml(beg)}"/>`);
+  if (spec.properties?.separatorCharacter !== undefined)
     prParts.push(`<m:sepChr m:val="${escapeXml(spec.properties.separatorCharacter)}"/>`);
-  if (end !== ")") prParts.push(`<m:endChr m:val="${escapeXml(end)}"/>`);
+  if (end !== undefined) prParts.push(`<m:endChr m:val="${escapeXml(end)}"/>`);
   if (spec.properties?.grow !== undefined)
     prParts.push(`<m:grow m:val="${onOff(spec.properties.grow)}"/>`);
   if (spec.properties?.shape) prParts.push(`<m:shp m:val="${spec.properties.shape}"/>`);
@@ -697,6 +695,10 @@ function parseMathNAry(el: Element): MathInput {
     }
     const grow = readOnOff(findChild(naryPr, "m:grow"));
     if (grow !== undefined) properties.grow = grow;
+    const hideSubscript = readOnOff(findChild(naryPr, "m:subHide"));
+    if (hideSubscript !== undefined) properties.hideSubscript = hideSubscript;
+    const hideSuperscript = readOnOff(findChild(naryPr, "m:supHide"));
+    if (hideSuperscript !== undefined) properties.hideSuperscript = hideSuperscript;
   }
 
   const common = {

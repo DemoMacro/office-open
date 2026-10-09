@@ -330,9 +330,10 @@ export function hasTocFieldEndBeforeChildren(el: Element): boolean {
     (firstChild.elements ?? []).some(
       (child) => child.name === "w:fldChar" && attr(child, "w:fldCharType") === "end",
     );
-  return Boolean(
-    hasEnd && (secondChild?.name === "w:bookmarkStart" || secondChild?.name === "w:bookmarkEnd"),
-  );
+  // Any content after the consumed end run (bookmark markers, page breaks,
+  // further runs) must stay after the re-injected end — the writer otherwise
+  // appends the end at the paragraph tail and swaps the source order.
+  return Boolean(hasEnd && secondChild !== undefined);
 }
 
 /**

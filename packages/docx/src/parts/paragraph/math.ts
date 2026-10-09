@@ -65,6 +65,10 @@ export interface MathNaryProperties {
   limitLocation?: MathNaryLimitLocation;
   /** Whether the operator grows to content height (m:grow). */
   grow?: boolean;
+  /** Hide the subscript placeholder (m:subHide). */
+  hideSubscript?: boolean;
+  /** Hide the superscript placeholder (m:supHide). */
+  hideSuperscript?: boolean;
 }
 
 /** Matrix column justification (one m:mc entry inside m:mcs). */

@@ -283,4 +283,64 @@ describe("objectDesc.parse embedding relationship type", () => {
     );
     expect(opts.embed!.relationshipType).toBe("oleObject");
   });
+
+  it("captures an external OLE link target without fabricating an embedding", () => {
+    const el = parseObjectXml(
+      `<v:shape id="_x0000_i1025" type="#_x0000_t75" style="width:100pt;height:50pt" o:ole="">` +
+        `<v:imagedata r:id="rId4" o:title=""/></v:shape>` +
+        `<o:OLEObject Type="Link" ProgID="Package" ShapeID="_x0000_i1025" ` +
+        `DrawAspect="Content" ObjectID="_3" r:id="rId5" UpdateMode="OnCall">` +
+        `<o:LockedField>false</o:LockedField></o:OLEObject>`,
+    );
+    const ctx = {
+      ...readCtx({}),
+      resolveExternalImage: (rid: string) =>
+        rid === "rId5" ? "file:///C:/linked/workbook.xlsx" : undefined,
+    } as unknown as ReadContext;
+    const opts = objectDesc.parse(el, ctx);
+    expect(opts.link).toMatchObject({
+      progId: "Package",
+      sourceUrl: "file:///C:/linked/workbook.xlsx",
+      updateMode: "onCall",
+      lockedField: false,
+    });
+    expect(opts.link!.data).toBeUndefined();
+  });
+});
+
+describe("objectDesc.stringify external link", () => {
+  it("emits an external relationship instead of an embedding part", () => {
+    const writeCtx = {
+      file: {
+        media: { addMedia: () => ({ fileName: "image1.png" }) },
+        embeddings: { addEmbedding: () => ({ fileName: "oleObject1.bin" }) },
+      },
+      addRelationship: (type: string, target: string, mode?: string) => {
+        expect(type).toBe(
+          "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject",
+        );
+        expect(target).toBe("file:///C:/linked/workbook.xlsx");
+        expect(mode).toBe("External");
+        return "rId7";
+      },
+    } as unknown as BodyContext;
+    const xml = objectDesc.stringify(
+      {
+        shapeId: "_x0000_i1025",
+        width: "100pt",
+        height: "50pt",
+        link: {
+          sourceUrl: "file:///C:/linked/workbook.xlsx",
+          updateMode: "onCall",
+          lockedField: false,
+        },
+      },
+      writeCtx,
+    )!;
+    expect(xml).toContain('Type="Link"');
+    expect(xml).toContain('r:id="rId7"');
+    expect(xml).toContain('UpdateMode="OnCall"');
+    expect(xml).toContain("<o:LockedField>f</o:LockedField>");
+    expect(xml).not.toContain("{oleObject1.bin}");
+  });
 });

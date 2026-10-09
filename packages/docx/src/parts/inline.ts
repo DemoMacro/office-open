@@ -149,7 +149,9 @@ function stringifyComplexFieldRuns(
           : "";
   const lrpb = cf.lastRenderedPageBreak ? "<w:lastRenderedPageBreak/>" : "";
   return (
-    `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"/></w:r>` +
+    `<w:r${beginAttrs}>${ctrl}${lrpb}<w:fldChar w:fldCharType="begin"${
+      cf.fieldLock !== undefined ? ` w:fldLock="${cf.fieldLock ? 1 : 0}"` : ""
+    }/></w:r>` +
     instrXml +
     separatorXml +
     resultXml +
@@ -949,10 +951,11 @@ export function stringifyChildDispatch(
         // The slot is taken. When the occupant is the same kind+target the
         // source shared one rel across references — reuse it. Otherwise the id
         // was reassigned and this reference allocates a fresh rel.
-        const shared = ctx.viewWrapper.relationships.idOf(relType, hl.url);
+        const shared = ctx.viewWrapper.relationships.idOf(relType, hl.url, TargetModeType.EXTERNAL);
+        const sharedId = shared === undefined ? undefined : /^rId(\d+)$/.exec(shared)?.[1];
         relationshipId =
-          typeof shared === "number"
-            ? shared
+          sharedId !== undefined
+            ? Number(sharedId)
             : ctx.viewWrapper.relationships.add(relType, hl.url, TargetModeType.EXTERNAL);
       }
       const linkId = `rId${relationshipId}`;

@@ -76,7 +76,9 @@ const PRINTER_SETTINGS_RELATIONSHIP_TYPE =
 export function themePartName(options: DocumentOptions): string {
   const themeRel = (options.passthroughRelationships ?? []).find(
     (rel) =>
-      rel.source === "word/document.xml" && rel.relationshipType.endsWith("/theme") && rel.target,
+      rel.source === (options.primaryPartPath ?? "word/document.xml") &&
+      rel.relationshipType.endsWith("/theme") &&
+      rel.target,
   );
   if (!themeRel || themeRel.target.startsWith("#")) return "word/theme/theme1.xml";
 
@@ -236,6 +238,8 @@ export class DocxWriteContext implements WriteContext {
   public glossaryHeaderParts: HeaderFooterEntry[] = [];
   public glossaryFooterParts: HeaderFooterEntry[] = [];
   declare public webSettings: WebSettingsOptions | undefined;
+  /** Source primary document path; relationship ownership follows it. */
+  readonly primaryDocumentPath: string;
 
   // --- Section properties (one per section, raw options for descriptor pipeline) ---
   // An entry is undefined when the source body carried no sectPr for that
@@ -315,6 +319,7 @@ export class DocxWriteContext implements WriteContext {
   constructor(options: DocumentOptions, reproducible?: ReproducibleScope) {
     this._options = options;
     this.reproducible = reproducible;
+    this.primaryDocumentPath = options.primaryPartPath ?? "word/document.xml";
 
     this.numbering = new Numbering(
       options.numbering ? options.numbering : { abstractNumberings: [] },
@@ -336,7 +341,7 @@ export class DocxWriteContext implements WriteContext {
       moveRunNext: scan.maxMoveRunId + 1,
     };
     this.fileRelationships = buildRootRelationships(
-      "word/document.xml",
+      this.primaryDocumentPath,
       options.customProperties !== undefined,
       options.passthroughRelationships,
       {
@@ -374,14 +379,14 @@ export class DocxWriteContext implements WriteContext {
     this.footNotes = { relationships: new Relationships(), notes: new Map() };
     this.endnotes = { relationships: new Relationships(), notes: new Map() };
     this.document = {
-      relationships: new Relationships("word/document.xml"),
-      partName: "word/document.xml",
+      relationships: new Relationships(this.primaryDocumentPath),
+      partName: this.primaryDocumentPath,
     };
     // Reserve every passthrough source id so parts the source didn't carry
     // (a fresh comment, header, …) allocate above the source id space instead
     // of taking an id a later source re-use (fontTable, theme, …) needs.
     this.document.relationships.reserveSourceRids(
-      "word/document.xml",
+      this.primaryDocumentPath,
       options.passthroughRelationships ?? [],
     );
     // Settings.xml content has a single entry point: `settings`. The
@@ -666,7 +671,7 @@ export class DocxWriteContext implements WriteContext {
     }
     const source = (this._options.passthroughRelationships ?? []).find(
       (r) =>
-        r.source === "word/document.xml" &&
+        r.source === this.primaryDocumentPath &&
         r.relationshipType === type &&
         (r.target === partName || r.target.endsWith(`/${partName}`)),
     );
@@ -776,7 +781,7 @@ export class DocxWriteContext implements WriteContext {
     // keeps the source relationship only, because some producers ship the
     // theme part without a document→theme relationship.
     const themeRel = (this._options.passthroughRelationships ?? []).find(
-      (r) => r.source === "word/document.xml" && r.relationshipType.endsWith("/theme"),
+      (r) => r.source === this.primaryDocumentPath && r.relationshipType.endsWith("/theme"),
     );
     if (themeRel || !this._options.contentTypes) {
       this.registerDocumentRel(
@@ -797,7 +802,7 @@ export class DocxWriteContext implements WriteContext {
       !this._options.contentTypes ||
       (this._options.passthroughRelationships ?? []).some(
         (rel) =>
-          rel.source === "word/document.xml" && rel.relationshipType.split("/").pop() === kind,
+          rel.source === this.primaryDocumentPath && rel.relationshipType.split("/").pop() === kind,
       )
     );
   }
@@ -813,7 +818,7 @@ export class DocxWriteContext implements WriteContext {
     const kind = type.split("/").pop();
     const preclaimed = (this._options.passthroughRelationships ?? []).find(
       (r) =>
-        r.source === "word/document.xml" &&
+        r.source === this.primaryDocumentPath &&
         r.relationshipType.split("/").pop() === kind &&
         sameDocumentRelationshipTarget(r.target, target),
     );
@@ -846,7 +851,8 @@ export class DocxWriteContext implements WriteContext {
    */
   public addPassthroughDocumentRelationships(): void {
     for (const rel of this._options.passthroughRelationships ?? []) {
-      if (rel.source !== "word/document.xml" || rel.relationshipType.endsWith("/theme")) continue;
+      if (rel.source !== this.primaryDocumentPath || rel.relationshipType.endsWith("/theme"))
+        continue;
       this.document.relationships.claimSourceRel(rel);
     }
   }

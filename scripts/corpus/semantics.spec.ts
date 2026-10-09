@@ -96,6 +96,64 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("xl/styles.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes OnOff toggle lexical variants and omitted values", () => {
+    const source = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body><w:p><w:pPr><w:keepNext w:val="true"/><w:keepLines w:val="on"/></w:pPr>' +
+        '<w:r><w:rPr><w:b/><w:i w:val="t"/></w:rPr></w:r></w:p>' +
+        '<w:tbl><w:tr><w:trPr><w:cantSplit w:val="on"/><w:tblHeader/></w:trPr></w:tr></w:tbl>' +
+        "</w:body></w:document>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body><w:p><w:pPr><w:keepNext/><w:keepLines w:val="1"/></w:pPr>' +
+        '<w:r><w:rPr><w:b w:val="1"/><w:i/></w:rPr></w:r></w:p>' +
+        '<w:tbl><w:tr><w:trPr><w:cantSplit/><w:tblHeader w:val="on"/></w:trPr></w:tr></w:tbl>' +
+        "</w:body></w:document>",
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("fills section margin header/footer writer defaults", () => {
+    const source = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body><w:sectPr><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:gutter="0"/></w:sectPr></w:body></w:document>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body><w:sectPr><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:gutter="0" w:header="851" w:footer="992"/></w:sectPr></w:body></w:document>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("normalizes boolean element text lexemes", () => {
+    const source = new TextEncoder().encode(
+      '<w:object xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+        'xmlns:o="urn:schemas-microsoft-com:office:office"><o:OLEObject Type="Embed">' +
+        "<o:LockedField>false</o:LockedField></o:OLEObject></w:object>",
+    );
+    const output = new TextEncoder().encode(
+      '<w:object xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+        'xmlns:o="urn:schemas-microsoft-com:office:office"><o:OLEObject Type="Embed">' +
+        "<o:LockedField>f</o:LockedField></o:OLEObject></w:object>",
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
+  it("folds duplicate singleton toggle elements with last-one-wins", () => {
+    const source = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        '<w:body><w:p><w:pPr><w:rPr><w:b w:val="1"/><w:b w:val="1"/>' +
+        '<w:bCs w:val="false"/><w:bCs w:val="false"/></w:rPr></w:pPr></w:p></w:body></w:document>',
+    );
+    const output = new TextEncoder().encode(
+      '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+        "<w:body><w:p><w:pPr><w:rPr><w:b/>" +
+        '<w:bCs w:val="false"/></w:rPr></w:pPr></w:p></w:body></w:document>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes legacy Office relationship URIs to transitional equivalents", () => {
     const source = new TextEncoder().encode(
       '<Relationships xmlns="http://schemas.microsoft.com/package/2005/06/relationships">' +

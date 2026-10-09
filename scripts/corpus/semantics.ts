@@ -56,6 +56,7 @@ const BOOLEAN_TEXT_ELEMENTS = new Set([
   "LinksUpToDate",
   "SharedDoc",
   "HyperlinksChanged",
+  "o:LockedField",
 ]);
 
 /** OOXML toggle elements whose omitted w:val means semantic true. */
@@ -81,10 +82,20 @@ const ON_OFF_ELEMENTS = new Set([
   "w:autoSpaceDE",
   "w:autoSpaceDN",
   "w:snapToGrid",
+  "w:cantSplit",
+  "w:tblHeader",
+  "w:hidden",
 ]);
 
 /** XML attributes whose XSD default is emitted explicitly by the writers. */
 const DEFAULT_ATTRIBUTES = new Map<string, Record<string, string>>([
+  [
+    "w:pgMar",
+    {
+      "w:header": "851",
+      "w:footer": "992",
+    },
+  ],
   [
     "wp:inline",
     {
@@ -185,6 +196,8 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
 function canonicalAttributeValue(name: string, value: string, elementName?: string): string {
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
+  if (value === "t") return "1";
+  if (value === "f") return "0";
   if (/^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/.test(value) && Number.isFinite(Number(value))) {
     return String(Number(value));
   }
@@ -246,6 +259,12 @@ function canonicalAttributeValue(name: string, value: string, elementName?: stri
     return value;
   }
   return value;
+}
+
+function canonicalBooleanText(value: string): string | undefined {
+  if (value === "1" || value === "true" || value === "on" || value === "t") return "1";
+  if (value === "0" || value === "false" || value === "off" || value === "f") return "0";
+  return undefined;
 }
 
 function canonicalElementName(name: string, partPath: string): string {
@@ -358,6 +377,9 @@ function canonicalNode(
       return "w:char";
     if ((name === "w16se:sym" || name === "w16se:symEx") && attributeName === "w16se:font")
       return "w:font";
+    // Lenient VML producers write the office drawing attribute unprefixed;
+    // our writers always use the canonical o: form.
+    if (attributeName === "detectmouseclick") return "o:detectmouseclick";
     return attributeName;
   };
   if (name === "mc:AlternateContent") {
@@ -379,6 +401,30 @@ function canonicalNode(
   if (name === "mc:Choice") {
     const content = (element.elements ?? []).find((child) => child.type === "element");
     if (content) return canonicalNode(content, childPath, references);
+  }
+  // Lenient producers write the section type as a schema-invalid @w:type
+  // attribute; Word reads it the same as the <w:type w:val/> child. Normalize
+  // to the child form so both spellings compare equal.
+  if ((name === "w:sectPr" || name.endsWith(":sectPr")) && element.attributes?.["w:type"]) {
+    const sectionType = element.attributes["w:type"]!;
+    const withoutAttr = { ...element, attributes: { ...element.attributes } };
+    delete withoutAttr.attributes!["w:type"];
+    const hasTypeChild = (withoutAttr.elements ?? []).some((child) => {
+      const childName = child.name ?? "";
+      return childName === "w:type" || childName.endsWith(":type");
+    });
+    if (!hasTypeChild) {
+      withoutAttr.elements = [
+        ...(withoutAttr.elements ?? []),
+        {
+          type: "element" as const,
+          name: "w:type",
+          attributes: { "w:val": sectionType },
+          cdata: undefined,
+        },
+      ];
+    }
+    return canonicalNode(withoutAttr, path, references);
   }
   const isRelationship = name === "Relationship" && path.includes("_rels/");
   const relsPath = name === "Relationship" ? path.slice(0, path.lastIndexOf("/")) : path;
@@ -463,11 +509,8 @@ function canonicalNode(
             rawText,
           )
         ? new Date(rawText).toISOString()
-        : BOOLEAN_TEXT_ELEMENTS.has(element.name ?? "") &&
-            (rawText === "0" || rawText === "1" || rawText === "true" || rawText === "false")
-          ? rawText === "1" || rawText === "true"
-            ? "1"
-            : "0"
+        : BOOLEAN_TEXT_ELEMENTS.has(element.name ?? "")
+          ? (canonicalBooleanText(rawText) ?? rawText)
           : rawText;
   const mappedChildren = (element.elements ?? [])
     .filter((child): child is Element => child.type === "element")
@@ -597,8 +640,26 @@ function sortUnorderedChildren(
     localName === "dateax" ||
     localName === "worksheet" ||
     localName === "dialogsheet" ||
-    localName === "sectpr"
+    localName === "sectpr" ||
+    // CT_TcPr/CT_TrPr children are xsd:choice maxOccurs=unbounded — order-free.
+    localName === "tcpr" ||
+    localName === "trpr"
   ) {
+    // CT_PPrBase/CT_RPr/CT_Settings children are schema singletons; Word
+    // applies the last duplicate. Normalize the same way instead of
+    // comparing structurally invalid duplicate source markup against the
+    // single element our model round-trips.
+    if (localName === "ppr" || localName === "rpr" || localName === "settings") {
+      const keepLastIndex = new Map<string, number>();
+      children.forEach((child, index) => {
+        if (child.name) keepLastIndex.set(child.name, index);
+      });
+      if (keepLastIndex.size < children.length) {
+        children = children.filter(
+          (child, index) => child.name !== undefined && keepLastIndex.get(child.name) === index,
+        );
+      }
+    }
     // Word folds a schema-invalid settings-root w:compatSetting into the
     // w:compat element on save — normalize the stray entry the same way
     // instead of comparing structurally invalid source markup against our
