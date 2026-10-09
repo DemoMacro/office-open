@@ -119,7 +119,7 @@ function stringifyComplexFieldRuns(
     mixedInstructionXml ??
     cf.instrRunsXml ??
     (cf.instruction !== ""
-      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
+      ? `<w:r${runAttrs([cf.instructionAdditionRsid, cf.instructionRunPropertiesRsid])}>${cf.instructionRPrXml ?? ctrl}<${instrTag}${cf.instructionPreserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(cf.instruction)}</${instrTag}></w:r>`
       : "");
   // `separate` + the result run are emitted only when there is a cached
   // result or ordered result members; a result-less field round-trips as
@@ -127,7 +127,7 @@ function stringifyComplexFieldRuns(
   // beyond the plain template.
   const separatorXml =
     cf.resultRunsXml !== undefined || cf.resultMembers !== undefined || cf.result !== undefined
-      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
+      ? `<w:r${runAttrs([cf.separatorAdditionRsid, cf.separatorRunPropertiesRsid])}>${cf.separatorRPrXml ?? ctrl}<w:fldChar w:fldCharType="separate"/></w:r>`
       : "";
   const resultXml =
     cf.resultMembers !== undefined
@@ -264,6 +264,8 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
   const rPr = stringifyRunProperties(runOpts);
 
   if (opts.break) body += breakXml(opts.break);
+  if (opts.pageBreak) body += '<w:br w:type="page"/>';
+  if (opts.columnBreak) body += '<w:br w:type="column"/>';
   const hasSpaceSegment =
     opts.children?.some(
       (child) => typeof child === "object" && child !== null && "preserveSpace" in child,
@@ -837,11 +839,20 @@ export function stringifyChildDispatch(
     const rPr = symbolFont
       ? '<w:rPr><w:rFonts w:ascii="MS Gothic" w:hAnsi="MS Gothic"/></w:rPr>'
       : "";
+    const instructionRPr = child.instructionRPrXml ?? ctrl;
+    const instructionXml =
+      child.instrRunsXml ??
+      `<w:r${runAttrs([child.instructionAdditionRsid, child.instructionRunPropertiesRsid])}>${instructionRPr}<w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>`;
+    const resultXml =
+      child.hasResult === false
+        ? ""
+        : `<w:r${runAttrs([child.separatorAdditionRsid, child.separatorRunPropertiesRsid])}>${child.separatorRPrXml ?? ctrl}${createSeparate()}</w:r>` +
+          (child.resultRunsXml ??
+            `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${child.resultRPrXml ?? (resultRPr || rPr)}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>`);
     return (
       `<w:r${runAttrs([child.additionRsid, child.runPropertiesRsid])}>${ctrl}${createBegin(undefined, ff)}</w:r>` +
-      `<w:r${runAttrs([child.instructionAdditionRsid, child.instructionRunPropertiesRsid])}><w:instrText xml:space="preserve"> ${instrCode} </w:instrText></w:r>` +
-      `<w:r${runAttrs([child.separatorAdditionRsid, child.separatorRunPropertiesRsid])}>${ctrl}${createSeparate()}</w:r>` +
-      `<w:r${runAttrs([child.resultAdditionRsid, child.resultRunPropertiesRsid])}>${resultRPr || rPr}<w:t xml:space="preserve">${escapeXml(result)}</w:t></w:r>` +
+      instructionXml +
+      resultXml +
       `<w:r${runAttrs([child.endAdditionRsid, child.endRunPropertiesRsid])}>${endRPr}${createEnd()}</w:r>`
     );
   }

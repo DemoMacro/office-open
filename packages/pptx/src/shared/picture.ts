@@ -1,4 +1,5 @@
 import type {
+  ShapeType,
   BasePictureOptions,
   BlipCompression,
   BlackWhiteMode,
@@ -77,7 +78,7 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
    * Preset geometry on p:spPr. Fresh pictures always carry a rect frame;
    * null suppresses the element for sources that omit it.
    */
-  geometry?: "rect" | null;
+  geometry?: ShapeType | null;
   /** Picture locks (a:picLocks inside p:cNvPicPr). */
   locking?: PictureLockingOptions;
   /**

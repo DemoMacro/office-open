@@ -175,6 +175,10 @@ export function stringifyUnsupportedDrawing(
   const firstExtension = anchorXml.search(/<wp14:sizeRel[HV]/);
   const spliceAt =
     anchorOpen >= 0 && firstExtension > anchorOpen ? firstExtension : anchorXml.lastIndexOf("</");
+  if (anchorXml.endsWith("/>")) {
+    const anchorName = options.anchor.name ?? "wp:inline";
+    return `<w:drawing>${anchorXml.slice(0, -2)}>${graphicXml}</${anchorName}></w:drawing>`;
+  }
   if (spliceAt < 0) return `<w:drawing>${anchorXml}${graphicXml}</w:drawing>`;
   return `<w:drawing>${anchorXml.slice(0, spliceAt)}${graphicXml}${anchorXml.slice(spliceAt)}</w:drawing>`;
 }

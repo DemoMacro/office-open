@@ -39,6 +39,19 @@ describe("ODF schema codecs", () => {
     expect(parsed.series[0]).toMatchObject({ name: "Sales", values: [10, 20] });
   });
 
+  it("renders sparse category cache points in the local table", () => {
+    const parsed = parseChartDocument(
+      generateChartDocument({
+        chart: {
+          type: "column",
+          categories: ["First", { index: 1, text: "Second" }],
+          series: [{ name: "Sales", values: [1, 2] }],
+        },
+      }),
+    ).chart;
+    expect(parsed.categories).toEqual(["First", "Second"]);
+  });
+
   it("round-trips scatter X/Y values and bubble sizes", () => {
     const scatter = {
       type: "scatter",

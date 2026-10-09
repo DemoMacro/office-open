@@ -188,6 +188,13 @@ export interface LevelsOptions {
   format?: (typeof LevelFormat)[keyof typeof LevelFormat];
   /** Custom number format string; set with format "custom". */
   formatOverride?: string;
+  /** `mc:Choice @Requires` when the primary numFmt is MCE-wrapped; round-trip only. */
+  formatChoiceRequires?: string;
+  /** Typed `w:numFmt` from `mc:Fallback`; round-trip only. */
+  formatFallback?: {
+    format?: (typeof LevelFormat)[keyof typeof LevelFormat];
+    formatOverride?: string;
+  };
   /**
    * Additional source `w:numFmt` elements after the primary format; round-trip
    * only — do not hand-author. Preserves duplicate lexical elements in order.

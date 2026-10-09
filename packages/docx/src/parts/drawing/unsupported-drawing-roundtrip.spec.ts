@@ -137,6 +137,20 @@ const GROUP_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
   </w:drawing></w:r></w:p></w:body>
 </w:document>`;
 
+const SELF_CLOSING_XML = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"
+  xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+  xmlns:synthetic="https://example.invalid/synthetic-drawing">
+  <w:body><w:p><w:r><w:drawing>
+    <wp:inline distT="0" distB="0" distL="0" distR="0"/>
+    <a:graphic><a:graphicData uri="https://example.invalid/synthetic-drawing">
+      <synthetic:shape id="42" kept="true"/>
+    </a:graphicData></a:graphic>
+  </w:drawing></w:r></w:p></w:body>
+</w:document>`;
+
 function syntheticSource() {
   return zipSync({
     "[Content_Types].xml": ENCODER.encode(CONTENT_TYPES_XML),
@@ -162,6 +176,14 @@ function groupSource() {
   return zipSync({
     "[Content_Types].xml": ENCODER.encode(CONTENT_TYPES_XML),
     "word/document.xml": ENCODER.encode(GROUP_XML),
+    "word/_rels/document.xml.rels": ENCODER.encode(RELS_XML),
+  });
+}
+
+function selfClosingSource() {
+  return zipSync({
+    "[Content_Types].xml": ENCODER.encode(CONTENT_TYPES_XML),
+    "word/document.xml": ENCODER.encode(SELF_CLOSING_XML),
     "word/_rels/document.xml.rels": ENCODER.encode(RELS_XML),
   });
 }
@@ -250,6 +272,36 @@ describe("unsupported DrawingML fallback", () => {
     const second = parseDocumentSync(await generateDocument(first, { type: "uint8array" }));
     const regenerated = groupDrawing(second as DocumentOptions).wpgGroup.children[0];
     expect(regenerated).toMatchObject(child);
+  });
+
+  it("rebuilds a self-closing anchor around the graphic payload", async () => {
+    const first = parseDocumentSync(selfClosingSource()) as DocumentOptions;
+    const drawing = unsupportedChild(first);
+    expect(drawing?.unsupportedDrawing.anchor).toEqual({
+      name: "wp:inline",
+      attributes: {
+        distT: 0,
+        distB: 0,
+        distL: 0,
+        distR: 0,
+      },
+      elements: [],
+      text: "",
+    });
+    expect(drawing?.unsupportedDrawing.graphicDataUri).toBe(
+      "https://example.invalid/synthetic-drawing",
+    );
+
+    const generated = await generateDocument(first, { type: "uint8array" });
+    const files = unzipSync(generated);
+    const documentXml = DECODER.decode(files["word/document.xml"]!);
+    expect(documentXml).toContain('<wp:inline distT="0" distB="0" distL="0" distR="0"><a:graphic>');
+    expect(documentXml).toContain("</a:graphic></wp:inline></w:drawing>");
+
+    const second = parseDocumentSync(generated) as DocumentOptions;
+    expect(unsupportedChild(second)?.unsupportedDrawing.graphicData).toEqual(
+      drawing?.unsupportedDrawing.graphicData,
+    );
   });
 });
 

@@ -76,6 +76,23 @@ describe("complex field parse", () => {
     expect((cf!.complexField as Record<string, unknown>).result).toBeUndefined();
   });
 
+  it("preserves an empty control rPr only on its source stage", () => {
+    const opts = parseParagraphXml(
+      '<w:r><w:rPr/><w:fldChar w:fldCharType="begin"/></w:r>' +
+        "<w:r><w:instrText>PAGE</w:instrText></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="separate"/></w:r>' +
+        "<w:r><w:t>1</w:t></w:r>" +
+        '<w:r><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    expect(findComplexField(opts)!.complexField).toMatchObject({
+      rPrXml: "<w:rPr/>",
+      separatorRPrXml: "",
+      endRPrXml: "",
+    });
+    const xml = stringifyParagraph(opts, writeCtx);
+    expect(xml.match(/<w:rPr\/>/g)).toHaveLength(1);
+  });
+
   it("concatenates instrText and result across multiple runs", () => {
     const opts = parseParagraphXml(
       '<w:r><w:fldChar w:fldCharType="begin"/></w:r>' +

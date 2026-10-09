@@ -14,6 +14,7 @@ import { buildUserShapesData, chartSpaceDesc, userShapesDesc } from "@office-ope
 import type { ChartSpaceOptions } from "@office-open/core/chart";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { stringify } from "@office-open/core/descriptor";
+import { themeOverrideDesc } from "@office-open/core/theme";
 import { attr, findChild, findFirst } from "@office-open/xml";
 
 import type { PptxWriteContext } from "../../context";
@@ -54,6 +55,7 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
         ...(opts.sourcePath ? { sourcePath: opts.sourcePath } : {}),
         ...(opts.sourceRelationships ? { sourceRelationships: opts.sourceRelationships } : {}),
         ...(opts.userShapes ? { userShapes: buildUserShapesData(opts.userShapes) } : {}),
+        ...(opts.themeOverride ? { themeOverride: opts.themeOverride } : {}),
       });
     }
 
@@ -137,6 +139,22 @@ export const chartDesc: CustomDescriptor<ChartOptions> = {
               if (bodyEl) us.anchors = userShapesDesc.parse(bodyEl, _ctx).anchors;
             }
             if (us && userShapesPath) us.path = userShapesPath;
+            const themeOverrideRel = relationships?.find((element) =>
+              (attr(element, "Type") ?? "").endsWith("/themeOverride"),
+            );
+            const themeOverrideTarget = themeOverrideRel
+              ? attr(themeOverrideRel, "Target")
+              : undefined;
+            const themeOverridePath = themeOverrideTarget
+              ? resolveRelationshipTarget(chartPath, themeOverrideTarget)
+              : undefined;
+            const themeOverrideEl = themeOverridePath ? _ctx.getPart(themeOverridePath) : undefined;
+            if (themeOverrideRel && themeOverridePath && themeOverrideEl) {
+              result.themeOverride = {
+                options: themeOverrideDesc.parse(themeOverrideEl, _ctx),
+                path: themeOverridePath,
+              };
+            }
             result.sourcePath = chartPath;
             result.sourceRelationships = relationships
               ?.filter((element) => element !== userShapesRel)

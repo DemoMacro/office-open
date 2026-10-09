@@ -220,6 +220,16 @@ describe("glossaryDesc round-trip", () => {
     expect(glossaryDesc.stringify(result, writeCtx)).not.toContain("<w:docParts");
   });
 
+  it("marks extension namespaces as ignorable on generated roots", () => {
+    const emptyXml = glossaryDesc.stringify({ hasDocParts: false, parts: [] }, writeCtx);
+    expect(emptyXml).toContain('mc:Ignorable="w14 w15"');
+    const populatedXml = glossaryDesc.stringify(
+      { parts: [{ name: "Part", gallery: "default", sections: [] }] },
+      writeCtx,
+    );
+    expect(populatedXml).toContain('mc:Ignorable="w14 w15"');
+  });
+
   it("preserves paragraph-hosted and terminal section properties", () => {
     const doc = parseXml(
       '<w:glossaryDocument xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docParts><w:docPart><w:docPartPr><w:name w:val="Sectioned"/><w:category><w:gallery w:val="default"/></w:category></w:docPartPr><w:docPartBody>' +

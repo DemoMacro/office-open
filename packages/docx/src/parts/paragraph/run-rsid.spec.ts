@@ -119,6 +119,22 @@ describe("run rsid round-trip", () => {
     expect(xml).toContain("FORMCHECKBOX");
   });
 
+  it("preserves a page break before text in the same run", () => {
+    const opts = parseParagraphXml(
+      `<w:p ${NS}><w:r w:rsidRPr="AABBCCDD">` +
+        '<w:rPr><w:b/></w:rPr><w:br w:type="page"/><w:t>Section</w:t></w:r></w:p>',
+    );
+    expect(firstChild(opts)).toMatchObject({
+      bold: true,
+      pageBreak: true,
+      runPropertiesRsid: "AABBCCDD",
+      text: "Section",
+    });
+    expect(stringifyParagraph(opts, writeCtx)).toContain(
+      '<w:rPr><w:b/></w:rPr><w:br w:type="page"/><w:t>Section</w:t>',
+    );
+  });
+
   it("preserves moved paragraph-mark revisions", () => {
     const opts = parseParagraphXml(
       `<w:p ${NS}><w:pPr><w:rPr>` +

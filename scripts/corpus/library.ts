@@ -112,7 +112,26 @@ function rebuiltXmlPaths(options: unknown, format: Format): ReadonlySet<string> 
     add(o.primaryPartPath);
     return paths;
   }
-  return undefined;
+  paths.add("ppt/presentation.xml");
+  paths.add("ppt/_rels/presentation.xml.rels");
+  paths.add("docProps/core.xml");
+  paths.add("docProps/app.xml");
+  paths.add("docProps/custom.xml");
+  const slideCount = Array.isArray(o.slides) ? o.slides.length : 0;
+  for (let index = 1; index <= slideCount; index += 1) {
+    paths.add(`ppt/slides/slide${index}.xml`);
+    paths.add(`ppt/slides/_rels/slide${index}.xml.rels`);
+  }
+  for (const tag of (o.tags as { sourcePath?: string }[] | undefined) ?? []) {
+    add(tag?.sourcePath);
+  }
+  for (const item of (o.customXml as
+    | { contentPath?: string; propertiesPath?: string }[]
+    | undefined) ?? []) {
+    add(item?.contentPath);
+    add(item?.propertiesPath);
+  }
+  return paths;
 }
 export type PackageFormat = keyof typeof OOXML_PACKAGE_FORMATS;
 

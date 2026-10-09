@@ -312,6 +312,16 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes omitted page margins to explicit writer defaults", () => {
+    const source = new TextEncoder().encode(
+      '<root><w:pgMar w:top="0" w:right="0" w:bottom="1440" w:left="1440" w:header="720" w:footer="720"/></root>',
+    );
+    const output = new TextEncoder().encode(
+      '<root><w:pgMar w:top="0" w:right="0" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/></root>',
+    );
+    expect(explainSemanticPartDiff("word/document.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes equivalent OOXML bullet percentage lexemes", () => {
     const source = new TextEncoder().encode('<root><a:buSzPct val="75000"/></root>');
     const output = new TextEncoder().encode('<root><a:buSzPct val="75%"/></root>');

@@ -120,6 +120,7 @@ const LEVEL_CHILD_ORDER: LevelChildOrder[] = [
 
 const LEVEL_SOURCE_ORDER = new Map<string, LevelChildOrder>([
   ["w:start", "start"],
+  ["mc:AlternateContent", "format"],
   ["w:numFmt", "format"],
   ["w:lvlRestart", "levelRestart"],
   ["w:pStyle", "paragraphStyle"],
@@ -557,7 +558,20 @@ function stringifyLevel(opts: LevelsOptions): string {
   if (opts.format !== undefined) {
     const attrs: string[] = [`w:val="${opts.format}"`];
     if (opts.formatOverride !== undefined) attrs.push(`w:format="${opts.formatOverride}"`);
-    addFragment("format", `<w:numFmt ${attrs.join(" ")}/>`);
+    const formatXml = `<w:numFmt ${attrs.join(" ")}/>`;
+    if (opts.formatChoiceRequires !== undefined || opts.formatFallback !== undefined) {
+      const fallback = opts.formatFallback;
+      const fallbackAttrs: string[] = [];
+      if (fallback?.format !== undefined) fallbackAttrs.push(`w:val="${fallback.format}"`);
+      if (fallback?.formatOverride !== undefined)
+        fallbackAttrs.push(`w:format="${fallback.formatOverride}"`);
+      addFragment(
+        "format",
+        `<mc:AlternateContent><mc:Choice Requires="${opts.formatChoiceRequires ?? "w14"}">${formatXml}</mc:Choice><mc:Fallback><w:numFmt ${fallbackAttrs.join(" ")}/></mc:Fallback></mc:AlternateContent>`,
+      );
+    } else {
+      addFragment("format", formatXml);
+    }
   }
   for (const duplicate of opts.formatDuplicates ?? []) {
     const attrs: string[] = [];
@@ -869,6 +883,36 @@ function parseLevelEl(
   if (lvlRestart) {
     const val = attrNum(lvlRestart, "w:val");
     if (val !== undefined) opts.levelRestart = val;
+  }
+
+  for (const alternate of (el.elements ?? []).filter(
+    (child) => child.name === "mc:AlternateContent",
+  )) {
+    const choice = findChild(alternate, "mc:Choice");
+    const fallback = findChild(alternate, "mc:Fallback");
+    const primary = choice?.elements?.find((child) => child.name === "w:numFmt");
+    const fallbackFormat = fallback?.elements?.find((child) => child.name === "w:numFmt");
+    if (!primary) continue;
+    const primaryVal = attr(primary, "w:val");
+    const primaryFormat = attr(primary, "w:format");
+    if (opts.format === undefined && opts.formatDuplicates === undefined) {
+      if (primaryVal) opts.format = primaryVal as LevelsOptions["format"];
+      if (primaryFormat) opts.formatOverride = primaryFormat;
+      opts.formatChoiceRequires = attr(choice, "Requires");
+      if (fallbackFormat) {
+        const fallbackVal = attr(fallbackFormat, "w:val");
+        const fallbackOverride = attr(fallbackFormat, "w:format");
+        opts.formatFallback = {
+          ...(fallbackVal && { format: fallbackVal as LevelsOptions["format"] }),
+          ...(fallbackOverride && { formatOverride: fallbackOverride }),
+        };
+      }
+      continue;
+    }
+    (opts.formatDuplicates ??= []).push({
+      ...(primaryVal && { format: primaryVal as LevelsOptions["format"] }),
+      ...(primaryFormat && { formatOverride: primaryFormat }),
+    });
   }
 
   const numFmtElements = (el.elements ?? []).filter((child) => child.name === "w:numFmt");

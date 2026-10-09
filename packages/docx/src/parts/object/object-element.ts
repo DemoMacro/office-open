@@ -69,6 +69,8 @@ export interface ObjectEmbedOptions {
   linkType?: string;
   /** Field codes (o:OLEObject/o:FieldCodes child). */
   fieldCodes?: string;
+  /** Locked-field flag (`o:LockedField`; some producers emit it on embeds too). */
+  lockedField?: boolean;
 }
 
 export interface ObjectLinkOptions extends Omit<ObjectEmbedOptions, "data"> {
@@ -260,8 +262,9 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
         if (payload.linkType) {
           innerEls.push(`<o:LinkType>${escapeXml(payload.linkType)}</o:LinkType>`);
         }
-        if (link?.lockedField !== undefined) {
-          innerEls.push(`<o:LockedField>${link.lockedField ? "t" : "f"}</o:LockedField>`);
+        const lockedField = link?.lockedField ?? payload.lockedField;
+        if (lockedField !== undefined) {
+          innerEls.push(`<o:LockedField>${lockedField ? "t" : "f"}</o:LockedField>`);
         }
         // CT_OLEObject children apply to the embed form too — an embedded
         // chart carries o:FieldCodes for its field switches.
@@ -508,6 +511,11 @@ function parseOleObject(el: Element): ObjectEmbedOptions {
   if (objectId) opts.objectId = objectId;
   const linkTypeEl = findChild(el, "o:LinkType");
   if (linkTypeEl) opts.linkType = textOf(linkTypeEl);
+  const lockedFieldEl = findChild(el, "o:LockedField");
+  if (lockedFieldEl) {
+    const value = textOf(lockedFieldEl).toLowerCase();
+    opts.lockedField = value === "" || value === "t" || value === "true";
+  }
   const fieldCodesEl = findChild(el, "o:FieldCodes");
   if (fieldCodesEl) opts.fieldCodes = textOf(fieldCodesEl);
   // Placeholder until the caller resolves r:id against the part's rels.

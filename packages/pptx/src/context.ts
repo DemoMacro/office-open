@@ -6,7 +6,7 @@
 
 import { EmbeddingCollection, Media } from "@office-open/core";
 import type { BaseMediaEntry, EmbeddingData } from "@office-open/core";
-import type { ChartSourceRelationship } from "@office-open/core/chart";
+import type { ChartSourceRelationship, ChartThemeOverrideData } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type {
   ColorDefinitionOptions,
@@ -55,6 +55,9 @@ export interface ChartEntry {
     /** Source user-shapes package path; round-trip only. */
     path?: string;
   };
+
+  /** Chart-owned themeOverride part; the body is typed, its rel stays source-ordered. */
+  themeOverride?: ChartThemeOverrideData;
 }
 
 export interface SmartArtEntry {

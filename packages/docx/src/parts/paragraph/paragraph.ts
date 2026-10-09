@@ -80,10 +80,14 @@ export interface ComplexFieldOptions {
   instructionAdditionRsid?: LongHexNumber;
   /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
   instructionRunPropertiesRsid?: LongHexNumber;
+  /** Verbatim instruction-run properties; empty string means explicitly absent. */
+  instructionRPrXml?: string;
   /** Revision save ID of the separator run (w:rsidR, round-trip). */
   separatorAdditionRsid?: LongHexNumber;
   /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
   separatorRunPropertiesRsid?: LongHexNumber;
+  /** Verbatim separator-run properties; empty string means explicitly absent. */
+  separatorRPrXml?: string;
   resultRPrXml?: string;
   /** Revision save ID of the first plain result run (w:rsidR, round-trip). */
   resultAdditionRsid?: string;
@@ -144,20 +148,30 @@ export type TrackChangeChild =
       runPropertiesRsid?: LongHexNumber;
       /** Control-run properties shared by begin/separate (round-trip). */
       rPrXml?: string;
+      /** Whether the source carried a separate marker and result (round-trip). */
+      hasResult?: boolean;
       /** Revision save ID of the separator run (w:rsidR, round-trip). */
       separatorAdditionRsid?: LongHexNumber;
       /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
       separatorRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim separator-run properties; empty string means explicitly absent. */
+      separatorRPrXml?: string;
       /** Revision save ID of the instruction run (w:rsidR, round-trip). */
       instructionAdditionRsid?: LongHexNumber;
       /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
       instructionRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim instruction-run properties (round-trip; defaults to control rPr). */
+      instructionRPrXml?: string;
+      /** Complete instruction-stage runs (round-trip only — do not hand-author). */
+      instrRunsXml?: string;
       /** Revision save ID of the result run (w:rsidR, round-trip). */
       resultAdditionRsid?: LongHexNumber;
       /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
       resultRunPropertiesRsid?: LongHexNumber;
       /** Result-run properties (round-trip; differs from the control rPr). */
       resultRPrXml?: string;
+      /** Complete result-stage runs after the separate marker (round-trip only). */
+      resultRunsXml?: string;
       /** Revision save ID of the end run (w:rsidR, round-trip). */
       endAdditionRsid?: LongHexNumber;
       /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
@@ -306,20 +320,30 @@ export type ParagraphChild =
       runPropertiesRsid?: LongHexNumber;
       /** Control-run properties shared by begin/separate (round-trip). */
       rPrXml?: string;
+      /** Whether the source carried a separate marker and result (round-trip). */
+      hasResult?: boolean;
       /** Revision save ID of the separator run (w:rsidR, round-trip). */
       separatorAdditionRsid?: LongHexNumber;
       /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
       separatorRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim separator-run properties; empty string means explicitly absent. */
+      separatorRPrXml?: string;
       /** Revision save ID of the instruction run (w:rsidR, round-trip). */
       instructionAdditionRsid?: LongHexNumber;
       /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
       instructionRunPropertiesRsid?: LongHexNumber;
+      /** Verbatim instruction-run properties (round-trip; defaults to control rPr). */
+      instructionRPrXml?: string;
+      /** Complete instruction-stage runs (round-trip only — do not hand-author). */
+      instrRunsXml?: string;
       /** Revision save ID of the result run (w:rsidR, round-trip). */
       resultAdditionRsid?: LongHexNumber;
       /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
       resultRunPropertiesRsid?: LongHexNumber;
       /** Result-run properties (round-trip; differs from the control rPr). */
       resultRPrXml?: string;
+      /** Complete result-stage runs after the separate marker (round-trip only). */
+      resultRunsXml?: string;
       /** Revision save ID of the end run (w:rsidR, round-trip). */
       endAdditionRsid?: LongHexNumber;
       /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */

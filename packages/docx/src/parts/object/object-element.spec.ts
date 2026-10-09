@@ -246,6 +246,35 @@ describe("objectDesc.stringify", () => {
 });
 
 describe("objectDesc.parse embedding relationship type", () => {
+  it("round-trips a locked field emitted on an embedded OLE object", () => {
+    const el = parseObjectXml(
+      `<o:OLEObject Type="Embed" ProgID="Excel.Sheet.12" ShapeID="_x0000_i1025" ` +
+        `DrawAspect="Content" ObjectID="_1" r:id="rId5">` +
+        `<o:LockedField>false</o:LockedField></o:OLEObject>`,
+    );
+    const opts = objectDesc.parse(
+      el,
+      readCtx({
+        rId5: {
+          path: "word/embeddings/oleObject1.bin",
+          bytes: new Uint8Array([9]),
+          relType: "oleObject",
+        },
+      }),
+    );
+    expect(opts.embed!.lockedField).toBe(false);
+
+    const writeCtx = {
+      file: {
+        media: { addMedia: () => ({ fileName: "image1.png" }) },
+        embeddings: { addEmbedding: () => ({ fileName: "oleObject1.bin" }) },
+      },
+    } as unknown as BodyContext;
+    const xml = objectDesc.stringify(opts, writeCtx)!;
+    expect(xml).toContain('Type="Embed"');
+    expect(xml).toContain("<o:LockedField>f</o:LockedField>");
+  });
+
   it("captures a package-typed embedding rel for native-format parts", () => {
     // Word relates an embedded workbook as an OPC package, not an OLE
     // compound; the distinction must survive for the rel to re-emit correctly.

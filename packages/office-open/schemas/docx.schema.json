@@ -2145,6 +2145,22 @@
       "required": ["captions"],
       "type": "object"
     },
+    "CategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "Sparse category cache point (c:cat > c:*Cache > c:pt with a non-positional",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v); an empty string preserves an empty cached point.",
+          "type": "string"
+        }
+      },
+      "required": ["index", "text"],
+      "type": "object"
+    },
     "CellMergeAttributes": {
       "additionalProperties": false,
       "properties": {
@@ -2362,7 +2378,14 @@
         },
         "categories": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/CategoryPointOptions"
+              }
+            ]
           },
           "type": "array"
         },
@@ -3084,10 +3107,7 @@
           "type": "number"
         },
         "categories": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartOptions/properties/categories"
         },
         "categoryFormatCode": {
           "$ref": "#/definitions/ChartOptions/properties/categoryFormatCode"
@@ -4835,6 +4855,10 @@
           "description": "Source `xml:space=\"preserve\"` marker on the plain instruction text.",
           "type": "boolean"
         },
+        "instructionRPrXml": {
+          "description": "Verbatim instruction-run properties; empty string means explicitly absent.",
+          "type": "string"
+        },
         "instructionRunPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
@@ -4882,6 +4906,9 @@
         "separatorAdditionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+        },
+        "separatorRPrXml": {
+          "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/separatorRPrXml"
         },
         "separatorRunPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -10424,6 +10451,10 @@
           ],
           "type": "string"
         },
+        "formatChoiceRequires": {
+          "description": "`mc:Choice",
+          "type": "string"
+        },
         "formatDuplicates": {
           "description": "Additional source `w:numFmt` elements after the primary format; round-trip only — do not hand-author. Preserves duplicate lexical elements in order.",
           "items": {
@@ -10506,6 +10537,84 @@
             "type": "object"
           },
           "type": "array"
+        },
+        "formatFallback": {
+          "additionalProperties": false,
+          "description": "Typed `w:numFmt` from `mc:Fallback`; round-trip only.",
+          "properties": {
+            "format": {
+              "enum": [
+                "decimal",
+                "upperRoman",
+                "lowerRoman",
+                "upperLetter",
+                "lowerLetter",
+                "ordinal",
+                "cardinalText",
+                "ordinalText",
+                "hex",
+                "chicago",
+                "ideographDigital",
+                "japaneseCounting",
+                "aiueo",
+                "iroha",
+                "decimalFullWidth",
+                "decimalHalfWidth",
+                "japaneseLegal",
+                "japaneseDigitalTenThousand",
+                "decimalEnclosedCircle",
+                "decimalFullWidth2",
+                "aiueoFullWidth",
+                "irohaFullWidth",
+                "decimalZero",
+                "bullet",
+                "ganada",
+                "chosung",
+                "decimalEnclosedFullstop",
+                "decimalEnclosedParen",
+                "decimalEnclosedCircleChinese",
+                "ideographEnclosedCircle",
+                "ideographTraditional",
+                "ideographZodiac",
+                "ideographZodiacTraditional",
+                "taiwaneseCounting",
+                "ideographLegalTraditional",
+                "taiwaneseCountingThousand",
+                "taiwaneseDigital",
+                "chineseCounting",
+                "chineseLegalSimplified",
+                "chineseCountingThousand",
+                "koreanDigital",
+                "koreanCounting",
+                "koreanLegal",
+                "koreanDigital2",
+                "vietnameseCounting",
+                "russianLower",
+                "russianUpper",
+                "none",
+                "numberInDash",
+                "hebrew1",
+                "hebrew2",
+                "arabicAlpha",
+                "arabicAbjad",
+                "hindiVowels",
+                "hindiConsonants",
+                "hindiNumbers",
+                "hindiCounting",
+                "thaiLetters",
+                "thaiNumbers",
+                "thaiCounting",
+                "bahtText",
+                "dollarText",
+                "custom"
+              ],
+              "type": "string"
+            },
+            "formatOverride": {
+              "type": "string"
+            }
+          },
+          "type": "object"
         },
         "formatOverride": {
           "description": "Custom number format string; set with format \"custom\".",
@@ -13225,6 +13334,10 @@
           "description": "Link type (o:OLEObject/o:LinkType child, e.g. \"EnhancedMetaFile\").",
           "type": "string"
         },
+        "lockedField": {
+          "description": "Locked-field flag (`o:LockedField`; some producers emit it on embeds too).",
+          "type": "boolean"
+        },
         "objectId": {
           "description": "OLE object id (o:OLEObject/`@ObjectID`). Defaults to a generated id.",
           "type": "string"
@@ -14586,9 +14699,21 @@
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
             },
+            "hasResult": {
+              "description": "Whether the source carried a separate marker and result (round-trip).",
+              "type": "boolean"
+            },
+            "instrRunsXml": {
+              "description": "Complete instruction-stage runs (round-trip only — do not hand-author).",
+              "type": "string"
+            },
             "instructionAdditionRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+            },
+            "instructionRPrXml": {
+              "description": "Verbatim instruction-run properties (round-trip; defaults to control rPr).",
+              "type": "string"
             },
             "instructionRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -14610,6 +14735,10 @@
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
             },
+            "resultRunsXml": {
+              "description": "Complete result-stage runs after the separate marker (round-trip only).",
+              "type": "string"
+            },
             "runPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
@@ -14617,6 +14746,10 @@
             "separatorAdditionRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+            },
+            "separatorRPrXml": {
+              "description": "Verbatim separator-run properties; empty string means explicitly absent.",
+              "type": "string"
             },
             "separatorRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -15645,6 +15778,10 @@
             }
           ]
         },
+        "columnBreak": {
+          "description": "Column break (`w:br/@w:type=\"column\"`) mixed with other run content.",
+          "type": "boolean"
+        },
         "complexScript": {
           "type": "boolean"
         },
@@ -15830,6 +15967,10 @@
           "$ref": "#/definitions/W14NumberSpacing"
         },
         "outline": {
+          "type": "boolean"
+        },
+        "pageBreak": {
+          "description": "Page break (`w:br/@w:type=\"page\"`) mixed with other run content.",
           "type": "boolean"
         },
         "position": {
@@ -17940,6 +18081,9 @@
             }
           ]
         },
+        "columnBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/columnBreak"
+        },
         "complexScript": {
           "type": "boolean"
         },
@@ -18030,6 +18174,9 @@
         },
         "outline": {
           "type": "boolean"
+        },
+        "pageBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/pageBreak"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
@@ -23221,6 +23368,9 @@
             }
           ]
         },
+        "columnBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/columnBreak"
+        },
         "complexScript": {
           "type": "boolean"
         },
@@ -23316,6 +23466,9 @@
         },
         "outline": {
           "type": "boolean"
+        },
+        "pageBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/pageBreak"
         },
         "position": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/position"
@@ -25989,9 +26142,18 @@
             "formField": {
               "$ref": "#/definitions/FormFieldOptions"
             },
+            "hasResult": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/hasResult"
+            },
+            "instrRunsXml": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/instrRunsXml"
+            },
             "instructionAdditionRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+            },
+            "instructionRPrXml": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/instructionRPrXml"
             },
             "instructionRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -26013,6 +26175,9 @@
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
             },
+            "resultRunsXml": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/resultRunsXml"
+            },
             "runPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
@@ -26020,6 +26185,9 @@
             "separatorAdditionRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+            },
+            "separatorRPrXml": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/separatorRPrXml"
             },
             "separatorRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",

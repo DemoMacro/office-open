@@ -854,16 +854,27 @@ function childFingerprint(node: CanonicalNode): string {
   return hash.digest("hex");
 }
 
+function writerDefaultOmittedAttributes(
+  node: CanonicalNode,
+  ignorablePrefixes: ReadonlySet<string> | undefined,
+): Record<string, string> {
+  const localName = node.name.split(":").pop() ?? node.name;
+  const defaults =
+    WRITER_EXPLICIT_DEFAULTS.get(node.name) ?? WRITER_EXPLICIT_DEFAULTS.get(localName);
+  return Object.fromEntries(
+    Object.entries(node.attributes).filter(
+      ([name, value]) =>
+        !isIgnorableForeignAttr(name, ignorablePrefixes) && !(defaults && defaults[name] === value),
+    ),
+  );
+}
+
 export function semanticChildFingerprint(
   node: CanonicalNode,
   ignorablePrefixes: ReadonlySet<string> | undefined,
 ): string {
   const hash = createHash("sha256");
-  const attributes = Object.fromEntries(
-    Object.entries(node.attributes).filter(
-      ([name]) => !isIgnorableForeignAttr(name, ignorablePrefixes),
-    ),
-  );
+  const attributes = writerDefaultOmittedAttributes(node, ignorablePrefixes);
   hash.update(`${node.name}\0${JSON.stringify(attributes)}\0${JSON.stringify(node.text)}`);
   for (const child of node.children)
     hash.update(semanticChildFingerprint(child, ignorablePrefixes));
@@ -885,11 +896,7 @@ function childSortKey(node: CanonicalNode, ignorablePrefixes?: ReadonlySet<strin
     if (identity) return `${node.name}:idx=${identity.attributes["val"] ?? ""}`;
   }
   const hash = createHash("sha256");
-  const attributes = Object.fromEntries(
-    Object.entries(node.attributes).filter(
-      ([name]) => !isIgnorableForeignAttr(name, ignorablePrefixes),
-    ),
-  );
+  const attributes = writerDefaultOmittedAttributes(node, ignorablePrefixes);
   hash.update(`${node.name}\0${JSON.stringify(attributes)}\0${JSON.stringify(node.text)}`);
   for (const child of node.children) {
     const childAttributes = Object.fromEntries(
@@ -1052,9 +1059,9 @@ function compareNodes(
       // Writer-side XSD defaults: a minimal source omits the attribute but
       // the writer always emits it with its schema default value.
       if (output.attributes[name] === WRITER_EXPLICIT_DEFAULTS.get(name)?.[name]) continue;
-      const elementDefaults = WRITER_EXPLICIT_DEFAULTS.get(
-        source.name.split(":").pop() ?? source.name,
-      );
+      const localName = source.name.split(":").pop() ?? source.name;
+      const elementDefaults =
+        WRITER_EXPLICIT_DEFAULTS.get(source.name) ?? WRITER_EXPLICIT_DEFAULTS.get(localName);
       if (elementDefaults && elementDefaults[name] === output.attributes[name]) continue;
       diffs.push({
         category: "attribute",

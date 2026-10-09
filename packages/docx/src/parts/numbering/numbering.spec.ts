@@ -339,6 +339,36 @@ describe("parseNumberingDefinitions (round-trip)", () => {
     ).toContain('<w:numFmt w:val="custom" w:format="number-in-dash"/>');
   });
 
+  it("round-trips an MCE-wrapped custom numFmt", () => {
+    const xml =
+      '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+      'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:w14="urn:w14">' +
+      '<w:abstractNum w:abstractNumId="0">' +
+      '<w:lvl w:ilvl="0"><w:start w:val="1"/>' +
+      '<mc:AlternateContent><mc:Choice Requires="w14">' +
+      '<w:numFmt w:val="custom" w:format="alpha-list"/>' +
+      '</mc:Choice><mc:Fallback><w:numFmt w:val="decimal"/></mc:Fallback></mc:AlternateContent>' +
+      '<w:lvlText w:val="%1."/></w:lvl>' +
+      "</w:abstractNum>" +
+      '<w:num w:numId="1"><w:abstractNumId w:val="0"/></w:num>' +
+      "</w:numbering>";
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const opts = parseNumberingDefinitions(el, parseParagraphProperties, ctx);
+    const level = opts?.abstractNumberings[0]?.levels[0];
+
+    expect(level?.format).toBe(LevelFormat.CUSTOM);
+    expect(level?.formatOverride).toBe("alpha-list");
+    expect(level?.formatChoiceRequires).toBe("w14");
+    expect(level?.formatFallback).toEqual({ format: "decimal" });
+    expect(
+      new Numbering({ abstractNumberings: opts!.abstractNumberings }).serialize(writeCtx),
+    ).toContain(
+      '<mc:AlternateContent><mc:Choice Requires="w14"><w:numFmt w:val="custom" w:format="alpha-list"/></mc:Choice>' +
+        '<mc:Fallback><w:numFmt w:val="decimal"/></mc:Fallback></mc:AlternateContent>',
+    );
+  });
+
   it("omits multiLevelType when the source omits it", () => {
     const xml =
       '<w:numbering xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +

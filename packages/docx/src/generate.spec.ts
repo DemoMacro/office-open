@@ -12,6 +12,29 @@ describe("generateDocument entry guards", () => {
   });
 });
 
+describe("raw cross-paragraph section hosts", () => {
+  it("does not append another section break after hosted rawXml", () => {
+    const xml = new TextDecoder().decode(
+      compileDocument({
+        sections: [
+          {
+            children: [
+              {
+                rawXml:
+                  '<w:p><w:pPr><w:sectPr><w:pgSz w:w="12240" w:h="15840"/></w:sectPr></w:pPr>' +
+                  '<w:r><w:fldChar w:fldCharType="begin"/></w:r></w:p>',
+              },
+            ],
+          },
+          { children: [{ paragraph: { children: ["Next"] } }] },
+        ],
+      })["word/document.xml"] as Uint8Array,
+    );
+    expect(xml.match(/<w:sectPr[ />]/g)).toHaveLength(2);
+    expect(xml).not.toContain("><w:p><w:pPr><w:sectPr/>");
+  });
+});
+
 describe("package variants", () => {
   const variants = [
     {

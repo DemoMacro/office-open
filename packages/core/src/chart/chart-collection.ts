@@ -1,3 +1,4 @@
+import type { ThemeOverrideOptions } from "../theme/theme-options";
 /**
  * Chart data and collection for document generation.
  *
@@ -32,6 +33,9 @@ export interface ChartData {
     xml: string;
     path?: string;
   };
+
+  /** Chart-owned themeOverride part parsed as a typed core theme model. */
+  themeOverride?: ChartThemeOverrideData;
 }
 
 export interface ChartSourceRelationship {
@@ -39,6 +43,11 @@ export interface ChartSourceRelationship {
   target: string;
   rId: string;
   targetMode?: "External";
+}
+
+export interface ChartThemeOverrideData {
+  options: ThemeOverrideOptions;
+  path: string;
 }
 
 export class ChartCollection {

@@ -31,6 +31,7 @@ import {
 import { parseOnOff } from "../util/values";
 import type {
   ChartSpaceOptions,
+  CategoryPointOptions,
   BubbleSeriesData,
   ChartSeriesData,
   ChartLinesOptions,
@@ -476,11 +477,21 @@ function refFormula(formula: string | undefined): string {
   return `<c:f>${escapeXml(formula ?? "")}</c:f>`;
 }
 
-function stringifyStrRef(values: readonly (string | undefined)[], formula?: string): string {
-  const pts = values
-    .map((v, i) => `<c:pt idx="${i}"><c:v>${escapeXml(v ?? "")}</c:v></c:pt>`)
+function stringifyStrRef(
+  values: readonly (string | CategoryPointOptions | undefined)[],
+  formula?: string,
+): string {
+  const entries = values.map((v, i) => {
+    if (typeof v === "object" && v !== null) {
+      return { index: v.index ?? i, text: v.text ?? "" };
+    }
+    return { index: i, text: typeof v === "string" ? v : "" };
+  });
+  const ptCount = entries.reduce((max, entry) => Math.max(max, entry.index + 1), 0);
+  const pts = entries
+    .map((entry) => `<c:pt idx="${entry.index}"><c:v>${escapeXml(entry.text)}</c:v></c:pt>`)
     .join("");
-  return `<c:strRef>${refFormula(formula)}<c:strCache><c:ptCount ${attrVal("val", values.length)}/>${pts}</c:strCache></c:strRef>`;
+  return `<c:strRef>${refFormula(formula)}<c:strCache><c:ptCount ${attrVal("val", ptCount)}/>${pts}</c:strCache></c:strRef>`;
 }
 
 function stringifyStrLit(values: readonly string[]): string {
@@ -531,7 +542,10 @@ function stringifyCategorySource(opts: ChartSpaceOptions): string {
     return stringifyMultiLvlStrRef(opts.multiLevelCategories, opts.categoryFormula);
   if (opts.categoryLabels) return stringifyStrLit(opts.categoryLabels);
   if (opts.numericCategories) {
-    return stringifyNumRef(opts.categories ?? [], opts.categoryFormula, opts.categoryFormatCode);
+    const categories = (opts.categories ?? []).map((category) =>
+      typeof category === "string" ? category : "",
+    );
+    return stringifyNumRef(categories, opts.categoryFormula, opts.categoryFormatCode);
   }
   return stringifyStrRef(opts.categories ?? [], opts.categoryFormula);
 }
@@ -1391,6 +1405,32 @@ function readStrCache(el: XmlElement): string[] {
     }
   }
   return result;
+}
+
+/**
+ * Category cache points preserving sparse indices: a continuous idx run with
+ * non-empty labels reads back as plain strings, anything else (skipped
+ * indices, empty cached points) surfaces as explicit sparse points so the
+ * source ptCount round-trips.
+ */
+function readCategoryPoints(el: XmlElement): string[] | CategoryPointOptions[] {
+  const strRef = findChild(el, "c:strRef");
+  const cache = strRef ? findChild(strRef, "c:strCache") : findChild(el, "c:strLit");
+  if (!cache?.elements) return [];
+  const points: { index: number; text: string }[] = [];
+  let expected = 0;
+  let dense = true;
+  for (const pt of cache.elements) {
+    if (pt.name !== "c:pt") continue;
+    const index = Number(attr(pt, "idx") ?? expected);
+    const v = findChild(pt, "c:v");
+    const text = v ? textOf(v) : "";
+    if (index !== expected || text === "") dense = false;
+    points.push({ index, text });
+    expected = index + 1;
+  }
+  if (dense) return points.map((point) => point.text);
+  return points;
 }
 
 /** Numeric category labels read as literal text (c:cat > c:numRef > c:numCache). */
@@ -2951,7 +2991,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
           result.series = xySeries;
         } else {
           const chartSeries: ChartSeriesData[] = [];
-          let categories: string[] | undefined;
+          let categories: string[] | CategoryPointOptions[] | undefined;
 
           for (const serEl of seriesEls) {
             const { name, literal: nameLiteral } = readSeriesName(serEl);
@@ -2982,7 +3022,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
                     result.numericCategories = true;
                     categories = readNumCacheText(catEl);
                   } else {
-                    categories = readStrCache(catEl);
+                    categories = readCategoryPoints(catEl);
                   }
                   const catMeta = readRefMeta(catEl);
                   if (catMeta.formula) result.categoryFormula = catMeta.formula;

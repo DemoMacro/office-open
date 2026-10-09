@@ -2001,6 +2001,22 @@
       ],
       "type": "string"
     },
+    "CategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "Sparse category cache point (c:cat > c:*Cache > c:pt with a non-positional",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v); an empty string preserves an empty cached point.",
+          "type": "string"
+        }
+      },
+      "required": ["index", "text"],
+      "type": "object"
+    },
     "CellFillOptions": {
       "additionalProperties": false,
       "description": "Worksheet fill description. `color` alone is a solid fill; `patternType` + `bgColor` describe a pattern fill; `stops` + `gradientType` describe a gradient fill.",
@@ -2935,7 +2951,14 @@
         },
         "categories": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/CategoryPointOptions"
+              }
+            ]
           },
           "type": "array"
         },
@@ -9956,6 +9979,10 @@
         }
       },
       "type": "object"
+    },
+    "MacrosheetOptions": {
+      "$ref": "#/definitions/WorksheetOptions",
+      "description": "One Excel 4.0 macro sheet (`xl/macrosheets/sheetN.xml`). The content model is (same descriptor pipeline); only the part root element, content type, and workbook relationship differ."
     },
     "ManualLayoutOptions": {
       "additionalProperties": false,
@@ -23578,6 +23605,13 @@
           "description": "Legacy Microsoft core-property root/element spelling; round-trip only.",
           "type": "boolean"
         },
+        "macrosheets": {
+          "description": "Excel 4.0 macro sheets (xl/macrosheets/sheetN.xml, XLM formulas preserved verbatim).",
+          "items": {
+            "$ref": "#/definitions/MacrosheetOptions"
+          },
+          "type": "array"
+        },
         "metadata": {
           "$ref": "#/definitions/MetadataOptions",
           "description": "Rich metadata block (xl/metadata.xml)"
@@ -24084,10 +24118,7 @@
           "type": "number"
         },
         "categories": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
+          "$ref": "#/definitions/ChartSpaceOptions/properties/categories"
         },
         "categoryFormatCode": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/categoryFormatCode"
@@ -24988,6 +25019,11 @@
         },
         "uid": {
           "description": "Revision UID; preserved when the source emitted it.",
+          "type": "string"
+        },
+        "uidPrefix": {
+          "description": "Root uid attribute namespace prefix when the source spelled it with a revision-prefixed binding (`xr2:`/`xr3:`/`xr6:`) — round-trip only; the writer defaults to `xr:`.",
+          "enum": ["xr2", "xr3", "xr6"],
           "type": "string"
         },
         "webExtensions": {

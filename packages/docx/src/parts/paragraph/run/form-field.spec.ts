@@ -134,4 +134,29 @@ describe("form field parse", () => {
     expect(ti.value).toBeUndefined();
     expect(ti.default).toBe("Placeholder");
   });
+
+  it("preserves a result-less field and instruction run styling", async () => {
+    const opts = parseParagraphXml(
+      '<w:r w:rsidRPr="007B7AC4"><w:rPr><w:b/></w:rPr>' +
+        '<w:fldChar w:fldCharType="begin"><w:ffData><w:name w:val="Check1"/>' +
+        '<w:enabled/><w:calcOnExit w:val="0"/><w:checkBox><w:sizeAuto/>' +
+        '<w:default w:val="0"/></w:checkBox></w:ffData></w:fldChar></w:r>' +
+        '<w:r w:rsidRPr="007B7AC4"><w:rPr><w:b/></w:rPr>' +
+        '<w:instrText xml:space="preserve"> FORMCHECKBOX </w:instrText></w:r>' +
+        '<w:r w:rsidRPr="007B7AC4"><w:fldChar w:fldCharType="end"/></w:r>',
+    );
+    const found = findFormField(opts);
+    expect(found).toMatchObject({
+      instructionRunPropertiesRsid: "007B7AC4",
+      hasResult: false,
+      rPrXml: "<w:rPr><w:b/></w:rPr>",
+    });
+
+    const { stringifyChildDispatch } = await import("../../inline");
+    const xml = stringifyChildDispatch(found as never, {} as never)!;
+    expect(xml).toContain('w:rsidRPr="007B7AC4"');
+    expect(xml).toContain("<w:rPr><w:b/></w:rPr><w:instrText");
+    expect(xml).not.toContain('w:fldCharType="separate"');
+    expect(xml).not.toContain("☐");
+  });
 });

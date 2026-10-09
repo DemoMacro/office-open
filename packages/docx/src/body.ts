@@ -465,6 +465,12 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     const sectPrOpts = bodySections[si];
     const sectPrXml = sectPrOpts ? (sectionPropertiesDesc.stringify(sectPrOpts, docCtx) ?? "") : "";
     const isLast = si === sections.length - 1;
+    const lastChild = children.at(-1);
+    const rawSectionBreakHosted =
+      !isLast &&
+      lastChild !== undefined &&
+      "rawXml" in lastChild &&
+      lastChild.rawXml.includes("<w:sectPr");
 
     // Per OOXML, a non-final section's sectPr lives in the pPr of its LAST
     // paragraph (the section-break paragraph carries both content and sectPr).
@@ -474,7 +480,7 @@ export function stringifyDocumentXml(ctx: DocxWriteContext, docCtx: BodyContext)
     // it: a mid-document section with no explicit properties still emits an
     // empty <w:sectPr/> (CT_SectPr children are all optional) so the
     // user-declared boundary survives generate→parse.
-    let sectPrHosted = isLast;
+    let sectPrHosted = isLast || rawSectionBreakHosted;
     for (let ci = 0; ci < children.length; ci++) {
       const child = children[ci]!;
       const inject =
@@ -1218,7 +1224,12 @@ function feedFieldRun(
         if (separatorRsid) formChild.separatorAdditionRsid = separatorRsid;
         if (separatorRunPropertiesRsid)
           formChild.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
-        const instructionRun = state.instrRunEls.length === 1 ? state.instrRunEls[0] : undefined;
+        formChild.separatorRPrXml = state.separatorRunEl
+          ? (runRPrXml(state.separatorRunEl) ?? "")
+          : undefined;
+        const instructionRun = state.instrRunEls.find(
+          (el) => findChild(el, "w:instrText") ?? findChild(el, "w:delInstrText"),
+        );
         const instructionRsid = instructionRun ? attr(instructionRun, "w:rsidR") : undefined;
         const instructionRunPropertiesRsid = instructionRun
           ? attr(instructionRun, "w:rsidRPr")
@@ -1226,16 +1237,31 @@ function feedFieldRun(
         if (instructionRsid) formChild.instructionAdditionRsid = instructionRsid;
         if (instructionRunPropertiesRsid)
           formChild.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
+        const instructionRPrXml = instructionRun ? runRPrXml(instructionRun) : undefined;
+        formChild.instructionRPrXml = instructionRPrXml;
+        formChild.hasResult = state.resultRunEls.length > 0;
+        if (
+          !isPlainFieldRuns(state.instrRunEls, state.controlRPr, ["w:instrText", "w:delInstrText"])
+        ) {
+          formChild.instrRunsXml = state.instrRunEls.map((el) => stringifyElement(el)).join("");
+        }
+        if (
+          !isPlainFieldRuns(state.resultRunEls, state.resultRPr ?? state.controlRPr, [
+            "w:t",
+            "w:delText",
+          ])
+        ) {
+          formChild.resultRunsXml = state.resultRunEls.map((el) => stringifyElement(el)).join("");
+        }
         const resultRunEl = state.resultRunEls.at(-1);
         const resultRsid = resultRunEl ? attr(resultRunEl, "w:rsidR") : undefined;
         const resultRPrRsid = resultRunEl ? attr(resultRunEl, "w:rsidRPr") : undefined;
         if (resultRsid) formChild.resultAdditionRsid = resultRsid;
         if (resultRPrRsid) formChild.resultRunPropertiesRsid = resultRPrRsid;
         const resultRPrXml = resultRunEl ? runRPrXml(resultRunEl) : undefined;
-        if (resultRPrXml && resultRPrXml !== state.controlRPr)
-          formChild.resultRPrXml = resultRPrXml;
+        formChild.resultRPrXml = resultRPrXml;
         const endRPr = runRPrXml(run);
-        if (endRPr && endRPr !== state.controlRPr) formChild.endRPrXml = endRPr;
+        formChild.endRPrXml = endRPr ?? "";
         const endRsid = attr(run, "w:rsidR");
         const endRunPropertiesRsid = attr(run, "w:rsidRPr");
         if (endRsid) formChild.endAdditionRsid = endRsid;
@@ -1256,7 +1282,9 @@ function feedFieldRun(
         if (beginRsid) cf.additionRsid = beginRsid;
         const beginRunPropertiesRsid = attr(state.beginRunEl ?? run, "w:rsidRPr");
         if (beginRunPropertiesRsid) cf.runPropertiesRsid = beginRunPropertiesRsid;
-        const instructionRun = state.instrRunEls.length === 1 ? state.instrRunEls[0] : undefined;
+        const instructionRun = state.instrRunEls.find(
+          (el) => findChild(el, "w:instrText") ?? findChild(el, "w:delInstrText"),
+        );
         const instructionRsid = instructionRun ? attr(instructionRun, "w:rsidR") : undefined;
         const instructionRunPropertiesRsid = instructionRun
           ? attr(instructionRun, "w:rsidRPr")
@@ -1264,6 +1292,7 @@ function feedFieldRun(
         if (instructionRsid) cf.instructionAdditionRsid = instructionRsid;
         if (instructionRunPropertiesRsid)
           cf.instructionRunPropertiesRsid = instructionRunPropertiesRsid;
+        cf.instructionRPrXml = instructionRun ? runRPrXml(instructionRun) : undefined;
         const separatorRsid = state.separatorRunEl
           ? attr(state.separatorRunEl, "w:rsidR")
           : undefined;
@@ -1272,13 +1301,16 @@ function feedFieldRun(
           : undefined;
         if (separatorRsid) cf.separatorAdditionRsid = separatorRsid;
         if (separatorRunPropertiesRsid) cf.separatorRunPropertiesRsid = separatorRunPropertiesRsid;
+        cf.separatorRPrXml = state.separatorRunEl
+          ? (runRPrXml(state.separatorRunEl) ?? "")
+          : undefined;
         // Mark the result present when the field carried any result run — an
         // empty-text result still round-trips its separate marker.
         if (state.resultRunEls.length > 0) cf.result = state.pendingResult;
         cf.instructionPreserveSpace = state.instructionPreserveSpace;
         cf.resultPreserveSpace = state.resultPreserveSpace;
         if (state.controlRPr) cf.rPrXml = state.controlRPr;
-        if (state.resultRPr) cf.resultRPrXml = state.resultRPr;
+        cf.resultRPrXml = state.resultRPr;
         const plainResultRun = state.resultRunEls.length === 1 ? state.resultRunEls[0] : undefined;
         const resultRsid = plainResultRun ? attr(plainResultRun, "w:rsidR") : undefined;
         const resultRPrRsid = plainResultRun ? attr(plainResultRun, "w:rsidRPr") : undefined;
@@ -1286,7 +1318,7 @@ function feedFieldRun(
         if (resultRPrRsid) cf.resultRunPropertiesRsid = resultRPrRsid;
         // Word styles the end run like the result (not like the controls).
         const endRPr = runRPrXml(run);
-        if (endRPr && endRPr !== state.controlRPr) cf.endRPrXml = endRPr;
+        cf.endRPrXml = endRPr ?? "";
         const endRsid = attr(run, "w:rsidR");
         const endRunPropertiesRsid = attr(run, "w:rsidRPr");
         if (endRsid) cf.endAdditionRsid = endRsid;

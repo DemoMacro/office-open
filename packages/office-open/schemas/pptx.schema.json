@@ -2760,6 +2760,22 @@
       ],
       "type": "string"
     },
+    "CategoryPointOptions": {
+      "additionalProperties": false,
+      "description": "Sparse category cache point (c:cat > c:*Cache > c:pt with a non-positional",
+      "properties": {
+        "index": {
+          "description": "Cache point index (c:pt",
+          "type": "number"
+        },
+        "text": {
+          "description": "Label text (c:v); an empty string preserves an empty cached point.",
+          "type": "string"
+        }
+      },
+      "required": ["index", "text"],
+      "type": "object"
+    },
     "Cell3DOptions": {
       "additionalProperties": false,
       "properties": {
@@ -2903,7 +2919,14 @@
         },
         "categories": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/CategoryPointOptions"
+              }
+            ]
           },
           "type": "array"
         },
@@ -3338,6 +3361,10 @@
           "$ref": "#/definitions/TextBodyOptions",
           "description": "Chart-space default text (c:txPr, a) — round-trip."
         },
+        "themeOverride": {
+          "$ref": "#/definitions/ChartThemeOverrideData",
+          "description": "Chart-owned themeOverride part (chart rel → a:themeOverride part)."
+        },
         "threeD": {
           "type": "boolean"
         },
@@ -3709,6 +3736,19 @@
         }
       },
       "required": ["style"],
+      "type": "object"
+    },
+    "ChartThemeOverrideData": {
+      "additionalProperties": false,
+      "properties": {
+        "options": {
+          "$ref": "#/definitions/ThemeOverrideOptions"
+        },
+        "path": {
+          "type": "string"
+        }
+      },
+      "required": ["options", "path"],
       "type": "object"
     },
     "ChartTitleOptions": {
@@ -9587,9 +9627,15 @@
           "type": "boolean"
         },
         "geometry": {
-          "description": "Preset geometry on p:spPr. Fresh pictures always carry a rect frame; null suppresses the element for sources that omit it.",
-          "enum": ["rect", null],
-          "type": ["string", "null"]
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ShapeType"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Preset geometry on p:spPr. Fresh pictures always carry a rect frame; null suppresses the element for sources that omit it."
         },
         "hasCustomPrompt": {
           "type": "boolean"

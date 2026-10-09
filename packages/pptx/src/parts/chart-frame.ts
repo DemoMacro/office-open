@@ -3,7 +3,11 @@ import type {
   NonVisualDrawingPropertiesOptions,
   UniversalMeasure,
 } from "@office-open/core";
-import type { ChartSourceRelationship, ChartSpaceOptions } from "@office-open/core/chart";
+import type {
+  ChartSourceRelationship,
+  ChartSpaceOptions,
+  ChartThemeOverrideData,
+} from "@office-open/core/chart";
 import type { GraphicFrameNvPrOptions } from "@parts/descriptors/graphic-frame";
 
 /**
@@ -33,4 +37,7 @@ export interface ChartOptions
   sourcePath?: string;
   /** Chart-part relationships other than userShapes; round-trip only. */
   sourceRelationships?: ChartSourceRelationship[];
+
+  /** Chart-owned themeOverride part (chart rel → a:themeOverride part). */
+  themeOverride?: ChartThemeOverrideData;
 }

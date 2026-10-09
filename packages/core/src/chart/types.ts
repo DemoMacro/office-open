@@ -381,6 +381,18 @@ export interface MultiLevelCategoryPointOptions {
 /** Multi-level category label: a dense positional string or sparse point. */
 export type MultiLevelCategoryPoint = string | MultiLevelCategoryPointOptions | null;
 
+/**
+ * Sparse category cache point (c:cat > c:*Cache > c:pt with a non-positional
+ * @idx). A dense category list stays plain strings; producers that skip
+ * indices (ptCount larger than the pt list) surface as sparse points.
+ */
+export interface CategoryPointOptions {
+  /** Cache point index (c:pt @idx). */
+  index: number;
+  /** Label text (c:v); an empty string preserves an empty cached point. */
+  text: string;
+}
+
 export interface ChartSpaceOptions {
   /**
    * Namespace dialect of the chart part — a strict (ISO/IEC 29500 Strict)
@@ -412,7 +424,7 @@ export interface ChartSpaceOptions {
   /** Chart-space default text (c:txPr, a CT_TextBody) — round-trip. */
   textProperties?: TextBodyOptions;
   type: ChartType;
-  categories?: readonly string[];
+  categories?: readonly (string | CategoryPointOptions)[];
   /**
    * Categories are numeric (c:cat carries c:numRef/c:numCache instead of
    * c:strRef/c:strCache). Numeric categories render on a value-formatted

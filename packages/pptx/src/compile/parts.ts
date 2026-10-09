@@ -27,6 +27,7 @@ import {
   stringifyStyleDefinitionPart,
 } from "@office-open/core/smartart";
 import { SmartArtCollection } from "@office-open/core/smartart";
+import { themeOverrideDesc } from "@office-open/core/theme";
 import { getColorXml, getLayoutXml, getStyleXml, DEFAULT_DRAWING_XML } from "@parts/smartart";
 import type { PresentationOptions } from "@shared/file";
 
@@ -83,6 +84,7 @@ export function compileTailParts(
       sourcePath: c.sourcePath,
       sourceRelationships: c.sourceRelationships,
       userShapes: c.userShapes,
+      themeOverride: c.themeOverride,
     })),
     ...descCtx.charts.map((c) => ({
       key: c.key,
@@ -90,6 +92,7 @@ export function compileTailParts(
       sourcePath: c.sourcePath,
       sourceRelationships: c.sourceRelationships,
       userShapes: c.userShapes,
+      themeOverride: c.themeOverride,
     })),
   ];
   for (const [i, chart] of allCharts.entries()) {
@@ -119,6 +122,10 @@ export function compileTailParts(
     }
     if (chartRels.relationshipCount > 0) {
       files[partPathToRelsPath(chartPath)] = encoder.encode(XML_DECL + chartRels.serialize());
+    }
+    if (chart.themeOverride) {
+      const overrideXml = themeOverrideDesc.stringify(chart.themeOverride.options, descCtx);
+      if (overrideXml) files[chart.themeOverride.path] = encoder.encode(XML_DECL + overrideXml);
     }
   }
 

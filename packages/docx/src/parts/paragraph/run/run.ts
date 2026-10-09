@@ -111,6 +111,10 @@ interface RunOptionsBase {
     | ParagraphChild
   )[];
   break?: number | BreakOptions;
+  /** Page break (`w:br/@w:type="page"`) mixed with other run content. */
+  pageBreak?: boolean;
+  /** Column break (`w:br/@w:type="column"`) mixed with other run content. */
+  columnBreak?: boolean;
   text?: string;
   /** Source `xml:space="preserve"` marker; round-trip only. */
   preserveSpace?: boolean;

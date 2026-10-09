@@ -544,7 +544,9 @@ function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
                 : []),
             ]
           : [
-              chart.categories?.[row] ?? "",
+              typeof chart.categories?.[row] === "object"
+                ? (chart.categories[row]?.text ?? "")
+                : (chart.categories?.[row] ?? ""),
               ...chart.series.map((series) => chartValueText(seriesValues(series)[row])),
             ],
       ),

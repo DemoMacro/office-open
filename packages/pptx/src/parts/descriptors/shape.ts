@@ -33,6 +33,7 @@ import {
 } from "@office-open/core/drawing";
 import type {
   BlipCompression,
+  ShapeType,
   SourceRectangleOptions,
   Transform2DOptions,
 } from "@office-open/core/drawing";
@@ -236,9 +237,14 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     // p:spPr (position/size/flip/rotation)
     const spPr = findChild(el, "p:spPr");
     if (spPr) {
+      const prstGeom = findChild(spPr, "a:prstGeom");
       // A source picture may carry no geometry at all — keep it suppressed.
-      if (!findChild(spPr, "a:prstGeom") && !findChild(spPr, "a:custGeom")) {
+      if (!prstGeom && !findChild(spPr, "a:custGeom")) {
         result.geometry = null;
+      } else if (prstGeom) {
+        const prst = attr(prstGeom, "prst");
+        // rect is the writer default — only a non-rect preset round-trips.
+        if (prst && prst !== "rect") result.geometry = prst as ShapeType;
       }
       const xfrm = findChild(spPr, "a:xfrm");
       if (xfrm) {
@@ -627,8 +633,9 @@ function stringifyPicSpPr(opts: PictureOptions, ctx: WriteContext): string {
       flipHorizontal: opts.flipHorizontal,
       flipVertical: opts.flipVertical,
       rotation: opts.rotation,
-      // Pictures always use a rect preset geometry unless the source omitted it.
-      geometry: opts.geometry === null ? undefined : "rect",
+      // Pictures default to a rect frame; a parsed non-rect preset and an
+      // explicit null (source omitted geometry) round-trip as written.
+      geometry: opts.geometry === null ? undefined : (opts.geometry ?? "rect"),
       fill: opts.fill,
       outline: opts.outline,
       effects: opts.effects,
