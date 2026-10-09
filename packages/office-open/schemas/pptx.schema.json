@@ -1506,6 +1506,9 @@
           "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
           "type": "string"
         },
+        "preferRelativeResize": {
+          "$ref": "#/definitions/VideoFrameOptions/properties/preferRelativeResize"
+        },
         "sourceUrl": {
           "description": "External audio source (a:audioFile `@r:link`). With `data`, this is the modern dual-reference form: external link plus embedded p14:media copy.",
           "type": "string"
@@ -9697,6 +9700,10 @@
           "$ref": "#/definitions/PlaceholderSize",
           "description": "`@sz` — sizing hint (default \"full\")."
         },
+        "preferRelativeResize": {
+          "description": "Resize relative to the original image rather than the frame (p:cNvPicPr attribute).",
+          "type": "boolean"
+        },
         "relationshipId": {
           "description": "Source `a:blip` `@r:embed` when the target has no image bytes (round-trip only — a broken internal reference).",
           "type": "string"
@@ -15221,6 +15228,10 @@
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"
@@ -15312,6 +15323,10 @@
     "UserShapeGroupOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:grpSpPr `@bwMode`)."
+        },
         "children": {
           "items": {
             "$ref": "#/definitions/UserShapeObjectOptions"
@@ -15380,6 +15395,10 @@
     "UserShapePictureOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "blipFill": {
           "$ref": "#/definitions/BlipFillOptions"
         },
@@ -15393,6 +15412,10 @@
         },
         "nonVisualProperties": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "preferRelativeResize": {
+          "description": "Resize relative to the original image (cdr:cNvPicPr attribute).",
+          "type": "boolean"
         },
         "published": {
           "description": "Published as a server-side shape (`@fPublished`, default false)",
@@ -15419,6 +15442,10 @@
     "UserShapeShapeOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"
@@ -15612,6 +15639,10 @@
         },
         "posterType": {
           "$ref": "#/definitions/PosterType"
+        },
+        "preferRelativeResize": {
+          "description": "Resize relative to the original media rather than the frame (p:cNvPicPr attribute).",
+          "type": "boolean"
         },
         "title": {
           "description": "XSD `@title`.",

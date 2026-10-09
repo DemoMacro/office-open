@@ -164,6 +164,10 @@ export interface DrawingPictureOptions
   hyperlink?: TextHyperlinkOptions;
   /** Blip crop (a:srcRect); an empty object round-trips the bare marker. */
   sourceRectangle?: SourceRectangleOptions;
+  /** Display resolution hint (blipFill/@dpi), e.g. 300 = 300 DPI. */
+  dpi?: number;
+  /** Whether the fill rotates with the shape (blipFill/@rotWithShape). */
+  rotWithShape?: boolean;
   /** Black/white mode (spPr/@bwMode); absent = attribute omitted. */
   blackWhiteMode?: BlackWhiteMode;
   /** Published-object flag (pic/@fPublished); explicit true/false round-trips. */
@@ -203,6 +207,12 @@ export interface DrawingChartOptions
   frameExtentCx?: number;
   /** Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU). */
   frameExtentCy?: number;
+  /** Graphic-frame rotation in degrees (xdr:xfrm/@rot). */
+  frameRotation?: number;
+  /** Horizontal flip (xdr:xfrm/@flipH). */
+  frameFlipHorizontal?: boolean;
+  /** Vertical flip (xdr:xfrm/@flipV). */
+  frameFlipVertical?: boolean;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.

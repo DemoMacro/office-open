@@ -60,6 +60,21 @@ describe("drawingDesc round-trip", () => {
     expect(images[0]?.rowOffset).toBe(25000);
   });
 
+  it("round-trips image blipFill display attributes", () => {
+    const xml = drawingDesc.stringify(
+      {
+        images: [{ col: 1, row: 1, rId: "rId1", dpi: 300, rotWithShape: false }],
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('<xdr:blipFill dpi="300" rotWithShape="0">');
+
+    const result = roundTrip({
+      images: [{ col: 1, row: 1, rId: "rId1", dpi: 300, rotWithShape: false }],
+    });
+    expect(result.images![0]).toMatchObject({ dpi: 300, rotWithShape: false });
+  });
+
   it("round-trips image locksWithSheet and printsWithSheet", () => {
     const opts: DrawingOptions = {
       images: [{ col: 1, row: 1, rId: "rId1", locksWithSheet: false, printsWithSheet: false }],
@@ -171,6 +186,43 @@ describe("drawingDesc round-trip", () => {
     expect(charts[0]?.row).toBe(5);
     expect(charts[0]?.colOffset).toBe(10000);
     expect(charts[0]?.rowOffset).toBe(20000);
+  });
+
+  it("round-trips graphicFrame transform attributes", () => {
+    const xml = drawingDesc.stringify(
+      {
+        charts: [
+          {
+            col: 1,
+            row: 1,
+            rId: "rId1",
+            frameRotation: 15,
+            frameFlipHorizontal: true,
+            frameFlipVertical: false,
+          },
+        ],
+      },
+      writeCtx,
+    );
+    expect(xml).toContain('<xdr:xfrm rot="900000" flipH="1" flipV="0">');
+
+    const result = roundTrip({
+      charts: [
+        {
+          col: 1,
+          row: 1,
+          rId: "rId1",
+          frameRotation: 15,
+          frameFlipHorizontal: true,
+          frameFlipVertical: false,
+        },
+      ],
+    });
+    expect(result.charts![0]).toMatchObject({
+      frameRotation: 15,
+      frameFlipHorizontal: true,
+      frameFlipVertical: false,
+    });
   });
 
   it("round-trips chart to corner, editAs and cNvPr", () => {

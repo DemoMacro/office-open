@@ -225,6 +225,9 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
       const hlinkClick = cNvPr ? findChild(cNvPr, "a:hlinkClick") : undefined;
       if (hlinkClick) result.hyperlink = readHyperlink(hlinkClick, ctx);
       const cNvPicPr = findChild(nvPicPr, "p:cNvPicPr");
+      if (cNvPicPr?.attributes?.preferRelativeResize !== undefined) {
+        result.preferRelativeResize = cNvPicPr.attributes.preferRelativeResize === "1";
+      }
       const picLocks = cNvPicPr ? findChild(cNvPicPr, "a:picLocks") : undefined;
       if (picLocks) {
         // Element presence is the signal — a bare <a:picLocks/> round-trips
@@ -570,7 +573,13 @@ function stringifyNvPicPr(
   }
   const cNvPrXml = stringifyNonVisualDrawingProperties("p:cNvPr", id, opts, name, hlinkXml);
   const locks = opts?.locking ? (pictureLockingDesc.stringify(opts.locking, ctx) ?? "") : "";
-  const cNvPicPr = locks ? `<p:cNvPicPr>${locks}</p:cNvPicPr>` : "<p:cNvPicPr/>";
+  const preferRelativeResize =
+    opts?.preferRelativeResize === undefined
+      ? ""
+      : ` preferRelativeResize="${opts.preferRelativeResize ? 1 : 0}"`;
+  const cNvPicPr = locks
+    ? `<p:cNvPicPr${preferRelativeResize}>${locks}</p:cNvPicPr>`
+    : `<p:cNvPicPr${preferRelativeResize}/>`;
   return `<p:nvPicPr>${cNvPrXml}${cNvPicPr}${stringifyNvPr(opts ?? {})}</p:nvPicPr>`;
 }
 

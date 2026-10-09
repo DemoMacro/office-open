@@ -23,7 +23,7 @@ interface PartFinding {
   pkg: string;
   file: string;
   descriptor: string;
-  stringify: "ok" | "stub" | "missing";
+  stringify: "ok" | "contextual" | "stub" | "missing";
   parse: "ok" | "missing";
 }
 
@@ -40,12 +40,47 @@ function collectFiles(dir: string, out: string[] = []): string[] {
 }
 
 function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  let out = "";
+  let quote: string | undefined;
+  for (let i = 0; i < src.length; i++) {
+    const char = src[i]!;
+    const next = src[i + 1];
+    if (quote) {
+      out += char;
+      if (char === "\\") {
+        if (next !== undefined) out += next;
+        i++;
+      } else if (char === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      out += char;
+      continue;
+    }
+    if (char === "/" && next === "/") {
+      while (i < src.length && src[i] !== "\n") i++;
+      if (src[i] === "\n") out += "\n";
+      continue;
+    }
+    if (char === "/" && next === "*") {
+      i += 2;
+      while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i++;
+      i++;
+      out += " ";
+      continue;
+    }
+    out += char;
+  }
+  return out;
 }
 
 function scanDescriptor(
   src: string,
   name: string,
+  hasPackageWriteBridge: boolean,
 ): { stringify: PartFinding["stringify"]; parse: PartFinding["parse"] } | undefined {
   // Locate the descriptor object — `export const xDesc: CustomDescriptor<...> = {`
   // or `export const xDesc = {`.
@@ -53,13 +88,25 @@ function scanDescriptor(
   const decl = declRe.exec(src);
   if (!decl) return undefined;
 
-  // Slice the object body: balanced braces from the declaration.
+  // Slice the object body with string-aware brace matching: descriptor XML
+  // builders commonly contain template interpolation such as `${value}`.
   let depth = 0;
   let start = decl.index + decl[0].length - 1;
   let end = start;
+  let quote: string | undefined;
   for (let i = start; i < src.length; i++) {
-    if (src[i] === "{") depth++;
-    else if (src[i] === "}") {
+    const char = src[i]!;
+    if (quote) {
+      if (char === "\\") i++;
+      else if (char === quote) quote = undefined;
+      continue;
+    }
+    if (char === '"' || char === "'" || char === "`") {
+      quote = char;
+      continue;
+    }
+    if (char === "{") depth++;
+    else if (char === "}") {
       depth--;
       if (depth === 0) {
         end = i;
@@ -69,31 +116,52 @@ function scanDescriptor(
   }
   const body = src.slice(start, end);
 
-  const member = (methodName: string): { exists: boolean; isStub: boolean } => {
+  const member = (
+    methodName: string,
+  ): { exists: boolean; isStub: boolean; hasWriteBridge: boolean } => {
     const re = new RegExp(`${methodName}\\s*\\(`);
     const match = re.exec(body);
     if (!match) return { exists: false, isStub: false };
-    // Find the method body and check whether it begins with a throw.
+    // Find the method body with string-aware brace matching, then check whether
+    // it begins with a throw.
     let mDepth = 0;
     let mStart = -1;
+    let mQuote: string | undefined;
     for (let i = match.index; i < body.length; i++) {
-      if (body[i] === "{") {
+      const char = body[i]!;
+      if (mQuote) {
+        if (char === "\\") i++;
+        else if (char === mQuote) mQuote = undefined;
+        continue;
+      }
+      if (char === '"' || char === "'" || char === "`") {
+        mQuote = char;
+        continue;
+      }
+      if (char === "{") {
         if (mDepth === 0) mStart = i;
         mDepth++;
-      } else if (body[i] === "}") {
+      } else if (char === "}") {
         mDepth--;
         if (mDepth === 0) break;
       }
     }
     const methodBody = body.slice(mStart, mStart + 400);
     const isStub = /^\s*throw\b/.test(methodBody.replace(/^\{\s*/, ""));
-    return { exists: true, isStub };
+    const hasWriteBridge = isStub && hasPackageWriteBridge;
+    return { exists: true, isStub, hasWriteBridge };
   };
 
   const stringify = member("stringify");
   const parse = member("parse");
   return {
-    stringify: !stringify.exists ? "missing" : stringify.isStub ? "stub" : "ok",
+    stringify: !stringify.exists
+      ? "missing"
+      : stringify.isStub && stringify.hasWriteBridge
+        ? "contextual"
+        : stringify.isStub
+          ? "stub"
+          : "ok",
     parse: parse.exists ? "ok" : "missing",
   };
 }
@@ -101,6 +169,10 @@ function scanDescriptor(
 function scanPackage(pkg: string): PartFinding[] {
   const findings: PartFinding[] = [];
   const partsDir = path.join(ROOT_DIR, "packages", pkg, "src", "parts");
+  const packageFiles = collectFiles(path.join(ROOT_DIR, "packages", pkg, "src"));
+  const hasPackageWriteBridge = packageFiles.some((file) =>
+    fs.readFileSync(file, "utf-8").includes("export function stringifyWorksheet("),
+  );
   for (const file of collectFiles(partsDir)) {
     const raw = fs.readFileSync(file, "utf-8");
     if (!raw.includes("CustomDescriptor")) continue;
@@ -109,7 +181,7 @@ function scanPackage(pkg: string): PartFinding[] {
     let match: RegExpExecArray | null;
     while ((match = declRe.exec(src)) !== null) {
       const name = match[1];
-      const result = scanDescriptor(src, name);
+      const result = scanDescriptor(src, name, hasPackageWriteBridge);
       if (!result) continue;
       findings.push({
         pkg,
@@ -129,7 +201,9 @@ function main(): void {
   let gaps = 0;
   for (const pkg of PACKAGES) {
     const findings = scanPackage(pkg);
-    const pkgGaps = findings.filter((f) => f.stringify !== "ok" || f.parse !== "ok");
+    const pkgGaps = findings.filter(
+      (f) => f.stringify === "missing" || f.stringify === "stub" || f.parse !== "ok",
+    );
     total += findings.length;
     gaps += pkgGaps.length;
     if (!summaryOnly) {

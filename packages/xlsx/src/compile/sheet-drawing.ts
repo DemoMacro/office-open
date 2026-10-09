@@ -221,6 +221,8 @@ export function compileSheetDrawing(
       ...(img.blackWhiteMode ? { blackWhiteMode: img.blackWhiteMode } : {}),
       ...(img.compression !== undefined ? { compression: img.compression } : {}),
       ...(img.sourceRectangle ? { sourceRectangle: img.sourceRectangle } : {}),
+      ...(img.dpi !== undefined ? { dpi: img.dpi } : {}),
+      ...(img.rotWithShape !== undefined ? { rotWithShape: img.rotWithShape } : {}),
       ...(img.preferRelativeResize !== undefined
         ? { preferRelativeResize: img.preferRelativeResize }
         : {}),
@@ -278,6 +280,13 @@ export function compileSheetDrawing(
       ...chartCnvPr,
       ...(chart.frameExtentCx !== undefined ? { frameExtentCx: chart.frameExtentCx } : {}),
       ...(chart.frameExtentCy !== undefined ? { frameExtentCy: chart.frameExtentCy } : {}),
+      ...(chart.frameRotation !== undefined ? { frameRotation: chart.frameRotation } : {}),
+      ...(chart.frameFlipHorizontal !== undefined
+        ? { frameFlipHorizontal: chart.frameFlipHorizontal }
+        : {}),
+      ...(chart.frameFlipVertical !== undefined
+        ? { frameFlipVertical: chart.frameFlipVertical }
+        : {}),
       rId: chartRid,
       ...(chart.frameLocks ? { frameLocks: chart.frameLocks } : {}),
       ...(chart.macro !== undefined ? { macro: chart.macro } : {}),

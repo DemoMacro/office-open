@@ -418,7 +418,13 @@ function stringifyBlipFill(
     parts.push("<a:stretch><a:fillRect/></a:stretch>");
   }
 
-  return `<pic:blipFill>${parts.join("")}</pic:blipFill>`;
+  const fillAttrs: string[] = [];
+  if (mediaData.dpi !== undefined) fillAttrs.push(`dpi="${mediaData.dpi}"`);
+  if (mediaData.rotWithShape !== undefined) {
+    fillAttrs.push(`rotWithShape="${mediaData.rotWithShape ? 1 : 0}"`);
+  }
+  const fillAttr = fillAttrs.length ? ` ${fillAttrs.join(" ")}` : "";
+  return `<pic:blipFill${fillAttr}>${parts.join("")}</pic:blipFill>`;
 }
 
 // ── Shape Properties (pic:spPr) ──

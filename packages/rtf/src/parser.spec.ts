@@ -107,7 +107,9 @@ describe("parseDocument RTF text and formatting", () => {
 
 describe("parseDocument RTF canonical projections", () => {
   it("preserves metadata and run details through RTF round trip", () => {
-    const source = String.raw`{\rtf1{\info{\edmins12}{\nofpages2}{\nofwords30}{\nofchars150}{\nofcharsws180}}{\super Up}{\nosupersub normal}{\sub Down}{\strike struck}}`;
+    const source =
+      String.raw`{\rtf1{\info{\edmins12}{\nofpages2}{\nofwords30}{\nofchars150}{\nofcharsws180}}` +
+      String.raw`{\super Up}{\super0 Flat}{\nosupersub normal}{\sub Down}{\strike struck}}`;
     const parsed = parseDocument(source);
     expect(parsed.appProperties).toEqual({
       totalTime: 12,
@@ -119,7 +121,7 @@ describe("parseDocument RTF canonical projections", () => {
     const paragraph = firstParagraph(source);
     expect(runs(paragraph)).toEqual([
       { verticalAlign: "superscript", text: "Up" },
-      { verticalAlign: "baseline", text: "normal" },
+      { verticalAlign: "baseline", text: "Flatnormal" },
       { verticalAlign: "subscript", text: "Down" },
       { strike: true, text: "struck" },
     ]);

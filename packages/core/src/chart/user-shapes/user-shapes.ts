@@ -19,6 +19,7 @@ import type { Element as XmlElement } from "@office-open/xml";
 
 import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
 import { stringify, parse } from "../../descriptor";
+import type { BlackWhiteMode } from "../../drawing/black-white-mode";
 import { blipFillDesc } from "../../drawing/blip/blip-descriptors";
 import type { BlipFillOptions } from "../../drawing/blip/blip-fill";
 import { groupShapePropertiesDesc } from "../../drawing/group-shape-properties-desc";
@@ -26,6 +27,7 @@ import type { GroupShapePropertiesOptions } from "../../drawing/group-shape-prop
 import type { GraphicFrameLockingOptions } from "../../drawing/locking/locking";
 import { stringifyNonVisualDrawingProperties } from "../../drawing/non-visual";
 import type { NonVisualDrawingPropertiesOptions } from "../../drawing/non-visual";
+import { parseNonVisualDrawingProperties } from "../../drawing/non-visual";
 import { shapePropertiesDesc } from "../../drawing/shape-properties-desc";
 import type { ShapePropertiesOptions } from "../../drawing/shape-properties-desc";
 import type { TextBodyOptions } from "../../drawing/text/text-body";
@@ -102,6 +104,8 @@ export interface UserShapeShapeOptions extends ObjectCommonAttributes {
   textLink?: string;
   /** Text locking (`@fLocksText`, default true) */
   locksText?: boolean;
+  /** Black-and-white rendering mode (cdr:spPr `@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 export interface UserShapeConnectorOptions extends ObjectCommonAttributes {
@@ -109,6 +113,8 @@ export interface UserShapeConnectorOptions extends ObjectCommonAttributes {
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
   shapeProperties: ShapePropertiesOptions;
   style?: DefaultShapeStyleOptions;
+  /** Black-and-white rendering mode (cdr:spPr `@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 export interface UserShapePictureOptions extends ObjectCommonAttributes {
@@ -116,9 +122,13 @@ export interface UserShapePictureOptions extends ObjectCommonAttributes {
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
   /** Image reference key (a:blip r:embed via the relationship placeholder) */
   referenceId: string;
+  /** Resize relative to the original image (cdr:cNvPicPr attribute). */
+  preferRelativeResize?: boolean;
   blipFill?: BlipFillOptions;
   shapeProperties: ShapePropertiesOptions;
   style?: DefaultShapeStyleOptions;
+  /** Black-and-white rendering mode (cdr:spPr `@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 export interface UserShapeGraphicFrameOptions extends ObjectCommonAttributes {
@@ -140,6 +150,8 @@ export interface UserShapeGroupOptions extends ObjectCommonAttributes {
   nonVisualProperties?: NonVisualDrawingPropertiesOptions;
   groupShapeProperties: GroupShapePropertiesOptions;
   children: UserShapeObjectOptions[];
+  /** Black-and-white rendering mode (cdr:grpSpPr `@bwMode`). */
+  blackWhiteMode?: BlackWhiteMode;
 }
 
 export type UserShapeObjectOptions =
@@ -202,7 +214,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
       return (
         `<cdr:sp${commonAttrs(obj)}${textLinkAttr}${locksTextAttr}>` +
         nvSpPr +
-        `<cdr:spPr>${spPrXml}</cdr:spPr>` +
+        `<cdr:spPr${obj.blackWhiteMode ? ` bwMode="${obj.blackWhiteMode}"` : ""}>${spPrXml}</cdr:spPr>` +
         styleXml +
         txBodyXml +
         "</cdr:sp>"
@@ -215,13 +227,19 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
       return (
         `<cdr:cxnSp${commonAttrs(obj)}>` +
         nvCxnSpPr +
-        `<cdr:spPr>${spPrXml}</cdr:spPr>` +
+        `<cdr:spPr${obj.blackWhiteMode ? ` bwMode="${obj.blackWhiteMode}"` : ""}>${spPrXml}</cdr:spPr>` +
         styleXml +
         "</cdr:cxnSp>"
       );
     }
     case "picture": {
-      const nvPicPr = `<cdr:nvPicPr>${stringifyCnvPr(obj.id, obj.nonVisualProperties)}<cdr:cNvPicPr/></cdr:nvPicPr>`;
+      const preferRelativeResize =
+        obj.preferRelativeResize === undefined
+          ? ""
+          : ` preferRelativeResize="${obj.preferRelativeResize ? 1 : 0}"`;
+      const nvPicPr =
+        `<cdr:nvPicPr>${stringifyCnvPr(obj.id, obj.nonVisualProperties)}` +
+        `<cdr:cNvPicPr${preferRelativeResize}/></cdr:nvPicPr>`;
       const fillOpts = { ...obj.blipFill, referenceId: obj.referenceId };
       // blipFill is a local element of CT_Picture → cdr-prefixed root; the
       // blip/srcRect/tile children belong to a: either way.
@@ -235,7 +253,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
         `<cdr:pic${commonAttrs(obj)}>` +
         nvPicPr +
         blipFillXml +
-        `<cdr:spPr>${spPrXml}</cdr:spPr>` +
+        `<cdr:spPr${obj.blackWhiteMode ? ` bwMode="${obj.blackWhiteMode}"` : ""}>${spPrXml}</cdr:spPr>` +
         styleXml +
         "</cdr:pic>"
       );
@@ -273,7 +291,7 @@ function stringifyObject(obj: UserShapeObjectOptions): string {
       return (
         "<cdr:grpSp>" +
         nvGrpSpPr +
-        `<cdr:grpSpPr>${grpSpPrXml}</cdr:grpSpPr>` +
+        `<cdr:grpSpPr${obj.blackWhiteMode ? ` bwMode="${obj.blackWhiteMode}"` : ""}>${grpSpPrXml}</cdr:grpSpPr>` +
         obj.children.map(stringifyObject).join("") +
         "</cdr:grpSp>"
       );
@@ -303,10 +321,7 @@ function readCnvPr(el: XmlElement | undefined): ParsedCnvPr | undefined {
   if (!el) return undefined;
   const attrs = el.attributes ?? {};
   if (attrs["id"] === undefined) return undefined;
-  const nvp: Partial<NonVisualDrawingPropertiesOptions> = {};
-  if (attrs["name"] !== undefined) nvp.name = String(attrs["name"]);
-  if (attrs["descr"] !== undefined) nvp.description = String(attrs["descr"]);
-  if (attrs["hidden"] !== undefined) nvp.hidden = parseOnOff(attrs["hidden"]) ?? false;
+  const nvp = parseNonVisualDrawingProperties(el);
   return { id: Number(attrs["id"]), nvp: nvp as NonVisualDrawingPropertiesOptions };
 }
 
@@ -341,6 +356,10 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       const txBody = findChild(el, "cdr:txBody");
       if (txBody) result.textBody = parse(textBodyDesc, txBody, ctx);
       Object.assign(result, readCommonAttrs(el));
+      const blackWhiteMode = spPr.attributes?.["bwMode"];
+      if (blackWhiteMode !== undefined) {
+        result.blackWhiteMode = blackWhiteMode as BlackWhiteMode;
+      }
       if (el.attributes?.["textlink"] !== undefined)
         result.textLink = String(el.attributes["textlink"]);
       if (el.attributes?.["fLocksText"] !== undefined)
@@ -362,6 +381,10 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
       const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       Object.assign(result, readCommonAttrs(el));
+      const blackWhiteMode = spPr.attributes?.["bwMode"];
+      if (blackWhiteMode !== undefined) {
+        result.blackWhiteMode = blackWhiteMode as BlackWhiteMode;
+      }
       return result;
     }
     case "cdr:pic": {
@@ -380,10 +403,18 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
         referenceId: referenceId ?? "",
         shapeProperties: parse(shapePropertiesDesc, spPr, ctx),
       };
+      const cNvPicPr = findChild(nvPicPr, "cdr:cNvPicPr");
+      if (cNvPicPr?.attributes?.preferRelativeResize !== undefined) {
+        result.preferRelativeResize = parseOnOff(cNvPicPr.attributes.preferRelativeResize) ?? true;
+      }
       if (Object.keys(blipFillOpts).length > 0) result.blipFill = blipFillOpts;
       const styleEl = findChild(el, "cdr:style") ?? findChild(el, "a:style");
       if (styleEl) result.style = parseShapeStyle(styleEl, ctx);
       Object.assign(result, readCommonAttrs(el));
+      const blackWhiteMode = spPr.attributes?.["bwMode"];
+      if (blackWhiteMode !== undefined) {
+        result.blackWhiteMode = blackWhiteMode as BlackWhiteMode;
+      }
       return result;
     }
     case "cdr:graphicFrame": {
@@ -436,12 +467,16 @@ function readObject(el: XmlElement, ctx: ReadContext): UserShapeObjectOptions | 
         const parsed = readObject(child, ctx);
         if (parsed) children.push(parsed);
       }
+      const blackWhiteMode = grpSpPr.attributes?.["bwMode"];
       return {
         type: "group",
         id: cnvPr.id,
         nonVisualProperties: cnvPr.nvp,
         groupShapeProperties: parse(groupShapePropertiesDesc, grpSpPr, ctx),
         children,
+        ...(blackWhiteMode !== undefined
+          ? { blackWhiteMode: blackWhiteMode as BlackWhiteMode }
+          : {}),
       };
     }
     default:

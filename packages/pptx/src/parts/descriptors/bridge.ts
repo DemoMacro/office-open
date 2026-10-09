@@ -176,6 +176,9 @@ function parseGraphicFrameChild(el: XmlElement, ctx: ReadContext): LegacySlideCh
   if (uri.includes("/ole")) {
     return { ole: oleDesc.parse(el, ctx) } as LegacySlideChild;
   }
+  if (uri.endsWith("/lockedCanvas")) {
+    return { lockedCanvas: lockedCanvasDesc.parse(el, ctx) } as LegacySlideChild;
+  }
 
   const tbl = findChild(graphicData, "a:tbl");
   if (tbl) {

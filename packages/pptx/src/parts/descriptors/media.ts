@@ -45,12 +45,17 @@ export const MEDIA_EXT_URI = "{DAA4B4D4-6D71-4841-9C94-3DE7FCFB9230}";
 // ── Shared media element builders (EG_Media) ──
 
 function stringifyMediaLocking(
-  opts: { locking?: PictureLockingOptions } | undefined,
+  opts: { locking?: PictureLockingOptions; preferRelativeResize?: boolean } | undefined,
   ctx: WriteContext,
 ): string {
-  return opts?.locking
+  const locking = opts?.locking
     ? (pictureLockingDesc.stringify(opts.locking, ctx) ?? "")
     : '<a:picLocks noChangeAspect="1"/>';
+  const preferRelativeResize =
+    opts?.preferRelativeResize === undefined
+      ? ""
+      : ` preferRelativeResize="${opts.preferRelativeResize ? 1 : 0}"`;
+  return `${preferRelativeResize}${locking}`;
 }
 
 function stringifyPosterBlip(
@@ -63,10 +68,17 @@ function stringifyPosterBlip(
   );
 }
 
-function readMediaLocking(el: Element, ctx: ReadContext): PictureLockingOptions | undefined {
-  const locks = findChild(findChild(el, "p:nvPicPr") ?? el, "p:cNvPicPr");
-  const picLocks = locks ? findChild(locks, "a:picLocks") : undefined;
-  return picLocks ? (pictureLockingDesc.parse(picLocks, ctx) ?? {}) : undefined;
+function readMediaPicProperties(
+  el: Element,
+  ctx: ReadContext,
+  result: { locking?: PictureLockingOptions; preferRelativeResize?: boolean },
+): void {
+  const cNvPicPr = findChild(findChild(el, "p:nvPicPr") ?? el, "p:cNvPicPr");
+  if (cNvPicPr?.attributes?.preferRelativeResize !== undefined) {
+    result.preferRelativeResize = cNvPicPr.attributes.preferRelativeResize === "1";
+  }
+  const picLocks = cNvPicPr ? findChild(cNvPicPr, "a:picLocks") : undefined;
+  if (picLocks) result.locking = pictureLockingDesc.parse(picLocks, ctx) ?? {};
 }
 
 /** a:audioCd — CD track playback, no media file. */
@@ -189,8 +201,7 @@ export const videoDesc: CustomDescriptor<VideoFrameOptions> = {
 
     // id + name from p:nvPicPr → a:cNvPr or p:cNvPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
-    const locking = readMediaLocking(el, _ctx);
-    if (locking) result.locking = locking;
+    readMediaPicProperties(el, _ctx, result);
     readMediaAction(el, result);
 
     // Media data from a:videoFile (r:link) or p14:media (r:embed)
@@ -320,8 +331,7 @@ export const audioDesc: CustomDescriptor<AudioFrameOptions> = {
 
     // id + name from p:nvPicPr
     Object.assign(result, readCnvPr(el, "p:nvPicPr"));
-    const locking = readMediaLocking(el, _ctx);
-    if (locking) result.locking = locking;
+    readMediaPicProperties(el, _ctx, result);
     readMediaAction(el, result);
 
     // CD audio (a:audioCd) — track/time, no media file

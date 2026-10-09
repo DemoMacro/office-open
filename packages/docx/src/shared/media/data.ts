@@ -93,6 +93,10 @@ export interface CoreMediaData extends BaseMediaEntry {
   transformation: MediaDataTransformation;
   /** Source rectangle for image cropping */
   sourceRectangle?: SourceRectangleOptions;
+  /** Rendering resolution in DPI (pic:blipFill/@dpi). */
+  dpi?: number;
+  /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
+  rotWithShape?: boolean;
   /** Picture non-visual properties (pic:cNvPr) for round-trip fidelity */
   nonVisualProperties?: NonVisualPropertiesOptions;
   /**
@@ -143,6 +147,10 @@ export interface LinkedPictureMediaData {
   type: RegularMediaData["type"];
   sourceUrl: string;
   transformation: MediaDataTransformation;
+  /** Rendering resolution in DPI (pic:blipFill/@dpi). */
+  dpi?: number;
+  /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
+  rotWithShape?: boolean;
   /** Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
   /** Blip crop (a:srcRect). */

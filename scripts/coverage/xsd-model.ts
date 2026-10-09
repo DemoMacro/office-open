@@ -186,11 +186,15 @@ const foreignAttributeGroups = new Map<string, Element>();
 
 // ── Parsing ──
 
-export function parseXsdStructured(file: string): XsdSchemaModel {
-  const content = fs.readFileSync(path.join(SCHEMA_DIR, file), "utf-8");
+export function parseXsdStructured(
+  file: string,
+  schemaDirectory = SCHEMA_DIR,
+  configuredPrefix?: string,
+): XsdSchemaModel {
+  const content = fs.readFileSync(path.join(schemaDirectory, file), "utf-8");
   const doc = parse(content).elements?.[0];
   if (!doc) throw new Error(`${file}: no root element`);
-  const prefix = FILE_PREFIX[file] ?? SHARED_PREFIX[file] ?? "";
+  const prefix = configuredPrefix ?? FILE_PREFIX[file] ?? SHARED_PREFIX[file] ?? "";
   const model: XsdSchemaModel = {
     file,
     prefix,
@@ -220,7 +224,10 @@ export function parseXsdStructured(file: string): XsdSchemaModel {
           // Transitional uses per-import prefixes (r, m, dcterms, …).
           importedFile.replace("shared-", "").replace(".xsd", "").slice(0, 2);
         try {
-          const imported = parseXsdShallow(importedFile);
+          const imported = parseXsdShallow(importedFile, schemaDirectory);
+          for (const [name, type] of imported.namedTypes) {
+            if (!model.namedTypes.has(name)) model.namedTypes.set(name, type);
+          }
           for (const [name, group] of imported.attributeGroups)
             foreignAttributeGroups.set(`${importedPrefix}:${name}`, group);
         } catch {
@@ -237,7 +244,8 @@ export function parseXsdStructured(file: string): XsdSchemaModel {
       if (child.name === "xsd:element" || child.name === "xs:element") {
         const name = attrOf(child, "name");
         if (name && !DEPRECATED_ELEMENTS.has(name) && !model.elements.has(name)) {
-          const qname = prefix ? `${prefix}:${name}` : name;
+          const schemaPrefix = prefix.endsWith(":") ? prefix.slice(0, -1) : prefix;
+          const qname = schemaPrefix ? `${schemaPrefix}:${name}` : name;
           const typeAttr = attrOf(child, "type");
           const inlineType =
             firstChild(child, "xsd:complexType") ?? firstChild(child, "xs:complexType");
@@ -272,19 +280,54 @@ export function parseXsdStructured(file: string): XsdSchemaModel {
   return model;
 }
 
-/** Parse only the type/group declarations (for import resolution). */
-function parseXsdShallow(file: string): { attributeGroups: Map<string, Element> } {
-  const content = fs.readFileSync(path.join(SCHEMA_DIR, file), "utf-8");
+/** Parse type/group declarations recursively (for import resolution). */
+function parseXsdShallow(
+  file: string,
+  schemaDirectory = SCHEMA_DIR,
+  visited = new Set<string>(),
+): {
+  namedTypes: Map<string, Element>;
+  attributeGroups: Map<string, Element>;
+} {
+  const schemaPath = path.resolve(schemaDirectory, file);
+  if (visited.has(schemaPath)) {
+    return { namedTypes: new Map(), attributeGroups: new Map() };
+  }
+  visited.add(schemaPath);
+  const content = fs.readFileSync(schemaPath, "utf-8");
   const doc = parse(content).elements?.[0];
-  if (!doc) return { attributeGroups };
   const attributeGroups = new Map<string, Element>();
+  const namedTypes = new Map<string, Element>();
   for (const child of doc.elements ?? []) {
-    if (child.name === "xsd:attributeGroup" || child.name === "xs:attributeGroup") {
+    if (
+      child.name === "xsd:import" ||
+      child.name === "xs:import" ||
+      child.name === "xsd:include" ||
+      child.name === "xs:include"
+    ) {
+      const location = attrOf(child, "schemaLocation");
+      if (!location) continue;
+      const importedPath = path.resolve(path.dirname(schemaPath), location);
+      const imported = parseXsdShallow(
+        path.basename(importedPath),
+        path.dirname(importedPath),
+        visited,
+      );
+      for (const [name, type] of imported.namedTypes) {
+        if (!namedTypes.has(name)) namedTypes.set(name, type);
+      }
+      for (const [name, group] of imported.attributeGroups) {
+        if (!attributeGroups.has(name)) attributeGroups.set(name, group);
+      }
+    } else if (child.name === "xsd:complexType" || child.name === "xs:complexType") {
+      const name = attrOf(child, "name");
+      if (name) namedTypes.set(name, child);
+    } else if (child.name === "xsd:attributeGroup" || child.name === "xs:attributeGroup") {
       const name = attrOf(child, "name");
       if (name) attributeGroups.set(name, child);
     }
   }
-  return { attributeGroups };
+  return { namedTypes, attributeGroups };
 }
 
 // ── CLI ──

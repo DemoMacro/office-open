@@ -22,6 +22,20 @@ class WriteContextStub {
 }
 
 describe("broken picture references", () => {
+  it("preserves an explicit preferRelativeResize=false switch", () => {
+    const options = {
+      type: "png",
+      relationshipId: "rIdBroken",
+      preferRelativeResize: false,
+    } as const;
+    const emitted = pictureDesc.stringify(options, new WriteContextStub() as WriteContext)!;
+    expect(emitted).toContain('<p:cNvPicPr preferRelativeResize="0"/>');
+
+    const element = parseXml(emitted).elements?.[0];
+    if (!element) throw new Error("fixture has no root element");
+    expect(pictureDesc.parse(element, readContext).preferRelativeResize).toBe(false);
+  });
+
   it("round-trips a:blip r:embed without media bytes", () => {
     const xml =
       '<p:pic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +

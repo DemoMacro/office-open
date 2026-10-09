@@ -1091,6 +1091,8 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...(image.blackWhiteMode ? { blackWhiteMode: image.blackWhiteMode } : {}),
             ...(image.compression !== undefined ? { compression: image.compression } : {}),
             ...(image.sourceRectangle ? { sourceRectangle: image.sourceRectangle } : {}),
+            ...(image.dpi !== undefined ? { dpi: image.dpi } : {}),
+            ...(image.rotWithShape !== undefined ? { rotWithShape: image.rotWithShape } : {}),
             ...(image.preferRelativeResize !== undefined
               ? { preferRelativeResize: image.preferRelativeResize }
               : {}),
@@ -1150,6 +1152,13 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
             ...chartCnvPr,
             ...(anchor.frameExtentCx !== undefined ? { frameExtentCx: anchor.frameExtentCx } : {}),
             ...(anchor.frameExtentCy !== undefined ? { frameExtentCy: anchor.frameExtentCy } : {}),
+            ...(anchor.frameRotation !== undefined ? { frameRotation: anchor.frameRotation } : {}),
+            ...(anchor.frameFlipHorizontal !== undefined
+              ? { frameFlipHorizontal: anchor.frameFlipHorizontal }
+              : {}),
+            ...(anchor.frameFlipVertical !== undefined
+              ? { frameFlipVertical: anchor.frameFlipVertical }
+              : {}),
             ...(chartPath ? { sourcePath: chartPath } : {}),
             ...chartExternalLink,
             ...(chartThemeOverrideRel ? { themeOverridePath: chartThemeOverrideRel.target } : {}),

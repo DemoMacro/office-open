@@ -635,6 +635,10 @@ export function parsePictureRun(
   // Blip-fill crop (pic:blipFill/a:srcRect)
   const blipFill = findFirst(el, "pic:blipFill");
   if (blipFill) {
+    const dpi = attrNum(blipFill, "dpi");
+    if (dpi !== undefined) imageOpts.dpi = dpi;
+    const rotWithShape = attrBool(blipFill, "rotWithShape");
+    if (rotWithShape !== undefined) imageOpts.rotWithShape = rotWithShape;
     const srcRect = readSourceRectangle(blipFill);
     if (srcRect) imageOpts.sourceRectangle = srcRect;
     const tile = findChild(blipFill, "a:tile");

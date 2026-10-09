@@ -333,6 +333,58 @@ describe("drawingDesc round-trip", () => {
     expect(result.picture?.geometry?.preset).toBe("ellipse");
   });
 
+  it("round-trips blip-fill DPI and shape-locked rotation", () => {
+    resetDrawingIdGen();
+    const xml = stringify({
+      mediaData: {
+        ...makeImageMediaData(),
+        dpi: 300,
+        rotWithShape: true,
+        blackWhiteMode: "gray",
+        nonVisualProperties: {
+          id: 9,
+          name: "Executable",
+          description: "DPI fixture",
+          title: "Picture",
+          hidden: true,
+          preferRelativeResize: false,
+        },
+      },
+    });
+    expect(xml).toContain('<pic:blipFill dpi="300" rotWithShape="1">');
+    expect(xml).toContain('bwMode="gray"');
+    expect(xml).toContain('preferRelativeResize="0"');
+
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = drawingDesc.parse(el, mediaReadCtx) as {
+      picture?: {
+        dpi?: number;
+        rotWithShape?: boolean;
+        blackWhiteMode?: string;
+        nonVisualProperties?: {
+          id?: number;
+          name?: string;
+          description?: string;
+          title?: string;
+          hidden?: boolean;
+          preferRelativeResize?: boolean;
+        };
+      };
+    };
+    expect(result.picture?.dpi).toBe(300);
+    expect(result.picture?.rotWithShape).toBe(true);
+    expect(result.picture?.blackWhiteMode).toBe("gray");
+    expect(result.picture?.nonVisualProperties).toMatchObject({
+      id: 9,
+      name: "Executable",
+      description: "DPI fixture",
+      title: "Picture",
+      hidden: true,
+      preferRelativeResize: false,
+    });
+  });
+
   it("stringifies wps shape with preset geometry (not hardcoded rect)", () => {
     const xml = stringify({
       mediaData: {

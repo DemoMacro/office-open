@@ -4,7 +4,7 @@
  * @module
  */
 
-import { convertToEmu } from "@office-open/core";
+import { convertToEmu, emitAngle } from "@office-open/core";
 import type { UniversalMeasure } from "@office-open/core";
 import type { WriteContext } from "@office-open/core/descriptor";
 import {
@@ -36,7 +36,7 @@ import type {
 } from "@office-open/core/drawing";
 import type { DefaultShapeStyleOptions } from "@office-open/core/theme";
 import { stringifyShapeStyle } from "@office-open/core/theme";
-import { escapeXml } from "@office-open/xml";
+import { attrsRaw, escapeXml } from "@office-open/xml";
 
 import type {
   DrawingAnchorOptions,
@@ -170,11 +170,14 @@ function picXml(
   const blipContent = effects + extLst;
   const blip = blipContent ? `${open}>${blipContent}</a:blip>` : `${open}/>`;
   const srcRect = img.sourceRectangle ? createSourceRectangle(img.sourceRectangle) : "";
+  const blipFillAttrs =
+    (img.dpi !== undefined ? ` dpi="${img.dpi}"` : "") +
+    (img.rotWithShape !== undefined ? ` rotWithShape="${img.rotWithShape ? 1 : 0}"` : "");
   const bwModeAttr = img.blackWhiteMode ? ` bwMode="${img.blackWhiteMode}"` : "";
   const publishedAttr = publishedObjectAttrs(img);
   return (
     `<xdr:pic${publishedAttr}><xdr:nvPicPr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, img, `Picture ${id}`, hlinkClickXml(img.hyperlink, ctx))}${cNvPicPr}</xdr:nvPicPr>` +
-    `<xdr:blipFill>${blip}${srcRect}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
+    `<xdr:blipFill${blipFillAttrs}>${blip}${srcRect}<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>` +
     `<xdr:spPr${bwModeAttr}>${spPr}</xdr:spPr></xdr:pic>`
   );
 }
@@ -213,6 +216,9 @@ export function graphicFrameXml(
     macro?: string;
     hyperlink?: TextHyperlinkOptions;
     fPublished?: boolean;
+    frameRotation?: number;
+    frameFlipHorizontal?: boolean;
+    frameFlipVertical?: boolean;
   } = {},
 ): string {
   // Locks are optional in CT_NonVisualGraphicFrameProperties — emit them only
@@ -230,7 +236,13 @@ export function graphicFrameXml(
   return (
     `<xdr:graphicFrame${objectAttrs}><xdr:nvGraphicFramePr>${stringifyNonVisualDrawingProperties("xdr:cNvPr", id, cNvPr, name, hlinkClickXml(extras.hyperlink, ctx))}` +
     `${cNvGraphicFramePr}</xdr:nvGraphicFramePr>` +
-    `<xdr:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
+    `<xdr:xfrm${attrsRaw({
+      rot: extras.frameRotation !== undefined ? emitAngle(extras.frameRotation) : undefined,
+      flipH:
+        extras.frameFlipHorizontal !== undefined ? (extras.frameFlipHorizontal ? 1 : 0) : undefined,
+      flipV:
+        extras.frameFlipVertical !== undefined ? (extras.frameFlipVertical ? 1 : 0) : undefined,
+    })}><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></xdr:xfrm>` +
     `<a:graphic><a:graphicData uri="${C_URI}">` +
     `<c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="${R_NS}" r:id="${rId}"/>` +
     `</a:graphicData></a:graphic></xdr:graphicFrame>`
@@ -262,6 +274,9 @@ export function stringifyChart(chart: DrawingChartOptions, id: number, ctx?: Wri
     macro: chart.macro,
     hyperlink: chart.hyperlink,
     fPublished: chart.fPublished,
+    frameRotation: chart.frameRotation,
+    frameFlipHorizontal: chart.frameFlipHorizontal,
+    frameFlipVertical: chart.frameFlipVertical,
   });
   return wrapAnchor(anchor, `${frame}${clientData}`);
 }

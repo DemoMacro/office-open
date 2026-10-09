@@ -81,6 +81,8 @@ export interface PictureOptions extends BasePictureOptions, NvPrPlaceholderOptio
   geometry?: ShapeType | null;
   /** Picture locks (a:picLocks inside p:cNvPicPr). */
   locking?: PictureLockingOptions;
+  /** Resize relative to the original image rather than the frame (p:cNvPicPr attribute). */
+  preferRelativeResize?: boolean;
   /**
    * Click hyperlink on the picture itself (a:hlinkClick inside p:cNvPr) —
    * jump to a URL or another slide when the picture is clicked.

@@ -29,7 +29,7 @@ const SCHEMA_ROOT = path.resolve(__dirname, "../../ooxml-schemas");
 
 // ── XSD → Code mapping configuration ──
 
-interface XsdConfig {
+export interface XsdConfig {
   /**
    * Schema directory under ooxml-schemas/ — "transitional" (default) for the
    * ISO schemas, "microsoft" for the Word extension namespaces (w14/w15/…).
@@ -53,7 +53,7 @@ interface XsdConfig {
   searchMode: "prefix" | "bare";
 }
 
-const XSD_CONFIGS: XsdConfig[] = [
+export const XSD_CONFIGS: XsdConfig[] = [
   {
     xsdFile: "wml.xsd",
     label: "wml",
@@ -236,7 +236,7 @@ const XSD_CONFIGS: XsdConfig[] = [
 // ── File reading utilities ──
 
 /** Recursively collect all .ts files in a directory (non-spec, non-bench) */
-function collectTsFiles(dir: string): string[] {
+function collectTsFiles(dir: string, includeTests = false): string[] {
   const results: string[] = [];
   if (!fs.existsSync(dir)) return results;
 
@@ -248,7 +248,7 @@ function collectTsFiles(dir: string): string[] {
     } else if (
       entry.isFile() &&
       entry.name.endsWith(".ts") &&
-      !entry.name.endsWith(".spec.ts") &&
+      (includeTests || !entry.name.endsWith(".spec.ts")) &&
       !entry.name.endsWith(".bench.ts") &&
       !entry.name.endsWith(".d.ts")
     ) {
@@ -389,7 +389,7 @@ const DEPRECATED_ATTRIBUTES = new Set<string>([]);
  * These are excluded from the coverage denominator — they don't count
  * as "implemented" OR "missing", they're simply unmeasurable.
  */
-const UNTRACKABLE_ATTRS = new Set([
+export const UNTRACKABLE_ATTRS = new Set([
   // Ultra-common in both XML and JS contexts
   "val",
   "type",
@@ -479,12 +479,15 @@ function parseXsd(xsdPath: string): { elements: Set<string>; attributes: Set<str
  * Extract element names found in XML construction and parsing code.
  * Uses targeted patterns — no broad property/key heuristics.
  */
-function extractUsedElements(config: XsdConfig): Set<string> {
+export function extractUsedElements(
+  config: XsdConfig,
+  options: { directories?: string[]; includeTests?: boolean } = {},
+): Set<string> {
   const found = new Set<string>();
 
-  for (const dir of config.searchDirs) {
+  for (const dir of options.directories ?? config.searchDirs) {
     const absDir = path.resolve(ROOT_DIR, dir);
-    const files = collectTsFiles(absDir);
+    const files = collectTsFiles(absDir, options.includeTests);
 
     for (const file of files) {
       const src = readFileStripped(file);
@@ -550,7 +553,7 @@ function extractUsedElements(config: XsdConfig): Set<string> {
       // dynamic-template body, so the call-site literal is the only trace of which
       // element it emits. Over-extraction is harmless: found is intersected with
       // the XSD element list, so non-element names (w:val, a:rgb) are ignored.
-      const quotedPrefixedRe = /"([a-z]+):([a-zA-Z][a-zA-Z0-9]*)"/g;
+      const quotedPrefixedRe = /"([a-z][a-z0-9]*):([a-zA-Z][a-zA-Z0-9]*)"/g;
       while ((m = quotedPrefixedRe.exec(src)) !== null) {
         found.add(m[2]);
       }
@@ -603,12 +606,15 @@ function extractUsedElements(config: XsdConfig): Set<string> {
  * Extract attribute names found in XML construction and parsing code.
  * Only matches attributes in provable XML/parsing contexts.
  */
-function extractUsedAttributes(config: XsdConfig): Set<string> {
+export function extractUsedAttributes(
+  config: XsdConfig,
+  options: { directories?: string[]; includeTests?: boolean } = {},
+): Set<string> {
   const found = new Set<string>();
 
-  for (const dir of config.searchDirs) {
+  for (const dir of options.directories ?? config.searchDirs) {
     const absDir = path.resolve(ROOT_DIR, dir);
-    const files = collectTsFiles(absDir);
+    const files = collectTsFiles(absDir, options.includeTests);
 
     for (const file of files) {
       const src = readFileStripped(file);
@@ -1001,4 +1007,5 @@ function main() {
   console.log(formatSummaryTable(results));
 }
 
-main();
+const invokedDirectly = process.argv[1]?.replaceAll("\\", "/").endsWith("coverage/xsd.ts");
+if (invokedDirectly) main();

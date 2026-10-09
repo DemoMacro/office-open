@@ -11,6 +11,7 @@
  * @module
  */
 
+import type { HexColorOrAuto, ThemeColor, UcharHexNumber } from "@office-open/core";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
 
 // ─── Lock ───────────────────────────────────────────────────────────────────
@@ -147,6 +148,20 @@ export interface SdtDataBindingOptions {
 }
 
 /**
+ * Color for a content control's start mark (CT_Color, w15:color).
+ */
+export interface SdtColorOptions {
+  /** Hex color, "auto", or 3-digit short hex (e.g., "F00") */
+  val: HexColorOrAuto;
+  /** Theme color slot: "dark1"/"light1" text/background, "accent1"–"accent6" theme accents, "hyperlink"/"followedHyperlink". */
+  themeColor?: ThemeColor;
+  /** Theme color tint (2-char hex) */
+  themeTint?: UcharHexNumber;
+  /** Theme color shade (2-char hex) */
+  themeShade?: UcharHexNumber;
+}
+
+/**
  * Options for CT_SdtPr — structured document tag properties.
  */
 export interface SdtPropertiesOptions {
@@ -171,6 +186,10 @@ export interface SdtPropertiesOptions {
   showingPlaceholder?: boolean;
   /** Data binding to custom XML */
   dataBinding?: SdtDataBindingOptions;
+  /** Word 2013 data binding extension (w15:dataBinding); distinct from w:dataBinding */
+  w15DataBinding?: SdtDataBindingOptions;
+  /** Word 2013 start-mark color extension (w15:color) */
+  w15Color?: SdtColorOptions;
   /** Numeric label */
   label?: number;
   /** Tab order index */
@@ -245,6 +264,8 @@ export type SdtChildOrder =
   | "temporary"
   | "showingPlaceholder"
   | "dataBinding"
+  | "w15DataBinding"
+  | "w15Color"
   | "label"
   | "tabIndex"
   | "appearance"

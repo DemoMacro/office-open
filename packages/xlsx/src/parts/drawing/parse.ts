@@ -30,7 +30,7 @@ import type {
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
 import { parseShapeStyle } from "@office-open/core/theme";
-import { findChild, stringifyElement } from "@office-open/xml";
+import { attrNum, attrBool, findChild, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type {
@@ -237,6 +237,10 @@ function parsePictureContent(pic: XmlElement, ctx: ReadContext): GroupPictureChi
   }
   const srcRect = blipFill ? findChild(blipFill, "a:srcRect") : undefined;
   if (srcRect) result.sourceRectangle = sourceRectangleDesc.parse(srcRect, ctx);
+  const dpi = attrNum(blipFill, "dpi");
+  if (dpi !== undefined) result.dpi = dpi;
+  const rotWithShape = attrBool(blipFill, "rotWithShape");
+  if (rotWithShape !== undefined) result.rotWithShape = rotWithShape;
 
   // Full spPr (rotation/flip/fill) beyond the position-only default; @bwMode
   // is a container attribute the descriptor leaves to the caller.
@@ -303,6 +307,12 @@ export function parseChartAnchor(
     if (!Number.isNaN(cx)) result.frameExtentCx = cx;
     if (!Number.isNaN(cy)) result.frameExtentCy = cy;
   }
+  const frameRotation = attrNum(frameXfrm, "rot");
+  if (frameRotation !== undefined) result.frameRotation = frameRotation / 60000;
+  const frameFlipHorizontal = attrBool(frameXfrm, "flipH");
+  if (frameFlipHorizontal !== undefined) result.frameFlipHorizontal = frameFlipHorizontal;
+  const frameFlipVertical = attrBool(frameXfrm, "flipV");
+  if (frameFlipVertical !== undefined) result.frameFlipVertical = frameFlipVertical;
   Object.assign(result, readCNvPr(graphicFrame, "nvGraphicFramePr", ctx));
   const nvGraphicFramePr = findXdr(graphicFrame, "nvGraphicFramePr");
   const cNvGraphicFramePr = nvGraphicFramePr

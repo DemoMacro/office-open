@@ -2,6 +2,8 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { generatePresentationSync } from "../../generate";
+import { parsePresentationSync } from "../../parse";
 import type { LockedCanvasFrameOptions } from "../locked-canvas-frame";
 import { lockedCanvasDesc } from "./locked-canvas";
 
@@ -28,6 +30,40 @@ function roundTrip(opts: LockedCanvasFrameOptions) {
 }
 
 describe("lockedCanvasDesc round-trip", () => {
+  it("parses package-level locked canvas without rawXml absorption", () => {
+    const options = {
+      slides: [
+        {
+          children: [
+            {
+              lockedCanvas: {
+                id: 100,
+                name: "Package Canvas",
+                x: 100,
+                y: 200,
+                width: 300,
+                height: 400,
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parsePresentationSync(generatePresentationSync(options, { type: "uint8array" }));
+    const child = parsed.slides?.[0]?.children?.[0];
+    expect(child).toEqual({
+      lockedCanvas: {
+        id: 100,
+        name: "Package Canvas",
+        locking: { noGrp: true },
+        x: 100,
+        y: 200,
+        width: 300,
+        height: 400,
+      },
+    });
+  });
+
   it("round-trips basic position and name", () => {
     const opts: LockedCanvasFrameOptions = {
       id: 100,

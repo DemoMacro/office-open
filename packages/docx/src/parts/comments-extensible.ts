@@ -37,7 +37,7 @@ export const commentsExtensibleDesc: CustomDescriptor<CommentExtensibleOptions[]
         if (entry.dateUtc !== undefined) attrs.push(`w16cex:dateUtc="${escapeXml(entry.dateUtc)}"`);
         if (entry.intelligentPlaceholder !== undefined)
           attrs.push(`w16cex:intelligentPlaceholder="${entry.intelligentPlaceholder ? 1 : 0}"`);
-        const ext = entry.ext === undefined ? "" : `<w16:extLst>${entry.ext}</w16:extLst>`;
+        const ext = entry.ext === undefined ? "" : `<w16cex:extLst>${entry.ext}</w16cex:extLst>`;
         return `<w16cex:commentExtensible ${attrs.join(" ")}>${ext}</w16cex:commentExtensible>`;
       })
       .join("");
@@ -55,7 +55,7 @@ export const commentsExtensibleDesc: CustomDescriptor<CommentExtensibleOptions[]
       const placeholder = attr(child, "w16cex:intelligentPlaceholder");
       if (placeholder !== undefined)
         entry.intelligentPlaceholder = parseOnOff(placeholder) ?? false;
-      const extLst = (child.elements ?? []).find((node) => node.name === "w16:extLst");
+      const extLst = (child.elements ?? []).find((node) => node.name === "w16cex:extLst");
       if (extLst) entry.ext = stringifyXml(extLst);
       return [entry as CommentExtensibleOptions];
     });

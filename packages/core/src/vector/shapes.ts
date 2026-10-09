@@ -463,7 +463,7 @@ function stringifyShapeAttrs(
   let attrStr = stringifyVmlAttributes(opts, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR]);
   const style = opts.style as VmlShapeStyle | undefined;
   if (style !== undefined) {
-    const styleValue = String(opts.styleRaw ?? stringifyVmlStyle(style));
+    const styleValue = typeof opts.styleRaw === "string" ? opts.styleRaw : stringifyVmlStyle(style);
     attrStr += ` style="${escapeXml(styleValue)}"`;
   }
   return attrStr;

@@ -8953,6 +8953,10 @@
         "description": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
+        "dpi": {
+          "description": "Display resolution hint (blipFill/@dpi), e.g. 300 = 300 DPI.",
+          "type": "number"
+        },
         "ext": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
         },
@@ -8995,6 +8999,9 @@
         "rId": {
           "description": "Relationship ID for the embedded image (a:blip",
           "type": "string"
+        },
+        "rotWithShape": {
+          "$ref": "#/definitions/PictureOptions/properties/rotWithShape"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only; fresh output allocates ids).",
@@ -11978,6 +11985,10 @@
         "description": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
+        "dpi": {
+          "description": "Display resolution hint (blipFill/@dpi), e.g. 300 = 300 DPI.",
+          "type": "number"
+        },
         "editAs": {
           "$ref": "#/definitions/EditAsType",
           "description": "editAs for twoCellAnchor (default \"oneCell\")."
@@ -12041,6 +12052,10 @@
         "properties": {
           "$ref": "#/definitions/ShapePropertiesOptions",
           "description": "Round-tripped pic/spPr (rotation/flip/bwMode/fill beyond position)."
+        },
+        "rotWithShape": {
+          "description": "Whether the fill rotates with the shape (blipFill/@rotWithShape).",
+          "type": "boolean"
         },
         "row": {
           "description": "1-based row (from marker)",
@@ -20159,6 +20174,10 @@
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"
@@ -20250,6 +20269,10 @@
     "UserShapeGroupOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:grpSpPr `@bwMode`)."
+        },
         "children": {
           "items": {
             "$ref": "#/definitions/UserShapeObjectOptions"
@@ -20318,6 +20341,10 @@
     "UserShapePictureOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "blipFill": {
           "$ref": "#/definitions/BlipFillOptions"
         },
@@ -20331,6 +20358,10 @@
         },
         "nonVisualProperties": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "preferRelativeResize": {
+          "description": "Resize relative to the original image (cdr:cNvPicPr attribute).",
+          "type": "boolean"
         },
         "published": {
           "description": "Published as a server-side shape (`@fPublished`, default false)",
@@ -20357,6 +20388,10 @@
     "UserShapeShapeOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"
@@ -24227,9 +24262,21 @@
           "description": "Graphic-frame transform height (a:xfrm/a:ext/@cy, EMU).",
           "type": "number"
         },
+        "frameFlipHorizontal": {
+          "description": "Horizontal flip (xdr:xfrm/@flipH).",
+          "type": "boolean"
+        },
+        "frameFlipVertical": {
+          "description": "Vertical flip (xdr:xfrm/@flipV).",
+          "type": "boolean"
+        },
         "frameLocks": {
           "$ref": "#/definitions/GraphicFrameLockingOptions",
           "description": "Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty."
+        },
+        "frameRotation": {
+          "description": "Graphic-frame rotation in degrees (xdr:xfrm/@rot).",
+          "type": "number"
         },
         "gapDepth": {
           "description": "3D bar/column gap depth as percent (c:gapDepth).",

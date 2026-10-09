@@ -232,11 +232,14 @@ function sdtDateXml(options: {
   return parts.length ? `<w:date${attrStr}>${parts.join("")}</w:date>` : `<w:date${attrStr}/>`;
 }
 
-function sdtDataBindingXml(options: {
-  prefixMappings?: string;
-  xpath: string;
-  storeItemID: string;
-}): string {
+function sdtDataBindingXml(
+  options: {
+    prefixMappings?: string;
+    xpath: string;
+    storeItemID: string;
+  },
+  elementName = "w:dataBinding",
+): string {
   const attrs: string[] = [`w:xpath="${escapeXml(options.xpath)}"`];
   // @w:storeItemID is required by CT_DataBinding; an empty string is not a
   // legal value and Word rejects the package on open, so skip the attribute
@@ -244,7 +247,15 @@ function sdtDataBindingXml(options: {
   if (options.storeItemID) attrs.push(`w:storeItemID="${escapeXml(options.storeItemID)}"`);
   if (options.prefixMappings !== undefined)
     attrs.push(`w:prefixMappings="${escapeXml(options.prefixMappings)}"`);
-  return `<w:dataBinding ${attrs.join(" ")}/>`;
+  return `<${elementName} ${attrs.join(" ")}/>`;
+}
+
+function sdtColorXml(options: NonNullable<SdtPropertiesOptions["w15Color"]>): string {
+  const attrs = [`w:val="${escapeXml(options.val)}"`];
+  if (options.themeColor !== undefined) attrs.push(`w:themeColor="${options.themeColor}"`);
+  if (options.themeTint !== undefined) attrs.push(`w:themeTint="${options.themeTint}"`);
+  if (options.themeShade !== undefined) attrs.push(`w:themeShade="${options.themeShade}"`);
+  return `<w15:color ${attrs.join(" ")}/>`;
 }
 
 function sdtDocPartXml(
@@ -306,6 +317,8 @@ const SDT_CHILD_ORDER: SdtChildOrder[] = [
   "temporary",
   "showingPlaceholder",
   "dataBinding",
+  "w15DataBinding",
+  "w15Color",
   "label",
   "tabIndex",
   "appearance",
@@ -359,6 +372,11 @@ function sdtChildFragments(
       onOff("w:showingPlcHdr", effectiveShowingPlcHdr),
   );
   set("dataBinding", opts.dataBinding && sdtDataBindingXml(opts.dataBinding));
+  set(
+    "w15DataBinding",
+    opts.w15DataBinding && sdtDataBindingXml(opts.w15DataBinding, "w15:dataBinding"),
+  );
+  set("w15Color", opts.w15Color && sdtColorXml(opts.w15Color));
   set("label", opts.label !== undefined && `<w:label w:val="${opts.label}"/>`);
   set("tabIndex", opts.tabIndex !== undefined && `<w:tabIndex w:val="${opts.tabIndex}"/>`);
   set("appearance", opts.appearance && `<w15:appearance w15:val="${opts.appearance}"/>`);

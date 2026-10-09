@@ -8914,6 +8914,10 @@
             "data": {
               "$ref": "#/definitions/DataType"
             },
+            "dpi": {
+              "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
+              "type": "number"
+            },
             "fileName": {
               "type": "string"
             },
@@ -8930,6 +8934,9 @@
             "partPath": {
               "description": "Physical package path from the source (round-trip only). Most media lives under the package's word/ppt/xl directory; OPC also permits package-root targets such as /media/image.png, which must not be silently relocated.",
               "type": "string"
+            },
+            "rotWithShape": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/rotWithShape"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
@@ -8974,6 +8981,10 @@
             "data": {
               "$ref": "#/definitions/DataType"
             },
+            "dpi": {
+              "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
+              "type": "number"
+            },
             "fallback": {
               "additionalProperties": false,
               "description": "Fallback image for Word processors that do not support SVG. This ensures the document displays correctly in all viewers.",
@@ -8989,6 +9000,10 @@
                 "data": {
                   "$ref": "#/definitions/DataType"
                 },
+                "dpi": {
+                  "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
+                  "type": "number"
+                },
                 "fileName": {
                   "type": "string"
                 },
@@ -8998,6 +9013,9 @@
                 },
                 "partPath": {
                   "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/partPath"
+                },
+                "rotWithShape": {
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/rotWithShape"
                 },
                 "sourceRectangle": {
                   "$ref": "#/definitions/SourceRectangleOptions",
@@ -9039,6 +9057,9 @@
             },
             "partPath": {
               "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/partPath"
+            },
+            "rotWithShape": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/rotWithShape"
             },
             "sourceRectangle": {
               "$ref": "#/definitions/SourceRectangleOptions",
@@ -16774,6 +16795,10 @@
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
             },
+            "dpi": {
+              "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
+              "type": "number"
+            },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
             },
@@ -16827,6 +16852,10 @@
             "partPath": {
               "description": "Physical source part path for non-conventional OPC locations (round-trip).",
               "type": "string"
+            },
+            "rotWithShape": {
+              "description": "Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape).",
+              "type": "boolean"
             },
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
@@ -16905,6 +16934,10 @@
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
             },
+            "dpi": {
+              "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
+              "type": "number"
+            },
             "effects": {
               "$ref": "#/definitions/EffectListOptions"
             },
@@ -16962,6 +16995,9 @@
             },
             "partPath": {
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/partPath"
+            },
+            "rotWithShape": {
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/rotWithShape"
             },
             "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
@@ -19181,6 +19217,8 @@
         "temporary",
         "showingPlaceholder",
         "dataBinding",
+        "w15DataBinding",
+        "w15Color",
         "label",
         "tabIndex",
         "appearance",
@@ -19204,6 +19242,30 @@
         "webExtensionCreated"
       ],
       "type": "string"
+    },
+    "SdtColorOptions": {
+      "additionalProperties": false,
+      "description": "Color for a content control's start mark.",
+      "properties": {
+        "themeColor": {
+          "$ref": "#/definitions/ThemeColor",
+          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
+        },
+        "themeShade": {
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color shade (2-char hex)"
+        },
+        "themeTint": {
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Theme color tint (2-char hex)"
+        },
+        "val": {
+          "$ref": "#/definitions/HexColorOrAuto",
+          "description": "Hex color, \"auto\", or 3-digit short hex (e.g., \"F00\")"
+        }
+      },
+      "required": ["val"],
+      "type": "object"
     },
     "SdtComboBoxOptions": {
       "additionalProperties": false,
@@ -19458,6 +19520,14 @@
         "text": {
           "$ref": "#/definitions/SdtTextOptions",
           "description": "Plain text SDT"
+        },
+        "w15Color": {
+          "$ref": "#/definitions/SdtColorOptions",
+          "description": "Word 2013 start-mark color extension (w15:color)"
+        },
+        "w15DataBinding": {
+          "$ref": "#/definitions/SdtDataBindingOptions",
+          "description": "Word 2013 data binding extension (w15:dataBinding); distinct from w:dataBinding"
         },
         "webExtensionCreated": {
           "description": "Web extension created flag (Word 2013+, w15:webExtensionCreated)",
@@ -26523,6 +26593,10 @@
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"
@@ -26614,6 +26688,10 @@
     "UserShapeGroupOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:grpSpPr `@bwMode`)."
+        },
         "children": {
           "items": {
             "$ref": "#/definitions/UserShapeObjectOptions"
@@ -26682,6 +26760,10 @@
     "UserShapePictureOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "blipFill": {
           "$ref": "#/definitions/BlipFillOptions"
         },
@@ -26695,6 +26777,10 @@
         },
         "nonVisualProperties": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions"
+        },
+        "preferRelativeResize": {
+          "description": "Resize relative to the original image (cdr:cNvPicPr attribute).",
+          "type": "boolean"
         },
         "published": {
           "description": "Published as a server-side shape (`@fPublished`, default false)",
@@ -26721,6 +26807,10 @@
     "UserShapeShapeOptions": {
       "additionalProperties": false,
       "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+        },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
           "type": "number"

@@ -29,21 +29,23 @@ describe("userShapesDesc", () => {
           object: {
             type: "shape",
             id: 2,
-            nonVisualProperties: { name: "Label" },
+            nonVisualProperties: { name: "Label", title: "Overlay" },
             textBox: true,
             textLink: "Sheet1!$A$1",
             locksText: false,
             shapeProperties: { width: 914400, height: 457200, geometry: "rect" },
+            blackWhiteMode: "gray",
             textBody: { paragraphs: [{ children: [{ text: "Overlaid label" }] }] },
           },
         },
       ],
     });
     expect(xml).toContain("<cdr:relSizeAnchor>");
-    expect(xml).toContain('<cdr:cNvPr id="2" name="Label"/>');
+    expect(xml).toContain('<cdr:cNvPr id="2" name="Label" title="Overlay"/>');
     expect(xml).toContain('txBox="1"');
     expect(xml).toContain('textlink="Sheet1!$A$1"');
     expect(xml).toContain('fLocksText="0"');
+    expect(xml).toContain('<cdr:spPr bwMode="gray">');
     // the text body rides inside a cdr:txBody wrapper, not spread bare
     // into cdr:sp (CT_Shape content model)
     expect(xml).toContain("<cdr:txBody><a:bodyPr");
@@ -53,6 +55,8 @@ describe("userShapesDesc", () => {
     if ("to" in anchor && anchor.object.type === "shape") {
       expect(anchor.object.id).toBe(2);
       expect(anchor.object.nonVisualProperties?.name).toBe("Label");
+      expect(anchor.object.nonVisualProperties?.title).toBe("Overlay");
+      expect(anchor.object.blackWhiteMode).toBe("gray");
       expect(anchor.object.textBox).toBe(true);
       expect(anchor.object.textLink).toBe("Sheet1!$A$1");
       expect(anchor.object.locksText).toBe(false);
@@ -81,6 +85,7 @@ describe("userShapesDesc", () => {
             type: "picture",
             id: 4,
             referenceId: "image1.png",
+            preferRelativeResize: false,
             shapeProperties: { width: 914400, height: 914400 },
             published: true,
           },
@@ -90,6 +95,7 @@ describe("userShapesDesc", () => {
     expect(xml).toContain("<cdr:absSizeAnchor>");
     expect(xml).toContain("<cdr:cxnSp>");
     expect(xml).toContain('r:embed="{image1.png}"');
+    expect(xml).toContain('<cdr:cNvPicPr preferRelativeResize="0"/>');
     expect(xml).toContain('fPublished="1"');
 
     const connector = result.anchors[0]!;
@@ -102,6 +108,7 @@ describe("userShapesDesc", () => {
       throw new Error("expected a picture anchor");
     }
     expect(picture.object.referenceId).toBe("image1.png");
+    expect(picture.object.preferRelativeResize).toBe(false);
     expect(picture.object.published).toBe(true);
   });
 

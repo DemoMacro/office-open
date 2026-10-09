@@ -37,6 +37,10 @@ import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "../../drawin
  */
 interface CorePictureOptions {
   transformation: MediaTransformation;
+  /** Rendering resolution in DPI (pic:blipFill/@dpi). */
+  dpi?: number;
+  /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
+  rotWithShape?: boolean;
   floating?: Floating;
   altText?: DocPropertiesOptions;
   outline?: OutlineOptions;

@@ -541,10 +541,10 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.scale = token.param;
         return;
       case "sub":
-        format.verticalAlign = "subscript";
+        format.verticalAlign = token.param === 0 ? "baseline" : "subscript";
         return;
       case "super":
-        format.verticalAlign = "superscript";
+        format.verticalAlign = token.param === 0 ? "baseline" : "superscript";
         return;
       case "nosupersub":
         format.verticalAlign = "baseline";
@@ -570,15 +570,6 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         else if (word === "nofwords") appProperties.words = token.param;
         else if (word === "nofchars") appProperties.characters = token.param;
         else appProperties.charactersWithSpaces = token.param;
-        return;
-      case "super":
-        format.verticalAlign = token.param === 0 ? "baseline" : "superscript";
-        return;
-      case "sub":
-        format.verticalAlign = token.param === 0 ? "baseline" : "subscript";
-        return;
-      case "nosupersub":
-        format.verticalAlign = "baseline";
         return;
       case "s":
         if (token.param === undefined)

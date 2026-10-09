@@ -32,6 +32,8 @@ export interface MediaFrameBaseOptions extends NonVisualDrawingPropertiesOptions
   mediaAction?: boolean;
   /** Picture locks (a:picLocks inside p:cNvPicPr). */
   locking?: PictureLockingOptions;
+  /** Resize relative to the original media rather than the frame (p:cNvPicPr attribute). */
+  preferRelativeResize?: boolean;
   /**
    * Play window trim of the p14:media extension copy (p14:trim, seconds).
    * undefined = no trim child.

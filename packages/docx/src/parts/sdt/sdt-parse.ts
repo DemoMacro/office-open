@@ -1,3 +1,4 @@
+import type { ThemeColor } from "@office-open/core";
 /**
  * Structured Document Tag parser for DOCX documents.
  *
@@ -31,6 +32,8 @@ const SDT_ELEMENT_ORDER = new Map<string, SdtChildOrder>([
   ["w:label", "label"],
   ["w:tabIndex", "tabIndex"],
   ["w:dataBinding", "dataBinding"],
+  ["w15:dataBinding", "w15DataBinding"],
+  ["w15:color", "w15Color"],
   ["w:equation", "equation"],
   ["w:comboBox", "comboBox"],
   ["w:date", "date"],
@@ -118,6 +121,26 @@ export function parseSdtProperties(el: Element): SdtPropertiesOptions {
       storeItemID: attr(dataBinding, "w:storeItemID") ?? "",
       prefixMappings: attr(dataBinding, "w:prefixMappings"),
     };
+  }
+
+  const w15DataBinding = findChild(el, "w15:dataBinding");
+  if (w15DataBinding) {
+    opts.w15DataBinding = {
+      xpath: attr(w15DataBinding, "w:xpath") ?? "",
+      storeItemID: attr(w15DataBinding, "w:storeItemID") ?? "",
+      prefixMappings: attr(w15DataBinding, "w:prefixMappings"),
+    };
+  }
+
+  const w15Color = findChild(el, "w15:color");
+  if (w15Color) {
+    opts.w15Color = {
+      val: attr(w15Color, "w:val") ?? "",
+      themeTint: attr(w15Color, "w:themeTint"),
+      themeShade: attr(w15Color, "w:themeShade"),
+    };
+    const themeColor = attr(w15Color, "w:themeColor");
+    if (themeColor) opts.w15Color.themeColor = themeColor as ThemeColor;
   }
 
   // Type discriminators (xsd:choice)

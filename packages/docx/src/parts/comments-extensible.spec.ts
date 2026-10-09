@@ -10,12 +10,18 @@ describe("commentsExtensibleDesc", () => {
   it("round-trips comment metadata and extension children", () => {
     const entries: CommentExtensibleOptions[] = [
       { durableId: "1EC7B1B1", dateUtc: "2026-01-01T00:00:00Z", intelligentPlaceholder: false },
-      { durableId: "2B401A58", intelligentPlaceholder: true, ext: "<w16:uri>example</w16:uri>" },
+      {
+        durableId: "2B401A58",
+        intelligentPlaceholder: true,
+        ext: '<w16:ext w16:uri="example"><w16:value>example</w16:value></w16:ext>',
+      },
     ];
     const xml = commentsExtensibleDesc.stringify(entries, {} as never)!;
     expect(xml).toContain('w16cex:dateUtc="2026-01-01T00:00:00Z"');
     expect(xml).toContain('w16cex:intelligentPlaceholder="0"');
-    expect(xml).toContain("<w16:extLst><w16:uri>example</w16:uri></w16:extLst>");
+    expect(xml).toContain(
+      '<w16cex:extLst><w16:ext w16:uri="example"><w16:value>example</w16:value></w16:ext></w16cex:extLst>',
+    );
 
     const parsed = commentsExtensibleDesc.parse(
       parseXml(

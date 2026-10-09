@@ -312,6 +312,36 @@ describe("sdtBlockDesc round-trip", () => {
     expect(result.properties.webExtensionLinked).toBe(true);
     expect(result.properties.webExtensionCreated).toBe(false);
   });
+
+  it("round-trips Word 2013 SDT color and data binding", () => {
+    const options: SdtBlockOptions = {
+      properties: {
+        w15Color: {
+          val: "FF0000",
+          themeColor: "accent1",
+          themeTint: "99",
+          themeShade: "BF",
+        },
+        w15DataBinding: {
+          xpath: "/invoice/customer",
+          storeItemID: "C9C24E26-8E6D-4C10-9B52-5A9D1C37D92E",
+        },
+      },
+    };
+    const result = roundTripSdt(options);
+    const xml = sdtBlockDesc.stringify(options, writeCtx)!;
+    expect(xml).toContain('<w15:dataBinding w:xpath="/invoice/customer"');
+    expect(result.properties.w15Color).toEqual({
+      val: "FF0000",
+      themeColor: "accent1",
+      themeTint: "99",
+      themeShade: "BF",
+    });
+    expect(result.properties.w15DataBinding).toEqual({
+      xpath: "/invoice/customer",
+      storeItemID: "C9C24E26-8E6D-4C10-9B52-5A9D1C37D92E",
+    });
+  });
 });
 
 // ── customXmlBlockDesc ──
