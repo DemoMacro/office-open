@@ -73,16 +73,16 @@ function parseFontCollection(el: XmlElement | undefined): FontCollectionOptions 
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
-// ── Fresh defaults (Office theme major/minor fonts) ──
+// ── Fresh defaults (Office 2024 theme major/minor fonts) ──
 
 const DEFAULT_MAJOR_FONT: FontCollectionOptions = {
-  latin: { typeface: "Calibri Light", panose: "020F0302020204030204" },
+  latin: { typeface: "Aptos Display", panose: "02110004020202020204" },
   eastAsian: { typeface: "" },
   complexScript: { typeface: "" },
 };
 
 const DEFAULT_MINOR_FONT: FontCollectionOptions = {
-  latin: { typeface: "Calibri", panose: "020F0502020204030204" },
+  latin: { typeface: "Aptos", panose: "02110004020202020204" },
   eastAsian: { typeface: "" },
   complexScript: { typeface: "" },
 };

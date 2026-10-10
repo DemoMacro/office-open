@@ -108,8 +108,8 @@ describe("themeDesc", () => {
     const el = doc.elements?.[0];
     if (!el) throw new Error("no root element");
     const result = parse(themeDesc, el, {} as ReadContext);
-    expect(result.colorScheme?.accent1).toBe("4472C4");
-    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Calibri Light");
+    expect(result.colorScheme?.accent1).toBe("156082");
+    expect(result.fontScheme?.majorFont?.latin?.typeface).toBe("Aptos Display");
     expect(result.formatScheme?.fillStyles).toHaveLength(3);
     expect(result.formatScheme?.lineStyles).toHaveLength(3);
     expect(result.formatScheme?.effectStyles).toHaveLength(3);
