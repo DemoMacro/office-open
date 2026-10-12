@@ -20,6 +20,27 @@ const levelText = (text: string): string => {
   return `${control("leveltext")}\\'${visible.toString(16).padStart(2, "0")}${text.replace(/%(\d+)/gu, (_, value: string) => `\\'0${Number(value) - 1}`)};`;
 };
 
+function alignmentCode(
+  alignment: NonNullable<
+    NonNullable<NumberingOptions["abstractNumberings"]>[number]["levels"][number]["alignment"]
+  >,
+): number {
+  if (alignment === "center") return 1;
+  if (alignment === "right") return 2;
+  if (alignment === "both") return 3;
+  return 0;
+}
+
+function suffixCode(
+  suffix: NonNullable<
+    NonNullable<NumberingOptions["abstractNumberings"]>[number]["levels"][number]["suffix"]
+  >,
+): number {
+  if (suffix === "space") return 1;
+  if (suffix === "nothing") return 2;
+  return 0;
+}
+
 function level(
   level: NonNullable<NumberingOptions["abstractNumberings"]>[number]["levels"][number],
   path: string,
@@ -35,21 +56,8 @@ function level(
   const properties = [
     control("levelnfc", format.code),
     control("levelnfcn", format.code),
-    level.alignment === undefined
-      ? ""
-      : control(
-          "leveljc",
-          level.alignment === "center"
-            ? 1
-            : level.alignment === "right"
-              ? 2
-              : level.alignment === "both"
-                ? 3
-                : 0,
-        ),
-    level.suffix === undefined
-      ? ""
-      : control("levelfollow", level.suffix === "space" ? 1 : level.suffix === "nothing" ? 2 : 0),
+    level.alignment === undefined ? "" : control("leveljc", alignmentCode(level.alignment)),
+    level.suffix === undefined ? "" : control("levelfollow", suffixCode(level.suffix)),
     level.start === undefined ? "" : control("levelstartat", level.start),
     typeof level.paragraph?.indent?.left === "number"
       ? control("levelindent", level.paragraph.indent.left)

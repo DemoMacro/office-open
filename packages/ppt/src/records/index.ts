@@ -133,12 +133,13 @@ export function readRecordTree(
       });
     }
     const header = readRecordHeader(view, cursor, end);
-    const children =
-      isContainer(header) && header.length > 0
-        ? depth < maxDepth
+    let children: RecordNode[] = [];
+    if (isContainer(header) && header.length > 0) {
+      children =
+        depth < maxDepth
           ? readRecordTree(view, header.offset + RECORD_HEADER_SIZE, header.end, depth + 1)
-          : readAtomChildren(view, header)
-        : [];
+          : readAtomChildren(view, header);
+    }
     nodes.push({ ...header, children });
     cursor = header.end;
   }
@@ -203,54 +204,39 @@ export function collectDescendants(
 }
 
 export function readInt32(view: DataView, record: RecordHeader, offset: number): number {
-  if (offset < 0 || offset + 4 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field", {
-      part: "record",
-      recordType: record.type,
-      offset: record.offset + RECORD_HEADER_SIZE + offset,
-      length: 4,
-      byteRange: [
-        record.offset + RECORD_HEADER_SIZE + offset,
-        record.offset + RECORD_HEADER_SIZE + offset + 4,
-      ],
-      reason: "out-of-range",
-    });
-  }
+  requireAtomBytes(record, offset, 4, "32-bit");
   return view.getInt32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readUint32(view: DataView, record: RecordHeader, offset: number): number {
-  if (offset < 0 || offset + 4 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 32-bit field", {
-      part: "record",
-      recordType: record.type,
-      offset: record.offset + RECORD_HEADER_SIZE + offset,
-      length: 4,
-      byteRange: [
-        record.offset + RECORD_HEADER_SIZE + offset,
-        record.offset + RECORD_HEADER_SIZE + offset + 4,
-      ],
-      reason: "out-of-range",
-    });
-  }
+  requireAtomBytes(record, offset, 4, "32-bit");
   return view.getUint32(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function readInt16(view: DataView, record: RecordHeader, offset: number): number {
-  if (offset < 0 || offset + 2 > record.length) {
-    throw new PptParseError("Corrupt legacy PowerPoint atom: missing 16-bit field", {
+  requireAtomBytes(record, offset, 2, "16-bit");
+  return view.getInt16(record.offset + RECORD_HEADER_SIZE + offset, true);
+}
+
+function requireAtomBytes(
+  record: RecordHeader,
+  offset: number,
+  byteLength: number,
+  fieldSize: "16-bit" | "32-bit",
+): void {
+  if (offset < 0 || offset + byteLength > record.length) {
+    throw new PptParseError(`Corrupt legacy PowerPoint atom: missing ${fieldSize} field`, {
       part: "record",
       recordType: record.type,
       offset: record.offset + RECORD_HEADER_SIZE + offset,
-      length: 2,
+      length: byteLength,
       byteRange: [
         record.offset + RECORD_HEADER_SIZE + offset,
-        record.offset + RECORD_HEADER_SIZE + offset + 2,
+        record.offset + RECORD_HEADER_SIZE + offset + byteLength,
       ],
       reason: "out-of-range",
     });
   }
-  return view.getInt16(record.offset + RECORD_HEADER_SIZE + offset, true);
 }
 
 export function recordBody(view: DataView, record: RecordHeader): Uint8Array {

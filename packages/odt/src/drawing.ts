@@ -15,6 +15,7 @@ import {
   emuToLength,
   graphicFill,
   graphicOutline,
+  isExternalOdfUrl,
   lengthToEmu,
   PRESET_GEOMETRY_DOCX,
   presetGeometryOdf,
@@ -106,12 +107,9 @@ export function wpsShapeFrameXml(
           candidate.frames?.some((frame) => frame.shapeId === shapeId),
         );
   if (object) {
-    return embeddedObjectFrameXml(
-      shape,
-      object,
-      object.frames!.find((frame) => frame.shapeId === shapeId)!,
-      styles,
-    );
+    const frame = object.frames?.find((candidate) => candidate.shapeId === shapeId);
+    if (!frame) throw malformedEmbeddedObject("embedded object frame reference is missing");
+    return embeddedObjectFrameXml(shape, object, frame, styles);
   }
   return xmlElement(
     "draw:custom-shape",
@@ -240,7 +238,7 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   const data = path ? context.binaries[path] : undefined;
   if (data && path) context.usedBinaryPaths.add(path);
   if (!data || !path) {
-    if (href && isExternalUrl(href))
+    if (href && isExternalOdfUrl(href))
       return [
         {
           picture: {
@@ -282,10 +280,6 @@ export function parsePictureFrame(frame: Element, context: ParseContext): Paragr
   ];
 }
 
-export function isExternalUrl(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
-}
-
 function pictureTypeFromUrl(value: string): RasterPictureType {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
   if (extension === "jpeg") return "jpg";
@@ -321,7 +315,8 @@ export function parseChartFrame(frame: Element, context: ParseContext): Paragrap
       },
     ];
   }
-  const object = context.embeddedObjects.get(href!)!;
+  const object = href === undefined ? undefined : context.embeddedObjects.get(href);
+  if (!object) throw malformedEmbeddedObject("embedded object subdocument is missing", href);
   const shapeId = context.nextEmbeddedShapeId++;
   const anchorType = frameAnchorType(attributeString(frame, "text:anchor-type"));
   const styleName = attributeString(frame, "draw:style-name");

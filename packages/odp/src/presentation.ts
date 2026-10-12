@@ -5,25 +5,27 @@ import {
   type FormControlOptions,
 } from "@office-open/core";
 import {
-  attributeNumber,
   attributeString,
   CHART_MIME,
   chartBodyXml,
   childNamed,
+  canonicalOfficeFormsXml,
   childrenNamed,
   emuToLength,
-  escapeText,
+  descendantElements,
   generateOcf,
   hasOcfManifestOverlay,
   lengthToEmu,
   metaXml,
   OdfSchemaError,
   parseEmbeddedCharts,
+  parseCanonicalFormControl,
   parseGraphicStyles,
   parseMeta,
   readOcf,
   readXml,
-  textOf,
+  unknownAttributeNames,
+  unknownChildElement,
   xmlElement,
   type OcfManifestOptions,
   type OdfPackageFiles,
@@ -242,53 +244,7 @@ export function normalizeSize(size: PresentationOptions["size"]): {
 }
 
 export function formsXml(forms: FormContainerOptions[]): string {
-  return xmlElement(
-    "office:forms",
-    {
-      "form:automatic-focus": forms[0]?.automaticFocus,
-      "form:apply-design-mode": forms[0]?.designMode,
-    },
-    forms.map((form) =>
-      xmlElement(
-        "form:form",
-        { "form:name": form.name },
-        form.controls.map((control) => formControlXml(control)),
-      ),
-    ),
-  );
-}
-
-export function formControlXml(control: FormControlOptions): string {
-  const common = {
-    "form:id": control.id,
-    "form:name": control.name,
-    "form:disabled": control.disabled,
-    "form:tab-index": control.tabIndex,
-    "form:automatic-focus": control.automaticFocus,
-  };
-  if (control.control === "checkBox")
-    return xmlElement("form:checkbox", {
-      ...common,
-      "form:current-state": control.checked ? "checked" : "unchecked",
-    });
-  if (control.control === "dropDownList")
-    return xmlElement(
-      "form:listbox",
-      common,
-      control.entries.map((label, optionIndex) =>
-        xmlElement(
-          "form:option",
-          { "form:selected": control.selectedIndex === optionIndex || undefined },
-          [escapeText(label)],
-        ),
-      ),
-    );
-  return xmlElement("form:text", {
-    ...common,
-    "office:value-type": control.valueType,
-    "form:current-value": control.value,
-    "form:max-length": control.maxLength,
-  });
+  return canonicalOfficeFormsXml(forms);
 }
 
 /** Rejects unrecognized slide content instead of emitting generic XML. */
@@ -297,14 +253,10 @@ export function assertElementNames(
   allowedAttributes: string[],
   allowedChildren: string[] = [],
 ): void {
-  const unknown = Object.keys(element.attributes ?? {}).filter(
-    (name) => !allowedAttributes.includes(name),
-  );
-  if (unknown.length) throw unknownSlideChild(element, "/draw:page/office:forms");
-  for (const child of element.elements ?? []) {
-    if (child.type === "element" && !allowedChildren.includes(child.name ?? ""))
-      throw unknownSlideChild(child, "/draw:page/office:forms");
-  }
+  if (unknownAttributeNames(element, allowedAttributes).length)
+    throw unknownSlideChild(element, "/draw:page/office:forms");
+  const unknownChild = unknownChildElement(element, allowedChildren);
+  if (unknownChild) throw unknownSlideChild(unknownChild, "/draw:page/office:forms");
 }
 
 export function parseForms(page: Element): FormContainerOptions[] {
@@ -339,13 +291,7 @@ export function parseForms(page: Element): FormContainerOptions[] {
     });
 }
 
-export function descendantElements(element: Element): Element[] {
-  return (element.elements ?? []).flatMap((child) =>
-    child.type === "element" ? [child, ...descendantElements(child)] : [],
-  );
-}
-
-export function parseFormControl(control: Element): FormControlOptions {
+function parseFormControl(control: Element): FormControlOptions {
   assertElementNames(
     control,
     [
@@ -362,52 +308,9 @@ export function parseFormControl(control: Element): FormControlOptions {
     ],
     ["form:option", "form:item"],
   );
-  const common = {
-    ...(attributeString(control, "form:id") ? { id: attributeString(control, "form:id") } : {}),
-    ...(attributeString(control, "form:name")
-      ? { name: attributeString(control, "form:name") }
-      : {}),
-    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
-    ...(attributeNumber(control, "form:tab-index") !== undefined
-      ? { tabIndex: attributeNumber(control, "form:tab-index") }
-      : {}),
-    ...(attributeString(control, "form:automatic-focus") === "true"
-      ? { automaticFocus: true }
-      : {}),
-  };
-  if (control.name === "form:text")
-    return {
-      control: "text",
-      ...common,
-      ...(attributeString(control, "form:current-value")
-        ? { value: attributeString(control, "form:current-value") }
-        : {}),
-      ...(attributeString(control, "office:value-type")
-        ? { valueType: attributeString(control, "office:value-type") as "float" | "string" }
-        : {}),
-      ...(attributeNumber(control, "form:max-length") !== undefined
-        ? { maxLength: attributeNumber(control, "form:max-length") }
-        : {}),
-    };
-  if (control.name === "form:checkbox") {
-    const state = attributeString(control, "form:current-state");
-    if (state !== "checked" && state !== "unchecked")
-      throw unknownSlideChild(control, "/office:forms");
-    return { control: "checkBox", ...common, checked: state === "checked" };
-  }
-  if (control.name === "form:listbox") {
-    const entries = childrenNamed(control, "form:option").map((option) => textOf(option));
-    const selected = childrenNamed(control, "form:option").findIndex(
-      (option) => attributeString(option, "form:selected") === "true",
-    );
-    return {
-      control: "dropDownList",
-      ...common,
-      entries,
-      ...(selected >= 0 ? { selectedIndex: selected } : {}),
-    };
-  }
-  throw unknownSlideChild(control, "/office:forms");
+  return parseCanonicalFormControl(control, (element) => {
+    throw unknownSlideChild(element, "/office:forms");
+  });
 }
 
 export function unknownSlideChild(element: Element, parentPath: string): OdpParseError {

@@ -1,7 +1,12 @@
+import type {
+  FormContainerOptions as CanonicalFormContainerOptions,
+  FormControlOptions as CanonicalFormControlOptions,
+} from "@office-open/core";
 import type { Element } from "@office-open/xml";
 
 import { OdfSchemaError } from "../errors";
 import {
+  attributeNumber,
   attributeString,
   childNamed,
   childrenNamed,
@@ -44,6 +49,110 @@ export const FORM_ELEMENT_NAMES = [
   "script:event-listener",
   "xforms:model",
 ] as const;
+
+export function canonicalFormControlXml(control: CanonicalFormControlOptions): string {
+  const common = {
+    "form:id": control.id,
+    "form:name": control.name,
+    "form:disabled": control.disabled,
+    "form:tab-index": control.tabIndex,
+    "form:automatic-focus": control.automaticFocus,
+  };
+  if (control.control === "checkBox")
+    return xmlElement("form:checkbox", {
+      ...common,
+      "form:current-state": control.checked ? "checked" : "unchecked",
+    });
+  if (control.control === "dropDownList")
+    return xmlElement(
+      "form:listbox",
+      common,
+      control.entries.map((label, optionIndex) =>
+        xmlElement(
+          "form:option",
+          { "form:selected": control.selectedIndex === optionIndex || undefined },
+          [escapeText(label)],
+        ),
+      ),
+    );
+  return xmlElement("form:text", {
+    ...common,
+    "office:value-type": control.valueType,
+    "form:current-value": control.value,
+    "form:max-length": control.maxLength,
+  });
+}
+
+export function parseCanonicalFormControl(
+  control: Element,
+  onError: (
+    control: Element,
+    reason: "invalid checkbox state" | "element has no canonical control mapping",
+  ) => never,
+): CanonicalFormControlOptions {
+  const id = attributeString(control, "form:id");
+  const name = attributeString(control, "form:name");
+  const tabIndex = attributeNumber(control, "form:tab-index");
+  const common = {
+    ...(id ? { id } : {}),
+    ...(name ? { name } : {}),
+    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
+    ...(tabIndex !== undefined ? { tabIndex } : {}),
+    ...(attributeString(control, "form:automatic-focus") === "true"
+      ? { automaticFocus: true }
+      : {}),
+  };
+  if (control.name === "form:text")
+    return {
+      control: "text",
+      ...common,
+      ...(attributeString(control, "form:current-value")
+        ? { value: attributeString(control, "form:current-value") }
+        : {}),
+      ...(attributeString(control, "office:value-type")
+        ? { valueType: attributeString(control, "office:value-type") as "float" | "string" }
+        : {}),
+      ...(attributeNumber(control, "form:max-length") !== undefined
+        ? { maxLength: attributeNumber(control, "form:max-length") }
+        : {}),
+    };
+  if (control.name === "form:checkbox") {
+    const state = attributeString(control, "form:current-state");
+    if (state !== "checked" && state !== "unchecked") onError(control, "invalid checkbox state");
+    return { control: "checkBox", ...common, checked: state === "checked" };
+  }
+  if (control.name === "form:listbox") {
+    const options = childrenNamed(control, "form:option");
+    const entries = options.map((option) => textOf(option));
+    const selected = options.findIndex(
+      (option) => attributeString(option, "form:selected") === "true",
+    );
+    return {
+      control: "dropDownList",
+      ...common,
+      entries,
+      ...(selected >= 0 ? { selectedIndex: selected } : {}),
+    };
+  }
+  return onError(control, "element has no canonical control mapping");
+}
+
+export function canonicalOfficeFormsXml(forms: CanonicalFormContainerOptions[]): string {
+  return xmlElement(
+    "office:forms",
+    {
+      "form:automatic-focus": forms[0]?.automaticFocus,
+      "form:apply-design-mode": forms[0]?.designMode,
+    },
+    forms.map((form) =>
+      xmlElement(
+        "form:form",
+        { "form:name": form.name },
+        form.controls.map((control) => canonicalFormControlXml(control)),
+      ),
+    ),
+  );
+}
 
 export const FORM_ATTRIBUTE_NAMES = [
   "form:id",

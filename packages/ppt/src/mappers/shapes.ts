@@ -528,11 +528,7 @@ function parsePictureShape(
   placeholderMetadata: ReturnType<typeof readShapePlaceholder>,
   context: DrawingContext,
 ): SlideChild | undefined {
-  const reference = style.blipReference;
-  const picture =
-    reference !== undefined && reference > 0 && reference < context.pictures.length
-      ? context.pictures[reference]
-      : undefined;
+  const picture = findPicture(context, style.blipReference);
   if (!picture) {
     return text
       ? {
@@ -604,16 +600,21 @@ function placeholderOptions(
 
 function resolveFill(style: EscherShapeStyle, context: DrawingContext) {
   if (style.fillType === 5) {
-    const reference = style.fillBlipReference;
-    const picture =
-      reference !== undefined && reference > 0 && reference < context.pictures.length
-        ? context.pictures[reference]
-        : undefined;
+    const picture = findPicture(context, style.fillBlipReference);
     return picture
       ? ({ type: "blip", data: picture.data, imageType: picture.type } as const)
       : undefined;
   }
   return style.fill;
+}
+
+function findPicture(
+  context: DrawingContext,
+  reference: number | undefined,
+): DrawingContext["pictures"][number] | undefined {
+  return reference !== undefined && reference > 0 && reference < context.pictures.length
+    ? context.pictures[reference]
+    : undefined;
 }
 
 interface ContainerText {

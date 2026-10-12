@@ -92,27 +92,6 @@ const REF_FOOTER = { x: 4038600, y: 6356350, cx: 4114800, cy: 365125 };
 const REF_SLDNUM = { x: 8610600, y: 6356350, cx: 2743200, cy: 365125 };
 
 /**
- * Resolve a placeholder option into a concrete EMU position, or null when
- * hidden. Legacy helper kept for callers that only need the rect.
- */
-export function resolvePos(
-  opt: boolean | MasterPlaceholderPosition | undefined,
-  ref: { x: number; y: number; cx: number; cy: number },
-  slideWidth: number,
-): { x: number; y: number; cx: number; cy: number } | null {
-  if (opt === false) return null;
-  if (opt === undefined || opt === true) {
-    return { x: sx(ref.x, slideWidth), y: ref.y, cx: sx(ref.cx, slideWidth), cy: ref.cy };
-  }
-  return {
-    x: convertToEmu(opt.x),
-    y: convertToEmu(opt.y),
-    cx: convertToEmu(opt.width),
-    cy: convertToEmu(opt.height),
-  };
-}
-
-/**
  * Resolve a placeholder option into a full definition (EMU position + carried
  * facets), or null when hidden. Fresh input (undefined/true) takes the
  * reference position; an explicit definition preserves its facets for emit.

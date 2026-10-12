@@ -26,60 +26,48 @@ export type LegacyFormat = "doc" | "xls" | "ppt" | "rtf" | "odt" | "ods" | "odp"
 
 const CORPUS_PASSWORDS = ["tika", "VelvetSweatshop", "Password1234_", "password"];
 
+async function verifyWithPasswords(
+  format: "DOC" | "XLS" | "PPT",
+  verify: (password?: string) => Promise<void> | void,
+): Promise<void> {
+  for (const password of [undefined, ...CORPUS_PASSWORDS]) {
+    try {
+      await verify(password);
+      return;
+    } catch (error) {
+      if (
+        password === undefined &&
+        !/encrypted|password/i.test(String((error as Error)?.message))
+      ) {
+        throw error;
+      }
+    }
+  }
+  throw new Error(`Encrypted legacy ${format} input could not be decrypted`);
+}
+
 export async function verify(format: LegacyFormat, data: Uint8Array): Promise<void> {
   if (format === "doc") {
-    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
-      try {
-        const options = parseLegacyDocument(data, password ? { password } : undefined);
-        parseDocument(await generateDocument(options));
-        return;
-      } catch (error) {
-        if (
-          password === undefined &&
-          !/encrypted|password/i.test(String((error as Error)?.message))
-        ) {
-          throw error;
-        }
-      }
-    }
-    throw new Error("Encrypted legacy DOC input could not be decrypted");
+    await verifyWithPasswords("DOC", async (password) => {
+      const options = parseLegacyDocument(data, password ? { password } : undefined);
+      return parseDocument(await generateDocument(options));
+    });
+    return;
   }
   if (format === "xls") {
-    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
-      try {
-        parseXlsxDocument(
-          await generateXlsxWorkbook(
-            parseLegacyWorkbook(data, password ? { password } : undefined),
-          ),
-        );
-        return;
-      } catch (error) {
-        if (
-          password === undefined &&
-          !/encrypted|password/i.test(String((error as Error)?.message))
-        ) {
-          throw error;
-        }
-      }
-    }
-    throw new Error("Encrypted legacy XLS input could not be decrypted");
+    await verifyWithPasswords("XLS", async (password) => {
+      parseXlsxDocument(
+        await generateXlsxWorkbook(parseLegacyWorkbook(data, password ? { password } : undefined)),
+      );
+    });
+    return;
   }
   if (format === "ppt") {
-    for (const password of [undefined, ...CORPUS_PASSWORDS]) {
-      try {
-        const options = parseLegacyPresentation(data, password ? { password } : undefined);
-        parsePresentation(await generatePptxPresentation(options));
-        return;
-      } catch (error) {
-        if (
-          password === undefined &&
-          !/encrypted|password/i.test(String((error as Error)?.message))
-        ) {
-          throw error;
-        }
-      }
-    }
-    throw new Error("Encrypted legacy PPT input could not be decrypted");
+    await verifyWithPasswords("PPT", async (password) => {
+      const options = parseLegacyPresentation(data, password ? { password } : undefined);
+      return parsePresentation(await generatePptxPresentation(options));
+    });
+    return;
   }
   if (format === "rtf") {
     parseDocument(await generateDocument(parseRtfDocument(Buffer.from(data).toString("latin1"))));

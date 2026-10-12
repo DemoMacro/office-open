@@ -8,6 +8,7 @@ import {
 } from "@office-open/core";
 import type { CompoundFileReader } from "@office-open/core";
 
+import { readUint16 } from "../binary";
 import { DocParseError } from "../errors";
 
 const FLAG_TABLE_ONE = 0x0200;
@@ -80,21 +81,4 @@ export function decryptWordStreams(
   const table = decrypt(encryptedTable);
   const data = reader.entry("Data") ? decrypt(reader.read("Data")) : undefined;
   return { word: decryptedWordCopy, table, tablePath, data };
-}
-
-function requireRange(bytes: Uint8Array, offset: number, length: number, message: string): void {
-  if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message, {
-      part: "stream",
-      offset,
-      length,
-      byteRange: [offset, offset + length],
-      reason: "out-of-range",
-    });
-  }
-}
-
-function readUint16(bytes: Uint8Array, offset: number, message: string): number {
-  requireRange(bytes, offset, 2, message);
-  return bytes[offset]! | (bytes[offset + 1]! << 8);
 }

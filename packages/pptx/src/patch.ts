@@ -380,10 +380,7 @@ const appendCommentsToMap = (
     : [];
 
   // buildCommentData continues author ids + per-author idx from existing authors.
-  const { authors, perSlide } = buildCommentData(
-    [{ comments: slideComments }] as unknown as SlideOptions[],
-    existingAuthors,
-  );
+  const { authors, perSlide } = buildCommentData([{ comments: slideComments }], existingAuthors);
   const mergedEntries = [...existingEntries, ...(perSlide[0] ?? [])];
   const mergedAuthors = authors ?? existingAuthors;
 

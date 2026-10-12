@@ -27,6 +27,8 @@ import {
   childNamed,
   childrenNamed,
   escapeText,
+  spreadsheetColumnName as columnLetters,
+  spreadsheetColumnNumber as columnNumber,
   textOf,
   xmlElement,
 } from "../runtime/xml";
@@ -933,24 +935,6 @@ function seriesValues(series: ChartSpaceOptions["series"][number]): readonly Cha
 
 function rowCount(table: OdfXmlNode): number {
   return (table.children ?? []).filter((child) => typeof child !== "string").length;
-}
-
-function columnLetters(number: number): string {
-  let value = number;
-  let result = "";
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    result = String.fromCharCode(65 + remainder) + result;
-    value = Math.floor((value - 1) / 26);
-  }
-  return result;
-}
-
-function columnNumber(column: string): number {
-  let total = 0;
-  for (let index = 0; index < column.length; index += 1)
-    total = total * 26 + column.charCodeAt(index) - 64;
-  return total;
 }
 
 function chartPath(element: Element, child?: string): string {

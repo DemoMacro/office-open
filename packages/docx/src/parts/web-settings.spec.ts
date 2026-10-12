@@ -1,11 +1,12 @@
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { documentNamespaceDialect } from "./document/document-attributes";
 import type { WebSettingsOptions } from "./web-settings";
 import { webSettingsDesc } from "./web-settings";
 
-const writeCtx = {} as unknown as WriteContext;
+const writeCtx = {} as unknown as Parameters<typeof documentNamespaceDialect>[0];
 const readCtx = {} as unknown as ReadContext;
 
 function roundTrip(opts: WebSettingsOptions) {

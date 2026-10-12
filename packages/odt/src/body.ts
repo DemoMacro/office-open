@@ -17,6 +17,7 @@ import {
   chartBodyXml,
   childNamed,
   childrenNamed,
+  descendantElements,
   generateOcf,
   hasOcfManifestOverlay,
   metaXml,
@@ -27,6 +28,8 @@ import {
   parseMeta,
   readOcf,
   readXml,
+  unknownAttributeNames,
+  unknownChildElement,
   xmlElement,
   type GraphicStyle,
   type OcfManifestOptions,
@@ -290,24 +293,26 @@ export function blocksXml(
   // Consecutive list paragraphs of the same level and kind group into one
   // text:list — the ODF shape for Word's bullet/numbering runs.
   while (index < blocks.length) {
-    const listInfo = listParagraphLevel(blocks[index]!);
+    const block = blocks[index];
+    if (!block) break;
+    const listInfo = listParagraphLevel(block);
     if (listInfo === undefined) {
-      parts.push(
-        blockXml(blocks[index]!, styles, images, notes, numbering, charts, embeddedObjects),
-      );
+      parts.push(blockXml(block, styles, images, notes, numbering, charts, embeddedObjects));
       index += 1;
       continue;
     }
     const group: SectionChild[] = [];
     while (index < blocks.length) {
-      const info = listParagraphLevel(blocks[index]!);
+      const item = blocks[index];
+      if (!item) break;
+      const info = listParagraphLevel(item);
       if (
         info?.level !== listInfo.level ||
         info?.ordered !== listInfo.ordered ||
         info?.reference !== listInfo.reference
       )
         break;
-      group.push(blocks[index]!);
+      group.push(item);
       index += 1;
     }
     parts.push(listXml(group, listInfo, styles, images, notes, numbering, charts, embeddedObjects));
@@ -468,12 +473,6 @@ function validateEmbeddedObjectBodies(
       "embedded-object-subdocument-missing",
     );
   }
-}
-
-function descendantElements(element: Element | undefined): Element[] {
-  return (element?.elements ?? []).flatMap((child) =>
-    child.type === "element" ? [child, ...descendantElements(child)] : [],
-  );
 }
 
 function objectMembers(
@@ -777,28 +776,25 @@ export function assertElementNames(
   allowedAttributes: string[],
   allowedChildren: string[] = [],
 ): void {
-  const unknown = Object.keys(element.attributes ?? {}).filter(
-    (name) => !allowedAttributes.includes(name),
-  );
-  if (unknown.length) {
+  const unknownAttributes = unknownAttributeNames(element, allowedAttributes);
+  if (unknownAttributes.length) {
     throw new OdtParseError(
-      `content.xml: unknown ${element.name} attribute: ${unknown.join(", ")}`,
+      `content.xml: unknown ${element.name} attribute: ${unknownAttributes.join(", ")}`,
       "content.xml",
       `/office:document-content/office:body/office:text/${element.name}`,
       element.name,
       "attribute has no canonical mapping",
     );
   }
-  for (const child of element.elements ?? []) {
-    if (child.type === "element" && !allowedChildren.includes(child.name ?? "")) {
-      throw new OdtParseError(
-        `content.xml: unknown ${element.name} child: ${child.name}`,
-        "content.xml",
-        `/office:document-content/office:body/office:text/${element.name}`,
-        child.name,
-        "child has no canonical mapping",
-      );
-    }
+  const unknownChild = unknownChildElement(element, allowedChildren);
+  if (unknownChild) {
+    throw new OdtParseError(
+      `content.xml: unknown ${element.name} child: ${unknownChild.name}`,
+      "content.xml",
+      `/office:document-content/office:body/office:text/${element.name}`,
+      unknownChild.name,
+      "child has no canonical mapping",
+    );
   }
 }
 

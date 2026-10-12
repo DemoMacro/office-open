@@ -7,6 +7,7 @@ import { control, rtfText } from "./escape";
 const EMU_PER_TWIP = 635;
 
 type RtfTransformation = MediaTransformation;
+type ShapeWrap = NonNullable<NonNullable<ShapeOptions["floating"]>["wrap"]>;
 
 function transformationExtents(
   transformation: RtfTransformation,
@@ -30,29 +31,31 @@ function twips(value: number, path: string): number {
   return Math.round(value / EMU_PER_TWIP);
 }
 
-function wrapControls(wrap: NonNullable<ShapeOptions["floating"]>["wrap"], path: string): string {
+function wrapTypeCode(wrap: ShapeWrap, path: string): number {
+  if (wrap.type === "topAndBottom") return 1;
+  if (wrap.type === "square") return 2;
+  if (wrap.type === "none") return 3;
+  if (wrap.type === "tight") return 4;
+  if (wrap.type === "through") return 5;
+  return reject("shape", `${path}.floating.wrap`, wrap.type, "unsupported RTF wrap type");
+}
+
+function wrapSideCode(side: ShapeWrap["side"]): number {
+  if (side === "left") return 1;
+  if (side === "right") return 2;
+  if (side === "largest") return 3;
+  return 0;
+}
+
+function wrapControls(wrap: ShapeWrap | undefined, path: string): string {
   if (!wrap) return "";
-  const type =
-    wrap.type === "topAndBottom"
-      ? 1
-      : wrap.type === "square"
-        ? 2
-        : wrap.type === "none"
-          ? 3
-          : wrap.type === "tight"
-            ? 4
-            : wrap.type === "through"
-              ? 5
-              : reject("shape", `${path}.floating.wrap`, wrap.type, "unsupported RTF wrap type");
+  const type = wrapTypeCode(wrap, path);
   let side = "";
   if (wrap.side !== undefined) {
     if (wrap.type !== "square" && wrap.type !== "tight" && wrap.type !== "through") {
       reject("shape", `${path}.floating.wrap.side`, wrap.side, "unsupported wrap side");
     }
-    side = control(
-      "shpwrk",
-      wrap.side === "left" ? 1 : wrap.side === "right" ? 2 : wrap.side === "largest" ? 3 : 0,
-    );
+    side = control("shpwrk", wrapSideCode(wrap.side));
   }
   return `${control("shpwr", type)}${side}`;
 }

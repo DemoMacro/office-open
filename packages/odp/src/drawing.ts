@@ -7,6 +7,7 @@ import {
   attributeNumber,
   attributeString,
   childNamed,
+  isExternalOdfUrl,
   lengthToEmu,
   xmlElement,
 } from "@office-open/odf";
@@ -150,7 +151,7 @@ export function parsePictureFrame(
   if (!data || !path) {
     const href = attributeString(image, "xlink:href");
     if (!href) return undefined;
-    if (isExternalUrl(href))
+    if (isExternalOdfUrl(href))
       return {
         picture: {
           type: pictureTypeFromUrl(href),
@@ -183,15 +184,9 @@ export function parsePictureFrame(
   };
 }
 
-function isExternalUrl(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
-}
-
 function pictureTypeFromUrl(value: string): PictureOptions["type"] {
   const extension = value.split(/[?#]/, 1)[0]?.split("/").pop()?.split(".").pop()?.toLowerCase();
-  return extension === "jpeg"
-    ? "jpg"
-    : ((["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "")
-        ? extension
-        : "png") as PictureOptions["type"]);
+  if (extension === "jpeg") return "jpg";
+  const supported = ["png", "jpg", "gif", "bmp", "emf", "wmf"].includes(extension ?? "");
+  return (supported ? extension : "png") as PictureOptions["type"];
 }

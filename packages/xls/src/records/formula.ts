@@ -1,3 +1,5 @@
+import { EXCEL_ERROR_LITERALS, columnLabel } from "../shared/cell-reference";
+
 export interface FormulaContext {
   baseRow: number;
   baseColumn: number;
@@ -5,16 +7,6 @@ export interface FormulaContext {
   sheetNameByExternIndex?: (index: number) => string | undefined;
   definedNameByIndex?: (index: number) => string | undefined;
   arrayData?: Uint8Array;
-}
-
-function columnLabel(column: number): string {
-  let value = column;
-  let label = "";
-  do {
-    label = String.fromCharCode(65 + (value % 26)) + label;
-    value = Math.floor(value / 26) - 1;
-  } while (value >= 0);
-  return label;
 }
 
 const BINARY_OPERATORS: Record<number, string> = {
@@ -142,17 +134,6 @@ function functionName(index: number): string {
   return FUNCTION_NAMES[index] ?? `FN_${index}`;
 }
 
-const EXCEL_ERRORS: Record<number, string> = {
-  0x00: "#NULL!",
-  0x07: "#DIV/0!",
-  0x0f: "#VALUE!",
-  0x17: "#REF!",
-  0x1d: "#NAME?",
-  0x24: "#NUM!",
-  0x2a: "#N/A",
-  0x2b: "#GETTING_DATA",
-};
-
 function readConstantArray(reader: FormulaReader): string {
   const columns = reader.byte() + 1;
   const rows = reader.byte() + 1;
@@ -175,7 +156,7 @@ function readConstantArray(reader: FormulaReader): string {
       } else if (type === 0x10) {
         const error = reader.byte();
         reader.bytes(7);
-        row.push(EXCEL_ERRORS[error] ?? `#ERROR_${error}`);
+        row.push(EXCEL_ERROR_LITERALS[error] ?? `#ERROR_${error}`);
       } else {
         throw new XlsParseError(
           `Invalid legacy XLS file: unsupported formula array constant 0x${type
@@ -247,7 +228,7 @@ function decodeTokens(
       }
       case 0x1c: {
         const error = reader.byte();
-        const message = EXCEL_ERRORS[error];
+        const message = EXCEL_ERROR_LITERALS[error];
         if (!message)
           throw new XlsParseError(
             `Invalid legacy XLS file: unsupported formula error 0x${error

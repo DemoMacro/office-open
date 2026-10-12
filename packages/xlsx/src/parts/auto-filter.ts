@@ -12,7 +12,7 @@
  */
 
 import { parseOnOff } from "@office-open/core";
-import { attrs, attr, attrNum, escapeXml, findChild, selfCloseElement } from "@office-open/xml";
+import { attrs, attr, attrNum, escapeXml, selfCloseElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
 import type {
@@ -280,10 +280,4 @@ export function parseAutoFilter(afEl: XmlElement): string | AutoFilterOptions {
   }
   const hasFilters = af.columns !== undefined || af.sortState !== undefined || af.uid !== undefined;
   return hasFilters ? af : af.ref;
-}
-
-/** Locate and parse an autoFilter child under a parent element. */
-export function findAndParseAutoFilter(parent: XmlElement): string | AutoFilterOptions | undefined {
-  const afEl = findChild(parent, "autoFilter");
-  return afEl ? parseAutoFilter(afEl) : undefined;
 }

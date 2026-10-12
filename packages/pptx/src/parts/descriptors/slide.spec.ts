@@ -1,9 +1,10 @@
-import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import type { SlideOptions } from "@shared/file";
 import type { TransitionOptions } from "@shared/transition";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { PptxWriteContext } from "../../context";
 import { slideDesc } from "./slide";
 
 const writeCtx = {
@@ -11,7 +12,7 @@ const writeCtx = {
   beginShapeScope() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
-} as unknown as WriteContext;
+} as unknown as PptxWriteContext;
 
 const readCtx = {
   resolveRelationship: () => undefined,

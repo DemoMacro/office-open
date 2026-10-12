@@ -26,10 +26,6 @@ import { tableDesc } from "./table";
 
 // ── Helpers ──
 
-export function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
 /**
  * Serialize a SlideChild to XML using descriptors.
  */

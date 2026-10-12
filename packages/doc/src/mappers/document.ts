@@ -43,6 +43,75 @@ import { decodePiece, projectText } from "./text";
 
 export { parseCommentRanges };
 
+function sectionProperties(section: SectionModel) {
+  const hasPageSize = section.width !== undefined && section.height !== undefined;
+  const hasPageMargin =
+    section.marginTop !== undefined ||
+    section.marginRight !== undefined ||
+    section.marginBottom !== undefined ||
+    section.marginLeft !== undefined;
+  if (!hasPageSize && !hasPageMargin) return {};
+  return {
+    properties: {
+      ...(hasPageSize
+        ? {
+            pageSize: {
+              width: section.width!,
+              height: section.height!,
+              ...(section.orientation ? { orientation: section.orientation } : {}),
+            },
+          }
+        : {}),
+      ...(hasPageMargin
+        ? {
+            pageMargin: {
+              ...(section.marginTop !== undefined ? { top: section.marginTop } : {}),
+              ...(section.marginRight !== undefined ? { right: section.marginRight } : {}),
+              ...(section.marginBottom !== undefined ? { bottom: section.marginBottom } : {}),
+              ...(section.marginLeft !== undefined ? { left: section.marginLeft } : {}),
+            },
+          }
+        : {}),
+    },
+  };
+}
+
+function sectionHeaders(
+  story:
+    | { defaultHeader: SectionChild[]; evenHeader: SectionChild[]; firstHeader: SectionChild[] }
+    | undefined,
+) {
+  if (!story) return {};
+  const hasHeaders =
+    story.defaultHeader.length > 0 || story.evenHeader.length > 0 || story.firstHeader.length > 0;
+  if (!hasHeaders) return {};
+  return {
+    headers: {
+      ...(story.defaultHeader.length > 0 ? { default: story.defaultHeader } : {}),
+      ...(story.evenHeader.length > 0 ? { even: story.evenHeader } : {}),
+      ...(story.firstHeader.length > 0 ? { first: story.firstHeader } : {}),
+    },
+  };
+}
+
+function sectionFooters(
+  story:
+    | { defaultFooter: SectionChild[]; evenFooter: SectionChild[]; firstFooter: SectionChild[] }
+    | undefined,
+) {
+  if (!story) return {};
+  const hasFooters =
+    story.defaultFooter.length > 0 || story.evenFooter.length > 0 || story.firstFooter.length > 0;
+  if (!hasFooters) return {};
+  return {
+    footers: {
+      ...(story.defaultFooter.length > 0 ? { default: story.defaultFooter } : {}),
+      ...(story.evenFooter.length > 0 ? { even: story.evenFooter } : {}),
+      ...(story.firstFooter.length > 0 ? { first: story.firstFooter } : {}),
+    },
+  };
+}
+
 export function parseInternal(data: Uint8Array, password?: string): DocumentOptions {
   let reader: CompoundFileReader;
   try {
@@ -342,85 +411,12 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
 
   const result: DocumentOptions = {
     sections: sectionModels.map((sectionModel, index) => {
-      const hasPageSize = sectionModel.width !== undefined && sectionModel.height !== undefined;
-      const hasPageMargin =
-        sectionModel.marginTop !== undefined ||
-        sectionModel.marginRight !== undefined ||
-        sectionModel.marginBottom !== undefined ||
-        sectionModel.marginLeft !== undefined;
+      const story = sectionHeaderStories[index];
       return {
         children: sectionChildGroups[index] ?? [],
-        ...(hasPageSize || hasPageMargin
-          ? {
-              properties: {
-                ...(hasPageSize
-                  ? {
-                      pageSize: {
-                        width: sectionModel.width!,
-                        height: sectionModel.height!,
-                        ...(sectionModel.orientation
-                          ? { orientation: sectionModel.orientation }
-                          : {}),
-                      },
-                    }
-                  : {}),
-                ...(hasPageMargin
-                  ? {
-                      pageMargin: {
-                        ...(sectionModel.marginTop !== undefined
-                          ? { top: sectionModel.marginTop }
-                          : {}),
-                        ...(sectionModel.marginRight !== undefined
-                          ? { right: sectionModel.marginRight }
-                          : {}),
-                        ...(sectionModel.marginBottom !== undefined
-                          ? { bottom: sectionModel.marginBottom }
-                          : {}),
-                        ...(sectionModel.marginLeft !== undefined
-                          ? { left: sectionModel.marginLeft }
-                          : {}),
-                      },
-                    }
-                  : {}),
-              },
-            }
-          : {}),
-        ...(sectionHeaderStories[index] &&
-        (sectionHeaderStories[index]!.defaultHeader.length > 0 ||
-          sectionHeaderStories[index]!.evenHeader.length > 0 ||
-          sectionHeaderStories[index]!.firstHeader.length > 0)
-          ? {
-              headers: {
-                ...(sectionHeaderStories[index]!.defaultHeader.length > 0
-                  ? { default: sectionHeaderStories[index]!.defaultHeader }
-                  : {}),
-                ...(sectionHeaderStories[index]!.evenHeader.length > 0
-                  ? { even: sectionHeaderStories[index]!.evenHeader }
-                  : {}),
-                ...(sectionHeaderStories[index]!.firstHeader.length > 0
-                  ? { first: sectionHeaderStories[index]!.firstHeader }
-                  : {}),
-              },
-            }
-          : {}),
-        ...(sectionHeaderStories[index] &&
-        (sectionHeaderStories[index]!.defaultFooter.length > 0 ||
-          sectionHeaderStories[index]!.evenFooter.length > 0 ||
-          sectionHeaderStories[index]!.firstFooter.length > 0)
-          ? {
-              footers: {
-                ...(sectionHeaderStories[index]!.defaultFooter.length > 0
-                  ? { default: sectionHeaderStories[index]!.defaultFooter }
-                  : {}),
-                ...(sectionHeaderStories[index]!.evenFooter.length > 0
-                  ? { even: sectionHeaderStories[index]!.evenFooter }
-                  : {}),
-                ...(sectionHeaderStories[index]!.firstFooter.length > 0
-                  ? { first: sectionHeaderStories[index]!.firstFooter }
-                  : {}),
-              },
-            }
-          : {}),
+        ...sectionProperties(sectionModel),
+        ...sectionHeaders(story),
+        ...sectionFooters(story),
       };
     }),
     ...(stylesheet.styles.length > 0

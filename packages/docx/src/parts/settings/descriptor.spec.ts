@@ -2,19 +2,26 @@ import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { documentNamespaceDialect } from "../document/document-attributes";
 import { mailMergeRecipientsDesc, settingsDesc } from "./descriptor";
 import type { CompatibilityOptions, SettingsOptions } from "./settings";
 
 const writeCtx = {
   addRelationship: () => "rId1",
   addMedia: () => "",
-} as unknown as WriteContext;
+} as unknown as Parameters<typeof documentNamespaceDialect>[0];
 
 const readCtx = {
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
 } as unknown as ReadContext;
+
+const unsupportedWriteCtx: WriteContext = {
+  addRelationship: () => "rId1",
+  addMedia: () => "",
+  addHyperlink: () => {},
+};
 
 function roundTrip(opts: SettingsOptions): SettingsOptions {
   const xml = settingsDesc.stringify(opts, writeCtx)!;
@@ -379,7 +386,7 @@ describe("mailMergeRecipientsDesc round-trip", () => {
         { column: 2, uniqueTag: "BB==" },
       ],
     };
-    const xml = mailMergeRecipientsDesc.stringify(opts, writeCtx)!;
+    const xml = mailMergeRecipientsDesc.stringify(opts, unsupportedWriteCtx)!;
     expect(xml).toContain('<w:active w:val="0"/>');
     expect(xml).toContain('<w:column w:val="2"/>');
     expect(xml).toContain('<w:uniqueTag w:val="BB=="/>');

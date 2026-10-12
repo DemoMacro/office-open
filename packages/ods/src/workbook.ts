@@ -11,16 +11,20 @@ import {
   chartBodyXml,
   childNamed,
   childrenNamed,
-  escapeText,
+  canonicalOfficeFormsXml,
+  descendantElements,
   generateOcf,
   hasOcfManifestOverlay,
+  isExternalOdfUrl,
   metaXml,
   OdfSchemaError,
   parseEmbeddedCharts,
+  parseCanonicalFormControl,
   parseMeta,
   readOcf,
   readXml,
-  textOf,
+  unknownAttributeNames,
+  unknownChildElement,
   xmlElement,
   type OcfManifestOptions,
   type OdfPackageFiles,
@@ -167,10 +171,6 @@ export function unsupportedOdsValue(name: string, reason: string): OdsParseError
   );
 }
 
-function isExternalUrl(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
-}
-
 export function parseWorkbook(data: Uint8Array): OdsDocumentOptions {
   try {
     return parseOdsBody(data);
@@ -220,7 +220,7 @@ function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
       for (const cell of row.cells ?? []) {
         for (const graphic of cell.graphics ?? []) {
           if (graphic.type === "image") {
-            if (isExternalUrl(graphic.href)) {
+            if (isExternalOdfUrl(graphic.href)) {
               graphic.sourceUrl = graphic.href;
               graphic.data = undefined;
               continue;
@@ -408,53 +408,7 @@ export function assertCalculationChildren(
 
 export function formsXml(forms: WorkbookOptions["forms"]): string {
   if (!forms?.length) return "";
-  return xmlElement(
-    "office:forms",
-    {
-      "form:automatic-focus": forms[0]?.automaticFocus,
-      "form:apply-design-mode": forms[0]?.designMode,
-    },
-    forms.map((form) =>
-      xmlElement(
-        "form:form",
-        { "form:name": form.name },
-        form.controls.map((control) => formControlXml(control)),
-      ),
-    ),
-  );
-}
-
-export function formControlXml(control: FormControlOptions): string {
-  const common = {
-    "form:id": control.id,
-    "form:name": control.name,
-    "form:disabled": control.disabled,
-    "form:tab-index": control.tabIndex,
-    "form:automatic-focus": control.automaticFocus,
-  };
-  if (control.control === "checkBox")
-    return xmlElement("form:checkbox", {
-      ...common,
-      "form:current-state": control.checked ? "checked" : "unchecked",
-    });
-  if (control.control === "dropDownList")
-    return xmlElement(
-      "form:listbox",
-      common,
-      control.entries.map((label, optionIndex) =>
-        xmlElement(
-          "form:option",
-          { "form:selected": control.selectedIndex === optionIndex || undefined },
-          [escapeText(label)],
-        ),
-      ),
-    );
-  return xmlElement("form:text", {
-    ...common,
-    "office:value-type": control.valueType,
-    "form:current-value": control.value,
-    "form:max-length": control.maxLength,
-  });
+  return canonicalOfficeFormsXml(forms);
 }
 
 export function parseForms(body: Element | undefined): FormContainerOptions[] {
@@ -487,13 +441,7 @@ export function parseForms(body: Element | undefined): FormContainerOptions[] {
     });
 }
 
-export function descendantElements(element: Element | undefined): Element[] {
-  return (element?.elements ?? []).flatMap((child) =>
-    child.type === "element" ? [child, ...descendantElements(child)] : [],
-  );
-}
-
-export function parseFormControl(control: Element): FormControlOptions {
+function parseFormControl(control: Element): FormControlOptions {
   assertElementNames(
     control,
     [
@@ -510,57 +458,16 @@ export function parseFormControl(control: Element): FormControlOptions {
     ],
     ["form:option", "form:item"],
   );
-  const common = {
-    ...(attributeString(control, "form:id") ? { id: attributeString(control, "form:id") } : {}),
-    ...(attributeString(control, "form:name")
-      ? { name: attributeString(control, "form:name") }
-      : {}),
-    ...(attributeString(control, "form:disabled") === "true" ? { disabled: true } : {}),
-    ...(attributeNumber(control, "form:tab-index") !== undefined
-      ? { tabIndex: attributeNumber(control, "form:tab-index") }
-      : {}),
-    ...(attributeString(control, "form:automatic-focus") === "true"
-      ? { automaticFocus: true }
-      : {}),
-  };
-  if (control.name === "form:text")
-    return {
-      control: "text",
-      ...common,
-      ...(attributeString(control, "form:current-value")
-        ? { value: attributeString(control, "form:current-value") }
-        : {}),
-      ...(attributeString(control, "office:value-type")
-        ? { valueType: attributeString(control, "office:value-type") as "float" | "string" }
-        : {}),
-      ...(attributeNumber(control, "form:max-length") !== undefined
-        ? { maxLength: attributeNumber(control, "form:max-length") }
-        : {}),
-    };
-  if (control.name === "form:checkbox") {
-    const state = attributeString(control, "form:current-state");
-    if (state !== "checked" && state !== "unchecked")
-      throw unknownOdsElement(control, "", control.name ?? "", "invalid checkbox state");
-    return { control: "checkBox", ...common, checked: state === "checked" };
-  }
-  if (control.name === "form:listbox") {
-    const entries = childrenNamed(control, "form:option").map((option) => textOf(option));
-    const selected = childrenNamed(control, "form:option").findIndex(
-      (option) => attributeString(option, "form:selected") === "true",
+  return parseCanonicalFormControl(control, (element, reason) => {
+    if (reason === "invalid checkbox state")
+      throw unknownOdsElement(element, "", element.name ?? "", reason);
+    throw unknownOdsElement(
+      element,
+      "/office:spreadsheet/office:forms",
+      element.name ?? "",
+      reason,
     );
-    return {
-      control: "dropDownList",
-      ...common,
-      entries,
-      ...(selected >= 0 ? { selectedIndex: selected } : {}),
-    };
-  }
-  throw unknownOdsElement(
-    control,
-    "/office:spreadsheet/office:forms",
-    control.name ?? "",
-    "element has no canonical control mapping",
-  );
+  });
 }
 
 export function semanticsXml(calculation: WorkbookOptions["calculation"]): string {
@@ -684,25 +591,22 @@ export function assertElementNames(
   allowedAttributes: string[],
   allowedChildren: string[] = [],
 ): void {
-  const unknown = Object.keys(element.attributes ?? {}).filter(
-    (name) => !allowedAttributes.includes(name),
-  );
-  if (unknown.length) {
+  const unknownAttributes = unknownAttributeNames(element, allowedAttributes);
+  if (unknownAttributes.length) {
     throw unknownOdsElement(
       element,
       `/office:document-content/office:body${element.name === "form:form" ? "/office:spreadsheet/office:forms" : ""}`,
-      unknown[0] ?? "",
+      unknownAttributes[0] ?? "",
       "attribute has no canonical mapping",
     );
   }
-  for (const child of element.elements ?? []) {
-    if (child.type === "element" && !allowedChildren.includes(child.name ?? "")) {
-      throw unknownOdsElement(
-        element,
-        `/office:document-content/office:body${element.name === "form:form" ? "/office:spreadsheet/office:forms" : ""}`,
-        child.name ?? "",
-        "child has no canonical mapping",
-      );
-    }
+  const unknownChild = unknownChildElement(element, allowedChildren);
+  if (unknownChild) {
+    throw unknownOdsElement(
+      element,
+      `/office:document-content/office:body${element.name === "form:form" ? "/office:spreadsheet/office:forms" : ""}`,
+      unknownChild.name ?? "",
+      "child has no canonical mapping",
+    );
   }
 }

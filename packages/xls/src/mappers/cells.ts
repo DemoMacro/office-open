@@ -1,13 +1,8 @@
-import type {
-  CellOptions,
-  FontOptions,
-  FormulaOptions,
-  RowOptions,
-  StyleOptions,
-} from "@office-open/xlsx";
+import type { CellOptions, FontOptions, FormulaOptions, StyleOptions } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
-import type { SheetState, TxoTextPart, WorkbookState, XfStyle } from "./models";
+import { columnLabel, EXCEL_ERROR_LITERALS } from "../shared/cell-reference";
+import type { SheetRow, SheetState, TxoTextPart, WorkbookState, XfStyle } from "./models";
 const DEFAULT_FONT: FontOptions = {
   size: 10,
   bold: false,
@@ -31,16 +26,6 @@ export function decodeRk(value: number): number {
   return divideBy100 ? result / 100 : result;
 }
 
-export function columnLabel(column: number): string {
-  let value = column;
-  let label = "";
-  do {
-    label = String.fromCharCode(65 + (value % 26)) + label;
-    value = Math.floor(value / 26) - 1;
-  } while (value >= 0);
-  return label;
-}
-
 export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
   const total = parts.reduce((length, part) => length + part.byteLength, 0);
   const bytes = new Uint8Array(total);
@@ -60,10 +45,10 @@ export function reference(row: number, column: number): string {
   return `${columnLabel(column)}${row + 1}`;
 }
 
-export function ensureRow(sheet: SheetState, rowNumber: number): RowOptions {
+export function ensureRow(sheet: SheetState, rowNumber: number): SheetRow {
   const existing = sheet.rows.get(rowNumber);
   if (existing) return existing;
-  const row: RowOptions = { rowNumber: rowNumber + 1, cells: [] };
+  const row: SheetRow = { rowNumber: rowNumber + 1, cells: [] };
   sheet.rows.set(rowNumber, row);
   return row;
 }
@@ -140,17 +125,7 @@ export function formulaOptions(
 }
 
 export function errorLiteral(code: number): string {
-  const literals: { [code: number]: string } = {
-    0x00: "#NULL!",
-    0x07: "#DIV/0!",
-    0x0f: "#VALUE!",
-    0x17: "#REF!",
-    0x1d: "#NAME?",
-    0x24: "#NUM!",
-    0x2a: "#N/A",
-    0x2b: "#GETTING_DATA",
-  };
-  const literal = literals[code];
+  const literal = EXCEL_ERROR_LITERALS[code];
   if (!literal)
     throw new XlsParseError(
       `Invalid legacy XLS file: unknown formula error code 0x${code.toString(16)}`,

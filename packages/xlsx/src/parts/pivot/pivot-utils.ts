@@ -753,12 +753,6 @@ export interface TupleCacheEntryOptions {
   underline?: boolean;
 }
 
-/** Deleted field (CT_DeletedField) */
-export interface DeletedFieldOptions {
-  /** Field name */
-  name: string;
-}
-
 /** Group member (CT_GroupMember) */
 export interface GroupMemberOptions {
   /** Unique name (required) */

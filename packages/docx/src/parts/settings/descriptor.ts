@@ -865,7 +865,10 @@ const SETTINGS_NAMESPACE_KEYS = [
 
 // ── Descriptor ──
 
-export const settingsDesc: CustomDescriptor<SettingsOptions> = {
+export const settingsDesc: CustomDescriptor<
+  SettingsOptions,
+  Parameters<typeof documentNamespaceDialect>[0]
+> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -1136,7 +1139,7 @@ export const settingsDesc: CustomDescriptor<SettingsOptions> = {
     const body = p.join("");
     return `<w:settings ${documentNamespaceAttributesInDialect(
       SETTINGS_NAMESPACE_KEYS,
-      documentNamespaceDialect(ctx as never),
+      documentNamespaceDialect(ctx),
     )}>${body}</w:settings>`;
   },
 

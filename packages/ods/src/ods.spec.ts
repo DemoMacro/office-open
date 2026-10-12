@@ -340,6 +340,18 @@ describe("ODS codec", () => {
     });
   });
 
+  it("treats parent-relative image references as external source URLs", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value="1"><draw:frame svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:image xlink:href="../logo.png"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const graphic = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0]?.rows?.[0]?.cells?.[0]?.graphics?.[0];
+    expect(graphic).toMatchObject({
+      type: "image",
+      href: "../logo.png",
+      sourceUrl: "../logo.png",
+    });
+  });
+
   it("round-trips cell object frames and rejects unknown frame children", () => {
     const object = {
       type: "object" as const,

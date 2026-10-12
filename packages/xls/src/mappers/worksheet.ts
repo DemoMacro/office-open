@@ -1,4 +1,4 @@
-import type { NoteAnchorOptions, WorksheetOptions } from "@office-open/xlsx";
+import type { ConditionalFormatRule, NoteAnchorOptions, WorksheetOptions } from "@office-open/xlsx";
 
 import { XlsParseError } from "../errors";
 import type { BiffRecord } from "../records";
@@ -36,6 +36,112 @@ import type {
 import { readCString } from "./workbook-globals";
 import { parseHyperlink } from "./workbook-globals";
 
+type ConditionalOperator = NonNullable<ConditionalFormatRule["operator"]>;
+
+function dataView(bytes: Uint8Array): DataView {
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+function parsePageMargins(
+  record: BiffRecord,
+  margins: WorksheetOptions["pageMargins"],
+): NonNullable<WorksheetOptions["pageMargins"]> {
+  if (record.body.byteLength < 8)
+    throw new XlsParseError("Invalid legacy XLS file: truncated page margin");
+  const value = dataView(record.body).getFloat64(0, true);
+  if (record.code === RecordCode.LeftMargin) return { ...margins, left: value };
+  if (record.code === RecordCode.RightMargin) return { ...margins, right: value };
+  if (record.code === RecordCode.TopMargin) return { ...margins, top: value };
+  return { ...margins, bottom: value };
+}
+
+function parsePageSetup(record: BiffRecord): {
+  pageSetup: NonNullable<WorksheetOptions["pageSetup"]>;
+  headerFooterMargins: Pick<NonNullable<WorksheetOptions["pageMargins"]>, "header" | "footer">;
+} {
+  if (record.body.byteLength < 32)
+    throw new XlsParseError("Invalid legacy XLS file: truncated PAGESETUP");
+  const view = dataView(record.body);
+  const flags = view.getUint16(10, true);
+  return {
+    pageSetup: {
+      paperSize: view.getUint16(0, true),
+      scale: view.getUint16(2, true),
+      fitToWidth: view.getUint16(6, true),
+      fitToHeight: view.getUint16(8, true),
+      pageOrder: (flags & 1) === 0 ? "downThenOver" : "overThenDown",
+      orientation: (flags & 2) === 0 ? "landscape" : "portrait",
+    },
+    headerFooterMargins: {
+      header: view.getFloat64(16, true),
+      footer: view.getFloat64(24, true),
+    },
+  };
+}
+
+function parseConditionalFormatRange(record: BiffRecord): { reference: string; remaining: number } {
+  if (record.body.byteLength < 14)
+    throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT");
+  const view = dataView(record.body);
+  const rangeCount = view.getUint16(12, true);
+  if (record.body.byteLength < 14 + rangeCount * 8)
+    throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT ranges");
+  return {
+    reference: `${reference(view.getUint16(4, true), view.getUint16(8, true))}:${reference(
+      view.getUint16(6, true),
+      view.getUint16(10, true),
+    )}`,
+    remaining: view.getUint16(0, true),
+  };
+}
+
+function parseConditionalRule(record: BiffRecord, priority: number): ConditionalFormatRule {
+  if (record.body.byteLength < 12)
+    throw new XlsParseError("Invalid legacy XLS file: conditional format rule outside CONDFMT");
+  const view = dataView(record.body);
+  const type = record.body[0]!;
+  const operatorCode = record.body[1]!;
+  const firstLength = view.getUint16(2, true);
+  const secondLength = view.getUint16(4, true);
+  const flags = view.getUint32(6, true);
+  let offset = 12;
+  if ((flags & 0x04000000) !== 0) offset += 118;
+  if ((flags & 0x10000000) !== 0) offset += 8;
+  if ((flags & 0x20000000) !== 0) offset += 4;
+  const decodeRuleFormula = (length: number): string | undefined => {
+    if (length === 0) return undefined;
+    const bytes = record.body.subarray(offset, offset + length);
+    offset += length;
+    try {
+      return decodeFormula(bytes, {
+        baseRow: 0,
+        baseColumn: 0,
+        arrayData: record.body.subarray(offset),
+      }).formula;
+    } catch {
+      return `#FORMULA_${length}`;
+    }
+  };
+  const formulas = [decodeRuleFormula(firstLength), decodeRuleFormula(secondLength)].filter(
+    (formula): formula is string => formula !== undefined,
+  );
+  return {
+    type: type === 1 ? "expression" : "cellIs",
+    operator: CONDITIONAL_OPERATORS[operatorCode] ?? "between",
+    formulas,
+    priority,
+  };
+}
+
+const CONDITIONAL_OPERATORS: Partial<Record<number, ConditionalOperator>> = {
+  3: "equal",
+  4: "notEqual",
+  5: "greaterThan",
+  6: "lessThan",
+  7: "greaterThanOrEqual",
+  8: "lessThanOrEqual",
+};
+
 function formulaDecodeError(error: unknown, record: BiffRecord): XlsParseError {
   const source = error instanceof XlsParseError ? error : undefined;
   return new XlsParseError(
@@ -59,14 +165,12 @@ function setCellFormula(
   formula: NonNullable<ReturnType<typeof formulaOptions>>,
 ): void {
   const rowOptions = ensureRow(sheet, row);
-  const cell = rowOptions.cells?.find(
-    (candidate) => candidate.reference === reference(row, column),
-  );
+  const cell = rowOptions.cells.find((candidate) => candidate.reference === reference(row, column));
   if (cell) {
     cell.formula = formula;
     return;
   }
-  rowOptions.cells?.push({
+  rowOptions.cells.push({
     ...makeCell(row, column, 0, cachedFormulaResult(new Uint8Array(8)), state),
     formula,
   });
@@ -157,7 +261,7 @@ export function parseWorksheetStream(
       } catch {
         throw new XlsParseError("Invalid legacy XLS file: truncated formula string");
       }
-      ensureRow(sheet, pendingFormula.row).cells!.push({
+      ensureRow(sheet, pendingFormula.row).cells.push({
         ...makeCell(
           pendingFormula.row,
           pendingFormula.column,
@@ -237,7 +341,7 @@ export function parseWorksheetStream(
         );
         const row = view.getUint16(0, true);
         const column = view.getUint16(2, true);
-        ensureRow(sheet, row).cells!.push({
+        ensureRow(sheet, row).cells.push({
           reference: reference(row, column),
           value: null,
           style: view.getUint16(4, true),
@@ -258,7 +362,7 @@ export function parseWorksheetStream(
         const style = view.getUint16(4, true);
         const value = record.body[6]!;
         const isError = record.body[7]! !== 0;
-        ensureRow(sheet, row).cells!.push(
+        ensureRow(sheet, row).cells.push(
           makeCell(row, column, style, isError ? errorLiteral(value) : value !== 0, state),
         );
         break;
@@ -284,7 +388,7 @@ export function parseWorksheetStream(
         for (let index = 0; index < count; index++) {
           const column = firstColumn + index;
           const style = view.getUint16(4 + index * 2, true);
-          rowOptions.cells!.push({ reference: reference(row, column), value: null, style });
+          rowOptions.cells.push({ reference: reference(row, column), value: null, style });
         }
         break;
       }
@@ -298,7 +402,7 @@ export function parseWorksheetStream(
             record.body.byteOffset,
             record.body.byteLength,
           );
-          ensureRow(sheet, view.getUint16(0, true)).cells!.push(
+          ensureRow(sheet, view.getUint16(0, true)).cells.push(
             makeCell(view.getUint16(0, true), view.getUint16(2, true), 0, view.getFloat64(7, true)),
           );
           break;
@@ -312,7 +416,7 @@ export function parseWorksheetStream(
         );
         const row = view.getUint16(0, true);
         const column = view.getUint16(2, true);
-        ensureRow(sheet, row).cells!.push(
+        ensureRow(sheet, row).cells.push(
           makeCell(row, column, view.getUint16(4, true), view.getFloat64(6, true), state),
         );
         break;
@@ -325,7 +429,7 @@ export function parseWorksheetStream(
           record.body.byteOffset,
           record.body.byteLength,
         );
-        ensureRow(sheet, view.getUint16(0, true)).cells!.push(
+        ensureRow(sheet, view.getUint16(0, true)).cells.push(
           makeCell(
             view.getUint16(0, true),
             view.getUint16(2, true),
@@ -356,7 +460,7 @@ export function parseWorksheetStream(
         } catch {
           throw new XlsParseError("Invalid legacy XLS file: truncated label cell");
         }
-        ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
+        ensureRow(sheet, row).cells.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.Biff2Label: {
@@ -373,7 +477,7 @@ export function parseWorksheetStream(
         } catch {
           throw new XlsParseError("Invalid legacy XLS file: truncated BIFF2 label cell");
         }
-        ensureRow(sheet, view.getUint16(0, true)).cells!.push(
+        ensureRow(sheet, view.getUint16(0, true)).cells.push(
           makeCell(view.getUint16(0, true), view.getUint16(2, true), 0, text.value, state),
         );
         break;
@@ -395,7 +499,7 @@ export function parseWorksheetStream(
         } catch {
           throw new XlsParseError("Invalid legacy XLS file: truncated rich label cell");
         }
-        ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
+        ensureRow(sheet, row).cells.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.LabelSst: {
@@ -413,7 +517,7 @@ export function parseWorksheetStream(
         const value = state.sharedStrings[index];
         if (value === undefined)
           throw new XlsParseError(`Invalid legacy XLS file: missing shared string ${index}`);
-        ensureRow(sheet, row).cells!.push(makeCell(row, column, style, value, state));
+        ensureRow(sheet, row).cells.push(makeCell(row, column, style, value, state));
         break;
       }
       case RecordCode.Rk: {
@@ -426,7 +530,7 @@ export function parseWorksheetStream(
         );
         const row = view.getUint16(0, true);
         const column = view.getUint16(2, true);
-        ensureRow(sheet, row).cells!.push(
+        ensureRow(sheet, row).cells.push(
           makeCell(row, column, view.getUint16(4, true), decodeRk(view.getInt32(6, true)), state),
         );
         break;
@@ -452,7 +556,7 @@ export function parseWorksheetStream(
           const column = firstColumn + index;
           const style = view.getUint16(offset, true);
           const value = decodeRk(view.getInt32(offset + 2, true));
-          rowOptions.cells!.push(makeCell(row, column, style, value, state));
+          rowOptions.cells.push(makeCell(row, column, style, value, state));
         }
         break;
       }
@@ -492,7 +596,7 @@ export function parseWorksheetStream(
 
           continue;
         }
-        ensureRow(sheet, row).cells!.push({
+        ensureRow(sheet, row).cells.push({
           ...makeCell(row, column, view.getUint16(4, true), result, state),
           formula: formulaOptions(expression),
         });
@@ -720,86 +824,15 @@ export function parseWorksheetStream(
         break;
       }
       case RecordCode.CondFmt: {
-        if (record.body.byteLength < 14)
-          throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT");
-        const view = new DataView(
-          record.body.buffer,
-          record.body.byteOffset,
-          record.body.byteLength,
-        );
-        const rangeCount = view.getUint16(12, true);
-        if (record.body.byteLength < 14 + rangeCount * 8)
-          throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT ranges");
-        const range = new DataView(
-          record.body.buffer,
-          record.body.byteOffset,
-          record.body.byteLength,
-        );
-        conditional = {
-          reference: `${reference(range.getUint16(4, true), range.getUint16(8, true))}:${reference(
-            range.getUint16(6, true),
-            range.getUint16(10, true),
-          )}`,
-          remaining: view.getUint16(0, true),
-          rules: [],
-        };
+        conditional = { ...parseConditionalFormatRange(record), rules: [] };
         break;
       }
       case RecordCode.ConditionalFormat: {
-        if (!conditional || record.body.byteLength < 12)
+        if (!conditional)
           throw new XlsParseError(
             "Invalid legacy XLS file: conditional format rule outside CONDFMT",
           );
-        const view = new DataView(
-          record.body.buffer,
-          record.body.byteOffset,
-          record.body.byteLength,
-        );
-        const type = record.body[0]!;
-        const operatorCode = record.body[1]!;
-        const firstLength = view.getUint16(2, true);
-        const secondLength = view.getUint16(4, true);
-        const flags = view.getUint32(6, true);
-        let offset = 12;
-        if ((flags & 0x04000000) !== 0) offset += 118;
-        if ((flags & 0x10000000) !== 0) offset += 8;
-        if ((flags & 0x20000000) !== 0) offset += 4;
-        const decodeRuleFormula = (length: number): string | undefined => {
-          if (length === 0) return undefined;
-          const bytes = record.body.subarray(offset, offset + length);
-          offset += length;
-          try {
-            return decodeFormula(bytes, {
-              baseRow: 0,
-              baseColumn: 0,
-              arrayData: record.body.subarray(offset),
-            }).formula;
-          } catch {
-            return `#FORMULA_${length}`;
-          }
-        };
-        const formulas = [decodeRuleFormula(firstLength), decodeRuleFormula(secondLength)].filter(
-          (formula): formula is string => formula !== undefined,
-        );
-        conditional.rules.push({
-          type: type === 1 ? "expression" : "cellIs",
-          operator:
-            operatorCode === 3
-              ? "equal"
-              : operatorCode === 4
-                ? "notEqual"
-                : operatorCode === 5
-                  ? "greaterThan"
-                  : operatorCode === 6
-                    ? "lessThan"
-                    : operatorCode === 7
-                      ? "greaterThanOrEqual"
-                      : operatorCode === 8
-                        ? "lessThanOrEqual"
-                        : "between",
-          formulas,
-          priority: conditional.rules.length + 1,
-        });
+        conditional.rules.push(parseConditionalRule(record, conditional.rules.length + 1));
         conditional.remaining--;
         if (conditional.remaining === 0) {
           worksheetExtras.conditionalFormats = [
@@ -828,47 +861,13 @@ export function parseWorksheetStream(
       case RecordCode.RightMargin:
       case RecordCode.TopMargin:
       case RecordCode.BottomMargin: {
-        if (record.body.byteLength < 8)
-          throw new XlsParseError("Invalid legacy XLS file: truncated page margin");
-        const value = new DataView(
-          record.body.buffer,
-          record.body.byteOffset,
-          record.body.byteLength,
-        ).getFloat64(0, true);
-        worksheetExtras.pageMargins = {
-          ...worksheetExtras.pageMargins,
-          ...(record.code === RecordCode.LeftMargin
-            ? { left: value }
-            : record.code === RecordCode.RightMargin
-              ? { right: value }
-              : record.code === RecordCode.TopMargin
-                ? { top: value }
-                : { bottom: value }),
-        };
+        worksheetExtras.pageMargins = parsePageMargins(record, worksheetExtras.pageMargins);
         break;
       }
       case RecordCode.PageSetup: {
-        if (record.body.byteLength < 32)
-          throw new XlsParseError("Invalid legacy XLS file: truncated PAGESETUP");
-        const view = new DataView(
-          record.body.buffer,
-          record.body.byteOffset,
-          record.body.byteLength,
-        );
-        const flags = view.getUint16(10, true);
-        worksheetExtras.pageSetup = {
-          paperSize: view.getUint16(0, true),
-          scale: view.getUint16(2, true),
-          fitToWidth: view.getUint16(6, true),
-          fitToHeight: view.getUint16(8, true),
-          pageOrder: (flags & 1) === 0 ? "downThenOver" : "overThenDown",
-          orientation: (flags & 2) === 0 ? "landscape" : "portrait",
-        };
-        worksheetExtras.pageMargins = {
-          ...worksheetExtras.pageMargins,
-          header: view.getFloat64(16, true),
-          footer: view.getFloat64(24, true),
-        };
+        const { pageSetup, headerFooterMargins } = parsePageSetup(record);
+        worksheetExtras.pageSetup = pageSetup;
+        worksheetExtras.pageMargins = { ...worksheetExtras.pageMargins, ...headerFooterMargins };
         break;
       }
       default:

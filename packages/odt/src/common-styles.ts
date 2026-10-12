@@ -21,6 +21,23 @@ export type DocumentDefaults = NonNullable<
   NonNullable<NonNullable<DocumentOptions["styles"]>["default"]>["document"]
 >;
 
+type CommonStyle =
+  | NonNullable<NonNullable<DocumentOptions["styles"]>["paragraphStyles"]>[number]
+  | NonNullable<NonNullable<DocumentOptions["styles"]>["characterStyles"]>[number];
+
+function textPropertiesXml(style: Pick<CommonStyle, "run">): string {
+  const run = style.run;
+  return xmlElement("style:text-properties", {
+    "fo:font-weight": run?.bold ? "bold" : undefined,
+    "fo:font-style": run?.italic ? "italic" : undefined,
+    "style:text-underline-style": run?.underline?.type ? "solid" : undefined,
+    "style:text-line-through-style": run?.strike ? "solid" : undefined,
+    "fo:font-size": typeof run?.size === "number" ? `${run.size}pt` : undefined,
+    "fo:color": typeof run?.color === "string" ? `#${run.color.slice(-6)}` : undefined,
+    "fo:font-family": typeof run?.font === "string" ? run.font : undefined,
+  });
+}
+
 /** Docx font table → ODF font-face declarations (no embedded data in ODF). */
 export function fontFaceDecls(fonts: DocumentOptions["fonts"]): string {
   if (!fonts?.length) return "";
@@ -114,16 +131,7 @@ export function commonStylesXml(styles: DocumentOptions["styles"]): string {
                 ? twipsToLength(paragraph.spacing.after)
                 : undefined,
           }),
-          xmlElement("style:text-properties", {
-            "fo:font-weight": style.run?.bold ? "bold" : undefined,
-            "fo:font-style": style.run?.italic ? "italic" : undefined,
-            "style:text-underline-style": style.run?.underline?.type ? "solid" : undefined,
-            "style:text-line-through-style": style.run?.strike ? "solid" : undefined,
-            "fo:font-size": typeof style.run?.size === "number" ? `${style.run.size}pt` : undefined,
-            "fo:color":
-              typeof style.run?.color === "string" ? `#${style.run.color.slice(-6)}` : undefined,
-            "fo:font-family": typeof style.run?.font === "string" ? style.run.font : undefined,
-          }),
+          textPropertiesXml(style),
         ],
       );
     }),
@@ -137,18 +145,7 @@ export function commonStylesXml(styles: DocumentOptions["styles"]): string {
           "style:parent-style-name": style.basedOn,
           "style:next-style-name": style.next,
         },
-        [
-          xmlElement("style:text-properties", {
-            "fo:font-weight": style.run?.bold ? "bold" : undefined,
-            "fo:font-style": style.run?.italic ? "italic" : undefined,
-            "style:text-underline-style": style.run?.underline?.type ? "solid" : undefined,
-            "style:text-line-through-style": style.run?.strike ? "solid" : undefined,
-            "fo:font-size": typeof style.run?.size === "number" ? `${style.run.size}pt` : undefined,
-            "fo:color":
-              typeof style.run?.color === "string" ? `#${style.run.color.slice(-6)}` : undefined,
-            "fo:font-family": typeof style.run?.font === "string" ? style.run.font : undefined,
-          }),
-        ],
+        [textPropertiesXml(style)],
       ),
     ),
   ].join("");

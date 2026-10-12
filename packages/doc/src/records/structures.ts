@@ -1,3 +1,8 @@
+import {
+  readUint16 as readStreamUint16,
+  readUint32 as readStreamUint32,
+  requireByteRange,
+} from "../binary";
 import { DocParseError, type DocParseContext } from "../errors";
 import type {
   LegacyBookmark,
@@ -10,6 +15,8 @@ interface NumberPair {
   offset: number;
   length: number;
 }
+const TABLE_LOCATION = { part: "table", path: "table" } as const;
+
 function requireRange(
   bytes: Uint8Array,
   offset: number,
@@ -17,33 +24,15 @@ function requireRange(
   message: string,
   context: Partial<Omit<DocParseContext, "format">> = {},
 ): void {
-  if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message, {
-      part: "table",
-      path: "table",
-      offset,
-      length,
-      byteRange: [offset, offset + length],
-      reason: "out-of-range",
-      ...context,
-    });
-  }
+  requireByteRange(bytes, offset, length, message, context, TABLE_LOCATION);
 }
 
 function readUint16(bytes: Uint8Array, offset: number, message: string): number {
-  requireRange(bytes, offset, 2, message);
-  return bytes[offset]! | (bytes[offset + 1]! << 8);
+  return readStreamUint16(bytes, offset, message, {}, TABLE_LOCATION);
 }
 
 function readUint32(bytes: Uint8Array, offset: number, message: string): number {
-  requireRange(bytes, offset, 4, message);
-  return (
-    (bytes[offset]! |
-      (bytes[offset + 1]! << 8) |
-      (bytes[offset + 2]! << 16) |
-      (bytes[offset + 3]! << 24)) >>>
-    0
-  );
+  return readStreamUint32(bytes, offset, message, {}, TABLE_LOCATION);
 }
 
 interface PlcRange {
@@ -135,8 +124,11 @@ export function parseStylesheet(table: Uint8Array, range: NumberPair): Styleshee
       ",",
       1,
     )[0]!;
+    let type: StyleModel["type"] = "paragraph";
+    if (styleKind === 2) type = "character";
+    else if (styleKind === 3) type = "table";
     styles.push({
-      type: styleKind === 2 ? "character" : styleKind === 3 ? "table" : "paragraph",
+      type,
       id: `style-${index}`,
       styleId: index,
       name: name || `style ${index}`,
@@ -613,7 +605,7 @@ export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): Lega
         })
       );
     }
-    return parseBlip(data, delayOffset)!;
+    return parseBlip(data, delayOffset);
   };
 
   walk(0, drawing.byteLength);
@@ -694,7 +686,7 @@ function parseEmbeddedBlip(bytes: Uint8Array): LegacyPictureData | undefined {
   return { type, data, ...dimensions };
 }
 
-function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData | undefined {
+function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData {
   if (reference >= dataStream.byteLength) {
     throw new DocParseError("Invalid DOC Data stream: BLIP reference is out of range", {
       part: "data",
@@ -705,7 +697,17 @@ function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData
       reason: "out-of-range",
     });
   }
-  return parseEmbeddedBlip(dataStream.subarray(reference));
+  const picture = parseEmbeddedBlip(dataStream.subarray(reference));
+  if (!picture) {
+    throw new DocParseError("Invalid DOC Data stream: unsupported BLIP record", {
+      part: "data",
+      path: "Data",
+      recordName: "BLIP",
+      offset: reference,
+      reason: "unsupported-record",
+    });
+  }
+  return picture;
 }
 
 function readImageDimensions(

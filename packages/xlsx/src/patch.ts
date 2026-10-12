@@ -735,8 +735,17 @@ function insertLegacyDrawing(wsRoot: Element, rId: string): void {
   els.splice(insertAt, 0, legacy);
 }
 
-/** commentsDesc.stringify ignores its context; this satisfies the WriteContext type. */
-const STUB_WRITE_CTX = {} as unknown as WriteContext;
+const STUB_WRITE_CTX: WriteContext = {
+  addRelationship() {
+    throw new Error("comments stringify does not support patch-context relationships");
+  },
+  addMedia() {
+    throw new Error("comments stringify does not support patch-context media");
+  },
+  addHyperlink() {
+    throw new Error("comments stringify does not support patch-context hyperlinks");
+  },
+};
 
 /**
  * Append cell comments to a worksheet, merging with any existing comments part.

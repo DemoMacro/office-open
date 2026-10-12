@@ -53,47 +53,34 @@ export type W14SchemeColorValue =
   | "followedHyperlink"
   | "placeholder";
 
+const W14_SCHEME_COLOR_TOKENS = {
+  background1: "bg1",
+  text1: "tx1",
+  background2: "bg2",
+  text2: "tx2",
+  dark1: "dk1",
+  light1: "lt1",
+  dark2: "dk2",
+  light2: "lt2",
+  accent1: "accent1",
+  accent2: "accent2",
+  accent3: "accent3",
+  accent4: "accent4",
+  accent5: "accent5",
+  accent6: "accent6",
+  hyperlink: "hlink",
+  followedHyperlink: "folHlink",
+  placeholder: "phClr",
+} as const satisfies Record<W14SchemeColorValue, string>;
+
+const W14_SCHEME_COLOR_VALUES = Object.fromEntries(
+  Object.entries(W14_SCHEME_COLOR_TOKENS).map(([value, token]) => [token, value]),
+) as Record<string, W14SchemeColorValue>;
+
 const xsdW14SchemeColor = {
-  to: (value: W14SchemeColorValue): string =>
-    value === "background1"
-      ? "bg1"
-      : value === "text1"
-        ? "tx1"
-        : value === "background2"
-          ? "bg2"
-          : value === "text2"
-            ? "tx2"
-            : value === "dark1"
-              ? "dk1"
-              : value === "light1"
-                ? "lt1"
-                : value === "dark2"
-                  ? "dk2"
-                  : value === "light2"
-                    ? "lt2"
-                    : value === "hyperlink"
-                      ? "hlink"
-                      : value === "followedHyperlink"
-                        ? "folHlink"
-                        : value === "placeholder"
-                          ? "phClr"
-                          : value,
-  from: (token: string): W14SchemeColorValue | undefined => {
-    const byToken: Record<string, W14SchemeColorValue> = {
-      bg1: "background1",
-      tx1: "text1",
-      bg2: "background2",
-      tx2: "text2",
-      dk1: "dark1",
-      lt1: "light1",
-      dk2: "dark2",
-      lt2: "light2",
-      hlink: "hyperlink",
-      folHlink: "followedHyperlink",
-      phClr: "placeholder",
-    };
-    return byToken[token] ?? (token as W14SchemeColorValue);
-  },
+  to: (value: W14SchemeColorValue): string => W14_SCHEME_COLOR_TOKENS[value],
+  from: (token: string): W14SchemeColorValue =>
+    W14_SCHEME_COLOR_VALUES[token] ?? (token as W14SchemeColorValue),
 } as const;
 
 /** Color transforms in integer percent (50 = 50%). */

@@ -34,6 +34,28 @@ import { numberingFromParsed, parseListOverrides, parseListTable } from "./numbe
 import { parseRtfShape } from "./shape";
 import { parseStylesheet, stylesFromDrafts, type StyleDraft } from "./stylesheet";
 
+type StoryBlocks = Map<"default" | "even" | "first", SectionChild[]>;
+
+function applyStoryBlocks(
+  section: SectionOptions | undefined,
+  headerBlocks: StoryBlocks,
+  footerBlocks: StoryBlocks,
+): void {
+  if (!section) return;
+  const headers = headerBlocks.get("default");
+  const evenHeaders = headerBlocks.get("even");
+  const firstHeaders = headerBlocks.get("first");
+  const footers = footerBlocks.get("default");
+  const evenFooters = footerBlocks.get("even");
+  const firstFooters = footerBlocks.get("first");
+  if (headers) section.headers = { default: headers };
+  if (evenHeaders) section.headers = { ...section.headers, even: evenHeaders };
+  if (firstHeaders) section.headers = { ...section.headers, first: firstHeaders };
+  if (footers) section.footers = { ...section.footers, default: footers };
+  if (evenFooters) section.footers = { ...section.footers, even: evenFooters };
+  if (firstFooters) section.footers = { ...section.footers, first: firstFooters };
+}
+
 export function parseRtfTokens(tokens: readonly RtfToken[], source: string): DocumentOptions {
   const fonts = new Map<number, string>();
   const colors: (string | null)[] = [];
@@ -1234,21 +1256,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   flushParagraph();
   if (shapes.length > 0) activeSection.children.push({ paragraph: { children: shapes } });
 
-  const first = sections[0];
-  if (first) {
-    const headers = headerBlocks.get("default");
-    const evenHeaders = headerBlocks.get("even");
-    const firstHeaders = headerBlocks.get("first");
-    const footers = footerBlocks.get("default");
-    const evenFooters = footerBlocks.get("even");
-    const firstFooters = footerBlocks.get("first");
-    if (headers) first.headers = { default: headers };
-    if (evenHeaders) first.headers = { ...first.headers, even: evenHeaders };
-    if (firstHeaders) first.headers = { ...first.headers, first: firstHeaders };
-    if (footers) first.footers = { ...first.footers, default: footers };
-    if (evenFooters) first.footers = { ...first.footers, even: evenFooters };
-    if (firstFooters) first.footers = { ...first.footers, first: firstFooters };
-  }
+  applyStoryBlocks(sections[0], headerBlocks, footerBlocks);
 
   const numbering = numberingFromParsed(listDefinitions, numberingReferences);
 

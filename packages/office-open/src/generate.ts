@@ -39,6 +39,41 @@ export type OfficeGenerationOptions<Format extends OfficeGenerateFormat> = {
   reproducible?: Format extends OdfGenerateFormat ? never : ReproducibleGenerationOptions;
 };
 
+const DOCUMENT_FORMATS = [
+  "docx",
+  "docm",
+  "dotx",
+  "dotm",
+  "odt",
+  "rtf",
+] as const satisfies readonly DocumentGenerateFormat[];
+const WORKBOOK_FORMATS = [
+  "xlsx",
+  "xlsm",
+  "xltx",
+  "xltm",
+  "ods",
+] as const satisfies readonly WorkbookGenerateFormat[];
+const PRESENTATION_FORMATS = [
+  "pptx",
+  "pptm",
+  "potx",
+  "potm",
+  "odp",
+] as const satisfies readonly PresentationGenerateFormat[];
+
+function isDocumentFormat(format: OfficeGenerateFormat): format is DocumentGenerateFormat {
+  return (DOCUMENT_FORMATS as readonly string[]).includes(format);
+}
+
+function isWorkbookFormat(format: OfficeGenerateFormat): format is WorkbookGenerateFormat {
+  return (WORKBOOK_FORMATS as readonly string[]).includes(format);
+}
+
+function isPresentationFormat(format: OfficeGenerateFormat): format is PresentationGenerateFormat {
+  return (PRESENTATION_FORMATS as readonly string[]).includes(format);
+}
+
 export async function generateOffice<
   Format extends OfficeGenerateFormat,
   Output extends OutputType = "nodebuffer",
@@ -48,44 +83,32 @@ export async function generateOffice<
   output?: Output,
   generationOptions?: OfficeGenerationOptions<Format>,
 ): Promise<OutputByType[Output]> {
-  const familyGenerators = {
-    docx: generateDocument,
-    docm: generateDocument,
-    dotx: generateDocument,
-    dotm: generateDocument,
-    odt: generateDocument,
-    rtf: generateDocument,
-  } as const;
-
-  if (format in familyGenerators) {
+  if (isDocumentFormat(format)) {
     return generateDocument(
-      format as DocumentGenerateFormat,
+      format as Exclude<DocumentGenerateFormat, "odt">,
       options as DocumentOptions,
       output,
-      generationOptions?.reproducible as DocumentGenerateFormat extends "odt"
-        ? never
-        : ReproducibleGenerationOptions,
+      generationOptions?.reproducible as ReproducibleGenerationOptions,
     );
   }
 
-  const workbookFormats = { xlsx: true, xlsm: true, xltx: true, xltm: true, ods: true } as const;
-  if (format in workbookFormats) {
+  if (isWorkbookFormat(format)) {
     return generateWorkbook(
-      format as WorkbookGenerateFormat,
+      format as Exclude<WorkbookGenerateFormat, "ods">,
       options as WorkbookOptions,
       output,
-      generationOptions?.reproducible as WorkbookGenerateFormat extends "ods"
-        ? never
-        : ReproducibleGenerationOptions,
+      generationOptions?.reproducible as ReproducibleGenerationOptions,
     );
   }
 
-  return generatePresentation(
-    format as PresentationGenerateFormat,
-    options as PresentationOptions,
-    output,
-    generationOptions?.reproducible as PresentationGenerateFormat extends "odp"
-      ? never
-      : ReproducibleGenerationOptions,
-  );
+  if (isPresentationFormat(format)) {
+    return generatePresentation(
+      format as Exclude<PresentationGenerateFormat, "odp">,
+      options as PresentationOptions,
+      output,
+      generationOptions?.reproducible as ReproducibleGenerationOptions,
+    );
+  }
+
+  throw new Error(`${format} is not an office generate format`);
 }

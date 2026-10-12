@@ -6,6 +6,7 @@ import type {
   DefinedNameOptions,
   ExternalLinkOptions,
   FontOptions,
+  CellOptions,
   RowOptions,
   StyleOptions,
   WorksheetOptions,
@@ -18,8 +19,10 @@ export interface BoundSheet {
   readonly name: string;
 }
 
+export type SheetRow = RowOptions & { cells: CellOptions[] };
+
 export interface SheetState {
-  rows: Map<number, RowOptions>;
+  rows: Map<number, SheetRow>;
   dimension?: string;
   extras: Partial<WorksheetOptions>;
 }

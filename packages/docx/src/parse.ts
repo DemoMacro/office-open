@@ -333,43 +333,27 @@ function parseDocPartRefs(doc: ParsedArchive, documentPath = "word/document.xml"
         // External image links (a:blip @r:link) keep the raw URL target —
         // path resolution would splice the URL into the part directory.
         if (attr(rel, "TargetMode") === "External") {
-          let extMap = refs.partExternalImages.get(partPath);
-          if (!extMap) {
-            extMap = new Map();
-            refs.partExternalImages.set(partPath, extMap);
-          }
-          extMap.set(id, target);
+          ensureNestedMap(refs.partExternalImages, partPath).set(id, target);
           continue;
         }
-        let partMap = refs.partMedia.get(partPath);
-        if (!partMap) {
-          partMap = new Map();
-          refs.partMedia.set(partPath, partMap);
-        }
-        partMap.set(id, resolveRelationshipTarget(partPath, target));
+        ensureNestedMap(refs.partMedia, partPath).set(
+          id,
+          resolveRelationshipTarget(partPath, target),
+        );
         if (type.includes("/oleObject") || type.includes("/package")) {
-          let typeMap = refs.partEmbeddingTypes.get(partPath);
-          if (!typeMap) {
-            typeMap = new Map();
-            refs.partEmbeddingTypes.set(partPath, typeMap);
-          }
-          typeMap.set(id, type.includes("/package") ? "package" : "oleObject");
+          ensureNestedMap(refs.partEmbeddingTypes, partPath).set(
+            id,
+            type.includes("/package") ? "package" : "oleObject",
+          );
         }
       } else if (type.includes("/hyperlink")) {
         // External URL — keep the raw target (no path resolution).
-        let partMap = refs.partHyperlinks.get(partPath);
-        if (!partMap) {
-          partMap = new Map();
-          refs.partHyperlinks.set(partPath, partMap);
-        }
-        partMap.set(id, target);
+        ensureNestedMap(refs.partHyperlinks, partPath).set(id, target);
       } else if (type.endsWith("/txbx")) {
-        let partMap = refs.partTextBoxes.get(partPath);
-        if (!partMap) {
-          partMap = new Map();
-          refs.partTextBoxes.set(partPath, partMap);
-        }
-        partMap.set(id, resolveRelationshipTarget(partPath, target));
+        ensureNestedMap(refs.partTextBoxes, partPath).set(
+          id,
+          resolveRelationshipTarget(partPath, target),
+        );
       }
     }
   }
@@ -447,6 +431,15 @@ function parseRootRels(doc: ParsedArchive): {
     customProps,
     relationships: capturedRelationships,
   };
+}
+
+function ensureNestedMap<K, V>(outer: Map<K, Map<K, V>>, key: K): Map<K, V> {
+  let inner = outer.get(key);
+  if (!inner) {
+    inner = new Map<K, V>();
+    outer.set(key, inner);
+  }
+  return inner;
 }
 
 /**

@@ -451,14 +451,17 @@ export function frameXml(f: WebFrameOptions): string {
   return parts.join("");
 }
 
-export const webSettingsDesc: CustomDescriptor<WebSettingsOptions> = {
+export const webSettingsDesc: CustomDescriptor<
+  WebSettingsOptions,
+  Parameters<typeof documentNamespaceDialect>[0]
+> = {
   kind: "custom",
 
   stringify(opts, ctx) {
     const p: string[] = [
       `<w:webSettings ${documentNamespaceAttributesInDialect(
         WEB_SETTINGS_NAMESPACE_KEYS,
-        documentNamespaceDialect(ctx as never),
+        documentNamespaceDialect(ctx),
       )}>`,
     ];
 

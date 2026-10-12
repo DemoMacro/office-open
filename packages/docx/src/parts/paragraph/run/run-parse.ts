@@ -19,6 +19,7 @@ import {
 import { findFirst } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseDrawingRun, parseUnsupportedDrawingRun } from "@parts/drawing/drawing-parse";
+import type { DrawingChild } from "@parts/drawing/drawing-parse";
 import { objectDesc } from "@parts/object";
 import type { ObjectElementOptions } from "@parts/object";
 import type { FootnoteEndnoteReferenceOptions } from "@parts/paragraph/paragraph";
@@ -37,8 +38,10 @@ import type { DocxReadContext } from "../../../context";
 import { replaceRelsWithPlaceholders } from "../../../util/replace-media-placeholders";
 import { stringifyElement } from "../../../util/stringify-element";
 import type { LanguageOptions } from "./language";
+import type { PositionalTabOptions } from "./positional-tab";
 import type { RubyContentOptions, RubyOptions, RubyPropertiesOptions } from "./ruby";
 import type { FontProperties } from "./run-fonts";
+import type { SymbolRunOptions } from "./symbol-run";
 import { parseW14RunEffect } from "./w14-effects";
 
 // On/off run properties: XML child tag → options key.
@@ -443,7 +446,11 @@ export type ParsedRunChild =
   | { endnoteReference: number | FootnoteEndnoteReferenceOptions }
   | { text: string; preserveSpace?: boolean }
   | { instructionText: string; preserveSpace?: boolean }
-  | { deletedInstructionText: string; preserveSpace?: boolean };
+  | { deletedInstructionText: string; preserveSpace?: boolean }
+  | DrawingChild
+  | { pict: PictOptions }
+  | { symbolRun: SymbolRunOptions }
+  | { positionalTab: PositionalTabOptions };
 
 function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions {
   const children: (RunOptions | string)[] = [];
@@ -595,7 +602,7 @@ export function parseRun(
               ...(brType ? { type: brType as BreakOptions["type"] } : {}),
               ...(brClear ? { clear: brClear as BreakClear } : {}),
             },
-          } as unknown as ParsedRunChild);
+          });
         } else {
           children.push(PARSED_LINE_BREAK);
         }
@@ -627,13 +634,13 @@ export function parseRun(
             const graphicData = findFirst(child, "a:graphicData");
             return graphicData ? parseUnsupportedDrawingRun(child, graphicData, _ctx) : undefined;
           })();
-        if (drawingChild) children.push(drawingChild as unknown as ParsedRunChild);
+        if (drawingChild) children.push(drawingChild);
         break;
       }
       // VML picture — ordered shape children with imagedata media bridged
       // from the part's rels (r:id → bytes → `{fileName}` placeholder).
       case "w:pict": {
-        children.push({ pict: parsePict(child, _ctx) } as unknown as ParsedRunChild);
+        children.push({ pict: parsePict(child, _ctx) });
         break;
       }
       // MCE wrapper around a VML pict (pandoc textbox double-encoding): the
@@ -660,7 +667,7 @@ export function parseRun(
               object.mcFallback = rawXml;
               object.mcFallbackMedia = rawMedia.length > 0 ? rawMedia : undefined;
             }
-            children.push({ object } as unknown as ParsedRunChild);
+            children.push({ object });
             break;
           }
           const symbolEl = choice
@@ -676,7 +683,7 @@ export function parseRun(
                     attr(symbolEl, "w:font") ?? attr(symbolEl, "w16se:font") ?? "Wingdings",
                   kind: "office2016" as const,
                 },
-              } as unknown as ParsedRunChild);
+              });
             }
           }
           break;
@@ -702,11 +709,11 @@ export function parseRun(
             })),
           ];
         }
-        children.push({ pict } as unknown as ParsedRunChild);
+        children.push({ pict });
         break;
       }
       case "w:object": {
-        children.push({ object: objectDesc.parse(child, _ctx) } as unknown as ParsedRunChild);
+        children.push({ object: objectDesc.parse(child, _ctx) });
         break;
       }
       case "w:ruby": {
@@ -729,7 +736,7 @@ export function parseRun(
               symbolFont: fontVal ?? "Wingdings",
               ...(child.name === "w:sym" ? {} : { kind: "office2016" as const }),
             },
-          } as unknown as ParsedRunChild);
+          });
         }
         break;
       }
@@ -740,10 +747,10 @@ export function parseRun(
           const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
           children.push(
             customMarkFollows
-              ? ({
+              ? {
                   footnoteReference: { id, customMarkFollows: true },
-                } as unknown as ParsedRunChild)
-              : ({ footnoteReference: id } as unknown as ParsedRunChild),
+                }
+              : { footnoteReference: id },
           );
         }
         break;
@@ -754,8 +761,8 @@ export function parseRun(
           const customMarkFollows = attrBool(child, "w:customMarkFollows") === true;
           children.push(
             customMarkFollows
-              ? ({ endnoteReference: { id, customMarkFollows: true } } as unknown as ParsedRunChild)
-              : ({ endnoteReference: id } as unknown as ParsedRunChild),
+              ? { endnoteReference: { id, customMarkFollows: true } }
+              : { endnoteReference: id },
           );
         }
         break;
@@ -767,8 +774,12 @@ export function parseRun(
         const relativeTo = attr(child, "w:relativeTo");
         if (alignment !== undefined && leader !== undefined && relativeTo !== undefined) {
           children.push({
-            positionalTab: { alignment, leader, relativeTo },
-          } as unknown as ParsedRunChild);
+            positionalTab: {
+              alignment: alignment as PositionalTabOptions["alignment"],
+              leader: leader as PositionalTabOptions["leader"],
+              relativeTo: relativeTo as PositionalTabOptions["relativeTo"],
+            },
+          });
         }
         break;
       }

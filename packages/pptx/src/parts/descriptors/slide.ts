@@ -26,14 +26,14 @@ import { colorMappingOverrideDesc } from "./color-map-override";
 
 // ── Slide (p:sld) descriptor ──
 
-export const slideDesc: CustomDescriptor<SlideOptions> = {
+export const slideDesc: CustomDescriptor<SlideOptions, PptxWriteContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
     // Single implementation lives in compiler.stringifySlide — the descriptor
     // used to keep a near-copy that silently dropped p:timing (animations)
     // and emitted a p:hf that CT_Slide's content model does not allow.
-    return stringifySlide(opts, ctx as unknown as PptxWriteContext);
+    return stringifySlide(opts, ctx);
   },
 
   parse(el, _ctx) {

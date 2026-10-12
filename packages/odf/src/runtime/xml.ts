@@ -38,6 +38,51 @@ export function textOf(element: Element | undefined): string {
     .join("");
 }
 
+export function descendantElements(element: Element | undefined): Element[] {
+  return (element?.elements ?? []).flatMap((child) =>
+    child.type === "element" ? [child, ...descendantElements(child)] : [],
+  );
+}
+
+export function spreadsheetColumnName(column: number): string {
+  let value = column;
+  let name = "";
+  while (value > 0) {
+    const remainder = (value - 1) % 26;
+    name = String.fromCharCode(65 + remainder) + name;
+    value = Math.floor((value - 1) / 26);
+  }
+  return name;
+}
+
+export function spreadsheetColumnNumber(column: string): number {
+  let number = 0;
+  for (let index = 0; index < column.length; index += 1) {
+    number = number * 26 + column.charCodeAt(index) - 64;
+  }
+  return number;
+}
+
+export function isExternalOdfUrl(value: string): boolean {
+  return /^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("../");
+}
+
+export function unknownAttributeNames(
+  element: Element,
+  allowedAttributes: readonly string[],
+): string[] {
+  return Object.keys(element.attributes ?? {}).filter((name) => !allowedAttributes.includes(name));
+}
+
+export function unknownChildElement(
+  element: Element,
+  allowedChildren: readonly string[],
+): Element | undefined {
+  return (element.elements ?? []).find(
+    (child) => child.type === "element" && !allowedChildren.includes(child.name ?? ""),
+  );
+}
+
 export function attributeString(element: Element | undefined, name: string): string | undefined {
   if (!element) return undefined;
   const value = element.attributes?.[name];
@@ -64,7 +109,8 @@ export function lengthToEmu(value: string | undefined): number | undefined {
     in: 914400,
     px: 9525,
   };
-  return Math.round(amount * unitFactors[match[2] as "cm"]!);
+  const factor = unitFactors[match[2]];
+  return factor === undefined ? undefined : Math.round(amount * factor);
 }
 
 export function emuToLength(emu: number | string | undefined, unit: "cm" | "px" = "cm"): string {

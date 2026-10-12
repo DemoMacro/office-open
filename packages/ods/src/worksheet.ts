@@ -5,7 +5,10 @@ import {
   childrenNamed,
   emuToLength,
   escapeText,
+  isExternalOdfUrl,
   lengthToEmu,
+  spreadsheetColumnName,
+  spreadsheetColumnNumber,
   textOf,
   xmlElement,
 } from "@office-open/odf";
@@ -217,22 +220,11 @@ function concatenate(parts: readonly string[]): string {
 }
 
 export function cellAddress(column: number, row: number): string {
-  let value = column;
-  let letters = "";
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    letters = String.fromCharCode(65 + remainder) + letters;
-    value = Math.floor((value - 1) / 26);
-  }
-  return `${letters}${row}`;
+  return `${spreadsheetColumnName(column)}${row}`;
 }
 
 export function columnNumber(column: string): number {
-  let total = 0;
-  for (let index = 0; index < column.length; index += 1) {
-    total = total * 26 + column.charCodeAt(index) - 64;
-  }
-  return total;
+  return spreadsheetColumnNumber(column);
 }
 
 export function cellXml(
@@ -258,7 +250,9 @@ export function cellXml(
   const cached = cacheAttributes(cell.value);
   const styleOptions = typeof cell.style === "object" ? cell.style : undefined;
   const valueKind = numFmtKind(styleOptions?.numFmt);
-  const type = valueKind === "time" ? "time" : valueKind === "currency" ? "currency" : cached.type;
+  let type = cached.type;
+  if (valueKind === "time") type = "time";
+  else if (valueKind === "currency") type = "currency";
   return xmlElement(
     "table:table-cell",
     {
@@ -691,7 +685,7 @@ export function parseRow(
                     }
                   : {
                       type: "image",
-                      href: isExternalUrl(href) ? href : href.replace(/^\//, ""),
+                      href: isExternalOdfUrl(href) ? href : href.replace(/^\//, ""),
                       data: "",
                       ...(attributeString(child, "draw:name")
                         ? { name: attributeString(child, "draw:name") }
@@ -737,10 +731,6 @@ export function parseRow(
       })
       .filter((cell): cell is CellOptions => cell !== undefined),
   };
-}
-
-function isExternalUrl(value: string): boolean {
-  return /^[a-z][a-z0-9+.-]*:/i.test(value);
 }
 
 export function parseCell(
@@ -812,12 +802,5 @@ export function parseCell(
 }
 
 export function columnName(column: number): string {
-  let result = "";
-  let value = column;
-  while (value > 0) {
-    const remainder = (value - 1) % 26;
-    result = String.fromCharCode(65 + remainder) + result;
-    value = Math.floor((value - 1) / 26);
-  }
-  return result;
+  return spreadsheetColumnName(column);
 }

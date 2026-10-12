@@ -1,3 +1,4 @@
+import { readUint32 as readStreamUint32, requireByteRange } from "../binary";
 import { DocParseError } from "../errors";
 
 export interface NumberPair {
@@ -143,26 +144,12 @@ function parsePieces(table: Uint8Array, start: number, length: number): Piece[] 
   return pieces;
 }
 
+const CLX_LOCATION = { part: "table", path: "CLX" } as const;
+
 function requireRange(bytes: Uint8Array, offset: number, length: number, message: string): void {
-  if (offset < 0 || length < 0 || offset > bytes.byteLength || length > bytes.byteLength - offset) {
-    throw new DocParseError(message, {
-      part: "table",
-      path: "CLX",
-      offset,
-      length,
-      byteRange: [offset, offset + length],
-      reason: "out-of-range",
-    });
-  }
+  requireByteRange(bytes, offset, length, message, {}, CLX_LOCATION);
 }
 
 function readUint32(bytes: Uint8Array, offset: number, message: string): number {
-  requireRange(bytes, offset, 4, message);
-  return (
-    (bytes[offset]! |
-      (bytes[offset + 1]! << 8) |
-      (bytes[offset + 2]! << 16) |
-      (bytes[offset + 3]! << 24)) >>>
-    0
-  );
+  return readStreamUint32(bytes, offset, message, {}, CLX_LOCATION);
 }
