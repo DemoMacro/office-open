@@ -9499,29 +9499,8 @@
           "type": "string"
         },
         "characterSet": {
-          "description": "Character set/encoding for the font",
-          "enum": [
-            "00",
-            "B2",
-            "BA",
-            "88",
-            "01",
-            "EE",
-            "86",
-            "A1",
-            "81",
-            "B1",
-            "80",
-            "82",
-            "4D",
-            "FF",
-            "CC",
-            "02",
-            "DE",
-            "A2",
-            "A3"
-          ],
-          "type": "string"
+          "$ref": "#/definitions/UcharHexNumber",
+          "description": "Character set/encoding for the font"
         },
         "characterSetName": {
           "description": "IANA character set name (w:charset/`@w:characterSet`, e.g. \"ISO-8859-1\").",

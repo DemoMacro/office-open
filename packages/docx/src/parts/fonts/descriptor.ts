@@ -6,6 +6,7 @@
  * @module
  */
 
+import { uCharHexNumber } from "@office-open/core";
 import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrBool, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
@@ -13,12 +14,7 @@ import {
   DocumentAttributeNamespaces,
   documentNamespaceAttributes,
 } from "@parts/document/document-attributes";
-import { CharacterSet } from "@parts/fonts/font";
-import type {
-  EmbeddedFontOptions,
-  EmbeddedFontPartName,
-  FontSignature,
-} from "@parts/fonts/font-table";
+import type { EmbeddedFontPartName, FontSignature } from "@parts/fonts/font-table";
 import {
   embeddedFontElementName,
   type FontTableFont,
@@ -64,12 +60,6 @@ const EMBED_FONT_ELEMENTS: readonly EmbeddedFontPartName[] = [
   "embedItalic",
   "embedBoldItalic",
 ];
-
-const CHARACTER_SET_VALUES = new Set<string>(Object.values(CharacterSet));
-
-function isCharacterSet(value: string): value is NonNullable<EmbeddedFontOptions["characterSet"]> {
-  return CHARACTER_SET_VALUES.has(value);
-}
 
 function embeddedFontXml(partName: EmbeddedFontPartName, part: EmbeddedFontPartWithKey): string {
   if (part.embedRid === undefined) return "";
@@ -185,7 +175,9 @@ export const fontTableDesc: CustomDescriptor<
       if (charsetEl) {
         const val = attr(charsetEl, "w:val");
         if (val !== undefined) {
-          if (!isCharacterSet(val)) {
+          try {
+            font.characterSet = uCharHexNumber(val);
+          } catch {
             throw new DocxParseError(
               `Invalid font character set "${val}".`,
               "word/fontTable.xml",
@@ -193,7 +185,6 @@ export const fontTableDesc: CustomDescriptor<
               "invalid-enumeration",
             );
           }
-          font.characterSet = val;
         }
         const csName = attr(charsetEl, "w:characterSet");
         if (csName) font.characterSetName = csName;

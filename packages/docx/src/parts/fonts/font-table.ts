@@ -8,8 +8,7 @@
  * @module
  */
 import type { DataType } from "@office-open/core";
-
-import { type CharacterSet } from "./font";
+import type { UcharHexNumber } from "@office-open/core";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>
@@ -56,7 +55,7 @@ export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;
   /** Character set/encoding for the font */
-  characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
+  characterSet?: UcharHexNumber;
   /** IANA character set name (w:charset/`@w:characterSet`, e.g. "ISO-8859-1"). */
   characterSetName?: string;
   /** Font family classification (e.g. "auto", "roman", "swiss") */

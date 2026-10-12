@@ -54,6 +54,13 @@ describe("fontTableDesc round-trip", () => {
     expect(result.fonts[0]?.characterSet).toBe("02");
   });
 
+  it("round-trips unlisted one-byte character sets", () => {
+    const result = roundTrip({
+      fonts: [{ name: "Calibri", characterSet: "4E" }],
+    });
+    expect(result.fonts[0]?.characterSet).toBe("4E");
+  });
+
   it("round-trips notTrueType — bare element true, w:val=0 false", () => {
     const xml = fontTableDesc.stringify(
       {
