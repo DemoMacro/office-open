@@ -1,3 +1,6 @@
+import type { DocumentOptions } from "@office-open/docx";
+import type { PresentationOptions } from "@office-open/pptx";
+import type { WorkbookOptions } from "@office-open/xlsx";
 /**
  * The committed draft-07 schemas and their ajv validators.
  *
@@ -46,7 +49,17 @@ const MAX_REPORTED_ERRORS = 5;
  * Aggregates up to five `instancePath`-qualified issues so callers (and LLMs)
  * can fix several problems per iteration instead of one.
  */
-export function validateDocumentInput(type: DocumentType, data: unknown): Record<string, unknown> {
+export function validateDocumentInput(type: "docx", data: unknown): DocumentOptions;
+export function validateDocumentInput(type: "pptx", data: unknown): PresentationOptions;
+export function validateDocumentInput(type: "xlsx", data: unknown): WorkbookOptions;
+export function validateDocumentInput(
+  type: DocumentType,
+  data: unknown,
+): DocumentOptions | PresentationOptions | WorkbookOptions;
+export function validateDocumentInput(
+  type: DocumentType,
+  data: unknown,
+): DocumentOptions | PresentationOptions | WorkbookOptions {
   const validate = getValidator(type);
   if (!validate(data)) {
     const errors = validate.errors ?? [];
@@ -61,5 +74,5 @@ export function validateDocumentInput(type: DocumentType, data: unknown): Record
       `Invalid ${type} options: ${lines.length > 0 ? lines.join("; ") : "invalid input"}${more}`,
     );
   }
-  return data as Record<string, unknown>;
+  return data as DocumentOptions | PresentationOptions | WorkbookOptions;
 }
