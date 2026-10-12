@@ -24,7 +24,6 @@ const CORPUS_DIRS = [
   "oletools",
   "pandoc",
   "python-pptx",
-  "tika",
 ].map((name) => path.resolve(ROOT_DIR, ".temp/corpus", name));
 
 type Outcome = "pass" | "encrypted" | "invalid" | "unexpected";

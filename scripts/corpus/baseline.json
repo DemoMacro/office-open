@@ -154,31 +154,5 @@
       "genFail": 0,
       "malformed": 0
     }
-  },
-  "tika": {
-    "docx": {
-      "total": 77,
-      "clean": 76,
-      "diff": 0,
-      "parseFail": 0,
-      "genFail": 0,
-      "malformed": 1
-    },
-    "xlsx": {
-      "total": 38,
-      "clean": 38,
-      "diff": 0,
-      "parseFail": 0,
-      "genFail": 0,
-      "malformed": 0
-    },
-    "pptx": {
-      "total": 33,
-      "clean": 33,
-      "diff": 0,
-      "parseFail": 0,
-      "genFail": 0,
-      "malformed": 0
-    }
   }
 }

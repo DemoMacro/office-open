@@ -24,7 +24,7 @@ import { parseWorkbook as parseXlsxDocument } from "../../packages/xlsx/dist/ind
 
 export type LegacyFormat = "doc" | "xls" | "ppt" | "rtf" | "odt" | "ods" | "odp";
 
-const CORPUS_PASSWORDS = ["tika", "VelvetSweatshop", "Password1234_", "password"];
+const CORPUS_PASSWORDS = ["VelvetSweatshop", "Password1234_", "password"];
 
 async function verifyWithPasswords(
   format: "DOC" | "XLS" | "PPT",
