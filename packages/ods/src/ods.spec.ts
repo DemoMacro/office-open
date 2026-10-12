@@ -1,7 +1,7 @@
 import { generateOcf, ODF_NAMESPACES, readOcf } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateWorkbook, OdsParseError, parseWorkbook, type OdsDocumentOptions } from "./index";
+import { generateWorkbook, OdsParseError, parseWorkbook, type OdsWorkbookOptions } from "./index";
 
 describe("ODS codec", () => {
   it("round-trips a workbook through canonical WorkbookOptions", () => {
@@ -141,7 +141,7 @@ describe("ODS codec", () => {
       "content.xml": content,
       "Object 1": new Uint8Array([1]),
     });
-    const parsed = parseWorkbook(source) as OdsDocumentOptions;
+    const parsed = parseWorkbook(source);
     expect(parsed.packageMembers).toEqual([
       { path: "Object 1", mediaType: "application/binary", data: new Uint8Array([1]) },
     ]);
@@ -278,7 +278,7 @@ describe("ODS codec", () => {
   });
 
   it("restores percent and length semantics in style overlays", () => {
-    const options: OdsDocumentOptions = {
+    const options: OdsWorkbookOptions = {
       worksheets: [{ rows: [{ cells: [{ value: "Overlay" }] }] }],
       styleOverlays: [
         {

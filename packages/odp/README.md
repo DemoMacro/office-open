@@ -33,8 +33,8 @@ const options = parsePresentation(odp);
 
 ## API
 
-- `generatePresentation(options, context?)` — generate an `.odp` package from `PresentationOptions`
-- `parsePresentation(data, options?)` — parse an `.odp` package into `PresentationOptions`
+- `generatePresentation(options)` — generate an `.odp` package from `PresentationOptions`
+- `parsePresentation(data)` — parse an `.odp` package into `PresentationOptions`
 - `OdpParseError` — structured parse failure with part, path, and reason diagnostics
 
 ## Errors and Limitations

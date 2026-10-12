@@ -133,9 +133,8 @@ export interface ParseContext {
   trackRevisions?: boolean;
 }
 
-export function generateDocument(options: DocumentOptions): Uint8Array {
-  const { packageManifest, embeddedObjects, packageMembers, styleOverlays } =
-    options as OdtDocumentOptions;
+export function generateDocument(options: OdtDocumentOptions): Uint8Array {
+  const { packageManifest, embeddedObjects, packageMembers, styleOverlays } = options;
   const styles: string[] = automaticStyleOverlaysXml(styleOverlays);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
@@ -320,7 +319,7 @@ export function blocksXml(
   return parts.join("");
 }
 
-export function parseDocument(data: Uint8Array): DocumentOptions {
+export function parseDocument(data: Uint8Array): OdtDocumentOptions {
   try {
     return parseOdtBody(data);
   } catch (cause) {

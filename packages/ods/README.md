@@ -33,8 +33,8 @@ const options = parseWorkbook(ods);
 
 ## API
 
-- `generateWorkbook(options, context?)` — generate an `.ods` package from `WorkbookOptions`
-- `parseWorkbook(data, options?)` — parse an `.ods` package into `WorkbookOptions`
+- `generateWorkbook(options)` — generate an `.ods` package from `WorkbookOptions`
+- `parseWorkbook(data)` — parse an `.ods` package into `WorkbookOptions`
 - `OdsParseError` — structured parse failure with part, path, and reason diagnostics
 
 ## Errors and Limitations

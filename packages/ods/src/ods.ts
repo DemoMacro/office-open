@@ -1,2 +1,2 @@
 export { generateWorkbook, parseWorkbook } from "./workbook";
-export type { OdsDocumentOptions } from "./semantics";
+export type { OdsWorkbookOptions } from "./semantics";

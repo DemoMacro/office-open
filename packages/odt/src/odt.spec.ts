@@ -1,15 +1,10 @@
+import type { DocumentOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
 import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { unzipSync } from "fflate";
 import { describe, expect, it } from "vite-plus/test";
 
-import {
-  generateDocument,
-  OdtParseError,
-  parseDocument,
-  type DocumentOptions,
-  type OdtDocumentOptions,
-} from "./index";
+import { generateDocument, OdtParseError, parseDocument } from "./index";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
 
@@ -86,7 +81,7 @@ describe("ODT canonical projection", () => {
       '<style:style style:name="P1" style:family="paragraph"><style:paragraph-properties fo:text-align="center" style:contextual-spacing="true"/></style:style>',
       '<text:p text:style-name="P1">Styled</text:p>',
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
     });
@@ -103,9 +98,7 @@ describe("ODT canonical projection", () => {
       },
     ]);
 
-    expect(
-      (parseDocument(generateDocument(parsed)) as OdtDocumentOptions).sections[0]?.children?.[0],
-    ).toMatchObject({
+    expect(parseDocument(generateDocument(parsed)).sections[0]?.children?.[0]).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
     });
   });
@@ -115,9 +108,9 @@ describe("ODT canonical projection", () => {
       '<style:style style:name="P1" style:family="paragraph"><loext:graphic-properties draw:fill="none"/><style:paragraph-properties fo:text-align="center"/></style:style>',
       '<text:p text:style-name="P1">Styled</text:p>',
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.styleOverlays?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
-    const reread = parseDocument(generateDocument(parsed)) as OdtDocumentOptions;
+    const reread = parseDocument(generateDocument(parsed));
     expect(reread.styleOverlays).toEqual(parsed.styleOverlays);
   });
 
@@ -126,14 +119,12 @@ describe("ODT canonical projection", () => {
       '<style:style style:name="C1" style:family="text"><style:text-properties fo:font-weight="bold" fo:background-color="#00ff00"/></style:style>',
       '<text:p><text:span text:style-name="C1">Styled</text:span></text:p>',
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
     });
 
-    expect(
-      (parseDocument(generateDocument(parsed)) as OdtDocumentOptions).sections[0]?.children?.[0],
-    ).toMatchObject({
+    expect(parseDocument(generateDocument(parsed)).sections[0]?.children?.[0]).toMatchObject({
       paragraph: { children: [{ text: "Styled", bold: true, style: "C1" }] },
     });
   });
@@ -196,7 +187,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.embeddedObjects).toEqual([
       {
         path: "Object 1",
@@ -212,7 +203,7 @@ describe("ODT canonical projection", () => {
       },
     ]);
 
-    const reread = parseDocument(generateDocument(parsed)) as OdtDocumentOptions;
+    const reread = parseDocument(generateDocument(parsed));
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     const manifest = new TextDecoder().decode(
       unzipSync(generateDocument(parsed))["META-INF/manifest.xml"],
@@ -243,7 +234,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.embeddedObjects).toEqual([
       expect.objectContaining({
         path: "Object 1",
@@ -277,7 +268,7 @@ describe("ODT canonical projection", () => {
       '<draw:frame text:anchor-type="char" draw:style-name="gr1" svg:x="1cm" svg:y="2cm" svg:width="4cm" svg:height="3cm" draw:name="Formula object"><draw:object xlink:href="./Object 1" xlink:type="simple"/></draw:frame>',
     );
 
-    const reread = parseDocument(generated) as OdtDocumentOptions;
+    const reread = parseDocument(generated);
     expect(reread.embeddedObjects).toEqual(parsed.embeddedObjects);
     expect(projection(reread.sections[0]?.children?.[0])).toEqual(
       projection(parsed.sections[0]?.children?.[0]),
@@ -305,7 +296,7 @@ describe("ODT canonical projection", () => {
         ],
       },
     );
-    const parsed = parseDocument(source) as OdtDocumentOptions;
+    const parsed = parseDocument(source);
     expect(parsed.packageMembers).toEqual([
       { path: "audit.bin", mediaType: "application/octet-stream", data: new Uint8Array([7, 9]) },
       {
@@ -319,7 +310,7 @@ describe("ODT canonical projection", () => {
     const entries = unzipSync(generated);
     expect(new TextDecoder().decode(entries["manifest.rdf"])).toContain("<rdf:RDF");
     expect(entries["audit.bin"]).toEqual(new Uint8Array([7, 9]));
-    expect(parseDocument(generated) as OdtDocumentOptions).toMatchObject({
+    expect(parseDocument(generated)).toMatchObject({
       packageMembers: parsed.packageMembers,
     });
 

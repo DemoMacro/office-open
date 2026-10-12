@@ -33,8 +33,8 @@ const options = parseDocument(odt);
 
 ## API
 
-- `generateDocument(options, context?)` — generate an `.odt` package from `DocumentOptions`
-- `parseDocument(data, options?)` — parse an `.odt` package into `DocumentOptions`
+- `generateDocument(options)` — generate an `.odt` package from `DocumentOptions`
+- `parseDocument(data)` — parse an `.odt` package into `DocumentOptions`
 - `OdtParseError` — structured parse failure with part, path, and reason diagnostics
 
 ## Errors and Limitations

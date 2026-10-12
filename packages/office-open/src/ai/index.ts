@@ -20,6 +20,7 @@ export { formatToolError } from "./error";
 
 import { lintWorkbookFormulas } from "@office-open/xlsx";
 
+import { generateDocument } from "../document";
 import { generateOffice } from "../generate";
 import {
   getSkeletonSchema,
@@ -185,7 +186,7 @@ export const odtTool: Tool<DocumentOptions, GeneratedDocumentOutput> = tool({
   execute: async (options) => {
     try {
       const validated = validateDocumentInput("docx", options);
-      const bytes = (await generateOffice(
+      const bytes = (await generateDocument(
         "odt",
         canonicalDocumentOptions(validated),
         "uint8array",

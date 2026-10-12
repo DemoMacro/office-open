@@ -60,3 +60,34 @@ describe("generateOffice RTF", () => {
     expect(new TextDecoder().decode(bytes)).toContain("Aggregate");
   });
 });
+
+describe("generateOffice ODF formats", () => {
+  it("dispatches each ODF family to its own writer", async () => {
+    const cases = [
+      {
+        format: "odt",
+        mimetype: "application/vnd.oasis.opendocument.text",
+        options: PACKAGE_FIXTURES.wordprocessing,
+      },
+      {
+        format: "ods",
+        mimetype: "application/vnd.oasis.opendocument.spreadsheet",
+        options: PACKAGE_FIXTURES.spreadsheet,
+      },
+      {
+        format: "odp",
+        mimetype: "application/vnd.oasis.opendocument.presentation",
+        options: PACKAGE_FIXTURES.presentation,
+      },
+    ] as const;
+
+    for (const { format, mimetype, options } of cases) {
+      const bytes = (await generateOffice(
+        format,
+        options as OfficeOptionsFor[typeof format],
+        "uint8array",
+      )) as Uint8Array;
+      expect(new TextDecoder().decode(unzipSync(bytes).mimetype)).toBe(mimetype);
+    }
+  });
+});

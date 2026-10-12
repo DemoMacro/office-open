@@ -36,7 +36,7 @@ import type { Element } from "@office-open/xml";
 import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
-import type { OdsDocumentOptions } from "./semantics";
+import type { OdsWorkbookOptions } from "./semantics";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./shared-data";
 import { parseDimensionStyles, parseStyleOverlays, styleOverlaysXml } from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
@@ -58,7 +58,7 @@ export const NAMESPACES = [
   'xmlns:dc="http://purl.org/dc/elements/1.1/"',
 ].join(" ");
 
-export function generateWorkbook(options: OdsDocumentOptions): Uint8Array {
+export function generateWorkbook(options: OdsWorkbookOptions): Uint8Array {
   const { packageManifest, packageMembers, styleOverlays } = options;
   const styles: string[] = styleOverlaysXml(styleOverlays);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
@@ -171,7 +171,7 @@ export function unsupportedOdsValue(name: string, reason: string): OdsParseError
   );
 }
 
-export function parseWorkbook(data: Uint8Array): OdsDocumentOptions {
+export function parseWorkbook(data: Uint8Array): OdsWorkbookOptions {
   try {
     return parseOdsBody(data);
   } catch (cause) {
@@ -192,7 +192,7 @@ export function parseWorkbook(data: Uint8Array): OdsDocumentOptions {
   }
 }
 
-function parseOdsBody(data: Uint8Array): OdsDocumentOptions {
+function parseOdsBody(data: Uint8Array): OdsWorkbookOptions {
   const { files, binaries, manifest } = readOcf(data, MIME);
   const content = readXml(files, "content.xml");
   const body = childNamed(childNamed(content, "office:body"), "office:spreadsheet");

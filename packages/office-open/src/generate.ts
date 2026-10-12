@@ -1,5 +1,8 @@
 import type { OutputByType, OutputType, ReproducibleGenerationOptions } from "@office-open/core";
 import type { DocumentOptions } from "@office-open/docx";
+import type { OdpPresentationOptions } from "@office-open/odp";
+import type { OdsWorkbookOptions } from "@office-open/ods";
+import type { OdtDocumentOptions } from "@office-open/odt";
 import type { PresentationOptions } from "@office-open/pptx";
 import type { WorkbookOptions } from "@office-open/xlsx";
 
@@ -18,18 +21,18 @@ export interface OfficeOptionsFor {
   docm: DocumentOptions;
   dotx: DocumentOptions;
   dotm: DocumentOptions;
-  odt: DocumentOptions;
+  odt: OdtDocumentOptions;
   rtf: DocumentOptions;
   xlsx: WorkbookOptions;
   xlsm: WorkbookOptions;
   xltx: WorkbookOptions;
   xltm: WorkbookOptions;
-  ods: WorkbookOptions;
+  ods: OdsWorkbookOptions;
   pptx: PresentationOptions;
   pptm: PresentationOptions;
   potx: PresentationOptions;
   potm: PresentationOptions;
-  odp: PresentationOptions;
+  odp: OdpPresentationOptions;
 }
 
 type OdfGenerateFormat = "odt" | "ods" | "odp";
@@ -85,7 +88,7 @@ export async function generateOffice<
 ): Promise<OutputByType[Output]> {
   if (isDocumentFormat(format)) {
     return generateDocument(
-      format as Exclude<DocumentGenerateFormat, "odt">,
+      format as DocumentGenerateFormat,
       options as DocumentOptions,
       output,
       generationOptions?.reproducible as ReproducibleGenerationOptions,
@@ -94,7 +97,7 @@ export async function generateOffice<
 
   if (isWorkbookFormat(format)) {
     return generateWorkbook(
-      format as Exclude<WorkbookGenerateFormat, "ods">,
+      format as WorkbookGenerateFormat,
       options as WorkbookOptions,
       output,
       generationOptions?.reproducible as ReproducibleGenerationOptions,
@@ -103,7 +106,7 @@ export async function generateOffice<
 
   if (isPresentationFormat(format)) {
     return generatePresentation(
-      format as Exclude<PresentationGenerateFormat, "odp">,
+      format as PresentationGenerateFormat,
       options as PresentationOptions,
       output,
       generationOptions?.reproducible as ReproducibleGenerationOptions,
