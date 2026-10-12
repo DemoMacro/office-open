@@ -5,5 +5,5 @@ export type {
   OdtEmbeddedObjectOptions,
   OdtEmbeddedObjectFrameOptions,
   OdtFrameAnchorType,
-  OdtPackageMemberOptions,
 } from "./package";
+export type { OdfPackageMemberOptions } from "@office-open/odf";

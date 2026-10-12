@@ -9,6 +9,8 @@ export interface NonVisualShapePropertiesOptions {
   description?: string;
   /** Alt-text title (wps:cNvPr `@title`). */
   title?: string;
+  /** Hidden drawing marker (wps:cNvPr `@hidden`). */
+  hidden?: boolean;
   /** Shape type marker (wps:cNvSpPr `@txBox`) — "1" marks a text box. */
   textBox?: string;
   /**

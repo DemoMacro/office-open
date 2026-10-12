@@ -1,6 +1,7 @@
 import { zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 
+import { parseArchive } from "../../packages/core/dist/index.mjs";
 import { encryptedPassthroughMatches, isEncryptedPassthrough } from "./library";
 import {
   archiveSemanticDiffDetails,
@@ -11,6 +12,7 @@ import {
   classifyPackageFailure,
   explainSemanticPartDiff,
   parseCanonicalXml,
+  primaryPackagePart,
 } from "./semantics";
 
 function zip(files: Record<string, string | Uint8Array>): Uint8Array {
@@ -222,6 +224,12 @@ describe("corpus semantic comparison", () => {
     expect(explainSemanticPartDiff("xl/worksheets/example.xml", source, output)).toEqual([]);
   });
 
+  it("normalizes equivalent ST_Percentage serializations", () => {
+    const source = new TextEncoder().encode('<root><color r="0%" g="50%" b="100%"/></root>');
+    const output = new TextEncoder().encode('<root><color r="0" g="50000" b="100000"/></root>');
+    expect(explainSemanticPartDiff("word/example.xml", source, output)).toEqual([]);
+  });
+
   it("normalizes semantically unordered section and footnote children", () => {
     const source = parseCanonicalXml(
       "<document><body><sectPr><pgSz/><cols/><headerReference/></sectPr></body></document>",
@@ -418,6 +426,18 @@ describe("corpus semantic comparison", () => {
     expect(classifyPackageFailure(new Error("compound file is truncated"))).toBe("invalid-cfb");
     expect(classifyPackageFailure(new Error("unexpected end of XML"))).toBe("truncated-xml");
     expect(classifyPackageFailure(new Error("primary part not found"))).toBe("invalid-package");
+  });
+
+  it("rejects packages whose primary relationship target is absent", () => {
+    const source = zip({
+      "_rels/.rels":
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>' +
+        "</Relationships>",
+    });
+    expect(() => primaryPackagePart(parseArchive(source), "word/document.xml")).toThrow(
+      "word/document.xml package primary part not found",
+    );
   });
 
   it("keeps transitional tag counting for the baseline gate", () => {

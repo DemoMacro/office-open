@@ -5,7 +5,7 @@ import { OOXML_EXECUTABLE_REGISTRY } from "./ooxml-fixtures";
 
 describe("executable OOXML fixture harness", () => {
   it("executes every registered OOXML fixture", () => {
-    expect(OOXML_EXECUTABLE_REGISTRY.cases.length).toBe(36);
+    expect(OOXML_EXECUTABLE_REGISTRY.cases.length).toBe(40);
     for (const fixtureCase of OOXML_EXECUTABLE_REGISTRY.cases) {
       expect(() => executeOoxmlCase(fixtureCase)).not.toThrow();
     }
@@ -25,7 +25,10 @@ describe("executable OOXML fixture harness", () => {
     expect(report.mode).toBe("executable");
     expect(report.elementOwnership).toBe("152/152");
     expect(report.attributeOwnership).toBe("178/178");
-    expect(report.executedCases).toBe(36);
+    expect(report.executedCases).toBe(40);
+    expect(report.evidence.schemaVersion).toBe(1);
+    expect(report.evidence.records).toHaveLength(40);
+    expect(report.evidence.records.every((record) => record.status === "passed")).toBe(true);
     expect(report.unknownFixtures).toEqual([]);
     expect(report.missingElementOwnership).toEqual([]);
     expect(report.missingAttributeOwnership).toEqual([]);

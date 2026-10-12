@@ -9,6 +9,7 @@ import type {
   CellGraphicOptions,
   CoveredCellOptions,
   DataType,
+  DataModelOptions,
   NonVisualDrawingPropertiesOptions,
   PositiveUniversalMeasure,
   UniversalMeasure,
@@ -27,6 +28,11 @@ import type {
   SourceRectangleOptions,
   TextHyperlinkOptions,
 } from "@office-open/core/drawing";
+import type {
+  ColorDefinitionOptions,
+  LayoutDefinitionOptions,
+  StyleDefinitionOptions,
+} from "@office-open/core/smartart";
 import type { ThemeOverrideOptions } from "@office-open/core/theme";
 
 import type { ColorOptions } from "../../shared/color";
@@ -579,21 +585,30 @@ export interface WorksheetContentPartOptions extends DrawingContentPartOptions {
 }
 
 /**
- * SmartArt anchored in the sheet. The four diagram parts travel as passthrough
- * parts; their package-absolute paths (as resolved from the source drawing
- * rels) wire the frame to them — passthrough paths never move, so they stay
- * valid verbatim.
+ * SmartArt anchored in the sheet. `nodes` plus the three definitions author
+ * canonical diagram parts; `dataModel` overrides the generated data model.
+ * Source paths are round-trip metadata used only when raw parts are preserved.
  */
 export interface WorksheetSmartArtOptions
   extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
+  /** Tree-shaped data for the diagram content. */
+  nodes: SmartArtNode[];
   /** Diagram data part (dgm:relIds @r:dm, e.g. "xl/diagrams/data1.xml"). */
-  dataPath: string;
+  dataPath?: string;
   /** Diagram layout part (dgm:relIds @r:lo). */
-  layoutPath: string;
+  layoutPath?: string;
   /** Diagram quick style part (dgm:relIds @r:qs). */
-  quickStylePath: string;
+  quickStylePath?: string;
   /** Diagram colors part (dgm:relIds @r:cs). */
-  colorsPath: string;
+  colorsPath?: string;
+  /** Complete canonical data model parsed from the diagram data part. */
+  dataModel?: DataModelOptions;
+  /** Built-in layout ID ("default") or a custom layout definition. */
+  layout?: string | LayoutDefinitionOptions;
+  /** Built-in quick style ID ("simple1") or a custom style definition. */
+  style?: string | StyleDefinitionOptions;
+  /** Built-in color transform ID ("accent1_2") or a custom color definition. */
+  color?: string | ColorDefinitionOptions;
   /** Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty. */
   frameLocks?: GraphicFrameLockingOptions;
   /** Document-order position inside the drawing part (round-trip only). */
@@ -602,6 +617,12 @@ export interface WorksheetSmartArtOptions
   shapeId?: number;
   /** Macro reference (CT_GraphicFrame/@macro); empty string round-trips. */
   macro?: string;
+}
+
+/** A tree node for SmartArt data. */
+export interface SmartArtNode {
+  text: string;
+  children?: SmartArtNode[];
 }
 
 export interface WorksheetWebExtensionOptions

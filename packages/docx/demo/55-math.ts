@@ -13,14 +13,16 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    "2+2",
-                    {
-                      fraction: {
-                        denominator: ["2"],
-                        numerator: ["hi"],
+                  equations: [
+                    [
+                      "2+2",
+                      {
+                        fraction: {
+                          denominator: ["2"],
+                          numerator: ["hi"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -36,13 +38,15 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      fraction: {
-                        denominator: ["2"],
-                        numerator: ["1", { radical: { children: ["2"] } }],
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          denominator: ["2"],
+                          numerator: ["1", { radical: { children: ["2"] } }],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -54,21 +58,23 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { sum: { children: ["test"] } },
-                    {
-                      sum: {
-                        children: [{ superScript: { children: ["e"], superScript: ["2"] } }],
-                        subScript: ["i"],
+                  equations: [
+                    [
+                      { sum: { children: ["test"] } },
+                      {
+                        sum: {
+                          children: [{ superScript: { children: ["e"], superScript: ["2"] } }],
+                          subScript: ["i"],
+                        },
                       },
-                    },
-                    {
-                      sum: {
-                        children: [{ radical: { children: ["i"] } }],
-                        subScript: ["i"],
-                        superScript: ["10"],
+                      {
+                        sum: {
+                          children: [{ radical: { children: ["i"] } }],
+                          subScript: ["i"],
+                          superScript: ["10"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -80,21 +86,23 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { integral: { children: ["test"] } },
-                    {
-                      integral: {
-                        children: [{ superScript: { children: ["e"], superScript: ["2"] } }],
-                        subScript: ["i"],
+                  equations: [
+                    [
+                      { integral: { children: ["test"] } },
+                      {
+                        integral: {
+                          children: [{ superScript: { children: ["e"], superScript: ["2"] } }],
+                          subScript: ["i"],
+                        },
                       },
-                    },
-                    {
-                      integral: {
-                        children: [{ radical: { children: ["i"] } }],
-                        subScript: ["i"],
-                        superScript: ["10"],
+                      {
+                        integral: {
+                          children: [{ radical: { children: ["i"] } }],
+                          subScript: ["i"],
+                          superScript: ["10"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -106,7 +114,7 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [{ superScript: { children: ["test"], superScript: ["hello"] } }],
+                  equations: [[{ superScript: { children: ["test"], superScript: ["hello"] } }]],
                 },
               },
             ],
@@ -117,7 +125,7 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [{ subScript: { children: ["test"], subScript: ["hello"] } }],
+                  equations: [[{ subScript: { children: ["test"], subScript: ["hello"] } }]],
                 },
               },
             ],
@@ -128,13 +136,15 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      subScript: {
-                        children: ["x"],
-                        subScript: [{ superScript: { children: ["y"], superScript: ["2"] } }],
+                  equations: [
+                    [
+                      {
+                        subScript: {
+                          children: ["x"],
+                          subScript: [{ superScript: { children: ["y"], superScript: ["2"] } }],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -146,14 +156,16 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      subSuperScript: {
-                        children: ["test"],
-                        subScript: ["world"],
-                        superScript: ["hello"],
+                  equations: [
+                    [
+                      {
+                        subSuperScript: {
+                          children: ["test"],
+                          subScript: ["world"],
+                          superScript: ["hello"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -165,14 +177,16 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      preSubSuperScript: {
-                        children: ["test"],
-                        subScript: ["world"],
-                        superScript: ["hello"],
+                  equations: [
+                    [
+                      {
+                        preSubSuperScript: {
+                          children: ["test"],
+                          subScript: ["world"],
+                          superScript: ["hello"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -184,13 +198,15 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      subScript: {
-                        children: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                        subScript: ["4"],
+                  equations: [
+                    [
+                      {
+                        subScript: {
+                          children: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
+                          subScript: ["4"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -202,20 +218,22 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      subScript: {
-                        children: [
-                          {
-                            radical: {
-                              children: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                              degree: ["4"],
+                  equations: [
+                    [
+                      {
+                        subScript: {
+                          children: [
+                            {
+                              radical: {
+                                children: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
+                                degree: ["4"],
+                              },
                             },
-                          },
-                        ],
-                        subScript: ["x"],
+                          ],
+                          subScript: ["x"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -227,7 +245,7 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [{ radical: { children: ["4"] } }],
+                  equations: [[{ radical: { children: ["4"] } }]],
                 },
               },
             ],
@@ -238,21 +256,23 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      function: {
-                        children: ["100"],
-                        name: [{ superScript: { children: ["cos"], superScript: ["-1"] } }],
+                  equations: [
+                    [
+                      {
+                        function: {
+                          children: ["100"],
+                          name: [{ superScript: { children: ["cos"], superScript: ["-1"] } }],
+                        },
                       },
-                    },
-                    "×",
-                    {
-                      function: {
-                        children: ["360"],
-                        name: ["sin"],
+                      "×",
+                      {
+                        function: {
+                          children: ["360"],
+                          name: ["sin"],
+                        },
                       },
-                    },
-                    "= x",
+                      "= x",
+                    ],
                   ],
                 },
               },
@@ -264,37 +284,21 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      roundBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                    },
-                    {
-                      squareBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                    },
-                    {
-                      curlyBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                    },
-                    {
-                      angledBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-        {
-          paragraph: {
-            children: [
-              {
-                math: {
-                  children: [
-                    {
-                      fraction: {
-                        denominator: ["2a"],
-                        numerator: [{ radical: { children: ["4"] } }],
+                  equations: [
+                    [
+                      {
+                        roundBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
                       },
-                    },
+                      {
+                        squareBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
+                      },
+                      {
+                        curlyBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
+                      },
+                      {
+                        angledBrackets: [{ fraction: { denominator: ["2"], numerator: ["1"] } }],
+                      },
+                    ],
                   ],
                 },
               },
@@ -306,10 +310,32 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { limitUpper: { children: ["x"], limit: ["-"] } },
-                    "=",
-                    { limitLower: { children: ["lim"], limit: ["x→0"] } },
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          denominator: ["2a"],
+                          numerator: [{ radical: { children: ["4"] } }],
+                        },
+                      },
+                    ],
+                  ],
+                },
+              },
+            ],
+          },
+        },
+        {
+          paragraph: {
+            children: [
+              {
+                math: {
+                  equations: [
+                    [
+                      { limitUpper: { children: ["x"], limit: ["-"] } },
+                      "=",
+                      { limitLower: { children: ["lim"], limit: ["x→0"] } },
+                    ],
                   ],
                 },
               },

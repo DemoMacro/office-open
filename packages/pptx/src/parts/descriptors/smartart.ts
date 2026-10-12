@@ -12,21 +12,23 @@ import {
   convertToEmu,
   imageTypeFromPath,
   partPathToRelsPath,
-  remapSmartArtMediaTargets,
   resolveRelationshipTarget,
   toUint8Array,
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { ReadContext } from "@office-open/core/descriptor";
 import {
-  COLOR_CATEGORIES,
-  LAYOUT_CATEGORIES,
-  STYLE_CATEGORIES,
   type SmartArtRawParts,
   createDataModel,
   definitionId,
+  isBuiltinColorDefinition,
+  isBuiltinLayoutDefinition,
+  isBuiltinStyleDefinition,
   parseColorDefinition,
+  parseDataModelOptions,
   parseLayoutDefinition,
   parseStyleDefinition,
+  stringifyDataModelOptions,
   type TreeNode,
 } from "@office-open/core/smartart";
 import { attr, findChild, findFirst } from "@office-open/xml";
@@ -67,9 +69,10 @@ function withRegisteredRawMedia(
   if (renames.size === 0) return raw;
   return {
     ...raw,
-    ...(raw.dataRels !== undefined
-      ? { dataRels: remapSmartArtMediaTargets(raw.dataRels, renames) }
-      : {}),
+    media: raw.media?.map((media) => {
+      const outputName = renames.get(media.fileName);
+      return outputName ? { ...media, fileName: outputName } : media;
+    }),
   };
 }
 
@@ -96,11 +99,14 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
     // Register SmartArt data with context — an explicitly empty node tree
     // still round-trips (the data part keeps its bare doc point); only an
     // absent tree skips registration.
-    if (opts.nodes !== undefined) {
-      const body = createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
-      const dataModelXml = body
-        ? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + body
-        : "";
+    if (opts.nodes !== undefined || opts.dataModel) {
+      const body = opts.dataModel
+        ? stringifyDataModelOptions(opts.dataModel, ctx)
+        : createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
+      const dataModelXml =
+        body !== undefined && body.length > 0
+          ? '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' + body
+          : "";
       pptxCtx.addSmartArt(saKey, {
         key: saKey,
         dataModelXml,
@@ -163,6 +169,11 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
         if (dataPath) {
           const dataEl = _ctx.getPart(dataPath);
           if (dataEl) {
+            const dataModel = parseDataModelOptions(
+              dataEl,
+              readSmartArtDataContext(dataPath, _ctx),
+            );
+            if (dataModel) result.dataModel = dataModel;
             parseSmartArtDataXml(dataEl, result);
           }
           const slideRels = (_ctx as { slideRelationships?: ReadonlyMap<string, string> })
@@ -170,45 +181,30 @@ export const smartArtDesc: CustomDescriptor<SmartArtOptions> = {
           const drawingPaths = [...(slideRels?.values() ?? [])].filter((path) =>
             path.startsWith("ppt/diagrams/drawing"),
           );
-          const raw = readRawParts(dataPath, _ctx, drawingPaths);
-          if (raw) result.raw = raw;
+          result.raw = readRawParts(dataPath, _ctx, drawingPaths);
         }
       }
 
-      // Custom definitions come back structured; built-in stubs fold to their
-      // id string so round-tripping a built-in diagram keeps the compact form.
       const layoutPath = readRelatedPartPath(_ctx, relIds, "r:lo");
       const layoutEl = layoutPath ? _ctx.getPart(layoutPath) : undefined;
       if (layoutEl) {
         const layout = parseLayoutDefinition(layoutEl);
         const id = layout.uniqueId?.split("/").pop();
-        result.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
-      }
-      if (result.raw && layoutPath) {
-        const bytes = _ctx.getRaw(layoutPath);
-        if (bytes) result.raw.layout = bytes;
+        result.layout = id && isBuiltinLayoutDefinition(id, layout) ? id : layout;
       }
       const stylePath = readRelatedPartPath(_ctx, relIds, "r:qs");
       const styleEl = stylePath ? _ctx.getPart(stylePath) : undefined;
       if (styleEl) {
         const style = parseStyleDefinition(styleEl);
         const id = style.uniqueId?.split("/").pop();
-        result.style = id && id in STYLE_CATEGORIES ? id : style;
-      }
-      if (result.raw && stylePath) {
-        const bytes = _ctx.getRaw(stylePath);
-        if (bytes) result.raw.style = bytes;
+        result.style = id && isBuiltinStyleDefinition(id, style) ? id : style;
       }
       const colorPath = readRelatedPartPath(_ctx, relIds, "r:cs");
       const colorEl = colorPath ? _ctx.getPart(colorPath) : undefined;
       if (colorEl) {
         const color = parseColorDefinition(colorEl);
         const id = color.uniqueId?.split("/").pop();
-        result.color = id && id in COLOR_CATEGORIES ? id : color;
-      }
-      if (result.raw && colorPath) {
-        const bytes = _ctx.getRaw(colorPath);
-        if (bytes) result.raw.color = bytes;
+        result.color = id && isBuiltinColorDefinition(id, color) ? id : color;
       }
     }
 
@@ -229,6 +225,23 @@ function readRelatedPartPath(
   return ctx.resolveRelationship(rId);
 }
 
+function readSmartArtDataContext(dataPath: string, parent: ReadContext): ReadContext {
+  const relsEl = parent.getPart(partPathToRelsPath(dataPath));
+  const relationships = new Map<string, string>();
+  for (const relationship of relsEl?.elements ?? []) {
+    if (relationship.name !== "Relationship") continue;
+    const id = attr(relationship, "Id");
+    const target = attr(relationship, "Target");
+    if (!id || !target || attr(relationship, "TargetMode") === "External") continue;
+    relationships.set(id, resolveRelationshipTarget(dataPath, target));
+  }
+  return {
+    resolveRelationship: (rId) => relationships.get(rId),
+    getPart: (path) => parent.getPart(path),
+    getRaw: (path) => parent.getRaw(path),
+  };
+}
+
 /** Collect verbatim diagram parts behind one graphicFrame. */
 function readRawParts(
   dataPath: string,
@@ -238,13 +251,11 @@ function readRawParts(
   },
   drawingPaths: readonly string[],
 ): SmartArtRawParts | undefined {
-  const data = ctx.getRaw(dataPath);
-  if (!data) return undefined;
-  const raw: SmartArtRawParts = { data };
+  const raw: SmartArtRawParts = {};
+  let drawingRelationship = false;
   const relsPath = partPathToRelsPath(dataPath);
   const relsEl = ctx.getPart(relsPath);
   if (relsEl) {
-    raw.dataRels = ctx.getRaw(relsPath);
     const media = new Map<string, { fileName: string; data: Uint8Array }>();
     for (const rel of relsEl.elements ?? []) {
       if (rel.name !== "Relationship") continue;
@@ -252,7 +263,10 @@ function readRawParts(
       const target = attr(rel, "Target");
       if (!target || attr(rel, "TargetMode") === "External") continue;
       const path = resolveRelationshipTarget(dataPath, target);
-      if (type.endsWith("/diagramDrawing")) raw.drawing = ctx.getRaw(path);
+      if (type.endsWith("/diagramDrawing")) {
+        drawingRelationship = true;
+        raw.drawing = ctx.getRaw(path);
+      }
       if (!type.endsWith("/image")) continue;
       const bytes = ctx.getRaw(path);
       const fileName = path.split("/").pop() ?? path;
@@ -275,6 +289,7 @@ function readRawParts(
     const index = dataPath.match(/\/data(\d+)\.xml$/)?.[1];
     if (index !== undefined) raw.drawing = ctx.getRaw(`ppt/diagrams/drawing${index}.xml`);
   }
+  raw.drawingRelationship = drawingRelationship;
   return raw;
 }
 

@@ -47,11 +47,11 @@
     "check": "vp check --fix"
   },
   "dependencies": {
-    "@office-open/odf": "workspace:*"
+    "@office-open/odf": "workspace:*",
+    "@office-open/xlsx": "workspace:*"
   },
   "devDependencies": {
     "@office-open/core": "workspace:*",
-    "@office-open/xlsx": "workspace:*",
     "@office-open/xml": "workspace:*"
   }
 }

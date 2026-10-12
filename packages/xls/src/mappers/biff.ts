@@ -1,4 +1,4 @@
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";
 import { RecordCode, requireBytes, type BiffVersion } from "../records";
 export function decodeBiffString(
   body: Uint8Array,
@@ -23,7 +23,7 @@ export function decodeBiffString(
   cursor += byteLength + richRunCount * 4;
   if (hasExtension) {
     if (cursor + 4 > body.byteLength)
-      throw new LegacyExcelError("Invalid legacy XLS file: truncated rich string");
+      throw new XlsParseError("Invalid legacy XLS file: truncated rich string");
     cursor += view.getUint32(cursor, true);
   }
   return { value, offset: cursor };
@@ -89,6 +89,30 @@ export function readShortBiff8String(
   return decodeBiffString(body, view, offset + 2, body[offset]!, body[offset + 1]!, encoding);
 }
 
+export function readNoCchBiff8String(
+  body: Uint8Array,
+  offset: number,
+  characterCount: number,
+  encoding = "windows-1252",
+): { value: string; offset: number } {
+  const view = new DataView(body.buffer, body.byteOffset, body.byteLength);
+  requireBytes(body, offset + 1, "string");
+  return decodeBiffString(body, view, offset + 1, characterCount, body[offset]!, encoding);
+}
+
+export function readNoCchBiff5String(
+  body: Uint8Array,
+  offset: number,
+  characterCount: number,
+  encoding = "windows-1252",
+): { value: string; offset: number } {
+  requireBytes(body, offset + characterCount, "string");
+  return {
+    value: new TextDecoder(encoding).decode(body.subarray(offset, offset + characterCount)),
+    offset: offset + characterCount,
+  };
+}
+
 export function encodingForCodepage(codepage: number): string {
   if (codepage === 1200) return "utf-16le";
   if (codepage === 65001) return "utf-8";
@@ -123,11 +147,10 @@ export function detectBiffVersion(stream: Uint8Array): {
   workbookLayout: "standard" | "biff4w";
 } {
   if (stream.byteLength < 6)
-    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
+    throw new XlsParseError("Invalid legacy XLS file: workbook stream is truncated");
   const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const code = view.getUint16(0, true);
-  if (code === 0)
-    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated");
+  if (code === 0) throw new XlsParseError("Invalid legacy XLS file: workbook stream is truncated");
   if (code === RecordCode.EndOfFile) return { version: 8, workbookLayout: "standard" };
   if (code === 0x0009) return { version: 2, workbookLayout: "standard" };
   if (code === 0x0209)
@@ -147,7 +170,7 @@ export function detectBiffVersion(stream: Uint8Array): {
   if (code !== 0x0809) return { version: 8, workbookLayout: "standard" };
   const recordVersion = view.getUint16(4, true);
   if (recordVersion !== 0x0500 && recordVersion !== 0x0600)
-    throw new LegacyExcelError(`Unsupported legacy XLS BIFF version: ${recordVersion}`);
+    throw new XlsParseError(`Unsupported legacy XLS BIFF version: ${recordVersion}`);
   return { version: recordVersion === 0x0600 ? 8 : 5, workbookLayout: "standard" };
 }
 

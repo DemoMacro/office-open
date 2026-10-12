@@ -245,14 +245,16 @@ const doc: DocumentOptions = {
             children: [
               {
                 math: {
-                  children: [
-                    "E=",
-                    {
-                      fraction: {
-                        numerator: [{ superScript: { children: ["mc"], superScript: ["2"] } }],
-                        denominator: ["1"],
+                  equations: [
+                    [
+                      "E=",
+                      {
+                        fraction: {
+                          numerator: [{ superScript: { children: ["mc"], superScript: ["2"] } }],
+                          denominator: ["1"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -321,19 +323,16 @@ const doc: DocumentOptions = {
                         geometry: { preset: "ellipse" },
                         fill: { type: "solid", color: "ED7D31" },
                       },
-                      transformation: {
-                        pixels: { x: 0, y: 0 },
-                        emus: { x: 1_828_800, y: 1_082_480 },
-                      },
+                      transformation: { width: 1_828_800, height: 1_082_480 },
                     },
                     {
                       type: "png",
                       data: png1x1,
                       fileName: "grouped.png",
                       transformation: {
-                        pixels: { x: 0, y: 0 },
-                        emus: { x: 914_400, y: 914_400 },
-                        offset: { emus: { x: 1_905_000, y: 0 }, pixels: { x: 200, y: 0 } },
+                        width: 914_400,
+                        height: 914_400,
+                        offset: { x: 1_905_000, y: 0 },
                       },
                     },
                   ],

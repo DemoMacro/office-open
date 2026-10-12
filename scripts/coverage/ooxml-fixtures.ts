@@ -1,10 +1,29 @@
+import type { ReadContext } from "@office-open/core/descriptor";
+import type { LayoutDefinitionOptions } from "@office-open/core/smartart";
 import type {
   DocumentOptions,
   RunPropertiesOptions,
   W14RunEffectsOptions,
 } from "@office-open/docx";
-import type { PresentationOptions } from "@office-open/pptx";
+import type { PresentationOptions, SmartArtOptions } from "@office-open/pptx";
 import type { WorkbookOptions } from "@office-open/xlsx";
+import type { Element } from "@office-open/xml";
+
+import {
+  colorsDefinitionHeaderListDesc,
+  layoutDefinitionHeaderListDesc,
+  styleDefinitionHeaderListDesc,
+} from "../../packages/core/src/drawing/diagram/headers";
+import type { DrawingDescriptorOptions } from "../../packages/docx/src/parts/drawing/descriptor";
+import { drawingDesc } from "../../packages/docx/src/parts/drawing/descriptor";
+import type { Floating } from "../../packages/docx/src/parts/drawing/floating";
+import type { MathInput } from "../../packages/docx/src/parts/paragraph/math";
+import {
+  parseMathChildren,
+  parseMathParagraph,
+  stringifyMathInput,
+  stringifyMathParagraph,
+} from "../../packages/docx/src/parts/paragraph/math/stringify";
 
 export type OoxmlFamily = "document" | "presentation" | "workbook";
 
@@ -19,6 +38,7 @@ export interface OoxmlExecutableCase {
   projection: (options: never) => unknown;
   validationSchema?: string;
   validationDirectory?: string;
+  validationTransform?: (xml: string) => string;
   expected: unknown;
 }
 
@@ -49,10 +69,42 @@ interface WorkbookExecutableCase extends Omit<
   projection: (options: WorkbookOptions) => unknown;
 }
 
+export interface OoxmlDirectExecutableCase {
+  id: string;
+  schema: string;
+  family: "descriptor";
+  element: string;
+  attributes: readonly string[];
+  namespaceAttributes?: string;
+  descriptor: {
+    stringify: (value: never) => string | null;
+    parse: (element: Element) => unknown;
+  };
+  options: never;
+  expected: unknown;
+  validationSchema?: string;
+  validationDirectory?: string;
+  validationTransform?: (xml: string) => string;
+}
+
 export type OoxmlExecutableCaseInput =
   | DocumentExecutableCase
   | PresentationExecutableCase
-  | WorkbookExecutableCase;
+  | WorkbookExecutableCase
+  | OoxmlDirectExecutableCase;
+
+export function descriptorCase<TInput, TOutput>(
+  fixtureCase: Omit<OoxmlDirectExecutableCase, "family" | "descriptor" | "options"> & {
+    descriptor: {
+      stringify: (value: TInput) => string | null;
+      parse: (element: Element) => TOutput;
+    };
+    options: TInput;
+    expected: TOutput;
+  },
+): OoxmlExecutableCaseInput {
+  return fixtureCase as OoxmlExecutableCaseInput;
+}
 
 export interface OoxmlExecutableRegistry {
   cases: readonly OoxmlExecutableCaseInput[];
@@ -2034,8 +2086,2077 @@ const pictureCase: OoxmlExecutableCaseInput = {
   },
 };
 
+function wordprocessingDrawingCase(
+  id: string,
+  element: string,
+  attributes: readonly string[],
+  floating: Floating | undefined,
+  expectedFloating: Floating | undefined,
+): OoxmlExecutableCaseInput {
+  return {
+    id,
+    schema: "dml-wp",
+    family: "document",
+    element,
+    attributes,
+    options: {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    picture: {
+                      type: "png",
+                      data: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2]),
+                      geometry: "rect",
+                      nonVisualProperties: { id: 21, name: "Wordprocessing Drawing" },
+                      transformation: {
+                        width: 914400,
+                        height: 914400,
+                        effectExtent: { left: 10, top: 20, right: 30, bottom: 40 },
+                      },
+                      floating,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    },
+    partPath: "word/document.xml",
+    validationSchema: "wml.xsd",
+    validationDirectory: "ooxml-schemas/transitional",
+    projection: (options: DocumentOptions) => {
+      const paragraphChild = options.sections?.[0]?.children?.[0];
+      if (!paragraphChild || !("paragraph" in paragraphChild)) return undefined;
+      const child = paragraphChild.paragraph.children?.[0];
+      if (typeof child !== "object" || child === null || !("picture" in child)) return undefined;
+      return child.picture.floating;
+    },
+    expected: expectedFloating,
+  };
+}
+
+function transitionalWordprocessingShape(xml: string): string {
+  const start = xml.indexOf("<wps:wsp");
+  const end = xml.lastIndexOf("</wps:wsp>");
+  if (start < 0 || end < 0) throw new Error("fixture did not generate wps:wsp");
+  return xml
+    .slice(start, end + "</wps:wsp>".length)
+    .replaceAll("<wps:", "<wp:")
+    .replaceAll("</wps:", "</wp:")
+    .replaceAll("<w:txbxContent", "<wp:txbxContent")
+    .replaceAll("</w:txbxContent", "</wp:txbxContent")
+    .replace(
+      "<wp:wsp",
+      '<wp:wsp xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+        'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"',
+    );
+}
+
+function transitionalWordprocessingGroup(xml: string): string {
+  const start = xml.indexOf("<wpg:wgp");
+  const end = xml.lastIndexOf("</wpg:wgp>");
+  if (start < 0 || end < 0) throw new Error("fixture did not generate wpg:wgp");
+  return xml
+    .slice(start, end + "</wpg:wgp>".length)
+    .replaceAll("<wpg:", "<wp:")
+    .replaceAll("</wpg:", "</wp:")
+    .replaceAll("<wps:", "<wp:")
+    .replaceAll("</wps:", "</wp:")
+    .replace(
+      "<wp:wgp",
+      '<wp:wgp xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+        'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+        'xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"',
+    );
+}
+
+function transitionalWordprocessingCanvas(xml: string): string {
+  const start = xml.indexOf("<wpc:wpc");
+  const end = xml.lastIndexOf("</wpc:wpc>");
+  if (start < 0 || end < 0) throw new Error("fixture did not generate wpc:wpc");
+  return xml
+    .slice(start, end + "</wpc:wpc>".length)
+    .replaceAll("<wpc:", "<wp:")
+    .replaceAll("</wpc:", "</wp:")
+    .replaceAll("<wps:", "<wp:")
+    .replaceAll("</wps:", "</wp:")
+    .replaceAll("<wpg:", "<wp:")
+    .replaceAll("</wpg:", "</wp:")
+    .replace(
+      "<wp:wpc",
+      '<wp:wpc xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+        'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+        'xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"',
+    );
+}
+
+type ParsedWpsShape = {
+  altText?: DrawingDescriptorOptions["docProperties"];
+  graphicFrameLocks?: DrawingDescriptorOptions["graphicFrameLocks"];
+  transformation: DrawingDescriptorOptions["mediaData"] extends {
+    transformation: infer Transformation;
+  }
+    ? Transformation
+    : never;
+} & Record<string, unknown>;
+
+const coverageBodyWriteContext = {
+  reproducible: false,
+  file: { numbering: { createConcreteNumberingInstance: () => undefined } },
+  viewWrapper: {},
+} as never;
+
+const wpShapeDescriptor = {
+  stringify: (value: DrawingDescriptorOptions) =>
+    drawingDesc.stringify(value, coverageBodyWriteContext),
+  parse: (element: Parameters<typeof drawingDesc.parse>[0]) => {
+    const parsed = drawingDesc.parse(element, {} as never) as { wpsShape?: ParsedWpsShape };
+    if (!parsed.wpsShape) return {} as DrawingDescriptorOptions;
+    const { altText, graphicFrameLocks, transformation, ...data } = parsed.wpsShape;
+    return {
+      mediaData: { type: "wps", transformation, data },
+      docProperties: altText,
+      graphicFrameLocks,
+    } satisfies DrawingDescriptorOptions;
+  },
+};
+
+const coverageDrawingReadContext = {
+  currentPart: "word/document.xml",
+  consumedPartPaths: new Set<string>(),
+} as unknown as ReadContext;
+
+const wordprocessingShapeCase = descriptorCase({
+  id: "dml-wp.wsp.round-trip",
+  schema: "dml-wp",
+  family: "descriptor",
+  element: "wp:wsp",
+  attributes: [
+    "wp:wsp/@normalEastAsianFlow",
+    "wp:cNvPr/@id",
+    "wp:cNvPr/@name",
+    "wp:cNvSpPr/@txBox",
+    "wp:spPr/@bwMode",
+    "wp:style/a:lnRef/@idx",
+    "wp:style/a:fontRef/@idx",
+    "wp:txbx/@id",
+    "wp:bodyPr/@rot",
+    "wp:bodyPr/@lIns",
+    "wp:bodyPr/@anchor",
+  ],
+  namespaceAttributes:
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+    'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"',
+  descriptor: wpShapeDescriptor,
+  options: {
+    docProperties: { id: "11", name: "Coverage Shape" },
+    mediaData: {
+      type: "wps",
+      transformation: { width: 914400, height: 914400 },
+      data: {
+        normalEastAsianFlow: true,
+        nonVisualProperties: { id: 31, name: "Coverage Shape", textBox: true },
+        blackWhiteMode: "gray",
+        geometry: "rect",
+        children: [{ text: "Coverage text" }],
+        style: {
+          lineReference: { index: 2 },
+          fillReference: { index: 3 },
+          effectReference: { index: 4 },
+          fontReference: { collection: "minor" },
+        },
+        bodyProperties: {
+          rotation: 15,
+          lIns: 100,
+          anchor: "center",
+        },
+      },
+    },
+  },
+  expected: {
+    docProperties: { id: "11", name: "Coverage Shape" },
+    graphicFrameLocks: { noChangeAspect: true },
+    mediaData: {
+      type: "wps",
+      data: {
+        normalEastAsianFlow: true,
+        blackWhiteMode: "gray",
+        geometry: { preset: "rect" },
+        children: [{ text: "Coverage text" }],
+        style: {
+          lineReference: { index: 2 },
+          fillReference: { index: 3 },
+          effectReference: { index: 4 },
+          fontReference: { collection: "minor" },
+        },
+        bodyProperties: {
+          rotation: 15,
+          lIns: 100,
+          anchor: "center",
+        },
+        nonVisualProperties: { id: 31, name: "Coverage Shape", textBox: "true" },
+      },
+      transformation: {
+        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        width: 914400,
+        height: 914400,
+      },
+    },
+  },
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingShape,
+});
+
+const wordprocessingLinkedShapeCase = descriptorCase({
+  id: "dml-wp.wsp.linked-text-box",
+  schema: "dml-wp",
+  family: "descriptor",
+  element: "wp:wsp",
+  attributes: ["wp:linkedTxbx/@id", "wp:linkedTxbx/@seq"],
+  namespaceAttributes:
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"',
+  descriptor: wpShapeDescriptor,
+  options: {
+    docProperties: { id: "12", name: "Coverage Linked Shape" },
+    mediaData: {
+      type: "wps",
+      transformation: { width: 914400, height: 914400 },
+      data: {
+        children: [],
+        linkedTextBox: { id: 7, sequence: 2 },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "major" },
+        },
+        bodyProperties: {},
+      },
+    },
+  },
+  expected: {
+    docProperties: { id: "12", name: "Coverage Linked Shape" },
+    graphicFrameLocks: { noChangeAspect: true },
+    mediaData: {
+      type: "wps",
+      data: {
+        children: [],
+        geometry: { preset: "rect" },
+        linkedTextBox: { id: 7, sequence: 2 },
+        nonVisualProperties: { textBox: "1" },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "major" },
+        },
+        bodyProperties: {},
+      },
+      transformation: {
+        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        width: 914400,
+        height: 914400,
+      },
+    },
+  },
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingShape,
+});
+
+const wordprocessingConnectorCase = descriptorCase({
+  id: "dml-wp.wsp.connector",
+  schema: "dml-wp",
+  family: "descriptor",
+  element: "wp:cNvCnPr",
+  attributes: ["wp:cNvCnPr/a:cxnSpLocks/@noChangeAspect"],
+  namespaceAttributes:
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"',
+  descriptor: wpShapeDescriptor,
+  options: {
+    docProperties: { id: "13", name: "Coverage Connector" },
+    mediaData: {
+      type: "wps",
+      transformation: { width: 914400, height: 914400 },
+      data: {
+        children: [],
+        nonVisualProperties: {
+          id: 42,
+          name: "Coverage Connector",
+          connector: true,
+          connectorLocking: { noChangeAspect: true },
+        },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "none" },
+        },
+        bodyProperties: {},
+      },
+    },
+  },
+  expected: {
+    docProperties: { id: "13", name: "Coverage Connector" },
+    graphicFrameLocks: { noChangeAspect: true },
+    mediaData: {
+      type: "wps",
+      data: {
+        children: [],
+        geometry: { preset: "rect" },
+        nonVisualProperties: {
+          id: 42,
+          name: "Coverage Connector",
+          connector: true,
+          connectorLocking: { noChangeAspect: true },
+        },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "none" },
+        },
+        bodyProperties: {},
+      },
+      transformation: {
+        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        width: 914400,
+        height: 914400,
+      },
+    },
+  },
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingShape,
+});
+
+const wordprocessingShapeMetadataCase = descriptorCase({
+  id: "dml-wp.wsp.metadata.body-xfrm",
+  schema: "dml-wp",
+  family: "descriptor",
+  element: "wp:bodyPr",
+  attributes: [
+    "wp:docPr/@descr",
+    "wp:docPr/@hidden",
+    "wp:docPr/@title",
+    "wp:cNvPr/@descr",
+    "wp:cNvPr/@hidden",
+    "wp:cNvPr/@title",
+    "wp:bodyPr/@spcFirstLastPara",
+    "wp:bodyPr/@vertOverflow",
+    "wp:bodyPr/@horzOverflow",
+    "wp:bodyPr/@vert",
+    "wp:bodyPr/@wrap",
+    "wp:bodyPr/@tIns",
+    "wp:bodyPr/@rIns",
+    "wp:bodyPr/@bIns",
+    "wp:bodyPr/@numCol",
+    "wp:bodyPr/@spcCol",
+    "wp:bodyPr/@rtlCol",
+    "wp:bodyPr/@fromWordArt",
+    "wp:bodyPr/@anchorCtr",
+    "wp:bodyPr/@forceAA",
+    "wp:bodyPr/@upright",
+    "wp:bodyPr/@compatLnSpc",
+    "wp:xfrm/@flipH",
+    "wp:xfrm/@flipV",
+  ],
+  namespaceAttributes:
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+    'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"',
+  descriptor: wpShapeDescriptor,
+  options: {
+    docProperties: {
+      id: "15",
+      name: "Coverage Shape Metadata",
+      description: "Shape metadata",
+      title: "Metadata",
+      hidden: true,
+    },
+    mediaData: {
+      type: "wps",
+      transformation: {
+        width: 914400,
+        height: 914400,
+        flipHorizontal: true,
+        flipVertical: true,
+      },
+      data: {
+        children: [],
+        nonVisualProperties: {
+          id: 51,
+          name: "Coverage Shape Metadata",
+          description: "Nested metadata",
+          title: "Nested",
+          hidden: true,
+        },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "minor" },
+        },
+        bodyProperties: {
+          spcFirstLastPara: true,
+          vertOverflow: "ellipsis",
+          horzOverflow: "overflow",
+          vertical: "vertical",
+          wrap: "square",
+          lIns: 45720,
+          tIns: 45720,
+          rIns: 45720,
+          bIns: 45720,
+          numCol: 2,
+          spcCol: 914400,
+          rtlCol: true,
+          fromWordArt: true,
+          anchor: "bottom",
+          anchorCtr: true,
+          forceAA: true,
+          upright: true,
+          compatLnSpc: true,
+        },
+      },
+    },
+  },
+  expected: {
+    docProperties: {
+      id: "15",
+      name: "Coverage Shape Metadata",
+      description: "Shape metadata",
+      title: "Metadata",
+      hidden: true,
+    },
+    graphicFrameLocks: { noChangeAspect: true },
+    mediaData: {
+      type: "wps",
+      data: {
+        children: [],
+        geometry: { preset: "rect" },
+        nonVisualProperties: {
+          id: 51,
+          name: "Coverage Shape Metadata",
+          description: "Nested metadata",
+          title: "Nested",
+          hidden: true,
+        },
+        style: {
+          lineReference: { index: 1 },
+          fillReference: { index: 2 },
+          effectReference: { index: 3 },
+          fontReference: { collection: "minor" },
+        },
+        bodyProperties: {
+          spcFirstLastPara: true,
+          vertOverflow: "ellipsis",
+          horzOverflow: "overflow",
+          vertical: "vertical",
+          wrap: "square",
+          lIns: 45720,
+          tIns: 45720,
+          rIns: 45720,
+          bIns: 45720,
+          numCol: 2,
+          spcCol: 914400,
+          rtlCol: true,
+          fromWordArt: true,
+          anchor: "bottom",
+          anchorCtr: true,
+          forceAA: true,
+          upright: true,
+          compatLnSpc: true,
+        },
+      },
+      transformation: {
+        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        flipHorizontal: true,
+        flipVertical: true,
+        width: 914400,
+        height: 914400,
+      },
+    },
+  },
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingShape,
+});
+
+const wordprocessingCanvasCase: OoxmlExecutableCaseInput = {
+  id: "dml-wp.wpc.round-trip",
+  schema: "dml-wp",
+  family: "document",
+  element: "wp:wpc",
+  attributes: ["wp:wpc/wp:bg", "wp:wpc/wp:whole", "wp:wpc/wp:extLst"],
+  options: {
+    sections: [
+      {
+        children: [
+          {
+            paragraph: {
+              children: [
+                {
+                  wordprocessingCanvas: {
+                    children: [],
+                    transformation: { width: 1828800, height: 1828800 },
+                    background: {
+                      fill: { type: "solid", color: "accent1" },
+                    },
+                    whole: {
+                      outline: { width: 12700, cap: "flat" },
+                    },
+                    extensions: [{ uri: "https://example.invalid/canvas" }],
+                    altText: { id: "1", name: "Coverage Canvas" },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+  partPath: "word/document.xml",
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingCanvas,
+  projection: (options: DocumentOptions) => {
+    const child = options.sections?.[0]?.children?.[0];
+    if (!child || !("paragraph" in child)) return undefined;
+    const paragraphChild = child.paragraph.children?.[0];
+    if (
+      typeof paragraphChild !== "object" ||
+      paragraphChild === null ||
+      !("wordprocessingCanvas" in paragraphChild)
+    ) {
+      return undefined;
+    }
+    return paragraphChild.wordprocessingCanvas;
+  },
+  expected: {
+    transformation: {
+      effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+      inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+      width: 1828800,
+      height: 1828800,
+    },
+    graphicFrameLocks: { noChangeAspect: true },
+    children: [],
+    background: {
+      fill: { type: "solid", color: { value: "accent1" } },
+    },
+    whole: {
+      outline: { width: 12700, cap: "flat" },
+    },
+    extensions: [{ uri: "https://example.invalid/canvas" }],
+    altText: { id: "1", name: "Coverage Canvas" },
+  },
+};
+
+type ParsedWpgGroup = {
+  altText?: DrawingDescriptorOptions["docProperties"];
+  graphicFrameLocks?: DrawingDescriptorOptions["graphicFrameLocks"];
+  groupShapeLocks?: unknown;
+  children: unknown[];
+  transformation: DrawingDescriptorOptions["mediaData"] extends {
+    transformation: infer Transformation;
+  }
+    ? Transformation
+    : never;
+};
+
+const wordprocessingGroupCase = descriptorCase({
+  id: "dml-wp.wgp.round-trip",
+  schema: "dml-wp",
+  family: "descriptor",
+  element: "wp:wgp",
+  attributes: [
+    "wp:cNvGrpSpPr/a:grpSpLocks/@noChangeAspect",
+    "wp:grpSpPr/@bwMode",
+    "wp:graphicFrame/wp:cNvPr/@id",
+    "wp:graphicFrame/wp:cNvFrPr/a:graphicFrameLocks/@noMove",
+    "wp:graphicFrame/wp:xfrm/@rot",
+    "wp:contentPart/@r:id",
+    "wp:contentPart/@bwMode",
+    "wp:contentPart/wp:nvContentPartPr/wp:cNvContentPartPr/@isComment",
+  ],
+  namespaceAttributes:
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" ' +
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+    'xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart"',
+  descriptor: {
+    stringify: (value: DrawingDescriptorOptions) => drawingDesc.stringify(value, {} as never),
+    parse: (element: Parameters<typeof drawingDesc.parse>[0]) => {
+      const parsed = drawingDesc.parse(element, coverageDrawingReadContext) as {
+        wpgGroup?: ParsedWpgGroup;
+      };
+      if (!parsed.wpgGroup) return {} as DrawingDescriptorOptions;
+      const { altText, graphicFrameLocks, transformation, ...data } = parsed.wpgGroup;
+      return {
+        mediaData: { type: "wpg", transformation, ...data },
+        docProperties: altText,
+        graphicFrameLocks,
+      } satisfies DrawingDescriptorOptions;
+    },
+  },
+  options: {
+    docProperties: { id: "14", name: "Coverage Group" },
+    mediaData: {
+      type: "wpg",
+      transformation: { width: 1828800, height: 1828800 },
+      childOffsetX: 0,
+      childOffsetY: 0,
+      childExtentWidth: 1828800,
+      childExtentHeight: 1828800,
+      groupShapeLocks: { noChangeAspect: true },
+      fill: { type: "solid", color: "accent1" },
+      children: [
+        {
+          type: "wpg",
+          transformation: { width: 914400, height: 914400 },
+          childOffsetX: 0,
+          childOffsetY: 0,
+          childExtentWidth: 914400,
+          childExtentHeight: 914400,
+          children: [],
+        },
+        {
+          type: "contentPart",
+          referenceId: "rId9",
+          blackWhiteMode: "gray",
+          transformation: { width: 914400, height: 914400 },
+          nonVisualProperties: {
+            id: 52,
+            name: "Coverage Content Part",
+            contentPart: { isComment: false },
+          },
+        },
+      ],
+    },
+  },
+  expected: {
+    docProperties: { id: "14", name: "Coverage Group" },
+    graphicFrameLocks: { noChangeAspect: true },
+    mediaData: {
+      type: "wpg",
+      transformation: {
+        effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+        inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+        width: 1828800,
+        height: 1828800,
+      },
+      childOffsetX: 0,
+      childOffsetY: 0,
+      childExtentWidth: 1828800,
+      childExtentHeight: 1828800,
+      groupShapeLocks: { noChangeAspect: true },
+      fill: { type: "solid", color: { value: "accent1" } },
+      children: [
+        {
+          type: "wpg",
+          transformation: {
+            offset: { x: 0, y: 0 },
+            width: 914400,
+            height: 914400,
+          },
+          childOffsetX: 0,
+          childOffsetY: 0,
+          childExtentWidth: 914400,
+          childExtentHeight: 914400,
+          children: [],
+        },
+        {
+          type: "contentPart",
+          referenceId: "rId9",
+          blackWhiteMode: "gray",
+          nonVisualProperties: {
+            id: 52,
+            name: "Coverage Content Part",
+            contentPart: { isComment: false },
+          },
+          transformation: {
+            offset: { x: 0, y: 0 },
+            width: 914400,
+            height: 914400,
+          },
+        },
+      ],
+    },
+  },
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingGroup,
+});
+
+const wordprocessingGroupChartCase: OoxmlExecutableCaseInput = {
+  id: "dml-wp.wgp.graphic-frame.round-trip",
+  schema: "dml-wp",
+  family: "document",
+  element: "wp:graphicFrame",
+  attributes: [
+    "wp:graphicFrame/wp:cNvPr/@id",
+    "wp:graphicFrame/wp:cNvPr/@name",
+    "wp:graphicFrame/wp:cNvFrPr/a:graphicFrameLocks/@noMove",
+    "wp:graphicFrame/wp:xfrm/@rot",
+  ],
+  options: {
+    sections: [
+      {
+        children: [
+          {
+            paragraph: {
+              children: [
+                {
+                  wpgGroup: {
+                    altText: { id: "1", name: "Coverage Group" },
+                    transformation: { width: 1828800, height: 1828800 },
+                    childOffsetX: 0,
+                    childOffsetY: 0,
+                    childExtentWidth: 1828800,
+                    childExtentHeight: 1828800,
+                    children: [
+                      {
+                        type: "chart",
+                        transformation: {
+                          width: 914400,
+                          height: 914400,
+                          offset: { x: 0, y: 0 },
+                          rotation: 30,
+                        },
+                        chartOptions: {
+                          type: "column",
+                          series: [{ values: [1, 2, 3] }],
+                        },
+                        nonVisualProperties: { id: 61, name: "Coverage Group Chart" },
+                        graphicFrameLocks: { noMove: true },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  },
+  partPath: "word/document.xml",
+  validationSchema: "dml-wordprocessingDrawing.xsd",
+  validationTransform: transitionalWordprocessingGroup,
+  projection: (options: DocumentOptions) => {
+    const child = options.sections?.[0]?.children?.[0];
+    if (!child || !("paragraph" in child)) return undefined;
+    const paragraphChild = child.paragraph.children?.[0];
+    if (
+      typeof paragraphChild !== "object" ||
+      paragraphChild === null ||
+      !("wpgGroup" in paragraphChild)
+    ) {
+      return undefined;
+    }
+    return paragraphChild.wpgGroup;
+  },
+  expected: {
+    altText: { id: "1", name: "Coverage Group" },
+    children: [
+      {
+        type: "chart",
+        chartOptions: {
+          type: "column",
+          series: [
+            {
+              formatCode: "General",
+              index: 0,
+              order: 0,
+              valueCache: true,
+              valuePointCount: 3,
+              values: [1, 2, 3],
+            },
+          ],
+          showLegend: true,
+          legendPosition: "bottom",
+          plotVisOnly: true,
+          axes: [
+            {
+              id: 10,
+              kind: "category",
+              crossAxisId: 20,
+              auto: true,
+              delete: false,
+              labelOffset: 100,
+              noMultiLevelLabel: false,
+              position: "bottom",
+              scaling: { orientation: "ascending" },
+              crosses: "zero",
+            },
+            {
+              id: 20,
+              kind: "value",
+              crossAxisId: 10,
+              delete: false,
+              numberFormat: "General",
+              position: "left",
+              scaling: { orientation: "ascending" },
+              crosses: "zero",
+            },
+          ],
+          axisIds: [10, 20],
+        },
+        nonVisualProperties: { id: 61, name: "Coverage Group Chart" },
+        graphicFrameLocks: { noMove: true },
+        transformation: {
+          offset: { x: 0, y: 0 },
+          rotation: 30,
+          width: 914400,
+          height: 914400,
+        },
+      },
+    ],
+    transformation: {
+      effectExtent: { left: 0, top: 0, right: 0, bottom: 0 },
+      inlineDistances: { left: 0, top: 0, right: 0, bottom: 0 },
+      width: 1828800,
+      height: 1828800,
+    },
+    childOffsetX: 0,
+    childOffsetY: 0,
+    childExtentWidth: 1828800,
+    childExtentHeight: 1828800,
+    graphicFrameLocks: { noChangeAspect: true },
+  },
+};
+
+const wordprocessingDrawingInlineCase = wordprocessingDrawingCase(
+  "dml-wp.inline.round-trip",
+  "wp:inline",
+  [
+    "wp:inline/@distT",
+    "wp:inline/@distB",
+    "wp:inline/@distL",
+    "wp:inline/@distR",
+    "wp:extent/@cx",
+    "wp:extent/@cy",
+    "wp:effectExtent/@l",
+    "wp:effectExtent/@t",
+    "wp:effectExtent/@r",
+    "wp:effectExtent/@b",
+    "wp:docPr/@id",
+    "wp:docPr/@name",
+    "wp:cNvGraphicFramePr/a:graphicFrameLocks/@noChangeAspect",
+  ],
+  undefined,
+  undefined,
+);
+
+const wordprocessingDrawingAnchorNoneCase = wordprocessingDrawingCase(
+  "dml-wp.anchor.wrap-none.round-trip",
+  "wp:anchor",
+  [
+    "wp:anchor/@distT",
+    "wp:anchor/@distB",
+    "wp:anchor/@distL",
+    "wp:anchor/@distR",
+    "wp:anchor/@simplePos",
+    "wp:anchor/@relativeHeight",
+    "wp:anchor/@behindDoc",
+    "wp:anchor/@locked",
+    "wp:anchor/@layoutInCell",
+    "wp:anchor/@allowOverlap",
+    "wp:simplePos/@x",
+    "wp:simplePos/@y",
+    "wp:positionH/@relativeFrom",
+    "wp:posOffset",
+    "wp:positionV/@relativeFrom",
+    "wp:wrapNone",
+  ],
+  {
+    horizontalPosition: { relative: "page", offset: 1000 },
+    verticalPosition: { relative: "page", offset: 2000 },
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    allowOverlap: false,
+    behindDocument: true,
+    layoutInCell: false,
+    lockAnchor: true,
+    zIndex: 300,
+    simplePos: { enabled: false, x: 0, y: 0 },
+    wrap: { type: "none" },
+  },
+  {
+    horizontalPosition: { relative: "page", offset: 1000 },
+    verticalPosition: { relative: "page", offset: 2000 },
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    allowOverlap: false,
+    behindDocument: true,
+    layoutInCell: false,
+    lockAnchor: true,
+    zIndex: 300,
+    simplePos: { enabled: false, x: 0, y: 0 },
+    wrap: { type: "none" },
+  },
+);
+
+const wordprocessingDrawingSquareCase = wordprocessingDrawingCase(
+  "dml-wp.anchor.wrap-square.round-trip",
+  "wp:wrapSquare",
+  [
+    "wp:anchor/@hidden",
+    "wp:wrapSquare/@wrapText",
+    "wp:wrapSquare/@distT",
+    "wp:wrapSquare/@distB",
+    "wp:wrapSquare/@distL",
+    "wp:wrapSquare/@distR",
+    "wp:wrapSquare/wp:effectExtent/@l",
+    "wp:wrapSquare/wp:effectExtent/@t",
+    "wp:wrapSquare/wp:effectExtent/@r",
+    "wp:wrapSquare/wp:effectExtent/@b",
+  ],
+  {
+    horizontalPosition: { relative: "margin", align: "center" },
+    verticalPosition: { relative: "paragraph", offset: 3000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    hidden: true,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "square",
+      side: "largest",
+      margins: { distT: 10, distB: 20, distL: 30, distR: 40 },
+      effectExtent: { left: 50, top: 60, right: 70, bottom: 80 },
+    },
+  },
+  {
+    horizontalPosition: { relative: "margin", align: "center" },
+    verticalPosition: { relative: "paragraph", offset: 3000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    hidden: true,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "square",
+      side: "largest",
+      margins: { distT: 10, distB: 20, distL: 30, distR: 40 },
+      effectExtent: { left: 50, top: 60, right: 70, bottom: 80 },
+    },
+  },
+);
+
+const wordprocessingDrawingTightCase = wordprocessingDrawingCase(
+  "dml-wp.anchor.wrap-tight.round-trip",
+  "wp:wrapTight",
+  [
+    "wp:wrapTight/@wrapText",
+    "wp:wrapTight/@distL",
+    "wp:wrapTight/@distR",
+    "wp:wrapPolygon/@edited",
+    "wp:start/@x",
+    "wp:start/@y",
+    "wp:lineTo/@x",
+    "wp:lineTo/@y",
+  ],
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "line", offset: 4000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "tight",
+      side: "right",
+      margins: { distL: 10, distR: 20 },
+      polygon: {
+        edited: false,
+        points: [
+          { x: 1, y: 2 },
+          { x: 3, y: 4 },
+          { x: 5, y: 6 },
+        ],
+      },
+    },
+  },
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "line", offset: 4000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "tight",
+      side: "right",
+      margins: { distL: 10, distR: 20 },
+      polygon: {
+        edited: false,
+        points: [
+          { x: 1, y: 2 },
+          { x: 3, y: 4 },
+          { x: 5, y: 6 },
+        ],
+      },
+    },
+  },
+);
+
+const wordprocessingDrawingThroughCase = wordprocessingDrawingCase(
+  "dml-wp.anchor.wrap-through.round-trip",
+  "wp:wrapThrough",
+  [
+    "wp:wrapThrough/@wrapText",
+    "wp:wrapThrough/@distL",
+    "wp:wrapThrough/@distR",
+    "wp:wrapPolygon/@edited",
+  ],
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "line", offset: 5000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "through",
+      side: "left",
+      margins: { distL: 30, distR: 40 },
+      polygon: {
+        edited: true,
+        points: [
+          { x: 7, y: 8 },
+          { x: 9, y: 10 },
+          { x: 11, y: 12 },
+        ],
+      },
+    },
+  },
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "line", offset: 5000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "through",
+      side: "left",
+      margins: { distL: 30, distR: 40 },
+      polygon: {
+        edited: true,
+        points: [
+          { x: 7, y: 8 },
+          { x: 9, y: 10 },
+          { x: 11, y: 12 },
+        ],
+      },
+    },
+  },
+);
+
+const wordprocessingDrawingTopAndBottomCase = wordprocessingDrawingCase(
+  "dml-wp.anchor.wrap-top-and-bottom.round-trip",
+  "wp:wrapTopAndBottom",
+  [
+    "wp:wrapTopAndBottom/@distT",
+    "wp:wrapTopAndBottom/@distB",
+    "wp:wrapTopAndBottom/wp:effectExtent/@l",
+    "wp:wrapTopAndBottom/wp:effectExtent/@t",
+    "wp:wrapTopAndBottom/wp:effectExtent/@r",
+    "wp:wrapTopAndBottom/wp:effectExtent/@b",
+  ],
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "paragraph", offset: 6000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "topAndBottom",
+      margins: { distT: 12, distB: 34 },
+      effectExtent: { left: 56, top: 78, right: 90, bottom: 12 },
+    },
+  },
+  {
+    horizontalPosition: { relative: "column", align: "center" },
+    verticalPosition: { relative: "paragraph", offset: 6000 },
+    allowOverlap: true,
+    behindDocument: false,
+    layoutInCell: true,
+    lockAnchor: false,
+    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+    simplePos: { enabled: false, x: 0, y: 0 },
+    zIndex: 914400,
+    wrap: {
+      type: "topAndBottom",
+      margins: { distT: 12, distB: 34 },
+      effectExtent: { left: 56, top: 78, right: 90, bottom: 12 },
+    },
+  },
+);
+
+function smartArtPresentation(smartart: SmartArtOptions): PresentationOptions {
+  return { slides: [{ children: [{ smartart }] }] };
+}
+
+function smartArtProjection(options: PresentationOptions) {
+  const child = options.slides?.[0]?.children?.[0];
+  if (!child || !("smartart" in child)) return undefined;
+  return child.smartart;
+}
+
+const coverageLayoutDefinition: LayoutDefinitionOptions = {
+  uniqueId: "urn:coverage/layout",
+  minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+  defaultStyle: "node0",
+  titles: [{ lang: "en-US", val: "Executable layout" }],
+  descriptions: [{ lang: "en-US", val: "Coverage layout" }],
+  categories: [{ type: "process", pri: 1000 }],
+  sampleData: { useDefault: true },
+  styleData: { useDefault: true },
+  colorData: { useDefault: true },
+  layoutNode: {
+    name: "root",
+    styleLabel: "node0",
+    childOrder: "t",
+    children: [
+      {
+        algorithm: {
+          type: "tx",
+          revision: 1,
+          parameters: [{ type: "linDir", value: "fromL" }],
+        },
+      },
+      {
+        shape: {
+          type: "rect",
+          rotation: 30,
+          blip: null,
+          zOrderOffset: 2,
+          hideGeometry: true,
+          lockTextEntry: true,
+          blipPlaceholder: true,
+          adjustments: [{ idx: 1, val: 25000 }],
+        },
+      },
+      {
+        constraints: [
+          {
+            type: "w",
+            value: 10,
+            factor: 2,
+            for: "ch",
+            forName: "child",
+            pointType: "node",
+            referenceType: "w",
+            referenceFor: "des",
+            referenceForName: "root",
+            referencePointType: "node",
+            operation: "equ",
+          },
+        ],
+      },
+      {
+        rules: [
+          {
+            type: "w",
+            value: 20,
+            factor: 2,
+            maximum: 30,
+            for: "ch",
+            forName: "child",
+            pointType: "node",
+          },
+        ],
+      },
+      {
+        variables: {
+          organizationChart: true,
+          childMaximum: 4,
+          childPreferred: 2,
+          bulletEnabled: false,
+          direction: "reversed",
+          hierarchyBranchStyle: "hanging",
+          animateOne: "branch",
+          animateLevel: "center",
+          resizeHandles: "relative",
+        },
+      },
+      {
+        presentationOf: {
+          axis: "ch",
+          pointType: "node",
+          hideLastTransition: "1",
+          start: "0",
+          count: "5",
+          step: "1",
+        },
+      },
+      {
+        forEach: {
+          name: "nodes",
+          reference: "root",
+          axis: "ch",
+          pointType: "node",
+          hideLastTransition: "1",
+          start: "0",
+          count: "5",
+          step: "1",
+          children: [{ layoutNode: { name: "node", moveWith: "root" } }],
+        },
+      },
+      {
+        choose: {
+          name: "branch",
+          conditions: [
+            {
+              name: "condition",
+              axis: "ch",
+              pointType: "node",
+              hideLastTransition: "1",
+              start: "0",
+              count: "5",
+              step: "1",
+              function: "var",
+              argument: "dir",
+              operator: "equ",
+              value: "1",
+              children: [{ layoutNode: { name: "horizontal" } }],
+            },
+          ],
+          otherwise: {
+            name: "fallback",
+            children: [{ layoutNode: { name: "vertical" } }],
+          },
+        },
+      },
+    ],
+  },
+  extensions: [{ uri: "urn:layout-ext" }],
+};
+
+const smartArtDataModelCase: OoxmlExecutableCaseInput = {
+  id: "dml-diagram.data-model.round-trip",
+  schema: "dml-diagram",
+  family: "presentation",
+  element: "dgm:dataModel",
+  attributes: ["dgm:pt/@modelId", "dgm:cxn/@modelId", "dgm:prSet/@phldr"],
+  options: smartArtPresentation({
+    id: 810,
+    nodes: [],
+    dataModel: {
+      points: [
+        { modelId: "0", type: "doc" },
+        {
+          modelId: "1",
+          propertySet: {
+            presentationAssociationId: "90",
+            presentationName: "coverage-name",
+            presentationStyleLabel: "node0",
+            presentationStyleIndex: 1,
+            presentationStyleCount: 3,
+            placeholder: true,
+            placeholderText: "Executable point",
+            customAngle: 30,
+            customFlipVertical: true,
+            customFlipHorizontal: true,
+            customSizeX: 100,
+            customSizeY: 200,
+            customScaleX: 1.5,
+            customScaleY: 2.5,
+            customText: true,
+            customLinearFactorX: 0.5,
+            customLinearFactorY: 0.75,
+            customLinearFactorNeighborX: 0.25,
+            customLinearFactorNeighborY: 0.125,
+            customRadialScaleRadius: 1.25,
+            customRadialScaleIncrement: 0.5,
+            coherent3DOffset: true,
+            layoutTypeId: "layout-id",
+            layoutCategoryId: "layout-cat",
+            quickStyleTypeId: "style-id",
+            quickStyleCategoryId: "style-cat",
+            colorStyleTypeId: "color-id",
+            colorStyleCategoryId: "color-cat",
+            presentationLayoutVariables: {
+              orgChart: { val: true },
+              maxChildren: { val: 4 },
+              bulletEnabled: { val: false },
+              direction: { val: "reversed" },
+              resizeHandles: { val: "relative" },
+            },
+            style: {
+              lineReference: { index: 2, color: { value: "accent1" } },
+              fillReference: { index: 1 },
+              effectReference: { index: 0 },
+              fontReference: { collection: "minor" },
+            },
+          },
+          blackWhiteMode: "auto",
+          shapeProperties: { x: 10, y: 20, width: 30, height: 40 },
+          textBody: {
+            bodyProperties: {},
+            paragraphs: [{ endParagraphProperties: false, text: "Root" }],
+          },
+          extensions: [{ uri: "urn:data-point-ext" }],
+        },
+        {
+          modelId: "2",
+          type: "parTrans",
+          connectionId: "3",
+          textBody: {
+            bodyProperties: {},
+            paragraphs: [{ endParagraphProperties: { lang: "en-US" } }],
+          },
+        },
+      ],
+      connections: [
+        {
+          modelId: "3",
+          sourceId: "0",
+          destinationId: "1",
+          type: "presParOf",
+          sourceOrder: 2,
+          destinationOrder: 4,
+          presentationId: "pres-1",
+          parentTransitionId: "2",
+          siblingTransitionId: "91",
+          extensions: [{ uri: "urn:data-cxn-ext" }],
+        },
+      ],
+      background: { fill: { type: "solid", color: { value: "00FF00" } } },
+      whole: { outline: { width: 12700, type: "solidFill", color: { value: "0000FF" } } },
+      extensions: [{ uri: "urn:data-model-ext" }],
+    },
+  }),
+  partPath: "ppt/diagrams/data1.xml",
+  projection: (options) => smartArtProjection(options)?.dataModel,
+  expected: {
+    points: [
+      { modelId: "0", type: "doc" },
+      {
+        modelId: "1",
+        propertySet: {
+          presentationAssociationId: "90",
+          presentationName: "coverage-name",
+          presentationStyleLabel: "node0",
+          presentationStyleIndex: 1,
+          presentationStyleCount: 3,
+          placeholder: true,
+          placeholderText: "Executable point",
+          customAngle: 30,
+          customFlipVertical: true,
+          customFlipHorizontal: true,
+          customSizeX: 100,
+          customSizeY: 200,
+          customScaleX: 1.5,
+          customScaleY: 2.5,
+          customText: true,
+          customLinearFactorX: 0.5,
+          customLinearFactorY: 0.75,
+          customLinearFactorNeighborX: 0.25,
+          customLinearFactorNeighborY: 0.125,
+          customRadialScaleRadius: 1.25,
+          customRadialScaleIncrement: 0.5,
+          coherent3DOffset: true,
+          layoutTypeId: "layout-id",
+          layoutCategoryId: "layout-cat",
+          quickStyleTypeId: "style-id",
+          quickStyleCategoryId: "style-cat",
+          colorStyleTypeId: "color-id",
+          colorStyleCategoryId: "color-cat",
+          presentationLayoutVariables: {
+            orgChart: { val: true },
+            maxChildren: { val: 4 },
+            bulletEnabled: { val: false },
+            direction: { val: "reversed" },
+            resizeHandles: { val: "relative" },
+          },
+          style: {
+            lineReference: { index: 2, color: { value: "accent1" } },
+            fillReference: { index: 1 },
+            effectReference: { index: 0 },
+            fontReference: { collection: "minor" },
+          },
+        },
+        blackWhiteMode: "auto",
+        shapeProperties: { x: 10, y: 20, width: 30, height: 40 },
+        textBody: {
+          bodyProperties: {},
+          paragraphs: [{ endParagraphProperties: false, text: "Root" }],
+        },
+        extensions: [{ uri: "urn:data-point-ext" }],
+      },
+      {
+        modelId: "2",
+        type: "parTrans",
+        connectionId: "3",
+        textBody: {
+          bodyProperties: {},
+          paragraphs: [{ endParagraphProperties: { lang: "en-US" } }],
+        },
+      },
+    ],
+    connections: [
+      {
+        modelId: "3",
+        sourceId: "0",
+        destinationId: "1",
+        type: "presParOf",
+        sourceOrder: 2,
+        destinationOrder: 4,
+        presentationId: "pres-1",
+        parentTransitionId: "2",
+        siblingTransitionId: "91",
+        extensions: [{ uri: "urn:data-cxn-ext" }],
+      },
+    ],
+    background: { fill: { type: "solid", color: { value: "00FF00" } } },
+    whole: { outline: { width: 12700, type: "solidFill", color: { value: "0000FF" } } },
+    extensions: [{ uri: "urn:data-model-ext" }],
+  },
+};
+
+const smartArtLayoutCase: OoxmlExecutableCaseInput = {
+  id: "dml-diagram.layout-definition.round-trip",
+  schema: "dml-diagram",
+  family: "presentation",
+  element: "dgm:layoutDef",
+  attributes: ["dgm:layoutDef/@uniqueId", "dgm:alg/@type", "dgm:param/@type"],
+  options: smartArtPresentation({
+    id: 811,
+    nodes: [],
+    layout: coverageLayoutDefinition,
+  }),
+  partPath: "ppt/diagrams/layout1.xml",
+  projection: (options) => smartArtProjection(options)?.layout,
+  expected: coverageLayoutDefinition,
+};
+
+const smartArtStyleCase: OoxmlExecutableCaseInput = {
+  id: "dml-diagram.style-definition.round-trip",
+  schema: "dml-diagram",
+  family: "presentation",
+  element: "dgm:styleDef",
+  attributes: ["dgm:styleDef/@uniqueId", "dgm:styleLbl/@name", "dgm:style/@lnRef"],
+  options: smartArtPresentation({
+    id: 812,
+    nodes: [],
+    style: {
+      uniqueId: "urn:coverage/style",
+      minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+      titles: [{ lang: "en-US", val: "Executable style" }],
+      styleLabels: [
+        {
+          name: "node0",
+          scene3d: {
+            camera: { preset: "orthographicFront" },
+            lightRig: { rig: "threePt", direction: "topLeft" },
+          },
+          shape3d: { z: 100, extrusionH: 500, contourW: 200, prstMaterial: "metal" },
+          textProperties: { flatText: 0 },
+          style: {
+            lineReference: { index: 2, color: { value: "accent1" } },
+            fillReference: { index: 1 },
+            effectReference: { index: 0 },
+            fontReference: { collection: "minor" },
+          },
+        },
+      ],
+      extensions: [{ uri: "urn:style-ext" }],
+    },
+  }),
+  partPath: "ppt/diagrams/quickStyle1.xml",
+  projection: (options) => smartArtProjection(options)?.style,
+  expected: {
+    uniqueId: "urn:coverage/style",
+    minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+    titles: [{ lang: "en-US", val: "Executable style" }],
+    styleLabels: [
+      {
+        name: "node0",
+        scene3d: {
+          camera: { preset: "orthographicFront" },
+          lightRig: { rig: "threePt", direction: "topLeft" },
+        },
+        shape3d: { z: 100, extrusionH: 500, contourW: 200, prstMaterial: "metal" },
+        textProperties: { flatText: 0 },
+        style: {
+          lineReference: { index: 2, color: { value: "accent1" } },
+          fillReference: { index: 1 },
+          effectReference: { index: 0 },
+          fontReference: { collection: "minor" },
+        },
+      },
+    ],
+    extensions: [{ uri: "urn:style-ext" }],
+  },
+};
+
+const smartArtColorCase: OoxmlExecutableCaseInput = {
+  id: "dml-diagram.color-definition.round-trip",
+  schema: "dml-diagram",
+  family: "presentation",
+  element: "dgm:colorsDef",
+  attributes: ["dgm:colorsDef/@uniqueId", "dgm:styleLbl/@name", "dgm:fillClrLst/@meth"],
+  options: smartArtPresentation({
+    id: 813,
+    nodes: [],
+    color: {
+      uniqueId: "urn:coverage/colors",
+      minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+      titles: [{ lang: "en-US", val: "Executable colors" }],
+      styleLabels: [
+        {
+          name: "node0",
+          fillColorList: {
+            meth: "cycle",
+            hueDir: "counterClockwise",
+            colors: [{ value: "accent1" }, { value: "FF0000" }],
+          },
+          lineColorList: {
+            meth: "cycle",
+            hueDir: "counterClockwise",
+            colors: [{ value: "lt1" }],
+          },
+          effectColorList: {
+            meth: "cycle",
+            hueDir: "counterClockwise",
+            colors: [{ value: "dk1" }],
+          },
+          textFillColorList: {
+            meth: "repeat",
+            hueDir: "counterClockwise",
+            colors: [{ value: "accent3" }],
+          },
+          textLineColorList: {
+            meth: "cycle",
+            hueDir: "counterClockwise",
+            colors: [{ value: "lt2" }],
+          },
+          textEffectColorList: {
+            meth: "cycle",
+            hueDir: "counterClockwise",
+            colors: [{ value: "accent2" }],
+          },
+        },
+      ],
+      extensions: [{ uri: "urn:color-ext" }],
+    },
+  }),
+  partPath: "ppt/diagrams/colors1.xml",
+  projection: (options) => smartArtProjection(options)?.color,
+  expected: {
+    uniqueId: "urn:coverage/colors",
+    minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+    titles: [{ lang: "en-US", val: "Executable colors" }],
+    styleLabels: [
+      {
+        name: "node0",
+        fillColorList: {
+          meth: "cycle",
+          hueDir: "counterClockwise",
+          colors: [{ value: "accent1" }, { value: "FF0000" }],
+        },
+        lineColorList: {
+          meth: "cycle",
+          hueDir: "counterClockwise",
+          colors: [{ value: "lt1" }],
+        },
+        effectColorList: {
+          meth: "cycle",
+          hueDir: "counterClockwise",
+          colors: [{ value: "dk1" }],
+        },
+        textFillColorList: { meth: "repeat" },
+        textFillColorList: {
+          meth: "repeat",
+          hueDir: "counterClockwise",
+          colors: [{ value: "accent3" }],
+        },
+        textLineColorList: {
+          meth: "cycle",
+          hueDir: "counterClockwise",
+          colors: [{ value: "lt2" }],
+        },
+        textEffectColorList: {
+          meth: "cycle",
+          hueDir: "counterClockwise",
+          colors: [{ value: "accent2" }],
+        },
+      },
+    ],
+    extensions: [{ uri: "urn:color-ext" }],
+  },
+};
+
+const smartArtRelationshipIdsCase: OoxmlExecutableCaseInput = {
+  id: "dml-diagram.relationship-ids.round-trip",
+  schema: "dml-diagram",
+  family: "presentation",
+  element: "dgm:relIds",
+  attributes: ["dgm:relIds/@r:dm", "dgm:relIds/@r:lo", "dgm:relIds/@r:qs", "dgm:relIds/@r:cs"],
+  options: smartArtPresentation({
+    id: 814,
+    nodes: [],
+    raw: {
+      drawing:
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<dgm:relIds xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ' +
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+        'r:dm="rId1" r:lo="rId2" r:qs="rId3" r:cs="rId4"/>',
+    },
+  }),
+  partPath: "ppt/diagrams/drawing1.xml",
+  projection: (options) => {
+    const child = options.slides?.[0]?.children?.[0];
+    if (!child || !("smartart" in child)) return undefined;
+    const drawing = child.smartart.raw?.drawing;
+    if (drawing === undefined) return undefined;
+    return typeof drawing === "string" ? drawing : new TextDecoder().decode(drawing);
+  },
+  expected:
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<dgm:relIds xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ' +
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" ' +
+    'r:dm="rId1" r:lo="rId2" r:qs="rId3" r:cs="rId4"/>',
+};
+
+const diagramHeaderNamespace =
+  'xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ' +
+  'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"';
+
+const diagramColorHeader = {
+  uniqueId: "urn:coverage/colors-header",
+  minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+  resId: 7,
+  title: [{ lang: "en-US", val: "Coverage colors" }],
+  desc: [{ lang: "en-US", val: "Executable color header" }],
+  categories: [{ type: "colorful", pri: 1000 }],
+};
+
+const diagramLayoutHeader = {
+  uniqueId: "urn:coverage/layout-header",
+  minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+  defStyle: "node0",
+  resId: 8,
+  title: [{ lang: "en-US", val: "Coverage layout" }],
+  desc: [{ lang: "en-US", val: "Executable layout header" }],
+  categories: [{ type: "process", pri: 1000 }],
+};
+
+const diagramStyleHeader = {
+  uniqueId: "urn:coverage/style-header",
+  minVer: "http://schemas.openxmlformats.org/drawingml/2006/diagram",
+  resId: 9,
+  title: [{ lang: "en-US", val: "Coverage style" }],
+  desc: [{ lang: "en-US", val: "Executable style header" }],
+  categories: [{ type: "simple", pri: 1000 }],
+};
+
+const diagramColorHeaderCase = descriptorCase({
+  id: "dml-diagram.colors-definition-header.round-trip",
+  schema: "dml-diagram",
+  family: "descriptor",
+  element: "dgm:colorsDefHdrLst",
+  attributes: ["dgm:colorsDefHdr/@uniqueId", "dgm:colorsDefHdr/@minVer", "dgm:colorsDefHdr/@resId"],
+  namespaceAttributes: diagramHeaderNamespace,
+  descriptor: colorsDefinitionHeaderListDesc,
+  options: { headers: [diagramColorHeader] },
+  expected: { headers: [diagramColorHeader] },
+});
+
+const diagramLayoutHeaderCase = descriptorCase({
+  id: "dml-diagram.layout-definition-header.round-trip",
+  schema: "dml-diagram",
+  family: "descriptor",
+  element: "dgm:layoutDefHdrLst",
+  attributes: [
+    "dgm:layoutDefHdr/@uniqueId",
+    "dgm:layoutDefHdr/@minVer",
+    "dgm:layoutDefHdr/@defStyle",
+    "dgm:layoutDefHdr/@resId",
+  ],
+  namespaceAttributes: diagramHeaderNamespace,
+  descriptor: layoutDefinitionHeaderListDesc,
+  options: { headers: [diagramLayoutHeader] },
+  expected: { headers: [diagramLayoutHeader] },
+});
+
+const diagramStyleHeaderCase = descriptorCase({
+  id: "dml-diagram.style-definition-header.round-trip",
+  schema: "dml-diagram",
+  family: "descriptor",
+  element: "dgm:styleDefHdrLst",
+  attributes: ["dgm:styleDefHdr/@uniqueId", "dgm:styleDefHdr/@minVer", "dgm:styleDefHdr/@resId"],
+  namespaceAttributes: diagramHeaderNamespace,
+  descriptor: styleDefinitionHeaderListDesc,
+  options: { headers: [diagramStyleHeader] },
+  expected: { headers: [diagramStyleHeader] },
+});
+
+const MATH_NAMESPACE =
+  'xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math" ' +
+  'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"';
+
+const mathEquationDescriptor = {
+  stringify: (children: MathInput[]) =>
+    `<m:oMath>${children.map((child) => stringifyMathInput(child)).join("")}</m:oMath>`,
+  parse: (element: Element) => parseMathChildren(element),
+};
+
+const mathStructureFixture: MathInput[] = [
+  {
+    fraction: {
+      numerator: ["n"],
+      denominator: ["d"],
+      fractionType: "skw",
+      numeratorArgumentProperties: { size: 1 },
+      denominatorArgumentProperties: { size: 2 },
+      controlProperties: {},
+    },
+  },
+  {
+    superScript: {
+      children: ["x"],
+      superScript: ["2"],
+      baseArgumentProperties: { size: 1 },
+      superScriptArgumentProperties: { size: 2 },
+      controlProperties: {},
+    },
+  },
+  {
+    subScript: {
+      children: ["x"],
+      subScript: ["1"],
+      baseArgumentProperties: { size: 1 },
+      subScriptArgumentProperties: { size: 2 },
+      controlProperties: {},
+    },
+  },
+  {
+    subSuperScript: {
+      children: ["x"],
+      subScript: ["1"],
+      superScript: ["2"],
+      baseArgumentProperties: { size: 1 },
+      subScriptArgumentProperties: { size: 2 },
+      superScriptArgumentProperties: { size: 1 },
+      alignScript: true,
+      controlProperties: {},
+    },
+  },
+  {
+    preSubSuperScript: {
+      children: ["x"],
+      subScript: ["1"],
+      superScript: ["2"],
+      baseArgumentProperties: { size: 1 },
+      subScriptArgumentProperties: { size: 2 },
+      superScriptArgumentProperties: { size: 1 },
+      controlProperties: {},
+    },
+  },
+  {
+    radical: {
+      children: ["x"],
+      degree: ["3"],
+      properties: { hideDegree: false },
+      controlProperties: {},
+    },
+  },
+  {
+    nary: {
+      character: "∏",
+      children: ["x"],
+      subScript: ["1"],
+      superScript: ["n"],
+      properties: {
+        limitLocation: "undOvr",
+        grow: true,
+        hideSubscript: false,
+        hideSuperscript: false,
+      },
+      controlProperties: {},
+    },
+  },
+  { limitLower: { children: ["x"], limit: ["min"], controlProperties: {} } },
+  { limitUpper: { children: ["x"], limit: ["max"], controlProperties: {} } },
+  { function: { name: ["sin"], children: ["x"], controlProperties: {} } },
+  {
+    squareBrackets: {
+      children: ["x"],
+      properties: {
+        beginCharacter: "[",
+        endCharacter: "]",
+        separatorCharacter: "|",
+        grow: true,
+        shape: "match",
+        controlProperties: {},
+      },
+    },
+  },
+  {
+    matrix: {
+      rows: [
+        [["a"], ["b"]],
+        [["c"], ["d"]],
+      ],
+      properties: {
+        baseline: "center",
+        hidePlaceholder: true,
+        rowSpacingRule: 2,
+        columnGapRule: 3,
+        rowSpacing: 120,
+        columnSpacing: 140,
+        columnGap: 160,
+        columns: [{ count: 2, justification: "center" }],
+      },
+      controlProperties: {},
+    },
+  },
+  {
+    borderBox: {
+      children: ["x"],
+      properties: {
+        hideTop: true,
+        hideBottom: false,
+        hideLeft: true,
+        hideRight: false,
+        strikeHorizontal: true,
+        strikeVertical: false,
+        strikeDiagonalUp: true,
+        strikeDiagonalDown: false,
+      },
+      controlProperties: {},
+    },
+  },
+  {
+    box: {
+      children: ["x"],
+      properties: { operatorEmulation: true, noBreak: true, differential: true, align: true },
+      controlProperties: {},
+    },
+  },
+  {
+    groupChr: {
+      children: ["x"],
+      properties: { character: "⏟", position: "bot", vertical: "top" },
+      controlProperties: {},
+    },
+  },
+  {
+    phant: {
+      children: ["x"],
+      properties: {
+        show: false,
+        zeroWidth: true,
+        zeroAscent: true,
+        zeroDescent: true,
+        transparent: false,
+      },
+      controlProperties: {},
+    },
+  },
+  {
+    eqArr: {
+      rows: [["a"], ["b"]],
+      properties: {
+        baseline: "top",
+        distributeRows: true,
+        objectDistance: true,
+        rowSpacingRule: 1,
+        rowSpacing: 100,
+      },
+      controlProperties: {},
+    },
+  },
+  { accent: { children: ["x"], accentCharacter: "^", controlProperties: {} } },
+  { bar: { children: ["x"], type: "top", controlProperties: {} } },
+  {
+    text: "y",
+    properties: {
+      literal: true,
+      normal: undefined,
+      script: "fraktur",
+      style: "boldItalic",
+      breakAlignment: 120,
+      align: false,
+    },
+  },
+];
+
+const mathStructuresCase = descriptorCase({
+  id: "math.inline.structures",
+  schema: "math",
+  family: "descriptor",
+  element: "m:oMath",
+  attributes: ["m:oMath/@xmlns:m", "m:oMath/@xmlns:w"],
+  namespaceAttributes: MATH_NAMESPACE,
+  descriptor: mathEquationDescriptor,
+  options: mathStructureFixture,
+  expected: mathStructureFixture,
+});
+
+const mathParagraphFixture = {
+  equations: [mathStructureFixture],
+  justification: "centerGroup",
+} as const;
+
+const mathParagraphCase = descriptorCase({
+  id: "math.paragraph.round-trip",
+  schema: "math",
+  family: "descriptor",
+  element: "m:oMathPara",
+  attributes: ["m:oMathParaPr/m:jc/@m:val"],
+  namespaceAttributes: MATH_NAMESPACE,
+  descriptor: {
+    stringify: (value: typeof mathParagraphFixture) =>
+      stringifyMathParagraph(value.equations as MathInput[], value.justification),
+    parse: parseMathParagraph,
+  },
+  options: mathParagraphFixture,
+  expected: mathParagraphFixture,
+});
+
+const mathSettingsOptions = {
+  mathProperties: {
+    mathFont: "Coverage Math",
+    binaryOperatorBreak: "before",
+    binaryOperatorBreakSubtraction: "-+",
+    smallFractions: false,
+    displayDefaults: false,
+    leftMargin: 720,
+    rightMargin: "1cm",
+    defaultJustification: "centerGroup",
+    preSpacing: "10pt",
+    postSpacing: 240,
+    interSpacing: 300,
+    intraSpacing: 360,
+    wrapIndent: 480,
+    integralLimitLocation: "subSup",
+    naryLimitLocation: "undOvr",
+  },
+} as const;
+
+const mathSettingsWrapRightOptions = {
+  mathProperties: {
+    mathFont: "Coverage Math",
+    binaryOperatorBreak: "before",
+    binaryOperatorBreakSubtraction: "-+",
+    smallFractions: false,
+    displayDefaults: false,
+    leftMargin: 720,
+    rightMargin: "1cm",
+    defaultJustification: "centerGroup",
+    preSpacing: "10pt",
+    postSpacing: 240,
+    interSpacing: 300,
+    intraSpacing: 360,
+    wrapRight: true,
+    integralLimitLocation: "subSup",
+    naryLimitLocation: "undOvr",
+  },
+} as const;
+
+const mathSettingsCase: OoxmlExecutableCaseInput = {
+  id: "math.settings.round-trip",
+  schema: "math",
+  family: "document",
+  element: "m:mathPr",
+  attributes: [
+    "m:mathFont/@m:val",
+    "m:brkBin/@m:val",
+    "m:brkBinSub/@m:val",
+    "m:lMargin/@m:val",
+    "m:rMargin/@m:val",
+    "m:defJc/@m:val",
+    "m:preSp/@m:val",
+    "m:postSp/@m:val",
+    "m:interSp/@m:val",
+    "m:intraSp/@m:val",
+    "m:wrapIndent/@m:val",
+    "m:intLim/@m:val",
+    "m:naryLim/@m:val",
+  ],
+  partPath: "word/settings.xml",
+  options: {
+    sections: [{ children: [] }],
+    settings: mathSettingsOptions,
+  } as DocumentOptions,
+  projection: (options) => options.settings?.mathProperties,
+  expected: mathSettingsOptions.mathProperties,
+};
+
+const mathSettingsWrapRightCase: OoxmlExecutableCaseInput = {
+  id: "math.settings.wrap-right",
+  schema: "math",
+  family: "document",
+  element: "m:mathPr",
+  attributes: ["m:wrapRight/@m:val"],
+  partPath: "word/settings.xml",
+  options: {
+    sections: [{ children: [] }],
+    settings: mathSettingsWrapRightOptions,
+  } as DocumentOptions,
+  projection: (options) => options.settings?.mathProperties,
+  expected: mathSettingsWrapRightOptions.mathProperties,
+};
+
+const mathNormalRunCase = descriptorCase({
+  id: "math.run.normal",
+  schema: "math",
+  family: "descriptor",
+  element: "m:r",
+  attributes: ["m:rPr/m:nor/@m:val", "m:t/@xml:space"],
+  namespaceAttributes: MATH_NAMESPACE,
+  descriptor: mathEquationDescriptor,
+  options: [{ text: "y", properties: { normal: true } }] as MathInput[],
+  expected: [{ text: "y", properties: { normal: true } }] as MathInput[],
+});
+
 export const OOXML_EXECUTABLE_REGISTRY: OoxmlExecutableRegistry = {
   cases: [
+    mathStructuresCase,
+    mathParagraphCase,
+    mathSettingsCase,
+    mathSettingsWrapRightCase,
+    mathNormalRunCase,
     commentIdCase,
     ...extensibleCases,
     lockedCanvasCase,
@@ -2067,5 +4188,26 @@ export const OOXML_EXECUTABLE_REGISTRY: OoxmlExecutableRegistry = {
     chartDrawingGraphicFrameCase,
     chartDrawingGroupCase,
     pictureCase,
+    wordprocessingDrawingInlineCase,
+    wordprocessingShapeCase,
+    wordprocessingLinkedShapeCase,
+    wordprocessingShapeMetadataCase,
+    wordprocessingCanvasCase,
+    wordprocessingConnectorCase,
+    wordprocessingGroupCase,
+    wordprocessingGroupChartCase,
+    wordprocessingDrawingAnchorNoneCase,
+    wordprocessingDrawingSquareCase,
+    wordprocessingDrawingTightCase,
+    wordprocessingDrawingThroughCase,
+    wordprocessingDrawingTopAndBottomCase,
+    smartArtDataModelCase,
+    smartArtLayoutCase,
+    smartArtStyleCase,
+    smartArtColorCase,
+    smartArtRelationshipIdsCase,
+    diagramColorHeaderCase,
+    diagramLayoutHeaderCase,
+    diagramStyleHeaderCase,
   ],
 };

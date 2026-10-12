@@ -1,7 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { OOXML_PACKAGE_FORMATS, opaquePassthroughPolicy } from "../../packages/core/dist/index.mjs";
+import {
+  isEncryptedContainer,
+  OOXML_PACKAGE_FORMATS,
+  opaquePassthroughPolicy,
+  parseArchive,
+} from "../../packages/core/dist/index.mjs";
 import { parseDocument } from "../../packages/docx/dist/index.mjs";
 import { parsePresentation } from "../../packages/pptx/dist/index.mjs";
 import { parseWorkbook } from "../../packages/xlsx/dist/index.mjs";
@@ -12,6 +17,7 @@ import {
   classifyPackageFailure,
   type CorpusFailureKind,
   orphanedPackageMembers,
+  primaryPackagePart,
   type SemanticPartDiff,
 } from "./semantics";
 
@@ -159,6 +165,7 @@ export interface FormatCounts {
   diff: number;
   parseFail: number;
   genFail: number;
+  malformed: number;
 }
 
 export interface LibraryRunInput {
@@ -228,9 +235,9 @@ export async function runLibrary(
   { destination, root, strictSemantic }: LibraryRunInput,
 ): Promise<LibraryRunResult> {
   const counts = {
-    docx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0 },
-    xlsx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0 },
-    pptx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0 },
+    docx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0, malformed: 0 },
+    xlsx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0, malformed: 0 },
+    pptx: { total: 0, clean: 0, diff: 0, parseFail: 0, genFail: 0, malformed: 0 },
   } as Record<Format, FormatCounts>;
   const blockerMaps: Record<Format, Map<string, number>> = {
     docx: new Map(),
@@ -255,10 +262,34 @@ export async function runLibrary(
     let options: unknown;
     let output: Uint8Array;
     const source = new Uint8Array(fs.readFileSync(file));
+    if (!isEncryptedContainer(source)) {
+      const fallbacks = {
+        docx: "word/document.xml",
+        xlsx: "xl/workbook.xml",
+        pptx: "ppt/presentation.xml",
+      } as const;
+      try {
+        primaryPackagePart(parseArchive(source), fallbacks[format]);
+      } catch (error) {
+        current.malformed++;
+        diagnostics.push({
+          file: path.relative(root, file),
+          format,
+          outcome: classifyPackageFailure(error),
+          package: libraryId,
+          error: String(error).slice(0, 240),
+        });
+        continue;
+      }
+    }
     try {
       options = await BY_EXT[path.extname(file).slice(1).toLowerCase()]!.parse(source);
     } catch (error) {
-      current.parseFail++;
+      const structured = error instanceof Error && error.name.endsWith("ParseError");
+      const classifiedMalformed =
+        structured && (error as { reason?: string }).reason === "unknown-chartex-child";
+      if (structured && !classifiedMalformed) current.parseFail++;
+      else current.malformed++;
       diagnostics.push({
         file: path.relative(root, file),
         format,

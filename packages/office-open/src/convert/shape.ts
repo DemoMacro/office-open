@@ -46,7 +46,7 @@ import {
   boxFromDocx,
   boxToPptx,
   boxToXlsx,
-  boxToDocx,
+  boxToDocxTransformation,
 } from "./position";
 import { fromDrawingParagraph, toDrawingParagraph } from "./text";
 
@@ -173,7 +173,7 @@ const hasCnvPr = (source: NonVisualDrawingPropertiesOptions): boolean => {
 /**
  * Build the docx wps core + position from a pptx or xlsx shape. Group
  * conversion reuses this to embed shapes as wpg children (the child carries a
- * full MediaDataTransformation; the caller runs it through createTransformation).
+ * full MediaTransformation).
  */
 export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): DocxShapeParts {
   if ("col" in source) {
@@ -196,7 +196,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
         ...(preset !== undefined ? { geometry: preset } : {}),
         ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
       },
-      transformation: boxToDocx(box),
+      transformation: boxToDocxTransformation(box),
     };
   }
   // pptx → docx
@@ -218,7 +218,7 @@ export function toDocxShapeParts(source: PptxShapeOptions | XlsxShapeOptions): D
       ...(preset !== undefined ? { geometry: preset } : {}),
       ...(hasCnvPr(source) ? docxNonVisual(source) : {}),
     },
-    transformation: boxToDocx(box),
+    transformation: boxToDocxTransformation(box),
   };
 }
 

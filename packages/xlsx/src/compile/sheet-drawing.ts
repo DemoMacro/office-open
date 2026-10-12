@@ -8,6 +8,7 @@
 
 import {
   RELATIONSHIP_TYPES,
+  partPathToRelsPath,
   Relationships,
   type PassthroughRelationship,
   resolveRelationshipTarget,
@@ -16,6 +17,17 @@ import {
   toUint8Array,
 } from "@office-open/core";
 import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
+import {
+  createDataModel,
+  definitionId,
+  getColorXml,
+  getLayoutXml,
+  getStyleXml,
+  stringifyColorDefinitionPart,
+  stringifyDataModelOptions,
+  stringifyLayoutDefinitionPart,
+  stringifyStyleDefinitionPart,
+} from "@office-open/core/smartart";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type {
   DrawingChartOptions,
@@ -298,9 +310,8 @@ export function compileSheetDrawing(
     state.globalChartIdx++;
   }
 
-  // Process SmartArt — the diagram parts themselves are passthrough, so the
-  // relationship targets stay exactly the source-relative form; only the
-  // rIds are renumbered into the rebuilt drawing rels.
+  // Process SmartArt. The modeled XML parts are always rebuilt from canonical
+  // data; source paths remain round-trip metadata and never select raw output.
   for (const sa of smartArtOpts) {
     const relTarget = (path: string): string =>
       path.startsWith("xl/") ? `../${path.slice(3)}` : path;
@@ -312,14 +323,100 @@ export function compileSheetDrawing(
       if (existing !== undefined) return existing;
       return addPreservedDrawingRel(undefined, relType, target);
     };
+    const smartArtIndex = state.globalSmartArtIdx;
+    const canonicalPaths = {
+      data: `xl/diagrams/data${smartArtIndex}.xml`,
+      layout: `xl/diagrams/layout${smartArtIndex}.xml`,
+      quickStyle: `xl/diagrams/quickStyle${smartArtIndex}.xml`,
+      colors: `xl/diagrams/colors${smartArtIndex}.xml`,
+    };
+    if (sa.nodes) {
+      state.globalSmartArtIdx++;
+      const layoutId =
+        typeof sa.layout === "string" || sa.layout === undefined
+          ? (sa.layout ?? "default")
+          : definitionId(sa.layout);
+      const styleId =
+        typeof sa.style === "string" || sa.style === undefined
+          ? (sa.style ?? "simple1")
+          : definitionId(sa.style);
+      const colorId =
+        typeof sa.color === "string" || sa.color === undefined
+          ? (sa.color ?? "accent1_2")
+          : definitionId(sa.color);
+      const dataRelationships = new Relationships(canonicalPaths.data);
+      const dataXml = sa.dataModel
+        ? bindMediaPlaceholders(
+            stringifyDataModelOptions(sa.dataModel, ctx),
+            ctx.media,
+            dataRelationships,
+          ).replace(
+            "<dgm:dataModel>",
+            '<dgm:dataModel xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram">',
+          )
+        : createDataModel(sa.nodes, layoutId, styleId, colorId, ctx.reproducible);
+      mapping[`SmartArtData${smartArtIndex}`] = {
+        data: XML_DECL + dataXml,
+        path: canonicalPaths.data,
+      };
+      if (dataRelationships.relationshipCount > 0) {
+        mapping[`SmartArtDataRels${smartArtIndex}`] = {
+          data: XML_DECL + dataRelationships.serialize(),
+          path: partPathToRelsPath(canonicalPaths.data),
+        };
+      }
+      mapping[`SmartArtLayout${smartArtIndex}`] = {
+        data:
+          typeof sa.layout === "string" || sa.layout === undefined
+            ? getLayoutXml(layoutId)
+            : stringifyLayoutDefinitionPart(sa.layout),
+        path: canonicalPaths.layout,
+      };
+      mapping[`SmartArtQuickStyle${smartArtIndex}`] = {
+        data:
+          typeof sa.style === "string" || sa.style === undefined
+            ? getStyleXml(styleId)
+            : stringifyStyleDefinitionPart(sa.style),
+        path: canonicalPaths.quickStyle,
+      };
+      mapping[`SmartArtColors${smartArtIndex}`] = {
+        data:
+          typeof sa.color === "string" || sa.color === undefined
+            ? getColorXml(colorId)
+            : stringifyColorDefinitionPart(sa.color),
+        path: canonicalPaths.colors,
+      };
+      state.generatedSmartArtParts.push(
+        {
+          path: canonicalPaths.data,
+          contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramData+xml",
+        },
+        {
+          path: canonicalPaths.layout,
+          contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramLayout+xml",
+        },
+        {
+          path: canonicalPaths.quickStyle,
+          contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramStyle+xml",
+        },
+        {
+          path: canonicalPaths.colors,
+          contentType: "application/vnd.openxmlformats-officedocument.drawingml.diagramColors+xml",
+        },
+      );
+    }
+    const usePaths = canonicalPaths;
+    if (!usePaths.data || !usePaths.layout || !usePaths.quickStyle || !usePaths.colors) {
+      throw new Error("SmartArt requires canonical content or the four source paths.");
+    }
     const relBase = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     drawingSmartArts.push({
       ...pickAnchorOptions(sa),
       ...pickNonVisualDrawingProperties(sa),
-      dataRId: addDiagRel(`${relBase}/diagramData`, sa.dataPath),
-      layoutRId: addDiagRel(`${relBase}/diagramLayout`, sa.layoutPath),
-      quickStyleRId: addDiagRel(`${relBase}/diagramQuickStyle`, sa.quickStylePath),
-      colorsRId: addDiagRel(`${relBase}/diagramColors`, sa.colorsPath),
+      dataRId: addDiagRel(`${relBase}/diagramData`, usePaths.data),
+      layoutRId: addDiagRel(`${relBase}/diagramLayout`, usePaths.layout),
+      quickStyleRId: addDiagRel(`${relBase}/diagramQuickStyle`, usePaths.quickStyle),
+      colorsRId: addDiagRel(`${relBase}/diagramColors`, usePaths.colors),
       ...(sa.frameLocks ? { frameLocks: sa.frameLocks } : {}),
       ...(sa.macro !== undefined ? { macro: sa.macro } : {}),
       ...(sa.zOrder !== undefined ? { zOrder: sa.zOrder } : {}),

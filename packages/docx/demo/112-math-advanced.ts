@@ -26,10 +26,12 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { box: { children: ["x + y"], properties: { operatorEmulation: true } } },
-                    " = ",
-                    { box: { children: ["z"] } },
+                  equations: [
+                    [
+                      { box: { children: ["x + y"], properties: { operatorEmulation: true } } },
+                      " = ",
+                      { box: { children: ["z"] } },
+                    ],
                   ],
                 },
               },
@@ -51,15 +53,17 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { borderBox: { children: ["a"] } },
-                    " + ",
-                    {
-                      borderBox: {
-                        children: ["b"],
-                        properties: { hideTop: true, hideBottom: true },
+                  equations: [
+                    [
+                      { borderBox: { children: ["a"] } },
+                      " + ",
+                      {
+                        borderBox: {
+                          children: ["b"],
+                          properties: { hideTop: true, hideBottom: true },
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -81,7 +85,7 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [{ eqArr: { rows: [["x + y = 1"], ["2x - y = 3"]] } }],
+                  equations: [[{ eqArr: { rows: [["x + y = 1"], ["2x - y = 3"]] } }]],
                 },
               },
             ],
@@ -102,17 +106,19 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      groupChr: {
-                        children: [{ eqArr: { rows: [["a"], ["b"], ["c"]] } }],
-                        properties: {
-                          character: "{",
-                          position: "bot",
-                          vertical: "top",
+                  equations: [
+                    [
+                      {
+                        groupChr: {
+                          children: [{ eqArr: { rows: [["a"], ["b"], ["c"]] } }],
+                          properties: {
+                            character: "{",
+                            position: "bot",
+                            vertical: "top",
+                          },
                         },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -134,15 +140,17 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      matrix: {
-                        rows: [
-                          ["1", "0"],
-                          ["0", "1"],
-                        ],
+                  equations: [
+                    [
+                      {
+                        matrix: {
+                          rows: [
+                            ["1", "0"],
+                            ["0", "1"],
+                          ],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -155,20 +163,22 @@ const buffer = await generateDocument({
               "With properties: ",
               {
                 math: {
-                  children: [
-                    {
-                      matrix: {
-                        rows: [
-                          ["a", "b"],
-                          ["c", "d"],
-                        ],
-                        properties: {
-                          baseline: "center",
-                          hidePlaceholder: true,
-                          rowSpacingRule: 2 as const,
+                  equations: [
+                    [
+                      {
+                        matrix: {
+                          rows: [
+                            ["a", "b"],
+                            ["c", "d"],
+                          ],
+                          properties: {
+                            baseline: "center",
+                            hidePlaceholder: true,
+                            rowSpacingRule: 2 as const,
+                          },
                         },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -196,21 +206,23 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    "f(x) = ",
-                    {
-                      fraction: {
-                        numerator: [
-                          {
-                            phant: {
-                              children: ["dy"],
-                              properties: { zeroAscent: true, zeroDescent: true },
+                  equations: [
+                    [
+                      "f(x) = ",
+                      {
+                        fraction: {
+                          numerator: [
+                            {
+                              phant: {
+                                children: ["dy"],
+                                properties: { zeroAscent: true, zeroDescent: true },
+                              },
                             },
-                          },
-                        ],
-                        denominator: ["dx"],
+                          ],
+                          denominator: ["dx"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -232,7 +244,7 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: ["E = m", { superScript: { children: ["c"], superScript: ["2"] } }],
+                  equations: [["E = m", { superScript: { children: ["c"], superScript: ["2"] } }]],
                 },
               },
             ],

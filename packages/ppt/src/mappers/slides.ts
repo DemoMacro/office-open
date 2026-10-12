@@ -1,8 +1,8 @@
 import type { AnimationEntry, MasterDefinition, SlideChild, SlideOptions } from "@office-open/pptx";
 
+import { PptParseError } from "../errors";
 import { readPersistedRecord } from "../parts/persist";
 import {
-  LegacyPowerPointError,
   RecordType,
   collectDescendants,
   findDirect,
@@ -24,18 +24,16 @@ export function readSlide(
   context: DrawingContext,
   defaultMaster: string | undefined,
   masterNames: ReadonlyMap<number, string>,
-  notesGroups: readonly SlideTextGroup[],
+  notesReferences: ReadonlyMap<number, number>,
 ): SlideOptions {
   const offset = references.get(group.persistReference);
   if (offset === undefined) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing slide persist object");
+    throw new PptParseError("Corrupt legacy PowerPoint file: missing slide persist object");
   }
   const slideHeader = readRecordHeader(view, offset);
   const slide = readRecordTree(view, offset, slideHeader.end)[0];
   if (!slide || slide.type !== RecordType.slide) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint file: unexpected slide persist object",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint file: unexpected slide persist object");
   }
   const drawing = findDirect(slide, RecordType.ppDrawing);
   const drawingChildren = drawing ? readDrawingChildren(view, drawing, context) : [];
@@ -49,7 +47,7 @@ export function readSlide(
   if (children.length > 0) result.children = children;
   const slideMaster = master ?? defaultMaster;
   if (slideMaster) result.master = slideMaster;
-  const notes = readNotes(view, references, notesGroups, notesId);
+  const notes = readNotes(view, notesReferences, notesId, context.fonts);
   if (notes) result.notes = notes;
   const animations = drawing
     ? readSlideAnimations(view, drawing).map((animation) => projectAnimation(view, animation))
@@ -60,25 +58,67 @@ export function readSlide(
 
 export function readNotes(
   view: DataView,
-  references: Map<number, number>,
-  notesGroups: readonly SlideTextGroup[],
+  notesReferences: ReadonlyMap<number, number>,
   notesId: number | undefined,
+  fonts: ReadonlyMap<number, string>,
 ): string | undefined {
   if (!notesId) return undefined;
-  const group = notesGroups.find((entry) => entry.slideIdentifier === notesId);
-  const offset = group && references.get(group.persistReference);
-  if (offset === undefined) return undefined;
-  try {
-    const notes = readPersistedRecord(view, offset, [RecordType.notes]);
-    const drawing = findDirect(notes, RecordType.ppDrawing);
-    if (!drawing) return undefined;
-    const paragraphs = collectEmbeddedText(view, drawing)
-      .flatMap((value) => splitParagraphs(value))
-      .filter((value) => value.length > 0);
-    return paragraphs.length > 0 ? paragraphs.join("\n") : undefined;
-  } catch {
+  const offset = notesReferences.get(notesId);
+  if (offset === undefined) {
     return undefined;
   }
+  const notes = readPersistedRecord(view, offset, [RecordType.notes]);
+  const drawing = findDirect(notes, RecordType.ppDrawing);
+  if (!drawing) {
+    throw new PptParseError("Corrupt legacy PowerPoint file: notes container has no drawing", {
+      part: "record",
+      recordType: RecordType.notes,
+      recordName: "NotesContainer",
+      notesId,
+      offset,
+      reason: "missing-notes-drawing",
+    });
+  }
+  const paragraphs = collectEmbeddedText(view, drawing, fonts)
+    .flatMap((value) => splitParagraphs(value))
+    .filter((value) => value.length > 0);
+  return paragraphs.length > 0 ? paragraphs.join("\n") : undefined;
+}
+
+export function readNotesPersistReferences(
+  view: DataView,
+  references: ReadonlyMap<number, number>,
+): ReadonlyMap<number, number> {
+  const notesReferences = new Map<number, number>();
+  for (const offset of new Set(references.values())) {
+    const header = readRecordHeader(view, offset);
+    if (header.type !== RecordType.notes) continue;
+    const notes = readPersistedRecord(view, offset, [RecordType.notes]);
+    const atom = findDirect(notes, RecordType.notesAtom);
+    if (!atom || atom.length < 4) {
+      throw new PptParseError("Corrupt legacy PowerPoint notes container: missing notes id", {
+        part: "record",
+        recordType: RecordType.notesAtom,
+        recordName: "NotesAtom",
+        offset,
+        reason: "missing-notes-id",
+      });
+    }
+    const notesId = readUint32(view, atom, 0);
+    const existingOffset = notesReferences.get(notesId);
+    if (existingOffset !== undefined && existingOffset !== offset) {
+      throw new PptParseError("Corrupt legacy PowerPoint file: duplicate notes id", {
+        part: "record",
+        recordType: RecordType.notesAtom,
+        recordName: "NotesAtom",
+        notesId,
+        offset,
+        reason: "duplicate-notes-id",
+      });
+    }
+    notesReferences.set(notesId, offset);
+  }
+  return notesReferences;
 }
 
 export function readSlideAnimations(view: DataView, drawing: RecordNode): LegacyAnimation[] {
@@ -159,16 +199,12 @@ export function readMaster(
 ): MasterDefinition {
   const offset = references.get(group.persistReference);
   if (offset === undefined) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint file: missing master persist object",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint file: missing master persist object");
   }
   const masterHeader = readRecordHeader(view, offset);
   const master = readRecordTree(view, offset, masterHeader.end)[0];
   if (!master || (master.type !== RecordType.slide && master.type !== RecordType.mainMaster)) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint file: unexpected master persist object",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint file: unexpected master persist object");
   }
   const drawing = findDirect(master, RecordType.ppDrawing);
   const drawingChildren = drawing ? readDrawingChildren(view, drawing, context) : [];
@@ -185,7 +221,7 @@ function appendUnreferencedText(children: SlideChild[], context: DrawingContext)
     result.push({
       shape: {
         textBox: true,
-        textBody: createTextBody([entry.text]),
+        textBody: createTextBody([entry]),
       },
     });
   }

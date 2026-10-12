@@ -4,7 +4,7 @@
  * translates between them via an absolute EMU bounding box.
  *
  * - pptx: absolute EMU coordinates as top-level x/y/w/h.
- * - docx: {@link MediaTransformation} (offset left/top + width/height).
+ * - docx: {@link MediaTransformation} (offset x/y + width/height).
  * - xlsx: 1-based cell anchors. Column/row sizes are heuristic (8.43-char
  *   column × 15pt row), so xlsx ↔ {pptx,docx} loses precise positioning — the
  *   same loss MS Office paste incurs between apps.
@@ -116,14 +116,33 @@ export function boxFromXlsxAnchor(
 
 /** Build a box from a docx MediaTransformation. */
 export function boxFromDocx(transformation: MediaTransformation): AbsoluteBox {
+  const offset = transformation.offset;
   return {
-    x: toEmu(transformation.offset?.left),
-    y: toEmu(transformation.offset?.top),
+    x: toEmu(offset?.x),
+    y: toEmu(offset?.y),
     width: toEmu(transformation.width),
     height: toEmu(transformation.height),
     ...(transformation.rotation !== undefined ? { rotation: transformation.rotation } : {}),
     ...(transformation.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(transformation.flipVertical ? { flipVertical: true } : {}),
+  };
+}
+
+export function boxToDocxTransformation(box: AbsoluteBox): MediaTransformation {
+  return {
+    ...(box.x !== 0 || box.y !== 0
+      ? {
+          offset: {
+            x: box.x,
+            y: box.y,
+          },
+        }
+      : {}),
+    width: box.width,
+    height: box.height,
+    ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
+    ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
+    ...(box.flipVertical ? { flipVertical: true } : {}),
   };
 }
 
@@ -181,17 +200,5 @@ export function boxToXlsx(box: AbsoluteBox): XlsxPosition {
     },
     xfrmX: colOffset,
     xfrmY: rowOffset,
-  };
-}
-
-/** Emit a docx MediaTransformation from a box. */
-export function boxToDocx(box: AbsoluteBox): MediaTransformation {
-  return {
-    offset: { left: box.x, top: box.y },
-    width: box.width,
-    height: box.height,
-    ...(box.rotation !== undefined ? { rotation: box.rotation } : {}),
-    ...(box.flipHorizontal ? { flipHorizontal: true } : {}),
-    ...(box.flipVertical ? { flipVertical: true } : {}),
   };
 }

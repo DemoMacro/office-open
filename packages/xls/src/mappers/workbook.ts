@@ -10,7 +10,7 @@ import {
 import type { WorkbookOptions, WorksheetOptions } from "@office-open/xlsx";
 
 import { readRequiredStream } from "../cfb/container";
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";
 import { readSummaryInformation } from "../parts/metadata";
 import { RecordCode, readRecord, recordHeaderSize, type BiffRecord } from "../records";
 import { PLAINTEXT_ENCRYPTION_CODES, detectBiffVersion } from "./biff";
@@ -32,7 +32,7 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
   const reader = new CompoundFileReader(data);
   const stream = readRequiredStream(reader, reader.entry("Workbook") ? "Workbook" : "Book");
   if (stream.byteLength < 8) {
-    throw new LegacyExcelError("Invalid legacy XLS file: workbook stream is truncated", {
+    throw new XlsParseError("Invalid legacy XLS file: workbook stream is truncated", {
       part: "stream",
       path: "Workbook",
       offset: 0,
@@ -45,18 +45,18 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
 }
 
 export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): WorkbookOptions {
-  if (!(data instanceof Uint8Array)) throw new LegacyExcelError("XLS data must be a Uint8Array");
+  if (!(data instanceof Uint8Array)) throw new XlsParseError("XLS data must be a Uint8Array");
   let workbookData: Uint8Array;
   try {
     workbookData = decryptWorkbookContainer(data, options?.password) ?? data;
   } catch (error) {
-    throw toLegacyExcelError(error);
+    throw toXlsParseError(error);
   }
   const state = (() => {
     try {
       return readWorkbookStream(workbookData);
     } catch (error) {
-      throw toLegacyExcelError(error);
+      throw toXlsParseError(error);
     }
   })();
   const metadata = readSummaryInformation(data);
@@ -91,9 +91,9 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
   };
 }
 
-function toLegacyExcelError(error: unknown): LegacyExcelError {
-  if (error instanceof LegacyExcelError) return error;
-  return new LegacyExcelError(error instanceof Error ? error.message : String(error), {
+function toXlsParseError(error: unknown): XlsParseError {
+  if (error instanceof XlsParseError) return error;
+  return new XlsParseError(error instanceof Error ? error.message : String(error), {
     part: "container",
     path: "/",
     reason: "invalid-container",
@@ -108,7 +108,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     const reader = new CompoundFileReader(data);
     const entry = reader.entry("Workbook") ?? reader.entry("Book");
     if (!entry || entry.type !== "stream") {
-      throw new LegacyExcelError("Invalid legacy XLS file: missing Workbook or Book stream", {
+      throw new XlsParseError("Invalid legacy XLS file: missing Workbook or Book stream", {
         part: "stream",
         path: "Workbook",
         reason: "missing-required-stream",
@@ -130,7 +130,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
   }
   if (!filePass) return undefined;
   if (password === undefined) {
-    throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+    throw new XlsParseError("Encrypted legacy XLS files are not supported", {
       part: "stream",
       path: "Workbook",
       recordType: "0x002f",
@@ -141,7 +141,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
   }
   const body = filePass.body;
   if (body.byteLength < 2 || body[0] !== 1 || body[1] !== 0) {
-    throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+    throw new XlsParseError("Encrypted legacy XLS files are not supported", {
       part: "stream",
       path: "Workbook",
       recordType: "0x002f",
@@ -156,7 +156,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     const majorVersion = body.byteLength >= 4 ? version.getUint16(2, true) : 0;
     const minorVersion = body.byteLength >= 6 ? version.getUint16(4, true) : 0;
     if (majorVersion === 1 && minorVersion !== 1) {
-      throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+      throw new XlsParseError("Encrypted legacy XLS files are not supported", {
         part: "stream",
         path: "Workbook",
         recordName: "FilePass",
@@ -165,7 +165,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
       });
     }
     if (majorVersion !== 1 && (minorVersion !== 0x0002 || majorVersion < 2 || majorVersion > 4)) {
-      throw new LegacyExcelError("Encrypted legacy XLS files are not supported", {
+      throw new XlsParseError("Encrypted legacy XLS files are not supported", {
         part: "stream",
         path: "Workbook",
         recordName: "FilePass",
@@ -176,7 +176,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     if (majorVersion === 1) {
       const verifier = parseLegacyRc4Verifier(body, 6);
       if (!verifyLegacyRc4Password(password, verifier)) {
-        throw new LegacyExcelError("Invalid legacy XLS password", {
+        throw new XlsParseError("Invalid legacy XLS password", {
           part: "stream",
           path: "Workbook",
           recordName: "FilePass",
@@ -189,7 +189,7 @@ function decryptWorkbookContainer(data: Uint8Array, password?: string): Uint8Arr
     }
     const { keySizeBits, verifier } = parseRc4CryptoApiHeader(body, 6);
     if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-      throw new LegacyExcelError("Invalid legacy XLS password", {
+      throw new XlsParseError("Invalid legacy XLS password", {
         part: "stream",
         path: "Workbook",
         recordName: "FilePass",

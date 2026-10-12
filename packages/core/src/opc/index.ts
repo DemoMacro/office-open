@@ -17,6 +17,12 @@ export {
   parseCorePropsElement,
   buildCorePropertiesXmlString,
   type CorePropertiesOptions,
+  type CalendarDurationOptions,
+  type DocumentTemplateOptions,
+  type AutoReloadOptions,
+  type HyperlinkBehaviorOptions,
+  type DocumentStatisticsOptions,
+  type UserDefinedMetadataOptions,
 } from "./core";
 
 // Extended (app) + custom properties (shared OPC parts)

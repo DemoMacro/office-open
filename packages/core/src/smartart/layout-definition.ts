@@ -13,10 +13,14 @@
 
 import { attr, attrNum, attrs, findChild } from "@office-open/xml";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
-import { stringify as stringifyInnerXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
+import {
+  createDiagramExtensionList,
+  parseDiagramExtensions,
+  type DiagramExtensionOptions,
+} from "../drawing/diagram/diagram-props";
 import type {
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
@@ -26,7 +30,9 @@ import type {
   AdjustOptions,
   AnimateOneByOne,
   AnimationLevel,
+  DiagramDirection,
   HierBranch,
+  ResizeHandles,
 } from "../drawing/diagram/layout-vars";
 import type { ShapeType } from "../drawing/geometry/preset-geometry";
 import {
@@ -38,6 +44,8 @@ import {
 import { parseOnOff } from "../util/values";
 import { parseDataModelOptions, stringifyDataModelOptions } from "./data-model";
 import type { DataModelOptions } from "./data-model";
+
+export type { DiagramDirection, ResizeHandles };
 
 // ── Enumerations (ST_* from dml-diagram.xsd, verbatim token values) ──
 
@@ -208,12 +216,6 @@ export type AlgorithmParameterType =
   | "numCol"
   | "animBg";
 
-/** ST_Direction (dgm:dir `@val`). */
-export type DiagramDirection = "normal" | "reversed";
-
-/** ST_ResizeHandlesStr (dgm:resizeHandles `@val`). */
-export type ResizeHandles = "exact" | "relative";
-
 // ST_FunctionArgument / ST_FunctionValue are unions of every layout-parameter
 // enum plus numbers; ST_AxisTypes / ST_ElementTypes / ST_Booleans / ST_Ints are
 // space-separated lists — those stay plain string by design.
@@ -278,8 +280,8 @@ export interface LayoutShapeOptions {
   rotation?: number;
   /** Preset geometry name or "none"/"conn" (dgm:shape `@type`, ST_LayoutShapeType). */
   type?: ShapeType | "none" | "conn";
-  /** Preview picture relationship id (dgm:shape `@r:blip`). */
-  blip?: string;
+  /** Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`). */
+  blip?: string | null;
   /** Z-order offset (dgm:shape `@zOrderOff`). */
   zOrderOffset?: number;
   /** Hide the shape geometry, keep the text (dgm:shape `@hideGeom`). */
@@ -288,8 +290,8 @@ export interface LayoutShapeOptions {
   lockTextEntry?: boolean;
   /** Use the picture placeholder (dgm:shape `@blipPhldr`). */
   blipPlaceholder?: boolean;
-  /** Geometry adjustment values (dgm:adjLst). */
-  adjustments?: AdjustOptions[];
+  /** Geometry adjustment values; null preserves an empty list (dgm:adjLst). */
+  adjustments?: AdjustOptions[] | null;
 }
 
 /** dgm:constr (CT_Constraint). */
@@ -313,10 +315,13 @@ export interface ConstraintOptions {
   /** How the reference combines with val (dgm:constr `@op`). */
   operation?: ConstraintOperator;
   /** Absolute value (dgm:constr `@val`). */
-  value?: number;
+  value?: XsdDouble;
   /** Factor applied to the reference (dgm:constr `@fact`). */
-  factor?: number;
+  factor?: XsdDouble;
 }
+
+/** XSD double's non-finite tokens are preserved as readable canonical values. */
+export type XsdDouble = number | "infinity" | "-infinity" | "nan";
 
 /** dgm:rule (CT_NumericRule). */
 export interface LayoutRuleOptions {
@@ -326,33 +331,33 @@ export interface LayoutRuleOptions {
   forName?: string;
   pointType?: string;
   /** Preferred value (dgm:rule `@val`). */
-  value?: number;
+  value?: XsdDouble;
   /** Multiplied factor (dgm:rule `@fact`). */
-  factor?: number;
+  factor?: XsdDouble;
   /** Upper bound (dgm:rule `@max`). */
-  maximum?: number;
+  maximum?: XsdDouble;
 }
 
 /** dgm:varLst (CT_LayoutVariablePropertySet). */
 export interface VariableListOptions {
   /** This is an organization chart (dgm:orgChart `@val`). */
   organizationChart?: boolean;
-  /** Maximum children per parent (dgm:chMax `@val`). */
-  childMaximum?: number;
-  /** Preferred children per parent (dgm:chPref `@val`). */
-  childPreferred?: number;
+  /** Maximum children per parent (dgm:chMax `@val`); null preserves an omitted value. */
+  childMaximum?: number | null;
+  /** Preferred children per parent (dgm:chPref `@val`); null preserves an omitted value. */
+  childPreferred?: number | null;
   /** Bullets enabled on text nodes (dgm:bulletEnabled `@val`). */
   bulletEnabled?: boolean;
   /** Reading direction (dgm:dir `@val`). */
-  direction?: DiagramDirection;
-  /** Branch style for hierarchy layouts (dgm:hierBranch `@val`). */
-  hierarchyBranchStyle?: HierBranch;
+  direction?: DiagramDirection | null;
+  /** Branch style for hierarchy layouts (dgm:hierBranch `@val`); null preserves an omitted value. */
+  hierarchyBranchStyle?: HierBranch | null;
   /** Animate siblings one by one or as a branch (dgm:animOne `@val`). */
   animateOne?: AnimateOneByOne;
   /** Animate by level or from center (dgm:animLvl `@val`). */
   animateLevel?: AnimationLevel;
   /** Resize-handle behavior (dgm:resizeHandles `@val`). */
-  resizeHandles?: ResizeHandles;
+  resizeHandles?: ResizeHandles | null;
 }
 
 /** One alternative inside a choose — dgm:if (CT_When); `if` is a reserved word. */
@@ -411,8 +416,8 @@ export interface LayoutNodeOptions {
   /** Move with another named layout node (dgm:`@moveWith`). */
   moveWith?: string;
   children?: LayoutNodeChild[];
-  /** Raw dgm:extLst inner XML — verbatim round-trip. */
-  ext?: string;
+  /** Foreign-namespace extensions (dgm:extLst). */
+  extensions?: DiagramExtensionOptions[];
 }
 
 /** dgm:forEach (CT_ForEach) — apply children to each selected point. */
@@ -445,8 +450,8 @@ export interface LayoutDefinitionOptions {
   colorData?: SampleDataOptions;
   /** The layout tree (dgm:layoutNode, required). */
   layoutNode: LayoutNodeOptions;
-  /** Raw dgm:extLst inner XML — verbatim round-trip. */
-  ext?: string;
+  /** Foreign-namespace extensions (dgm:extLst). */
+  extensions?: DiagramExtensionOptions[];
 }
 
 // ── Stringify ──
@@ -467,11 +472,11 @@ function stringifyShape(o: LayoutShapeOptions): string {
   const adjustments = (o.adjustments ?? [])
     .map((a) => `<dgm:adj${attrs({ idx: a.idx, val: a.val })}/>`)
     .join("");
-  const adjLst = o.adjustments ? `<dgm:adjLst>${adjustments}</dgm:adjLst>` : "";
+  const adjLst = o.adjustments === undefined ? "" : `<dgm:adjLst>${adjustments}</dgm:adjLst>`;
   const attrStr = attrs({
     rot: o.rotation,
     type: o.type,
-    "r:blip": o.blip,
+    "r:blip": o.blip === undefined ? undefined : o.blip === null ? "" : o.blip,
     zOrderOff: o.zOrderOffset,
     hideGeom: booleanAttr(o.hideGeometry),
     lkTxEntry: booleanAttr(o.lockTextEntry),
@@ -483,6 +488,8 @@ function stringifyShape(o: LayoutShapeOptions): string {
 function stringifyConstraints(list: readonly ConstraintOptions[]): string {
   const items = list
     .map((c) => {
+      const value = c.value === undefined ? undefined : xsdDoubleToXml(c.value);
+      const factor = c.factor === undefined ? undefined : xsdDoubleToXml(c.factor);
       const base = attrs({
         type: c.type,
         for: c.for,
@@ -493,9 +500,9 @@ function stringifyConstraints(list: readonly ConstraintOptions[]): string {
         refForName: c.referenceForName,
         refPtType: c.referencePointType,
         op: c.operation,
-        val: c.value,
+        val: value,
       });
-      const fact = c.factor !== undefined ? ` fact="${c.factor}"` : "";
+      const fact = factor !== undefined ? ` fact="${factor}"` : "";
       return `<dgm:constr${base}${fact}/>`;
     })
     .join("");
@@ -505,15 +512,18 @@ function stringifyConstraints(list: readonly ConstraintOptions[]): string {
 function stringifyRules(list: readonly LayoutRuleOptions[]): string {
   const items = list
     .map((r) => {
+      const value = r.value === undefined ? undefined : xsdDoubleToXml(r.value);
+      const maximum = r.maximum === undefined ? undefined : xsdDoubleToXml(r.maximum);
+      const factor = r.factor === undefined ? undefined : xsdDoubleToXml(r.factor);
       const base = attrs({
         type: r.type,
         for: r.for,
         forName: r.forName,
         ptType: r.pointType,
-        val: r.value,
-        max: r.maximum,
+        val: value,
+        max: maximum,
       });
-      const fact = r.factor !== undefined ? ` fact="${r.factor}"` : "";
+      const fact = factor !== undefined ? ` fact="${factor}"` : "";
       return `<dgm:rule${base}${fact}/>`;
     })
     .join("");
@@ -521,24 +531,39 @@ function stringifyRules(list: readonly LayoutRuleOptions[]): string {
 }
 
 function stringifyVariables(o: VariableListOptions): string {
-  const emit = (tag: string, value: string | number | boolean | undefined) =>
-    value === undefined ? "" : `<dgm:${tag}${attrs({ val: value })}/>`;
+  const emit = (tag: string, value: string | number | boolean | null | undefined) =>
+    value === undefined ? "" : `<dgm:${tag}${attrs(value === null ? {} : { val: value })}/>`;
   return (
     "<dgm:varLst>" +
     emit("orgChart", booleanAttr(o.organizationChart)) +
     emit("chMax", o.childMaximum) +
     emit("chPref", o.childPreferred) +
     emit("bulletEnabled", booleanAttr(o.bulletEnabled)) +
-    emit("dir", o.direction !== undefined ? xsdDiagramDirection.to(o.direction) : undefined) +
+    emit(
+      "dir",
+      o.direction === undefined
+        ? undefined
+        : o.direction === null
+          ? null
+          : xsdDiagramDirection.to(o.direction),
+    ) +
     emit(
       "hierBranch",
-      o.hierarchyBranchStyle !== undefined ? xsdHierBranch.to(o.hierarchyBranchStyle) : undefined,
+      o.hierarchyBranchStyle === undefined
+        ? undefined
+        : o.hierarchyBranchStyle === null
+          ? null
+          : xsdHierBranch.to(o.hierarchyBranchStyle),
     ) +
     emit("animOne", o.animateOne) +
     emit("animLvl", o.animateLevel !== undefined ? xsdAnimLevel.to(o.animateLevel) : undefined) +
     emit(
       "resizeHandles",
-      o.resizeHandles !== undefined ? xsdResizeHandles.to(o.resizeHandles) : undefined,
+      o.resizeHandles === undefined
+        ? undefined
+        : o.resizeHandles === null
+          ? null
+          : xsdResizeHandles.to(o.resizeHandles),
     ) +
     "</dgm:varLst>"
   );
@@ -579,7 +604,8 @@ function stringifyChildren(children: readonly LayoutNodeChild[] | undefined): st
 
 function stringifyLayoutNode(o: LayoutNodeOptions): string {
   // CT_LayoutNode declares extLst locally — the element is dgm-namespaced
-  const body = stringifyChildren(o.children) + (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
+  const body =
+    stringifyChildren(o.children) + createDiagramExtensionList({ extensions: o.extensions });
   return `<dgm:layoutNode${attrs({
     name: o.name,
     styleLbl: o.styleLabel,
@@ -656,7 +682,7 @@ export function stringifyLayoutDefinition(o: LayoutDefinitionOptions): string {
     stringifySampleData("styleData", o.styleData) +
     stringifySampleData("clrData", o.colorData) +
     stringifyLayoutNode(o.layoutNode) +
-    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
+    createDiagramExtensionList({ extensions: o.extensions });
   return `<dgm:layoutDef${attrs({
     uniqueId: o.uniqueId,
     minVer: o.minVer,
@@ -670,13 +696,13 @@ const R_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationship
 
 /**
  * Inject the part-level dgm/a namespace declarations into the root element of
- * a serialized layoutDef/styleDef/colorsDef body; r joins only when the body
+ * a serialized diagram part body; r joins only when the body
  * actually uses the prefix (dgm:shape @r:blip preview references).
  */
 export function withDiagramNamespaces(xml: string): string {
   const r = xml.includes("xmlns:r=") ? "" : /\sr:[\w]+=/.test(xml) ? ` xmlns:r="${R_NS}"` : "";
   return xml.replace(
-    /^<dgm:(layoutDef|styleDef|colorsDef)/,
+    /^<dgm:(dataModel|layoutDef|styleDef|colorsDef)/,
     `<dgm:$1 xmlns:dgm="${DGM_NS}" xmlns:a="${A_NS}"${r}`,
   );
 }
@@ -730,9 +756,9 @@ function parseShape(el: Element): LayoutShapeOptions {
   const rot = attrNum(el, "rot");
   if (rot !== undefined) result.rotation = rot;
   const type = attr(el, "type");
-  if (type !== undefined && type !== "none") result.type = type as LayoutShapeOptions["type"];
+  if (type !== undefined) result.type = type as LayoutShapeOptions["type"];
   const blip = attr(el, "r:blip");
-  if (blip) result.blip = blip;
+  if (blip !== undefined) result.blip = blip === "" ? null : blip;
   const zOrderOff = attrNum(el, "zOrderOff");
   if (zOrderOff !== undefined) result.zOrderOffset = zOrderOff;
   const hideGeom = attr(el, "hideGeom");
@@ -750,7 +776,7 @@ function parseShape(el: Element): LayoutShapeOptions {
       const val = attrNum(adj, "val");
       if (idx !== undefined && val !== undefined) adjustments.push({ idx, val });
     }
-    if (adjustments.length) result.adjustments = adjustments;
+    result.adjustments = adjustments.length ? adjustments : null;
   }
   return result as LayoutShapeOptions;
 }
@@ -776,9 +802,9 @@ function parseConstraint(el: Element): ConstraintOptions {
   if (refPtType !== undefined && refPtType !== "all") result.referencePointType = refPtType;
   const op = attr(el, "op");
   if (op !== undefined && op !== "none") result.operation = op as ConstraintOperator;
-  const val = finiteAttr(el, "val");
+  const val = xsdDouble(el, "val");
   if (val !== undefined) result.value = val;
-  const fact = finiteAttr(el, "fact");
+  const fact = xsdDouble(el, "fact");
   if (fact !== undefined && fact !== 1) result.factor = fact;
   return result as ConstraintOptions;
 }
@@ -793,11 +819,11 @@ function parseRule(el: Element): LayoutRuleOptions {
   if (forName !== undefined && forName !== "") result.forName = forName;
   const ptType = attr(el, "ptType");
   if (ptType !== undefined && ptType !== "all") result.pointType = ptType;
-  const val = finiteAttr(el, "val");
+  const val = xsdDouble(el, "val");
   if (val !== undefined) result.value = val;
-  const fact = finiteAttr(el, "fact");
+  const fact = xsdDouble(el, "fact");
   if (fact !== undefined) result.factor = fact;
-  const max = finiteAttr(el, "max");
+  const max = xsdDouble(el, "max");
   if (max !== undefined) result.maximum = max;
   return result as LayoutRuleOptions;
 }
@@ -808,6 +834,21 @@ function finiteAttr(el: Element, name: string): number | undefined {
   if (raw === undefined) return undefined;
   const n = Number(raw);
   return Number.isFinite(n) ? n : undefined;
+}
+
+function xsdDouble(el: Element, name: string): XsdDouble | undefined {
+  const raw = attr(el, name);
+  if (raw === "INF") return "infinity";
+  if (raw === "-INF") return "-infinity";
+  if (raw === "NaN") return "nan";
+  return finiteAttr(el, name);
+}
+
+function xsdDoubleToXml(value: XsdDouble): string | number {
+  if (value === "infinity") return "INF";
+  if (value === "-infinity") return "-INF";
+  if (value === "nan") return "NaN";
+  return value;
 }
 
 function parseVariables(el: Element): VariableListOptions {
@@ -830,8 +871,7 @@ function parseVariables(el: Element): VariableListOptions {
   const readNumber = (tag: string) => {
     for (const child of el.elements ?? []) {
       if (child.name !== `dgm:${tag}`) continue;
-      const v = attrNum(child, "val");
-      return v === -1 ? undefined : v;
+      return attr(child, "val") === undefined ? null : attrNum(child, "val");
     }
     return undefined;
   };
@@ -844,15 +884,24 @@ function parseVariables(el: Element): VariableListOptions {
   const bulletEnabled = readBool("bulletEnabled");
   if (bulletEnabled !== undefined) result.bulletEnabled = bulletEnabled;
   const direction = readEnum("dir");
-  if (direction) result.direction = xsdDiagramDirection.from(direction) as DiagramDirection;
-  const hierBranch = readEnum("hierBranch");
-  if (hierBranch) result.hierarchyBranchStyle = xsdHierBranch.from(hierBranch) as HierBranch;
+  if (direction !== undefined)
+    result.direction = direction ? (xsdDiagramDirection.from(direction) as DiagramDirection) : null;
+  const hierBranchElement = el.elements?.find((child) => child.name === "dgm:hierBranch");
+  if (hierBranchElement) {
+    const hierBranch = attr(hierBranchElement, "val");
+    result.hierarchyBranchStyle = hierBranch
+      ? (xsdHierBranch.from(hierBranch) as HierBranch)
+      : null;
+  }
   const animOne = readEnum("animOne");
   if (animOne) result.animateOne = animOne as AnimateOneByOne;
   const animLvl = readEnum("animLvl");
   if (animLvl) result.animateLevel = xsdAnimLevel.from(animLvl) as AnimationLevel;
   const resizeHandles = readEnum("resizeHandles");
-  if (resizeHandles) result.resizeHandles = xsdResizeHandles.from(resizeHandles) as ResizeHandles;
+  if (resizeHandles !== undefined)
+    result.resizeHandles = resizeHandles
+      ? (xsdResizeHandles.from(resizeHandles) as ResizeHandles)
+      : null;
   return result as VariableListOptions;
 }
 
@@ -913,7 +962,10 @@ function parseLayoutNode(el: Element): LayoutNodeOptions {
   const children = parseChildren(el);
   if (children) result.children = children;
   const extLst = findChild(el, "dgm:extLst") ?? findChild(el, "a:extLst");
-  if (extLst) result.ext = stringifyInnerXml(extLst);
+  if (extLst) {
+    const extensions = parseDiagramExtensions(extLst);
+    if (extensions.length) result.extensions = extensions;
+  }
   return result as LayoutNodeOptions;
 }
 
@@ -1021,7 +1073,10 @@ export function parseLayoutDefinition(el: Element): LayoutDefinitionOptions {
   const layoutNode = findChild(root, "dgm:layoutNode");
   if (layoutNode) result.layoutNode = parseLayoutNode(layoutNode);
   const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
-  if (extLst) result.ext = stringifyInnerXml(extLst);
+  if (extLst) {
+    const extensions = parseDiagramExtensions(extLst);
+    if (extensions.length) result.extensions = extensions;
+  }
   return result as LayoutDefinitionOptions;
 }
 

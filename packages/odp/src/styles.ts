@@ -6,10 +6,10 @@ import {
   lengthToEmu,
   xmlElement,
 } from "@office-open/odf";
+import type { OdfStyleFamily, OdfStyleOverlayOptions } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
-import type { OdpStyleOverlay } from "./semantics";
 import type { TextProperties } from "./text-run";
 
 export function addTextStyle(properties: TextProperties, styles: string[]): string | undefined {
@@ -28,7 +28,7 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
   return name;
 }
 
-export function styleOverlaysXml(overlays: OdpStyleOverlay[] | undefined): string[] {
+export function styleOverlaysXml(overlays: OdfStyleOverlayOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
     xmlElement(
       "style:style",
@@ -121,11 +121,11 @@ const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
   "drawing-page": ["style:drawing-page-properties"],
 };
 
-export function parseStyleOverlays(container: Element | undefined): OdpStyleOverlay[] {
-  const result: OdpStyleOverlay[] = [];
+export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {
+  const result: OdfStyleOverlayOptions[] = [];
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
-    const family = attributeString(style, "style:family") ?? "";
+    const family = attributeString(style, "style:family") as OdfStyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
     const allowed = ODP_STYLE_PROPERTIES[family];
     if (!allowed) {
@@ -138,7 +138,7 @@ export function parseStyleOverlays(container: Element | undefined): OdpStyleOver
         reason,
       );
     }
-    const properties: OdpStyleOverlay["properties"] = [];
+    const properties: OdfStyleOverlayOptions["properties"] = [];
     for (const property of style.elements ?? []) {
       if (property.type !== "element" || property.name === "style:tab-stops") continue;
       if (!allowed.includes(property.name ?? "")) {
@@ -151,7 +151,7 @@ export function parseStyleOverlays(container: Element | undefined): OdpStyleOver
           reason,
         );
       }
-      const attributes: Record<string, string | number> = {};
+      const attributes: Record<string, string | number | boolean> = {};
       for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
         if (
           !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext):/.test(attribute)

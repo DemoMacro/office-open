@@ -26,6 +26,7 @@ import type {
 import type { MathInput } from "./math";
 import type { ParagraphPropertiesOptions } from "./properties";
 import type { RunOptions, RunPropertiesOptions } from "./run";
+import type { ChartExOptions } from "./run/chart-ex-run";
 import type { ChartOptions } from "./run/chart-run";
 import type { CommentChildOptions } from "./run/comment-run";
 import type { FormFieldOptions } from "./run/form-field";
@@ -35,6 +36,7 @@ import type { SimpleFieldOptions } from "./run/simple-field";
 import type { SmartArtOptions } from "./run/smartart-run";
 import type { SymbolRunOptions } from "./run/symbol-run";
 import type { UnsupportedDrawingOptions } from "./run/unsupported-drawing-run";
+import type { WordprocessingCanvasOptions } from "./run/wordprocessing-canvas-run";
 import type { GroupOptions } from "./run/wpg-group-run";
 import type { ShapeOptions } from "./run/wps-shape-run";
 
@@ -183,19 +185,23 @@ export type TrackChangeChild =
   // Drawings inserted as revisions (w:ins around the drawing's w:r)
   | { picture: PictureOptions }
   | { chart: ChartOptions }
+  | { chartEx: ChartExOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
+  | { wordprocessingCanvas: WordprocessingCanvasOptions }
   | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
   | { deletion: ChangedProperties & { children: TrackChangeChild[] } };
 
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
 export type ParagraphChild =
   | { chart: ChartOptions }
+  | { chartEx: ChartExOptions }
   | { smartArt: SmartArtOptions }
   | { picture: PictureOptions }
   | {
       math: {
-        children?: MathInput[];
+        /** Equations (`m:oMath` inside an inline run or display paragraph). */
+        equations: MathInput[][];
         /**
          * Wrap the equation in a display `m:oMathPara` container instead of an
          * inline `m:oMath` (preserved from a parsed source even without a
@@ -204,8 +210,6 @@ export type ParagraphChild =
         display?: boolean;
         /**
          * Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`).
-         * Present → the equation is wrapped in a display `m:oMathPara`; absent →
-         * inline `m:oMath`.
          */
         justification?: "left" | "right" | "center" | "centerGroup";
       };
@@ -268,6 +272,7 @@ export type ParagraphChild =
   | { bookmark: BookmarkOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
+  | { wordprocessingCanvas: WordprocessingCanvasOptions }
   // OLE object (w:object) — occupies its own paragraph-child slot
   | { object: ObjectElementOptions }
   // VML picture (w:pict) — run-level pre-DrawingML drawing, own paragraph child

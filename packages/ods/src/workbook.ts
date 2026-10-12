@@ -25,6 +25,7 @@ import {
   type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
+import type { OdfPackageMemberOptions } from "@office-open/odf";
 import type { WorkbookOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
@@ -32,7 +33,6 @@ import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { parseNumberStyles } from "./numbering";
 import type { OdsDocumentOptions } from "./semantics";
-import type { OdsPackageMemberOptions } from "./semantics";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./shared-data";
 import { parseDimensionStyles, parseStyleOverlays, styleOverlaysXml } from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
@@ -125,7 +125,7 @@ export function generateWorkbook(options: OdsDocumentOptions): Uint8Array {
   );
 }
 
-function addPackageFile(files: OdfPackageFiles, member: OdsPackageMemberOptions): void {
+function addPackageFile(files: OdfPackageFiles, member: OdfPackageMemberOptions): void {
   if (
     !member.path ||
     member.path.startsWith("/") ||
@@ -298,7 +298,7 @@ function sourcePackageMembers(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
-): OdsPackageMemberOptions[] {
+): OdfPackageMemberOptions[] {
   const mediaTypes = new Map(
     manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
   );

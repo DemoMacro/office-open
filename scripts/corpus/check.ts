@@ -146,7 +146,7 @@ const formats = (formatFilter ? [formatFilter] : ["docx", "xlsx", "pptx"]) as Fo
 
 const updateBaseline = args.includes("--update-baseline");
 const baseline = loadBaseline();
-const nextBaseline: Baseline = {};
+const nextBaseline = structuredClone(baseline) as Baseline;
 let failed = false;
 const allDiagnostics: FileDiagnostic[] = [];
 const rawBlockerReport: Record<
@@ -163,7 +163,7 @@ const missingLibraries = LIBRARIES.filter(
 );
 if (missingLibraries.length > 0) {
   console.warn(
-    `\nexternal corpus incomplete (${missingLibraries.length}/${LIBRARIES.length} libraries missing) — synthetic gate only; run pnpm corpus:setup first`,
+    `\ncorpus is incomplete (${missingLibraries.length}/${LIBRARIES.length} libraries missing) — synthetic gate only; run pnpm corpus:setup first`,
   );
 }
 
@@ -189,10 +189,10 @@ for (const library of LIBRARIES.filter((library) => !missingLibraries.includes(l
     console.log(
       `  ${format}  total ${current.total} | clean ${current.clean} | diff ${current.diff} | parseFail ${current.parseFail} | genFail ${current.genFail}`,
     );
-    if (current.diff > 0 || current.genFail > 0) {
+    if (current.diff > 0 || current.genFail > 0 || current.parseFail > 0) {
       failed = true;
       console.log(
-        `      FAIL valid corpus must round-trip cleanly (diff ${current.diff}, genFail ${current.genFail})`,
+        `      FAIL valid corpus must round-trip cleanly (parseFail ${current.parseFail}, diff ${current.diff}, genFail ${current.genFail})`,
       );
     }
     const raw = result.rawAudit[format];
@@ -219,7 +219,8 @@ for (const library of LIBRARIES.filter((library) => !missingLibraries.includes(l
     if (
       current.clean < expected.clean ||
       current.parseFail > expected.parseFail ||
-      current.genFail > expected.genFail
+      current.genFail > expected.genFail ||
+      current.malformed > (expected.malformed ?? Number.POSITIVE_INFINITY)
     ) {
       failed = true;
       console.log(

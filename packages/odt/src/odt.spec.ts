@@ -54,6 +54,29 @@ describe("ODT canonical projection", () => {
     expect(projection(parsed.sections[0]?.children)).toEqual([{ paragraph: { text: "ODT" } }]);
   });
 
+  it("round-trips common style identity, relationships, indents, and spacing", () => {
+    const options: DocumentOptions = {
+      sections: [],
+      styles: {
+        paragraphStyles: [
+          {
+            id: "P1",
+            name: "Title",
+            basedOn: "Standard",
+            next: "Normal",
+            paragraph: {
+              indent: { left: 720, right: 360 },
+              spacing: { before: 240, after: 120 },
+              alignment: "center",
+            },
+          },
+        ],
+      },
+    };
+    const parsed = parseDocument(generateDocument(options));
+    expect(parsed.styles?.paragraphStyles?.[0]).toEqual(options.styles?.paragraphStyles?.[0]);
+  });
+
   it("rejects invalid packages with a structured error", () => {
     expect(() => parseDocument(new Uint8Array([1, 2, 3]))).toThrow(OdtParseError);
   });
@@ -235,7 +258,7 @@ describe("ODT canonical projection", () => {
             wpsShape: {
               geometry: "rect",
               transformation: {
-                offset: { left: 360000, top: 720000 },
+                offset: { x: 360000, y: 720000 },
                 width: 1440000,
                 height: 1080000,
               },

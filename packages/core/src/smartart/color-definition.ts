@@ -13,10 +13,14 @@
 
 import { attr, attrs, findChild } from "@office-open/xml";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
-import { stringify as stringifyInnerXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
+import {
+  createDiagramExtensionList,
+  parseDiagramExtensions,
+  type DiagramExtensionOptions,
+} from "../drawing/diagram/diagram-props";
 import { createColorList, parseColorList } from "../drawing/diagram/diagram-style";
 import type { ColorListOptions, ColorStyleLabelOptions } from "../drawing/diagram/diagram-style";
 import type {
@@ -40,8 +44,8 @@ export interface ColorDefinitionOptions {
   categories?: DiagramCategoryOptions[];
   /** Color slots, at least one in a real part (dgm:styleLbl*). */
   styleLabels?: ColorStyleLabelOptions[];
-  /** Raw dgm:extLst inner XML — verbatim round-trip. */
-  ext?: string;
+  /** Foreign-namespace extensions (dgm:extLst). */
+  extensions?: DiagramExtensionOptions[];
 }
 
 // CT_CTStyleLabel color lists in schema order: fill, line, effect, text line,
@@ -88,7 +92,7 @@ export function stringifyColorDefinition(o: ColorDefinitionOptions): string {
       : "") +
     (o.styleLabels ?? []).map(stringifyColorStyleLabel).join("") +
     // CT_ColorTransform declares extLst locally — the element is dgm-namespaced
-    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
+    createDiagramExtensionList({ extensions: o.extensions });
   return `<dgm:colorsDef${attrs({ uniqueId: o.uniqueId, minVer: o.minVer })}>${body}</dgm:colorsDef>`;
 }
 
@@ -142,7 +146,10 @@ export function parseColorDefinition(el: Element): ColorDefinitionOptions {
   }
   if (styleLabels.length) result.styleLabels = styleLabels;
   const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
-  if (extLst) result.ext = stringifyInnerXml(extLst);
+  if (extLst) {
+    const extensions = parseDiagramExtensions(extLst);
+    if (extensions.length) result.extensions = extensions;
+  }
   return result as ColorDefinitionOptions;
 }
 

@@ -1,4 +1,4 @@
-import type { ShapeOptions as DocxShapeOptions } from "@office-open/docx";
+import type { MediaTransformation, ShapeOptions as DocxShapeOptions } from "@office-open/docx";
 import type { ShapeOptions as PptxShapeOptions } from "@office-open/pptx";
 import type { ShapeOptions as XlsxShapeOptions } from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
@@ -80,9 +80,10 @@ describe("toPptxShape (xlsx → pptx)", () => {
 describe("toDocxShape (pptx → docx)", () => {
   it("maps position to transformation and textBody to w:p children", () => {
     const d = toDocxShape(RECT_PPTX);
-    expect(d.transformation.offset).toEqual({ left: 609600, top: 190500 });
-    expect(d.transformation.width).toBe(1219200);
-    expect(d.transformation.height).toBe(381000);
+    const transformation = d.transformation as MediaTransformation;
+    expect(transformation.offset).toEqual({ x: 609600, y: 190500 });
+    expect(transformation.width).toBe(1219200);
+    expect(transformation.height).toBe(381000);
     // text shorthand → one string paragraph (docx children accept strings)
     expect(d.children).toHaveLength(1);
     expect(d.children[0]).toBe("Hello");

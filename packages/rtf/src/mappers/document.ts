@@ -7,6 +7,8 @@ import type {
   SectionChild,
   SectionOptions,
   RunOptions,
+  TableCellOptions,
+  TableRowOptions,
 } from "@office-open/docx";
 
 import {
@@ -43,8 +45,8 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   const footnotes: FootnoteOptions[] = [];
   const numberingReferences = new Set<string>();
   const listFormats = new Map<string, "bullet" | "decimal">();
-  const headerBlocks = new Map<"default" | "first", SectionChild[]>();
-  const footerBlocks = new Map<"default" | "first", SectionChild[]>();
+  const headerBlocks = new Map<"default" | "even" | "first", SectionChild[]>();
+  const footerBlocks = new Map<"default" | "even" | "first", SectionChild[]>();
   const metadata = new Map<string, string>();
   const styleDefinitions: StyleDraft[] = [];
   const shapes: ParagraphChild[] = [];
@@ -58,6 +60,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let pendingList: { reference: string; level?: number } | undefined;
   let pendingShading: NonNullable<ParagraphOptions["shading"]> | undefined;
   let pendingBorder: NonNullable<ParagraphOptions["border"]> | undefined;
+  let pendingCellProperties: Partial<TableCellOptions> = {};
+  let pendingRowProperties: Partial<TableRowOptions> = {};
+  let previousBoundary = 0;
 
   let format: RunFormat = {};
   let alignment: ParagraphOptions["alignment"];
@@ -192,6 +197,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       if (targetClass && token.kind === "text") className += token.value;
       else if (token.kind === "binary") bytes.push(...token.data);
       else if (token.kind === "hex") bytes.push(Number.parseInt(token.value, 16));
+      else if (token.kind === "text") {
+        for (const pair of token.value.replace(/\s+/gu, "").match(/../gu) ?? []) {
+          bytes.push(Number.parseInt(pair, 16));
+        }
+      }
     }
     if (bytes.length === 0)
       throw new RtfParseError(
@@ -247,7 +257,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
 
   const closeRow = (draft: TableDraft) => {
     if (!draft.cellEnded) finalizeCell(draft);
-    draft.target.rows.push({ cells: draft.cells });
+    draft.target.rows.push({ ...draft.rowProperties, cells: draft.cells });
+    if (draft.target.rows.length === 1 && draft.boundaries.length > 0)
+      draft.target.columnWidths = [...draft.boundaries];
     draft.cells = [];
     draft.cellEnded = false;
     tables.pop();
@@ -255,6 +267,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   };
 
   const ensureParagraph = () => {
+    const table = activeTable();
+    if (table && table.cell.blocks.length === 0) {
+      const definition = table.cellDefinitions[table.cells.length];
+      if (definition) table.cell.properties = { ...definition };
+    }
     if (paragraph) return paragraph;
     paragraph = { options: {}, runs: [], format: { ...format }, segments: [] };
     if (pendingList) paragraph.options.numbering = { ...pendingList };
@@ -338,20 +355,26 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       target,
       rows: [],
       cells: [],
-      cell: { blocks: [] },
+      cell: { blocks: [], properties: { ...pendingCellProperties } },
+      rowProperties: { ...pendingRowProperties },
+      boundaries: [],
+      cellDefinitions: [],
       cellOpen: true,
       cellEnded: false,
       parentBlocks,
     });
+    pendingCellProperties = {};
+    pendingRowProperties = {};
+    previousBoundary = 0;
     paragraph = undefined;
   };
 
   const finalizeCell = (draft: TableDraft) => {
     flushParagraph();
     if (draft.cellOpen) {
-      draft.cells.push({ children: draft.cell.blocks });
+      draft.cells.push({ ...draft.cell.properties, children: draft.cell.blocks });
       draft.cellOpen = false;
-      draft.cell = { blocks: [] };
+      draft.cell = { blocks: [], properties: {} };
     }
   };
 
@@ -368,6 +391,10 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       return;
     }
     finalizeCell(draft);
+    draft.cell = {
+      blocks: [],
+      properties: { ...draft.cellDefinitions[draft.cells.length] },
+    };
     draft.cellOpen = true;
     draft.cellEnded = true;
   };
@@ -430,6 +457,57 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       colors.push(`${component(color.red)}${component(color.green)}${component(color.blue)}`);
     }
     color = {};
+  };
+
+  const applyCellControl = (
+    word: string,
+    parameter: number | undefined,
+    position: number,
+  ): boolean => {
+    const current = activeTable()?.cellDefinitions.at(-1) ?? pendingCellProperties;
+    if (word === "clmgf") current.horizontalMerge = "restart";
+    else if (word === "clmrg") current.horizontalMerge = "continue";
+    else if (word === "clvmgf") current.verticalMerge = "restart";
+    else if (word === "clvmrg") current.verticalMerge = "continue";
+    else if (word === "clvertalt") current.verticalAlign = "top";
+    else if (word === "clvertalc") current.verticalAlign = "center";
+    else if (word === "clvertalb") current.verticalAlign = "bottom";
+    else if (word === "clcbpat" && parameter !== undefined) {
+      const fill = colors[parameter];
+      if (typeof fill !== "string")
+        throw new RtfParseError("\\clcbpat references an invalid color", position, source);
+      current.shading = { type: "clear", fill };
+    } else if (
+      word === "clbrdrt" ||
+      word === "clbrdrb" ||
+      word === "clbrdrl" ||
+      word === "clbrdrr"
+    ) {
+      current.borders ??= {};
+      const side =
+        word === "clbrdrt"
+          ? "top"
+          : word === "clbrdrb"
+            ? "bottom"
+            : word === "clbrdrl"
+              ? "left"
+              : "right";
+      current.borders[side] = { style: "single" };
+    } else return false;
+    return true;
+  };
+
+  const applyRowControl = (word: string, parameter: number | undefined): boolean => {
+    const current = activeTable()?.rowProperties ?? pendingRowProperties;
+    if (word === "trhdr") current.tableHeader = true;
+    else if (word === "trkeep") current.cantSplit = true;
+    else if (word === "trh" && parameter !== undefined)
+      current.height = { value: parameter, rule: "atLeast" };
+    else if (word === "trql") current.rowAlignment = "left";
+    else if (word === "trqc") current.rowAlignment = "center";
+    else if (word === "trqr") current.rowAlignment = "right";
+    else return false;
+    return true;
   };
 
   const applyControl = (
@@ -509,6 +587,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           const tag = lcidToTag(token.param);
           if (tag !== undefined) format.language = { value: tag };
         }
+        return;
+      case "insrsid":
+        if (token.param === undefined)
+          throw new RtfParseError("\\insrsid requires a revision save ID", token.position, source);
+        format.additionRsid = token.param.toString(16).padStart(8, "0").toUpperCase();
         return;
       case "expnd":
         if (token.param !== undefined && token.param > 0) format.characterSpacing = token.param * 5;
@@ -711,6 +794,28 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.color = mapped ?? undefined;
         return;
       }
+      case "clmgf":
+      case "clmrg":
+      case "clvmgf":
+      case "clvmrg":
+      case "clvertalt":
+      case "clvertalc":
+      case "clvertalb":
+      case "clcbpat":
+      case "clbrdrt":
+      case "clbrdrb":
+      case "clbrdrl":
+      case "clbrdrr":
+        applyCellControl(word, token.param, token.position);
+        return;
+      case "trhdr":
+      case "trkeep":
+      case "trh":
+      case "trql":
+      case "trqc":
+      case "trqr":
+        applyRowControl(word, token.param);
+        return;
       case "trowd":
         ensureTable();
         return;
@@ -727,10 +832,14 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       case "cellx":
         if (token.param === undefined)
           throw new RtfParseError("\\cellx requires a boundary", token.position, source);
-        const table = activeTable()?.target;
+        const table = activeTable();
         if (!table) return;
-        table.columnWidths ??= [];
-        table.columnWidths.push(token.param);
+        if (token.param <= previousBoundary)
+          throw new RtfParseError("\\cellx boundaries must increase", token.position, source);
+        table.cellDefinitions.push({ ...pendingCellProperties });
+        table.boundaries.push(token.param);
+        pendingCellProperties = {};
+        previousBoundary = token.param;
         return;
       default:
         return;
@@ -805,6 +914,13 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           reason: "binary data is only canonical inside picture or object data",
         },
       );
+    }
+    if (token.kind === "control" && token.word === "shpinst" && currentFrame) {
+      const end = consumeGroup(tokenIndex);
+      shapes.push({ wpsShape: parseRtfShape(tokens, tokenIndex, end, source) });
+      groupFrames.pop();
+      tokenIndex = end;
+      continue;
     }
     if (currentFrame?.skip) {
       if (
@@ -911,12 +1027,20 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
               if (child) appendInline(child);
             } else if (token.word?.startsWith("header") || token.word?.startsWith("footer")) {
               const children = blocksFromText(tokenIndex, end);
-              const target = token.word.endsWith("f") ? "first" : "default";
+              const target = token.word.endsWith("f")
+                ? "first"
+                : token.word.endsWith("l")
+                  ? "even"
+                  : "default";
               const map = token.word?.startsWith("header") ? headerBlocks : footerBlocks;
               map.set(target, children);
             } else if (token.word === "footnote") {
               const children = blocksFromText(tokenIndex, end);
               if (children.length > 0) footnotes.push({ children });
+              const draft = ensureParagraph();
+              flushRun(draft);
+              draft.runs.push({ footnoteReference: footnotes.length - 1 });
+              draft.format = { ...format };
             } else if (token.word === "objdata") {
               const objectData = readObjectData(tokenIndex, end);
               if (objectData.className) objectType = objectData.className;
@@ -1010,7 +1134,16 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           tokenIndex = end;
           continue;
         }
+        if (token.word === "shp") continue;
+        if (token.word === "shprslt") {
+          currentFrame.skip = true;
+          continue;
+        }
         if (token.word === "info") continue;
+        if (token.word === "insrsid") {
+          applyControl(token, destination);
+          continue;
+        }
         if (token.word !== undefined && APP_METADATA_CONTROLS.has(token.word)) {
           applyControl(token, destination);
           continue;
@@ -1104,12 +1237,16 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   const first = sections[0];
   if (first) {
     const headers = headerBlocks.get("default");
+    const evenHeaders = headerBlocks.get("even");
     const firstHeaders = headerBlocks.get("first");
     const footers = footerBlocks.get("default");
+    const evenFooters = footerBlocks.get("even");
     const firstFooters = footerBlocks.get("first");
     if (headers) first.headers = { default: headers };
+    if (evenHeaders) first.headers = { ...first.headers, even: evenHeaders };
     if (firstHeaders) first.headers = { ...first.headers, first: firstHeaders };
-    if (footers) first.footers = { default: footers };
+    if (footers) first.footers = { ...first.footers, default: footers };
+    if (evenFooters) first.footers = { ...first.footers, even: evenFooters };
     if (firstFooters) first.footers = { ...first.footers, first: firstFooters };
   }
 

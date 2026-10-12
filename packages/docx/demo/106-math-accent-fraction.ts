@@ -19,22 +19,24 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    { accent: { children: ["x"] } },
-                    " + ",
-                    {
-                      accent: {
-                        accentCharacter: "̃",
-                        children: ["y"],
+                  equations: [
+                    [
+                      { accent: { children: ["x"] } },
+                      " + ",
+                      {
+                        accent: {
+                          accentCharacter: "̃",
+                          children: ["y"],
+                        },
                       },
-                    },
-                    " + ",
-                    {
-                      accent: {
-                        accentCharacter: "̇",
-                        children: ["z"],
+                      " + ",
+                      {
+                        accent: {
+                          accentCharacter: "̇",
+                          children: ["z"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -46,20 +48,22 @@ const buffer = await generateDocument({
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      accent: {
-                        accentCharacter: "⃗",
-                        children: ["AB"],
+                  equations: [
+                    [
+                      {
+                        accent: {
+                          accentCharacter: "⃗",
+                          children: ["AB"],
+                        },
                       },
-                    },
-                    " = ",
-                    {
-                      accent: {
-                        accentCharacter: "̅",
-                        children: ["CD"],
+                      " = ",
+                      {
+                        accent: {
+                          accentCharacter: "̅",
+                          children: ["CD"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -79,13 +83,15 @@ const buffer = await generateDocument({
               "Standard bar fraction: ",
               {
                 math: {
-                  children: [
-                    {
-                      fraction: {
-                        numerator: ["a"],
-                        denominator: ["b"],
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          numerator: ["a"],
+                          denominator: ["b"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -98,14 +104,16 @@ const buffer = await generateDocument({
               "Skewed fraction: ",
               {
                 math: {
-                  children: [
-                    {
-                      fraction: {
-                        numerator: ["a"],
-                        denominator: ["b"],
-                        fractionType: "skw",
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          numerator: ["a"],
+                          denominator: ["b"],
+                          fractionType: "skw",
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -118,14 +126,16 @@ const buffer = await generateDocument({
               "Linear fraction: ",
               {
                 math: {
-                  children: [
-                    {
-                      fraction: {
-                        numerator: ["a"],
-                        denominator: ["b"],
-                        fractionType: "lin",
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          numerator: ["a"],
+                          denominator: ["b"],
+                          fractionType: "lin",
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -138,14 +148,16 @@ const buffer = await generateDocument({
               "No-bar fraction: ",
               {
                 math: {
-                  children: [
-                    {
-                      fraction: {
-                        numerator: ["a"],
-                        denominator: ["b"],
-                        fractionType: "noBar",
+                  equations: [
+                    [
+                      {
+                        fraction: {
+                          numerator: ["a"],
+                          denominator: ["b"],
+                          fractionType: "noBar",
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },

@@ -523,6 +523,7 @@ export function compileWorkbook(
   const state: WorksheetCompileState = {
     globalMediaIdx: 0,
     globalChartIdx: 0,
+    globalSmartArtIdx: 1,
     globalPivotIdx: 0,
     globalPivotCacheIdx: 0,
     globalTableIdx: 0,
@@ -537,6 +538,7 @@ export function compileWorkbook(
     allTableParts: [],
     chartPaths: new Map(),
     nextDrawingIndex: 1,
+    generatedSmartArtParts: [],
   };
   compileDefinitionPivotCaches(options, ctx, mapping, state);
   for (const [i, wsOpts] of worksheetConfigs.entries()) {
@@ -1020,6 +1022,10 @@ export function compileWorkbook(
         rawParts: options.rawParts,
         omitDerivedOverrides: options.contentTypes ? ["docProps/app.xml"] : undefined,
         forcedOverrides: [
+          ...state.generatedSmartArtParts.map((part) => ({
+            path: part.path,
+            contentType: part.contentType,
+          })),
           ...(options.contentTypes?.overrides ?? [])
             .filter(
               (override) =>
@@ -1058,6 +1064,7 @@ export function compileWorkbook(
 export interface WorksheetCompileState {
   globalMediaIdx: number;
   globalChartIdx: number;
+  globalSmartArtIdx: number;
   globalPivotIdx: number;
   globalPivotCacheIdx: number;
   globalTableIdx: number;
@@ -1072,6 +1079,7 @@ export interface WorksheetCompileState {
   allTableParts: TablePartReference[];
   chartPaths: Map<string, string>;
   nextDrawingIndex: number;
+  generatedSmartArtParts: { path: string; contentType: string }[];
 }
 
 /**

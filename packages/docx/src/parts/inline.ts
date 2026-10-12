@@ -401,9 +401,11 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext): string {
         if (
           "picture" in child ||
           "chart" in child ||
+          "chartEx" in child ||
           "smartArt" in child ||
           "wpsShape" in child ||
           "wpgGroup" in child ||
+          "wordprocessingCanvas" in child ||
           "unsupportedDrawing" in child ||
           "contentPart" in child
         ) {
@@ -867,11 +869,11 @@ export function stringifyChildDispatch(
   // wraps the equation in a display m:oMathPara; without it stays inline m:oMath.
   if ("math" in child && typeof child.math === "object" && child.math !== null) {
     const mathOpts = child.math;
-    const children = mathOpts.children ?? [];
+    const equations = mathOpts.equations;
     if (mathOpts.display || mathOpts.justification !== undefined) {
-      return stringifyMathParagraph(children, mathOpts.justification);
+      return stringifyMathParagraph(equations, mathOpts.justification, ctx);
     }
-    return stringifyMath(children);
+    return equations.map((equation) => stringifyMath(equation, ctx)).join("");
   }
 
   // Inserted text run(s) — w:ins wraps one or more runs (CT_RunTrackChange)

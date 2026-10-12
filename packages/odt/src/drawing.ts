@@ -37,6 +37,28 @@ export type RasterPictureType = Exclude<PictureType, "svg">;
 
 export type CanonicalFormControl = NonNullable<FormContainerOptions["controls"][number]>;
 
+type DrawingTransformation = ChartOptions["transformation"];
+
+function transformationWidth(transformation: DrawingTransformation): number | string {
+  return typeof transformation.width === "number"
+    ? emuToLength(transformation.width)
+    : transformation.width;
+}
+
+function transformationHeight(transformation: DrawingTransformation): number | string {
+  return typeof transformation.height === "number"
+    ? emuToLength(transformation.height)
+    : transformation.height;
+}
+
+function transformationOffset(
+  offset: DrawingTransformation["offset"],
+  axis: "x" | "y",
+): number | string | undefined {
+  const value = axis === "x" ? offset?.x : offset?.y;
+  return value === undefined || value === 0 ? undefined : emuToLength(value);
+}
+
 /** Binary image collected during generation — emitted as a Pictures/ entry. */
 export interface OdtImage {
   path: string;
@@ -61,8 +83,8 @@ export function chartFrameXml(chart: ChartOptions, charts: OdtChart[]): string {
     "draw:frame",
     {
       "text:anchor-type": "as-char",
-      "svg:width": emuToLength(chart.transformation.width),
-      "svg:height": emuToLength(chart.transformation.height),
+      "svg:width": transformationWidth(chart.transformation),
+      "svg:height": transformationHeight(chart.transformation),
     },
     [xmlElement("draw:object", { "xlink:href": `./${path}`, "xlink:type": "simple" })],
   );
@@ -96,26 +118,10 @@ export function wpsShapeFrameXml(
     {
       "text:anchor-type": "as-char",
       "draw:style-name": addShapeStyle(shape, styles),
-      "svg:x":
-        offset?.left !== undefined
-          ? typeof offset.left === "number"
-            ? emuToLength(offset.left)
-            : offset.left
-          : undefined,
-      "svg:y":
-        offset?.top !== undefined
-          ? typeof offset.top === "number"
-            ? emuToLength(offset.top)
-            : offset.top
-          : undefined,
-      "svg:width":
-        typeof shape.transformation.width === "number"
-          ? emuToLength(shape.transformation.width)
-          : shape.transformation.width,
-      "svg:height":
-        typeof shape.transformation.height === "number"
-          ? emuToLength(shape.transformation.height)
-          : shape.transformation.height,
+      "svg:x": transformationOffset(offset, "x"),
+      "svg:y": transformationOffset(offset, "y"),
+      "svg:width": transformationWidth(shape.transformation),
+      "svg:height": transformationHeight(shape.transformation),
       "draw:name": shape.altText?.name,
     },
     [
@@ -142,10 +148,10 @@ function embeddedObjectFrameXml(
     {
       "text:anchor-type": frame.anchorType,
       "draw:style-name": frame.styleName ?? addShapeStyle(shape, styles),
-      "svg:x": lengthAttributeXml(offset?.left),
-      "svg:y": lengthAttributeXml(offset?.top),
-      "svg:width": lengthAttributeXml(shape.transformation.width),
-      "svg:height": lengthAttributeXml(shape.transformation.height),
+      "svg:x": lengthAttributeXml(transformationOffset(offset, "x")),
+      "svg:y": lengthAttributeXml(transformationOffset(offset, "y")),
+      "svg:width": lengthAttributeXml(transformationWidth(shape.transformation)),
+      "svg:height": lengthAttributeXml(transformationHeight(shape.transformation)),
       "draw:name": name,
     },
     [xmlElement("draw:object", { "xlink:href": `./${object.path}`, "xlink:type": "simple" })],
@@ -178,8 +184,8 @@ export function pictureFrameXml(picture: PictureOptions, images: OdtImage[]): st
     "draw:frame",
     {
       "text:anchor-type": "as-char",
-      "svg:width": emuToLength(picture.transformation.width),
-      "svg:height": emuToLength(picture.transformation.height),
+      "svg:width": transformationWidth(picture.transformation),
+      "svg:height": transformationHeight(picture.transformation),
       "draw:name": picture.altText?.name,
     },
     [
@@ -205,10 +211,10 @@ export function parseShape(element: Element): ShapeOptions {
     ...(name ? { altText: { name } } : {}),
     transformation: {
       ...(lengthToEmu(attributeString(element, "svg:x"))
-        ? { offset: { left: lengthToEmu(attributeString(element, "svg:x")) } }
+        ? { offset: { x: lengthToEmu(attributeString(element, "svg:x")) } }
         : {}),
       ...(lengthToEmu(attributeString(element, "svg:y"))
-        ? { offset: { top: lengthToEmu(attributeString(element, "svg:y")) } }
+        ? { offset: { y: lengthToEmu(attributeString(element, "svg:y")) } }
         : {}),
       width: lengthToEmu(attributeString(element, "svg:width")) ?? 0,
       height: lengthToEmu(attributeString(element, "svg:height")) ?? 0,
@@ -349,7 +355,7 @@ function embeddedObjectShape(frame: Element, context: ParseContext, shapeId: num
     children: [],
     geometry: "rect",
     transformation: {
-      ...(x || y ? { offset: { ...(x ? { left: x } : {}), ...(y ? { top: y } : {}) } } : {}),
+      ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
       width: lengthToEmu(attributeString(frame, "svg:width")) ?? 0,
       height: lengthToEmu(attributeString(frame, "svg:height")) ?? 0,
     },
@@ -390,7 +396,7 @@ export function parseCustomShape(
     wpsShape: {
       children: [],
       transformation: {
-        ...(x || y ? { offset: { ...(x ? { left: x } : {}), ...(y ? { top: y } : {}) } } : {}),
+        ...(x || y ? { offset: { ...(x ? { x } : {}), ...(y ? { y } : {}) } } : {}),
         width,
         height,
       },

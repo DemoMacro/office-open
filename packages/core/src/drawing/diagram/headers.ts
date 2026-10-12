@@ -7,7 +7,12 @@
  *
  * @module
  */
-import { element } from "@office-open/xml";
+import { children as childElements, element, escapeXml } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
+
+import type { CustomDescriptor } from "../../descriptor";
+import { parseDiagramExtensions, stringifyDiagramExtensions } from "./diagram-props";
+import type { DiagramExtensionOptions } from "./diagram-props";
 
 // ---------------------------------------------------------------------------
 // Shared name/description/category types
@@ -29,28 +34,84 @@ export interface DiagramCategoryOptions {
 }
 
 const createNameEl = (tag: string, options: DiagramNameOptions): string => {
-  const attrs: Record<string, string> = { val: options.val };
-  if (options.lang) attrs.lang = options.lang;
+  const attrs: Record<string, string> = { val: escapeXml(options.val) };
+  if (options.lang) attrs.lang = escapeXml(options.lang);
   return element(tag, attrs);
 };
 
 const createDescEl = (tag: string, options: DiagramDescriptionOptions): string => {
-  const attrs: Record<string, string> = { val: options.val };
-  if (options.lang) attrs.lang = options.lang;
+  const attrs: Record<string, string> = { val: escapeXml(options.val) };
+  if (options.lang) attrs.lang = escapeXml(options.lang);
   return element(tag, attrs);
 };
 
 const createCatEl = (options: DiagramCategoryOptions): string =>
-  `<dgm:cat type="${options.type}" pri="${options.pri}"/>`;
+  `<dgm:cat type="${escapeXml(options.type)}" pri="${options.pri}"/>`;
 
 const createCatLst = (categories?: readonly DiagramCategoryOptions[]): string => {
-  const children: string[] = [];
+  const catChildren: string[] = [];
   if (categories) {
     for (const cat of categories) {
-      children.push(createCatEl(cat));
+      catChildren.push(createCatEl(cat));
     }
   }
-  return element("dgm:catLst", undefined, children);
+  return element("dgm:catLst", undefined, catChildren);
+};
+
+const parseNames = (el: Element, tag: string): DiagramNameOptions[] =>
+  childElements(el, tag).map((child) => ({
+    ...(child.attributes?.lang !== undefined ? { lang: String(child.attributes.lang) } : {}),
+    val: String(child.attributes?.val ?? ""),
+  }));
+
+const parseDescriptions = (el: Element, tag: string): DiagramDescriptionOptions[] =>
+  childElements(el, tag).map((child) => ({
+    ...(child.attributes?.lang !== undefined ? { lang: String(child.attributes.lang) } : {}),
+    val: String(child.attributes?.val ?? ""),
+  }));
+
+const parseCategories = (el: Element): DiagramCategoryOptions[] =>
+  childElements(findCategoryList(el), "dgm:cat").map((child) => ({
+    type: String(child.attributes?.type ?? ""),
+    pri: Number(child.attributes?.pri ?? 0),
+  }));
+
+const findCategoryList = (el: Element): Element | undefined => childElements(el, "dgm:catLst")[0];
+
+const parseHeaderExtensions = (el: Element): DiagramExtensionOptions[] | undefined => {
+  const extLst = childElements(el, "dgm:extLst")[0];
+  return extLst ? parseDiagramExtensions(extLst) : undefined;
+};
+
+const parseHeaderAttributes = (
+  el: Element,
+): Pick<LayoutDefinitionHeaderOptions, "uniqueId" | "minVer" | "resId"> => {
+  const result: Pick<LayoutDefinitionHeaderOptions, "uniqueId" | "minVer" | "resId"> = {
+    uniqueId: String(el.attributes?.uniqueId ?? ""),
+  };
+  if (el.attributes?.minVer !== undefined) result.minVer = String(el.attributes.minVer);
+  if (el.attributes?.resId !== undefined) result.resId = Number(el.attributes.resId);
+  return result;
+};
+
+const stringifyHeaderExtensions = (extensions?: readonly DiagramExtensionOptions[]): string => {
+  if (!extensions?.length) return "";
+  return stringifyDiagramExtensions(extensions);
+};
+
+const parseHeaderList = <T>(
+  el: Element,
+  headerTag: string,
+  parseHeader: (header: Element) => T,
+): readonly T[] => childElements(el, headerTag).map(parseHeader);
+
+const stringifyHeaderList = <T>(
+  tag: string,
+  headers: readonly T[] | undefined,
+  createHeader: (header: T) => string,
+): string => {
+  const listChildren = headers?.map(createHeader) ?? [];
+  return element(tag, undefined, listChildren);
 };
 
 // ---------------------------------------------------------------------------
@@ -64,6 +125,7 @@ export interface ColorsDefinitionHeaderOptions {
   title: readonly DiagramNameOptions[];
   desc: readonly DiagramDescriptionOptions[];
   categories?: readonly DiagramCategoryOptions[];
+  extensions?: readonly DiagramExtensionOptions[];
 }
 
 /**
@@ -89,12 +151,32 @@ export const createColorsDefinitionHeader = (options: ColorsDefinitionHeaderOpti
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
+  children.push(stringifyHeaderExtensions(options.extensions));
 
   const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
   if (options.minVer !== undefined) attrs.minVer = options.minVer;
   if (options.resId !== undefined) attrs.resId = options.resId;
 
   return element("dgm:colorsDefHdr", attrs, children);
+};
+
+export const parseColorsDefinitionHeader = (el: Element): ColorsDefinitionHeaderOptions => {
+  const result: ColorsDefinitionHeaderOptions = {
+    ...parseHeaderAttributes(el),
+    title: parseNames(el, "dgm:title"),
+    desc: parseDescriptions(el, "dgm:desc"),
+  };
+  const categories = parseCategories(el);
+  if (categories.length) result.categories = categories;
+  const extensions = parseHeaderExtensions(el);
+  if (extensions?.length) result.extensions = extensions;
+  return result;
+};
+
+export const colorsDefinitionHeaderDesc: CustomDescriptor<ColorsDefinitionHeaderOptions> = {
+  kind: "custom",
+  stringify: (options) => createColorsDefinitionHeader(options),
+  parse: (el) => parseColorsDefinitionHeader(el),
 };
 
 // ---------------------------------------------------------------------------
@@ -109,13 +191,19 @@ export interface ColorsDefinitionHeaderListOptions {
 export const createColorsDefinitionHeaderList = (
   options?: ColorsDefinitionHeaderListOptions,
 ): string => {
-  const children: string[] = [];
-  if (options?.headers) {
-    for (const hdr of options.headers) {
-      children.push(createColorsDefinitionHeader(hdr));
-    }
-  }
-  return element("dgm:colorsDefHdrLst", undefined, children);
+  return stringifyHeaderList("dgm:colorsDefHdrLst", options?.headers, createColorsDefinitionHeader);
+};
+
+export const parseColorsDefinitionHeaderList = (
+  el: Element,
+): ColorsDefinitionHeaderListOptions => ({
+  headers: parseHeaderList(el, "dgm:colorsDefHdr", parseColorsDefinitionHeader),
+});
+
+export const colorsDefinitionHeaderListDesc: CustomDescriptor<ColorsDefinitionHeaderListOptions> = {
+  kind: "custom",
+  stringify: (options) => createColorsDefinitionHeaderList(options),
+  parse: (el) => parseColorsDefinitionHeaderList(el),
 };
 
 // ---------------------------------------------------------------------------
@@ -130,6 +218,7 @@ export interface LayoutDefinitionHeaderOptions {
   title: readonly DiagramNameOptions[];
   desc: readonly DiagramDescriptionOptions[];
   categories?: readonly DiagramCategoryOptions[];
+  extensions?: readonly DiagramExtensionOptions[];
 }
 
 /**
@@ -156,6 +245,7 @@ export const createLayoutDefinitionHeader = (options: LayoutDefinitionHeaderOpti
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
+  children.push(stringifyHeaderExtensions(options.extensions));
 
   const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
   if (options.minVer !== undefined) attrs.minVer = options.minVer;
@@ -163,6 +253,26 @@ export const createLayoutDefinitionHeader = (options: LayoutDefinitionHeaderOpti
   if (options.resId !== undefined) attrs.resId = options.resId;
 
   return element("dgm:layoutDefHdr", attrs, children);
+};
+
+export const parseLayoutDefinitionHeader = (el: Element): LayoutDefinitionHeaderOptions => {
+  const result: LayoutDefinitionHeaderOptions = {
+    ...parseHeaderAttributes(el),
+    title: parseNames(el, "dgm:title"),
+    desc: parseDescriptions(el, "dgm:desc"),
+  };
+  if (el.attributes?.defStyle !== undefined) result.defStyle = String(el.attributes.defStyle);
+  const categories = parseCategories(el);
+  if (categories.length) result.categories = categories;
+  const extensions = parseHeaderExtensions(el);
+  if (extensions?.length) result.extensions = extensions;
+  return result;
+};
+
+export const layoutDefinitionHeaderDesc: CustomDescriptor<LayoutDefinitionHeaderOptions> = {
+  kind: "custom",
+  stringify: (options) => createLayoutDefinitionHeader(options),
+  parse: (el) => parseLayoutDefinitionHeader(el),
 };
 
 // ---------------------------------------------------------------------------
@@ -177,13 +287,19 @@ export interface LayoutDefinitionHeaderListOptions {
 export const createLayoutDefinitionHeaderList = (
   options?: LayoutDefinitionHeaderListOptions,
 ): string => {
-  const children: string[] = [];
-  if (options?.headers) {
-    for (const hdr of options.headers) {
-      children.push(createLayoutDefinitionHeader(hdr));
-    }
-  }
-  return element("dgm:layoutDefHdrLst", undefined, children);
+  return stringifyHeaderList("dgm:layoutDefHdrLst", options?.headers, createLayoutDefinitionHeader);
+};
+
+export const parseLayoutDefinitionHeaderList = (
+  el: Element,
+): LayoutDefinitionHeaderListOptions => ({
+  headers: parseHeaderList(el, "dgm:layoutDefHdr", parseLayoutDefinitionHeader),
+});
+
+export const layoutDefinitionHeaderListDesc: CustomDescriptor<LayoutDefinitionHeaderListOptions> = {
+  kind: "custom",
+  stringify: (options) => createLayoutDefinitionHeaderList(options),
+  parse: (el) => parseLayoutDefinitionHeaderList(el),
 };
 
 // ---------------------------------------------------------------------------
@@ -197,6 +313,7 @@ export interface StyleDefinitionHeaderOptions {
   title: readonly DiagramNameOptions[];
   desc: readonly DiagramDescriptionOptions[];
   categories?: readonly DiagramCategoryOptions[];
+  extensions?: readonly DiagramExtensionOptions[];
 }
 
 /**
@@ -222,12 +339,32 @@ export const createStyleDefinitionHeader = (options: StyleDefinitionHeaderOption
   for (const t of options.title) children.push(createNameEl("dgm:title", t));
   for (const d of options.desc) children.push(createDescEl("dgm:desc", d));
   if (options.categories?.length) children.push(createCatLst(options.categories));
+  children.push(stringifyHeaderExtensions(options.extensions));
 
   const attrs: Record<string, string | number> = { uniqueId: options.uniqueId };
   if (options.minVer !== undefined) attrs.minVer = options.minVer;
   if (options.resId !== undefined) attrs.resId = options.resId;
 
   return element("dgm:styleDefHdr", attrs, children);
+};
+
+export const parseStyleDefinitionHeader = (el: Element): StyleDefinitionHeaderOptions => {
+  const result: StyleDefinitionHeaderOptions = {
+    ...parseHeaderAttributes(el),
+    title: parseNames(el, "dgm:title"),
+    desc: parseDescriptions(el, "dgm:desc"),
+  };
+  const categories = parseCategories(el);
+  if (categories.length) result.categories = categories;
+  const extensions = parseHeaderExtensions(el);
+  if (extensions?.length) result.extensions = extensions;
+  return result;
+};
+
+export const styleDefinitionHeaderDesc: CustomDescriptor<StyleDefinitionHeaderOptions> = {
+  kind: "custom",
+  stringify: (options) => createStyleDefinitionHeader(options),
+  parse: (el) => parseStyleDefinitionHeader(el),
 };
 
 // ---------------------------------------------------------------------------
@@ -242,11 +379,15 @@ export interface StyleDefinitionHeaderListOptions {
 export const createStyleDefinitionHeaderList = (
   options?: StyleDefinitionHeaderListOptions,
 ): string => {
-  const children: string[] = [];
-  if (options?.headers) {
-    for (const hdr of options.headers) {
-      children.push(createStyleDefinitionHeader(hdr));
-    }
-  }
-  return element("dgm:styleDefHdrLst", undefined, children);
+  return stringifyHeaderList("dgm:styleDefHdrLst", options?.headers, createStyleDefinitionHeader);
+};
+
+export const parseStyleDefinitionHeaderList = (el: Element): StyleDefinitionHeaderListOptions => ({
+  headers: parseHeaderList(el, "dgm:styleDefHdr", parseStyleDefinitionHeader),
+});
+
+export const styleDefinitionHeaderListDesc: CustomDescriptor<StyleDefinitionHeaderListOptions> = {
+  kind: "custom",
+  stringify: (options) => createStyleDefinitionHeaderList(options),
+  parse: (el) => parseStyleDefinitionHeaderList(el),
 };

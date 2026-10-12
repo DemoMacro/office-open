@@ -19,21 +19,15 @@
  * @module
  */
 
-import {
-  convertPixelsToEmu,
-  parseAngle,
-  pickGroupBase,
-  pickNonVisualDrawingProperties,
-} from "@office-open/core";
+import { pickGroupBase, pickNonVisualDrawingProperties } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core";
 import type { ShapePropertiesOptions, GroupTransform2DOptions } from "@office-open/core/drawing";
 import type {
   GroupOptions as DocxGroupOptions,
   GroupChildMediaData,
-  MediaDataTransformation,
+  MediaTransformation,
   ShapeCoreOptions,
 } from "@office-open/docx";
-import { createTransformation } from "@office-open/docx";
 import type {
   GroupOptions as PptxGroupOptions,
   SlideChild,
@@ -52,9 +46,10 @@ import {
   boxFromSpPr,
   boxFromXlsxAnchor,
   boxFromDocx,
+  toEmu,
   boxToPptx,
   boxToXlsx,
-  boxToDocx,
+  boxToDocxTransformation,
 } from "./position";
 import type { AbsoluteBox } from "./position";
 import {
@@ -108,16 +103,14 @@ const hasCnvPr = (picked: Partial<NonVisualDrawingPropertiesOptions>): boolean =
 
 // ── container helpers ──
 
-/** docx child MediaDataTransformation → absolute box (reads EMUs; falls back to pixels). */
-function docxChildMediaToBox(t: MediaDataTransformation): AbsoluteBox {
-  const x = t.offset?.emus?.x ?? convertPixelsToEmu(t.offset?.pixels.x ?? 0);
-  const y = t.offset?.emus?.y ?? convertPixelsToEmu(t.offset?.pixels.y ?? 0);
+/** docx child MediaTransformation → absolute EMU box. */
+function docxChildMediaToBox(t: MediaTransformation): AbsoluteBox {
   return {
-    x,
-    y,
-    width: t.emus.x,
-    height: t.emus.y,
-    ...(t.rotation !== undefined ? { rotation: parseAngle(t.rotation) } : {}),
+    x: toEmu(t.offset?.x),
+    y: toEmu(t.offset?.y),
+    width: toEmu(t.width),
+    height: toEmu(t.height),
+    ...(t.rotation !== undefined ? { rotation: t.rotation } : {}),
     ...(t.flipHorizontal ? { flipHorizontal: true } : {}),
     ...(t.flipVertical ? { flipVertical: true } : {}),
   };
@@ -239,7 +232,11 @@ export function toDocxGroup(source: PptxGroupOptions | XlsxGroupOptions): DocxGr
     children = pptxGroupChildrenToDocx(source.children);
   }
   // Container cNvPr → docx altText (wp:docPr).
-  return { children, transformation: boxToDocx(box), ...altTextFromCnvPr(pickGroupBase(source)) };
+  return {
+    children,
+    transformation: boxToDocxTransformation(box),
+    ...altTextFromCnvPr(pickGroupBase(source)),
+  };
 }
 
 function pptxGroupChildrenToDocx(children: SlideChild[] | undefined): GroupChildMediaData[] {
@@ -249,7 +246,7 @@ function pptxGroupChildrenToDocx(children: SlideChild[] | undefined): GroupChild
       const parts = toDocxShapeParts(child.shape);
       out.push({
         type: "wps",
-        transformation: createTransformation(parts.transformation),
+        transformation: parts.transformation,
         data: parts.data,
       });
     } else if ("connector" in child) {
@@ -269,7 +266,7 @@ function xlsxGroupChildrenToDocx(
   for (const s of shapes ?? []) {
     out.push({
       type: "wps",
-      transformation: createTransformation(boxToDocx(boxFromSpPr(s.properties))),
+      transformation: boxToDocxTransformation(boxFromSpPr(s.properties)),
       data: xlsxShapeChildToDocxData(s),
     });
   }

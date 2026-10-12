@@ -1,4 +1,4 @@
-import type { GroupOptions as DocxGroupOptions } from "@office-open/docx";
+import type { GroupOptions as DocxGroupOptions, MediaTransformation } from "@office-open/docx";
 import type {
   GroupOptions as PptxGroupOptions,
   ShapeOptions as PptxShapeOptions,
@@ -60,8 +60,10 @@ describe("toXlsxGroup (pptx → xlsx)", () => {
 describe("toDocxGroup (pptx → docx)", () => {
   it("emits wpg children as wps ShapeMediaData", () => {
     const d = toDocxGroup(PPTX_GROUP);
-    expect(d.transformation.offset).toEqual({ left: 609600, top: 190500 });
-    expect(d.transformation.width).toBe(2438400);
+    const transformation = d.transformation as MediaTransformation;
+    expect(transformation.offset).toEqual({ x: 609600, y: 190500 });
+    expect(transformation.width).toBe(2438400);
+    expect(transformation.height).toBe(762000);
     expect(d.children).toHaveLength(1);
     expect(d.children[0].type).toBe("wps");
   });

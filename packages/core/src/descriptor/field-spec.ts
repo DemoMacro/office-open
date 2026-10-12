@@ -56,7 +56,19 @@ export const FIELD_SPECS: readonly DescriptorFieldSpec[] = [
     // string fields (category/contentStatus/identifier/language/version).
     // defaultNamespace/legacyMicrosoft are round-trip form flags (prefix vs
     // default-ns binding and the legacy Microsoft spelling), not content.
-    excludeFields: ["childOrder", "defaultNamespace", "legacyMicrosoft"],
+    excludeFields: [
+      "childOrder",
+      "defaultNamespace",
+      "legacyMicrosoft",
+      "application",
+      "printedBy",
+      "editingDuration",
+      "template",
+      "autoReload",
+      "hyperlinkBehavior",
+      "statistics",
+      "userDefinedProperties",
+    ],
     interfaceFields: [
       "title",
       "subject",

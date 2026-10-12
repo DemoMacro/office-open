@@ -27,10 +27,7 @@ const buffer = await generateDocument({
                         series: [{ name: "2025", values: [140, 170, 210, 250] }],
                         title: "Quarterly Revenue",
                       },
-                      transformation: {
-                        pixels: { x: 0, y: 0 },
-                        emus: { x: 5_486_400, y: 2_743_200 },
-                      },
+                      transformation: { width: 5_486_400, height: 2_743_200 },
                     },
                     {
                       type: "wps",
@@ -38,9 +35,9 @@ const buffer = await generateDocument({
                         children: ["Grouped caption shape"],
                       },
                       transformation: {
-                        offset: { emus: { x: 0, y: 2_743_200 }, pixels: { x: 0, y: 0 } },
-                        pixels: { x: 0, y: 0 },
-                        emus: { x: 5_486_400, y: 914_400 },
+                        width: 5_486_400,
+                        height: 914_400,
+                        offset: { x: 0, y: 2_743_200 },
                       },
                     },
                   ],

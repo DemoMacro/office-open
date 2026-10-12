@@ -13,6 +13,8 @@ import {
   type XmlifyedFile,
   toUint8Array,
   partPathToRelsPath,
+  replacePlaceholders,
+  withDiagramNamespaces,
 } from "@office-open/core";
 import {
   getColorXml,
@@ -117,6 +119,35 @@ export function compileChartParts(ctx: DocxWriteContext): {
   };
 }
 
+export function compileChartExParts(ctx: DocxWriteContext): {
+  ChartEx?: XmlifyedFile[];
+} {
+  if (ctx.chartExes.array.length === 0) return {};
+  return {
+    ChartEx: ctx.chartExes.array
+      .map((chartExData) => {
+        const chartExPath =
+          chartExData.sourcePath ??
+          `word/charts/chartEx${Number(chartExData.key.replace(/^chartEx_/, ""))}.xml`;
+        const relationships = new Relationships(chartExPath);
+        for (const rel of chartExData.sourceRelationships ?? []) {
+          relationships.claimSourceRel(rel);
+        }
+        const parts: Array<{ data: string; path: string }> = [
+          { data: XML_DECL + chartExData.chartExXml, path: chartExPath },
+        ];
+        if (relationships.relationshipCount > 0) {
+          parts.push({
+            data: XML_DECL + relationships.serialize(),
+            path: partPathToRelsPath(chartExPath),
+          });
+        }
+        return parts;
+      })
+      .flat(),
+  };
+}
+
 export function compileSmartArtParts(ctx: DocxWriteContext): {
   DiagramData?: XmlifyedFile[];
   DiagramLayout?: XmlifyedFile[];
@@ -126,39 +157,51 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
   SmartArtDataRels?: XmlifyedFile[];
 } {
   if (ctx.smartArts.array.length === 0) return {};
+  const smartArtParts = ctx.smartArts.array.map((smartArtData, i) => {
+    const dataPath = smartArtData.sourcePaths?.data ?? `word/diagrams/data${i + 1}.xml`;
+    const hasDrawingRelationship =
+      smartArtData.raw?.drawing !== undefined && smartArtData.raw.drawingRelationship !== false;
+    const mediaIds = new Map(
+      (smartArtData.raw?.media ?? []).map((media, mediaIndex) => [
+        media.fileName,
+        `rId${(hasDrawingRelationship ? 2 : 1) + mediaIndex}`,
+      ]),
+    );
+    return {
+      smartArtData,
+      dataPath,
+      hasDrawingRelationship,
+      dataXml: replacePlaceholders(
+        XML_DECL + withDiagramNamespaces(smartArtData.dataModelXml),
+        mediaIds,
+      ),
+      media: smartArtData.raw?.media ?? [],
+    };
+  });
   return {
-    DiagramData: ctx.smartArts.array.map((smartArtData, i) => ({
-      data:
-        smartArtData.raw?.data !== undefined
-          ? toUint8Array(smartArtData.raw.data)
-          : XML_DECL + smartArtData.dataModelXml,
-      path: smartArtData.sourcePaths?.data ?? `word/diagrams/data${i + 1}.xml`,
+    DiagramData: smartArtParts.map(({ dataPath, dataXml }) => ({
+      data: dataXml,
+      path: dataPath,
     })),
     DiagramLayout: ctx.smartArts.array.map((smartArtData, i) => ({
       data:
-        smartArtData.raw?.layout !== undefined
-          ? toUint8Array(smartArtData.raw.layout)
-          : typeof smartArtData.layout === "string"
-            ? getLayoutXml(smartArtData.layout)
-            : stringifyLayoutDefinitionPart(smartArtData.layout),
+        typeof smartArtData.layout === "string"
+          ? getLayoutXml(smartArtData.layout)
+          : stringifyLayoutDefinitionPart(smartArtData.layout),
       path: smartArtData.sourcePaths?.layout ?? `word/diagrams/layout${i + 1}.xml`,
     })),
     DiagramStyle: ctx.smartArts.array.map((smartArtData, i) => ({
       data:
-        smartArtData.raw?.style !== undefined
-          ? toUint8Array(smartArtData.raw.style)
-          : typeof smartArtData.style === "string"
-            ? getStyleXml(smartArtData.style)
-            : stringifyStyleDefinitionPart(smartArtData.style),
+        typeof smartArtData.style === "string"
+          ? getStyleXml(smartArtData.style)
+          : stringifyStyleDefinitionPart(smartArtData.style),
       path: smartArtData.sourcePaths?.quickStyle ?? `word/diagrams/quickStyle${i + 1}.xml`,
     })),
     DiagramColors: ctx.smartArts.array.map((smartArtData, i) => ({
       data:
-        smartArtData.raw?.color !== undefined
-          ? toUint8Array(smartArtData.raw.color)
-          : typeof smartArtData.color === "string"
-            ? getColorXml(smartArtData.color)
-            : stringifyColorDefinitionPart(smartArtData.color),
+        typeof smartArtData.color === "string"
+          ? getColorXml(smartArtData.color)
+          : stringifyColorDefinitionPart(smartArtData.color),
       path: smartArtData.sourcePaths?.colors ?? `word/diagrams/colors${i + 1}.xml`,
     })),
     DiagramDrawing: ctx.smartArts.array
@@ -168,23 +211,34 @@ export function compileSmartArtParts(ctx: DocxWriteContext): {
         data: toUint8Array(smartArtData.raw!.drawing!),
         path: smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${i + 1}.xml`,
       })),
-    // Data parts with their own rels (blipFill art): re-emit the rels
-    // verbatim — its rIds and ../media targets match the pinned media.
-    ...(ctx.smartArts.array.some((s) => s.raw?.dataRels !== undefined)
-      ? {
-          SmartArtDataRels: ctx.smartArts.array.flatMap((smartArtData, i) =>
-            smartArtData.raw?.dataRels !== undefined
-              ? [
-                  {
-                    data: toUint8Array(smartArtData.raw.dataRels),
-                    path:
-                      smartArtData.sourcePaths?.dataRels ??
-                      `word/diagrams/_rels/data${i + 1}.xml.rels`,
-                  },
-                ]
-              : [],
-          ),
+    SmartArtDataRels: smartArtParts.flatMap(
+      ({ smartArtData, dataPath, hasDrawingRelationship, media }) => {
+        const drawingFileIndex = ctx.smartArts.array.indexOf(smartArtData) + 1;
+        const drawingPath =
+          smartArtData.sourcePaths?.drawing ?? `word/diagrams/drawing${drawingFileIndex}.xml`;
+        const rels = new Relationships(dataPath);
+        if (hasDrawingRelationship) {
+          rels.addRelationship(
+            1,
+            RELATIONSHIP_TYPES.diagramDrawingMs,
+            relativeTarget(dataPath, drawingPath),
+          );
         }
-      : {}),
+        for (const [mediaIndex, mediaReference] of media.entries()) {
+          rels.addRelationship(
+            (hasDrawingRelationship ? 2 : 1) + mediaIndex,
+            RELATIONSHIP_TYPES.image,
+            `../media/${mediaReference.fileName}`,
+          );
+        }
+        if (rels.relationshipCount === 0) return [];
+        return [
+          {
+            data: XML_DECL + rels.serialize(),
+            path: partPathToRelsPath(dataPath),
+          },
+        ];
+      },
+    ),
   };
 }

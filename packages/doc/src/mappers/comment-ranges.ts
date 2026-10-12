@@ -7,7 +7,7 @@ export function parseCommentRanges(
 ): Array<{ start: number; end: number; data: Uint8Array }> {
   const message = "Invalid DOC annotation references: they are outside the table stream";
   requireRange(table, range.offset, range.length, message);
-  if (range.length < 8 || range.length % 4 !== 0) {
+  if (range.length < 8 || (range.length - 4) % 34 !== 0) {
     throw new DocParseError("Invalid DOC annotation references: malformed CP count", {
       part: "table",
       path: "PlcfandRef",
@@ -18,15 +18,15 @@ export function parseCommentRanges(
       reason: "invalid-record-length",
     });
   }
-  const count = (range.length - 4) / 4;
-  const descriptorLength = range.length - (count + 1) * 4;
-  if (descriptorLength !== 0 && descriptorLength !== count * 4) {
+  const count = (range.length - 4) / 34;
+  const descriptorLength = count * 30;
+  if (range.length !== (count + 1) * 4 + descriptorLength) {
     throw new DocParseError("Invalid DOC annotation references: truncated descriptors", {
       part: "table",
       path: "PlcfandRef",
-      recordName: "FRD",
+      recordName: "ATRD",
       offset: range.offset + (count + 1) * 4,
-      length: count * 4,
+      length: descriptorLength,
       byteRange: [
         range.offset + (count + 1) * 4,
         range.offset + (count + 1) * 4 + descriptorLength,
@@ -36,13 +36,13 @@ export function parseCommentRanges(
   }
   const values: Array<{ start: number; end: number; data: Uint8Array }> = [];
   for (let index = 0; index < count; index += 1) {
-    const start = readUint32(table, range.offset + index * 4, message);
+    const start = readUint32(table, range.offset + index * 30, message);
     const end = readUint32(table, range.offset + (index + 1) * 4, message);
     const dataOffset = range.offset + (count + 1) * 4 + index * 4;
     values.push({
       start,
       end,
-      data: descriptorLength === 0 ? new Uint8Array(4) : table.subarray(dataOffset, dataOffset + 4),
+      data: table.subarray(dataOffset, dataOffset + 30),
     });
   }
   return values;

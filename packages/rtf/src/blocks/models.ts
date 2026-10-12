@@ -9,6 +9,7 @@ import type {
 
 export type RunFormat = Pick<
   RunOptions,
+  | "additionRsid"
   | "bold"
   | "italic"
   | "underline"
@@ -37,13 +38,19 @@ export type ParagraphDraft = {
   segments: (string | NonNullable<RunOptions["children"]>[number])[];
 };
 
-export type CellDraft = { blocks: SectionChild[] };
+export type CellDraft = {
+  blocks: SectionChild[];
+  properties: Partial<TableCellOptions>;
+};
 
 export type TableDraft = {
   target: TableOptions;
   rows: TableRowOptions[];
   cells: TableCellOptions[];
   cell: CellDraft;
+  rowProperties: Partial<TableRowOptions>;
+  boundaries: number[];
+  cellDefinitions: Partial<TableCellOptions>[];
   cellOpen: boolean;
   cellEnded: boolean;
   parentBlocks: SectionChild[];

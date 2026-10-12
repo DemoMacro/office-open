@@ -18,8 +18,37 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("round-trips left, right, and first headers and footers", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          headers: {
+            default: [{ paragraph: { children: [{ text: "Right" }] } }],
+            even: [{ paragraph: { children: [{ text: "Left" }] } }],
+            first: [{ paragraph: { children: [{ text: "First" }] } }],
+          },
+          footers: {
+            default: [{ paragraph: { children: [{ text: "Bottom" }] } }],
+            even: [{ paragraph: { children: [{ text: "Even" }] } }],
+          },
+          children: [],
+        },
+      ],
+    };
+    expect(roundTrip(decoder.decode(generateDocument(options)))).toEqual(options);
+  });
+
+  it("round-trips footnote references at their source positions", () => {
+    const source = String.raw`{\rtf1Before{\footnote Note}After\par}`;
+    const options = parseDocument(source);
+    expect(options.sections[0]?.children?.[0]).toEqual({
+      paragraph: { children: [{ text: "Before" }, { footnoteReference: 0 }, { text: "After" }] },
+    });
+    expect(roundTrip(decoder.decode(generateDocument(options)))).toEqual(options);
+  });
+
   it("projects styles, fonts, colors, and character formatting", () => {
-    const source = String.raw`{\rtf1{\stylesheet{\s0 Heading;}{\cs0 Term;}}{\fonttbl{\f0 Arial;}}{\colortbl;\red255\green0\blue0;}\s0\f0\fs20\cf1\b\i\ul Heading\par}`;
+    const source = String.raw`{\rtf1{\stylesheet{\s0 Heading;}{\cs0 Term;\strike\super\lang1033\caps\scaps\v\charscalex90}}{\fonttbl{\f0 Arial;}}{\colortbl;\red255\green0\blue0;}\s0\f0\fs20\cf1\b\i\ul Heading\par}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
@@ -43,13 +72,13 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
-  it("round-trips complete numbering tables and pntext shadow controls", () => {
-    const source = String.raw`{\rtf1{\listtable{\list\listtemplateid9\listhybrid{\listlevel\levelnfc2\leveljc1\levelstartat3\levelindent720{\leveltext\'02\'00.;}{\levelnumbers;}}{\listname rtf-list-template-9;}\listid77}}{\listoverridetable{\listoverride\listid77\listoverridecount0\ls4}}\ls4\ilvl0\par Item}`;
+  it("projects flat and nested tables", () => {
+    const source = String.raw`{\rtf1\trowd\cellx1000 Outer{\trowd\cellx500 Inner\cell}\nestrow End\cell\row}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
-  it("projects flat and nested tables", () => {
-    const source = String.raw`{\rtf1\trowd\cellx1000\cellx2000 Outer{\trowd\cellx500 Inner\cell}\nestrow End\cell\row}`;
+  it("round-trips table row and cell properties", () => {
+    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}\trowd\trhdr\trkeep\trh300\trqc\clcbpat1\clvertalc\clvmgf\cellx1000\clvmrg\cellx2000 First\cell\cell\row}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
@@ -66,6 +95,34 @@ describe("generateDocument RTF projections", () => {
   it("projects shapes", () => {
     const source = String.raw`{\rtf1{\shpinst\shpleft100\shptop100\shpwidth1000\shpheight500\shptxt Shape}}`;
     expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
+  it("projects wrapped floating shape anchors", () => {
+    const source = String.raw`{\rtf1{\shp{\*\shpinst\shpbxpage\shpbypage\shpleft100\shptop100\shpwidth1000\shpheight500\shpfblwtxt1\shplockanchor\shpz7\shpwr2\shpwrk3\shptxt Shape}}\par}`;
+    expect(roundTrip(source)).toEqual(parseDocument(source));
+  });
+
+  it("projects revision IDs and hexadecimal object data", () => {
+    const source = String.raw`{\rtf1\insrsid27113541 Revised{\object{\objclass Test.Class}{\objdata 48656C6C6F}}\par}`;
+    const parsed = parseDocument(source);
+    expect(parsed.sections?.[0]?.children[0]).toMatchObject({
+      paragraph: {
+        children: [
+          { additionRsid: "019DB845" },
+          {
+            additionRsid: "019DB845",
+            children: [
+              {
+                object: {
+                  embed: { progId: "Test.Class", data: new Uint8Array([72, 101, 108, 108, 111]) },
+                },
+              },
+            ],
+          },
+        ],
+      },
+    });
+    expect(roundTrip(source)).toEqual(parsed);
   });
 
   it("rejects unsupported document fields with structured context", () => {

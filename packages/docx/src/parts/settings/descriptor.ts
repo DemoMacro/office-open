@@ -123,6 +123,15 @@ function readNum(el: Element | undefined, name: string): number | undefined {
   return Number.isNaN(n) ? undefined : n;
 }
 
+function readPositiveMeasure(
+  el: Element | undefined,
+): number | PositiveUniversalMeasure | undefined {
+  const value = attrMeasure(el, "m:val");
+  return typeof value === "number" || typeof value === "string"
+    ? (value as number | PositiveUniversalMeasure)
+    : undefined;
+}
+
 /** Read an attribute as a string, or undefined if absent. */
 function readStr(el: Element | undefined, name: string): string | undefined {
   if (!el) return undefined;
@@ -353,9 +362,9 @@ function parseMathPr(el: Element): MathPropertiesOptions | undefined {
   if (smallFractions !== undefined) o.smallFractions = smallFractions;
   const displayDefaults = readOnOff(findChild(el, "m:dispDef"));
   if (displayDefaults !== undefined) o.displayDefaults = displayDefaults;
-  const leftMargin = readNum(findChild(el, "m:lMargin"), "m:val");
+  const leftMargin = readPositiveMeasure(findChild(el, "m:lMargin"));
   if (leftMargin !== undefined) o.leftMargin = leftMargin;
-  const rightMargin = readNum(findChild(el, "m:rMargin"), "m:val");
+  const rightMargin = readPositiveMeasure(findChild(el, "m:rMargin"));
   if (rightMargin !== undefined) o.rightMargin = rightMargin;
   const defaultJustification = readEnum(findChild(el, "m:defJc"), "m:val", [
     "left",
@@ -364,15 +373,15 @@ function parseMathPr(el: Element): MathPropertiesOptions | undefined {
     "centerGroup",
   ] as const);
   if (defaultJustification) o.defaultJustification = defaultJustification;
-  const preSpacing = readNum(findChild(el, "m:preSp"), "m:val");
+  const preSpacing = readPositiveMeasure(findChild(el, "m:preSp"));
   if (preSpacing !== undefined) o.preSpacing = preSpacing;
-  const postSpacing = readNum(findChild(el, "m:postSp"), "m:val");
+  const postSpacing = readPositiveMeasure(findChild(el, "m:postSp"));
   if (postSpacing !== undefined) o.postSpacing = postSpacing;
-  const interSpacing = readNum(findChild(el, "m:interSp"), "m:val");
+  const interSpacing = readPositiveMeasure(findChild(el, "m:interSp"));
   if (interSpacing !== undefined) o.interSpacing = interSpacing;
-  const intraSpacing = readNum(findChild(el, "m:intraSp"), "m:val");
+  const intraSpacing = readPositiveMeasure(findChild(el, "m:intraSp"));
   if (intraSpacing !== undefined) o.intraSpacing = intraSpacing;
-  const wrapIndent = readNum(findChild(el, "m:wrapIndent"), "m:val");
+  const wrapIndent = readPositiveMeasure(findChild(el, "m:wrapIndent"));
   if (wrapIndent !== undefined) o.wrapIndent = wrapIndent;
   const wrapRight = readOnOff(findChild(el, "m:wrapRight"));
   if (wrapRight !== undefined) o.wrapRight = wrapRight;
@@ -752,15 +761,15 @@ function stringifyMathPr(opts: MathPropertiesOptions): string {
     p.push(attrEl("m:brkBinSub", { "m:val": opts.binaryOperatorBreakSubtraction }));
   p.push(onOff("m:smallFrac", opts.smallFractions));
   p.push(onOff("m:dispDef", opts.displayDefaults));
-  p.push(numVal("m:lMargin", opts.leftMargin));
-  p.push(numVal("m:rMargin", opts.rightMargin));
+  p.push(measureVal("m:lMargin", opts.leftMargin));
+  p.push(measureVal("m:rMargin", opts.rightMargin));
   if (opts.defaultJustification !== undefined)
     p.push(attrEl("m:defJc", { "m:val": opts.defaultJustification }));
-  p.push(numVal("m:preSp", opts.preSpacing));
-  p.push(numVal("m:postSp", opts.postSpacing));
-  p.push(numVal("m:interSp", opts.interSpacing));
-  p.push(numVal("m:intraSp", opts.intraSpacing));
-  p.push(numVal("m:wrapIndent", opts.wrapIndent));
+  p.push(measureVal("m:preSp", opts.preSpacing));
+  p.push(measureVal("m:postSp", opts.postSpacing));
+  p.push(measureVal("m:interSp", opts.interSpacing));
+  p.push(measureVal("m:intraSp", opts.intraSpacing));
+  p.push(measureVal("m:wrapIndent", opts.wrapIndent));
   // CT_MathPr wraps with wrapIndent | wrapRight (a choice) — wrapIndent wins
   if (opts.wrapIndent === undefined) p.push(onOff("m:wrapRight", opts.wrapRight));
   if (opts.integralLimitLocation !== undefined)

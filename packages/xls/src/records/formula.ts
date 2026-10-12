@@ -1,8 +1,10 @@
 export interface FormulaContext {
   baseRow: number;
   baseColumn: number;
+  formulaVersion?: number;
   sheetNameByExternIndex?: (index: number) => string | undefined;
   definedNameByIndex?: (index: number) => string | undefined;
+  arrayData?: Uint8Array;
 }
 
 function columnLabel(column: number): string {
@@ -28,6 +30,9 @@ const BINARY_OPERATORS: Record<number, string> = {
   0x0c: ">=",
   0x0d: ">",
   0x0e: "<>",
+  0x0f: " ",
+  0x10: ",",
+  0x11: ":",
 };
 
 const FUNCTION_NAMES: Record<number, string> = {
@@ -57,7 +62,7 @@ class FormulaReader {
 
   require(length: number): void {
     if (this.cursor + length > this.data.byteLength) {
-      throw new LegacyExcelError("Invalid legacy XLS file: truncated formula");
+      throw new XlsParseError("Invalid legacy XLS file: truncated formula");
     }
   }
 
@@ -124,17 +129,75 @@ function readString(reader: FormulaReader): string {
   return new TextDecoder(highByte ? "utf-16le" : "windows-1252").decode(bytes);
 }
 
+function biff5Address(reader: FormulaReader, context: FormulaContext): string {
+  const rowField = reader.uint16();
+  const column = reader.byte();
+  const flags = ((rowField & 0x4000) === 0 ? 0x4000 : 0) | ((rowField & 0x8000) === 0 ? 0x8000 : 0);
+  const row = rowField & 0x3fff;
+  if ((rowField & 0xc000) === 0) return absoluteCell(row, column, flags);
+  return relativeCell(row, column, flags, context);
+}
+
 function functionName(index: number): string {
   return FUNCTION_NAMES[index] ?? `FN_${index}`;
 }
 
-export function decodeFormula(
+const EXCEL_ERRORS: Record<number, string> = {
+  0x00: "#NULL!",
+  0x07: "#DIV/0!",
+  0x0f: "#VALUE!",
+  0x17: "#REF!",
+  0x1d: "#NAME?",
+  0x24: "#NUM!",
+  0x2a: "#N/A",
+  0x2b: "#GETTING_DATA",
+};
+
+function readConstantArray(reader: FormulaReader): string {
+  const columns = reader.byte() + 1;
+  const rows = reader.byte() + 1;
+  const values: string[][] = [];
+  for (let rowIndex = 0; rowIndex < rows; rowIndex += 1) {
+    const row: string[] = [];
+    for (let columnIndex = 0; columnIndex < columns; columnIndex += 1) {
+      const type = reader.byte();
+      if (type === 0x00) {
+        reader.bytes(8);
+        row.push("");
+      } else if (type === 0x01) {
+        row.push(String(reader.float64()));
+      } else if (type === 0x02) {
+        row.push(readString(reader));
+      } else if (type === 0x04) {
+        const value = reader.byte();
+        reader.bytes(7);
+        row.push(value === 0 ? "FALSE" : "TRUE");
+      } else if (type === 0x10) {
+        const error = reader.byte();
+        reader.bytes(7);
+        row.push(EXCEL_ERRORS[error] ?? `#ERROR_${error}`);
+      } else {
+        throw new XlsParseError(
+          `Invalid legacy XLS file: unsupported formula array constant 0x${type
+            .toString(16)
+            .padStart(2, "0")}`,
+        );
+      }
+    }
+    values.push(row);
+  }
+  return `{${values.map((row) => row.join(",")).join(";")}}`;
+}
+
+function decodeTokens(
   data: Uint8Array,
   context: FormulaContext,
 ): { formula: string; consumed: number } {
   const reader = new FormulaReader(data);
+  const arrayReader = new FormulaReader(context.arrayData ?? new Uint8Array());
   const operands: string[] = [];
   let pendingFunction: { name: string; arguments: number } | undefined;
+  let sharedFormulaReference = false;
 
   while (reader.position < data.byteLength) {
     const token = reader.byte();
@@ -150,11 +213,14 @@ export function decodeFormula(
       case 0x0b:
       case 0x0c:
       case 0x0d:
-      case 0x0e: {
+      case 0x0e:
+      case 0x0f:
+      case 0x10:
+      case 0x11: {
         const right = operands.pop();
         const left = operands.pop();
         if (left === undefined || right === undefined)
-          throw new LegacyExcelError("Invalid legacy XLS file: malformed formula operation");
+          throw new XlsParseError("Invalid legacy XLS file: malformed formula operation");
         operands.push(`${left}${BINARY_OPERATORS[token]}${right}`);
         break;
       }
@@ -162,15 +228,52 @@ export function decodeFormula(
       case 0x12: {
         const operand = operands.pop();
         if (operand === undefined)
-          throw new LegacyExcelError("Invalid legacy XLS file: malformed unary formula");
+          throw new XlsParseError("Invalid legacy XLS file: malformed unary formula");
         operands.push(token === 0x13 ? `-${operand}` : `+${operand}`);
+        break;
+      }
+      case 0x01: {
+        reader.uint16();
+        reader.uint16();
+        sharedFormulaReference = true;
         break;
       }
       case 0x15: {
         const operand = operands.pop();
         if (operand === undefined)
-          throw new LegacyExcelError("Invalid legacy XLS file: malformed parenthesized formula");
+          throw new XlsParseError("Invalid legacy XLS file: malformed parenthesized formula");
         operands.push(`(${operand})`);
+        break;
+      }
+      case 0x1c: {
+        const error = reader.byte();
+        const message = EXCEL_ERRORS[error];
+        if (!message)
+          throw new XlsParseError(
+            `Invalid legacy XLS file: unsupported formula error 0x${error
+              .toString(16)
+              .padStart(2, "0")}`,
+          );
+        operands.push(message);
+        break;
+      }
+      case 0x29:
+      case 0x49:
+      case 0x69: {
+        const length = reader.uint16();
+        const subexpression = decodeTokens(reader.bytes(length), context).formula;
+        operands.push(subexpression);
+        break;
+      }
+      case 0x20:
+      case 0x40:
+      case 0x60: {
+        reader.bytes(7);
+        if (!context.arrayData || context.arrayData.byteLength === 0) {
+          operands.push('""');
+          break;
+        }
+        operands.push(readConstantArray(arrayReader));
         break;
       }
       case 0x19: {
@@ -232,37 +335,94 @@ export function decodeFormula(
       case 0x5a:
       case 0x7a: {
         const externIndex = reader.uint16();
-        const row = reader.uint16();
-        const column = reader.uint16();
-        const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
-        operands.push(`${sheet}!${absoluteCell(row, column, column >> 8)}`);
+        if (context.formulaVersion === 5) {
+          reader.bytes(8);
+          reader.uint16();
+          reader.uint16();
+          const address = biff5Address(reader, context);
+          const sheet = context.sheetNameByExternIndex?.(viewSigned(externIndex)) ?? "#REF";
+          operands.push(sheet ? `${sheet}!${address}` : address);
+        } else {
+          const row = reader.uint16();
+          const column = reader.uint16();
+          const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
+          operands.push(`${sheet}!${absoluteCell(row, column, column >> 8)}`);
+        }
         break;
       }
       case 0x3b:
       case 0x5b:
       case 0x7b: {
         const externIndex = reader.uint16();
-        const firstRow = reader.uint16();
-        const lastRow = reader.uint16();
-        const firstColumn = reader.uint16();
-        const lastColumn = reader.uint16();
-        const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
-        operands.push(
-          `${sheet}!${absoluteCell(firstRow, firstColumn, firstColumn >> 8)}:${absoluteCell(
-            lastRow,
-            lastColumn,
-            lastColumn >> 8,
-          )}`,
-        );
+        if (context.formulaVersion === 5) {
+          reader.bytes(8);
+          reader.uint16();
+          reader.uint16();
+          const first = biff5Address(reader, context);
+          const last = biff5Address(reader, context);
+          const sheet = context.sheetNameByExternIndex?.(viewSigned(externIndex)) ?? "#REF";
+          operands.push(sheet ? `${sheet}!${first}:${last}` : `${first}:${last}`);
+        } else {
+          const firstRow = reader.uint16();
+          const lastRow = reader.uint16();
+          const firstColumn = reader.uint16();
+          const lastColumn = reader.uint16();
+          const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
+          operands.push(
+            `${sheet}!${absoluteCell(firstRow, firstColumn, firstColumn >> 8)}:${absoluteCell(
+              lastRow,
+              lastColumn,
+              lastColumn >> 8,
+            )}`,
+          );
+        }
         break;
       }
-      case 0x3f: {
+      case 0x17: {
         const value = readString(reader);
         operands.push(`"${value.replaceAll('"', '""')}"`);
         break;
       }
+      case 0x3c:
+      case 0x5c:
+      case 0x7c: {
+        const externIndex = reader.uint16();
+        if (context.formulaVersion === 5) {
+          reader.bytes(8);
+          reader.uint16();
+          reader.uint16();
+          reader.bytes(3);
+        } else {
+          reader.bytes(2);
+        }
+        const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
+        operands.push(`${sheet}!#REF!`);
+        break;
+      }
+      case 0x3d:
+      case 0x5d:
+      case 0x7d: {
+        const externIndex = reader.uint16();
+        if (context.formulaVersion === 5) {
+          reader.bytes(8);
+          reader.uint16();
+          reader.uint16();
+          reader.bytes(6);
+        } else {
+          reader.bytes(8);
+        }
+        const sheet = context.sheetNameByExternIndex?.(externIndex) ?? "#REF";
+        operands.push(`${sheet}!#REF!`);
+        break;
+      }
       case 0x41:
       case 0x61: {
+        const argumentCount = reader.byte();
+        const index = reader.uint16();
+        pendingFunction = { name: functionName(index), arguments: argumentCount };
+        break;
+      }
+      case 0x1d: {
         operands.push(reader.byte() === 0 ? "FALSE()" : "TRUE()");
         break;
       }
@@ -288,7 +448,17 @@ export function decodeFormula(
         break;
       }
       default:
-        throw new LegacyExcelError(
+        const operatorToken = token >= 0x20 ? token & 0x1f : token;
+        if (BINARY_OPERATORS[operatorToken] !== undefined) {
+          const right = operands.pop();
+          const left = operands.pop();
+          if (left === undefined || right === undefined) {
+            throw new XlsParseError("Invalid legacy XLS file: malformed formula operation");
+          }
+          operands.push(`${left}${BINARY_OPERATORS[operatorToken]}${right}`);
+          break;
+        }
+        throw new XlsParseError(
           `Invalid legacy XLS file: unsupported formula token 0x${token.toString(16).padStart(2, "0")}`,
         );
     }
@@ -302,13 +472,24 @@ export function decodeFormula(
     }
   }
 
-  if (operands.length !== 1 || pendingFunction) {
-    throw new LegacyExcelError("Invalid legacy XLS file: malformed formula token stream");
+  if (
+    (operands.length !== 1 && !(sharedFormulaReference && operands.length === 0)) ||
+    pendingFunction
+  ) {
+    throw new XlsParseError("Invalid legacy XLS file: malformed formula token stream");
   }
-  return { formula: operands[0]!, consumed: data.byteLength };
+  return { formula: operands[0] ?? "", consumed: data.byteLength };
+}
+
+export function decodeFormula(
+  data: Uint8Array,
+  context: FormulaContext,
+): { formula: string; consumed: number } {
+  const result = decodeTokens(data, context);
+  return { ...result, consumed: result.consumed + (context.arrayData?.byteLength ?? 0) };
 }
 
 function reference(row: number, column: number): string {
   return `${columnLabel(column)}${row + 1}`;
 }
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";

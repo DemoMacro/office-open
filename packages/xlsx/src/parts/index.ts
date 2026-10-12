@@ -182,6 +182,7 @@ export {
 } from "./pivot-cache";
 export { XlsxParseError, type PivotXmlElementOptions } from "./pivot/pivot-xml";
 export type {
+  DefinitionPivotTableOptions,
   SourcePivotTableOptions,
   PivotTableOptions,
   PivotDataField,

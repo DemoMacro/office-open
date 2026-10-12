@@ -120,6 +120,10 @@ export function parseChild(el: XmlElement, ctx: ReadContext): LegacySlideChild |
       return { connector: connectorShapeDesc.parse(el, ctx) } as LegacySlideChild;
     case "p:grpSp":
       return { group: groupShapeDesc.parse(el, ctx) } as LegacySlideChild;
+    case "p:contentPart": {
+      const rId = attr(el, "r:id");
+      return rId ? ({ contentPart: { rId } } as LegacySlideChild) : undefined;
+    }
     default:
       // Unrecognized element — keep verbatim so round-trip never drops content
       // (mc:AlternateContent, vendor extensions, future schema versions).

@@ -22,6 +22,54 @@ const NO_STREAM = 0xffffffff;
 const SECTOR_SIZE = 512;
 const STREAM_SIZE = 4096;
 
+function escherRecord(type: number, payload: Uint8Array, version = 1, instance = 0): Uint8Array {
+  const record = new Uint8Array(8 + payload.length);
+  const view = new DataView(record.buffer);
+  view.setUint16(0, (instance << 4) | version, true);
+  view.setUint16(2, type, true);
+  view.setUint32(4, payload.length, true);
+  record.set(payload, 8);
+  return record;
+}
+
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  const bytes = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let offset = 0;
+  for (const part of parts) {
+    bytes.set(part, offset);
+    offset += part.length;
+  }
+  return bytes;
+}
+
+function pictureStoreRecord(blip: Uint8Array): Uint8Array {
+  const header = new Uint8Array(36);
+  const view = new DataView(header.buffer);
+  view.setUint32(8, 1, true);
+  view.setUint32(12, 1, true);
+  view.setUint32(28, 0xffffffff, true);
+  header[33] = 0;
+  return escherRecord(0xf007, concatBytes([header, blip]));
+}
+
+function emfBlipRecord(): Uint8Array {
+  return escherRecord(0xf01a, new Uint8Array(51), 3, 0);
+}
+
+function pictureShapeContainer(shapeId: number): Uint8Array {
+  const shape = new Uint8Array(4);
+  new DataView(shape.buffer).setUint32(0, shapeId, true);
+  const property = new Uint8Array(6);
+  const propertyView = new DataView(property.buffer);
+  propertyView.setUint16(0, 0x4104, true);
+  propertyView.setUint32(2, 1, true);
+  return escherRecord(
+    0xf004,
+    concatBytes([escherRecord(0xf00a, shape, 2), escherRecord(0xf00b, property, 3, 1)]),
+    0xf,
+  );
+}
+
 function fillName(bytes: Uint8Array, offset: number, name: string): void {
   const view = new DataView(bytes.buffer);
   for (const [index, character] of Array.from(name).entries()) {
@@ -137,9 +185,10 @@ function buildDocument(
     paragraphGrpprl?: readonly number[];
     sectionProperties?: boolean;
     stylesheet?: boolean;
-    textboxes?: { malformed?: boolean; reusableFirst?: boolean };
+    textboxes?: { malformed?: boolean; reusableFirst?: boolean; missingAnchor?: boolean };
     notes?: boolean;
     headers?: boolean;
+    sections?: boolean;
   } = {},
 ): {
   data: Uint8Array;
@@ -172,7 +221,7 @@ function buildDocument(
       : undefined;
   wordView.setUint32(76, fieldBytes?.byteLength ?? (storyFixture ? 4 : 7), true);
   wordView.setUint32(80, options.notes ? 4 : 0, true);
-  wordView.setUint32(84, options.headers ? 4 : 0, true);
+  wordView.setUint32(84, options.headers ? (options.sections ? 8 : 4) : 0, true);
   wordView.setUint32(100, options.textboxes ? 4 : 0, true);
   wordView.setUint16(152, 75, true);
 
@@ -183,39 +232,61 @@ function buildDocument(
   setFibPair(12, 0, options.characterBinTableLength ?? 12);
   setFibPair(13, 12, 12);
   setFibPair(33, 512, 33);
-  setFibPair(56, 640, options.textboxes?.malformed ? 57 : 56);
+  setFibPair(56, 640, options.textboxes?.malformed ? 49 : 48);
+  if (options.textboxes && !options.textboxes.missingAnchor) {
+    setFibPair(40, 1344, 34);
+  }
   setFibPair(3, 720, options.notes ? 16 : 0);
-  setFibPair(11, 720, options.headers ? 56 : 0);
-  setFibPair(1, options.stylesheet ? 768 : 0, options.stylesheet ? 28 : 0);
+  const headerSlotCount = options.headers && options.sections ? 18 : 12;
+  setFibPair(11, 720, options.headers ? (headerSlotCount + 2) * 4 : 0);
+  setFibPair(1, options.stylesheet ? 768 : 0, options.stylesheet ? 50 : 0);
   setFibPair(
     4,
     options.annotations ? 944 : 0,
-    options.annotations ? (options.annotationLength ?? 12) : 0,
+    options.annotations ? (options.annotationLength ?? 38) : 0,
   );
-  setFibPair(6, options.sectionProperties ? 800 : 0, options.sectionProperties ? 20 : 0);
+  const sectionTable = options.sectionProperties || options.sections;
+  setFibPair(6, sectionTable ? 800 : 0, sectionTable ? (options.sections ? 36 : 20) : 0);
   setFibPair(16, options.fieldTable ? 912 : 0, options.fieldTable ? 16 : 0);
-  setFibPair(21, options.bookmarks ? 832 : 0, options.bookmarks ? 8 : 0);
+  setFibPair(21, options.bookmarks ? 832 : 0, options.bookmarks ? 16 : 0);
   setFibPair(22, options.bookmarks ? 880 : 0, options.bookmarks ? 12 : 0);
-  setFibPair(23, options.bookmarks ? 896 : 0, options.bookmarks ? 8 : 0);
+  setFibPair(23, options.bookmarks ? 896 : 0, options.bookmarks ? 16 : 0);
   setFibPair(
     50,
     options.drawing ? 1024 : 0,
-    options.drawing ? (options.drawing === "embedded" ? 114 : 60) : 0,
+    options.drawing ? (options.drawing === "embedded" ? 215 : 162) : 0,
+  );
+  const hasTextboxAnchor = !!options.textboxes && !options.textboxes.missingAnchor;
+  setFibPair(
+    40,
+    options.drawing || hasTextboxAnchor ? 1344 : 0,
+    options.drawing || hasTextboxAnchor ? 34 : 0,
   );
   setFibPair(73, options.lists ? 1216 : 0, options.lists ? 30 : 0);
   setFibPair(74, options.lists ? 1280 : 0, options.lists ? 10 : 0);
 
-  word.set(new TextEncoder().encode("Hi\r"), 512);
+  word.set(new TextEncoder().encode(options.drawing ? "Hi\x08\r" : "Hi\r"), 512);
   if (fieldBytes) {
     word.set(fieldBytes, 512);
   }
-  const unicode = new Uint8Array(storyFixture ? 8 : 6);
+  const multiSectionHeaders = options.headers && options.sections;
+  const unicode = new Uint8Array(multiSectionHeaders ? 24 : storyFixture ? 8 : 6);
   const unicodeView = new DataView(unicode.buffer);
   if (storyFixture) {
     unicodeView.setUint16(0, 0x0041, true);
     unicodeView.setUint16(2, 0x000d, true);
     unicodeView.setUint16(4, 0x0042, true);
     unicodeView.setUint16(6, 0x000d, true);
+    if (multiSectionHeaders) {
+      unicodeView.setUint16(8, 0x0043, true);
+      unicodeView.setUint16(10, 0x000d, true);
+      unicodeView.setUint16(12, 0x0044, true);
+      unicodeView.setUint16(14, 0x000d, true);
+      unicodeView.setUint16(16, 0x0043, true);
+      unicodeView.setUint16(18, 0x000d, true);
+      unicodeView.setUint16(20, 0x0044, true);
+      unicodeView.setUint16(22, 0x000d, true);
+    }
   } else {
     unicodeView.setUint16(0, 0x4e16, true);
     unicodeView.setUint16(2, 0x754c, true);
@@ -227,7 +298,20 @@ function buildDocument(
   tableView.setUint32(513, 28, true);
   tableView.setUint32(517, 0, true);
   tableView.setUint32(521, options.secondCp ?? (fieldBytes ? fieldBytes.byteLength : 4), true);
-  tableView.setUint32(525, fieldBytes ? fieldBytes.byteLength + 3 : storyFixture ? 8 : 7, true);
+  if (options.drawing) tableView.setUint32(521, 5, true);
+  tableView.setUint32(
+    525,
+    fieldBytes
+      ? fieldBytes.byteLength + 3
+      : multiSectionHeaders
+        ? options.textboxes
+          ? 16
+          : 12
+        : storyFixture
+          ? 8
+          : 7,
+    true,
+  );
   tableView.setUint32(531, 0x40000400, true);
   tableView.setUint32(539, fieldBytes ? 576 : 516, true);
 
@@ -243,7 +327,14 @@ function buildDocument(
     tableView.setUint32(644, 2, true);
     tableView.setUint32(648, 4, true);
     tableView.setUint16(660, options.textboxes.reusableFirst ? 1 : 0);
+    tableView.setUint32(666, 7001, true);
     tableView.setUint16(682, 1);
+    if (!options.textboxes.missingAnchor) {
+      const anchorCp = options.sections ? 3 : 2;
+      tableView.setUint32(1344, anchorCp, true);
+      tableView.setUint32(1348, anchorCp + 1, true);
+      tableView.setUint32(1352, 7001, true);
+    }
   }
 
   if (options.notes) {
@@ -251,9 +342,17 @@ function buildDocument(
   }
 
   if (options.headers) {
-    [0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 0].forEach((value, index) =>
-      tableView.setUint32(720 + index * 4, value, true),
-    );
+    const headerCps = Array.from({ length: headerSlotCount + 2 }, () => 0);
+    if (options.sections) {
+      headerCps.fill(3, 8);
+      headerCps.fill(7, 13);
+      headerCps[13] = 3;
+      headerCps[18] = 7;
+    } else {
+      headerCps.fill(3, 8);
+      headerCps[headerSlotCount] = 3;
+    }
+    headerCps.forEach((value, index) => tableView.setUint32(720 + index * 4, value, true));
   }
 
   const characterPage = 1024;
@@ -276,12 +375,26 @@ function buildDocument(
     word.set(Uint8Array.from([0, papxCb, 0, 0, ...paddedGrpprl, 0, 0]), paragraphPage + 40);
   }
 
-  if (options.sectionProperties) {
+  if (sectionTable) {
     tableView.setUint32(800, 0, true);
-    tableView.setUint32(804, 1, true);
-    tableView.setUint32(808, 0, true);
-    tableView.setUint32(810, 2048, true);
-    tableView.setUint32(816, 0, true);
+    if (options.sections) {
+      tableView.setUint32(804, 3, true);
+      tableView.setUint32(808, 7, true);
+      tableView.setUint32(814, 2048, true);
+      tableView.setUint32(826, 2304, true);
+      word.set(
+        Uint8Array.from([
+          24, 0, 0x1f, 0xf6, 0xb8, 0x0b, 0x20, 0xf6, 0xd0, 0x07, 0x21, 0xf6, 0x40, 0x00, 0x22, 0xf6,
+          0x80, 0x00, 0x23, 0xf6, 0x60, 0x00,
+        ]),
+        2304,
+      );
+    } else {
+      tableView.setUint32(804, 1, true);
+      tableView.setUint32(808, 0, true);
+      tableView.setUint32(810, 2048, true);
+      tableView.setUint32(816, 0, true);
+    }
     word.set(
       Uint8Array.from([
         24, 0, 0x1f, 0xf6, 0xa0, 0x0f, 0x20, 0xf6, 0xd0, 0x07, 0x21, 0xf6, 0x40, 0x00, 0x22, 0xf6,
@@ -292,26 +405,35 @@ function buildDocument(
   }
 
   if (options.stylesheet) {
-    tableView.setUint16(768, 1, true);
-    tableView.setUint8(772, 0);
-    tableView.setUint8(773, 0);
-    tableView.setUint16(774, 0, true);
-    tableView.setUint16(776, 4095, true);
+    tableView.setUint16(768, 18, true);
+    tableView.setUint16(770, 1, true);
+    tableView.setUint16(772, 10, true);
+    tableView.setUint16(774, 1, true);
+    tableView.setUint16(776, 75, true);
     tableView.setUint16(778, 10, true);
-    tableView.setUint16(780, 0, true);
-    tableView.setUint16(782, 6, true);
-    "Normal"
-      .split("")
-      .forEach((character, index) =>
-        tableView.setUint16(784 + index * 2, character.charCodeAt(0), true),
-      );
+    tableView.setUint16(780, 1, true);
+    tableView.setUint16(782, 0, true);
+    tableView.setUint16(784, 0, true);
+    tableView.setUint16(786, 0, true);
+    tableView.setUint16(788, 28, true);
+    tableView.setUint16(790, 0, true);
+    tableView.setUint16(792, 0xfff1, true);
+    tableView.setUint16(794, 2, true);
+    tableView.setUint16(796, 28, true);
+    tableView.setUint16(798, 0, true);
+    tableView.setUint16(800, 7, true);
+    Array.from("Normal\0").forEach((character, index) =>
+      tableView.setUint16(802 + index * 2, character.charCodeAt(0), true),
+    );
   }
 
   if (options.bookmarks) {
-    tableView.setUint32(832, 1, true);
-    tableView.setUint16(836, 4, true);
+    tableView.setUint16(832, 0xffff, true);
+    tableView.setUint16(834, 1, true);
+    tableView.setUint16(836, 0, true);
+    tableView.setUint16(838, 4, true);
     "Mark".split("").forEach((character, index) => {
-      tableView.setUint8(838 + index, character.charCodeAt(0));
+      tableView.setUint16(840 + index * 2, character.charCodeAt(0), true);
     });
     tableView.setUint32(880, 0, true);
     tableView.setUint32(884, 3, true);
@@ -339,15 +461,17 @@ function buildDocument(
   if (options.drawing) {
     const drawingView = new DataView(table.buffer);
     const embedded = options.drawing === "embedded";
+    const drawingLength = embedded ? 105 : 52;
+    const drawingEnd = 1024 + 8 + drawingLength;
     drawingView.setUint16(1024, 0x000f, true);
     drawingView.setUint16(1026, 0xf000, true);
-    drawingView.setUint32(1028, embedded ? 106 : 52, true);
+    drawingView.setUint32(1028, drawingLength + 102, true);
     drawingView.setUint16(1032, 0x000f, true);
     drawingView.setUint16(1034, 0xf001, true);
-    drawingView.setUint32(1036, embedded ? 98 : 44, true);
+    drawingView.setUint32(1036, embedded ? 97 : 44, true);
     drawingView.setUint16(1040, embedded ? 0x06e0 : 0x0000, true);
     drawingView.setUint16(1042, 0xf007, true);
-    drawingView.setUint32(1044, embedded ? 90 : 36, true);
+    drawingView.setUint32(1044, embedded ? 89 : 36, true);
     tableView.setUint8(1058, 1);
     drawingView.setUint32(1076, embedded ? 0xffffffff : 0, true);
     if (embedded) {
@@ -359,9 +483,46 @@ function buildDocument(
         0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0,
         0, 4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
       ].forEach((byte, index) => {
-        drawingView.setUint8(1109 + index, byte);
+        drawingView.setUint8(1108 + index, byte);
       });
     }
+
+    drawingView.setUint16(drawingEnd, 0x000f, true);
+    drawingView.setUint16(drawingEnd + 2, 0xf002, true);
+    drawingView.setUint32(drawingEnd + 4, 94, true);
+    drawingView.setUint16(drawingEnd + 8, 0, true);
+    drawingView.setUint16(drawingEnd + 10, 0xf008, true);
+    drawingView.setUint32(drawingEnd + 12, 8, true);
+    drawingView.setUint32(drawingEnd + 16, 1, true);
+    drawingView.setUint32(drawingEnd + 20, 1025, true);
+    drawingView.setUint16(drawingEnd + 24, 0x000f, true);
+    drawingView.setUint16(drawingEnd + 26, 0xf003, true);
+    drawingView.setUint32(drawingEnd + 28, 70, true);
+    drawingView.setUint16(drawingEnd + 32, 0x000f, true);
+    drawingView.setUint16(drawingEnd + 34, 0xf004, true);
+    drawingView.setUint32(drawingEnd + 36, 62, true);
+    drawingView.setUint16(drawingEnd + 40, 0x0009, true);
+    drawingView.setUint16(drawingEnd + 42, 0xf009, true);
+    drawingView.setUint32(drawingEnd + 44, 16, true);
+    drawingView.setUint16(drawingEnd + 64, 0x000a, true);
+    drawingView.setUint16(drawingEnd + 66, 0xf00a, true);
+    drawingView.setUint32(drawingEnd + 68, 16, true);
+    drawingView.setUint32(drawingEnd + 72, 1025, true);
+    drawingView.setUint32(drawingEnd + 76, 0x00000200, true);
+    drawingView.setUint16(drawingEnd + 88, 0x0013, true);
+    drawingView.setUint16(drawingEnd + 90, 0xf00b, true);
+    drawingView.setUint32(drawingEnd + 92, 6, true);
+    drawingView.setUint16(drawingEnd + 96, 0x4104, true);
+    drawingView.setUint32(drawingEnd + 98, 1, true);
+
+    tableView.setUint32(1344, 2, true);
+    tableView.setUint32(1348, 4, true);
+    tableView.setUint32(1352, 1025, true);
+    tableView.setUint32(1356, 0, true);
+    tableView.setUint32(1360, 0, true);
+    tableView.setUint32(1364, 0, true);
+    tableView.setUint32(1368, 0, true);
+    tableView.setUint32(1372, 1, true);
   }
 
   if (options.lists) {
@@ -415,14 +576,13 @@ function drawingStream(): Uint8Array {
   const view = new DataView(data.buffer);
   view.setUint16(0, 0x06e0, true);
   view.setUint16(2, 0xf01e, true);
-  view.setUint32(4, 46, true);
-  view.setUint8(24, 0xff);
+  view.setUint32(4, 45, true);
   data.set(
     Uint8Array.from([
       0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52, 0, 0, 0,
       4, 0, 0, 0, 3, 8, 6, 0, 0, 0,
     ]),
-    25,
+    24,
   );
   return data;
 }
@@ -624,6 +784,27 @@ describe("legacy DOC parser", () => {
     expect("textbox" in children[0]!).toBe(false);
   });
 
+  it("rejects an actual textbox whose shape anchor is missing", () => {
+    const { data } = buildDocument({ textboxes: { missingAnchor: true } });
+
+    expect(() => parseDocument(data)).toThrow(DocParseError);
+  });
+
+  it("projects a textbox to the section containing its anchor", () => {
+    const { data } = buildDocument({
+      headers: true,
+      sections: true,
+      textboxes: {},
+    });
+    const sections = parseDocument(data).sections;
+    const textboxSections = sections.map((section) =>
+      section.children.some((child) => "textbox" in child),
+    );
+
+    expect(sections).toHaveLength(2);
+    expect(textboxSections).toEqual([false, true]);
+  });
+
   it("tolerates malformed textbox boundary tables with a structured warning", () => {
     const { data } = buildDocument({ textboxes: { malformed: true } });
     const warnings: string[] = [];
@@ -652,12 +833,25 @@ describe("legacy DOC parser", () => {
   it("projects the default header story slot", () => {
     const { data } = buildDocument({ headers: true });
     const section = parseDocument(data).sections[0]!;
-
     expect(section.headers?.default).toEqual([
       { paragraph: { children: [{ text: "A", bold: true, size: 12 }] } },
       { paragraph: { children: [{ text: "B", bold: true, size: 12 }] } },
     ]);
     expect(section.footers).toBeUndefined();
+  });
+
+  it("projects header stories into each section", () => {
+    const { data } = buildDocument({ headers: true, sections: true });
+    const document = parseDocument(data);
+    expect(document.sections).toHaveLength(2);
+    expect(document.sections[0]!.headers?.default).toEqual([
+      { paragraph: { children: [{ text: "A", bold: true, size: 12 }] } },
+      { paragraph: { children: [{ text: "B", bold: true, size: 12 }] } },
+    ]);
+    expect(document.sections[1]!.headers?.default).toEqual([
+      { paragraph: { children: [{ text: "C", bold: true, size: 12 }] } },
+      { paragraph: "D" },
+    ]);
   });
 
   it("decodes full CHPX run formatting", () => {
@@ -689,6 +883,20 @@ describe("legacy DOC parser", () => {
     const section = parseDocument(data).sections[0]!;
     expect(section.properties?.pageSize).toMatchObject({ width: 4000, height: 2000 });
     expect(section.properties?.pageMargin).toMatchObject({ left: 64, right: 128, top: 96 });
+  });
+
+  it("projects multiple section ranges and SEPX geometry", () => {
+    const { data } = buildDocument({ sections: true });
+    const sections = parseDocument(data).sections;
+    expect(sections).toHaveLength(2);
+    expect(sections[0]!.children).toHaveLength(1);
+    expect(sections[1]!.children).toHaveLength(1);
+    expect(extractParagraph(sections[0]!.children[0]!).children?.[0]).toMatchObject({ text: "Hi" });
+    expect(extractParagraph(sections[1]!.children[0]!).children?.[0]).toMatchObject({
+      text: "世界",
+    });
+    expect(sections[0]!.properties?.pageSize).toMatchObject({ width: 4000 });
+    expect(sections[1]!.properties?.pageSize).toMatchObject({ width: 3000 });
   });
 
   it("builds a table row from in-table PAPX and TAP", () => {
@@ -752,26 +960,40 @@ describe("legacy DOC parser", () => {
     const { data } = buildDocument({ fieldTable: true });
     const children = parseLegacyDocument(data).sections[0]!.children;
     expect(children[0]).toMatchObject({
-      paragraph: { children: [{ complexField: { instruction: expect.any(String) } }] },
+      paragraph: {
+        children: [{ text: "A" }, { complexField: { instruction: expect.any(String) } }],
+      },
     });
   });
 
   it("projects Escher BStore pictures into canonical inline pictures", () => {
     const { data } = buildDocument({ drawing: true });
     const children = parseLegacyDocument(data).sections[0]!.children;
-    expect(children[0]).toMatchObject({
-      paragraph: {
-        children: [{ picture: { type: "png", transformation: { width: 4, height: 3 } } }],
-      },
-    });
+    expect(extractParagraph(children[0]!).children).toMatchObject([
+      { text: "Hi", bold: true, size: 12 },
+      { picture: { type: "png", transformation: { width: 4, height: 3 } } },
+    ]);
   });
 
   it("projects embedded BLIP pictures without consulting the Data stream", () => {
     const { data } = buildDocument({ drawing: "embedded" });
     const children = parseLegacyDocument(data).sections[0]!.children;
-    expect(children[0]).toMatchObject({
-      paragraph: { children: [{ picture: { type: "png" } }] },
-    });
+    expect(extractParagraph(children[0]!).children).toMatchObject([
+      { text: "Hi", bold: true, size: 12 },
+      { picture: { type: "png" } },
+    ]);
+  });
+
+  it("maps EMF BLIPs and recovers one-byte Escher container boundaries", () => {
+    const drawing = concatBytes([
+      pictureStoreRecord(emfBlipRecord()),
+      escherRecord(0xf000, new Uint8Array(), 0xf),
+      new Uint8Array([0]),
+      escherRecord(0xf002, pictureShapeContainer(1025), 0xf),
+    ]);
+    const pictures = parsePictures(drawing, new Uint8Array());
+    expect(pictures.get(1025)).toMatchObject({ type: "emf", width: 0, height: 0 });
+    expect(pictures.get(1025)!.data).toHaveLength(1);
   });
 
   it("converts PlfLst and PlfLfo to numbering definitions", () => {

@@ -1,4 +1,4 @@
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";
 
 export const BIFF2_RECORD_HEADER_SIZE = 4;
 export const RECORD_LENGTH_SIZE = 4;
@@ -69,7 +69,7 @@ export type BiffVersion = 2 | 3 | 4 | 5 | 8;
 
 export function requireBytes(data: Uint8Array, length: number, description: string): void {
   if (length < 0 || length > data.byteLength) {
-    throw new LegacyExcelError(`Invalid legacy XLS file: truncated ${description}`, {
+    throw new XlsParseError(`Invalid legacy XLS file: truncated ${description}`, {
       part: "stream",
       recordName: description,
       length,
@@ -86,7 +86,7 @@ export function readRecord(stream: Uint8Array, position: number, version: BiffVe
   const view = new DataView(stream.buffer, stream.byteOffset, stream.byteLength);
   const headerSize = recordHeaderSize(version);
   if (position < 0 || position + headerSize > stream.byteLength) {
-    throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF record header", {
+    throw new XlsParseError("Invalid legacy XLS file: truncated BIFF record header", {
       part: "stream",
       offset: position,
       length: headerSize,
@@ -98,7 +98,7 @@ export function readRecord(stream: Uint8Array, position: number, version: BiffVe
   const length = view.getUint16(position + 2, true);
   const bodyStart = position + headerSize;
   if (bodyStart + length > stream.byteLength) {
-    throw new LegacyExcelError(
+    throw new XlsParseError(
       `Invalid legacy XLS file: truncated BIFF record 0x${code.toString(16).padStart(4, "0")}`,
       {
         part: "stream",
@@ -129,7 +129,7 @@ export function* recordsFrom(
     yield record;
     if (record.code === RecordCode.EndOfFile && stopAtFirstEndOfFile) return;
   }
-  throw new LegacyExcelError("Invalid legacy XLS file: workbook stream ends before End Of File", {
+  throw new XlsParseError("Invalid legacy XLS file: workbook stream ends before End Of File", {
     part: "stream",
     path: "Workbook",
     recordName: "End Of File",

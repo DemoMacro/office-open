@@ -169,7 +169,6 @@ export type {
   MathStyleType,
   Media,
   MediaData,
-  MediaDataTransformation,
   MediaTransformation,
   MoveRangeOptions,
   MoveRangeStartOptions,

@@ -84,6 +84,8 @@ export function parseFib(word: Uint8Array): Fib {
     bookmarkEnds: readPair(23, "fcPlcfBkl"),
     fields: readPair(16, "fcPlcffldMom"),
     comments: readPair(4, "fcPlcfandRef"),
+    bodyShapes: readPair(40, "fcPlcspaMom"),
+    headerShapes: readPair(41, "fcPlcspaHdr"),
     drawing: readPair(50, "fcDggInfo"),
     list: readPair(73, "fcPlfLst"),
     listOverrides: readPair(74, "fcPlcflfo"),

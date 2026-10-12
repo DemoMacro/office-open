@@ -58,8 +58,8 @@ function makeImageMediaData() {
     fileName: "image1.png",
     data: new Uint8Array([1, 2, 3]),
     transformation: {
-      pixels: { x: 0, y: 0 },
-      emus: { x: 914400, y: 914400 },
+      width: 914400,
+      height: 914400,
     },
   };
 }
@@ -270,10 +270,7 @@ describe("drawingDesc round-trip", () => {
       mediaData: {
         type: "chart" as const,
         chartKey: "chart1",
-        transformation: {
-          pixels: { x: 0, y: 0 },
-          emus: { x: 5000000, y: 3000000 },
-        },
+        transformation: { width: 5000000, height: 3000000 },
       },
     });
     expect(xml).toContain("c:chart");
@@ -285,10 +282,7 @@ describe("drawingDesc round-trip", () => {
       mediaData: {
         type: "smartart" as const,
         smartArtKey: "smartart1",
-        transformation: {
-          pixels: { x: 0, y: 0 },
-          emus: { x: 5000000, y: 3000000 },
-        },
+        transformation: { width: 5000000, height: 3000000 },
       },
     });
     expect(xml).toContain("dgm:relIds");
@@ -389,7 +383,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [],
           geometry: { preset: "roundRect" },
@@ -405,7 +399,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [],
           extensions: [
@@ -444,7 +438,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [],
           linkedTextBox: { id: 7, sequence: 2 },
@@ -472,7 +466,7 @@ describe("drawingDesc round-trip", () => {
     const absent = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: { children: [] },
       },
     });
@@ -482,7 +476,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: { children: [], blackWhiteMode: "blackWhite" as const },
       },
     });
@@ -507,7 +501,7 @@ describe("drawingDesc round-trip", () => {
       {
         mediaData: {
           type: "wps" as const,
-          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+          transformation: { width: 914400, height: 914400 },
           data: {
             children: [],
             textBoxPart: { path: "word/txbx1.xml", sequence: 0 },
@@ -567,7 +561,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [
             {
@@ -629,7 +623,7 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [{ rawXml: "<w:unknown/>" }, { paragraph: "text" }],
         },
@@ -649,12 +643,12 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wpg" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 1828800, y: 914400 } },
+        transformation: { width: 1828800, height: 914400 },
         children: [
           {
             type: "chart" as const,
             chartKey: "chart_1",
-            transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+            transformation: { width: 914400, height: 914400 },
             nonVisualProperties: { id: 6, name: "Chart 6" },
           },
         ],
@@ -670,12 +664,12 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wpg" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 1828800, y: 914400 } },
+        transformation: { width: 1828800, height: 914400 },
         children: [
           {
             type: "contentPart" as const,
             referenceId: "rId9",
-            transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+            transformation: { width: 914400, height: 914400 },
             nonVisualProperties: {
               id: 3,
               name: "Video",
@@ -694,25 +688,28 @@ describe("drawingDesc round-trip", () => {
     const el = doc.elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, readCtx) as {
-      contentPart?: {
-        referenceId?: string;
-        blackWhiteMode?: string;
-        nonVisualProperties?: {
-          contentPart?: { isComment?: boolean; locks?: Record<string, boolean> };
-        };
+      wpgGroup?: {
+        children?: Array<{
+          referenceId?: string;
+          blackWhiteMode?: string;
+          nonVisualProperties?: {
+            contentPart?: { isComment?: boolean; locks?: Record<string, boolean> };
+          };
+        }>;
       };
     };
-    expect(result.contentPart?.referenceId).toBe("rId9");
-    expect(result.contentPart?.blackWhiteMode).toBe("auto");
-    expect(result.contentPart?.nonVisualProperties?.contentPart?.isComment).toBe(false);
-    expect(result.contentPart?.nonVisualProperties?.contentPart?.locks?.noChangeAspect).toBe(true);
+    const contentPart = result.wpgGroup?.children?.[0];
+    expect(contentPart?.referenceId).toBe("rId9");
+    expect(contentPart?.blackWhiteMode).toBe("auto");
+    expect(contentPart?.nonVisualProperties?.contentPart?.isComment).toBe(false);
+    expect(contentPart?.nonVisualProperties?.contentPart?.locks?.noChangeAspect).toBe(true);
   });
 
   it("round-trips wps shape preset geometry", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [],
           geometry: { preset: "roundRect" },
@@ -741,7 +738,7 @@ describe("drawingDesc round-trip", () => {
     const output = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: { children: [] },
         graphicDataUri: legacyUri,
       },
@@ -751,8 +748,8 @@ describe("drawingDesc round-trip", () => {
 
   it("emits and re-reads flipH/flipV on pic:spPr/a:xfrm", () => {
     const transformation = {
-      pixels: { x: 0, y: 0 },
-      emus: { x: 914400, y: 914400 },
+      width: 914400,
+      height: 914400,
       flipHorizontal: true,
       flipVertical: true,
     };
@@ -779,21 +776,20 @@ describe("drawingDesc round-trip", () => {
         transformation?: {
           width?: number;
           height?: number;
-          emus?: { x?: number; y?: number };
-          shapeExtent?: { x?: number; y?: number };
+          shapeExtent?: { width?: number; height?: number };
         };
       };
     };
     expect(result.picture?.transformation?.width).toBe(100);
     expect(result.picture?.transformation?.height).toBe(200);
-    expect(result.picture?.transformation?.shapeExtent).toEqual({ x: 300, y: 400 });
+    expect(result.picture?.transformation?.shapeExtent).toEqual({ width: 300, height: 400 });
 
     const mediaData = {
       ...makeImageMediaData(),
       transformation: {
-        pixels: { x: 0, y: 0 },
-        emus: { x: 100, y: 200 },
-        shapeExtent: { x: 300, y: 400 },
+        width: 100,
+        height: 200,
+        shapeExtent: { width: 300, height: 400 },
       },
     };
     const output = stringify({ mediaData });
@@ -819,21 +815,21 @@ describe("drawingDesc round-trip", () => {
         transformation?: {
           width?: number;
           height?: number;
-          shapeExtent?: { x?: number; y?: number };
+          shapeExtent?: { width?: number; height?: number };
         };
       };
     };
     expect(result.wpsShape?.transformation?.width).toBe(100);
     expect(result.wpsShape?.transformation?.height).toBe(200);
-    expect(result.wpsShape?.transformation?.shapeExtent).toEqual({ x: 300, y: 400 });
+    expect(result.wpsShape?.transformation?.shapeExtent).toEqual({ width: 300, height: 400 });
 
     const output = stringify({
       mediaData: {
         type: "wps" as const,
         transformation: {
-          pixels: { x: 0, y: 0 },
-          emus: { x: 100, y: 200 },
-          shapeExtent: { x: 300, y: 400 },
+          width: 100,
+          height: 200,
+          shapeExtent: { width: 300, height: 400 },
         },
         data: { children: [] },
       },
@@ -856,17 +852,21 @@ describe("drawingDesc round-trip", () => {
     const xml = stringify({
       mediaData: {
         type: "wps" as const,
-        transformation: { pixels: { x: 0, y: 0 }, emus: { x: 914400, y: 914400 } },
+        transformation: { width: 914400, height: 914400 },
         data: {
           children: [],
           style: {
             lineReference: { index: 2 },
+            fillReference: { index: 3 },
+            effectReference: { index: 4 },
             fontReference: { collection: "minor" },
           },
         },
       },
     });
     expect(xml).toContain('<a:lnRef idx="2"/>');
+    expect(xml).toContain('<a:fillRef idx="3"/>');
+    expect(xml).toContain('<a:effectRef idx="4"/>');
     expect(xml).toContain('<a:fontRef idx="minor"/>');
 
     const doc = parseXml(xml);
@@ -876,11 +876,15 @@ describe("drawingDesc round-trip", () => {
       wpsShape?: {
         style?: {
           lineReference?: { index?: number };
+          fillReference?: { index?: number };
+          effectReference?: { index?: number };
           fontReference?: { collection?: string };
         };
       };
     };
     expect(result.wpsShape?.style?.lineReference?.index).toBe(2);
+    expect(result.wpsShape?.style?.fillReference?.index).toBe(3);
+    expect(result.wpsShape?.style?.effectReference?.index).toBe(4);
     // fontReference @idx is ST_FontCollectionIndex, not a matrix index.
     expect(result.wpsShape?.style?.fontReference?.collection).toBe("minor");
   });
@@ -1053,7 +1057,11 @@ describe("drawingDesc round-trip", () => {
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("parsed document has no root element");
     const result = drawingDesc.parse(el, mediaReadCtx) as { picture?: { floating?: Floating } };
-    expect(result.picture?.floating?.simplePos).toEqual({ x: 11111, y: 22222 });
+    expect(result.picture?.floating?.simplePos).toEqual({
+      enabled: false,
+      x: 11111,
+      y: 22222,
+    });
   });
 
   it("does not inherit wp:anchor distances in wrapTopAndBottom", () => {

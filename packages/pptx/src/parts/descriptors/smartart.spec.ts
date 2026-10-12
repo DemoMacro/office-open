@@ -1,6 +1,7 @@
 import type { ReadContext, WriteContext } from "@office-open/core/descriptor";
 import type {
   ColorDefinitionOptions,
+  DataModelOptions,
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
 } from "@office-open/core/smartart";
@@ -128,6 +129,102 @@ describe("smartArtDesc round-trip", () => {
     expect(result.y).toBe(768);
     expect(result.width).toBe(1920);
     expect(result.height).toBe(1080);
+  });
+
+  it("round-trips a typed data model without raw bytes", () => {
+    smartArtRegistry.clear();
+    const dataModel: DataModelOptions = {
+      points: [
+        {
+          modelId: "0",
+          type: "doc",
+          propertySet: {
+            layoutTypeId: "urn:microsoft.com/office/officeart/2005/8/layout/default",
+          },
+          textBody: {
+            bodyProperties: {},
+            paragraphs: [{ endParagraphProperties: false, text: "Document" }],
+          },
+        },
+        {
+          modelId: "1",
+          shapeProperties: { geometry: { preset: "rect" } },
+          textBody: {
+            bodyProperties: {},
+            paragraphs: [{ endParagraphProperties: false, text: "Typed" }],
+          },
+        },
+      ],
+      connections: [
+        {
+          modelId: "2",
+          sourceId: "0",
+          destinationId: "1",
+          sourceOrder: 1,
+          destinationOrder: 2,
+        },
+      ],
+      background: { fill: { type: "solid", color: { value: "F5F5F5" } } },
+      whole: { outline: { width: 12700, type: "solidFill", color: { value: "1F1F1F" } } },
+    };
+    const opts: SmartArtOptions = { id: 700, nodes: [], dataModel };
+    const xml = smartArtDesc.stringify(opts, writeCtx)!;
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("stringify returned no element");
+    const entry = smartArtRegistry.get("smartart_1024") as { dataModelXml: string };
+    const ctx = {
+      resolveRelationship: (relationshipId: string) =>
+        relationshipId.startsWith("{smartart:") ? "ppt/diagrams/data1.xml" : undefined,
+      getPart: (path: string) =>
+        path === "ppt/diagrams/data1.xml" ? parseXml(entry.dataModelXml).elements?.[0] : undefined,
+      getRaw: () => undefined,
+    } as unknown as ReadContext;
+
+    expect(smartArtDesc.parse(el, ctx).dataModel).toEqual(dataModel);
+  });
+
+  it("resolves typed data-model relationships from the data part", () => {
+    const image = new Uint8Array([1, 2, 3]);
+    const dataXml =
+      '<dgm:dataModel xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<dgm:ptLst><dgm:pt modelId="0"/></dgm:ptLst>' +
+      '<dgm:bg><a:blipFill><a:blip r:embed="rId1"/></a:blipFill></dgm:bg>' +
+      "</dgm:dataModel>";
+    const dataEl = parseXml(dataXml).elements?.[0];
+    if (!dataEl) throw new Error("data model has no root element");
+    const relsEl = parseXml(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image1.png"/>' +
+        "</Relationships>",
+    ).elements?.[0];
+    if (!relsEl) throw new Error("data relationships have no root element");
+
+    // The owner slide deliberately resolves rId1 differently; SmartArt must
+    // use ppt/diagrams/_rels/data1.xml.rels, not the enclosing slide rels.
+    const ctx = {
+      resolveRelationship: (rId: string) =>
+        rId.startsWith("{smartart:")
+          ? "ppt/diagrams/data1.xml"
+          : "ppt/slideLayouts/slideLayout1.xml",
+      getPart: (path: string) => {
+        if (path === "ppt/diagrams/data1.xml") return dataEl;
+        if (path === "ppt/diagrams/_rels/data1.xml.rels") return relsEl;
+        return undefined;
+      },
+      getRaw: (path: string) => (path === "ppt/media/image1.png" ? image : undefined),
+    } as unknown as ReadContext;
+    const frameXml = smartArtDesc.stringify(
+      { id: 701, nodes: [], dataModel: { points: [{ modelId: "0" }] } },
+      writeCtx,
+    );
+    if (!frameXml) throw new Error("graphic frame was not emitted");
+    const frameEl = parseXml(frameXml).elements?.[0];
+    if (!frameEl) throw new Error("graphic frame has no root element");
+
+    const fill = smartArtDesc.parse(frameEl, ctx).dataModel?.background?.fill;
+    expect(fill).toMatchObject({ type: "blip", fileName: "image1.png" });
   });
 });
 

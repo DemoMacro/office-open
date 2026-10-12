@@ -10,15 +10,19 @@ export const RecordType = {
   slideAtom: 1007,
   notes: 1008,
   notesAtom: 1009,
+  fontCollection: 2005,
   mainMaster: 1016,
+  fontEntityAtom: 4023,
   slidePersistAtom: 1011,
   ppDrawing: 1036,
   textHeader: 3999,
   textChars: 4000,
+  styleTextPropAtom: 4001,
+  textRulerAtom: 4006,
   textBytes: 4008,
   interactiveText: 4063,
   interactiveString: 4026,
-  dateTimeAtom: 4006,
+  dateTimeMetaCharAtom: 4087,
   hyperlinkAtom: 4051,
   animationInfoAtom: 4081,
   slideNumberAtom: 4056,
@@ -29,6 +33,9 @@ export const RecordType = {
   currentUserAtom: 4086,
   animationInfo: 4116,
   hyperlink: 4055,
+  roundTripHeaderFooterPlaceholder: 0x0420,
+  placeholder: 0x0bc3,
+  roundTripNewPlaceholder: 0x0bdd,
   persistPointerFullBlock: 6001,
   persistPointerIncrementalBlock: 6002,
   documentEncryptionAtom: 12052,
@@ -43,6 +50,7 @@ export const RecordType = {
   escherShape: 0xf00a,
   escherShapeProperties: 0xf00b,
   escherClientTextbox: 0xf00d,
+  escherClientData: 0xf011,
   escherChildAnchor: 0xf00f,
   escherClientAnchor: 0xf010,
 } as const;
@@ -59,8 +67,6 @@ export interface RecordHeader {
 export interface RecordNode extends RecordHeader {
   readonly children: readonly RecordNode[];
 }
-
-export class LegacyPowerPointError extends PptParseError {}
 
 export function isContainer(record: RecordHeader): boolean {
   return record.version === 15;

@@ -4,6 +4,7 @@ import type {
   StylesOptions,
 } from "@office-open/docx";
 
+import { lcidToTag } from "../langs";
 import type { RtfToken } from "../tokenizer";
 
 export type StyleDraft = {
@@ -78,6 +79,22 @@ const applyRun = (
   else if (word === "i") run.italic = parameter !== 0;
   else if (word === "ul" || word === "ulw") run.underline = { type: "single" };
   else if (word === "ulnone") run.underline = undefined;
+  else if (word === "strike") run.strike = parameter !== 0;
+  else if (word === "sub") run.verticalAlign = parameter === 0 ? "baseline" : "subscript";
+  else if (word === "super") run.verticalAlign = parameter === 0 ? "baseline" : "superscript";
+  else if (word === "nosupersub") run.verticalAlign = "baseline";
+  else if (word === "lang" && parameter !== undefined) {
+    const tag = lcidToTag(parameter);
+    if (tag !== undefined) run.language = { value: tag };
+  } else if (word === "expndtw" && parameter !== undefined) run.characterSpacing = parameter;
+  else if (word === "kerning" && parameter !== undefined) run.kern = parameter * 10;
+  else if (word === "caps") run.allCaps = parameter !== 0;
+  else if (word === "scaps") run.smallCaps = parameter !== 0;
+  else if (word === "outl") run.outline = parameter !== 0;
+  else if (word === "shad") run.shadow = parameter !== 0;
+  else if (word === "v") run.vanish = parameter !== 0;
+  else if (word === "impr") run.emboss = parameter !== 0;
+  else if (word === "charscalex" && parameter !== undefined) run.scale = parameter;
   else if (word === "fs" && parameter !== undefined && parameter > 0) run.size = parameter / 2;
   else if (word === "cf" && parameter !== undefined) run.color = colors[parameter] ?? undefined;
   else if (word === "f" && parameter !== undefined) run.font = fonts.get(parameter);

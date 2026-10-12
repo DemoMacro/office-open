@@ -1,0 +1,20 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@office-open/core": ["../../packages/core/src/index.ts"],
+      "@office-open/core/*": ["../../packages/core/src/*/index.ts"],
+      "@office-open/xml": ["../../packages/xml/src/index.ts"],
+      "@office-open/odf": ["../../packages/odf/src/index.ts"],
+      "@office-open/odt": ["../../packages/odt/src/index.ts"],
+      "@office-open/ods": ["../../packages/ods/src/index.ts"],
+      "@office-open/odp": ["../../packages/odp/src/index.ts"],
+      "@office-open/xml/*": ["../../packages/xml/src/*/index.ts"],
+      "@office-open/docx": ["../../packages/docx/src/index.ts"],
+      "@office-open/pptx": ["../../packages/pptx/src/index.ts"],
+      "@office-open/xlsx": ["../../packages/xlsx/src/index.ts"],
+      "@parts/*": ["../../packages/docx/src/parts/*"],
+      "@shared/*": ["../../packages/docx/src/shared/*"]
+    }
+  }
+}

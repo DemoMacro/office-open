@@ -12,8 +12,13 @@
 
 import type { DataType } from "@office-open/core";
 import { encodeBase64, imageTypeFromPath, toUint8Array } from "@office-open/core";
-import { buildUserShapesData, chartSpaceDesc } from "@office-open/core/chart";
-import { createDataModel, definitionId } from "@office-open/core/smartart";
+import { buildUserShapesData, chartExSpaceDesc, chartSpaceDesc } from "@office-open/core/chart";
+import type { ChartExSpaceOptions } from "@office-open/core/chart";
+import {
+  createDataModel,
+  definitionId,
+  stringifyDataModelOptions,
+} from "@office-open/core/smartart";
 import type { SmartArtRawParts } from "@office-open/core/smartart";
 import { documentNamespaceDialect } from "@parts/document/document-attributes";
 import type { BackgroundRawMediaOptions } from "@parts/document/document-background/document-background";
@@ -23,6 +28,7 @@ import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import { stringifyUnsupportedDrawing } from "@parts/paragraph/run/unsupported-drawing-run";
 import type {
   ChartMediaData,
+  ChartExMediaData,
   CoreMediaData,
   GroupChildMediaData,
   MediaData,
@@ -31,6 +37,7 @@ import type {
   GroupMediaData,
   ShapeMediaData,
   SvgMediaData,
+  CanvasMediaData,
 } from "@shared/media";
 import { createTransformation } from "@shared/media";
 
@@ -45,6 +52,7 @@ import {
 import { stringifyRunProperties } from "./paragraph/stringify";
 
 let nextChartId = 1;
+let nextChartExId = 1;
 const drawingDialect = (ctx: BodyContext) => documentNamespaceDialect(ctx.fileData);
 
 /**
@@ -116,7 +124,7 @@ function registerVmlFallbackMedia(
           type: m.type,
           data,
           fileName,
-          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+          transformation: { width: 0, height: 0 },
         }) as MediaData,
       m.fileName,
     );
@@ -129,29 +137,6 @@ function registerVmlFallbackMedia(
   return out;
 }
 
-/** Rewrite ../media targets inside verbatim data rels after the media
- *  collection re-allocated pinned names. All renames apply in one pass over
- *  the original text, each match bounded by its closing quote, so a name
- *  that prefixes another cannot collide and chained renames cannot re-hit
- *  an already-rewritten target. Preserves the input form (string stays
- *  string, bytes stay bytes). */
-function remapDataRelsTargets(rels: DataType, renames: Map<string, string>): DataType {
-  const isText = typeof rels === "string";
-  const text = isText ? rels : new TextDecoder().decode(toUint8Array(rels));
-  let out = "";
-  let last = 0;
-  for (const m of text.matchAll(/\.\.\/media\/([^"']*)["']/g)) {
-    const name = m[1] ?? "";
-    const to = renames.get(name);
-    if (to === undefined) continue;
-    const start = (m.index ?? 0) + "../media/".length;
-    out += text.slice(last, start) + to;
-    last = start + name.length;
-  }
-  out += text.slice(last);
-  return isText ? out : new TextEncoder().encode(out);
-}
-
 /** Content fingerprint of the raw source parts: every field participates so
  *  two instances that differ in any raw part (or in their companion rels or
  *  media names) never merge into one diagram part set. */
@@ -160,13 +145,111 @@ function rawSmartArtFingerprint(raw: SmartArtRawParts | undefined): string | und
   const b64 = (v: DataType | undefined) =>
     v === undefined ? undefined : encodeBase64(toUint8Array(v));
   return JSON.stringify({
-    data: b64(raw.data),
-    layout: b64(raw.layout),
-    style: b64(raw.style),
-    color: b64(raw.color),
-    dataRels: b64(raw.dataRels),
+    drawing: b64(raw.drawing),
     media: raw.media?.map((m) => m.fileName),
   });
+}
+
+/** Clone a WPG/canvas child tree so media-registration mutations stay local. */
+function cloneDrawingChild(child: GroupChildMediaData): GroupChildMediaData {
+  return child.type === "wpg"
+    ? { ...child, children: child.children.map(cloneDrawingChild) }
+    : child.type === "svg"
+      ? { ...child, fallback: { ...child.fallback } }
+      : { ...child };
+}
+
+function registerChartEx(options: ChartExSpaceOptions, ctx: BodyContext): string {
+  const key = `chartEx_${nextChartExId++}`;
+  ctx.file.chartExes.addChartEx(key, {
+    key,
+    chartExXml: chartExSpaceDesc.stringify(options, ctx.file) ?? "",
+    ...(takeChartSourcePath(options) ? { sourcePath: takeChartSourcePath(options) } : {}),
+    ...(takeChartSourceRelationships(options)
+      ? { sourceRelationships: takeChartSourceRelationships(options) }
+      : {}),
+  });
+  return key;
+}
+
+/** Register child media and chart parts for WPG groups and WordprocessingCanvas. */
+function registerDrawingChildMedia(
+  children: readonly GroupChildMediaData[],
+  ctx: BodyContext,
+): void {
+  const adopt =
+    (media: MediaData): ((fileName: string) => MediaData) =>
+    (fileName) => {
+      media.fileName = fileName;
+      return media;
+    };
+  for (const child of children) {
+    if (child.type === "wps") continue;
+    if (child.type === "wpg") {
+      registerDrawingChildMedia(child.children, ctx);
+      continue;
+    }
+    if (child.type === "chart") {
+      if (child.chartOptions && !child.chartKey) {
+        child.chartKey = `chart_${nextChartId++}`;
+        const externalData = child.chartOptions.externalData;
+        ctx.file.charts.addChart(child.chartKey, {
+          key: child.chartKey,
+          chartSpaceXml: chartSpaceDesc.stringify(child.chartOptions, ctx.file) ?? "",
+          ...(takeChartSourcePath(child.chartOptions)
+            ? { sourcePath: takeChartSourcePath(child.chartOptions) }
+            : {}),
+          ...(takeChartSourceRelationships(child.chartOptions)
+            ? { sourceRelationships: takeChartSourceRelationships(child.chartOptions) }
+            : {}),
+          ...(externalData?.data !== undefined &&
+          externalData.fileName !== undefined &&
+          externalData.relationshipId !== undefined
+            ? {
+                embedding: {
+                  relationshipId: externalData.relationshipId,
+                  fileName: externalData.fileName,
+                  data: externalData.data,
+                },
+              }
+            : {}),
+          ...(child.chartOptions.userShapes
+            ? {
+                userShapes: {
+                  ...buildUserShapesData(child.chartOptions.userShapes),
+                  ...(takeUserShapesSourcePath(child.chartOptions.userShapes)
+                    ? { path: takeUserShapesSourcePath(child.chartOptions.userShapes) }
+                    : {}),
+                },
+              }
+            : {}),
+        });
+      }
+      continue;
+    }
+    if (child.type === "chartEx") {
+      if (child.chartExOptions && !child.chartExKey) {
+        child.chartExKey = registerChartEx(child.chartExOptions, ctx);
+      }
+      continue;
+    }
+    if (child.type === "contentPart" || child.type === "unsupported") continue;
+    if (child.type === "svg") {
+      const fallback = child.fallback;
+      const fallbackEntry = ctx.file.media.addMedia(
+        fallback.data,
+        fallback.type,
+        adopt(fallback),
+        fallback.fileName,
+      );
+      fallback.fileName = fallbackEntry.fileName;
+      const svgEntry = ctx.file.media.addMedia(child.data, "svg", adopt(child), child.fileName);
+      child.fileName = svgEntry.fileName;
+      continue;
+    }
+    const entry = ctx.file.media.addMedia(child.data, child.type, adopt(child), child.fileName);
+    child.fileName = entry.fileName;
+  }
 }
 
 /** Hash SmartArt data for unique key generation (duplicated from SmartArtRun). */
@@ -177,6 +260,7 @@ function hashSmartArtData(options: SmartArtOptions): number {
   // two instances fold to identical structured options.
   const data = JSON.stringify({
     nodes: options.nodes,
+    dataModel: options.dataModel,
     layout: options.layout,
     style: options.style,
     color: options.color,
@@ -285,7 +369,7 @@ export function stringifyDrawingChild(
           type: fallbackType,
           data: fallbackData,
           fileName,
-          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+          transformation: { width: 0, height: 0 },
         }),
         opts.fallback.fileName,
       ) as RegularMediaData & CoreMediaData;
@@ -299,7 +383,7 @@ export function stringifyDrawingChild(
               data: rawData,
               fileName,
               fallback,
-              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+              transformation: { width: 0, height: 0 },
             }) as SvgMediaData & CoreMediaData,
           opts.fileName,
         ) as SvgMediaData & CoreMediaData),
@@ -326,7 +410,7 @@ export function stringifyDrawingChild(
               data: rawData,
               fileName,
               ...(opts.partPath ? { partPath: opts.partPath } : {}),
-              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+              transformation: { width: 0, height: 0 },
             }) as MediaData,
           opts.fileName,
         ),
@@ -438,6 +522,29 @@ export function stringifyDrawingChild(
     return wrap(drawingXml, opts);
   }
 
+  // ChartEx — side effect: independent chartEx part registration.
+  if ("chartEx" in child) {
+    const opts = child.chartEx;
+    const chartExKey = registerChartEx(opts, ctx);
+    const mediaData: ChartExMediaData = {
+      chartExKey,
+      transformation: createTransformation(opts.transformation),
+      type: "chartEx",
+    };
+    const drawingXml = drawingDesc.stringify(
+      {
+        mediaData,
+        docProperties: opts.altText,
+        floating: opts.floating,
+        graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
+      },
+      ctx,
+    );
+    return wrap(drawingXml, opts);
+  }
+
   // SmartArt — side effect: smartArt registration
   if ("smartArt" in child) {
     const opts = child.smartArt;
@@ -457,16 +564,18 @@ export function stringifyDrawingChild(
       typeof opts.style === "object" ? definitionId(opts.style) : (opts.style ?? "simple1");
     const colorId =
       typeof opts.color === "object" ? definitionId(opts.color) : (opts.color ?? "accent1_2");
-    const dataModelXml = createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
+    const dataModelXml = opts.dataModel
+      ? stringifyDataModelOptions(opts.dataModel, ctx)
+      : createDataModel(opts.nodes, layoutId, styleId, colorId, ctx.reproducible);
 
     // Data-part companion images (dgm:pt blipFill art): register through the
     // media collection so name pinning and dedup match the picture path. A
     // pinned name taken by different bytes re-allocates — remap the verbatim
     // data rels target to follow, or the rels would point at the wrong bytes.
-    let remappedDataRels = opts.raw?.dataRels;
-    if (opts.raw?.media) {
+    let raw = opts.raw;
+    if (raw?.media) {
       const renames = new Map<string, string>();
-      for (const m of opts.raw.media) {
+      for (const m of raw.media) {
         const data = toUint8Array(m.data);
         const type = imageTypeFromPath(m.fileName);
         const entry = ctx.file.media.addMedia(
@@ -477,14 +586,20 @@ export function stringifyDrawingChild(
               type,
               data,
               fileName,
-              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+              transformation: { width: 0, height: 0 },
             }) as MediaData,
           m.fileName,
         );
         if (entry.fileName !== m.fileName) renames.set(m.fileName, entry.fileName);
       }
-      if (renames.size > 0 && remappedDataRels !== undefined) {
-        remappedDataRels = remapDataRelsTargets(remappedDataRels, renames);
+      if (renames.size > 0) {
+        raw = {
+          ...raw,
+          media: raw.media.map((media) => {
+            const outputName = renames.get(media.fileName);
+            return outputName ? { ...media, fileName: outputName } : media;
+          }),
+        };
       }
     }
 
@@ -497,9 +612,7 @@ export function stringifyDrawingChild(
       ...(takeSmartArtSourcePaths(opts) ? { sourcePaths: takeSmartArtSourcePaths(opts) } : {}),
       // Store a shallow copy with the remapped rels — never mutate the
       // caller's Options object.
-      ...(opts.raw || remappedDataRels !== undefined
-        ? { raw: { ...opts.raw, dataRels: remappedDataRels } }
-        : {}),
+      ...(raw ? { raw } : {}),
     });
 
     const drawingXml = drawingDesc.stringify(
@@ -567,14 +680,8 @@ export function stringifyDrawingChild(
     // serializable data; mutating them would leak this run's media numbering
     // into the next run's input, and a persisted chart key would skip the
     // chart registration of a later run entirely).
-    const cloneChild = (c: GroupChildMediaData): GroupChildMediaData =>
-      c.type === "wpg"
-        ? { ...c, children: c.children.map(cloneChild) }
-        : c.type === "svg"
-          ? { ...c, fallback: { ...c.fallback } }
-          : { ...c };
     const mediaData: GroupMediaData = {
-      children: opts.children.map(cloneChild),
+      children: opts.children.map(cloneDrawingChild),
       transformation: createTransformation(opts.transformation),
       childOffsetX: opts.childOffsetX,
       childOffsetY: opts.childOffsetY,
@@ -588,86 +695,35 @@ export function stringifyDrawingChild(
 
     // Register pic children media so {fileName} placeholders resolve, recursing
     // into nested wpg groups. wps children carry shape data, not media.
-    const registerMedia = (children: readonly GroupChildMediaData[]): void => {
-      // The build callback must adopt the allocated name onto the child (the
-      // child IS the entry — every other addMedia call site builds a fresh
-      // object carrying fileName); returning it bare leaves a fresh picture's
-      // fileName undefined and its {fileName} placeholder unresolved.
-      const adopt =
-        (m: MediaData): ((fileName: string) => MediaData) =>
-        (fileName) => {
-          m.fileName = fileName;
-          return m;
-        };
-      for (const c of children) {
-        if (c.type === "wps") continue;
-        if (c.type === "wpg") {
-          registerMedia(c.children);
-          continue;
-        }
-        if (c.type === "chart") {
-          // Group-nested charts register their chart part from the parsed or
-          // fresh chartOptions; the {chart:key} placeholder resolves in the
-          // compiler like a top-level chart run.
-          if (c.chartOptions && !c.chartKey) {
-            c.chartKey = `chart_${nextChartId++}`;
-            const externalData = c.chartOptions.externalData;
-            ctx.file.charts.addChart(c.chartKey, {
-              key: c.chartKey,
-              chartSpaceXml: chartSpaceDesc.stringify(c.chartOptions, ctx.file) ?? "",
-              ...(takeChartSourcePath(c.chartOptions)
-                ? { sourcePath: takeChartSourcePath(c.chartOptions) }
-                : {}),
-              ...(takeChartSourceRelationships(c.chartOptions)
-                ? { sourceRelationships: takeChartSourceRelationships(c.chartOptions) }
-                : {}),
-              ...(externalData?.data !== undefined &&
-              externalData.fileName !== undefined &&
-              externalData.relationshipId !== undefined
-                ? {
-                    embedding: {
-                      relationshipId: externalData.relationshipId,
-                      fileName: externalData.fileName,
-                      data: externalData.data,
-                    },
-                  }
-                : {}),
-              ...(c.chartOptions.userShapes
-                ? {
-                    userShapes: {
-                      ...buildUserShapesData(c.chartOptions.userShapes),
-                      ...(takeUserShapesSourcePath(c.chartOptions.userShapes)
-                        ? { path: takeUserShapesSourcePath(c.chartOptions.userShapes) }
-                        : {}),
-                    },
-                  }
-                : {}),
-            });
-          }
-          continue;
-        }
-        if (c.type === "contentPart") continue;
-        if (c.type === "unsupported") continue;
-        if (c.type === "svg") {
-          // Register the raster fallback first so its file name is allocated,
-          // then the SVG entry referencing it. Dedup applies to each independently.
-          const fb = c.fallback;
-          const fbEntry = ctx.file.media.addMedia(fb.data, fb.type, adopt(fb), fb.fileName);
-          fb.fileName = fbEntry.fileName;
-          const svgEntry = ctx.file.media.addMedia(c.data, "svg", adopt(c), c.fileName);
-          c.fileName = svgEntry.fileName;
-          continue;
-        }
-        const entry = ctx.file.media.addMedia(c.data, c.type, adopt(c), c.fileName);
-        // Sync to the canonical entry: when these bytes dedupe against an earlier
-        // image, addMedia returns that entry without invoking the build callback,
-        // leaving c.fileName at the source basename — the {fileName} placeholder
-        // then fails to resolve. entry.fileName is always the registered name.
-        c.fileName = entry.fileName;
-      }
-    };
-    registerMedia(mediaData.children);
+    registerDrawingChildMedia(mediaData.children, ctx);
 
+    const drawingXml = drawingDesc.stringify(
+      {
+        mediaData,
+        docProperties: opts.altText,
+        floating: opts.floating,
+        graphicFrameLocks: opts.graphicFrameLocks,
+        extensionIds: opts.extensionIds,
+        dialect: drawingDialect(ctx),
+      },
+      ctx,
+    );
+    const vmlFallback = registerVmlFallbackMedia(opts, ctx);
+    return wrap(drawingXml, opts, vmlFallback);
+  }
+
+  // WordprocessingCanvas — shares WPG child registration and descriptor output.
+  if ("wordprocessingCanvas" in child) {
+    const opts = child.wordprocessingCanvas;
+    const mediaData: CanvasMediaData = {
+      type: "wpc",
+      children: opts.children.map(cloneDrawingChild),
+      transformation: createTransformation(opts.transformation),
+      background: opts.background,
+      whole: opts.whole,
+      extensions: opts.extensions,
+    };
+    registerDrawingChildMedia(mediaData.children, ctx);
     const drawingXml = drawingDesc.stringify(
       {
         mediaData,

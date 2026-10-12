@@ -8,6 +8,7 @@
  * @module
  */
 import type { Distance } from "../drawing";
+import type { EffectExtentProperties } from "../effect-extent/effect-extent";
 
 /**
  * Enumeration of text wrapping types for floating drawings.
@@ -58,7 +59,10 @@ export interface WrapPolygonPoint {
  */
 export interface WrapPolygon {
   edited?: boolean;
-  points: WrapPolygonPoint[];
+  /**
+   * One wp:start point followed by at least two wp:lineTo points, in source order.
+   */
+  points: [WrapPolygonPoint, WrapPolygonPoint, WrapPolygonPoint, ...WrapPolygonPoint[]];
 }
 
 /**
@@ -71,6 +75,8 @@ export interface TextWrapping {
   side?: (typeof TextWrappingSide)[keyof typeof TextWrappingSide];
   /** Wrap-element distances in EMUs; separate from Floating.margins on wp:anchor. */
   margins?: Distance;
+  /** Nested wp:effectExtent distances in EMUs; separate from the wrapper-level wp:effectExtent. */
+  effectExtent?: EffectExtentProperties;
   /** Wrap polygon for wrapTight/wrapThrough. Preserves the source contour on round-trip; defaults to the extent rectangle when unset. */
   polygon?: WrapPolygon;
 }

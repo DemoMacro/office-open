@@ -2,6 +2,7 @@ import type { ParagraphOptions, RunOptions } from "@office-open/docx";
 
 import { assertAllowed, registerColor, reject, type RtfGenerateContext } from "./context";
 import { control, rtfText } from "./escape";
+import { writeFootnoteReference } from "./footnote";
 import { writeParagraphNumbering, type NumberingReferences } from "./numbering";
 import { writeInlineChild, writeRun } from "./run";
 
@@ -98,6 +99,9 @@ export function writeParagraph(
     .map((child, index) => {
       const childPath = `${path}.children[${index}]`;
       if (typeof child === "string") return rtfText(child);
+      if ("footnoteReference" in child) {
+        return writeFootnoteReference(context, child.footnoteReference, childPath);
+      }
       const isRun =
         "text" in child ||
         "bold" in child ||

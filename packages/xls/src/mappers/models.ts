@@ -1,9 +1,13 @@
 import type {
   ConditionalFormatRule,
+  AlignmentOptions,
+  BorderSideOptions,
+  CellFillOptions,
   DefinedNameOptions,
   ExternalLinkOptions,
   FontOptions,
   RowOptions,
+  StyleOptions,
   WorksheetOptions,
 } from "@office-open/xlsx";
 
@@ -34,8 +38,28 @@ export interface WorkbookState {
   externalLinks: ExternalLinkOptions[];
   definedNames: DefinedNameOptions[];
   externSheetNames: Map<number, string>;
-  styleTable: Map<number, { fontIndex?: number; numberFormatId?: number }>;
+  styleTable: Map<number, XfStyle>;
   drawingImages: { data: Uint8Array; type: "png" | "jpg" | "webp" | "wmf" | "emf" }[];
+}
+
+export interface XfStyle {
+  fontIndex: number;
+  numberFormatId: number;
+  isStyle: boolean;
+  parentIndex: number;
+  usedAttributes: {
+    font: boolean;
+    format: boolean;
+    alignment: boolean;
+    border: boolean;
+    fill: boolean;
+    protection: boolean;
+  };
+  alignment?: AlignmentOptions;
+  border?: BorderSideOptions;
+  fill?: CellFillOptions;
+  protection?: StyleOptions["protection"];
+  quotePrefix?: boolean;
 }
 
 export interface FormulaLocation {

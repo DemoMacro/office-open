@@ -129,6 +129,17 @@ export type { Transform2DOptions, GroupTransform2DOptions } from "./transform";
 // Black/white mode (ST_BlackWhiteMode — @bwMode on spPr/grpSpPr)
 export type { BlackWhiteMode } from "./black-white-mode";
 
+// Shared background/whole formatting containers
+export {
+  parseBackgroundFormatting,
+  parseWholeE2oFormatting,
+  stringifyBackgroundFormatting,
+  stringifyWholeE2oFormatting,
+  type BackgroundFormattingOptions,
+  type OfficeArtExtensionOptions,
+  type WholeE2oFormattingOptions,
+} from "./formatting";
+
 // Table Style
 export {
   createTableStyle,
@@ -243,7 +254,6 @@ export type {
   LayoutDefinitionHeaderListOptions,
   StyleDefinitionHeaderOptions,
   StyleDefinitionHeaderListOptions,
-  DiagramStyleOptions,
   ColorListOptions,
   ColorStyleLabelOptions,
   DiagramRelationshipIdsOptions,

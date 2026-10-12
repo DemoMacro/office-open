@@ -52,6 +52,9 @@
     "check": "vp check --fix"
   },
   "dependencies": {
+    "@office-open/core": "workspace:*"
+  },
+  "devDependencies": {
     "@office-open/docx": "workspace:*"
   }
 }

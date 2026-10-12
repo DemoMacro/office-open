@@ -43,8 +43,10 @@ import {
   shapeLockingDesc,
   shapePropertiesDesc,
   stringifyBlipEffects,
+  stringifyBackgroundFormatting,
   stringifyNonVisualContentPartProperties,
   stringifyNonVisualDrawingProperties,
+  stringifyWholeE2oFormatting,
 } from "@office-open/core/drawing";
 import { escapeXml } from "@office-open/xml";
 import { stringifyParagraphInline } from "@parts/inline";
@@ -52,15 +54,17 @@ import type { ParagraphOptions } from "@parts/paragraph/paragraph";
 import { stringifyUnsupportedXmlElementData } from "@parts/paragraph/run/unsupported-drawing-run";
 import type {
   ChartMediaData,
+  ChartExMediaData,
   ContentPartMediaData,
   ExtendedMediaData,
   GroupChildMediaData,
   LinkedPictureMediaData,
   MediaData,
-  MediaDataTransformation,
+  MediaTransformation,
   SmartArtMediaData,
   GroupMediaData,
   ShapeMediaData,
+  CanvasMediaData,
 } from "@shared/media";
 import type { NonVisualPropertiesOptions } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
@@ -71,7 +75,6 @@ import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/do
 // Import parse function from drawing-parse.ts (parse path)
 import { parseDrawingRun } from "./drawing-parse";
 import type { Floating, HorizontalPositionOptions, VerticalPositionOptions } from "./floating";
-import type { Margins } from "./floating";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "./floating";
 // wpg/wps types only
 import {
@@ -183,6 +186,9 @@ export const resetDrawingIdGen = (): void => {
 
 const WPS_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingShape";
 const WPG_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingGroup";
+const WPC_URI = "http://schemas.microsoft.com/office/word/2010/wordprocessingCanvas";
+const CHART_EX_GRAPHIC_URI = "http://schemas.microsoft.com/office/drawing/2014/chartex";
+const CHART_EX_ROOT_NS = "http://schemas.microsoft.com/office/drawing/2014/chartex";
 const HYPERLINK_REL = RELATIONSHIP_TYPES.hyperlink;
 const IMAGE_REL = RELATIONSHIP_TYPES.image;
 const TEXT_BOX_REL = RELATIONSHIP_TYPES.txbxMs;
@@ -430,7 +436,7 @@ function stringifyBlipFill(
 // ── Shape Properties (pic:spPr) ──
 
 function stringifyShapeProps(
-  transform: MediaDataTransformation,
+  transform: MediaTransformation,
   outline?: OutlineOptions,
   fill?: FillOptions,
   effects?: EffectListOptions,
@@ -442,10 +448,10 @@ function stringifyShapeProps(
 ): string {
   const spPr = shapePropertiesDesc.stringify(
     {
-      x: transform.offset?.emus?.x ?? 0,
-      y: transform.offset?.emus?.y ?? 0,
-      width: transform.shapeExtent?.x ?? transform.emus.x,
-      height: transform.shapeExtent?.y ?? transform.emus.y,
+      x: convertToEmu(transform.offset?.x ?? 0),
+      y: convertToEmu(transform.offset?.y ?? 0),
+      width: transform.shapeExtent?.width ?? convertToEmu(transform.width),
+      height: transform.shapeExtent?.height ?? convertToEmu(transform.height),
       flipHorizontal: transform.flipHorizontal,
       flipVertical: transform.flipVertical,
       rotation: transform.rotation,
@@ -495,7 +501,7 @@ function stringifyNvPicPr(
 
 /** WpsShape options for stringification (extends ShapeCoreOptions with transformation). */
 interface WpsStringifyOptions extends ShapeCoreOptions {
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
 }
 
 const SECTION_CHILD_KEYS: ReadonlySet<string> = new Set([
@@ -528,10 +534,10 @@ function stringifyWpsShape(opts: WpsStringifyOptions, ctx: BodyContext): string 
   const spPrContent =
     shapePropertiesDesc.stringify(
       {
-        x: transform.offset?.emus?.x ?? 0,
-        y: transform.offset?.emus?.y ?? 0,
-        width: transform.shapeExtent?.x ?? transform.emus.x,
-        height: transform.shapeExtent?.y ?? transform.emus.y,
+        x: convertToEmu(transform.offset?.x ?? 0),
+        y: convertToEmu(transform.offset?.y ?? 0),
+        width: transform.shapeExtent?.width ?? convertToEmu(transform.width),
+        height: transform.shapeExtent?.height ?? convertToEmu(transform.height),
         flipHorizontal: transform.flipHorizontal,
         flipVertical: transform.flipVertical,
         rotation: transform.rotation,
@@ -606,13 +612,14 @@ function textBoxRelationshipTarget(partPath: string, ctx: BodyContext): string {
 
 function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions): string {
   let xml = "";
-  // wps:cNvPr — id/name/descr/title (XSD CT_NonVisualDrawingProps)
+  // wps:cNvPr — id/name/descr/title/hidden (XSD CT_NonVisualDrawingProps)
   if (opts.id !== undefined || opts.name !== undefined) {
     const attrs: string[] = [];
     if (opts.id !== undefined) attrs.push(`id="${opts.id}"`);
     if (opts.name !== undefined) attrs.push(`name="${escapeXml(opts.name)}"`);
     if (opts.description !== undefined) attrs.push(`descr="${escapeXml(opts.description)}"`);
     if (opts.title !== undefined) attrs.push(`title="${escapeXml(opts.title)}"`);
+    if (opts.hidden !== undefined) attrs.push(`hidden="${opts.hidden ? 1 : 0}"`);
     xml += `<wps:cNvPr ${attrs.join(" ")}/>`;
   }
   // CT_WordprocessingShape choice: wps:cNvSpPr (text box/autoshape) or
@@ -667,7 +674,7 @@ function stringifyBodyPr(opts?: BodyPropertiesOptions): string {
 function stringifyWpgGroup(
   opts: {
     children: readonly GroupChildMediaData[];
-    transformation: MediaDataTransformation;
+    transformation: MediaTransformation;
     childOffsetX?: number;
     childOffsetY?: number;
     childExtentWidth?: number;
@@ -683,10 +690,10 @@ function stringifyWpgGroup(
   const grpSpPrContent =
     groupShapePropertiesDesc.stringify(
       {
-        x: transform.offset?.emus?.x ?? 0,
-        y: transform.offset?.emus?.y ?? 0,
-        width: transform.emus.x,
-        height: transform.emus.y,
+        x: convertToEmu(transform.offset?.x ?? 0),
+        y: convertToEmu(transform.offset?.y ?? 0),
+        width: convertToEmu(transform.width),
+        height: convertToEmu(transform.height),
         flipHorizontal: transform.flipHorizontal,
         flipVertical: transform.flipVertical,
         rotation: transform.rotation,
@@ -712,6 +719,31 @@ function stringifyWpgGroup(
     childXml +
     "</wpg:wgp>"
   );
+}
+
+/** Stringify a WordprocessingCanvas and its shared DrawingML formatting. */
+function stringifyWordprocessingCanvas(
+  md: CanvasMediaData,
+  ctx: BodyContext,
+  dialect?: DocumentNamespaceDialect,
+): string {
+  const background = md.background ? stringifyBackgroundFormatting(md.background, ctx, "wpc") : "";
+  const whole = md.whole ? stringifyWholeE2oFormatting(md.whole, ctx, "wpc") : "";
+  const extensions = (md.extensions ?? [])
+    .map(
+      (extension) => `<a:ext uri="${escapeXml(extension.uri)}">${extension.content ?? ""}</a:ext>`,
+    )
+    .join("");
+  const extensionXml = extensions ? `<wpc:extLst>${extensions}</wpc:extLst>` : "";
+  const children = md.children.map((child) => stringifyGroupChild(child, ctx, dialect)).join("");
+  const wpcXml =
+    `<wpc:wpc xmlns:wpc="${WPC_URI}">` +
+    background +
+    whole +
+    children +
+    extensionXml +
+    "</wpc:wpc>";
+  return `<a:graphicData uri="${WPC_URI}">${wpcXml}</a:graphicData>`;
 }
 
 /**
@@ -743,6 +775,9 @@ function stringifyGroupChild(
   }
   if (child.type === "chart") {
     return stringifyGroupGraphicFrame(child as ChartMediaData, dialect);
+  }
+  if (child.type === "chartEx") {
+    return stringifyChartExGraphicFrame(child as ChartExMediaData, dialect);
   }
   if (child.type === "contentPart") {
     return stringifyContentPart("wpg", child as ContentPartMediaData);
@@ -818,6 +853,28 @@ function stringifyGroupGraphicFrame(
   );
 }
 
+function stringifyChartExGraphicFrame(
+  md: ChartExMediaData,
+  dialect?: DocumentNamespaceDialect,
+): string {
+  const nvp = md.nonVisualProperties;
+  const cNvPrXml = stringifyNonVisualDrawingProperties("wpg:cNvPr", nvp?.id ?? 0, nvp, "Chart");
+  const cNvFrPrXml = stringifyCnvFrPr(md.graphicFrameLocks, dialect);
+  const xfrmXml = stringifyChildXfrm("wpg", md.transformation);
+  return (
+    "<wpg:graphicFrame>" +
+    cNvPrXml +
+    cNvFrPrXml +
+    xfrmXml +
+    `<a:graphic xmlns:a="${drawingmlUri(dialect, "main")}">` +
+    `<a:graphicData uri="${CHART_EX_GRAPHIC_URI}">` +
+    `<cx:chart xmlns:cx="${CHART_EX_ROOT_NS}" xmlns:r="${relationshipNs(dialect)}" r:id="{chartex:${md.chartExKey}}"/>` +
+    `</a:graphicData>` +
+    `</a:graphic>` +
+    "</wpg:graphicFrame>"
+  );
+}
+
 /** Render wpg:cNvFrPr (CT_NonVisualGraphicFrameProperties — a:graphicFrameLocks). */
 function stringifyCnvFrPr(
   locks?: GraphicFrameLocksOptions | null,
@@ -841,12 +898,12 @@ function stringifyCnvFrPr(
  * root tag is host-namespaced (local element of CT_GraphicFrame /
  * CT_WordprocessingContentPart); the off/ext children belong to a:.
  */
-function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaDataTransformation): string {
-  const x = t.offset?.emus?.x ?? 0;
-  const y = t.offset?.emus?.y ?? 0;
+function stringifyChildXfrm(prefix: "wp" | "wpg", t: MediaTransformation): string {
+  const x = t.offset?.x ?? 0;
+  const y = t.offset?.y ?? 0;
   const flipAttrs = (t.flipHorizontal ? ' flipH="1"' : "") + (t.flipVertical ? ' flipV="1"' : "");
-  const rotAttr = t.rotation !== undefined ? ` rot="${t.rotation}"` : "";
-  return `<${prefix}:xfrm${flipAttrs}${rotAttr}><a:off x="${x}" y="${y}"/><a:ext cx="${t.emus.x}" cy="${t.emus.y}"/></${prefix}:xfrm>`;
+  const rotAttr = t.rotation !== undefined ? ` rot="${Math.round(t.rotation * 60000)}"` : "";
+  return `<${prefix}:xfrm${flipAttrs}${rotAttr}><a:off x="${x}" y="${y}"/><a:ext cx="${t.width}" cy="${t.height}"/></${prefix}:xfrm>`;
 }
 
 /**
@@ -883,10 +940,10 @@ function stringifyNestedGroup(
   const grpSpPrContent =
     groupShapePropertiesDesc.stringify(
       {
-        x: grp.transformation.offset?.emus?.x ?? 0,
-        y: grp.transformation.offset?.emus?.y ?? 0,
-        width: grp.transformation.emus.x,
-        height: grp.transformation.emus.y,
+        x: grp.transformation.offset?.x ?? 0,
+        y: grp.transformation.offset?.y ?? 0,
+        width: grp.transformation.width,
+        height: grp.transformation.height,
         flipHorizontal: grp.transformation.flipHorizontal,
         flipVertical: grp.transformation.flipVertical,
         rotation: grp.transformation.rotation,
@@ -926,6 +983,15 @@ function stringifyGraphicDataContent(
     return (
       `<a:graphicData uri="${drawingmlUri(dialect, "chart")}">` +
       `<c:chart xmlns:c="${drawingmlUri(dialect, "chart")}" xmlns:r="${relationshipNs(dialect)}" r:id="{chart:${md.chartKey}}"/>` +
+      `</a:graphicData>`
+    );
+  }
+
+  if (mediaData.type === "chartEx") {
+    const md = mediaData as ChartExMediaData;
+    return (
+      `<a:graphicData uri="${CHART_EX_GRAPHIC_URI}">` +
+      `<cx:chart xmlns:cx="${CHART_EX_ROOT_NS}" xmlns:r="${relationshipNs(dialect)}" r:id="{chartex:${md.chartExKey}}"/>` +
       `</a:graphicData>`
     );
   }
@@ -974,6 +1040,10 @@ function stringifyGraphicDataContent(
       ctx,
     );
     return `<a:graphicData uri="${WPG_URI}">${wpgXml}</a:graphicData>`;
+  }
+
+  if (mediaData.type === "wpc") {
+    return stringifyWordprocessingCanvas(mediaData as CanvasMediaData, ctx, dialect);
   }
 
   // Default: image (pic:pic)
@@ -1059,6 +1129,9 @@ function stringifyPositionV(opts: VerticalPositionOptions): string {
 function wrapPolygonStr(cx: number, cy: number, polygon?: WrapPolygon): string {
   // Preserve the source contour verbatim when round-tripped.
   if (polygon?.points.length) {
+    if (polygon.points.length < 3) {
+      throw new Error("wp:wrapPolygon requires one wp:start and at least two wp:lineTo points");
+    }
     // Emit `edited` only when the source had it — keeps the polygon byte-faithful on round-trip.
     const editedAttr = polygon.edited !== undefined ? ` edited="${polygon.edited ? 1 : 0}"` : "";
     const [start, ...rest] = polygon.points;
@@ -1089,42 +1162,48 @@ function wrapSquareStr(textWrapping: TextWrapping): string {
     ...(m.distL != null ? [`distL="${convertToEmu(m.distL)}"`] : []),
     ...(m.distR != null ? [`distR="${convertToEmu(m.distR)}"`] : []),
   ].join(" ");
-  return `<wp:wrapSquare ${a}/>`;
+  const ee = textWrapping.effectExtent;
+  const effectExtentXml = ee
+    ? `<wp:effectExtent l="${ee.left}" t="${ee.top}" r="${ee.right}" b="${ee.bottom}"/>`
+    : "";
+  return ee ? `<wp:wrapSquare ${a}>${effectExtentXml}</wp:wrapSquare>` : `<wp:wrapSquare ${a}/>`;
 }
 
-function wrapTightStr(
-  textWrapping: TextWrapping,
-  margins: Margins,
-  cx: number,
-  cy: number,
-): string {
+function wrapTightStr(textWrapping: TextWrapping, cx: number, cy: number): string {
   const side = textWrapping.side ?? TextWrappingSide.BOTH_SIDES;
   const a = [`wrapText="${side}"`];
-  if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
-  if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
+  const m = textWrapping.margins ?? {};
+  if (m.distL != null) a.push(`distL="${convertToEmu(m.distL)}"`);
+  if (m.distR != null) a.push(`distR="${convertToEmu(m.distR)}"`);
   return `<wp:wrapTight ${a.join(" ")}>${wrapPolygonStr(cx, cy, textWrapping.polygon)}</wp:wrapTight>`;
 }
 
-function wrapThroughStr(
-  textWrapping: TextWrapping,
-  margins: Margins,
-  cx: number,
-  cy: number,
-): string {
+function wrapThroughStr(textWrapping: TextWrapping, cx: number, cy: number): string {
   const side = textWrapping.side ?? TextWrappingSide.BOTH_SIDES;
   const a = [`wrapText="${side}"`];
-  if (margins.left != null) a.push(`distL="${convertToEmu(margins.left)}"`);
-  if (margins.right != null) a.push(`distR="${convertToEmu(margins.right)}"`);
+  const m = textWrapping.margins ?? {};
+  if (m.distL != null) a.push(`distL="${convertToEmu(m.distL)}"`);
+  if (m.distR != null) a.push(`distR="${convertToEmu(m.distR)}"`);
   return `<wp:wrapThrough ${a.join(" ")}>${wrapPolygonStr(cx, cy, textWrapping.polygon)}</wp:wrapThrough>`;
 }
 
-function wrapTopAndBottomStr(margins?: Margins): string {
-  const m = margins ?? {};
+function wrapTopAndBottomStr(textWrapping?: TextWrapping): string {
+  const m = textWrapping?.margins ?? {};
   const a = [
-    ...(m.top != null ? [`distT="${convertToEmu(m.top)}"`] : []),
-    ...(m.bottom != null ? [`distB="${convertToEmu(m.bottom)}"`] : []),
+    ...(m.distT != null ? [`distT="${convertToEmu(m.distT)}"`] : []),
+    ...(m.distB != null ? [`distB="${convertToEmu(m.distB)}"`] : []),
   ].join(" ");
-  return a ? `<wp:wrapTopAndBottom ${a}/>` : "<wp:wrapTopAndBottom/>";
+  const ee = textWrapping?.effectExtent;
+  const effectExtentXml = ee
+    ? `<wp:effectExtent l="${ee.left}" t="${ee.top}" r="${ee.right}" b="${ee.bottom}"/>`
+    : "";
+  return ee
+    ? a
+      ? `<wp:wrapTopAndBottom ${a}>${effectExtentXml}</wp:wrapTopAndBottom>`
+      : `<wp:wrapTopAndBottom>${effectExtentXml}</wp:wrapTopAndBottom>`
+    : a
+      ? `<wp:wrapTopAndBottom ${a}/>`
+      : "<wp:wrapTopAndBottom/>";
 }
 
 // ── Inline wrapper ──
@@ -1184,12 +1263,19 @@ function stringifyInline(
   ctx: BodyContext,
 ): string {
   const { mediaData, effects, docProperties } = opts;
-  const cx = mediaData.transformation.emus.x;
-  const cy = mediaData.transformation.emus.y;
+  const cx = convertToEmu(mediaData.transformation.width);
+  const cy = convertToEmu(mediaData.transformation.height);
 
   // Prefer the verbatim source effectExtent (round-trip); fall back to
   // computing it from the shape's effects on the generation path.
-  const effectExtent = mediaData.transformation.effectExtent ?? calculateEffectExtent(effects);
+  const calculatedEffectExtent = calculateEffectExtent(effects);
+  const effectExtent = mediaData.transformation.effectExtent ?? {
+    left: calculatedEffectExtent.l,
+    top: calculatedEffectExtent.t,
+    right: calculatedEffectExtent.r,
+    bottom: calculatedEffectExtent.b,
+  };
+  const distances = mediaData.transformation.inlineDistances ?? {};
   // CT_Inline's choice is a:graphic — a content part only nests inside a wpg
   // group or canvas, never directly under wp:inline.
   const choiceXml = `<a:graphic xmlns:a="${drawingmlUri(
@@ -1199,14 +1285,14 @@ function stringifyInline(
 
   return (
     `<w:drawing><wp:inline ${[
-      'distT="0"',
-      'distB="0"',
-      'distL="0"',
-      'distR="0"',
+      `distT="${convertToEmu(distances.top ?? 0)}"`,
+      `distB="${convertToEmu(distances.bottom ?? 0)}"`,
+      `distL="${convertToEmu(distances.left ?? 0)}"`,
+      `distR="${convertToEmu(distances.right ?? 0)}"`,
       ...drawingExtensionAttrs(opts.extensionIds),
     ].join(" ")}>` +
     `<wp:extent cx="${cx}" cy="${cy}"/>` +
-    `<wp:effectExtent l="${effectExtent.l}" t="${effectExtent.t}" r="${effectExtent.r}" b="${effectExtent.b}"/>` +
+    `<wp:effectExtent l="${effectExtent.left}" t="${effectExtent.top}" r="${effectExtent.right}" b="${effectExtent.bottom}"/>` +
     stringifyDocPr(
       docProperties,
       hlIds,
@@ -1228,8 +1314,8 @@ function stringifyAnchor(
   ctx: BodyContext,
 ): string {
   const { mediaData, floating: rawFloating, docProperties } = opts;
-  const cx = mediaData.transformation.emus.x;
-  const cy = mediaData.transformation.emus.y;
+  const cx = convertToEmu(mediaData.transformation.width);
+  const cy = convertToEmu(mediaData.transformation.height);
 
   const floating: Floating = {
     allowOverlap: true,
@@ -1238,7 +1324,7 @@ function stringifyAnchor(
     layoutInCell: true,
     lockAnchor: false,
     verticalPosition: {},
-    zIndex: mediaData.transformation.emus.y,
+    zIndex: convertToEmu(mediaData.transformation.height),
     margins: {},
     wrap: { type: TextWrappingType.NONE },
     ...rawFloating,
@@ -1249,11 +1335,12 @@ function stringifyAnchor(
     `distB="${convertToEmu(floating.margins?.bottom ?? 0)}"`,
     `distL="${convertToEmu(floating.margins?.left ?? 0)}"`,
     `distR="${convertToEmu(floating.margins?.right ?? 0)}"`,
-    'simplePos="0"',
+    `simplePos="${floating.simplePos?.enabled ? 1 : 0}"`,
     `allowOverlap="${floating.allowOverlap ? 1 : 0}"`,
     `behindDoc="${floating.behindDocument ? 1 : 0}"`,
     `locked="${floating.lockAnchor ? 1 : 0}"`,
     `layoutInCell="${floating.layoutInCell ? 1 : 0}"`,
+    ...(floating.hidden !== undefined ? [`hidden="${floating.hidden ? 1 : 0}"`] : []),
     `relativeHeight="${floating.zIndex}"`,
     ...drawingExtensionAttrs(opts.extensionIds),
   ];
@@ -1264,13 +1351,11 @@ function stringifyAnchor(
   if (rawWrap?.type === TextWrappingType.SQUARE) {
     wrapXml = wrapSquareStr(rawWrap);
   } else if (rawWrap?.type === TextWrappingType.TIGHT) {
-    wrapXml = wrapTightStr(rawWrap, floating.margins ?? {}, cx, cy);
+    wrapXml = wrapTightStr(rawWrap, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.THROUGH) {
-    wrapXml = wrapThroughStr(rawWrap, floating.margins ?? {}, cx, cy);
+    wrapXml = wrapThroughStr(rawWrap, cx, cy);
   } else if (rawWrap?.type === TextWrappingType.TOP_AND_BOTTOM) {
-    wrapXml = wrapTopAndBottomStr(
-      rawWrap.margins ? { top: rawWrap.margins.distT, bottom: rawWrap.margins.distB } : undefined,
-    );
+    wrapXml = wrapTopAndBottomStr(rawWrap);
   } else {
     wrapXml = "<wp:wrapNone/>";
   }
@@ -1285,7 +1370,7 @@ function stringifyAnchor(
   // Prefer the verbatim source effectExtent (round-trip); default to zero.
   const ee = mediaData.transformation.effectExtent;
   const effectExtentXml = ee
-    ? `<wp:effectExtent l="${ee.l}" t="${ee.t}" r="${ee.r}" b="${ee.b}"/>`
+    ? `<wp:effectExtent l="${ee.left}" t="${ee.top}" r="${ee.right}" b="${ee.bottom}"/>`
     : '<wp:effectExtent l="0" t="0" r="0" b="0"/>';
 
   // wp14:sizeRelH/V trail a:graphic in CT_Anchor (Word 2010+); percent is a

@@ -11,8 +11,128 @@ describe("ODS codec", () => {
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
   });
 
+  it("round-trips percentage, currency, and time cell semantics", () => {
+    const parsed = parseWorkbook(
+      generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              {
+                cells: [
+                  { value: 0.25, style: { numFmt: "0%" } },
+                  { value: 1.25, style: { numFmt: "[$$]#,##0.00" } },
+                  { value: 0.5, style: { numFmt: "hh:mm:ss" } },
+                ],
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    const cells = parsed.worksheets?.[0]?.rows?.[0]?.cells ?? [];
+    expect(cells[0]).toEqual({ reference: "A1", value: 0.25, style: { numFmt: "0%" } });
+    expect(cells[1]).toEqual({
+      reference: "B1",
+      value: 1.25,
+      style: { numFmt: "[$$]#,##0.00" },
+    });
+    expect(cells[2]).toEqual({
+      reference: "C1",
+      value: 0.5,
+      style: { numFmt: "hh:mm:ss" },
+    });
+  });
+
   it("wraps invalid packages in OdsParseError", () => {
     expect(() => parseWorkbook(new Uint8Array([1, 2, 3]))).toThrow(OdsParseError);
+  });
+
+  it("preserves unstyled percentage and currency values", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="percentage" office:value="0.25"/><table:table-cell office:value-type="currency" office:value="12.5" office:currency="USD"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const worksheet = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0];
+    if (!worksheet) throw new Error("Missing worksheet");
+    expect(worksheet.rows?.[0]?.cells?.[0]).toMatchObject({
+      value: 0.25,
+      style: { numFmt: "0%" },
+    });
+    expect(worksheet.rows?.[0]?.cells?.[1]).toMatchObject({
+      value: 12.5,
+      style: { numFmt: "[$USD] #,##0.00" },
+    });
+  });
+
+  it("preserves negative time durations", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value-type="time" office:time-value="-PT1H"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const parsed = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value;
+    expect(parsed).toBe(-1 / 24);
+
+    const roundTrip = parseWorkbook(
+      generateWorkbook({
+        worksheets: [{ rows: [{ cells: [{ value: -1 / 24, style: { numFmt: "[hh]:mm:ss" } }] }] }],
+      }),
+    );
+    expect(
+      parseWorkbook(generateWorkbook(roundTrip)).worksheets?.[0]?.rows?.[0]?.cells?.[0]?.value,
+    ).toBe(-1 / 24);
+  });
+
+  it("expands column, row, and cell repeats", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-column table:number-columns-repeated="3"/><table:table-row table:number-rows-repeated="2"><table:table-cell table:number-columns-repeated="3"/><table:table-cell office:value-type="float" office:value="1"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const worksheet = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0];
+    if (!worksheet) throw new Error("Missing worksheet");
+    expect(worksheet.columns).toEqual([{ min: 1, max: 3, width: undefined, hidden: undefined }]);
+    expect(worksheet.rows).toHaveLength(2);
+    expect(worksheet.rows?.[0]?.rowNumber).toBe(1);
+    expect(worksheet.rows?.[1]?.rowNumber).toBe(2);
+    expect(worksheet.rows?.[0]?.cells?.map((cell) => cell.reference)).toEqual([
+      "A1",
+      "B1",
+      "C1",
+      "D1",
+    ]);
+    expect(worksheet.rows?.[0]?.cells?.[3]?.value).toBe(1);
+  });
+
+  it("does not materialize very large empty repeats", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:number-rows-repeated="999999999"><table:table-cell table:number-columns-repeated="16384"/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const worksheet = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0];
+    expect(worksheet?.rows).toEqual([]);
+  });
+
+  it("compresses very large empty row repeats into the default row height", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:automatic-styles><style:style style:name="ro1" style:family="table-row"><style:table-row-properties style:row-height="15pt"/></style:style></office:automatic-styles><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row table:style-name="ro1" table:number-rows-repeated="1048576"><table:table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const worksheet = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    ).worksheets?.[0];
+    expect(worksheet?.rows).toEqual([]);
+    expect(worksheet?.sheetFormat).toEqual({ defaultRowHeight: 15 });
+  });
+
+  it("round-trips merged cells through spans and covered cells", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell table:number-columns-spanned="2" table:number-rows-spanned="2" office:value-type="string"><text:p>Merged</text:p></table:table-cell><table:covered-table-cell/></table:table-row><table:table-row><table:covered-table-cell/><table:covered-table-cell/></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const source = parseWorkbook(
+      generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
+    );
+    expect(source.worksheets?.[0]?.mergeCells).toEqual([{ ref: "A1:B2" }]);
+
+    const roundTrip = parseWorkbook(generateWorkbook(source));
+    expect(roundTrip.worksheets?.[0]?.mergeCells).toEqual([{ ref: "A1:B2" }]);
+    expect(roundTrip.worksheets?.[0]?.rows?.[0]?.cells?.map((cell) => cell.reference)).toEqual([
+      "A1",
+      "B1",
+    ]);
+    expect(roundTrip.worksheets?.[0]?.rows?.[1]?.cells?.map((cell) => cell.reference)).toEqual([
+      "A2",
+      "B2",
+    ]);
   });
 
   it("requires an embedded object body but tolerates a missing replacement", () => {

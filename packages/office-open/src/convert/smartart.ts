@@ -22,7 +22,7 @@ import type { TreeNode } from "@office-open/core/smartart";
 import type { SmartArtOptions as DocxSmartArt } from "@office-open/docx";
 import type { SmartArtOptions as PptxSmartArt } from "@office-open/pptx";
 
-import { boxFromDocx, boxFromPptx, boxToPptx } from "./position";
+import { boxFromDocx, boxFromPptx, boxToDocxTransformation, boxToPptx } from "./position";
 
 // SmartArtNode (docx) and TreeNode (core) are structurally identical trees.
 // Map recursively since docx children are mutable and core's are readonly.
@@ -65,13 +65,8 @@ export function toDocxSmartArt(source: PptxSmartArt): DocxSmartArt {
   const box = boxFromPptx(source.x, source.y, source.width, source.height);
   return {
     nodes: toDocxNodes(source.nodes),
-    transformation: {
-      width: box.width,
-      height: box.height,
-      ...(source.x !== undefined || source.y !== undefined
-        ? { offset: { left: box.x, top: box.y } }
-        : {}),
-    },
+    ...(source.dataModel ? { dataModel: source.dataModel } : {}),
+    transformation: boxToDocxTransformation(box),
     ...altTextFromCnvPr(source),
     ...(source.layout ? { layout: source.layout } : {}),
     ...(source.style ? { style: source.style } : {}),
@@ -87,6 +82,7 @@ export function toPptxSmartArt(source: DocxSmartArt): PptxSmartArt {
   const pos = boxToPptx(box);
   return {
     nodes: toTreeNodes(source.nodes),
+    ...(source.dataModel ? { dataModel: source.dataModel } : {}),
     x: pos.x,
     y: pos.y,
     width: pos.width,

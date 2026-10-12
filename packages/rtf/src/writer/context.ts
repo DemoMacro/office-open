@@ -1,10 +1,11 @@
-import type { DocumentOptions, RunOptions } from "@office-open/docx";
+import type { DocumentOptions, FootnoteOptions, RunOptions } from "@office-open/docx";
 
 import { RtfGenerateError } from "../errors";
 
 export interface RtfGenerateContext {
   colors: string[];
   fonts: string[];
+  footnotes?: FootnoteOptions[];
 }
 
 export function createContext(): RtfGenerateContext {

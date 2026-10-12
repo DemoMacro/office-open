@@ -13,9 +13,15 @@ import { parseOnOff } from "@office-open/core";
 import { xsdMathStyle } from "@office-open/core";
 import { attr, children, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+
+import type { BodyContext, DocxReadContext } from "../../../context";
+import { autoRevisionId } from "../../../shared/track-revision/track-revision";
+import { stringifyDrawingChild } from "../../inline-drawings";
 import type {
+  MathArgumentPropertiesOptions,
   MathBorderBoxProperties,
   MathBoxProperties,
+  MathControlPropertiesOptions,
   MathDelimiterProperties,
   MathEquationArrayProperties,
   MathGroupCharacterProperties,
@@ -25,22 +31,26 @@ import type {
   MathNaryProperties,
   MathPhantomProperties,
   MathRunPropertiesOptions,
-} from "@parts/paragraph/math";
-import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
-
-import { parseRunProperties } from "../run/run-parse";
+} from "../math";
+import type { RunPropertiesOptions } from "../run/properties";
+import { EMPTY_RUN_ELEMENTS, breakXml } from "../run/run";
+import type { RunOptions } from "../run/run";
+import { parseRun, parseRunProperties, parsedRunToOptions } from "../run/run-parse";
 import { stringifyRunProperties } from "../stringify";
 
 // ── MathRun properties ──
 
 function mathRunPropsStr(opts: MathRunPropertiesOptions): string {
   const parts: string[] = [];
-  if (opts.literal) parts.push(`<m:lit m:val="${onOff(true)}"/>`);
-  if (opts.normal) parts.push(`<m:nor m:val="${onOff(true)}"/>`);
-  if (opts.script) parts.push(`<m:scr m:val="${opts.script}"/>`);
-  if (opts.style) parts.push(`<m:sty m:val="${xsdMathStyle.to(opts.style)}"/>`);
-  if (opts.breakAlignment) parts.push(`<m:brk m:alnAt="${opts.breakAlignment}"/>`);
-  if (opts.align) parts.push(`<m:aln m:val="${onOff(true)}"/>`);
+  if (opts.literal !== undefined) parts.push(`<m:lit m:val="${onOff(opts.literal)}"/>`);
+  if (opts.normal !== undefined) {
+    parts.push(`<m:nor m:val="${onOff(opts.normal)}"/>`);
+  } else {
+    if (opts.script) parts.push(`<m:scr m:val="${opts.script}"/>`);
+    if (opts.style) parts.push(`<m:sty m:val="${xsdMathStyle.to(opts.style)}"/>`);
+  }
+  if (opts.breakAlignment !== undefined) parts.push(`<m:brk m:alnAt="${opts.breakAlignment}"/>`);
+  if (opts.align !== undefined) parts.push(`<m:aln m:val="${onOff(opts.align)}"/>`);
   return parts.length ? `<m:rPr>${parts.join("")}</m:rPr>` : "";
 }
 
@@ -50,29 +60,140 @@ function wRPrXml(opts: RunPropertiesOptions | undefined): string {
 }
 
 /** m:ctrlPr — always the last child of a structure's *Pr element. */
-function ctrlPrXml(ctrlPr: RunPropertiesOptions | undefined): string {
+function revisionAttrs(revision: { id?: number; author: string; date?: string }): string {
+  const date = revision.date ? ` w:date="${escapeXml(revision.date)}"` : "";
+  return ` w:id="${revision.id ?? autoRevisionId()}" w:author="${escapeXml(revision.author)}"${date}`;
+}
+
+function ctrlPrXml(ctrlPr: MathControlPropertiesOptions | undefined): string {
   if (!ctrlPr) return "";
-  const rPr = wRPrXml(ctrlPr);
+  if ("insertion" in ctrlPr) {
+    const { deletion, runProperties, ...revision } = ctrlPr.insertion;
+    let inner = runProperties ? wRPrXml(runProperties) : "";
+    if (deletion) {
+      const { author: _author, date: _date, id: _id, ...original } = deletion;
+      inner += `<w:del${revisionAttrs(deletion)}><w:rPr>${wRPrXml(original)}</w:rPr></w:del>`;
+    }
+    return `<m:ctrlPr><w:ins${revisionAttrs(revision)}>${inner}</w:ins></m:ctrlPr>`;
+  }
+  if ("deletion" in ctrlPr) {
+    const { runProperties, ...revision } = ctrlPr.deletion;
+    return `<m:ctrlPr><w:del${revisionAttrs(revision)}>${runProperties ? wRPrXml(runProperties) : ""}</w:del></m:ctrlPr>`;
+  }
+  const rPr = wRPrXml(ctrlPr.runProperties);
   return rPr ? `<m:ctrlPr>${rPr}</m:ctrlPr>` : "<m:ctrlPr/>";
 }
 
-/** Read the w:rPr inside an m:ctrlPr (CT_CtrlPr's only child). */
-function readCtrlPr(prEl: Element | undefined): RunPropertiesOptions | undefined {
+/** Read the EG_RPrMath choice inside an m:ctrlPr. */
+function readCtrlPr(prEl: Element | undefined): MathControlPropertiesOptions | undefined {
   const ctrlPr = prEl ? findChild(prEl, "m:ctrlPr") : undefined;
-  if (!ctrlPr) return undefined;
+  return ctrlPr ? readCtrlPrElement(ctrlPr) : undefined;
+}
+
+function readCtrlPrElement(ctrlPr: Element): MathControlPropertiesOptions | undefined {
   const rPr = findChild(ctrlPr, "w:rPr");
-  return rPr ? parseRunProperties(rPr) : {};
+  if (rPr) return { runProperties: parseRunProperties(rPr) };
+  const ins = findChild(ctrlPr, "w:ins");
+  if (ins) {
+    const insRPr = findChild(ins, "w:rPr");
+    const delEl = findChild(ins, "w:del");
+    const delRPr = delEl ? findChild(delEl, "w:rPr") : undefined;
+    return {
+      insertion: {
+        ...readRevision(ins),
+        ...(insRPr ? { runProperties: parseRunProperties(insRPr) } : {}),
+        ...(delEl
+          ? { deletion: { ...readRevision(delEl), ...(delRPr ? parseRunProperties(delRPr) : {}) } }
+          : {}),
+      },
+    };
+  }
+  const del = findChild(ctrlPr, "w:del");
+  if (del) {
+    const delRPr = findChild(del, "w:rPr");
+    return {
+      deletion: {
+        ...readRevision(del),
+        ...(delRPr ? { runProperties: parseRunProperties(delRPr) } : {}),
+      },
+    };
+  }
+  return {};
+}
+
+function readRevision(el: Element): { id?: number; author: string; date?: string } {
+  const id = Number(attr(el, "w:id"));
+  return {
+    ...(Number.isFinite(id) ? { id } : {}),
+    author: attr(el, "w:author") ?? "",
+    ...(attr(el, "w:date") ? { date: attr(el, "w:date")! } : {}),
+  };
 }
 
 // ── Children array ──
 
-function stringifyChildren(items: MathInput[]): string {
-  return items.map(stringifyMathInput).join("");
+function mathTextXml(text: string, preserveSpace?: boolean): string {
+  return `<m:t${preserveSpace ? ' xml:space="preserve"' : ""}>${escapeXml(text)}</m:t>`;
+}
+
+function stringifyWordRunChild(
+  child: NonNullable<RunOptions["children"]>[number],
+  ctx?: BodyContext,
+): string {
+  if (typeof child === "string") return mathTextXml(child);
+  if ("text" in child && typeof child.text === "string") {
+    const segment = child as { text: string; preserveSpace?: boolean };
+    return mathTextXml(segment.text, segment.preserveSpace);
+  }
+  if ("tab" in child) return "<w:tab/>";
+  if ("break" in child || "pageBreak" in child || "columnBreak" in child) {
+    if ("break" in child) return breakXml(child.break);
+    if ("pageBreak" in child) return '<w:br w:type="page"/>';
+    return '<w:br w:type="column"/>';
+  }
+  let firstKey: string | undefined;
+  for (const key in child) {
+    firstKey = key;
+    break;
+  }
+  const emptyXml = firstKey !== undefined ? EMPTY_RUN_ELEMENTS[firstKey] : undefined;
+  if (emptyXml !== undefined) return emptyXml;
+  if (
+    ctx &&
+    ("picture" in child ||
+      "chart" in child ||
+      "chartEx" in child ||
+      "smartArt" in child ||
+      "wpsShape" in child ||
+      "wpgGroup" in child ||
+      "unsupportedDrawing" in child ||
+      "contentPart" in child)
+  ) {
+    return stringifyDrawingChild(child as never, ctx, { bareInRun: true }) ?? "";
+  }
+  return "";
+}
+
+let currentMathReadContext: DocxReadContext | undefined;
+let currentMathWriteContext: BodyContext | undefined;
+
+function stringifyChildren(items: MathInput[], ctx?: BodyContext): string {
+  return items.map((child) => stringifyMathInput(child, ctx)).join("");
 }
 
 // ── Main recursive stringifier ──
 
-export function stringifyMathInput(value: MathInput): string {
+export function stringifyMathInput(value: MathInput, ctx?: BodyContext): string {
+  const previousContext = currentMathWriteContext;
+  if (ctx !== undefined) currentMathWriteContext = ctx;
+  try {
+    return stringifyMathInputInner(value, ctx ?? currentMathWriteContext);
+  } finally {
+    currentMathWriteContext = previousContext;
+  }
+}
+
+function stringifyMathInputInner(value: MathInput, ctx?: BodyContext): string {
   // String → MathRun shorthand
   if (typeof value === "string") {
     return `<m:r><m:t>${escapeXml(value)}</m:t></m:r>`;
@@ -92,31 +213,31 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.subSuperScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr =
-      opts.alignScript || ctrl
-        ? `<m:sSubSupPr>${opts.alignScript ? `<m:alnScr m:val="${onOff(true)}"/>` : ""}${ctrl}</m:sSubSupPr>`
+      opts.alignScript !== undefined || ctrl
+        ? `<m:sSubSupPr>${opts.alignScript !== undefined ? `<m:alnScr m:val="${onOff(opts.alignScript)}"/>` : ""}${ctrl}</m:sSubSupPr>`
         : "";
-    return `<m:sSubSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
+    return `<m:sSubSup>${pr}<m:e>${argPrXml(opts.baseArgumentProperties)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentProperties)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentProperties)}${stringifyChildren(opts.superScript)}</m:sup></m:sSubSup>`;
   }
 
   if ("preSubSuperScript" in value) {
     const opts = value.preSubSuperScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sPrePr>${ctrl}</m:sPrePr>` : "";
-    return `<m:sPre>${pr}<m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup><m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e></m:sPre>`;
+    return `<m:sPre>${pr}<m:sub>${argPrXml(opts.subScriptArgumentProperties)}${stringifyChildren(opts.subScript)}</m:sub><m:sup>${argPrXml(opts.superScriptArgumentProperties)}${stringifyChildren(opts.superScript)}</m:sup><m:e>${argPrXml(opts.baseArgumentProperties)}${stringifyChildren(opts.children)}</m:e></m:sPre>`;
   }
 
   if ("superScript" in value) {
     const opts = value.superScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSupPr>${ctrl}</m:sSupPr>` : "";
-    return `<m:sSup>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sup>${argPrXml(opts.superScriptArgumentSize)}${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
+    return `<m:sSup>${pr}<m:e>${argPrXml(opts.baseArgumentProperties)}${stringifyChildren(opts.children)}</m:e><m:sup>${argPrXml(opts.superScriptArgumentProperties)}${stringifyChildren(opts.superScript)}</m:sup></m:sSup>`;
   }
 
   if ("subScript" in value) {
     const opts = value.subScript;
     const ctrl = ctrlPrXml(opts.controlProperties);
     const pr = ctrl ? `<m:sSubPr>${ctrl}</m:sSubPr>` : "";
-    return `<m:sSub>${pr}<m:e>${argPrXml(opts.baseArgumentSize)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentSize)}${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
+    return `<m:sSub>${pr}<m:e>${argPrXml(opts.baseArgumentProperties)}${stringifyChildren(opts.children)}</m:e><m:sub>${argPrXml(opts.subScriptArgumentProperties)}${stringifyChildren(opts.subScript)}</m:sub></m:sSub>`;
   }
 
   if ("fraction" in value) {
@@ -125,17 +246,20 @@ export function stringifyMathInput(value: MathInput): string {
       (opts.fractionType ? `<m:type m:val="${opts.fractionType}"/>` : "") +
       ctrlPrXml(opts.controlProperties);
     const pr = inner ? `<m:fPr>${inner}</m:fPr>` : "";
-    const numArgPr = argPrXml(opts.numeratorArgumentSize);
-    const denArgPr = argPrXml(opts.denominatorArgumentSize);
+    const numArgPr = argPrXml(opts.numeratorArgumentProperties);
+    const denArgPr = argPrXml(opts.denominatorArgumentProperties);
     return `<m:f>${pr}<m:num>${numArgPr}${stringifyChildren(opts.numerator)}</m:num><m:den>${denArgPr}${stringifyChildren(opts.denominator)}</m:den></m:f>`;
   }
 
   if ("radical" in value) {
     const opts = value.radical;
     const hasDegree = opts.degree && opts.degree.length > 0;
-    const hideDegree = opts.properties?.hideDegree ?? !hasDegree;
+    const explicitHideDegree = opts.properties?.hideDegree;
+    const hideDegree = explicitHideDegree ?? !hasDegree;
     const inner =
-      (hideDegree ? `<m:degHide m:val="${onOff(true)}"/>` : "") + ctrlPrXml(opts.controlProperties);
+      (explicitHideDegree !== undefined || !hasDegree
+        ? `<m:degHide m:val="${onOff(hideDegree)}"/>`
+        : "") + ctrlPrXml(opts.controlProperties);
     const pr = inner ? `<m:radPr>${inner}</m:radPr>` : "";
     const deg = hasDegree ? `<m:deg>${stringifyChildren(opts.degree!)}</m:deg>` : "<m:deg/>";
     return `<m:rad>${pr}${deg}<m:e>${stringifyChildren(opts.children)}</m:e></m:rad>`;
@@ -143,6 +267,10 @@ export function stringifyMathInput(value: MathInput): string {
 
   if ("sum" in value) {
     return stringifyNAry(value.sum, "∑");
+  }
+
+  if ("nary" in value) {
+    return stringifyNAry(value.nary, value.nary.character);
   }
 
   if ("integral" in value) {
@@ -183,7 +311,7 @@ export function stringifyMathInput(value: MathInput): string {
               (cell) =>
                 `<m:e>${
                   Array.isArray(cell)
-                    ? cell.map(stringifyMathInput).join("")
+                    ? cell.map((item) => stringifyMathInput(item)).join("")
                     : stringifyMathInput(cell)
                 }</m:e>`,
             )
@@ -236,14 +364,18 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.borderBox;
     const p = opts.properties;
     const parts: string[] = [];
-    if (p?.hideTop) parts.push(`<m:hideTop m:val="${onOff(true)}"/>`);
-    if (p?.hideBottom) parts.push(`<m:hideBot m:val="${onOff(true)}"/>`);
-    if (p?.hideLeft) parts.push(`<m:hideLeft m:val="${onOff(true)}"/>`);
-    if (p?.hideRight) parts.push(`<m:hideRight m:val="${onOff(true)}"/>`);
-    if (p?.strikeHorizontal) parts.push(`<m:strikeH m:val="${onOff(true)}"/>`);
-    if (p?.strikeVertical) parts.push(`<m:strikeV m:val="${onOff(true)}"/>`);
-    if (p?.strikeDiagonalUp) parts.push(`<m:strikeBLTR m:val="${onOff(true)}"/>`);
-    if (p?.strikeDiagonalDown) parts.push(`<m:strikeTLBR m:val="${onOff(true)}"/>`);
+    if (p?.hideTop !== undefined) parts.push(`<m:hideTop m:val="${onOff(p.hideTop)}"/>`);
+    if (p?.hideBottom !== undefined) parts.push(`<m:hideBot m:val="${onOff(p.hideBottom)}"/>`);
+    if (p?.hideLeft !== undefined) parts.push(`<m:hideLeft m:val="${onOff(p.hideLeft)}"/>`);
+    if (p?.hideRight !== undefined) parts.push(`<m:hideRight m:val="${onOff(p.hideRight)}"/>`);
+    if (p?.strikeHorizontal !== undefined)
+      parts.push(`<m:strikeH m:val="${onOff(p.strikeHorizontal)}"/>`);
+    if (p?.strikeVertical !== undefined)
+      parts.push(`<m:strikeV m:val="${onOff(p.strikeVertical)}"/>`);
+    if (p?.strikeDiagonalUp !== undefined)
+      parts.push(`<m:strikeBLTR m:val="${onOff(p.strikeDiagonalUp)}"/>`);
+    if (p?.strikeDiagonalDown !== undefined)
+      parts.push(`<m:strikeTLBR m:val="${onOff(p.strikeDiagonalDown)}"/>`);
     parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:borderBoxPr>${parts.join("")}</m:borderBoxPr>` : "";
     return `<m:borderBox>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:borderBox>`;
@@ -253,10 +385,11 @@ export function stringifyMathInput(value: MathInput): string {
     const opts = value.box;
     const p = opts.properties;
     const parts: string[] = [];
-    if (p?.operatorEmulation) parts.push(`<m:opEmu m:val="${onOff(true)}"/>`);
-    if (p?.noBreak) parts.push(`<m:noBreak m:val="${onOff(true)}"/>`);
-    if (p?.differential) parts.push(`<m:diff m:val="${onOff(true)}"/>`);
-    if (p?.align) parts.push(`<m:aln m:val="${onOff(true)}"/>`);
+    if (p?.operatorEmulation !== undefined)
+      parts.push(`<m:opEmu m:val="${onOff(p.operatorEmulation)}"/>`);
+    if (p?.noBreak !== undefined) parts.push(`<m:noBreak m:val="${onOff(p.noBreak)}"/>`);
+    if (p?.differential !== undefined) parts.push(`<m:diff m:val="${onOff(p.differential)}"/>`);
+    if (p?.align !== undefined) parts.push(`<m:aln m:val="${onOff(p.align)}"/>`);
     parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:boxPr>${parts.join("")}</m:boxPr>` : "";
     return `<m:box>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:box>`;
@@ -279,10 +412,10 @@ export function stringifyMathInput(value: MathInput): string {
     const p = opts.properties;
     const parts: string[] = [];
     if (p?.show !== undefined) parts.push(`<m:show m:val="${onOff(p.show)}"/>`);
-    if (p?.zeroWidth) parts.push(`<m:zeroWid m:val="${onOff(true)}"/>`);
-    if (p?.zeroAscent) parts.push(`<m:zeroAsc m:val="${onOff(true)}"/>`);
-    if (p?.zeroDescent) parts.push(`<m:zeroDesc m:val="${onOff(true)}"/>`);
-    if (p?.transparent) parts.push(`<m:transp m:val="${onOff(true)}"/>`);
+    if (p?.zeroWidth !== undefined) parts.push(`<m:zeroWid m:val="${onOff(p.zeroWidth)}"/>`);
+    if (p?.zeroAscent !== undefined) parts.push(`<m:zeroAsc m:val="${onOff(p.zeroAscent)}"/>`);
+    if (p?.zeroDescent !== undefined) parts.push(`<m:zeroDesc m:val="${onOff(p.zeroDescent)}"/>`);
+    if (p?.transparent !== undefined) parts.push(`<m:transp m:val="${onOff(p.transparent)}"/>`);
     parts.push(ctrlPrXml(opts.controlProperties));
     const pr = parts.some(Boolean) ? `<m:phantPr>${parts.join("")}</m:phantPr>` : "";
     return `<m:phant>${pr}<m:e>${stringifyChildren(opts.children)}</m:e></m:phant>`;
@@ -293,8 +426,10 @@ export function stringifyMathInput(value: MathInput): string {
     const p = opts.properties;
     const parts: string[] = [];
     if (p?.baseline) parts.push(`<m:baseJc m:val="${p.baseline}"/>`);
-    if (p?.distributeRows) parts.push(`<m:maxDist m:val="${onOff(true)}"/>`);
-    if (p?.objectDistance) parts.push(`<m:objDist m:val="${onOff(true)}"/>`);
+    if (p?.distributeRows !== undefined)
+      parts.push(`<m:maxDist m:val="${onOff(p.distributeRows)}"/>`);
+    if (p?.objectDistance !== undefined)
+      parts.push(`<m:objDist m:val="${onOff(p.objectDistance)}"/>`);
     if (p?.rowSpacingRule) parts.push(`<m:rSpRule m:val="${p.rowSpacingRule}"/>`);
     if (p?.rowSpacing !== undefined) parts.push(`<m:rSp m:val="${p.rowSpacing}"/>`);
     parts.push(ctrlPrXml(opts.controlProperties));
@@ -326,10 +461,16 @@ export function stringifyMathInput(value: MathInput): string {
     return `<m:r>${props}${rPr}<m:t${space}>${escapeXml(value.text)}</m:t></m:r>`;
   }
 
+  if ("children" in value) {
+    const props = value.properties ? mathRunPropsStr(value.properties) : "";
+    const rPr = wRPrXml(value.runProperties);
+    return `<m:r>${props}${rPr}${value.children.map((child) => stringifyWordRunChild(child, ctx)).join("")}</m:r>`;
+  }
+
   return "";
 }
 
-// ── N-ary operator (sum/integral) ──
+// ── N-ary operator (sum/integral/custom) ──
 
 function stringifyNAry(
   opts: {
@@ -337,7 +478,7 @@ function stringifyNAry(
     subScript?: MathInput[];
     superScript?: MathInput[];
     properties?: MathNaryProperties;
-    controlProperties?: RunPropertiesOptions;
+    controlProperties?: MathControlPropertiesOptions;
   },
   character: string,
 ): string {
@@ -387,8 +528,10 @@ function stringifyDelimiters(spec: {
 }
 
 /** Build an m:argPr/m:argSz block for an argument size scaling value. */
-function argPrXml(size: number | undefined): string {
-  return size !== undefined ? `<m:argPr><m:argSz m:val="${size}"/></m:argPr>` : "";
+function argPrXml(properties: MathArgumentPropertiesOptions | undefined): string {
+  if (properties === undefined) return "";
+  if (properties.size === undefined) return "<m:argPr/>";
+  return `<m:argPr><m:argSz m:val="${properties.size}"/></m:argPr>`;
 }
 
 /** Split a bracket shorthand into children/elements + delimiter properties. */
@@ -411,18 +554,21 @@ function bracketSpec(
 
 // ── Top-level Math wrapper ──
 
-export function stringifyMath(children: MathInput[]): string {
-  const inner = children.map((c) => stringifyMathInput(c)).join("");
+export function stringifyMath(children: MathInput[], ctx?: BodyContext): string {
+  const inner = children.map((c) => stringifyMathInput(c, ctx)).join("");
   return `<m:oMath>${inner}</m:oMath>`;
 }
 
 export function stringifyMathParagraph(
-  children: MathInput[],
+  equations: MathInput[][],
   justification?: "left" | "right" | "center" | "centerGroup",
+  ctx?: BodyContext,
 ): string {
-  const inner = children.map((c) => stringifyMathInput(c)).join("");
+  const inner = equations
+    .map((children) => `<m:oMath>${stringifyChildren(children, ctx)}</m:oMath>`)
+    .join("");
   const pr = justification ? `<m:oMathParaPr><m:jc m:val="${justification}"/></m:oMathParaPr>` : "";
-  return `<m:oMathPara>${pr}<m:oMath>${inner}</m:oMath></m:oMathPara>`;
+  return `<m:oMathPara>${pr}${inner}</m:oMathPara>`;
 }
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -432,13 +578,37 @@ export function stringifyMathParagraph(
 /**
  * Parse all math children from an m:oMath (or similar container) element.
  */
-export function parseMathChildren(el: Element): MathInput[] {
-  const result: MathInput[] = [];
-  for (const child of el.elements ?? []) {
-    const parsed = parseMathElement(child);
-    if (parsed !== undefined) result.push(parsed);
+export function parseMathChildren(el: Element, ctx?: DocxReadContext): MathInput[] {
+  const previousContext = currentMathReadContext;
+  if (ctx !== undefined) currentMathReadContext = ctx;
+  try {
+    const result: MathInput[] = [];
+    for (const child of el.elements ?? []) {
+      const parsed = parseMathElement(child);
+      if (parsed !== undefined) result.push(parsed);
+    }
+    return result;
+  } finally {
+    currentMathReadContext = previousContext;
   }
-  return result;
+}
+
+/** Parse an m:oMathPara into its equation list and justification. */
+export function parseMathParagraph(
+  el: Element,
+  ctx?: DocxReadContext,
+): {
+  equations: MathInput[][];
+  justification?: "left" | "right" | "center" | "centerGroup";
+} {
+  const jcEl = findChild(findChild(el, "m:oMathParaPr") ?? el, "m:jc");
+  const jc = jcEl ? attr(jcEl, "m:val") : undefined;
+  return {
+    equations: children(el, "m:oMath").map((equation) => parseMathChildren(equation, ctx)),
+    ...(jc === "left" || jc === "right" || jc === "center" || jc === "centerGroup"
+      ? { justification: jc }
+      : {}),
+  };
 }
 
 function parseMathElement(el: Element): MathInput | undefined {
@@ -508,8 +678,7 @@ function parseMathElement(el: Element): MathInput | undefined {
     case "m:ctrlPr": {
       // Content-stream ctrlPr: the trailing control formatting of an argument
       // element (m:e/m:num/m:den...) — keep it as a children member in place.
-      const rPr = findChild(el, "w:rPr");
-      return { argumentControlProperties: rPr ? parseRunProperties(rPr) : {} };
+      return { argumentControlProperties: readCtrlPrElement(el) ?? {} };
     }
     default:
       return undefined;
@@ -522,6 +691,34 @@ function parseMathRun(el: Element): MathInput {
   const preserveSpace = attr(textEl, "xml:space") === "preserve";
   const rPrEl = findChild(el, "m:rPr");
   const wRPrEl = findChild(el, "w:rPr");
+  const contentElements = (el.elements ?? []).filter(
+    (child) => child.type === "element" && child.name !== "m:rPr" && child.name !== "w:rPr",
+  );
+  const hasWordRunContent = contentElements.some((child) => child.name !== "m:t");
+  const wordElements = contentElements.map((child) =>
+    child.type === "element" && child.name === "m:t" ? { ...child, name: "w:t" } : child,
+  );
+  const parsedRunOptions = hasWordRunContent
+    ? parsedRunToOptions(
+        parseRun({ ...el, elements: wordElements }, currentMathReadContext as DocxReadContext),
+      )
+    : undefined;
+  const parsedChildren =
+    parsedRunOptions !== undefined && "children" in parsedRunOptions
+      ? parsedRunOptions.children
+      : undefined;
+  const hasMixedWordContent =
+    parsedChildren !== undefined ||
+    (parsedRunOptions !== undefined && !textEl && "text" in parsedRunOptions);
+  if (hasMixedWordContent && parsedChildren !== undefined) {
+    const properties = rPrEl ? readMathRunProperties(rPrEl) : undefined;
+    const runProperties = wRPrEl ? parseRunProperties(wRPrEl) : undefined;
+    return {
+      children: parsedChildren,
+      ...(properties && Object.keys(properties).length > 0 ? { properties } : {}),
+      ...(runProperties && Object.keys(runProperties).length > 0 ? { runProperties } : {}),
+    };
+  }
   if (!rPrEl && !wRPrEl) {
     return preserveSpace ? { text: text ?? "", preserveSpace: true } : (text ?? "");
   }
@@ -547,15 +744,18 @@ function parseMathRun(el: Element): MathInput {
 /** Read m:rPr (CT_RPr) into its structured options. */
 function readMathRunProperties(el: Element): MathRunPropertiesOptions {
   const result: MathRunPropertiesOptions = {};
-  if (findChild(el, "m:lit")) result.literal = true;
-  if (findChild(el, "m:nor")) result.normal = true;
+  const literal = readOnOff(findChild(el, "m:lit"));
+  if (literal !== undefined) result.literal = literal;
+  const normal = readOnOff(findChild(el, "m:nor"));
+  if (normal !== undefined) result.normal = normal;
   const scr = attr(findChild(el, "m:scr"), "m:val");
   if (scr) result.script = scr as MathRunPropertiesOptions["script"];
   const sty = attr(findChild(el, "m:sty"), "m:val");
   if (sty) result.style = xsdMathStyle.from(sty) as MathRunPropertiesOptions["style"];
   const brk = attr(findChild(el, "m:brk"), "m:alnAt");
   if (brk !== undefined && brk !== "") result.breakAlignment = Number(brk);
-  if (findChild(el, "m:aln")) result.align = true;
+  const align = readOnOff(findChild(el, "m:aln"));
+  if (align !== undefined) result.align = align;
   return result;
 }
 
@@ -585,24 +785,29 @@ function readNum(el: Element | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-/** Read an m:argSz scaling value from an argument element (m:arg > m:argPr > m:argSz). */
-function readArgSize(argEl: Element | undefined): number | undefined {
+/** Read m:argPr from an argument element (CT_OMathArg). */
+function readArgumentProperties(
+  argEl: Element | undefined,
+): MathArgumentPropertiesOptions | undefined {
   if (!argEl) return undefined;
-  return readNum(findChild(findChild(argEl, "m:argPr"), "m:argSz"));
+  const argPr = findChild(argEl, "m:argPr");
+  if (!argPr) return undefined;
+  const size = readNum(findChild(argPr, "m:argSz"));
+  return size !== undefined ? { size } : {};
 }
 
 function parseMathFraction(el: Element): MathInput {
   const fPr = findChild(el, "m:fPr");
   const fractionType = attr(findChild(fPr, "m:type"), "m:val");
-  const numeratorArgumentSize = readArgSize(findChild(el, "m:num"));
-  const denominatorArgumentSize = readArgSize(findChild(el, "m:den"));
+  const numeratorArgumentProperties = readArgumentProperties(findChild(el, "m:num"));
+  const denominatorArgumentProperties = readArgumentProperties(findChild(el, "m:den"));
   return {
     fraction: {
       numerator: parseMathArg(el, "m:num"),
       denominator: parseMathArg(el, "m:den"),
       ...(fractionType ? { fractionType } : {}),
-      ...(numeratorArgumentSize !== undefined ? { numeratorArgumentSize } : {}),
-      ...(denominatorArgumentSize !== undefined ? { denominatorArgumentSize } : {}),
+      ...(numeratorArgumentProperties !== undefined ? { numeratorArgumentProperties } : {}),
+      ...(denominatorArgumentProperties !== undefined ? { denominatorArgumentProperties } : {}),
       ...spreadCtrlPr(fPr),
     },
   };
@@ -624,34 +829,36 @@ function parseMathRadical(el: Element): MathInput {
 }
 
 /** Spread a ctrlPr read into its "ctrlPr" option field. */
-function spreadCtrlPr(prEl: Element | undefined): { controlProperties?: RunPropertiesOptions } {
+function spreadCtrlPr(prEl: Element | undefined): {
+  controlProperties?: MathControlPropertiesOptions;
+} {
   const ctrlPr = readCtrlPr(prEl);
   return ctrlPr !== undefined ? { controlProperties: ctrlPr } : {};
 }
 
 function parseMathSuperScript(el: Element): MathInput {
-  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
-  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
+  const baseArgumentProperties = readArgumentProperties(findChild(el, "m:e"));
+  const superScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sup"));
   return {
     superScript: {
       children: parseMathArg(el, "m:e"),
       superScript: parseMathArg(el, "m:sup"),
-      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
-      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
+      ...(baseArgumentProperties !== undefined ? { baseArgumentProperties } : {}),
+      ...(superScriptArgumentProperties !== undefined ? { superScriptArgumentProperties } : {}),
       ...spreadCtrlPr(findChild(el, "m:sSupPr")),
     },
   };
 }
 
 function parseMathSubScript(el: Element): MathInput {
-  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
-  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
+  const baseArgumentProperties = readArgumentProperties(findChild(el, "m:e"));
+  const subScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sub"));
   return {
     subScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
-      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
-      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
+      ...(baseArgumentProperties !== undefined ? { baseArgumentProperties } : {}),
+      ...(subScriptArgumentProperties !== undefined ? { subScriptArgumentProperties } : {}),
       ...spreadCtrlPr(findChild(el, "m:sSubPr")),
     },
   };
@@ -660,17 +867,17 @@ function parseMathSubScript(el: Element): MathInput {
 function parseMathSubSuperScript(el: Element): MathInput {
   const pr = findChild(el, "m:sSubSupPr");
   const alignScript = pr ? readOnOff(findChild(pr, "m:alnScr")) : undefined;
-  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
-  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
-  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
+  const baseArgumentProperties = readArgumentProperties(findChild(el, "m:e"));
+  const subScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sub"));
+  const superScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sup"));
   return {
     subSuperScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
       superScript: parseMathArg(el, "m:sup"),
-      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
-      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
-      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
+      ...(baseArgumentProperties !== undefined ? { baseArgumentProperties } : {}),
+      ...(subScriptArgumentProperties !== undefined ? { subScriptArgumentProperties } : {}),
+      ...(superScriptArgumentProperties !== undefined ? { superScriptArgumentProperties } : {}),
       ...(alignScript !== undefined ? { alignScript } : {}),
       ...spreadCtrlPr(pr),
     },
@@ -710,7 +917,8 @@ function parseMathNAry(el: Element): MathInput {
   };
 
   if (chrVal === "∑") return { sum: common };
-  return { integral: common };
+  if (chrVal === undefined || chrVal === "∫") return { integral: common };
+  return { nary: { ...common, character: chrVal } };
 }
 
 function parseMathFunction(el: Element): MathInput {
@@ -898,17 +1106,17 @@ function parseMathLimitUpper(el: Element): MathInput {
 }
 
 function parseMathPreSubSuperScript(el: Element): MathInput {
-  const baseArgumentSize = readArgSize(findChild(el, "m:e"));
-  const subArgumentSize = readArgSize(findChild(el, "m:sub"));
-  const supArgumentSize = readArgSize(findChild(el, "m:sup"));
+  const baseArgumentProperties = readArgumentProperties(findChild(el, "m:e"));
+  const subScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sub"));
+  const superScriptArgumentProperties = readArgumentProperties(findChild(el, "m:sup"));
   return {
     preSubSuperScript: {
       children: parseMathArg(el, "m:e"),
       subScript: parseMathArg(el, "m:sub"),
       superScript: parseMathArg(el, "m:sup"),
-      ...(baseArgumentSize !== undefined ? { baseArgumentSize } : {}),
-      ...(subArgumentSize !== undefined ? { subScriptArgumentSize: subArgumentSize } : {}),
-      ...(supArgumentSize !== undefined ? { superScriptArgumentSize: supArgumentSize } : {}),
+      ...(baseArgumentProperties !== undefined ? { baseArgumentProperties } : {}),
+      ...(subScriptArgumentProperties !== undefined ? { subScriptArgumentProperties } : {}),
+      ...(superScriptArgumentProperties !== undefined ? { superScriptArgumentProperties } : {}),
       ...spreadCtrlPr(findChild(el, "m:sPrePr")),
     },
   };

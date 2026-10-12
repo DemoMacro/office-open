@@ -311,7 +311,7 @@ export const objectDesc: CustomDescriptor<ObjectElementOptions, BodyContext> = {
             type: m.type,
             data,
             fileName,
-            transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+            transformation: { width: 0, height: 0 },
           }) as MediaData,
         m.fileName,
       );

@@ -269,16 +269,44 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
   const container = childNamed(readXml(files, "styles.xml"), "office:styles");
   const parsed = new Map<
     string,
-    { family?: string; alignment?: string; character: Record<string, unknown> }
+    {
+      id: string;
+      name?: string;
+      family?: string;
+      alignment?: string;
+      basedOn?: string;
+      next?: string;
+      indent?: { left?: number; right?: number };
+      spacing?: { before?: number; after?: number };
+      character: Record<string, unknown>;
+    }
   >();
   for (const style of childrenNamed(container, "style:style")) {
+    const id = attributeString(style, "style:name") ?? "";
     const character = childNamed(style, "style:text-properties");
+    const paragraph = childNamed(style, "style:paragraph-properties");
+    const indentLeft = lengthToTwips(attributeString(paragraph, "fo:margin-left"));
+    const indentRight = lengthToTwips(attributeString(paragraph, "fo:margin-right"));
+    const spacingBefore = lengthToTwips(attributeString(paragraph, "fo:margin-top"));
+    const spacingAfter = lengthToTwips(attributeString(paragraph, "fo:margin-bottom"));
+    const indent =
+      indentLeft !== undefined || indentRight !== undefined
+        ? {
+            ...(indentLeft !== undefined ? { left: indentLeft } : {}),
+            ...(indentRight !== undefined ? { right: indentRight } : {}),
+          }
+        : undefined;
+    const spacing =
+      spacingBefore !== undefined || spacingAfter !== undefined
+        ? {
+            ...(spacingBefore !== undefined ? { before: spacingBefore } : {}),
+            ...(spacingAfter !== undefined ? { after: spacingAfter } : {}),
+          }
+        : undefined;
     const size = attributeString(character, "fo:font-size");
     const color = attributeString(character, "fo:color");
-    parsed.set(attributeString(style, "style:name") ?? "", {
-      family: attributeString(style, "style:family"),
-      alignment: attributeString(childNamed(style, "style:paragraph-properties"), "fo:text-align"),
-      character: {
+    const run = Object.fromEntries(
+      Object.entries({
         bold: attributeString(character, "fo:font-weight") === "bold" || undefined,
         italic: attributeString(character, "fo:font-style") === "italic" || undefined,
         underline:
@@ -290,22 +318,47 @@ export function parseCommonStyles(files: OdfFiles): DocumentOptions["styles"] {
         ...(size?.endsWith("pt") ? { size: Number(size.slice(0, -2)) } : {}),
         color: color?.startsWith("#") ? color.slice(1) : undefined,
         font: attributeString(character, "fo:font-family") || undefined,
-      },
+      }).filter(([, value]) => value !== undefined),
+    );
+    parsed.set(id, {
+      id,
+      name: attributeString(style, "style:display-name") ?? id,
+      family: attributeString(style, "style:family"),
+      alignment: attributeString(paragraph, "fo:text-align"),
+      basedOn: attributeString(style, "style:parent-style-name"),
+      next: attributeString(style, "style:next-style-name"),
+      indent,
+      spacing,
+      character: run,
     });
   }
   const paragraphStyles = [...parsed]
     .filter(([, style]) => style.family === "paragraph")
     .map(([name, style]) => ({
-      id: name,
-      name,
-      paragraph: {
-        alignment: style.alignment as never,
-      },
-      run: style.character as never,
+      id: style.id,
+      name: style.name ?? name,
+      ...(style.basedOn ? { basedOn: style.basedOn } : {}),
+      ...(style.next ? { next: style.next } : {}),
+      ...(style.alignment !== undefined || style.indent !== undefined || style.spacing !== undefined
+        ? {
+            paragraph: {
+              alignment: style.alignment as never,
+              ...(style.indent ? { indent: style.indent } : {}),
+              ...(style.spacing ? { spacing: style.spacing } : {}),
+            },
+          }
+        : {}),
+      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
     }));
   const characterStyles = [...parsed]
     .filter(([, style]) => style.family === "text")
-    .map(([name, style]) => ({ id: name, name, run: style.character as never }));
+    .map(([name, style]) => ({
+      id: style.id,
+      name: style.name ?? name,
+      ...(style.basedOn ? { basedOn: style.basedOn } : {}),
+      ...(style.next ? { next: style.next } : {}),
+      ...(Object.keys(style.character).length > 0 ? { run: style.character as never } : {}),
+    }));
   const result = {
     ...(paragraphStyles.length > 0 ? { paragraphStyles } : {}),
     ...(characterStyles.length > 0 ? { characterStyles } : {}),

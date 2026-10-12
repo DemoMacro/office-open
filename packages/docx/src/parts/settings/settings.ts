@@ -677,22 +677,22 @@ export interface MathPropertiesOptions {
   smallFractions?: boolean;
   /** Use display defaults (m:dispDef) */
   displayDefaults?: boolean;
-  /** Left margin in twips (m:lMargin) */
-  leftMargin?: number;
-  /** Right margin in twips (m:rMargin) */
-  rightMargin?: number;
+  /** Left margin in twips or universal measure (m:lMargin; 720 = 0.5"). */
+  leftMargin?: number | PositiveUniversalMeasure;
+  /** Right margin in twips or universal measure (m:rMargin; 720 = 0.5"). */
+  rightMargin?: number | PositiveUniversalMeasure;
   /** Default justification (m:defJc) */
   defaultJustification?: "left" | "right" | "center" | "centerGroup";
-  /** Spacing before a math instance in twips (m:preSp) */
-  preSpacing?: number;
-  /** Spacing after a math instance in twips (m:postSp) */
-  postSpacing?: number;
-  /** Inter-equation spacing in twips (m:interSp) */
-  interSpacing?: number;
-  /** Intra-equation spacing in twips (m:intraSp) */
-  intraSpacing?: number;
-  /** Wrap indent in twips (m:wrapIndent) */
-  wrapIndent?: number;
+  /** Spacing before a math instance in twips or universal measure (m:preSp). */
+  preSpacing?: number | PositiveUniversalMeasure;
+  /** Spacing after a math instance in twips or universal measure (m:postSp). */
+  postSpacing?: number | PositiveUniversalMeasure;
+  /** Inter-equation spacing in twips or universal measure (m:interSp). */
+  interSpacing?: number | PositiveUniversalMeasure;
+  /** Intra-equation spacing in twips or universal measure (m:intraSp). */
+  intraSpacing?: number | PositiveUniversalMeasure;
+  /** Wrap indent in twips or universal measure (m:wrapIndent). */
+  wrapIndent?: number | PositiveUniversalMeasure;
   /** Wrap equations to the right (m:wrapRight; alternative to wrapIndent) */
   wrapRight?: boolean;
   /** Integral limit location (m:intLim) */

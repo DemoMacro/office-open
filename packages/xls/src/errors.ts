@@ -39,5 +39,3 @@ export class XlsParseError extends Error {
     } as XlsParseContext;
   }
 }
-
-export class LegacyExcelError extends XlsParseError {}

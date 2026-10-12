@@ -3,6 +3,7 @@ import type { GraphicFrameLockingOptions } from "@office-open/core";
 import type { NonVisualDrawingPropertiesOptions } from "@office-open/core/drawing";
 import type {
   ColorDefinitionOptions,
+  DataModelOptions,
   LayoutDefinitionOptions,
   StyleDefinitionOptions,
   SmartArtRawParts,
@@ -44,6 +45,8 @@ export interface SmartArtOptions
   height?: number | UniversalMeasure;
   /** Tree-shaped data for the diagram content. */
   nodes: TreeNode[];
+  /** Complete canonical data model; preferred when rebuilding without raw bytes. */
+  dataModel?: DataModelOptions;
   /** Built-in layout ID ("default", "process1") or a custom layout definition. */
   layout?: string | LayoutDefinitionOptions;
   /** Built-in quick style ID ("simple1") or a custom style definition. */

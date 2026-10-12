@@ -1,41 +1,15 @@
 import { DocParseError, type DocParseContext } from "../errors";
-import type { LegacyBookmark, LegacyField, LegacyPictureData } from "./models";
+import type {
+  LegacyBookmark,
+  LegacyField,
+  LegacyPictureByShapeId,
+  LegacyPictureData,
+} from "./models";
 
 interface NumberPair {
   offset: number;
   length: number;
 }
-
-const WINDOWS_1252_HIGH = new Map<number, string>([
-  [0x80, "\u20ac"],
-  [0x82, "\u201a"],
-  [0x83, "\u0192"],
-  [0x84, "\u201e"],
-  [0x85, "\u2026"],
-  [0x86, "\u2020"],
-  [0x87, "\u2021"],
-  [0x88, "\u02c6"],
-  [0x89, "\u2030"],
-  [0x8a, "\u0160"],
-  [0x8b, "\u2039"],
-  [0x8c, "\u0152"],
-  [0x8e, "\u017d"],
-  [0x91, "\u2018"],
-  [0x92, "\u2019"],
-  [0x93, "\u201c"],
-  [0x94, "\u201d"],
-  [0x95, "\u2022"],
-  [0x96, "\u2013"],
-  [0x97, "\u2014"],
-  [0x98, "\u02dc"],
-  [0x99, "\u2122"],
-  [0x9a, "\u0161"],
-  [0x9b, "\u203a"],
-  [0x9c, "\u0153"],
-  [0x9e, "\u017e"],
-  [0x9f, "\u0178"],
-]);
-
 function requireRange(
   bytes: Uint8Array,
   offset: number,
@@ -106,12 +80,6 @@ function parsePlcf(
   return values;
 }
 
-function decodeWindows1252(bytes: Uint8Array): string {
-  let result = "";
-  for (const byte of bytes) result += WINDOWS_1252_HIGH.get(byte) ?? String.fromCharCode(byte);
-  return result;
-}
-
 function readUnicodeString(bytes: Uint8Array, offset: number): string {
   if (offset + 2 > bytes.byteLength) return "";
   const length = readUint16(bytes, offset, "Invalid DOC stylesheet: truncated string");
@@ -128,28 +96,53 @@ function readUnicodeString(bytes: Uint8Array, offset: number): string {
 export function parseStylesheet(table: Uint8Array, range: NumberPair): StylesheetModel {
   const message = "Invalid DOC stylesheet: it is outside the table stream";
   requireRange(table, range.offset, range.length, message);
-  if (range.length < 4) throw new DocParseError("Invalid DOC stylesheet: malformed STSH");
-  const count = readUint16(table, range.offset, message);
-  let offset = range.offset + 4;
+  if (range.length < 6) throw new DocParseError("Invalid DOC stylesheet: malformed STSH");
+  const headerLength = readUint16(table, range.offset, message);
+  if (headerLength < 6) throw new DocParseError("Invalid DOC stylesheet: malformed STSHI");
+  const baseLength = readUint16(table, range.offset + 4, message);
+  if (baseLength < 8) throw new DocParseError("Invalid DOC stylesheet: malformed STD base");
+  const count = readUint16(table, range.offset + 2, message);
+  let offset = range.offset + 2 + headerLength;
   const styles: StyleModel[] = [];
-  for (let index = 0; index < count && offset + 12 <= range.offset + range.length; index += 1) {
-    const type = table[offset]!;
-    const istd = readUint16(table, offset + 2, message);
-    const base = readUint16(table, offset + 4, message);
-    const nameOffset = readUint16(table, offset + 6, message);
-    const name = readUnicodeString(table, offset + nameOffset);
-    styles.push({
-      type: type === 2 ? "character" : type === 3 ? "table" : "paragraph",
-      id: `style-${istd}`,
-      styleId: istd,
-      name: name || `style ${istd}`,
-      basedOn: base === 4095 || base === istd ? undefined : `style-${base}`,
-    });
-    const nameLength = readUint16(table, offset + nameOffset, message);
-    offset += nameOffset + 2 + nameLength * 2;
-    if (offset > range.offset + range.length) {
+  const end = range.offset + range.length;
+  for (let index = 0; index < count; index += 1) {
+    if (offset + 2 > end) {
+      throw new DocParseError("Invalid DOC stylesheet: style record is truncated");
+    }
+    const recordLength = readUint16(table, offset, message);
+    if (recordLength === 0) continue;
+    if (recordLength % 2 !== 0 || offset + 2 + recordLength > end) {
       throw new DocParseError("Invalid DOC stylesheet: style description is truncated");
     }
+    if (recordLength < 8) {
+      throw new DocParseError("Invalid DOC stylesheet: style description is truncated");
+    }
+
+    const record = table.subarray(offset + 2, offset + 2 + recordLength);
+    const info2 = readUint16(record, 2, message);
+    const styleKind = info2 & 0x0f;
+    const basedOn = (info2 >> 4) & 0x0fff;
+    const nameOffset = Math.min(baseLength, recordLength);
+    if (nameOffset + 2 > recordLength) {
+      throw new DocParseError("Invalid DOC stylesheet: style name is truncated");
+    }
+    const nameLength = readUint16(record, nameOffset, message);
+    if (nameOffset + 2 + nameLength * 2 > recordLength) {
+      throw new DocParseError("Invalid DOC stylesheet: style name is truncated");
+    }
+    const rawName = readUnicodeString(record, nameOffset);
+    const name = (nameLength > 0 && rawName.endsWith("\0") ? rawName.slice(0, -1) : rawName).split(
+      ",",
+      1,
+    )[0]!;
+    styles.push({
+      type: styleKind === 2 ? "character" : styleKind === 3 ? "table" : "paragraph",
+      id: `style-${index}`,
+      styleId: index,
+      name: name || `style ${index}`,
+      basedOn: basedOn === 4095 || basedOn === index ? undefined : `style-${basedOn}`,
+    });
+    offset += 2 + recordLength;
   }
   return { styles };
 }
@@ -184,7 +177,7 @@ export function parseSectionProperties(
 }
 
 function parseOneSection(
-  record: { data: Uint8Array },
+  record: { start: number; end: number; data: Uint8Array },
   word: Uint8Array,
   properties: SectionModel[],
 ): void {
@@ -193,6 +186,8 @@ function parseOneSection(
   const grpprlStart = sepx + 2;
   requireRange(word, grpprlStart, cb, "Invalid DOC section properties: truncated SEPX");
   const section: SectionModel = {};
+  section.mainStart = record.start;
+  section.mainEnd = record.end;
   for (let index = 0; index + 2 <= cb;) {
     const opcode = readUint16(word, grpprlStart + index, "Invalid DOC section properties");
     const form = (opcode >> 13) & 7;
@@ -232,6 +227,10 @@ function parseOneSection(
 }
 
 export interface SectionModel {
+  /** Main-document CP range start projected into this section. */
+  mainStart?: number;
+  /** Main-document CP range end projected into this section. */
+  mainEnd?: number;
   width?: number;
   height?: number;
   orientation?: "portrait" | "landscape";
@@ -342,15 +341,21 @@ export function parseBookmarks(
   const nameMessage = "Invalid DOC bookmark names: they are outside the table stream";
   requireRange(table, names.offset, names.length, nameMessage);
   if (names.length < 6) throw new DocParseError("Invalid DOC bookmark names: malformed STTB");
-  const count = readUint16(table, names.offset, nameMessage);
-  let cursor = names.offset + 4;
+  if (readUint16(table, names.offset, nameMessage) !== 0xffff) {
+    throw new DocParseError("Invalid DOC bookmark names: non-extended STTB");
+  }
+  const count = readUint16(table, names.offset + 2, nameMessage);
+  if (readUint16(table, names.offset + 4, nameMessage) !== 0) {
+    throw new DocParseError("Invalid DOC bookmark names: unexpected extra data");
+  }
+  let cursor = names.offset + 6;
   const bookmarkNames: string[] = [];
   for (let index = 0; index < count; index += 1) {
     const length = readUint16(table, cursor, nameMessage);
     cursor += 2;
-    requireRange(table, cursor, length, nameMessage);
-    bookmarkNames.push(decodeWindows1252(table.subarray(cursor, cursor + length)));
-    cursor += length;
+    requireRange(table, cursor, length * 2, nameMessage);
+    bookmarkNames.push(readUnicodeString(table, cursor - 2));
+    cursor += length * 2;
   }
   const startsByCp = parsePlcf(table, starts, 4, "Invalid DOC bookmark start table");
   requireRange(table, ends.offset, ends.length, "Invalid DOC bookmark end table");
@@ -375,21 +380,32 @@ export function parseFields(
   range: NumberPair,
 ): LegacyField[] {
   const message = "Invalid DOC field table: it is outside the table stream";
+  if (range.length === 4) return [];
   const records = parsePlcf(table, range, 2, message);
   const fields: LegacyField[] = [];
   for (const record of records) {
-    const kind = record.data[0];
-    if (kind === 0x13) {
+    if ((record.data[0]! & 0x7f) === 0x13) {
       const cp = record.start;
       const limit = Math.min(cp + 255, characters.length);
       let separator = -1;
-      for (let index = cp + 1; index < limit; index += 1) {
-        if (characters[index] === "\x14") {
-          separator = index;
+      for (let scan = cp + 1; scan < limit; scan += 1) {
+        if (characters[scan] === "\x14") {
+          separator = scan;
           break;
         }
       }
       if (separator < 0) {
+        for (let scan = cp + 1; scan < limit; scan += 1) {
+          if (characters[scan] === "\x15") {
+            fields.push({
+              start: cp,
+              end: scan,
+              instruction: characters.slice(cp + 1, scan).join(""),
+            });
+            break;
+          }
+        }
+        if (fields.at(-1)?.start === cp) continue;
         throw new DocParseError("Invalid DOC field table: field has no separator", {
           part: "stream",
           path: "WordDocument",
@@ -398,45 +414,241 @@ export function parseFields(
           reason: "missing-required-record",
         });
       }
-      const instruction = characters.slice(cp + 1, separator).join("");
-      fields.push({ start: cp, end: separator, instruction });
+      fields.push({
+        start: cp,
+        end: separator,
+        instruction: characters.slice(cp + 1, separator).join(""),
+      });
     }
   }
   return fields;
 }
 
-/** Parse Escher OfficeArtContent, including BStore containers and BLIP records. */
-export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): LegacyPictureData[] {
+/** Parse Escher OfficeArtContent and resolve picture-bearing shapes by shape id. */
+export function parsePictures(drawing: Uint8Array, dataStream: Uint8Array): LegacyPictureByShapeId {
   const pictures: LegacyPictureData[] = [];
-  const addPicture = (picture: LegacyPictureData): void => {
-    if (picture.data.byteLength > 0) pictures.push(picture);
+  const picturesByShapeId: LegacyPictureByShapeId = new Map();
+
+  const isEscherType = (type: number): boolean =>
+    (type >= 0xf000 && type <= 0xf012) ||
+    type === 0xf11e ||
+    type === 0xf121 ||
+    type === 0xf122 ||
+    (type >= 0xf01a && type <= 0xf01f);
+
+  const alignRecord = (offset: number, end: number, path: string): number => {
+    const canRead = (candidate: number): boolean => candidate + 8 <= end;
+    const read = (candidate: number) => ({
+      version: readUint16(drawing, candidate, "Invalid DOC Escher drawing") & 0x000f,
+      type: readUint16(drawing, candidate + 2, "Invalid DOC Escher drawing"),
+      length: readUint32(drawing, candidate + 4, "Invalid DOC Escher drawing"),
+    });
+    if (canRead(offset)) {
+      const header = read(offset);
+      if (isEscherType(header.type) && header.length <= end - offset - 8) return offset;
+    }
+    for (
+      let candidate = offset + 1;
+      candidate + 8 <= end && candidate - offset <= 16;
+      candidate += 1
+    ) {
+      const header = read(candidate);
+      if (isEscherType(header.type) && header.length <= end - candidate - 8) return candidate;
+    }
+    throw new DocParseError("Invalid DOC Escher drawing: no valid record boundary", {
+      part: "data",
+      path,
+      offset,
+      reason: "invalid-record",
+    });
   };
-  const walk = (offset: number, end: number): void => {
+
+  const walk = (start: number, end: number): void => {
+    if (start + 8 > end) return;
+    let offset = alignRecord(start, end, "Escher");
     while (offset + 8 <= end) {
       const version = readUint16(drawing, offset, "Invalid DOC Escher drawing") & 0x000f;
       const type = readUint16(drawing, offset + 2, "Invalid DOC Escher drawing");
       const length = readUint32(drawing, offset + 4, "Invalid DOC Escher drawing");
       const body = offset + 8;
-      if (length > end - body) return;
-      if (version === 0x0f) {
-        walk(body, body + length);
-      } else if (type === 0xf007) {
-        const delayOffset = readUint32(drawing, body + 28, "Invalid DOC Escher picture");
-        const nameLength = drawing[body + 33] ?? 0;
-        const embedded = body + 36 + nameLength;
-        if (delayOffset === 0xffffffff && embedded + 8 <= body + length) {
-          addPicture(parseEmbeddedBlip(drawing.subarray(embedded, body + length)));
-        } else if (delayOffset !== 0xffffffff) {
-          addPicture(parseBlip(dataStream, delayOffset));
-        }
-      } else if (type >= 0xf01a && type <= 0xf01f) {
-        addPicture(parseEmbeddedBlip(drawing.subarray(body, body + length)));
+      if (length > end - body) {
+        throw new DocParseError("Invalid DOC Escher drawing: record is truncated", {
+          part: "data",
+          path: "Escher",
+          offset,
+          length,
+          byteRange: [offset, offset + 8 + length],
+          reason: "out-of-range",
+        });
       }
-      offset = body + length;
+      if (version === 0x0f) {
+        if (type === 0xf004) parseShapeContainer(body, body + length);
+        else walk(body, body + length);
+      } else if (type === 0xf007) {
+        pictures.push(parsePictureStoreEntry(body, body + length, dataStream));
+      } else if (type >= 0xf01a && type <= 0xf01f) {
+        const blip = parseEmbeddedBlip(drawing.subarray(body, body + length));
+        if (!blip) {
+          throw new DocParseError("Invalid DOC Escher drawing: unsupported BLIP record", {
+            part: "data",
+            path: "Escher/BLIP",
+            offset,
+            length,
+            reason: "unsupported-required-structure",
+          });
+        }
+        pictures.push(blip);
+      }
+      if (body + length >= end) break;
+      offset = alignRecord(body + length, end, "Escher");
     }
   };
+
+  const parseShapeContainer = (start: number, end: number): void => {
+    if (start + 8 > end) return;
+    let shapeId: number | undefined;
+    let blipIndex: number | undefined;
+    let cursor = alignRecord(start, end, "Escher/SpContainer");
+    while (cursor + 8 <= end) {
+      const type = readUint16(drawing, cursor + 2, "Invalid DOC Escher shape");
+      const length = readUint32(drawing, cursor + 4, "Invalid DOC Escher shape");
+      const body = cursor + 8;
+      if (length > end - body) {
+        throw new DocParseError("Invalid DOC Escher shape: child record is truncated", {
+          part: "data",
+          path: "Escher/SpContainer",
+          offset: cursor,
+          length,
+          byteRange: [cursor, cursor + 8 + length],
+          reason: "out-of-range",
+        });
+      }
+      if (type === 0xf00a) shapeId = readUint32(drawing, body, "Invalid DOC Escher shape id");
+      if (type === 0xf00b) blipIndex = parseBlipProperty(cursor, cursor + 8 + length);
+      if (body + length >= end) break;
+      cursor = alignRecord(body + length, end, "Escher/SpContainer");
+    }
+    if (shapeId !== undefined && blipIndex !== undefined) {
+      const picture = pictures[blipIndex - 1];
+      if (!picture || picture.type === "unknown") {
+        throw new DocParseError("Invalid DOC Escher shape: BLIP reference is out of range", {
+          part: "data",
+          path: "Escher/OPT/BLIPTODISPLAY",
+          offset: start,
+          reason: "out-of-range",
+        });
+      }
+      picturesByShapeId.set(shapeId, picture);
+    }
+  };
+
+  const parseBlipProperty = (offset: number, end: number): number | undefined => {
+    requireRange(drawing, offset, 6, "Invalid DOC Escher properties", {
+      part: "data",
+      path: "Escher/OPT",
+      offset,
+      length: 6,
+      reason: "out-of-range",
+    });
+    const count = (readUint16(drawing, offset, "Invalid DOC Escher properties") >> 4) & 0x0fff;
+    if (offset + count * 6 > end) {
+      throw new DocParseError("Invalid DOC Escher properties: property table is truncated", {
+        part: "data",
+        path: "Escher/OPT",
+        offset,
+        length: count * 6,
+        reason: "out-of-range",
+      });
+    }
+    let complexBytes = 0;
+    for (let index = 0; index < count; index += 1) {
+      const id = readUint16(drawing, offset + 8 + index * 6, "Invalid DOC Escher property");
+      const value = readUint32(drawing, offset + 8 + index * 6 + 2, "Invalid DOC Escher property");
+      if ((id & 0x8000) !== 0) complexBytes += value;
+      if ((id & 0x3fff) === 0x0104 && (id & 0x4000) !== 0) return value;
+    }
+    requireRange(drawing, end, complexBytes, "Invalid DOC Escher properties", {
+      part: "data",
+      path: "Escher/OPT",
+      offset: end,
+      length: complexBytes,
+      reason: "out-of-range",
+    });
+    return undefined;
+  };
+
+  const parsePictureStoreEntry = (
+    offset: number,
+    end: number,
+    data: Uint8Array,
+  ): LegacyPictureData => {
+    requireRange(drawing, offset, 36, "Invalid DOC Escher BSE", {
+      part: "data",
+      path: "Escher/BSE",
+      offset,
+      length: 36,
+      reason: "out-of-range",
+    });
+    const delayOffset = readUint32(drawing, offset + 28, "Invalid DOC Escher picture");
+    const nameLength = drawing[offset + 33] ?? 0;
+    const embedded = offset + 36 + nameLength;
+    let embeddedError: unknown;
+    let embeddedPicture: LegacyPictureData | undefined;
+    if (embedded + 8 <= end) {
+      try {
+        embeddedPicture = parseEmbeddedBlip(drawing.subarray(embedded, end));
+      } catch (error) {
+        embeddedError = error;
+      }
+    }
+    if (embeddedPicture) return embeddedPicture;
+    if (delayOffset === 0xffffffff) {
+      throw (
+        embeddedError ??
+        new DocParseError("Invalid DOC Escher BSE: embedded BLIP is truncated", {
+          part: "data",
+          path: "Escher/BSE/BLIP",
+          offset: embedded,
+          reason: "out-of-range",
+        })
+      );
+    }
+    return parseBlip(data, delayOffset)!;
+  };
+
   walk(0, drawing.byteLength);
-  return pictures.filter((picture) => picture.data.byteLength > 0);
+  return new Map([...picturesByShapeId].filter(([, picture]) => picture.data.byteLength > 0));
+}
+
+/** Parse PlcspaMom into main-document CP → shape-id anchors. */
+export function parseBodyPictureAnchors(table: Uint8Array, range: NumberPair): Map<number, number> {
+  const message = "Invalid DOC picture anchor table: it is outside the table stream";
+  requireRange(table, range.offset, range.length, message, {
+    part: "table",
+    path: "PlcspaMom",
+    offset: range.offset,
+    length: range.length,
+  });
+  const entryLength = 4 + 26;
+  if (range.length < entryLength || (range.length - 4) % entryLength !== 0) {
+    throw new DocParseError("Invalid DOC picture anchor table: malformed CP count", {
+      part: "table",
+      path: "PlcspaMom",
+      offset: range.offset,
+      length: range.length,
+      byteRange: [range.offset, range.offset + range.length],
+      reason: "invalid-record-length",
+    });
+  }
+  const count = (range.length - 4) / entryLength;
+  const anchors = new Map<number, number>();
+  for (let index = 0; index < count; index += 1) {
+    const cp = readUint32(table, range.offset + index * 4, message);
+    const entryOffset = range.offset + (count + 1) * 4 + index * 26;
+    const shapeId = readUint32(table, entryOffset, message);
+    anchors.set(cp, shapeId);
+  }
+  return anchors;
 }
 
 function imageTypeFromBytes(data: Uint8Array): LegacyPictureData["type"] | undefined {
@@ -449,7 +661,7 @@ function imageTypeFromBytes(data: Uint8Array): LegacyPictureData["type"] | undef
   return undefined;
 }
 
-function parseEmbeddedBlip(bytes: Uint8Array): LegacyPictureData {
+function parseEmbeddedBlip(bytes: Uint8Array): LegacyPictureData | undefined {
   const requireBlipRange = (offset: number, length: number): void => {
     requireRange(bytes, offset, length, "Invalid DOC Escher BLIP: record is truncated", {
       part: "data",
@@ -464,27 +676,25 @@ function parseEmbeddedBlip(bytes: Uint8Array): LegacyPictureData {
   const header = readUint16(bytes, 0, "Invalid DOC Escher BLIP");
   const recordType = readUint16(bytes, 2, "Invalid DOC Escher BLIP");
   if (recordType < 0xf01a || recordType > 0xf01f) {
-    throw new DocParseError("Invalid DOC Escher BLIP: unsupported record type", {
-      part: "data",
-      path: "Escher/BLIP",
-      recordType,
-      offset: 2,
-      length: 2,
-      reason: "unsupported-required-structure",
-    });
+    return undefined;
   }
   const instance = header >> 4;
   const uidCount = instance % 2 === 0 ? 1 : 2;
-  const metafileHeaderLength = recordType <= 0xf01c ? 34 : 1;
+  const metafileHeaderLength = recordType <= 0xf01c ? 34 : 0;
   const start = 8 + uidCount * 16 + metafileHeaderLength;
   requireBlipRange(start, 1);
-  const type = imageTypeFromBytes(bytes.subarray(start)) ?? "unknown";
+  const type =
+    recordType === 0xf01a
+      ? "emf"
+      : recordType === 0xf01b
+        ? "wmf"
+        : (imageTypeFromBytes(bytes.subarray(start)) ?? "unknown");
   const data = bytes.subarray(start);
   const dimensions = readImageDimensions(data, type);
   return { type, data, ...dimensions };
 }
 
-function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData {
+function parseBlip(dataStream: Uint8Array, reference: number): LegacyPictureData | undefined {
   if (reference >= dataStream.byteLength) {
     throw new DocParseError("Invalid DOC Data stream: BLIP reference is out of range", {
       part: "data",

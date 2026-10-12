@@ -58,7 +58,10 @@ export function slideXml(
     : undefined;
   return xmlElement(
     "draw:page",
-    { "draw:name": `Slide${index}`, "draw:master-page-name": "Default" },
+    {
+      "draw:name": slide.name ?? `Slide${index}`,
+      "draw:master-page-name": slide.master ?? "Default",
+    },
     [
       ...(slide.forms?.length ? [formsXml(slide.forms)] : []),
       ...frames,
@@ -108,6 +111,10 @@ export function parseSlide(
   );
   const notesText = notes ? textOf(childNamed(notes, "text:p")) : undefined;
   const slideOptions = {
+    ...(attributeString(page, "draw:name") ? { name: attributeString(page, "draw:name") } : {}),
+    ...(attributeString(page, "draw:master-page-name")
+      ? { master: attributeString(page, "draw:master-page-name") }
+      : {}),
     ...(forms.length > 0 ? { forms } : {}),
     children:
       page.elements?.flatMap((child): SlideChild[] => {

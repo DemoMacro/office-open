@@ -43,6 +43,57 @@ function int16(value: number): number[] {
   return [value & 0xff, (value >>> 8) & 0xff];
 }
 
+function rgb(red: number, green: number, blue: number): number[] {
+  const value = (0xfe << 24) | (red << 16) | (green << 8) | blue;
+  return int32(value);
+}
+
+function styledText(value: string, truncated = false): number[] {
+  const body = [
+    ...int32(value.length),
+    ...int16(2),
+    ...int32(0x00000800),
+    ...int16(2),
+    ...int32(Math.ceil(value.length / 2)),
+    ...int32(0x00010107),
+    ...int16(0x0107),
+    ...int16(0),
+    ...int32(value.length - Math.ceil(value.length / 2)),
+    ...int32(0x00060000),
+    ...int16(18),
+    ...rgb(255, 0, 0),
+  ];
+  return record(4001, truncated ? body.slice(0, -2) : body);
+}
+
+function multiScriptStyledText(value: string): number[] {
+  return record(4001, [
+    ...int32(value.length),
+    ...int32(Math.ceil(value.length / 2)),
+    ...int32(0x00010107 | 0x000f0000),
+    ...int16(0x0107),
+    ...int16(0),
+    ...int16(1),
+    ...int16(2),
+    ...int16(3),
+  ]);
+}
+
+function fontCollection(fonts: readonly string[]): number[] {
+  return container(
+    2005,
+    fonts.map((name, index) => {
+      const encoded = utf16(name);
+      if (encoded.length > 64) throw new RangeError("Font fixture exceeds 64 bytes");
+      return record(
+        4023,
+        [...encoded, ...Array.from({ length: 64 - encoded.length }, () => 0), ...int32(0)],
+        { instance: index },
+      );
+    }),
+  );
+}
+
 function utf16(value: string): number[] {
   const bytes: number[] = [];
   for (let index = 0; index < value.length; index += 1) {
@@ -82,16 +133,33 @@ function userEditAtom(pointerOffset: number): number[] {
   ]);
 }
 
-function anchoredTextShapeBody(): number[][] {
+function placeholderClientData(index: number, type: number, size: number): number[] {
+  return container(0xf011, [record(0xbc3, [...int32(index), type, size, 0, 0])]);
+}
+
+function anchoredTextShapeBody(placeholder?: number[]): number[][] {
   return [
-    record(0xf00a, [...int32(2050), ...int32(544)]),
+    record(0xf00a, [...int32(2050), ...int32(544)], { instance: 202 }),
     record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
+    ...(placeholder ? [placeholder] : []),
     container(0xf00d, [record(3998, int32(0))]),
   ];
 }
 
-function anchoredTextShape(): number[] {
-  return container(0xf004, anchoredTextShapeBody());
+function anchoredTextShape(placeholder?: number[]): number[] {
+  return container(0xf004, anchoredTextShapeBody(placeholder));
+}
+
+function embeddedStyledTextShape(): number[] {
+  return container(0xf004, [
+    record(0xf00a, [...int32(2050), ...int32(544)], { instance: 202 }),
+    record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
+    container(0xf00d, [
+      record(3999, int32(0)),
+      record(4008, [...new TextEncoder().encode("Styled")]),
+      styledText("Styled"),
+    ]),
+  ]);
 }
 
 function optEntry(id: number, value: number, blip = false): number[] {
@@ -145,7 +213,7 @@ function childTextShape(
   bottom: number,
 ): number[] {
   return container(0xf004, [
-    record(0xf00a, [...int32(id), ...int32(0)]),
+    record(0xf00a, [...int32(id), ...int32(0)], { instance: 202 }),
     record(0xf00f, [...int32(left), ...int32(top), ...int32(right), ...int32(bottom)]),
     container(0xf00d, [record(3998, int32(textIndex))]),
   ]);
@@ -236,11 +304,12 @@ function wrappedCompactGroupedTableDrawing(): number[][] {
   return wrappedCompactGroupDrawing(shapes);
 }
 
-function pictureShape(id: number): number[] {
+function pictureShape(id: number, placeholder?: number[]): number[] {
   return container(0xf004, [
     record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
     record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
-    record(0xf00b, [0x04, 0xc1, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
+    record(0xf00b, [0x04, 0x41, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
+    ...(placeholder ? [placeholder] : []),
   ]);
 }
 
@@ -248,7 +317,7 @@ function pictureShapeWithReference(id: number, reference: number): number[] {
   return container(0xf004, [
     record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
     record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
-    record(0xf00b, [...int16(0xc104), ...int32(reference)], { version: 3, instance: 1 }),
+    record(0xf00b, [...int16(0x4104), ...int32(reference)], { version: 3, instance: 1 }),
   ]);
 }
 
@@ -256,14 +325,14 @@ function pictureTextShape(id: number): number[] {
   return container(0xf004, [
     record(0xf00a, [...int32(id), ...int32(544)], { instance: 75 }),
     record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(400)]),
-    record(0xf00b, [0x04, 0xc1, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
+    record(0xf00b, [0x04, 0x41, 0x01, 0x00, 0x00, 0x00], { version: 3, instance: 1 }),
     container(0xf00d, [record(3998, int32(0))]),
   ]);
 }
 
 function fieldShape(id: number, atomType: number): number[] {
   return container(0xf004, [
-    record(0xf00a, [...int32(id), ...int32(544)]),
+    record(0xf00a, [...int32(id), ...int32(544)], { instance: 202 }),
     record(0xf010, [...int16(100), ...int16(200), ...int16(500), ...int16(100)]),
     container(0xf00d, [
       record(3999, int32(4)),
@@ -275,7 +344,7 @@ function fieldShape(id: number, atomType: number): number[] {
 
 function embeddedTextShape(id: number, text: string): number[] {
   return container(0xf004, [
-    record(0xf00a, [...int32(id), ...int32(544)]),
+    record(0xf00a, [...int32(id), ...int32(544)], { instance: 202 }),
     record(0xf010, [...int16(0), ...int16(0), ...int16(1728), ...int16(576)]),
     container(0xf00d, [record(3999, int32(0)), record(4000, utf16(text))]),
   ]);
@@ -308,7 +377,7 @@ function animatedTextShape(): number[] {
 
 function hyperlinkTextShape(): number[] {
   return container(0xf004, [
-    record(0xf00a, [...int32(2050), ...int32(544)]),
+    record(0xf00a, [...int32(2050), ...int32(544)], { instance: 202 }),
     record(0xf010, [...int16(0), ...int16(576), ...int16(1728), ...int16(1152)]),
     container(0xf00d, [
       record(3999, int32(0)),
@@ -345,17 +414,32 @@ function mergedTableDrawing(): number[][] {
 function buildDocument(
   shapeContainers: readonly number[][] = [anchoredTextShape()],
   textValues: readonly string[] = ["First\rSecond"],
-  extras: { notes?: boolean; animation?: boolean; hyperlink?: boolean } = {},
+  extras: {
+    notes?: boolean | "missing-container" | "missing-drawing" | "missing-group";
+    animation?: boolean;
+    hyperlink?: boolean | string;
+    placeholderType?: number;
+    styleText?: boolean | "truncated" | "multi-script";
+    fonts?: readonly string[] | false;
+  } = {},
 ): { document: Uint8Array; currentUser: Uint8Array } {
   const slideList = container(4080, [
     record(1011, [...int32(2), ...int32(4), ...int32(1), ...int32(257), ...int32(0), ...int32(0)]),
     ...textValues.flatMap((value) => [
-      record(3999, int32(0)),
+      record(3999, int32(extras.placeholderType ?? 0)),
       record(4008, [...new TextEncoder().encode(value)]),
+      ...(extras.styleText === true
+        ? [styledText(value)]
+        : extras.styleText === "truncated"
+          ? [styledText(value, true)]
+          : extras.styleText === "multi-script"
+            ? [multiScriptStyledText(value)]
+            : []),
     ]),
   ]);
   const documentChildren = [
     record(1001, [...int32(5760), ...int32(4320), ...Array.from<number>({ length: 40 }).fill(0)]),
+    fontCollection(extras.fonts === false ? [] : (extras.fonts ?? ["Arial"])),
     slideList,
   ];
   const notesList = container(
@@ -363,14 +447,15 @@ function buildDocument(
     [record(1011, [...int32(3), ...int32(0), ...int32(0), ...int32(123), ...int32(0)])],
     2,
   );
-  if (extras.notes) documentChildren.push(notesList);
+  if (extras.notes === true) documentChildren.push(notesList);
   if (extras.hyperlink) {
+    const url = typeof extras.hyperlink === "string" ? extras.hyperlink : "https://example.com";
     documentChildren.push(
       container(1033, [
         container(4055, [
           record(4051, int32(1)),
           record(4026, utf16("Tooltip"), { instance: 0 }),
-          record(4026, utf16("https://example.com"), { instance: 16 }),
+          record(4026, utf16(url), { instance: 16 }),
         ]),
       ]),
     );
@@ -390,12 +475,18 @@ function buildDocument(
   const drawing = container(1036, [container(0xf002, [container(0xf003, shapeContainers)])]);
   const slide = container(1006, [slideAtom, drawing]);
 
-  const notes = container(1008, [
-    record(1009, [...int32(123), ...int16(0), ...int16(0)]),
-    container(1036, [
-      container(0xf002, [container(0xf003, [embeddedTextShape(5000, "Speaker note")])]),
-    ]),
-  ]);
+  const notesData = !extras.notes
+    ? undefined
+    : extras.notes === "missing-container"
+      ? undefined
+      : extras.notes === "missing-drawing"
+        ? container(1008, [record(1009, [...int32(123), ...int16(0), ...int16(0)])])
+        : container(1008, [
+            record(1009, [...int32(123), ...int16(0), ...int16(0)]),
+            container(1036, [
+              container(0xf002, [container(0xf003, [embeddedTextShape(5000, "Speaker note")])]),
+            ]),
+          ]);
 
   const pointerBody = [
     ...packedPersist(1, 1),
@@ -407,11 +498,11 @@ function buildDocument(
     pointerBody.push(...packedPersist(3, 1), ...int32(document.length + slide.length));
   }
   const pointers = record(6002, pointerBody);
-  const pointerOffset = document.length + slide.length + (extras.notes ? notes.length : 0);
+  const pointerOffset = document.length + slide.length + (notesData?.length ?? 0);
   const editOffset = pointerOffset + pointers.length;
   const userEdit = userEditAtom(pointerOffset);
   const paddedDocument = extras.notes
-    ? [...document, ...slide, ...notes, ...pointers, ...userEdit]
+    ? [...document, ...slide, ...(notesData ?? []), ...pointers, ...userEdit]
     : [...document, ...slide, ...pointers, ...userEdit];
   paddedDocument.push(
     ...Array.from<number>({ length: Math.max(0, 4096 - paddedDocument.length) }).fill(0),
@@ -636,6 +727,23 @@ describe("parsePresentation", () => {
     expect(child.shape?.textBody?.paragraphs).toEqual([{ children: [{ text: "First\nSecond" }] }]);
   });
 
+  it("projects legacy WordArt text warp", () => {
+    const { document, currentUser } = buildDocument(
+      [anchoredShape(2066, 156, [0, 0, 1728, 576], [], true)],
+      ["Warped"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.bodyProperties).toEqual({
+      fromWordArt: true,
+      prstTxWarp: { preset: "textWave1" },
+    });
+  });
+
   it("projects notes associated by SlideAtom.notesIdRef", () => {
     const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
       notes: true,
@@ -645,6 +753,99 @@ describe("parsePresentation", () => {
       { name: "Current User", data: currentUser },
     ]);
     expect(parsePresentation(fixture).slides![0]!.notes).toBe("Speaker note");
+  });
+
+  it("locates a notes persist object without a notes text group", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
+      notes: "missing-group",
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+
+    expect(parsePresentation(fixture).slides![0]!.notes).toBe("Speaker note");
+  });
+
+  it("treats a dangling legacy notes identifier as absent notes", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
+      notes: "missing-container",
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+
+    expect(parsePresentation(fixture).slides![0]!.notes).toBeUndefined();
+  });
+
+  it("rejects a referenced notes container without a drawing", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["Slide text"], {
+      notes: "missing-drawing",
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+
+    expect(() => parsePresentation(fixture)).toThrow(PptParseError);
+  });
+
+  it("projects legacy text placeholders and body sizing variants", () => {
+    const titleFixture = buildCfb(
+      (() => {
+        const built = buildDocument([anchoredTextShape()], ["Title"], { placeholderType: 0 });
+        return [
+          { name: "PowerPoint Document", data: built.document },
+          { name: "Current User", data: built.currentUser },
+        ];
+      })(),
+    );
+    const title = parsePresentation(titleFixture).slides![0]!.children![0]!;
+    if (!("shape" in title)) throw new TypeError("Expected a shape child");
+    expect(title.shape?.placeholder).toBe("title");
+
+    const halfFixture = buildCfb(
+      (() => {
+        const built = buildDocument([anchoredTextShape()], ["Half"], { placeholderType: 7 });
+        return [
+          { name: "PowerPoint Document", data: built.document },
+          { name: "Current User", data: built.currentUser },
+        ];
+      })(),
+    );
+    const halfBody = parsePresentation(halfFixture).slides![0]!.children![0]!;
+    if (!("shape" in halfBody)) throw new TypeError("Expected a shape child");
+    expect(halfBody.shape?.placeholder).toBe("body");
+    expect(halfBody.shape?.placeholderSize).toBe("half");
+  });
+
+  it("projects legacy placeholder identity and object sizing", () => {
+    const built = buildDocument(
+      [anchoredTextShape(placeholderClientData(2, 19, 2))],
+      ["Placeholder"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: built.document },
+      { name: "Current User", data: built.currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.placeholder).toBe("object");
+    expect(child.shape?.placeholderIndex).toBe(2);
+    expect(child.shape?.placeholderSize).toBe("quarter");
+  });
+
+  it("rejects an invalid legacy placeholder size", () => {
+    const built = buildDocument(
+      [anchoredTextShape(placeholderClientData(0, 13, 3))],
+      ["Placeholder"],
+    );
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: built.document },
+      { name: "Current User", data: built.currentUser },
+    ]);
+    expect(() => parsePresentation(fixture)).toThrow(PptParseError);
   });
 
   it("projects legacy shape animation effect, target, trigger, and delay", () => {
@@ -659,6 +860,77 @@ describe("parsePresentation", () => {
     expect(slide.animations).toEqual([
       { type: "fade", class: "entrance", trigger: "onClick", delay: 120, shapeId: 2050 },
     ]);
+  });
+
+  it("projects legacy style text paragraph and character formatting", () => {
+    const { document, currentUser } = buildDocument([anchoredTextShape()], ["Styled"], {
+      styleText: true,
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([
+      {
+        properties: { alignment: "right", indentLevel: 2 },
+        children: [
+          {
+            bold: true,
+            italic: true,
+            underline: "single",
+            strike: "singleStrike",
+            font: "Arial",
+            text: "Sty",
+          },
+          { size: 18, fill: "ff0000", text: "led" },
+        ],
+      },
+    ]);
+  });
+
+  it("projects style formatting embedded in a text box", () => {
+    const { document, currentUser } = buildDocument([embeddedStyledTextShape()], []);
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs).toEqual([
+      {
+        properties: { alignment: "right", indentLevel: 2 },
+        children: [
+          {
+            bold: true,
+            italic: true,
+            underline: "single",
+            strike: "singleStrike",
+            font: "Arial",
+            text: "Sty",
+          },
+          { size: 18, fill: "ff0000", text: "led" },
+        ],
+      },
+    ]);
+  });
+
+  it("rejects truncated legacy text styles", () => {
+    const { document, currentUser } = buildDocument(undefined, ["Styled"], {
+      styleText: "truncated",
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    try {
+      parsePresentation(fixture);
+      throw new Error("Expected PptParseError");
+    } catch (error) {
+      expect(error).toBeInstanceOf(PptParseError);
+      expect((error as PptParseError).context.reason).toBe("truncated-int32");
+    }
   });
 
   it("projects legacy external text hyperlinks", () => {
@@ -681,6 +953,22 @@ describe("parsePresentation", () => {
     });
   });
 
+  it("projects external hyperlinks containing delimiters", () => {
+    const url = "https://example.com/search?q=office,open";
+    const { document, currentUser } = buildDocument([hyperlinkTextShape()], ["Slide text"], {
+      hyperlink: url,
+    });
+    const fixture = buildCfb([
+      { name: "PowerPoint Document", data: document },
+      { name: "Current User", data: currentUser },
+    ]);
+    const child = parsePresentation(fixture).slides![0]!.children![0]!;
+    if (!("shape" in child)) throw new TypeError("Expected a shape child");
+    expect(child.shape?.textBody?.paragraphs?.[0]).toEqual({
+      children: [{ text: "Slide text", hyperlink: { url, tooltip: "Tooltip" } }],
+    });
+  });
+
   it("projects direct OfficeArt picture records and blip references", () => {
     const png = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
     const pictures = record(0xf01e, [...Array.from<number>({ length: 17 }).fill(0), ...png], {
@@ -689,7 +977,10 @@ describe("parsePresentation", () => {
     });
     const pictureStream = new Uint8Array(4096);
     pictureStream.set(pictures, 0);
-    const { document, currentUser } = buildDocument([pictureShape(2051)], ["Picture"]);
+    const { document, currentUser } = buildDocument(
+      [pictureShape(2051, placeholderClientData(3, 26, 2))],
+      ["Picture"],
+    );
     const fixture = buildCfb([
       { name: "PowerPoint Document", data: document },
       { name: "Current User", data: currentUser },
@@ -704,6 +995,9 @@ describe("parsePresentation", () => {
     expect(child.picture?.height).toBe(476_250);
     expect(child.picture?.type).toBe("png");
     expect(child.picture?.data).toEqual(new Uint8Array(png));
+    expect(child.picture?.placeholder).toBe("picture");
+    expect(child.picture?.placeholderIndex).toBe(3);
+    expect(child.picture?.placeholderSize).toBe("quarter");
   });
 
   it("reads 32-bit child anchors in nested groups", () => {
@@ -1134,7 +1428,7 @@ describe("parsePresentation", () => {
 
   it("resolves date and slide-number field placeholders", () => {
     const { document, currentUser } = buildDocument(
-      [fieldShape(2051, 4006), fieldShape(2052, 4056)],
+      [fieldShape(2051, 4087), fieldShape(2052, 4056)],
       [],
     );
     const fixture = buildCfb([

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import type { ChartSpaceOptions, UniversalMeasure } from "@office-open/core";
+import type { ChartExSpaceOptions, ChartSpaceOptions, UniversalMeasure } from "@office-open/core";
 import {
   parseOnOff,
   partPathToRelsPath,
@@ -14,7 +14,6 @@ import {
 } from "@office-open/core";
 import {
   blipDesc,
-  convertEmuToPixels,
   customGeometryDesc,
   effectListDesc,
   extUriMatches,
@@ -28,10 +27,17 @@ import {
   presetGeometryDesc,
   shapePropertiesDesc,
 } from "@office-open/core";
-import { chartSpaceDesc, userShapesDesc } from "@office-open/core/chart";
+import {
+  ChartExParseError,
+  chartExSpaceDesc,
+  chartSpaceDesc,
+  userShapesDesc,
+} from "@office-open/core/chart";
 import {
   tileDesc,
   connectorLockingDesc,
+  parseBackgroundFormatting,
+  parseWholeE2oFormatting,
   scene3DDesc,
   shape3DDesc,
   shapeLockingDesc,
@@ -43,17 +49,27 @@ import type {
 } from "@office-open/core/drawing";
 import { parseNonVisualContentPartProperties } from "@office-open/core/drawing";
 import {
-  COLOR_CATEGORIES,
-  LAYOUT_CATEGORIES,
-  STYLE_CATEGORIES,
+  isBuiltinColorDefinition,
+  isBuiltinLayoutDefinition,
+  isBuiltinStyleDefinition,
   parseColorDefinition,
+  parseDataModelOptions,
   parseLayoutDefinition,
   parseStyleDefinition,
 } from "@office-open/core/smartart";
 import type { SmartArtRawParts } from "@office-open/core/smartart";
-import { attr, attrBool, attrNum, findChild, findFirst, textOf } from "@office-open/xml";
+import {
+  attr,
+  attrBool,
+  attrNum,
+  findChild,
+  findFirst,
+  stringifyElement,
+  textOf,
+} from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import { parseRegisteredBodyChild } from "@parts/bodychildren";
+import type { ChartExOptions } from "@parts/paragraph/run/chart-ex-run";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
 import type { PictureOptions } from "@parts/paragraph/run/picture-run";
 import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
@@ -61,6 +77,7 @@ import type {
   UnsupportedDrawingOptions,
   XmlElementData,
 } from "@parts/paragraph/run/unsupported-drawing-run";
+import type { WordprocessingCanvasOptions } from "@parts/paragraph/run/wordprocessing-canvas-run";
 import type { GroupOptions } from "@parts/paragraph/run/wpg-group-run";
 import type { ShapeOptions } from "@parts/paragraph/run/wps-shape-run";
 import type { ShapeTextBoxChild } from "@parts/paragraph/run/wps-shape-run";
@@ -244,14 +261,16 @@ function readChartSourceRelationships(chartPath: string, ctx: DocxReadContext) {
 }
 import type {
   ChartMediaData,
+  ChartExMediaData,
   ContentPartMediaData,
   GroupChildMediaData,
   MediaData,
-  MediaDataTransformation,
+  MediaTransformation,
   GroupCommonMediaData,
   GroupMediaData,
   ShapeMediaData,
 } from "@shared/media";
+import { createTransformation } from "@shared/media";
 import type { ContentPartOptions, NonVisualPropertiesOptions } from "@shared/media/data";
 
 import { parseParagraph } from "../../body";
@@ -263,6 +282,7 @@ import type {
   GroupShapeLocksOptions,
 } from "./descriptor";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
+import type { Distance } from "./drawing";
 import type {
   Floating,
   HorizontalPositionOptions,
@@ -284,9 +304,11 @@ import type { TextWrapping, WrapPolygon } from "./text-wrap";
 export type DrawingChild =
   | { picture: PictureOptions }
   | { chart: ChartOptions }
+  | { chartEx: ChartExOptions }
   | { smartArt: SmartArtOptions }
   | { wpsShape: ShapeOptions }
   | { wpgGroup: GroupOptions }
+  | { wordprocessingCanvas: WordprocessingCanvasOptions }
   | { contentPart: ContentPartOptions }
   | { unsupportedDrawing: UnsupportedDrawingOptions };
 
@@ -298,7 +320,10 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
   // A content part nests inside a wpg group (wpg:contentPart, no a:graphic
   // wrapper), so it must be checked before the graphicData dispatch; the
   // wp: spelling is accepted leniently for third-party files.
-  const contentPartEl = findFirst(el, "wpg:contentPart") ?? findFirst(el, "wp:contentPart");
+  const groupEl = findFirst(el, "wpg:wgp");
+  const contentPartEl = groupEl
+    ? undefined
+    : (findFirst(el, "wpg:contentPart") ?? findFirst(el, "wp:contentPart"));
   if (contentPartEl) {
     // Group children keep the full ContentPartMediaData (type-discriminated);
     // the paragraph-level payload is the public ContentPartOptions.
@@ -311,6 +336,9 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
 
   const uri = attr(graphicData, "uri") ?? "";
 
+  if (uri === "http://schemas.microsoft.com/office/drawing/2014/chartex") {
+    return parseChartExDrawing(el, ctx);
+  }
   if (uri.includes("/chart")) {
     return parseChartDrawing(el, ctx);
   }
@@ -319,6 +347,9 @@ export function parseDrawingRun(el: Element, ctx: DocxReadContext): DrawingChild
   }
   if (uri.includes("wordprocessingGroup")) {
     return parseWpgGroupDrawing(el, ctx);
+  }
+  if (uri.includes("wordprocessingCanvas")) {
+    return parseWordprocessingCanvasDrawing(el, ctx);
   }
   if (uri.includes("wordprocessingShape")) {
     return parseWpsShapeDrawing(el, ctx);
@@ -340,9 +371,63 @@ interface AnchorInfo {
   floating?: Floating;
   altText?: DocPropertiesOptions;
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
-  /** wp:effectExtent in raw EMUs — round-tripped verbatim. */
-  effectExtent?: { l: number; t: number; r: number; b: number };
+  /** wp:effectExtent in EMUs. */
+  effectExtent?: { left: number; top: number; right: number; bottom: number };
   extensionIds?: DrawingExtensionIds;
+  inlineDistances?: NonNullable<MediaTransformation["inlineDistances"]>;
+}
+
+function readAnchorTransformation(info: AnchorInfo): MediaTransformation {
+  const transformation = createTransformation({
+    width: info.width ?? 0,
+    height: info.height ?? 0,
+    ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
+  });
+  if (info.inlineDistances) transformation.inlineDistances = info.inlineDistances;
+  return transformation;
+}
+
+function invalidDrawingModel(
+  ctx: DocxReadContext,
+  wrapper: Element,
+  path: string,
+  detail: string,
+): never {
+  throw new DocxParseError(
+    `Invalid WordprocessingDrawing model: ${detail}`,
+    ctx.currentPart ?? "word/document.xml",
+    `w:drawing/${wrapper.name}/${path}`,
+    "invalid-drawing-model",
+  );
+}
+
+function requiredCoordinate(
+  el: Element,
+  name: string,
+  ctx: DocxReadContext,
+  wrapper: Element,
+  path: string,
+): number {
+  const value = attrNum(el, name);
+  if (value === undefined || !Number.isInteger(value)) {
+    invalidDrawingModel(ctx, wrapper, path, `${el.name}/@${name} must be an integer coordinate`);
+  }
+  return value;
+}
+
+function optionalWrapDistance(
+  el: Element,
+  name: string,
+  ctx: DocxReadContext,
+  wrapper: Element,
+  path: string,
+): number | undefined {
+  if (attr(el, name) === undefined) return undefined;
+  const value = attrNum(el, name);
+  if (value === undefined || !Number.isInteger(value) || value < 0) {
+    invalidDrawingModel(ctx, wrapper, path, `${el.name}/@${name} must be an unsigned integer`);
+  }
+  return value;
 }
 
 /** Read wp:cNvGraphicFramePr locking flags. An empty element (no graphicFrameLocks
@@ -409,6 +494,20 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     info.extensionIds = { anchorId, editId };
   }
 
+  // Optional CT_Inline distance attributes (ST_WrapDistance).
+  if (inline) {
+    const distances: NonNullable<MediaTransformation["inlineDistances"]> = {};
+    const top = optionalWrapDistance(inline, "distT", ctx, inline, "@distT");
+    const bottom = optionalWrapDistance(inline, "distB", ctx, inline, "@distB");
+    const left = optionalWrapDistance(inline, "distL", ctx, inline, "@distL");
+    const right = optionalWrapDistance(inline, "distR", ctx, inline, "@distR");
+    if (top !== undefined) distances.top = top;
+    if (bottom !== undefined) distances.bottom = bottom;
+    if (left !== undefined) distances.left = left;
+    if (right !== undefined) distances.right = right;
+    if (Object.keys(distances).length > 0) info.inlineDistances = distances;
+  }
+
   // Extent (EMU)
   const extent = findChild(parent, "wp:extent");
   if (extent) {
@@ -421,11 +520,12 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
   // Effect extent (raw EMUs — round-tripped verbatim, never converted to pixels)
   const ee = findChild(parent, "wp:effectExtent");
   if (ee) {
+    const effectPath = "wp:effectExtent";
     info.effectExtent = {
-      l: attrNum(ee, "l") ?? 0,
-      t: attrNum(ee, "t") ?? 0,
-      r: attrNum(ee, "r") ?? 0,
-      b: attrNum(ee, "b") ?? 0,
+      left: requiredCoordinate(ee, "l", ctx, parent, effectPath),
+      top: requiredCoordinate(ee, "t", ctx, parent, effectPath),
+      right: requiredCoordinate(ee, "r", ctx, parent, effectPath),
+      bottom: requiredCoordinate(ee, "b", ctx, parent, effectPath),
     };
   }
 
@@ -463,13 +563,13 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
 
     // Margins (distT/distB/distL/distR on wp:anchor)
     const margins: Margins = {};
-    const distT = attrNum(anchor, "distT");
+    const distT = optionalWrapDistance(anchor, "distT", ctx, anchor, "@distT");
     if (distT !== undefined) margins.top = distT;
-    const distB = attrNum(anchor, "distB");
+    const distB = optionalWrapDistance(anchor, "distB", ctx, anchor, "@distB");
     if (distB !== undefined) margins.bottom = distB;
-    const distL = attrNum(anchor, "distL");
+    const distL = optionalWrapDistance(anchor, "distL", ctx, anchor, "@distL");
     if (distL !== undefined) margins.left = distL;
-    const distR = attrNum(anchor, "distR");
+    const distR = optionalWrapDistance(anchor, "distR", ctx, anchor, "@distR");
     if (distR !== undefined) margins.right = distR;
     if (Object.keys(margins).length > 0) floating.margins = margins;
 
@@ -507,7 +607,7 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     }
 
     // Wrap (element name → TextWrappingType number) + optional side
-    const wrap = readWrap(anchor);
+    const wrap = readWrap(anchor, ctx, parent);
     if (wrap) floating.wrap = wrap;
 
     // Anchor-level flags (stringifyAnchor writes all of these)
@@ -522,6 +622,9 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
     const relativeHeight = attrNum(anchor, "relativeHeight");
     if (relativeHeight !== undefined) floating.zIndex = relativeHeight;
 
+    const hidden = attrBool(anchor, "hidden");
+    if (hidden !== undefined) floating.hidden = hidden;
+
     const simplePos = findChild(anchor, "wp:simplePos");
     const simplePosX = attr(simplePos, "x");
     const simplePosY = attr(simplePos, "y");
@@ -530,11 +633,15 @@ function parseAnchorOrInline(el: Element, ctx: DocxReadContext): AnchorInfo | nu
       if (value === undefined) return undefined;
       return Number.isNaN(number) ? (value as UniversalMeasure) : number;
     };
+    const simplePosEnabled = attrBool(anchor, "simplePos");
     if (simplePos && (simplePosX !== undefined || simplePosY !== undefined)) {
       floating.simplePos = {
+        ...(simplePosEnabled !== undefined ? { enabled: simplePosEnabled } : {}),
         ...(simplePosX !== undefined ? { x: coordinate(simplePosX) } : {}),
         ...(simplePosY !== undefined ? { y: coordinate(simplePosY) } : {}),
       };
+    } else if (simplePosEnabled !== undefined) {
+      floating.simplePos = { enabled: simplePosEnabled };
     }
 
     // wp14:sizeRelH/V (Word 2010+) — pctWidth/pctHeight carry 1/1000 %, the
@@ -588,11 +695,7 @@ export function parsePictureRun(
   // only a blip with neither reference has nothing picture-shaped to build.
   if (!rEmbed && !rLink) return undefined;
 
-  const transformation = {
-    ...(info.width !== undefined ? { width: info.width } : {}),
-    ...(info.height !== undefined ? { height: info.height } : {}),
-    ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
-  };
+  const transformation = readAnchorTransformation(info);
 
   let imageOpts: Record<string, unknown>;
   if (rEmbed) {
@@ -676,10 +779,9 @@ export function parsePictureRun(
     const xfrm = findChild(picSpPr, "a:xfrm");
     if (xfrm) {
       const transform = imageOpts.transformation as {
-        width?: number;
-        height?: number;
-        emus?: { x: number; y: number };
-        shapeExtent?: { x: number; y: number };
+        width: number;
+        height: number;
+        shapeExtent?: { width: number; height: number };
         rotation?: number;
         flipHorizontal?: boolean;
         flipVertical?: boolean;
@@ -689,8 +791,8 @@ export function parsePictureRun(
       const shapeCy = attrNum(shapeExt, "cy");
       if (shapeExt && (shapeCx !== undefined || shapeCy !== undefined)) {
         transform.shapeExtent = {
-          x: shapeCx ?? transform.width ?? 0,
-          y: shapeCy ?? transform.height ?? 0,
+          width: shapeCx ?? transform.width,
+          height: shapeCy ?? transform.height,
         };
       }
       const rot = attrNum(xfrm, "rot");
@@ -860,7 +962,7 @@ function readShapeFill(parent: Element, ctx: DocxReadContext) {
     findChild(parent, "a:grpFill") ??
     findChild(parent, "a:blipFill");
   if (!fillChild) return undefined;
-  return fillDesc.parse(parent, ctx);
+  return fillDesc.parse(fillChild, ctx);
 }
 
 /**
@@ -881,7 +983,10 @@ function parseStyleRef(el: Element, ctx: DocxReadContext): ShapeStyleReferenceOp
  * number, so it reads as a collection slot instead of a matrix index. Off-XSD
  * tokens drop the reference (core parseFontReference precedent).
  */
-function parseFontRef(el: Element, ctx: DocxReadContext): ShapeStyleOptions["fontReference"] {
+function parseFontRef(
+  el: Element,
+  ctx: DocxReadContext,
+): ShapeStyleOptions["fontReference"] | undefined {
   const idx = attr(el, "idx");
   if (idx !== "major" && idx !== "minor" && idx !== "none") return undefined;
   const result: NonNullable<ShapeStyleOptions["fontReference"]> = { collection: idx };
@@ -895,15 +1000,29 @@ function parseFontRef(el: Element, ctx: DocxReadContext): ShapeStyleOptions["fon
  * document theme. Delegates color to the shared core parseColorChoice.
  */
 function parseShapeStyle(styleEl: Element, ctx: DocxReadContext): ShapeStyleOptions {
-  const result: ShapeStyleOptions = {};
+  const stylePath = "w:drawing/wps:wsp/wps:style";
   const lnRef = findChild(styleEl, "a:lnRef");
-  if (lnRef) result.lineReference = parseStyleRef(lnRef, ctx);
   const fillRef = findChild(styleEl, "a:fillRef");
-  if (fillRef) result.fillReference = parseStyleRef(fillRef, ctx);
   const effectRef = findChild(styleEl, "a:effectRef");
-  if (effectRef) result.effectReference = parseStyleRef(effectRef, ctx);
   const fontRef = findChild(styleEl, "a:fontRef");
-  if (fontRef) result.fontReference = parseFontRef(fontRef, ctx);
+  const lineReference = lnRef ? parseStyleRef(lnRef, ctx) : undefined;
+  const fillReference = fillRef ? parseStyleRef(fillRef, ctx) : undefined;
+  const effectReference = effectRef ? parseStyleRef(effectRef, ctx) : undefined;
+  const fontReference = fontRef ? parseFontRef(fontRef, ctx) : undefined;
+  if (!lineReference || !fillReference || !effectReference || !fontReference) {
+    throw new DocxParseError(
+      "Invalid WordprocessingDrawing style: CT_ShapeStyle requires lnRef, fillRef, effectRef, and fontRef",
+      ctx.currentPart,
+      stylePath,
+      "invalid-drawing-model",
+    );
+  }
+  const result: ShapeStyleOptions = {
+    lineReference,
+    fillReference,
+    effectReference,
+    fontReference,
+  };
   return result as ShapeStyleOptions;
 }
 
@@ -998,10 +1117,12 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
       const name = attr(cNvPr, "name");
       const descr = attr(cNvPr, "descr");
       const title = attr(cNvPr, "title");
+      const hidden = attrBool(cNvPr, "hidden");
       if (id !== undefined) nvp.id = id;
       if (name) nvp.name = name;
       if (descr) nvp.description = descr;
       if (title) nvp.title = title;
+      if (hidden !== undefined) nvp.hidden = hidden;
     }
     if (cNvCnPr) {
       nvp.connector = true;
@@ -1051,15 +1172,12 @@ function parseWpsShapeCore(wspEl: Element, ctx: DocxReadContext): ShapeCoreOptio
 }
 
 /**
- * Build a child's MediaDataTransformation directly from an `a:xfrm`, keeping
+ * Build a child's MediaTransformation directly from an `a:xfrm`, keeping
  * EMU values intact (no pixel rounding) so group child coordinates survive
  * round-trip without drift.
  */
-function readChildTransformation(spPr: Element | undefined): MediaDataTransformation {
-  const result: MediaDataTransformation = {
-    pixels: { x: 0, y: 0 },
-    emus: { x: 0, y: 0 },
-  };
+function readChildTransformation(spPr: Element | undefined): MediaTransformation {
+  const result: MediaTransformation = { width: 0, height: 0 };
   if (!spPr) return result;
   const xfrm = findChild(spPr, "a:xfrm");
   if (!xfrm) return result;
@@ -1068,17 +1186,14 @@ function readChildTransformation(spPr: Element | undefined): MediaDataTransforma
   if (off?.attributes) {
     const x = Number(off.attributes["x"] ?? 0);
     const y = Number(off.attributes["y"] ?? 0);
-    result.offset = {
-      emus: { x, y },
-      pixels: { x: convertEmuToPixels(x), y: convertEmuToPixels(y) },
-    };
+    result.offset = { x, y };
   }
   const ext = findChild(xfrm, "a:ext");
   if (ext?.attributes) {
     const cx = Number(ext.attributes["cx"] ?? 0);
     const cy = Number(ext.attributes["cy"] ?? 0);
-    result.emus = { x: cx, y: cy };
-    result.pixels = { x: convertEmuToPixels(cx), y: convertEmuToPixels(cy) };
+    result.width = cx;
+    result.height = cy;
   }
 
   const flipH = attrBool(xfrm, "flipH");
@@ -1086,39 +1201,42 @@ function readChildTransformation(spPr: Element | undefined): MediaDataTransforma
   if (flipH !== undefined) result.flipHorizontal = flipH;
   if (flipV !== undefined) result.flipVertical = flipV;
   const rot = attrNum(xfrm, "rot");
-  if (rot !== undefined) result.rotation = rot;
+  if (rot !== undefined) result.rotation = parseAngle(rot);
 
   return result;
 }
 
 /**
- * Build a MediaDataTransformation from a directly nested xfrm (graphicFrame /
+ * Build a MediaTransformation from a directly nested xfrm (graphicFrame /
  * contentPart carry wp:/wpg:xfrm as a direct child instead of inside spPr).
  */
-function readDirectXfrmTransformation(el: Element): MediaDataTransformation {
+function readDirectXfrmTransformation(el: Element): MediaTransformation {
   const xfrm = (el.elements ?? []).find(
     (c) => c.type === "element" && /^(wp|wpg|a):xfrm$/.test(c.name ?? ""),
   ) as Element | undefined;
-  if (!xfrm) return { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } };
+  if (!xfrm) return { width: 0, height: 0 };
 
-  const result: MediaDataTransformation = { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } };
+  const result: MediaTransformation = { width: 0, height: 0 };
   const off = findChild(xfrm, "a:off");
   if (off?.attributes) {
     result.offset = {
-      emus: { x: Number(off.attributes["x"] ?? 0), y: Number(off.attributes["y"] ?? 0) },
-      pixels: {
-        x: convertEmuToPixels(Number(off.attributes["x"] ?? 0)),
-        y: convertEmuToPixels(Number(off.attributes["y"] ?? 0)),
-      },
+      x: Number(off.attributes["x"] ?? 0),
+      y: Number(off.attributes["y"] ?? 0),
     };
   }
   const ext = findChild(xfrm, "a:ext");
   if (ext?.attributes) {
     const cx = Number(ext.attributes["cx"] ?? 0);
     const cy = Number(ext.attributes["cy"] ?? 0);
-    result.emus = { x: cx, y: cy };
-    result.pixels = { x: convertEmuToPixels(cx), y: convertEmuToPixels(cy) };
+    result.width = cx;
+    result.height = cy;
   }
+  const flipH = attrBool(xfrm, "flipH");
+  const flipV = attrBool(xfrm, "flipV");
+  if (flipH !== undefined) result.flipHorizontal = flipH;
+  if (flipV !== undefined) result.flipVertical = flipV;
+  const rot = attrNum(xfrm, "rot");
+  if (rot !== undefined) result.rotation = parseAngle(rot);
   return result;
 }
 
@@ -1212,6 +1330,7 @@ function parseWpsShapeDrawing(
   const info = parseAnchorOrInline(el, ctx) ?? {};
   const data = parseWpsShapeCore(wsp, ctx);
   const shapeXfrm = findChild(findChild(wsp, "wps:spPr"), "a:xfrm");
+  const shapeFlipHorizontal = attrBool(shapeXfrm, "flipH");
   const shapeFlipVertical = attrBool(shapeXfrm, "flipV");
   const shapeExtentEl = findChild(shapeXfrm, "a:ext");
   const shapeExtentWidth = attrNum(shapeExtentEl, "cx");
@@ -1219,19 +1338,19 @@ function parseWpsShapeDrawing(
 
   const shape: ShapeOptions = {
     ...data,
-    transformation: {
-      width: info.width ?? 0,
-      height: info.height ?? 0,
-      ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
-    },
+    transformation: readAnchorTransformation(info),
   };
   if (
     shapeExtentWidth !== undefined &&
     shapeExtentHeight !== undefined &&
     (shapeExtentWidth !== Number(info.width) || shapeExtentHeight !== Number(info.height))
   ) {
-    shape.transformation.shapeExtent = { x: shapeExtentWidth, y: shapeExtentHeight };
+    shape.transformation.shapeExtent = {
+      width: shapeExtentWidth,
+      height: shapeExtentHeight,
+    };
   }
+  if (shapeFlipHorizontal !== undefined) shape.transformation.flipHorizontal = shapeFlipHorizontal;
   if (shapeFlipVertical !== undefined) shape.transformation.flipVertical = shapeFlipVertical;
   if (info.floating) shape.floating = info.floating;
   if (info.altText) shape.altText = info.altText;
@@ -1260,11 +1379,7 @@ function parseWpgGroupDrawing(
 
   const group: GroupOptions = {
     children: parseGroupChildren(wgp, ctx),
-    transformation: {
-      width: info.width ?? 0,
-      height: info.height ?? 0,
-      ...(info.effectExtent ? { effectExtent: info.effectExtent } : {}),
-    },
+    transformation: readAnchorTransformation(info),
   };
   if (childOffsetX !== undefined) group.childOffsetX = childOffsetX;
   if (childOffsetY !== undefined) group.childOffsetY = childOffsetY;
@@ -1285,6 +1400,50 @@ function parseWpgGroupDrawing(
   }
 
   return { wpgGroup: group as GroupOptions };
+}
+
+/**
+ * Parse a WordprocessingCanvas drawing (graphicData URI wordprocessingCanvas).
+ * Canvas children share the WPG typed child union; bg/whole/extLst are shared
+ * DrawingML formatting containers.
+ */
+function parseWordprocessingCanvasDrawing(
+  el: Element,
+  ctx: DocxReadContext,
+): { wordprocessingCanvas: WordprocessingCanvasOptions } | undefined {
+  const canvas = findFirst(el, "wpc:wpc");
+  if (!canvas) return undefined;
+
+  const info = parseAnchorOrInline(el, ctx) ?? {};
+  const canvasOptions: WordprocessingCanvasOptions = {
+    children: parseCanvasChildren(canvas, ctx),
+    transformation: readAnchorTransformation(info),
+  };
+
+  const background = findChild(canvas, "wpc:bg");
+  if (background) canvasOptions.background = parseBackgroundFormatting(background, ctx, "wpc");
+  const whole = findChild(canvas, "wpc:whole");
+  if (whole) canvasOptions.whole = parseWholeE2oFormatting(whole, ctx, "wpc");
+  const extensionList = findChild(canvas, "wpc:extLst");
+  if (extensionList) {
+    canvasOptions.extensions = (extensionList.elements ?? [])
+      .filter((child) => child.name === "a:ext")
+      .map((extension) => ({
+        uri: attr(extension, "uri") ?? "",
+        ...(extension.elements?.length
+          ? { content: (extension.elements ?? []).map(stringifyElement).join("") }
+          : {}),
+      }));
+  }
+
+  if (info.floating) canvasOptions.floating = info.floating;
+  if (info.altText) canvasOptions.altText = info.altText;
+  if (info.graphicFrameLocks !== undefined) {
+    canvasOptions.graphicFrameLocks = info.graphicFrameLocks;
+  }
+  if (info.extensionIds) canvasOptions.extensionIds = info.extensionIds;
+
+  return { wordprocessingCanvas: canvasOptions };
 }
 
 /**
@@ -1329,6 +1488,24 @@ function parseGroupChildren(groupEl: Element, ctx: DocxReadContext): GroupChildM
     if (child.type !== "element") continue;
     const md = parseGroupChild(child, ctx);
     if (md) children.push(md);
+  }
+  return children;
+}
+
+/**
+ * Parse WordprocessingCanvas choice children. Unlike WPG, canvas also carries
+ * bg/whole/extLst formatting containers; those are parsed at canvas level and
+ * must not leak into the child media union.
+ */
+function parseCanvasChildren(canvasEl: Element, ctx: DocxReadContext): GroupChildMediaData[] {
+  const children: GroupChildMediaData[] = [];
+  for (const child of canvasEl.elements ?? []) {
+    if (child.type !== "element") continue;
+    if (child.name === "wpc:bg" || child.name === "wpc:whole" || child.name === "wpc:extLst") {
+      continue;
+    }
+    const media = parseGroupChild(child, ctx);
+    if (media) children.push(media);
   }
   return children;
 }
@@ -1460,7 +1637,12 @@ function readCnvPrHyperlink(
  * payload Word produces in groups; the chart part is re-registered on
  * generate from the parsed chartOptions.
  */
-function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaData | undefined {
+function parseGroupGraphicFrame(
+  el: Element,
+  ctx: DocxReadContext,
+): ChartMediaData | ChartExMediaData | undefined {
+  const chartExRef = findFirst(el, "cx:chart");
+  if (chartExRef) return parseGroupChartExGraphicFrame(el, chartExRef, ctx);
   const chartRef = findFirst(el, "c:chart");
   if (!chartRef) return undefined;
   const rId = attr(chartRef, "r:id");
@@ -1506,6 +1688,68 @@ function parseGroupGraphicFrame(el: Element, ctx: DocxReadContext): ChartMediaDa
   return md;
 }
 
+function parseGroupChartExGraphicFrame(
+  el: Element,
+  chartRef: Element,
+  ctx: DocxReadContext,
+): ChartExMediaData {
+  const relationshipId = attr(chartRef, "r:id");
+  const chartExPath = lookupRId(ctx.docx.partRefs.charts, relationshipId);
+  if (!relationshipId || !chartExPath) {
+    throw new DocxParseError(
+      "ChartEx group frame is missing its package part",
+      ctx.currentPart,
+      "/wpg:graphicFrame/cx:chart",
+      "missing-package-part",
+    );
+  }
+  const chartExXml = ctx.docx.doc.get(chartExPath);
+  if (!chartExXml) {
+    throw new DocxParseError(
+      "ChartEx package part is missing",
+      ctx.currentPart,
+      `/wpg:graphicFrame/cx:chart[@r:id="${relationshipId}"]`,
+      "missing-package-part",
+    );
+  }
+  let options: ChartExSpaceOptions;
+  try {
+    options = chartExSpaceDesc.parse(chartExXml, ctx);
+  } catch (error) {
+    if (error instanceof ChartExParseError) throw error;
+    throw new DocxParseError(
+      error instanceof Error ? error.message : String(error),
+      chartExPath,
+      "/cx:chartSpace",
+      "invalid-chartex-part",
+    );
+  }
+
+  consumePartPath(ctx, chartExPath);
+  consumePartPath(ctx, partPathToRelsPath(chartExPath));
+  const md: ChartExMediaData = {
+    type: "chartEx",
+    transformation: readDirectXfrmTransformation(el),
+    chartExOptions: options,
+  };
+  const cNvPr = findChild(el, "wpg:cNvPr") ?? findChild(el, "wp:cNvPr");
+  if (cNvPr) {
+    const nvp: NonVisualPropertiesOptions = {};
+    const id = attrNum(cNvPr, "id");
+    const name = attr(cNvPr, "name");
+    const descr = attr(cNvPr, "descr");
+    const title = attr(cNvPr, "title");
+    if (id !== undefined) nvp.id = id;
+    if (name) nvp.name = name;
+    if (descr) nvp.description = descr;
+    if (title) nvp.title = title;
+    if (Object.keys(nvp).length > 0) md.nonVisualProperties = nvp;
+  }
+  const cNvFrPr = findChild(el, "wpg:cNvFrPr") ?? findChild(el, "wp:cNvFrPr");
+  if (cNvFrPr) md.graphicFrameLocks = readGraphicFrameLocks(cNvFrPr);
+  return md;
+}
+
 /**
  * Parse a wp:/wpg:contentPart element (CT_WordprocessingContentPart). The
  * r:id is captured verbatim — the relationship itself is not re-registered
@@ -1530,10 +1774,12 @@ function parseContentPart(el: Element): ContentPartMediaData {
       const name = attr(cNvPr, "name");
       const descr = attr(cNvPr, "descr");
       const title = attr(cNvPr, "title");
+      const hidden = attrBool(cNvPr, "hidden");
       if (id !== undefined) nvp.id = id;
       if (name) nvp.name = name;
       if (descr) nvp.description = descr;
       if (title) nvp.title = title;
+      if (hidden !== undefined) nvp.hidden = hidden;
     }
     const contentPart = parseNonVisualContentPartProperties(cpPr);
     if (contentPart) nvp.contentPart = contentPart;
@@ -1599,7 +1845,9 @@ function readPosition(
     const val = Number(textOf(posOffset));
     if (!isNaN(val)) result.offset = val;
   } else if (percentOffset) {
-    const val = Number(textOf(percentOffset));
+    const raw = attrNum(percentOffset, "w14:val");
+    const text = textOf(percentOffset);
+    const val = raw ?? (text.trim() === "" ? Number.NaN : Number(text));
     if (!isNaN(val)) result.percentOffset = val / 1000;
   }
   return Object.keys(result).length > 0
@@ -1617,24 +1865,75 @@ function readPositionFallback(
   return fallbackPosition ? readPosition(fallbackPosition) : undefined;
 }
 
-/** Read wp:wrapPolygon (start + lineTo points) into a WrapPolygon, if present. */
-function readWrapPolygon(el: Element): WrapPolygon | undefined {
+/** Read wp:wrapPolygon (one wp:start followed by at least two wp:lineTo points). */
+function readWrapPolygon(
+  el: Element,
+  ctx: DocxReadContext,
+  wrapper: Element,
+): WrapPolygon | undefined {
   const poly = findChild(el, "wp:wrapPolygon");
   if (!poly) return undefined;
-  const points: { x: number; y: number }[] = [];
-  const start = findChild(poly, "wp:start");
-  if (start) points.push({ x: attrNum(start, "x") ?? 0, y: attrNum(start, "y") ?? 0 });
-  for (const child of poly.elements ?? []) {
-    if (child.name === "wp:lineTo") {
-      points.push({ x: attrNum(child, "x") ?? 0, y: attrNum(child, "y") ?? 0 });
-    }
+  const path = "wp:wrapPolygon";
+  const children = (poly.elements ?? []).filter((child) => child.type === "element");
+  const startChildren = children.filter((child) => child.name === "wp:start");
+  const lineToChildren = children.filter((child) => child.name === "wp:lineTo");
+  if (startChildren.length !== 1) {
+    invalidDrawingModel(ctx, wrapper, path, "wp:wrapPolygon requires exactly one wp:start");
   }
-  if (points.length === 0) return undefined;
+  if (lineToChildren.length < 2) {
+    invalidDrawingModel(ctx, wrapper, path, "wp:wrapPolygon requires at least two wp:lineTo");
+  }
+  if (
+    children[0]?.name !== "wp:start" ||
+    children.slice(1).some((child) => child.name !== "wp:lineTo")
+  ) {
+    invalidDrawingModel(ctx, wrapper, path, "wp:wrapPolygon must be wp:start then wp:lineTo");
+  }
+  const [start] = startChildren;
+  const [firstLineTo, secondLineTo, ...remainingLineTo] = lineToChildren;
+  const points: WrapPolygon["points"] = [
+    {
+      x: requiredCoordinate(start!, "x", ctx, wrapper, path),
+      y: requiredCoordinate(start!, "y", ctx, wrapper, path),
+    },
+    {
+      x: requiredCoordinate(firstLineTo!, "x", ctx, wrapper, path),
+      y: requiredCoordinate(firstLineTo!, "y", ctx, wrapper, path),
+    },
+    {
+      x: requiredCoordinate(secondLineTo!, "x", ctx, wrapper, path),
+      y: requiredCoordinate(secondLineTo!, "y", ctx, wrapper, path),
+    },
+    ...remainingLineTo.map((child) => ({
+      x: requiredCoordinate(child, "x", ctx, wrapper, path),
+      y: requiredCoordinate(child, "y", ctx, wrapper, path),
+    })),
+  ];
   return { edited: attrBool(poly, "edited"), points };
 }
 
-/** Map the wp:anchor wrap child element into a TextWrapping ({ type, side? }). */
-function readWrap(anchor: Element): TextWrapping | undefined {
+function readWrapEffectExtent(
+  el: Element,
+  ctx: DocxReadContext,
+  wrapper: Element,
+): TextWrapping["effectExtent"] {
+  const ee = findChild(el, "wp:effectExtent");
+  if (!ee) return undefined;
+  const path = "wp:effectExtent";
+  return {
+    left: requiredCoordinate(ee, "l", ctx, wrapper, path),
+    top: requiredCoordinate(ee, "t", ctx, wrapper, path),
+    right: requiredCoordinate(ee, "r", ctx, wrapper, path),
+    bottom: requiredCoordinate(ee, "b", ctx, wrapper, path),
+  };
+}
+
+/** Map the wp:anchor wrap child into its canonical TextWrapping model. */
+function readWrap(
+  anchor: Element,
+  ctx: DocxReadContext,
+  wrapper: Element,
+): TextWrapping | undefined {
   const WRAP_TYPE: ReadonlyArray<[string, TextWrapping["type"]]> = [
     ["wrapNone", TextWrappingType.NONE],
     ["wrapSquare", TextWrappingType.SQUARE],
@@ -1645,33 +1944,37 @@ function readWrap(anchor: Element): TextWrapping | undefined {
   for (const [name, type] of WRAP_TYPE) {
     const el = findChild(anchor, `wp:${name}`);
     if (!el) continue;
+    const path = `${el.name ?? `wp:${name}`}/wp:wrapPolygon`;
     const wrap: TextWrapping = { type };
     const side = attr(el, "wrapText");
     if (side) wrap.side = side as TextWrapping["side"];
-    if (name === "wrapSquare") {
+    const margin = (attribute: keyof Distance) =>
+      optionalWrapDistance(el, attribute, ctx, wrapper, path);
+    if (name === "wrapSquare" || name === "wrapTopAndBottom") {
       const margins: NonNullable<TextWrapping["margins"]> = {};
-      const distT = attrNum(el, "distT");
+      const distT = margin("distT");
       if (distT !== undefined) margins.distT = distT;
-      const distB = attrNum(el, "distB");
+      const distB = margin("distB");
       if (distB !== undefined) margins.distB = distB;
-      const distL = attrNum(el, "distL");
+      const distL = margin("distL");
       if (distL !== undefined) margins.distL = distL;
-      const distR = attrNum(el, "distR");
+      const distR = margin("distR");
       if (distR !== undefined) margins.distR = distR;
       if (Object.keys(margins).length > 0) wrap.margins = margins;
+      wrap.effectExtent = readWrapEffectExtent(el, ctx, wrapper);
     }
-    if (name === "wrapTopAndBottom") {
-      const margins: NonNullable<TextWrapping["margins"]> = {};
-      const distT = attrNum(el, "distT");
-      if (distT !== undefined) margins.distT = distT;
-      const distB = attrNum(el, "distB");
-      if (distB !== undefined) margins.distB = distB;
-      if (Object.keys(margins).length > 0) wrap.margins = margins;
-    }
-    // wrapTight/wrapThrough carry a contour polygon; preserve it verbatim.
     if (name === "wrapTight" || name === "wrapThrough") {
-      const polygon = readWrapPolygon(el);
+      const margins: NonNullable<TextWrapping["margins"]> = {};
+      const distL = margin("distL");
+      const distR = margin("distR");
+      if (distL !== undefined) margins.distL = distL;
+      if (distR !== undefined) margins.distR = distR;
+      if (Object.keys(margins).length > 0) wrap.margins = margins;
+      const polygon = readWrapPolygon(el, ctx, wrapper);
       if (polygon) wrap.polygon = polygon;
+      else {
+        invalidDrawingModel(ctx, wrapper, path, `${el.name} requires one wp:wrapPolygon`);
+      }
     }
     return wrap;
   }
@@ -1679,23 +1982,6 @@ function readWrap(anchor: Element): TextWrapping | undefined {
 }
 
 // ── Common helpers ──────────────────────────────────────────────────────────
-
-function getDrawingExtent(el: Element): { width?: number; height?: number } {
-  const inline = findFirst(el, "wp:inline");
-  const anchor = inline ? undefined : findFirst(el, "wp:anchor");
-  const parent = inline ?? anchor;
-  if (!parent) return {};
-
-  const extent = findChild(parent, "wp:extent");
-  if (!extent) return {};
-
-  const cxEmu = attrNum(extent, "cx");
-  const cyEmu = attrNum(extent, "cy");
-  return {
-    ...(cxEmu !== undefined ? { width: cxEmu } : {}),
-    ...(cyEmu !== undefined ? { height: cyEmu } : {}),
-  };
-}
 
 // ── Chart parsing ───────────────────────────────────────────────────────────
 
@@ -1734,16 +2020,11 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
 
   // Anchor wrapper fields: extent, alt text, frame locks, floating position.
   const info = parseAnchorOrInline(el, ctx);
-  const ext = getDrawingExtent(el);
   const opts: ChartOptions = {
     ...chartSpace,
     // wp:extent always carries both cx and cy in valid documents; fall back
     // to zeros so the required transformation field stays well-formed.
-    transformation: {
-      width: ext.width ?? 0,
-      height: ext.height ?? 0,
-      ...(info?.effectExtent ? { effectExtent: info.effectExtent } : {}),
-    },
+    transformation: readAnchorTransformation(info ?? {}),
   };
   const sourceRelationships = readChartSourceRelationships(chartPath, ctx);
   if (sourceRelationships.length > 0) chartSourceRelationships.set(opts, sourceRelationships);
@@ -1756,6 +2037,67 @@ function parseChartDrawing(el: Element, ctx: DocxReadContext): { chart: ChartOpt
   if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
   return { chart: opts };
+}
+
+function parseChartExDrawing(el: Element, ctx: DocxReadContext): { chartEx: ChartExOptions } {
+  const chartRef = findFirst(el, "cx:chart");
+  if (!chartRef) {
+    throw new DocxParseError(
+      "ChartEx drawing is missing its chart reference",
+      ctx.currentPart,
+      "/w:drawing/a:graphicData",
+      "missing-chart-reference",
+    );
+  }
+
+  const relationshipId = attr(chartRef, "r:id");
+  const chartExPath = lookupRId(ctx.docx.partRefs.charts, relationshipId);
+  if (!relationshipId || !chartExPath) {
+    throw new DocxParseError(
+      "ChartEx drawing is missing its package part",
+      ctx.currentPart,
+      "/w:drawing/a:graphicData/cx:chart",
+      "missing-package-part",
+    );
+  }
+  const chartExXml = ctx.docx.doc.get(chartExPath);
+  if (!chartExXml) {
+    throw new DocxParseError(
+      "ChartEx package part is missing",
+      ctx.currentPart,
+      `/w:drawing/a:graphicData/cx:chart[@r:id="${relationshipId}"]`,
+      "missing-package-part",
+    );
+  }
+
+  let options: ChartExSpaceOptions;
+  try {
+    options = chartExSpaceDesc.parse(chartExXml, ctx);
+  } catch (error) {
+    if (error instanceof ChartExParseError) throw error;
+    throw new DocxParseError(
+      error instanceof Error ? error.message : String(error),
+      chartExPath,
+      "/cx:chartSpace",
+      "invalid-chartex-part",
+    );
+  }
+
+  consumePartPath(ctx, chartExPath);
+  consumePartPath(ctx, partPathToRelsPath(chartExPath));
+  const info = parseAnchorOrInline(el, ctx);
+  const opts: ChartExOptions = {
+    ...options,
+    transformation: readAnchorTransformation(info ?? {}),
+  };
+  chartSourcePaths.set(opts, chartExPath);
+  const sourceRelationships = readChartSourceRelationships(chartExPath, ctx);
+  if (sourceRelationships.length > 0) chartSourceRelationships.set(opts, sourceRelationships);
+  if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
+  if (info?.altText) opts.altText = info.altText;
+  if (info?.floating) opts.floating = info.floating;
+  if (info?.extensionIds) opts.extensionIds = info.extensionIds;
+  return { chartEx: opts };
 }
 
 // ── SmartArt parsing ────────────────────────────────────────────────────────
@@ -1776,6 +2118,8 @@ function parseSmartArtDrawing(
 
   const opts = parseSmartArtDataXml(dataEl);
   if (!opts) return undefined;
+  const dataModel = ctx.withPart(dataPath, () => parseDataModelOptions(dataEl, ctx));
+  if (dataModel) opts.dataModel = dataModel;
   consumePartPath(ctx, dataPath);
   consumePartPath(ctx, partPathToRelsPath(dataPath));
   const sourcePaths: SmartArtSourcePaths = {
@@ -1796,11 +2140,9 @@ function parseSmartArtDrawing(
       const layout = parseLayoutDefinition(layoutEl);
       sourcePaths.layout = layoutPath;
       consumePartPath(ctx, layoutPath);
-      const id = layout.uniqueId?.split("/").pop();
-      opts.layout = id && id in LAYOUT_CATEGORIES ? id : layout;
+      const layoutId = layout.uniqueId?.split("/").pop();
+      opts.layout = layoutId && isBuiltinLayoutDefinition(layoutId, layout) ? layoutId : layout;
     }
-    const bytes = ctx.docx.doc.getRaw(layoutPath);
-    if (bytes && raw) raw.layout = bytes;
   }
   const stylePath = readDiagramPartPath(relIds, "r:qs", ctx.docx.partRefs.diagramQuickStyle);
   if (stylePath) {
@@ -1809,11 +2151,9 @@ function parseSmartArtDrawing(
       const style = parseStyleDefinition(styleEl);
       sourcePaths.quickStyle = stylePath;
       consumePartPath(ctx, stylePath);
-      const id = style.uniqueId?.split("/").pop();
-      opts.style = id && id in STYLE_CATEGORIES ? id : style;
+      const styleId = style.uniqueId?.split("/").pop();
+      opts.style = styleId && isBuiltinStyleDefinition(styleId, style) ? styleId : style;
     }
-    const bytes = ctx.docx.doc.getRaw(stylePath);
-    if (bytes && raw) raw.style = bytes;
   }
   const colorPath = readDiagramPartPath(relIds, "r:cs", ctx.docx.partRefs.diagramColors);
   if (colorPath) {
@@ -1822,11 +2162,9 @@ function parseSmartArtDrawing(
       const color = parseColorDefinition(colorEl);
       sourcePaths.colors = colorPath;
       consumePartPath(ctx, colorPath);
-      const id = color.uniqueId?.split("/").pop();
-      opts.color = id && id in COLOR_CATEGORIES ? id : color;
+      const colorId = color.uniqueId?.split("/").pop();
+      opts.color = colorId && isBuiltinColorDefinition(colorId, color) ? colorId : color;
     }
-    const bytes = ctx.docx.doc.getRaw(colorPath);
-    if (bytes && raw) raw.color = bytes;
   }
   if (raw) opts.raw = raw;
 
@@ -1835,15 +2173,10 @@ function parseSmartArtDrawing(
   const info = parseAnchorOrInline(el, ctx);
   if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
   if (info?.altText) opts.altText = info.altText;
+  if (info?.floating) opts.floating = info.floating;
   if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
-  const ext = getDrawingExtent(el);
-  if (ext.width !== undefined || ext.height !== undefined) {
-    (opts as Record<string, unknown>).transformation = {
-      ...ext,
-      ...(info?.effectExtent ? { effectExtent: info.effectExtent } : {}),
-    };
-  }
+  (opts as Record<string, unknown>).transformation = readAnchorTransformation(info ?? {});
 
   return { smartArt: opts as unknown as SmartArtOptions };
 }
@@ -1871,14 +2204,11 @@ function readSmartArtRawParts(
   sourcePaths: { drawing?: string },
 ): SmartArtRawParts | undefined {
   const raw: SmartArtRawParts = {};
-  const dataBytes = ctx.docx.doc.getRaw(dataPath);
-  if (!dataBytes) return undefined;
-  raw.data = dataBytes;
+  let drawingRelationship = false;
 
   const relsPath = partPathToRelsPath(dataPath);
   const relsEl = ctx.docx.doc.get(relsPath);
   if (relsEl) {
-    raw.dataRels = ctx.docx.doc.getRaw(relsPath);
     const media: { fileName: string; data: Uint8Array }[] = [];
     // Walk the rels as elements (not a regex scan) so attribute order,
     // single quotes and spacing variants all resolve.
@@ -1896,6 +2226,7 @@ function readSmartArtRawParts(
           const bytes = ctx.docx.doc.getRaw(drawingPath);
           if (bytes) raw.drawing = bytes;
         }
+        drawingRelationship = true;
         continue;
       }
       if (!type.includes("/image")) continue;
@@ -1924,7 +2255,8 @@ function readSmartArtRawParts(
       if (bytes) raw.drawing = bytes;
     }
   }
-  return raw;
+  raw.drawingRelationship = drawingRelationship;
+  return raw.drawing === undefined && raw.media === undefined ? undefined : raw;
 }
 
 /** Pair a dataN.xml path with drawingN.xml from the given part paths. */

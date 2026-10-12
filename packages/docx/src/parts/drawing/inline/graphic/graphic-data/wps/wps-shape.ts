@@ -41,11 +41,11 @@ export interface ShapeStyleReferenceOptions {
  * document's theme. Word emits this for every shape that inherits theme styling.
  */
 export interface ShapeStyleOptions {
-  lineReference?: ShapeStyleReferenceOptions;
-  fillReference?: ShapeStyleReferenceOptions;
-  effectReference?: ShapeStyleReferenceOptions;
+  lineReference: ShapeStyleReferenceOptions;
+  fillReference: ShapeStyleReferenceOptions;
+  effectReference: ShapeStyleReferenceOptions;
   /** a:fontRef — @idx is ST_FontCollectionIndex, not a number. */
-  fontReference?: { collection: "major" | "minor" | "none"; color?: SolidFillOptions };
+  fontReference: { collection: "major" | "minor" | "none"; color?: SolidFillOptions };
 }
 
 export type ShapeTextBoxChild = ParagraphOptions | string | SectionChild;

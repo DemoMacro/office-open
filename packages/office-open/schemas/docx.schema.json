@@ -409,10 +409,28 @@
       "enum": ["none", "one", "branch"],
       "type": "string"
     },
+    "AnimateOneByOneOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/AnimateOneByOne"
+        }
+      },
+      "type": "object"
+    },
     "AnimationLevel": {
       "description": "Diagram animation granularity.",
       "enum": ["none", "level", "center"],
       "type": "string"
+    },
+    "AnimationLevelOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/AnimationLevel"
+        }
+      },
+      "type": "object"
     },
     "AppPropertiesOptions": {
       "additionalProperties": false,
@@ -737,6 +755,23 @@
       ],
       "type": "string"
     },
+    "AutoReloadOptions": {
+      "additionalProperties": false,
+      "description": "ODF automatic reload; xlink:type is fixed to \"simple\" by the schema.",
+      "properties": {
+        "delay": {
+          "$ref": "#/definitions/CalendarDurationOptions"
+        },
+        "href": {
+          "type": "string"
+        },
+        "show": {
+          "enum": ["replace", "onLoad"],
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "AxisCrossBetween": {
       "description": "Value-axis crossing mode: between category bands or at the band middle.",
       "enum": ["between", "middleOfCategory"],
@@ -969,6 +1004,35 @@
         }
       },
       "required": ["anchor", "normal", "up"],
+      "type": "object"
+    },
+    "BackgroundFormattingOptions": {
+      "additionalProperties": false,
+      "description": "Background formatting.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/OfficeArtExtensionOptions"
+          },
+          "type": "array"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
       "type": "object"
     },
     "BackgroundImageOptions": {
@@ -1866,6 +1930,15 @@
       "required": ["type"],
       "type": "object"
     },
+    "BulletEnabledOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "BulletNoneOption": {
       "additionalProperties": false,
       "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
@@ -1989,6 +2062,35 @@
         },
         "sizePoints": {
           "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "CalendarDurationOptions": {
+      "additionalProperties": false,
+      "description": "ISO 8601 duration components; omitted components are zero.",
+      "properties": {
+        "days": {
+          "type": "number"
+        },
+        "hours": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        },
+        "months": {
+          "type": "number"
+        },
+        "negative": {
+          "const": true,
+          "type": "boolean"
+        },
+        "seconds": {
+          "type": "number"
+        },
+        "years": {
           "type": "number"
         }
       },
@@ -2279,6 +2381,1688 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "ChartExAlignment": {
+      "enum": ["minimum", "center", "maximum"],
+      "type": "string"
+    },
+    "ChartExArtifact": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "type": {
+          "const": "html",
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "type", "value"],
+      "type": "object"
+    },
+    "ChartExAutomatic": {
+      "const": "auto",
+      "type": "string"
+    },
+    "ChartExAutomaticNumber": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "$ref": "#/definitions/ChartExAutomatic"
+        }
+      ]
+    },
+    "ChartExAxis": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "number"
+        },
+        "majorGridlines": {
+          "$ref": "#/definitions/ChartExGridlines"
+        },
+        "majorTickMarks": {
+          "$ref": "#/definitions/ChartExTickMarks"
+        },
+        "minorGridlines": {
+          "$ref": "#/definitions/ChartExGridlines"
+        },
+        "minorTickMarks": {
+          "$ref": "#/definitions/ChartExTickMarks"
+        },
+        "numberFormat": {
+          "$ref": "#/definitions/ChartExNumberFormat"
+        },
+        "scaling": {
+          "$ref": "#/definitions/ChartExScaling"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "tickLabels": {
+          "$ref": "#/definitions/ChartExTickLabels"
+        },
+        "title": {
+          "additionalProperties": false,
+          "properties": {
+            "extensions": {
+              "items": {
+                "$ref": "#/definitions/ChartExExtension"
+              },
+              "type": "array"
+            },
+            "offset": {
+              "$ref": "#/definitions/ChartExOffset"
+            },
+            "shapeProperties": {
+              "$ref": "#/definitions/ShapePropertiesOptions"
+            },
+            "text": {
+              "$ref": "#/definitions/ChartExText"
+            },
+            "textProperties": {
+              "$ref": "#/definitions/TextBodyOptions"
+            }
+          },
+          "type": "object"
+        },
+        "units": {
+          "$ref": "#/definitions/ChartExUnits"
+        }
+      },
+      "required": ["id", "scaling"],
+      "type": "object"
+    },
+    "ChartExAxisUnit": {
+      "enum": [
+        "hundreds",
+        "thousands",
+        "tenThousands",
+        "hundredThousands",
+        "millions",
+        "tenMillions",
+        "hundredMillions",
+        "billions",
+        "trillions",
+        "percentage"
+      ],
+      "type": "string"
+    },
+    "ChartExBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "dataId": {
+          "type": "number"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ChartExNumericDimensionType"
+            },
+            {
+              "$ref": "#/definitions/ChartExStringDimensionType"
+            }
+          ]
+        }
+      },
+      "required": ["name", "dataId", "type"],
+      "type": "object"
+    },
+    "ChartExBinning": {
+      "additionalProperties": false,
+      "properties": {
+        "count": {
+          "type": "number"
+        },
+        "intervalClosed": {
+          "$ref": "#/definitions/ChartExIntervalClosedSide"
+        },
+        "overflow": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        },
+        "size": {
+          "type": "number"
+        },
+        "underflow": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExCategoryScaling": {
+      "additionalProperties": false,
+      "properties": {
+        "gapWidth": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        },
+        "kind": {
+          "const": "category",
+          "type": "string"
+        }
+      },
+      "required": ["kind"],
+      "type": "object"
+    },
+    "ChartExChart": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "legend": {
+          "$ref": "#/definitions/ChartExLegend"
+        },
+        "plotArea": {
+          "$ref": "#/definitions/ChartExPlotArea"
+        },
+        "title": {
+          "$ref": "#/definitions/ChartExTitle"
+        }
+      },
+      "required": ["plotArea"],
+      "type": "object"
+    },
+    "ChartExChartData": {
+      "additionalProperties": false,
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/ChartExData"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "externalData": {
+          "$ref": "#/definitions/ChartExExternalData"
+        }
+      },
+      "required": ["data"],
+      "type": "object"
+    },
+    "ChartExDashboard": {
+      "additionalProperties": false,
+      "properties": {
+        "artifacts": {
+          "items": {
+            "$ref": "#/definitions/ChartExArtifact"
+          },
+          "type": "array"
+        },
+        "bindings": {
+          "items": {
+            "$ref": "#/definitions/ChartExBinding"
+          },
+          "type": "array"
+        },
+        "entrypoint": {
+          "type": "string"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["entrypoint", "bindings", "artifacts"],
+      "type": "object"
+    },
+    "ChartExData": {
+      "additionalProperties": false,
+      "properties": {
+        "dimensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExDimension"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "dimensions"],
+      "type": "object"
+    },
+    "ChartExDataLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "index": {
+          "type": "number"
+        },
+        "numberFormat": {
+          "$ref": "#/definitions/ChartExNumberFormat"
+        },
+        "position": {
+          "$ref": "#/definitions/ChartExLabelPosition"
+        },
+        "separator": {
+          "type": "string"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "visibility": {
+          "$ref": "#/definitions/ChartExLabelVisibility"
+        }
+      },
+      "required": ["index"],
+      "type": "object"
+    },
+    "ChartExDataLabels": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "hidden": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "labels": {
+          "items": {
+            "$ref": "#/definitions/ChartExDataLabel"
+          },
+          "type": "array"
+        },
+        "numberFormat": {
+          "$ref": "#/definitions/ChartExNumberFormat"
+        },
+        "position": {
+          "$ref": "#/definitions/ChartExLabelPosition"
+        },
+        "separator": {
+          "type": "string"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "visibility": {
+          "$ref": "#/definitions/ChartExLabelVisibility"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExDataPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "index": {
+          "type": "number"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        }
+      },
+      "required": ["index"],
+      "type": "object"
+    },
+    "ChartExDimension": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ChartExNumericDimension"
+        },
+        {
+          "$ref": "#/definitions/ChartExStringDimension"
+        }
+      ]
+    },
+    "ChartExEntityType": {
+      "enum": [
+        "Address",
+        "AdminDistrict",
+        "AdminDistrict2",
+        "AdminDistrict3",
+        "Continent",
+        "CountryRegion",
+        "Locality",
+        "Ocean",
+        "Planet",
+        "PostalCode",
+        "Region",
+        "Unsupported"
+      ],
+      "type": "string"
+    },
+    "ChartExExtension": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExExternalData": {
+      "additionalProperties": false,
+      "properties": {
+        "autoUpdate": {
+          "type": "boolean"
+        },
+        "autoUpdatePrefix": {
+          "description": "Attribute-name prefix for",
+          "type": "string"
+        },
+        "relationshipId": {
+          "type": "string"
+        }
+      },
+      "required": ["relationshipId"],
+      "type": "object"
+    },
+    "ChartExFormatOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "index": {
+          "type": "number"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        }
+      },
+      "required": ["index"],
+      "type": "object"
+    },
+    "ChartExFormula": {
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "$ref": "#/definitions/ChartExFormulaDirection"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": ["text"],
+      "type": "object"
+    },
+    "ChartExFormulaDirection": {
+      "enum": ["column", "row"],
+      "type": "string"
+    },
+    "ChartExGeoCache": {
+      "additionalProperties": false,
+      "properties": {
+        "entries": {
+          "items": {
+            "anyOf": [
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "const": "binary",
+                    "type": "string"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                },
+                "required": ["kind", "value"],
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "childQueries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "entityId": {
+                          "type": "string"
+                        },
+                        "entityTypes": {
+                          "items": {
+                            "$ref": "#/definitions/ChartExEntityType"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "required": ["entityId"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "entityQueries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "data": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "copyrights": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "east": {
+                              "type": "number"
+                            },
+                            "entityId": {
+                              "type": "string"
+                            },
+                            "entityName": {
+                              "type": "string"
+                            },
+                            "north": {
+                              "type": "number"
+                            },
+                            "polygons": {
+                              "items": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "pcaRings": {
+                                    "type": "string"
+                                  },
+                                  "pointCount": {
+                                    "type": "number"
+                                  },
+                                  "polygonId": {
+                                    "type": "string"
+                                  }
+                                },
+                                "required": ["polygonId", "pointCount", "pcaRings"],
+                                "type": "object"
+                              },
+                              "type": "array"
+                            },
+                            "south": {
+                              "type": "number"
+                            },
+                            "west": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["entityName", "entityId", "east", "west", "north", "south"],
+                          "type": "object"
+                        },
+                        "query": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "entityId": {
+                              "type": "string"
+                            },
+                            "entityType": {
+                              "$ref": "#/definitions/ChartExEntityType"
+                            }
+                          },
+                          "required": ["entityType", "entityId"],
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "kind": {
+                    "const": "clear",
+                    "type": "string"
+                  },
+                  "locationQueries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "locations": {
+                          "items": {
+                            "additionalProperties": false,
+                            "properties": {
+                              "address": {
+                                "additionalProperties": false,
+                                "properties": {
+                                  "address1": {
+                                    "type": "string"
+                                  },
+                                  "adminDistrict1": {
+                                    "type": "string"
+                                  },
+                                  "countryRegion": {
+                                    "type": "string"
+                                  },
+                                  "isoCountryCode": {
+                                    "type": "string"
+                                  },
+                                  "locality": {
+                                    "type": "string"
+                                  },
+                                  "postalCode": {
+                                    "type": "string"
+                                  }
+                                },
+                                "type": "object"
+                              },
+                              "entityName": {
+                                "type": "string"
+                              },
+                              "entityType": {
+                                "$ref": "#/definitions/ChartExEntityType"
+                              },
+                              "latitude": {
+                                "type": "number"
+                              },
+                              "longitude": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["entityName", "entityType"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "query": {
+                          "additionalProperties": false,
+                          "properties": {
+                            "adminDistrict1": {
+                              "type": "string"
+                            },
+                            "adminDistrict2": {
+                              "type": "string"
+                            },
+                            "countryRegion": {
+                              "type": "string"
+                            },
+                            "entityType": {
+                              "$ref": "#/definitions/ChartExEntityType"
+                            },
+                            "postalCode": {
+                              "type": "string"
+                            }
+                          },
+                          "required": ["entityType"],
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "parentQueries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "entityId": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["entityId"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "pointToEntityQueries": {
+                    "items": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "query": {
+                          "$ref": "#/definitions/ChartExGeoCache/properties/entries/items/anyOf/1/properties/entityQueries/items/properties/query"
+                        }
+                      },
+                      "required": ["query"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["kind"],
+                "title": "kind",
+                "type": "object"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        "provider": {
+          "type": "string"
+        }
+      },
+      "required": ["provider", "entries"],
+      "type": "object"
+    },
+    "ChartExGeography": {
+      "additionalProperties": false,
+      "properties": {
+        "attribution": {
+          "type": "string"
+        },
+        "cache": {
+          "$ref": "#/definitions/ChartExGeoCache"
+        },
+        "cultureLanguage": {
+          "type": "string"
+        },
+        "cultureRegion": {
+          "type": "string"
+        },
+        "projection": {
+          "$ref": "#/definitions/ChartExProjection"
+        },
+        "viewedRegion": {
+          "$ref": "#/definitions/ChartExMappingLevel"
+        }
+      },
+      "required": ["cultureLanguage", "cultureRegion", "attribution"],
+      "type": "object"
+    },
+    "ChartExGridlines": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExHeaderFooter": {
+      "additionalProperties": false,
+      "properties": {
+        "alignWithMargins": {
+          "type": "boolean"
+        },
+        "differentFirst": {
+          "type": "boolean"
+        },
+        "differentOddEven": {
+          "type": "boolean"
+        },
+        "evenFooter": {
+          "type": "string"
+        },
+        "evenHeader": {
+          "type": "string"
+        },
+        "firstFooter": {
+          "type": "string"
+        },
+        "firstHeader": {
+          "type": "string"
+        },
+        "oddFooter": {
+          "type": "string"
+        },
+        "oddHeader": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExIntervalClosedSide": {
+      "enum": ["left", "right"],
+      "type": "string"
+    },
+    "ChartExLabelLayout": {
+      "enum": ["none", "banner", "overlapping"],
+      "type": "string"
+    },
+    "ChartExLabelPosition": {
+      "enum": [
+        "bestFit",
+        "bottom",
+        "center",
+        "insideBase",
+        "insideEnd",
+        "left",
+        "outsideEnd",
+        "right",
+        "top"
+      ],
+      "type": "string"
+    },
+    "ChartExLabelVisibility": {
+      "additionalProperties": false,
+      "properties": {
+        "categoryName": {
+          "type": "boolean"
+        },
+        "seriesName": {
+          "type": "boolean"
+        },
+        "value": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExLegend": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/ChartExAlignment"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "offset": {
+          "$ref": "#/definitions/ChartExOffset"
+        },
+        "overlay": {
+          "type": "boolean"
+        },
+        "position": {
+          "$ref": "#/definitions/ChartExSide"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExMappingLevel": {
+      "enum": [
+        "dataOnly",
+        "postalCode",
+        "county",
+        "state",
+        "countryRegion",
+        "countryRegionList",
+        "world"
+      ],
+      "type": "string"
+    },
+    "ChartExNumberFormat": {
+      "additionalProperties": false,
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "sourceLinked": {
+          "type": "boolean"
+        }
+      },
+      "required": ["formatCode"],
+      "type": "object"
+    },
+    "ChartExNumericDimension": {
+      "additionalProperties": false,
+      "properties": {
+        "formula": {
+          "$ref": "#/definitions/ChartExFormula"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/definitions/ChartExNumericLevel"
+          },
+          "type": "array"
+        },
+        "normalizedFormula": {
+          "$ref": "#/definitions/ChartExFormula"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartExNumericDimensionType"
+        }
+      },
+      "required": ["type", "levels"],
+      "type": "object"
+    },
+    "ChartExNumericDimensionType": {
+      "enum": ["val", "xVal", "yVal", "size", "degree"],
+      "type": "string"
+    },
+    "ChartExNumericLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "pointCount": {
+          "type": "number"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/definitions/ChartExNumericValue"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["pointCount"],
+      "type": "object"
+    },
+    "ChartExNumericValue": {
+      "additionalProperties": false,
+      "properties": {
+        "formatCode": {
+          "type": "string"
+        },
+        "index": {
+          "type": "number"
+        },
+        "value": {
+          "type": "number"
+        }
+      },
+      "required": ["index", "value"],
+      "type": "object"
+    },
+    "ChartExOffset": {
+      "additionalProperties": false,
+      "properties": {
+        "left": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        }
+      },
+      "required": ["top", "left"],
+      "type": "object"
+    },
+    "ChartExOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber"
+        },
+        "altText": {
+          "$ref": "#/definitions/DocPropertiesOptions"
+        },
+        "chart": {
+          "$ref": "#/definitions/ChartExChart"
+        },
+        "chartData": {
+          "$ref": "#/definitions/ChartExChartData"
+        },
+        "colorMapping": {
+          "additionalProperties": false,
+          "properties": {
+            "accent1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent3": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent4": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent5": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "accent6": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "background2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "followedHyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "hyperlink": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text1": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            },
+            "text2": {
+              "$ref": "#/definitions/ColorSchemeIndex"
+            }
+          },
+          "type": "object"
+        },
+        "dashboard": {
+          "$ref": "#/definitions/ChartExDashboard"
+        },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber"
+        },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "fallbackImage": {
+          "type": "string"
+        },
+        "featureList": {
+          "type": "string"
+        },
+        "floating": {
+          "$ref": "#/definitions/Floating"
+        },
+        "formatOverrides": {
+          "items": {
+            "$ref": "#/definitions/ChartExFormatOverride"
+          },
+          "type": "array"
+        },
+        "graphicFrameLocks": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/GraphicFrameLocksOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "lastRenderedPageBreak": {
+          "type": "boolean"
+        },
+        "printSettings": {
+          "$ref": "#/definitions/ChartExPrintSettings"
+        },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions"
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "transformation": {
+          "$ref": "#/definitions/MediaTransformation"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": ["transformation"],
+      "type": "object"
+    },
+    "ChartExPageMargins": {
+      "additionalProperties": false,
+      "properties": {
+        "bottom": {
+          "type": "number"
+        },
+        "footer": {
+          "type": "number"
+        },
+        "header": {
+          "type": "number"
+        },
+        "left": {
+          "type": "number"
+        },
+        "right": {
+          "type": "number"
+        },
+        "top": {
+          "type": "number"
+        }
+      },
+      "required": ["left", "right", "top", "bottom", "header", "footer"],
+      "type": "object"
+    },
+    "ChartExPageOrientation": {
+      "enum": ["default", "portrait", "landscape"],
+      "type": "string"
+    },
+    "ChartExPageSetup": {
+      "additionalProperties": false,
+      "properties": {
+        "blackAndWhite": {
+          "type": "boolean"
+        },
+        "copies": {
+          "type": "number"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "firstPageNumber": {
+          "type": "number"
+        },
+        "horizontalDpi": {
+          "type": "number"
+        },
+        "orientation": {
+          "$ref": "#/definitions/ChartExPageOrientation"
+        },
+        "paperSize": {
+          "type": "number"
+        },
+        "useFirstPageNumber": {
+          "type": "boolean"
+        },
+        "verticalDpi": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExPlotArea": {
+      "additionalProperties": false,
+      "properties": {
+        "axes": {
+          "items": {
+            "$ref": "#/definitions/ChartExAxis"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "region": {
+          "additionalProperties": false,
+          "properties": {
+            "extensions": {
+              "items": {
+                "$ref": "#/definitions/ChartExExtension"
+              },
+              "type": "array"
+            },
+            "series": {
+              "items": {
+                "$ref": "#/definitions/ChartExSeries"
+              },
+              "type": "array"
+            },
+            "surface": {
+              "$ref": "#/definitions/ChartExPlotSurface"
+            }
+          },
+          "required": ["series"],
+          "type": "object"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        }
+      },
+      "required": ["region", "axes"],
+      "type": "object"
+    },
+    "ChartExPlotSurface": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExPrintSettings": {
+      "additionalProperties": false,
+      "properties": {
+        "headerFooter": {
+          "$ref": "#/definitions/ChartExHeaderFooter"
+        },
+        "pageMargins": {
+          "$ref": "#/definitions/ChartExPageMargins"
+        },
+        "pageSetup": {
+          "$ref": "#/definitions/ChartExPageSetup"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExProjection": {
+      "enum": ["mercator", "miller", "robinson", "albers"],
+      "type": "string"
+    },
+    "ChartExQuartileMethod": {
+      "enum": ["inclusive", "exclusive"],
+      "type": "string"
+    },
+    "ChartExRegionLabelLayout": {
+      "enum": ["none", "bestFitOnly", "showAll"],
+      "type": "string"
+    },
+    "ChartExScaling": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ChartExCategoryScaling"
+        },
+        {
+          "$ref": "#/definitions/ChartExValueScaling"
+        }
+      ]
+    },
+    "ChartExSeries": {
+      "additionalProperties": false,
+      "properties": {
+        "axisIds": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "colors": {
+          "$ref": "#/definitions/ChartExValueColors"
+        },
+        "dataId": {
+          "type": "number"
+        },
+        "dataLabels": {
+          "$ref": "#/definitions/ChartExDataLabels"
+        },
+        "dataPoints": {
+          "items": {
+            "$ref": "#/definitions/ChartExDataPoint"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "formatIndex": {
+          "type": "number"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "layout": {
+          "$ref": "#/definitions/ChartExSeriesLayout"
+        },
+        "layoutProperties": {
+          "$ref": "#/definitions/ChartExSeriesLayoutProperties"
+        },
+        "ownerIndex": {
+          "type": "number"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "text": {
+          "$ref": "#/definitions/ChartExText"
+        },
+        "uniqueId": {
+          "type": "string"
+        }
+      },
+      "required": ["layout"],
+      "type": "object"
+    },
+    "ChartExSeriesLayout": {
+      "enum": [
+        "boxWhisker",
+        "clusteredColumn",
+        "funnel",
+        "paretoLine",
+        "regionMap",
+        "sunburst",
+        "treemap",
+        "waterfall"
+      ],
+      "type": "string"
+    },
+    "ChartExSeriesLayoutProperties": {
+      "additionalProperties": false,
+      "properties": {
+        "aggregation": {
+          "const": true,
+          "type": "boolean"
+        },
+        "binning": {
+          "$ref": "#/definitions/ChartExBinning"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "geography": {
+          "$ref": "#/definitions/ChartExGeography"
+        },
+        "parentLabelLayout": {
+          "$ref": "#/definitions/ChartExLabelLayout"
+        },
+        "regionLabelLayout": {
+          "$ref": "#/definitions/ChartExRegionLabelLayout"
+        },
+        "statistics": {
+          "additionalProperties": false,
+          "properties": {
+            "quartileMethod": {
+              "$ref": "#/definitions/ChartExQuartileMethod"
+            }
+          },
+          "type": "object"
+        },
+        "subtotals": {
+          "items": {
+            "type": "number"
+          },
+          "type": "array"
+        },
+        "visibility": {
+          "$ref": "#/definitions/ChartExSeriesVisibility"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExSeriesVisibility": {
+      "additionalProperties": false,
+      "properties": {
+        "connectorLines": {
+          "type": "boolean"
+        },
+        "meanLine": {
+          "type": "boolean"
+        },
+        "meanMarker": {
+          "type": "boolean"
+        },
+        "nonOutliers": {
+          "type": "boolean"
+        },
+        "outliers": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExSide": {
+      "enum": ["left", "top", "right", "bottom"],
+      "type": "string"
+    },
+    "ChartExSpaceOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "chart": {
+          "$ref": "#/definitions/ChartExChart"
+        },
+        "chartData": {
+          "$ref": "#/definitions/ChartExChartData"
+        },
+        "colorMapping": {
+          "$ref": "#/definitions/ChartExOptions/properties/colorMapping"
+        },
+        "dashboard": {
+          "$ref": "#/definitions/ChartExDashboard"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "fallbackImage": {
+          "type": "string"
+        },
+        "featureList": {
+          "type": "string"
+        },
+        "formatOverrides": {
+          "items": {
+            "$ref": "#/definitions/ChartExFormatOverride"
+          },
+          "type": "array"
+        },
+        "printSettings": {
+          "$ref": "#/definitions/ChartExPrintSettings"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExStringDimension": {
+      "additionalProperties": false,
+      "properties": {
+        "formula": {
+          "$ref": "#/definitions/ChartExFormula"
+        },
+        "levels": {
+          "items": {
+            "$ref": "#/definitions/ChartExStringLevel"
+          },
+          "type": "array"
+        },
+        "normalizedFormula": {
+          "$ref": "#/definitions/ChartExFormula"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartExStringDimensionType"
+        }
+      },
+      "required": ["type", "levels"],
+      "type": "object"
+    },
+    "ChartExStringDimensionType": {
+      "enum": ["category", "colorString", "entityId"],
+      "type": "string"
+    },
+    "ChartExStringLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "pointCount": {
+          "type": "number"
+        },
+        "points": {
+          "items": {
+            "$ref": "#/definitions/ChartExStringValue"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["pointCount"],
+      "type": "object"
+    },
+    "ChartExStringValue": {
+      "additionalProperties": false,
+      "properties": {
+        "index": {
+          "type": "number"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": ["index", "value"],
+      "type": "object"
+    },
+    "ChartExText": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "formula": {
+              "$ref": "#/definitions/ChartExFormula"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["formula"],
+          "title": "formula",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "rich": {
+              "$ref": "#/definitions/TextBodyOptions"
+            }
+          },
+          "required": ["rich"],
+          "title": "rich",
+          "type": "object"
+        }
+      ]
+    },
+    "ChartExTickLabels": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExTickMarkType": {
+      "enum": ["inside", "outside", "cross", "none"],
+      "type": "string"
+    },
+    "ChartExTickMarks": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/definitions/ChartExTickMarkType"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExTitle": {
+      "additionalProperties": false,
+      "properties": {
+        "alignment": {
+          "$ref": "#/definitions/ChartExAlignment"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "offset": {
+          "$ref": "#/definitions/ChartExOffset"
+        },
+        "overlay": {
+          "type": "boolean"
+        },
+        "position": {
+          "$ref": "#/definitions/ChartExSide"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "text": {
+          "$ref": "#/definitions/ChartExText"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExUnits": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "label": {
+          "$ref": "#/definitions/ChartExUnitsLabel"
+        },
+        "unit": {
+          "$ref": "#/definitions/ChartExAxisUnit"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExUnitsLabel": {
+      "additionalProperties": false,
+      "properties": {
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/ChartExExtension"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions"
+        },
+        "text": {
+          "$ref": "#/definitions/ChartExText"
+        },
+        "textProperties": {
+          "$ref": "#/definitions/TextBodyOptions"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExValueColors": {
+      "additionalProperties": false,
+      "properties": {
+        "maximum": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "middle": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "minimum": {
+          "$ref": "#/definitions/FillOptions"
+        },
+        "positions": {
+          "additionalProperties": false,
+          "properties": {
+            "count": {
+              "type": "number"
+            },
+            "maximum": {
+              "$ref": "#/definitions/ChartExValueColors/properties/positions/properties/minimum"
+            },
+            "middle": {
+              "additionalProperties": false,
+              "properties": {
+                "number": {
+                  "type": "number"
+                },
+                "percent": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "minimum": {
+              "additionalProperties": false,
+              "properties": {
+                "extremeValue": {
+                  "const": true,
+                  "type": "boolean"
+                },
+                "number": {
+                  "type": "number"
+                },
+                "percent": {
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "ChartExValueScaling": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "value",
+          "type": "string"
+        },
+        "majorUnit": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        },
+        "maximum": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        },
+        "minimum": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        },
+        "minorUnit": {
+          "$ref": "#/definitions/ChartExAutomaticNumber"
+        }
+      },
+      "required": ["kind"],
       "type": "object"
     },
     "ChartGrouping": {
@@ -3731,9 +5515,8 @@
         "descriptions": {
           "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "minVer": {
           "description": "Minimum Office version (dgm:colorsDef `@minVer`).",
@@ -4908,7 +6691,7 @@
           "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
         },
         "separatorRPrXml": {
-          "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/separatorRPrXml"
+          "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/separatorRPrXml"
         },
         "separatorRunPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -4993,8 +6776,8 @@
       "description": "dgm:constr.",
       "properties": {
         "factor": {
-          "description": "Factor applied to the reference (dgm:constr `@fact`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Factor applied to the reference (dgm:constr `@fact`)."
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship",
@@ -5033,8 +6816,8 @@
           "description": "Constrained dimension (dgm:constr `@type`)."
         },
         "value": {
-          "description": "Absolute value (dgm:constr `@val`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Absolute value (dgm:constr `@val`)."
         }
       },
       "required": ["type"],
@@ -5127,13 +6910,13 @@
           "description": "Black-and-white mode (`@bwMode`)."
         },
         "nonVisualProperties": {
-          "$ref": "#/definitions/GroupChildMediaData/anyOf/5/properties/nonVisualProperties"
+          "$ref": "#/definitions/GroupChildMediaData/anyOf/6/properties/nonVisualProperties"
         },
         "referenceId": {
-          "$ref": "#/definitions/GroupChildMediaData/anyOf/5/properties/referenceId"
+          "$ref": "#/definitions/GroupChildMediaData/anyOf/6/properties/referenceId"
         },
         "transformation": {
-          "$ref": "#/definitions/MediaDataTransformation",
+          "$ref": "#/definitions/MediaTransformation",
           "description": "Placement transform (xfrm)"
         }
       },
@@ -5632,21 +7415,163 @@
       },
       "type": "object"
     },
+    "DataModelBackgroundOptions": {
+      "additionalProperties": false,
+      "description": "dgm:bg —.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DataModelConnectionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:cxn — one data-model connection.",
+      "properties": {
+        "destinationId": {
+          "type": "string"
+        },
+        "destinationOrder": {
+          "type": "number"
+        },
+        "extensions": {
+          "description": "Connection extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "parentTransitionId": {
+          "type": "string"
+        },
+        "presentationId": {
+          "type": "string"
+        },
+        "siblingTransitionId": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceOrder": {
+          "type": "number"
+        },
+        "type": {
+          "description": "Connection kind (dgm:cxn `@type`).",
+          "enum": ["parOf", "presOf", "presParOf", "unknownRelationship"],
+          "type": "string"
+        }
+      },
+      "required": ["modelId", "sourceId", "destinationId"],
+      "type": "object"
+    },
     "DataModelOptions": {
       "additionalProperties": false,
       "description": "dgm:dataModel — structured point/connection model.",
       "properties": {
+        "background": {
+          "$ref": "#/definitions/DataModelBackgroundOptions"
+        },
         "connections": {
           "items": {
-            "$ref": "#/definitions/ModelConnectionOptions"
+            "$ref": "#/definitions/DataModelConnectionOptions"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
           },
           "type": "array"
         },
         "points": {
           "items": {
-            "$ref": "#/definitions/ModelPointOptions"
+            "$ref": "#/definitions/DataModelPointOptions"
           },
           "type": "array"
+        },
+        "whole": {
+          "$ref": "#/definitions/DataModelWholeOptions"
+        }
+      },
+      "type": "object"
+    },
+    "DataModelPointOptions": {
+      "additionalProperties": false,
+      "description": "dgm:pt — one data-model point (dgm:pt).",
+      "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Container black-and-white mode (dgm:spPr `@bwMode`)."
+        },
+        "connectionId": {
+          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
+          "type": "string"
+        },
+        "extensions": {
+          "description": "Point extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
+        },
+        "modelId": {
+          "description": "Point identity (dgm:pt `@modelId`).",
+          "type": "string"
+        },
+        "propertySet": {
+          "$ref": "#/definitions/PointPropertySetOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "DrawingML shape properties (dgm:spPr)."
+        },
+        "text": {
+          "description": "Plain-text projection of dgm:t.",
+          "type": "string"
+        },
+        "textBody": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Complete DrawingML text body (dgm:t)."
+        },
+        "type": {
+          "description": "Point kind (dgm:pt `@type`).",
+          "enum": ["node", "asst", "doc", "pres", "parTrans", "sibTrans"],
+          "type": "string"
+        }
+      },
+      "required": ["modelId"],
+      "type": "object"
+    },
+    "DataModelWholeOptions": {
+      "additionalProperties": false,
+      "description": "dgm:whole — CT_WholeE2oFormatting.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
         }
       },
       "type": "object"
@@ -5891,9 +7816,32 @@
       "type": "object"
     },
     "DiagramDirection": {
-      "description": "(dgm:dir `@val`).",
+      "description": "Diagram reading direction.",
       "enum": ["normal", "reversed"],
       "type": "string"
+    },
+    "DiagramDirectionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/DiagramDirection"
+        }
+      },
+      "type": "object"
+    },
+    "DiagramExtensionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "description": "Foreign-namespace child XML inside a:ext; omit for an empty extension.",
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
     },
     "DiagramIterationOptions": {
       "additionalProperties": false,
@@ -6572,6 +8520,14 @@
           "$ref": "#/definitions/AppPropertiesOptions",
           "description": "Extended properties (docProps/app.xml)"
         },
+        "application": {
+          "description": "Generating application name, round-tripped from ODF meta:generator.",
+          "type": "string"
+        },
+        "autoReload": {
+          "$ref": "#/definitions/AutoReloadOptions",
+          "description": "ODF automatic document reload behavior."
+        },
         "background": {
           "$ref": "#/definitions/DocumentBackgroundOptions"
         },
@@ -6681,6 +8637,10 @@
           "enum": ["transitional", "strict"],
           "type": "string"
         },
+        "editingDuration": {
+          "$ref": "#/definitions/CalendarDurationOptions",
+          "description": "Editing duration expressed with explicit calendar components."
+        },
         "encrypted": {
           "$ref": "#/definitions/EncryptedContainerOptions",
           "description": "Encrypted source (OLE2/CFB container). Round-trip only: the original bytes are re-emitted unchanged, every other field stays empty (`sections: []`); mixing real content is rejected. Do not hand-author."
@@ -6780,6 +8740,10 @@
           "$ref": "#/definitions/GlossaryDocumentOptions",
           "description": "Glossary document — building blocks (Quick Parts)"
         },
+        "hyperlinkBehavior": {
+          "$ref": "#/definitions/HyperlinkBehaviorOptions",
+          "description": "ODF hyperlink target behavior."
+        },
         "identifier": {
           "description": "Unique document identifier, round-tripped from dc:identifier.",
           "type": "string"
@@ -6854,6 +8818,10 @@
           "description": "Primary document part path from `_rels/.rels`. Round-trip only; fresh documents use `word/document.xml`.",
           "type": "string"
         },
+        "printedBy": {
+          "description": "Printed-by name, round-tripped from ODF meta:printed-by.",
+          "type": "string"
+        },
         "rawParts": {
           "description": "Source parts generate() does not rebuild (word/theme/*, customXml/*, unknown extension parts), carried verbatim with bytes and content-type intact; compiler-rebuilt paths win over the passthrough copy. Round-trip only — do not hand-author.",
           "items": {
@@ -6895,6 +8863,10 @@
           "$ref": "#/definitions/SettingsOptions",
           "description": "Document settings (word/settings.xml)."
         },
+        "statistics": {
+          "$ref": "#/definitions/DocumentStatisticsOptions",
+          "description": "ODF document statistics."
+        },
         "styles": {
           "$ref": "#/definitions/StylesOptions"
         },
@@ -6905,12 +8877,23 @@
         "subject": {
           "type": "string"
         },
+        "template": {
+          "$ref": "#/definitions/DocumentTemplateOptions",
+          "description": "ODF document template reference."
+        },
         "theme": {
           "$ref": "#/definitions/ThemeOptions",
           "description": "Document theme (word/theme/theme1.xml); fresh output emits the default"
         },
         "title": {
           "type": "string"
+        },
+        "userDefinedProperties": {
+          "description": "ODF user-defined properties, in source order.",
+          "items": {
+            "$ref": "#/definitions/UserDefinedMetadataOptions"
+          },
+          "type": "array"
         },
         "variableDeclarations": {
           "description": "Declared variable names and value types used by variable fields.",
@@ -7022,6 +9005,79 @@
           "type": "number"
         }
       },
+      "type": "object"
+    },
+    "DocumentStatisticsOptions": {
+      "additionalProperties": false,
+      "description": "ODF document statistic counts.",
+      "properties": {
+        "cellCount": {
+          "type": "number"
+        },
+        "characterCount": {
+          "type": "number"
+        },
+        "drawCount": {
+          "type": "number"
+        },
+        "frameCount": {
+          "type": "number"
+        },
+        "imageCount": {
+          "type": "number"
+        },
+        "nonWhitespaceCharacterCount": {
+          "type": "number"
+        },
+        "objectCount": {
+          "type": "number"
+        },
+        "oleObjectCount": {
+          "type": "number"
+        },
+        "pageCount": {
+          "type": "number"
+        },
+        "paragraphCount": {
+          "type": "number"
+        },
+        "rowCount": {
+          "type": "number"
+        },
+        "sentenceCount": {
+          "type": "number"
+        },
+        "syllableCount": {
+          "type": "number"
+        },
+        "tableCount": {
+          "type": "number"
+        },
+        "wordCount": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "DocumentTemplateOptions": {
+      "additionalProperties": false,
+      "description": "ODF template reference; xlink:type is fixed to \"simple\" by the schema.",
+      "properties": {
+        "actuate": {
+          "const": "onRequest",
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "modified": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": ["href"],
       "type": "object"
     },
     "DrawingExtensionIds": {
@@ -7328,6 +9384,30 @@
       },
       "type": "object"
     },
+    "EffectExtentProperties": {
+      "additionalProperties": false,
+      "description": "Attributes for effect extent.",
+      "properties": {
+        "bottom": {
+          "description": "Additional bottom extent in EMUs.",
+          "type": "number"
+        },
+        "left": {
+          "description": "Additional left extent in EMUs.",
+          "type": "number"
+        },
+        "right": {
+          "description": "Additional right extent in EMUs.",
+          "type": "number"
+        },
+        "top": {
+          "description": "Additional top extent in EMUs.",
+          "type": "number"
+        }
+      },
+      "required": ["top", "right", "bottom", "left"],
+      "type": "object"
+    },
     "EffectListOptions": {
       "additionalProperties": false,
       "description": "Options for the effect list container.\n\nEach property corresponds to an optional child effect element. Only specified effects will be included in the output.",
@@ -7626,46 +9706,7 @@
       "description": "Extra color scheme.",
       "properties": {
         "colorMapping": {
-          "additionalProperties": false,
-          "properties": {
-            "accent1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent3": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent4": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent5": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "accent6": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "background2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "followedHyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "hyperlink": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text1": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            },
-            "text2": {
-              "$ref": "#/definitions/ColorSchemeIndex"
-            }
-          },
-          "type": "object"
+          "$ref": "#/definitions/ChartExOptions/properties/colorMapping"
         },
         "colorScheme": {
           "$ref": "#/definitions/ColorSchemeOptions"
@@ -7955,6 +9996,10 @@
         "behindDocument": {
           "type": "boolean"
         },
+        "hidden": {
+          "description": "Whether the drawing is hidden (wp:anchor/@hidden); omitted when the source attribute is absent.",
+          "type": "boolean"
+        },
         "horizontalPosition": {
           "$ref": "#/definitions/HorizontalPositionOptions"
         },
@@ -7973,8 +10018,12 @@
         },
         "simplePos": {
           "additionalProperties": false,
-          "description": "Marker coordinates (wp:simplePos, EMU or universal measure); defaults to 0,0.",
+          "description": "Marker coordinates and simplePos switch (EMU or universal measure); coordinates default to 0,0.",
           "properties": {
+            "enabled": {
+              "description": "Explicit wp:anchor/@simplePos value; omitted when the source attribute is absent.",
+              "type": "boolean"
+            },
             "x": {
               "anyOf": [
                 {
@@ -8890,7 +10939,7 @@
               "$ref": "#/definitions/OutlineOptions"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation"
+              "$ref": "#/definitions/MediaTransformation"
             },
             "type": {
               "const": "wps",
@@ -8947,7 +10996,7 @@
               "type": "string"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation",
+              "$ref": "#/definitions/MediaTransformation",
               "description": "Transformation settings for display"
             },
             "type": {
@@ -9026,7 +11075,7 @@
                   "type": "string"
                 },
                 "transformation": {
-                  "$ref": "#/definitions/MediaDataTransformation",
+                  "$ref": "#/definitions/MediaTransformation",
                   "description": "Transformation settings for display"
                 },
                 "type": {
@@ -9070,7 +11119,7 @@
               "type": "string"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation",
+              "$ref": "#/definitions/MediaTransformation",
               "description": "Transformation settings for display"
             },
             "type": {
@@ -9129,7 +11178,7 @@
               "$ref": "#/definitions/OutlineOptions"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation"
+              "$ref": "#/definitions/MediaTransformation"
             },
             "type": {
               "const": "wpg",
@@ -9171,10 +11220,50 @@
               "$ref": "#/definitions/OutlineOptions"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation"
+              "$ref": "#/definitions/MediaTransformation"
             },
             "type": {
               "const": "chart",
+              "type": "string"
+            }
+          },
+          "required": ["transformation", "type"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "chartExKey": {
+              "type": "string"
+            },
+            "chartExOptions": {
+              "$ref": "#/definitions/ChartExSpaceOptions",
+              "description": "Group-nested payload preserved through round-trip parsing."
+            },
+            "fill": {
+              "$ref": "#/definitions/FillOptions"
+            },
+            "graphicFrameLocks": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/GraphicFrameLocksOptions"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "nonVisualProperties": {
+              "$ref": "#/definitions/NonVisualPropertiesOptions"
+            },
+            "outline": {
+              "$ref": "#/definitions/OutlineOptions"
+            },
+            "transformation": {
+              "$ref": "#/definitions/MediaTransformation"
+            },
+            "type": {
+              "const": "chartEx",
               "type": "string"
             }
           },
@@ -9243,7 +11332,7 @@
               "type": "string"
             },
             "transformation": {
-              "$ref": "#/definitions/MediaDataTransformation",
+              "$ref": "#/definitions/MediaTransformation",
               "description": "Placement transform (xfrm)"
             },
             "type": {
@@ -9585,6 +11674,15 @@
       "enum": ["left", "right", "hanging", "standard", "initial"],
       "type": "string"
     },
+    "HierBranchOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/HierBranch"
+        }
+      },
+      "type": "object"
+    },
     "HorizontalPositionOptions": {
       "additionalProperties": false,
       "description": "Options for horizontal positioning of a floating drawing.",
@@ -9654,6 +11752,20 @@
       "description": "Hue rotation direction.",
       "enum": ["clockwise", "counterClockwise"],
       "type": "string"
+    },
+    "HyperlinkBehaviorOptions": {
+      "additionalProperties": false,
+      "description": "ODF hyperlink target behavior.",
+      "properties": {
+        "show": {
+          "enum": ["new", "replace"],
+          "type": "string"
+        },
+        "targetFrameName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "HyperlinkOptions": {
       "additionalProperties": false,
@@ -9887,9 +11999,12 @@
           },
           "type": "array"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "description": "Foreign-namespace extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
         },
         "layoutNode": {
           "$ref": "#/definitions/LayoutNodeOptions",
@@ -10051,9 +12166,8 @@
           },
           "type": "array"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "moveWith": {
           "description": "Move with another named layout node (dgm:`@moveWith`).",
@@ -10075,8 +12189,8 @@
       "description": "dgm:rule.",
       "properties": {
         "factor": {
-          "description": "Multiplied factor (dgm:rule `@fact`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Multiplied factor (dgm:rule `@fact`)."
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship"
@@ -10085,8 +12199,8 @@
           "type": "string"
         },
         "maximum": {
-          "description": "Upper bound (dgm:rule `@max`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Upper bound (dgm:rule `@max`)."
         },
         "pointType": {
           "type": "string"
@@ -10096,8 +12210,8 @@
           "description": "Rule dimension (dgm:rule `@type`)."
         },
         "value": {
-          "description": "Preferred value (dgm:rule `@val`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Preferred value (dgm:rule `@val`)."
         }
       },
       "required": ["type"],
@@ -10108,15 +12222,22 @@
       "description": "dgm:shape — the geometry template a layout node renders as.",
       "properties": {
         "adjustments": {
-          "description": "Geometry adjustment values (dgm:adjLst).",
-          "items": {
-            "$ref": "#/definitions/AdjustOptions"
-          },
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/AdjustOptions"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Geometry adjustment values; null preserves an empty list (dgm:adjLst)."
         },
         "blip": {
-          "description": "Preview picture relationship id (dgm:shape `@r:blip`).",
-          "type": "string"
+          "description": "Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`).",
+          "type": ["string", "null"]
         },
         "blipPlaceholder": {
           "description": "Use the picture placeholder (dgm:shape `@blipPhldr`).",
@@ -11160,6 +13281,17 @@
       "required": ["id"],
       "type": "object"
     },
+    "MathArgumentPropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Argument properties (`m:argPr`).",
+      "properties": {
+        "size": {
+          "description": "Argument size scale (`m:argSz/@m:val`; 1 = 100%, 2 = 200%).",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "MathBaselineAlignment": {
       "description": "Matrix baseline alignment (s:).",
       "enum": ["inline", "top", "center", "bottom", "inside", "outside"],
@@ -11227,6 +13359,81 @@
       },
       "type": "object"
     },
+    "MathControlPropertiesOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "runProperties": {
+              "$ref": "#/definitions/RunPropertiesOptions"
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "insertion": {
+              "additionalProperties": false,
+              "properties": {
+                "author": {
+                  "description": "Name of the author who made the change",
+                  "type": "string"
+                },
+                "date": {
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+                },
+                "deletion": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions"
+                },
+                "id": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
+                },
+                "runProperties": {
+                  "$ref": "#/definitions/RunPropertiesOptions"
+                }
+              },
+              "required": ["author"],
+              "type": "object"
+            }
+          },
+          "required": ["insertion"],
+          "title": "insertion",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "deletion": {
+              "additionalProperties": false,
+              "properties": {
+                "author": {
+                  "description": "Name of the author who made the change",
+                  "type": "string"
+                },
+                "date": {
+                  "$ref": "#/definitions/DateTime",
+                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+                },
+                "id": {
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
+                },
+                "runProperties": {
+                  "$ref": "#/definitions/RunPropertiesOptions"
+                }
+              },
+              "required": ["author"],
+              "type": "object"
+            }
+          },
+          "required": ["deletion"],
+          "title": "deletion",
+          "type": "object"
+        }
+      ],
+      "description": "Control-character formatting (`m:ctrlPr`)."
+    },
     "MathDelimiterProperties": {
       "additionalProperties": false,
       "description": "Delimiter properties — bracket characters, growth, shape.",
@@ -11236,7 +13443,7 @@
           "type": "string"
         },
         "controlProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
+          "$ref": "#/definitions/MathControlPropertiesOptions",
           "description": "Control-character formatting (m:dPr/m:ctrlPr → w:rPr)."
         },
         "endCharacter": {
@@ -11337,8 +13544,328 @@
         {
           "additionalProperties": false,
           "properties": {
-            "argumentControlProperties": {
+            "children": {
+              "allOf": [
+                {
+                  "items": {
+                    "anyOf": [
+                      {
+                        "const": "CURRENT",
+                        "type": "string"
+                      },
+                      {
+                        "const": "TOTAL_PAGES",
+                        "type": "string"
+                      },
+                      {
+                        "const": "TOTAL_PAGES_IN_SECTION",
+                        "type": "string"
+                      },
+                      {
+                        "const": "SECTION",
+                        "type": "string"
+                      },
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "preserveSpace": {
+                            "type": "boolean"
+                          },
+                          "text": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["text"],
+                        "title": "text",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "instructionText": {
+                            "type": "string"
+                          },
+                          "preserveSpace": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["instructionText"],
+                        "title": "instructionText",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "deletedInstructionText": {
+                            "type": "string"
+                          },
+                          "preserveSpace": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["deletedInstructionText"],
+                        "title": "deletedInstructionText",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "tab": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["tab"],
+                        "title": "tab",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "noBreakHyphen": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["noBreakHyphen"],
+                        "title": "noBreakHyphen",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "softHyphen": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["softHyphen"],
+                        "title": "softHyphen",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dayShort": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["dayShort"],
+                        "title": "dayShort",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "monthShort": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["monthShort"],
+                        "title": "monthShort",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "yearShort": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["yearShort"],
+                        "title": "yearShort",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "dayLong": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["dayLong"],
+                        "title": "dayLong",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "monthLong": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["monthLong"],
+                        "title": "monthLong",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "yearLong": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["yearLong"],
+                        "title": "yearLong",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "annotationRef": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["annotationRef"],
+                        "title": "annotationRef",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "footnoteRef": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["footnoteRef"],
+                        "title": "footnoteRef",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "endnoteRef": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["endnoteRef"],
+                        "title": "endnoteRef",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "separator": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["separator"],
+                        "title": "separator",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "continuationSeparator": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["continuationSeparator"],
+                        "title": "continuationSeparator",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "pgNum": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["pgNum"],
+                        "title": "pgNum",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "carriageReturn": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["carriageReturn"],
+                        "title": "carriageReturn",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "lastRenderedPageBreak": {
+                            "const": true,
+                            "type": "boolean"
+                          }
+                        },
+                        "required": ["lastRenderedPageBreak"],
+                        "title": "lastRenderedPageBreak",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "object": {
+                            "$ref": "#/definitions/ObjectElementOptions"
+                          }
+                        },
+                        "required": ["object"],
+                        "title": "object",
+                        "type": "object"
+                      },
+                      {
+                        "additionalProperties": false,
+                        "properties": {
+                          "ruby": {
+                            "$ref": "#/definitions/RubyOptions"
+                          }
+                        },
+                        "required": ["ruby"],
+                        "title": "ruby",
+                        "type": "object"
+                      },
+                      {
+                        "$ref": "#/definitions/ParagraphChild"
+                      }
+                    ]
+                  },
+                  "type": "array"
+                },
+                {
+                  "additionalProperties": false,
+                  "properties": {},
+                  "type": "object"
+                }
+              ],
+              "description": "Mixed Word run content (w:EG_RunInnerContent mixed with m:t)."
+            },
+            "properties": {
+              "$ref": "#/definitions/MathRunPropertiesOptions"
+            },
+            "runProperties": {
               "$ref": "#/definitions/RunPropertiesOptions",
+              "description": "Run text formatting (w:rPr inside m:r)."
+            }
+          },
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "argumentControlProperties": {
+              "$ref": "#/definitions/MathControlPropertiesOptions",
               "description": "Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den...) — carried as a children-array member so its position round-trips."
             }
           },
@@ -11353,7 +13880,7 @@
               "additionalProperties": false,
               "properties": {
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:fPr/m:ctrlPr)."
                 },
                 "denominator": {
@@ -11362,9 +13889,9 @@
                   },
                   "type": "array"
                 },
-                "denominatorArgumentSize": {
-                  "description": "Argument size scaling for the denominator (m:den/m:argPr/m:argSz).",
-                  "type": "number"
+                "denominatorArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Denominator argument properties (m:den/m:argPr)."
                 },
                 "fractionType": {
                   "type": "string"
@@ -11375,9 +13902,9 @@
                   },
                   "type": "array"
                 },
-                "numeratorArgumentSize": {
-                  "description": "Argument size scaling for the numerator (m:num/m:argPr/m:argSz).",
-                  "type": "number"
+                "numeratorArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Numerator argument properties (m:num/m:argPr)."
                 }
               },
               "required": ["numerator", "denominator"],
@@ -11394,9 +13921,9 @@
             "superScript": {
               "additionalProperties": false,
               "properties": {
-                "baseArgumentSize": {
-                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
-                  "type": "number"
+                "baseArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Base argument properties (m:e/m:argPr)."
                 },
                 "children": {
                   "items": {
@@ -11405,7 +13932,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:sSupPr/m:ctrlPr)."
                 },
                 "superScript": {
@@ -11414,9 +13941,9 @@
                   },
                   "type": "array"
                 },
-                "superScriptArgumentSize": {
-                  "description": "Argument size scaling for the superscript (m:sup/m:argPr/m:argSz).",
-                  "type": "number"
+                "superScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Superscript argument properties (m:sup/m:argPr)."
                 }
               },
               "required": ["children", "superScript"],
@@ -11433,9 +13960,9 @@
             "subScript": {
               "additionalProperties": false,
               "properties": {
-                "baseArgumentSize": {
-                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
-                  "type": "number"
+                "baseArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Base argument properties (m:e/m:argPr)."
                 },
                 "children": {
                   "items": {
@@ -11444,7 +13971,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:sSubPr/m:ctrlPr)."
                 },
                 "subScript": {
@@ -11453,9 +13980,9 @@
                   },
                   "type": "array"
                 },
-                "subScriptArgumentSize": {
-                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
-                  "type": "number"
+                "subScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Subscript argument properties (m:sub/m:argPr)."
                 }
               },
               "required": ["children", "subScript"],
@@ -11476,9 +14003,9 @@
                   "description": "Align sub/super scripts (m:sSubSupPr/m:alnScr).",
                   "type": "boolean"
                 },
-                "baseArgumentSize": {
-                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
-                  "type": "number"
+                "baseArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Base argument properties (m:e/m:argPr)."
                 },
                 "children": {
                   "items": {
@@ -11487,7 +14014,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:sSubSupPr/m:ctrlPr)."
                 },
                 "subScript": {
@@ -11496,9 +14023,9 @@
                   },
                   "type": "array"
                 },
-                "subScriptArgumentSize": {
-                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
-                  "type": "number"
+                "subScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Subscript argument properties (m:sub/m:argPr)."
                 },
                 "superScript": {
                   "items": {
@@ -11506,8 +14033,9 @@
                   },
                   "type": "array"
                 },
-                "superScriptArgumentSize": {
-                  "$ref": "#/definitions/MathInput/anyOf/4/properties/superScript/properties/superScriptArgumentSize"
+                "superScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Superscript argument properties (m:sup/m:argPr)."
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -11524,9 +14052,9 @@
             "preSubSuperScript": {
               "additionalProperties": false,
               "properties": {
-                "baseArgumentSize": {
-                  "description": "Argument size scaling for the base (m:e/m:argPr/m:argSz).",
-                  "type": "number"
+                "baseArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Base argument properties (m:e/m:argPr)."
                 },
                 "children": {
                   "items": {
@@ -11535,7 +14063,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:sPrePr/m:ctrlPr)."
                 },
                 "subScript": {
@@ -11544,9 +14072,9 @@
                   },
                   "type": "array"
                 },
-                "subScriptArgumentSize": {
-                  "description": "Argument size scaling for the subscript (m:sub/m:argPr/m:argSz).",
-                  "type": "number"
+                "subScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Subscript argument properties (m:sub/m:argPr)."
                 },
                 "superScript": {
                   "items": {
@@ -11554,8 +14082,9 @@
                   },
                   "type": "array"
                 },
-                "superScriptArgumentSize": {
-                  "$ref": "#/definitions/MathInput/anyOf/4/properties/superScript/properties/superScriptArgumentSize"
+                "superScriptArgumentProperties": {
+                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
+                  "description": "Superscript argument properties (m:sup/m:argPr)."
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -11579,7 +14108,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:radPr/m:ctrlPr)."
                 },
                 "degree": {
@@ -11614,7 +14143,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11645,11 +14174,56 @@
           "additionalProperties": false,
           "properties": {
             "integral": {
-              "$ref": "#/definitions/MathInput/anyOf/9/properties/sum"
+              "$ref": "#/definitions/MathInput/anyOf/10/properties/sum"
             }
           },
           "required": ["integral"],
           "title": "integral",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "nary": {
+              "additionalProperties": false,
+              "description": "Any OMML n-ary operator not represented by the sum/integral sugar.",
+              "properties": {
+                "character": {
+                  "description": "Exact operator character (m:naryPr/m:chr, for example ∏).",
+                  "type": "string"
+                },
+                "children": {
+                  "items": {
+                    "$ref": "#/definitions/MathInput"
+                  },
+                  "type": "array"
+                },
+                "controlProperties": {
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
+                  "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
+                },
+                "properties": {
+                  "$ref": "#/definitions/MathNaryProperties"
+                },
+                "subScript": {
+                  "items": {
+                    "$ref": "#/definitions/MathInput"
+                  },
+                  "type": "array"
+                },
+                "superScript": {
+                  "items": {
+                    "$ref": "#/definitions/MathInput"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": ["character", "children"],
+              "type": "object"
+            }
+          },
+          "required": ["nary"],
+          "title": "nary",
           "type": "object"
         },
         {
@@ -11665,7 +14239,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:limLowPr/m:ctrlPr)."
                 },
                 "limit": {
@@ -11696,7 +14270,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:limUppPr/m:ctrlPr)."
                 },
                 "limit": {
@@ -11727,7 +14301,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:funcPr/m:ctrlPr)."
                 },
                 "name": {
@@ -11752,7 +14326,7 @@
               "additionalProperties": false,
               "properties": {
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:mPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11835,7 +14409,7 @@
           "additionalProperties": false,
           "properties": {
             "curlyBrackets": {
-              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
+              "$ref": "#/definitions/MathInput/anyOf/17/properties/roundBrackets"
             }
           },
           "required": ["curlyBrackets"],
@@ -11846,7 +14420,7 @@
           "additionalProperties": false,
           "properties": {
             "angledBrackets": {
-              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
+              "$ref": "#/definitions/MathInput/anyOf/17/properties/roundBrackets"
             }
           },
           "required": ["angledBrackets"],
@@ -11857,7 +14431,7 @@
           "additionalProperties": false,
           "properties": {
             "squareBrackets": {
-              "$ref": "#/definitions/MathInput/anyOf/15/properties/roundBrackets"
+              "$ref": "#/definitions/MathInput/anyOf/17/properties/roundBrackets"
             }
           },
           "required": ["squareBrackets"],
@@ -11877,7 +14451,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:borderBoxPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11906,7 +14480,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:boxPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11935,7 +14509,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:groupChrPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11964,7 +14538,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:phantPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -11987,7 +14561,7 @@
               "additionalProperties": false,
               "properties": {
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:eqArrPr/m:ctrlPr)."
                 },
                 "properties": {
@@ -12028,7 +14602,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:accPr/m:ctrlPr)."
                 }
               },
@@ -12053,7 +14627,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/RunPropertiesOptions",
+                  "$ref": "#/definitions/MathControlPropertiesOptions",
                   "description": "Control-character formatting (m:barPr/m:ctrlPr)."
                 },
                 "type": {
@@ -12226,16 +14800,37 @@
           "type": "string"
         },
         "interSpacing": {
-          "description": "Inter-equation spacing in twips (m:interSp)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Inter-equation spacing in twips or universal measure (m:interSp)."
         },
         "intraSpacing": {
-          "description": "Intra-equation spacing in twips (m:intraSp)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Intra-equation spacing in twips or universal measure (m:intraSp)."
         },
         "leftMargin": {
-          "description": "Left margin in twips (m:lMargin)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Left margin in twips or universal measure (m:lMargin; 720 = 0.5\")."
         },
         "mathFont": {
           "description": "Default math font (m:mathFont)",
@@ -12247,24 +14842,52 @@
           "type": "string"
         },
         "postSpacing": {
-          "description": "Spacing after a math instance in twips (m:postSp)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Spacing after a math instance in twips or universal measure (m:postSp)."
         },
         "preSpacing": {
-          "description": "Spacing before a math instance in twips (m:preSp)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Spacing before a math instance in twips or universal measure (m:preSp)."
         },
         "rightMargin": {
-          "description": "Right margin in twips (m:rMargin)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Right margin in twips or universal measure (m:rMargin; 720 = 0.5\")."
         },
         "smallFractions": {
           "description": "Use small fractions (m:smallFrac)",
           "type": "boolean"
         },
         "wrapIndent": {
-          "description": "Wrap indent in twips (m:wrapIndent)",
-          "type": "number"
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/PositiveUniversalMeasure"
+            }
+          ],
+          "description": "Wrap indent in twips or universal measure (m:wrapIndent)."
         },
         "wrapRight": {
           "description": "Wrap equations to the right (m:wrapRight; alternative to wrapIndent)",
@@ -12323,135 +14946,36 @@
       "enum": ["plain", "bold", "italic", "boldItalic"],
       "type": "string"
     },
-    "MediaDataTransformation": {
+    "MaxChildrenOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "MediaTransformation": {
       "additionalProperties": false,
       "properties": {
         "effectExtent": {
           "additionalProperties": false,
           "description": "Effect extent (wp:effectExtent) in raw EMUs — round-tripped verbatim from the source wrapper. When absent (generation path), the descriptor computes it from the shape's effects.",
           "properties": {
-            "b": {
+            "bottom": {
               "type": "number"
             },
-            "l": {
+            "left": {
               "type": "number"
             },
-            "r": {
+            "right": {
               "type": "number"
             },
-            "t": {
+            "top": {
               "type": "number"
             }
           },
-          "required": ["l", "t", "r", "b"],
-          "type": "object"
-        },
-        "emus": {
-          "additionalProperties": false,
-          "description": "Display dimensions in EMUs (English Metric Units)",
-          "properties": {
-            "x": {
-              "description": "Width in EMUs (1 inch = 914400 EMUs)",
-              "type": "number"
-            },
-            "y": {
-              "description": "Height in EMUs (1 inch = 914400 EMUs)",
-              "type": "number"
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
-        },
-        "flipHorizontal": {
-          "description": "Whether to flip the image horizontally (a:xfrm",
-          "type": "boolean"
-        },
-        "flipVertical": {
-          "description": "Whether to flip the image vertically (a:xfrm",
-          "type": "boolean"
-        },
-        "offset": {
-          "additionalProperties": false,
-          "properties": {
-            "emus": {
-              "$ref": "#/definitions/MediaDataTransformation/properties/offset/properties/pixels"
-            },
-            "pixels": {
-              "additionalProperties": false,
-              "properties": {
-                "x": {
-                  "type": "number"
-                },
-                "y": {
-                  "type": "number"
-                }
-              },
-              "required": ["x", "y"],
-              "type": "object"
-            }
-          },
-          "required": ["pixels"],
-          "type": "object"
-        },
-        "pixels": {
-          "additionalProperties": false,
-          "properties": {
-            "x": {
-              "description": "Width in pixels",
-              "type": "number"
-            },
-            "y": {
-              "description": "Height in pixels",
-              "type": "number"
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
-        },
-        "rotation": {
-          "description": "Optional rotation angle in degrees",
-          "type": "number"
-        },
-        "shapeExtent": {
-          "additionalProperties": false,
-          "description": "Shape extent from pic:spPr/a:xfrm/a:ext in EMUs when it differs from wp:extent; omitted when the two source sizes agree.",
-          "properties": {
-            "x": {
-              "type": "number"
-            },
-            "y": {
-              "type": "number"
-            }
-          },
-          "required": ["x", "y"],
-          "type": "object"
-        }
-      },
-      "required": ["pixels", "emus"],
-      "type": "object"
-    },
-    "MediaTransformation": {
-      "additionalProperties": false,
-      "description": "Transformation options for media display.\n\nSpecifies how an image should be transformed when displayed in the document. Width and height can be specified as numbers (in EMUs) or as universal measures (e.g., \"100mm\", \"2in\").",
-      "properties": {
-        "effectExtent": {
-          "additionalProperties": false,
-          "description": "Effect extent (wp:effectExtent) in raw EMUs — passed through verbatim.",
-          "properties": {
-            "b": {
-              "type": "number"
-            },
-            "l": {
-              "type": "number"
-            },
-            "r": {
-              "type": "number"
-            },
-            "t": {
-              "type": "number"
-            }
-          },
-          "required": ["l", "t", "r", "b"],
+          "required": ["left", "top", "right", "bottom"],
           "type": "object"
         },
         "flipHorizontal": {
@@ -12471,12 +14995,32 @@
               "$ref": "#/definitions/UniversalMeasure"
             }
           ],
-          "description": "Display height in EMUs or universal measure"
+          "description": "Display height in EMUs, or a universal measure such as `\"25.4mm\"`."
+        },
+        "inlineDistances": {
+          "additionalProperties": false,
+          "description": "Wrapper-level wp:inline distances in EMUs; wp:anchor distances use Floating.margins.",
+          "properties": {
+            "bottom": {
+              "type": "number"
+            },
+            "left": {
+              "type": "number"
+            },
+            "right": {
+              "type": "number"
+            },
+            "top": {
+              "type": "number"
+            }
+          },
+          "type": "object"
         },
         "offset": {
           "additionalProperties": false,
+          "description": "Drawing offset in EMUs, or universal measures.",
           "properties": {
-            "left": {
+            "x": {
               "anyOf": [
                 {
                   "type": "number"
@@ -12486,7 +15030,7 @@
                 }
               ]
             },
-            "top": {
+            "y": {
               "anyOf": [
                 {
                   "type": "number"
@@ -12505,16 +15049,16 @@
         },
         "shapeExtent": {
           "additionalProperties": false,
-          "description": "Shape extent from pic:spPr/a:xfrm/a:ext in EMUs; round-trip only when it differs from the wrapper extent.",
+          "description": "Shape extent from pic:spPr/a:xfrm/a:ext in EMUs when it differs from wp:extent; omitted when the two source sizes agree.",
           "properties": {
-            "x": {
+            "height": {
               "type": "number"
             },
-            "y": {
+            "width": {
               "type": "number"
             }
           },
-          "required": ["x", "y"],
+          "required": ["width", "height"],
           "type": "object"
         },
         "width": {
@@ -12525,7 +15069,8 @@
             {
               "$ref": "#/definitions/UniversalMeasure"
             }
-          ]
+          ],
+          "description": "Display width in EMUs, or a universal measure such as `\"25.4mm\"`."
         }
       },
       "required": ["width", "height"],
@@ -12612,71 +15157,6 @@
         }
       },
       "required": ["type"],
-      "type": "object"
-    },
-    "ModelConnectionOptions": {
-      "additionalProperties": false,
-      "description": "dgm:cxn — one data-model connection.",
-      "properties": {
-        "destinationId": {
-          "type": "string"
-        },
-        "destinationOrder": {
-          "type": "number"
-        },
-        "modelId": {
-          "type": "string"
-        },
-        "parentTransitionId": {
-          "type": "string"
-        },
-        "presentationId": {
-          "type": "string"
-        },
-        "siblingTransitionId": {
-          "type": "string"
-        },
-        "sourceId": {
-          "type": "string"
-        },
-        "sourceOrder": {
-          "type": "number"
-        },
-        "type": {
-          "description": "Connection kind (dgm:cxn `@type`).",
-          "enum": ["parOf", "presOf", "presParOf", "unknownRelationship"],
-          "type": "string"
-        }
-      },
-      "required": ["modelId", "sourceId", "destinationId"],
-      "type": "object"
-    },
-    "ModelPointOptions": {
-      "additionalProperties": false,
-      "description": "dgm:pt — one data-model point (dgm:pt).",
-      "properties": {
-        "connectionId": {
-          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
-          "type": "string"
-        },
-        "modelId": {
-          "description": "Point identity (dgm:pt `@modelId`).",
-          "type": "string"
-        },
-        "propertySet": {
-          "$ref": "#/definitions/PointPropertySetOptions"
-        },
-        "text": {
-          "description": "Point text (dgm:t).",
-          "type": "string"
-        },
-        "type": {
-          "description": "Point kind (dgm:pt `@type`).",
-          "enum": ["node", "asst", "doc", "pres", "parTrans", "sibTrans"],
-          "type": "string"
-        }
-      },
-      "required": ["modelId"],
       "type": "object"
     },
     "MoveRangeOptions": {
@@ -12899,6 +15379,10 @@
         "description": {
           "description": "Alt-text description (wps:cNvPr `@descr`).",
           "type": "string"
+        },
+        "hidden": {
+          "description": "Hidden drawing marker (wps:cNvPr `@hidden`).",
+          "type": "boolean"
         },
         "id": {
           "description": "Drawing id (wps:cNvPr `@id`).",
@@ -13541,6 +16025,20 @@
       "enum": ["pie", "bar"],
       "type": "string"
     },
+    "OfficeArtExtensionOptions": {
+      "additionalProperties": false,
+      "description": "An OfficeArt extension (a:ext). Content may only contain foreign namespaces.",
+      "properties": {
+        "content": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
+    },
     "OnOffLexicalValue": {
       "description": "Source lexical form for boolean run properties. String values round-trip verbatim — do not hand-author them.",
       "enum": ["true", "false", "1", "0", "on", "off", "t", "f"],
@@ -13556,6 +16054,15 @@
         },
         "value": {
           "description": "On/off value — defaults to true when omitted.",
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "OrgChartOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
           "type": "boolean"
         }
       },
@@ -13997,6 +16504,17 @@
         {
           "additionalProperties": false,
           "properties": {
+            "chartEx": {
+              "$ref": "#/definitions/ChartExOptions"
+            }
+          },
+          "required": ["chartEx"],
+          "title": "chartEx",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "smartArt": {
               "$ref": "#/definitions/SmartArtOptions"
             }
@@ -14022,22 +16540,27 @@
             "math": {
               "additionalProperties": false,
               "properties": {
-                "children": {
-                  "items": {
-                    "$ref": "#/definitions/MathInput"
-                  },
-                  "type": "array"
-                },
                 "display": {
                   "description": "Wrap the equation in a display `m:oMathPara` container instead of an inline `m:oMath` (preserved from a parsed source even without a justification).",
                   "type": "boolean"
                 },
+                "equations": {
+                  "description": "Equations (`m:oMath` inside an inline run or display paragraph).",
+                  "items": {
+                    "items": {
+                      "$ref": "#/definitions/MathInput"
+                    },
+                    "type": "array"
+                  },
+                  "type": "array"
+                },
                 "justification": {
-                  "description": "Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`). Present → the equation is wrapped in a display `m:oMathPara`; absent → inline `m:oMath`.",
+                  "description": "Display-math paragraph justification (`m:oMathPara/m:oMathParaPr/m:jc`).",
                   "enum": ["left", "right", "center", "centerGroup"],
                   "type": "string"
                 }
               },
+              "required": ["equations"],
               "type": "object"
             }
           },
@@ -14232,7 +16755,7 @@
           "additionalProperties": false,
           "properties": {
             "deletion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["deletion"],
@@ -14352,6 +16875,17 @@
           },
           "required": ["wpgGroup"],
           "title": "wpgGroup",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "wordprocessingCanvas": {
+              "$ref": "#/definitions/WordprocessingCanvasOptions"
+            }
+          },
+          "required": ["wordprocessingCanvas"],
+          "title": "wordprocessingCanvas",
           "type": "object"
         },
         {
@@ -14480,7 +17014,7 @@
           "additionalProperties": false,
           "properties": {
             "movedFrom": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["movedFrom"],
@@ -14491,7 +17025,7 @@
           "additionalProperties": false,
           "properties": {
             "movedTo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["movedTo"],
@@ -14559,7 +17093,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlDelRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlDelRangeStart"],
@@ -14581,7 +17115,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveFromRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveFromRangeStart"],
@@ -14603,7 +17137,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveToRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveToRangeStart"],
@@ -14625,7 +17159,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlConflictInsRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlConflictInsRangeStart"],
@@ -14647,7 +17181,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlConflictDelRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/36/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlConflictDelRangeStart"],
@@ -14669,7 +17203,7 @@
           "additionalProperties": false,
           "properties": {
             "conflictIns": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["conflictIns"],
@@ -14680,7 +17214,7 @@
           "additionalProperties": false,
           "properties": {
             "conflictDel": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["conflictDel"],
@@ -14863,7 +17397,7 @@
           "additionalProperties": false,
           "properties": {
             "bdo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/55/properties/dir"
+              "$ref": "#/definitions/ParagraphChild/anyOf/57/properties/dir"
             }
           },
           "required": ["bdo"],
@@ -17131,22 +19665,10 @@
         "customText": {
           "type": "boolean"
         },
-        "hideGeometry": {
-          "type": "boolean"
-        },
-        "hideLastTransition": {
-          "type": "boolean"
-        },
         "layoutCategoryId": {
           "type": "string"
         },
         "layoutTypeId": {
-          "type": "string"
-        },
-        "lockTextEntry": {
-          "type": "boolean"
-        },
-        "moveWith": {
           "type": "string"
         },
         "placeholder": {
@@ -17157,6 +19679,10 @@
         },
         "presentationAssociationId": {
           "type": "string"
+        },
+        "presentationLayoutVariables": {
+          "$ref": "#/definitions/PresentationLayoutVariablesOptions",
+          "description": "Presentation layout variables (dgm:presLayoutVars)."
         },
         "presentationName": {
           "type": "string"
@@ -17176,11 +19702,9 @@
         "quickStyleTypeId": {
           "type": "string"
         },
-        "useDefault": {
-          "type": "boolean"
-        },
-        "zOrderOffset": {
-          "type": "number"
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Shape style reference (dgm:style)."
         }
       },
       "type": "object"
@@ -17251,6 +19775,48 @@
       "examples": ["2.5cm", "1in", "6pt"],
       "pattern": "^(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi)$",
       "type": "string"
+    },
+    "PreferredChildrenOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "PresentationLayoutVariablesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "animateOneByOne": {
+          "$ref": "#/definitions/AnimateOneByOneOptions"
+        },
+        "animationLevel": {
+          "$ref": "#/definitions/AnimationLevelOptions"
+        },
+        "bulletEnabled": {
+          "$ref": "#/definitions/BulletEnabledOptions"
+        },
+        "direction": {
+          "$ref": "#/definitions/DiagramDirectionOptions"
+        },
+        "hierBranch": {
+          "$ref": "#/definitions/HierBranchOptions"
+        },
+        "maxChildren": {
+          "$ref": "#/definitions/MaxChildrenOptions"
+        },
+        "orgChart": {
+          "$ref": "#/definitions/OrgChartOptions"
+        },
+        "preferredChildren": {
+          "$ref": "#/definitions/PreferredChildrenOptions"
+        },
+        "resizeHandles": {
+          "$ref": "#/definitions/ResizeHandlesOptions"
+        }
+      },
+      "type": "object"
     },
     "PresetColorOptions": {
       "additionalProperties": false,
@@ -17868,9 +20434,18 @@
       "type": "object"
     },
     "ResizeHandles": {
-      "description": "(dgm:resizeHandles `@val`).",
+      "description": "Diagram resize-handle behavior.",
       "enum": ["exact", "relative"],
       "type": "string"
+    },
+    "ResizeHandlesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/ResizeHandles"
+        }
+      },
+      "type": "object"
     },
     "RevisionViewOptions": {
       "additionalProperties": false,
@@ -22192,6 +24767,7 @@
           "$ref": "#/definitions/ShapeStyleReferenceOptions"
         }
       },
+      "required": ["lineReference", "fillReference", "effectReference", "fontReference"],
       "type": "object"
     },
     "ShapeStyleReferenceOptions": {
@@ -22515,6 +25091,10 @@
           ],
           "description": "Built-in color transform ID (\"accent1_2\") or a custom color definition."
         },
+        "dataModel": {
+          "$ref": "#/definitions/DataModelOptions",
+          "description": "Complete data model for points, connections, properties, and metadata."
+        },
         "deletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
@@ -22595,18 +25175,6 @@
       "additionalProperties": false,
       "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a `SmartArtData` entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
       "properties": {
-        "color": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/colorsN.xml source bytes."
-        },
-        "data": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/dataN.xml source bytes."
-        },
-        "dataRels": {
-          "$ref": "#/definitions/DataType",
-          "description": "Verbatim rels XML of the data part (its targets resolve beside the data part)."
-        },
         "drawing": {
           "$ref": "#/definitions/DataType",
           "description": "diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) cached beside the data model. Falls back to an empty spTree shell when absent."
@@ -22615,9 +25183,9 @@
           "description": "Source drawing part file name (for sparse packages such as drawing10.xml).",
           "type": "string"
         },
-        "layout": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/layoutN.xml source bytes."
+        "drawingRelationship": {
+          "description": "Whether the source data part's own rels referenced the drawing cache. Undefined means authoring input and therefore uses standard data-part wiring; false preserves slide-rel wiring found during parsing.",
+          "type": "boolean"
         },
         "media": {
           "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
@@ -22635,10 +25203,6 @@
             "type": "object"
           },
           "type": "array"
-        },
-        "style": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/quickStyleN.xml source bytes."
         }
       },
       "type": "object"
@@ -23002,9 +25566,8 @@
         "descriptions": {
           "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "minVer": {
           "description": "Minimum Office version (dgm:styleDef `@minVer`).",
@@ -23035,9 +25598,8 @@
       "additionalProperties": false,
       "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "name": {
           "description": "Slot name referenced by dgm:layoutNode `@styleLbl` (required).",
@@ -25904,6 +28466,10 @@
       "additionalProperties": false,
       "description": "Options for configuring text wrapping around a drawing.",
       "properties": {
+        "effectExtent": {
+          "$ref": "#/definitions/EffectExtentProperties",
+          "description": "Nested wp:effectExtent distances in EMUs; separate from the wrapper-level wp:effectExtent."
+        },
         "margins": {
           "$ref": "#/definitions/Distance",
           "description": "Wrap-element distances in EMUs; separate from Floating.margins on wp:anchor."
@@ -26213,17 +28779,17 @@
               "$ref": "#/definitions/FormFieldOptions"
             },
             "hasResult": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/hasResult"
+              "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/hasResult"
             },
             "instrRunsXml": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/instrRunsXml"
+              "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/instrRunsXml"
             },
             "instructionAdditionRsid": {
               "$ref": "#/definitions/LongHexNumber",
               "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
             },
             "instructionRPrXml": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/instructionRPrXml"
+              "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/instructionRPrXml"
             },
             "instructionRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -26246,7 +28812,7 @@
               "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
             },
             "resultRunsXml": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/resultRunsXml"
+              "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/resultRunsXml"
             },
             "runPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -26257,7 +28823,7 @@
               "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
             },
             "separatorRPrXml": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/51/properties/separatorRPrXml"
+              "$ref": "#/definitions/ParagraphChild/anyOf/53/properties/separatorRPrXml"
             },
             "separatorRunPropertiesRsid": {
               "$ref": "#/definitions/LongHexNumber",
@@ -26305,6 +28871,17 @@
         {
           "additionalProperties": false,
           "properties": {
+            "chartEx": {
+              "$ref": "#/definitions/ChartExOptions"
+            }
+          },
+          "required": ["chartEx"],
+          "title": "chartEx",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "wpsShape": {
               "$ref": "#/definitions/ShapeOptions"
             }
@@ -26327,8 +28904,19 @@
         {
           "additionalProperties": false,
           "properties": {
+            "wordprocessingCanvas": {
+              "$ref": "#/definitions/WordprocessingCanvasOptions"
+            }
+          },
+          "required": ["wordprocessingCanvas"],
+          "title": "wordprocessingCanvas",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
             "insertion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["insertion"],
@@ -26339,7 +28927,7 @@
           "additionalProperties": false,
           "properties": {
             "deletion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/13/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
             }
           },
           "required": ["deletion"],
@@ -26589,6 +29177,113 @@
       },
       "required": ["sourceRelationshipId", "relationshipType", "target"],
       "type": "object"
+    },
+    "UserDefinedMetadataOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "float",
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "date",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "time",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/CalendarDurationOptions"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "string",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "text",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        }
+      ],
+      "description": "ODF user-defined metadata value with an explicit XSD-style discriminant."
     },
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
@@ -26890,27 +29585,48 @@
           "type": "boolean"
         },
         "childMaximum": {
-          "description": "Maximum children per parent (dgm:chMax `@val`).",
-          "type": "number"
+          "description": "Maximum children per parent (dgm:chMax `@val`); null preserves an omitted value.",
+          "type": ["number", "null"]
         },
         "childPreferred": {
-          "description": "Preferred children per parent (dgm:chPref `@val`).",
-          "type": "number"
+          "description": "Preferred children per parent (dgm:chPref `@val`); null preserves an omitted value.",
+          "type": ["number", "null"]
         },
         "direction": {
-          "$ref": "#/definitions/DiagramDirection",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DiagramDirection"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "Reading direction (dgm:dir `@val`)."
         },
         "hierarchyBranchStyle": {
-          "$ref": "#/definitions/HierBranch",
-          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HierBranch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`); null preserves an omitted value."
         },
         "organizationChart": {
           "description": "This is an organization chart (dgm:orgChart `@val`).",
           "type": "boolean"
         },
         "resizeHandles": {
-          "$ref": "#/definitions/ResizeHandles",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ResizeHandles"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "Resize-handle behavior (dgm:resizeHandles `@val`)."
         }
       },
@@ -32835,6 +35551,28 @@
       "required": ["function", "operator", "value"],
       "type": "object"
     },
+    "WholeE2oFormattingOptions": {
+      "additionalProperties": false,
+      "description": "Whole-shape formatting.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/OfficeArtExtensionOptions"
+          },
+          "type": "array"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
+        }
+      },
+      "type": "object"
+    },
     "WordCustomizationsOptions": {
       "additionalProperties": false,
       "description": "Word keyboard and toolbar customizations (`wne:tcg`).",
@@ -32863,6 +35601,78 @@
       },
       "type": "object"
     },
+    "WordprocessingCanvasOptions": {
+      "additionalProperties": false,
+      "description": "Wordprocessing canvas (`wpc:wpc`). Children use the same typed media union as `wpg:wgp`; canvas-level formatting uses shared DrawingML containers.",
+      "properties": {
+        "additionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+        },
+        "altText": {
+          "$ref": "#/definitions/DocPropertiesOptions"
+        },
+        "background": {
+          "$ref": "#/definitions/BackgroundFormattingOptions"
+        },
+        "children": {
+          "items": {
+            "$ref": "#/definitions/GroupChildMediaData"
+          },
+          "type": "array"
+        },
+        "deletionRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+        },
+        "extensionIds": {
+          "$ref": "#/definitions/DrawingExtensionIds",
+          "description": "Word 2010 wrapper ids; round-trip only."
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/OfficeArtExtensionOptions"
+          },
+          "type": "array"
+        },
+        "floating": {
+          "$ref": "#/definitions/Floating"
+        },
+        "graphicFrameLocks": {
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/graphicFrameLocks"
+        },
+        "lastRenderedPageBreak": {
+          "description": "A w:lastRenderedPageBreak shared the drawing's run (round-trip).",
+          "type": "boolean"
+        },
+        "mcChoiceRequires": {
+          "description": "mc:Choice Requires attribute used to regenerate the AlternateContent wrapper.",
+          "type": "string"
+        },
+        "runProperties": {
+          "$ref": "#/definitions/RunPropertiesOptions",
+          "description": "Structured run properties of the wrapping w:r (round-trip)."
+        },
+        "runPropertiesRsid": {
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+        },
+        "transformation": {
+          "$ref": "#/definitions/MediaTransformation"
+        },
+        "vmlFallback": {
+          "$ref": "#/definitions/ShapeOptions/properties/vmlFallback"
+        },
+        "vmlFallbackMedia": {
+          "$ref": "#/definitions/ShapeOptions/properties/vmlFallbackMedia"
+        },
+        "whole": {
+          "$ref": "#/definitions/WholeE2oFormattingOptions"
+        }
+      },
+      "required": ["children", "transformation"],
+      "type": "object"
+    },
     "WrapPolygon": {
       "additionalProperties": false,
       "description": "Wrap polygon for wrapTight/wrapThrough — the contour text wraps around. Round-tripped verbatim so Word's authored contour is preserved.",
@@ -32871,9 +35681,11 @@
           "type": "boolean"
         },
         "points": {
+          "description": "One wp:start point followed by at least two wp:lineTo points, in source order.",
           "items": {
             "$ref": "#/definitions/WrapPolygonPoint"
           },
+          "minItems": 3,
           "type": "array"
         }
       },
@@ -33165,6 +35977,26 @@
       },
       "required": ["name"],
       "type": "object"
+    },
+    "XsdDouble": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "const": "infinity",
+          "type": "string"
+        },
+        {
+          "const": "-infinity",
+          "type": "string"
+        },
+        {
+          "const": "nan",
+          "type": "string"
+        }
+      ],
+      "description": "XSD double's non-finite tokens are preserved as readable canonical values."
     }
   },
   "description": "Options for generating a WordprocessingML (.docx) document. Mirrors the DocumentOptions TypeScript interface of @office-open/docx.",

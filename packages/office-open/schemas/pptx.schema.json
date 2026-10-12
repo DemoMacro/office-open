@@ -256,6 +256,15 @@
       "enum": ["none", "one", "branch"],
       "type": "string"
     },
+    "AnimateOneByOneOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/AnimateOneByOne"
+        }
+      },
+      "type": "object"
+    },
     "AnimationBuildOptions": {
       "additionalProperties": false,
       "properties": {
@@ -878,6 +887,15 @@
       "description": "Diagram animation granularity.",
       "enum": ["none", "level", "center"],
       "type": "string"
+    },
+    "AnimationLevelOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/AnimationLevel"
+        }
+      },
+      "type": "object"
     },
     "AnimationOptions": {
       "additionalProperties": false,
@@ -1609,6 +1627,23 @@
         "hindiAlpha1Period"
       ],
       "type": "string"
+    },
+    "AutoReloadOptions": {
+      "additionalProperties": false,
+      "description": "ODF automatic reload; xlink:type is fixed to \"simple\" by the schema.",
+      "properties": {
+        "delay": {
+          "$ref": "#/definitions/CalendarDurationOptions"
+        },
+        "href": {
+          "type": "string"
+        },
+        "show": {
+          "enum": ["replace", "onLoad"],
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "AxisCrossBetween": {
       "description": "Value-axis crossing mode: between category bands or at the band middle.",
@@ -2543,6 +2578,15 @@
       "required": ["type"],
       "type": "object"
     },
+    "BulletEnabledOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "BulletNoneOption": {
       "additionalProperties": false,
       "description": "No bullet (a:buNone) — may still carry the shared color/size/font style (EG_Bullet allows buClrTx/buSzTx/buFontTx before buNone).",
@@ -2666,6 +2710,35 @@
         },
         "sizePoints": {
           "description": "a:buSzPts `@val` — bullet size in points.",
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "CalendarDurationOptions": {
+      "additionalProperties": false,
+      "description": "ISO 8601 duration components; omitted components are zero.",
+      "properties": {
+        "days": {
+          "type": "number"
+        },
+        "hours": {
+          "type": "number"
+        },
+        "minutes": {
+          "type": "number"
+        },
+        "months": {
+          "type": "number"
+        },
+        "negative": {
+          "const": true,
+          "type": "boolean"
+        },
+        "seconds": {
+          "type": "number"
+        },
+        "years": {
           "type": "number"
         }
       },
@@ -3978,9 +4051,8 @@
         "descriptions": {
           "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "minVer": {
           "description": "Minimum Office version (dgm:colorsDef `@minVer`).",
@@ -4690,8 +4762,8 @@
       "description": "dgm:constr.",
       "properties": {
         "factor": {
-          "description": "Factor applied to the reference (dgm:constr `@fact`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Factor applied to the reference (dgm:constr `@fact`)."
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship",
@@ -4730,8 +4802,8 @@
           "description": "Constrained dimension (dgm:constr `@type`)."
         },
         "value": {
-          "description": "Absolute value (dgm:constr `@val`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Absolute value (dgm:constr `@val`)."
         }
       },
       "required": ["type"],
@@ -5267,21 +5339,163 @@
       },
       "type": "object"
     },
+    "DataModelBackgroundOptions": {
+      "additionalProperties": false,
+      "description": "dgm:bg —.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "fill": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/FillOptions"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "DataModelConnectionOptions": {
+      "additionalProperties": false,
+      "description": "dgm:cxn — one data-model connection.",
+      "properties": {
+        "destinationId": {
+          "type": "string"
+        },
+        "destinationOrder": {
+          "type": "number"
+        },
+        "extensions": {
+          "description": "Connection extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
+        },
+        "modelId": {
+          "type": "string"
+        },
+        "parentTransitionId": {
+          "type": "string"
+        },
+        "presentationId": {
+          "type": "string"
+        },
+        "siblingTransitionId": {
+          "type": "string"
+        },
+        "sourceId": {
+          "type": "string"
+        },
+        "sourceOrder": {
+          "type": "number"
+        },
+        "type": {
+          "description": "Connection kind (dgm:cxn `@type`).",
+          "enum": ["parOf", "presOf", "presParOf", "unknownRelationship"],
+          "type": "string"
+        }
+      },
+      "required": ["modelId", "sourceId", "destinationId"],
+      "type": "object"
+    },
     "DataModelOptions": {
       "additionalProperties": false,
       "description": "dgm:dataModel — structured point/connection model.",
       "properties": {
+        "background": {
+          "$ref": "#/definitions/DataModelBackgroundOptions"
+        },
         "connections": {
           "items": {
-            "$ref": "#/definitions/ModelConnectionOptions"
+            "$ref": "#/definitions/DataModelConnectionOptions"
+          },
+          "type": "array"
+        },
+        "extensions": {
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
           },
           "type": "array"
         },
         "points": {
           "items": {
-            "$ref": "#/definitions/ModelPointOptions"
+            "$ref": "#/definitions/DataModelPointOptions"
           },
           "type": "array"
+        },
+        "whole": {
+          "$ref": "#/definitions/DataModelWholeOptions"
+        }
+      },
+      "type": "object"
+    },
+    "DataModelPointOptions": {
+      "additionalProperties": false,
+      "description": "dgm:pt — one data-model point (dgm:pt).",
+      "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode",
+          "description": "Container black-and-white mode (dgm:spPr `@bwMode`)."
+        },
+        "connectionId": {
+          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
+          "type": "string"
+        },
+        "extensions": {
+          "description": "Point extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
+        },
+        "modelId": {
+          "description": "Point identity (dgm:pt `@modelId`).",
+          "type": "string"
+        },
+        "propertySet": {
+          "$ref": "#/definitions/PointPropertySetOptions"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ShapePropertiesOptions",
+          "description": "DrawingML shape properties (dgm:spPr)."
+        },
+        "text": {
+          "description": "Plain-text projection of dgm:t.",
+          "type": "string"
+        },
+        "textBody": {
+          "$ref": "#/definitions/TextBodyOptions",
+          "description": "Complete DrawingML text body (dgm:t)."
+        },
+        "type": {
+          "description": "Point kind (dgm:pt `@type`).",
+          "enum": ["node", "asst", "doc", "pres", "parTrans", "sibTrans"],
+          "type": "string"
+        }
+      },
+      "required": ["modelId"],
+      "type": "object"
+    },
+    "DataModelWholeOptions": {
+      "additionalProperties": false,
+      "description": "dgm:whole — CT_WholeE2oFormatting.",
+      "properties": {
+        "effectDag": {
+          "$ref": "#/definitions/EffectDagOptions"
+        },
+        "effects": {
+          "$ref": "#/definitions/EffectListOptions"
+        },
+        "outline": {
+          "$ref": "#/definitions/OutlineOptions"
         }
       },
       "type": "object"
@@ -5444,9 +5658,32 @@
       "type": "object"
     },
     "DiagramDirection": {
-      "description": "(dgm:dir `@val`).",
+      "description": "Diagram reading direction.",
       "enum": ["normal", "reversed"],
       "type": "string"
+    },
+    "DiagramDirectionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/DiagramDirection"
+        }
+      },
+      "type": "object"
+    },
+    "DiagramExtensionOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "description": "Foreign-namespace child XML inside a:ext; omit for an empty extension.",
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        }
+      },
+      "required": ["uri"],
+      "type": "object"
     },
     "DiagramIterationOptions": {
       "additionalProperties": false,
@@ -5514,6 +5751,79 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "DocumentStatisticsOptions": {
+      "additionalProperties": false,
+      "description": "ODF document statistic counts.",
+      "properties": {
+        "cellCount": {
+          "type": "number"
+        },
+        "characterCount": {
+          "type": "number"
+        },
+        "drawCount": {
+          "type": "number"
+        },
+        "frameCount": {
+          "type": "number"
+        },
+        "imageCount": {
+          "type": "number"
+        },
+        "nonWhitespaceCharacterCount": {
+          "type": "number"
+        },
+        "objectCount": {
+          "type": "number"
+        },
+        "oleObjectCount": {
+          "type": "number"
+        },
+        "pageCount": {
+          "type": "number"
+        },
+        "paragraphCount": {
+          "type": "number"
+        },
+        "rowCount": {
+          "type": "number"
+        },
+        "sentenceCount": {
+          "type": "number"
+        },
+        "syllableCount": {
+          "type": "number"
+        },
+        "tableCount": {
+          "type": "number"
+        },
+        "wordCount": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "DocumentTemplateOptions": {
+      "additionalProperties": false,
+      "description": "ODF template reference; xlink:type is fixed to \"simple\" by the schema.",
+      "properties": {
+        "actuate": {
+          "const": "onRequest",
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        },
+        "modified": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": ["href"],
       "type": "object"
     },
     "DropDownListControlOptions": {
@@ -7124,6 +7434,15 @@
       "enum": ["left", "right", "hanging", "standard", "initial"],
       "type": "string"
     },
+    "HierBranchOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/HierBranch"
+        }
+      },
+      "type": "object"
+    },
     "HslColorOptions": {
       "additionalProperties": false,
       "description": "Options for HSL color.",
@@ -7171,6 +7490,20 @@
       "description": "Hue rotation direction.",
       "enum": ["clockwise", "counterClockwise"],
       "type": "string"
+    },
+    "HyperlinkBehaviorOptions": {
+      "additionalProperties": false,
+      "description": "ODF hyperlink target behavior.",
+      "properties": {
+        "show": {
+          "enum": ["new", "replace"],
+          "type": "string"
+        },
+        "targetFrameName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
     },
     "InnerShadowEffectOptions": {
       "additionalProperties": false,
@@ -7361,9 +7694,12 @@
           },
           "type": "array"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "description": "Foreign-namespace extensions (dgm:extLst).",
+          "items": {
+            "$ref": "#/definitions/DiagramExtensionOptions"
+          },
+          "type": "array"
         },
         "layoutNode": {
           "$ref": "#/definitions/LayoutNodeOptions",
@@ -7525,9 +7861,8 @@
           },
           "type": "array"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "moveWith": {
           "description": "Move with another named layout node (dgm:`@moveWith`).",
@@ -7553,8 +7888,8 @@
       "description": "dgm:rule.",
       "properties": {
         "factor": {
-          "description": "Multiplied factor (dgm:rule `@fact`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Multiplied factor (dgm:rule `@fact`)."
         },
         "for": {
           "$ref": "#/definitions/ConstraintRelationship"
@@ -7563,8 +7898,8 @@
           "type": "string"
         },
         "maximum": {
-          "description": "Upper bound (dgm:rule `@max`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Upper bound (dgm:rule `@max`)."
         },
         "pointType": {
           "type": "string"
@@ -7574,8 +7909,8 @@
           "description": "Rule dimension (dgm:rule `@type`)."
         },
         "value": {
-          "description": "Preferred value (dgm:rule `@val`).",
-          "type": "number"
+          "$ref": "#/definitions/XsdDouble",
+          "description": "Preferred value (dgm:rule `@val`)."
         }
       },
       "required": ["type"],
@@ -7586,15 +7921,22 @@
       "description": "dgm:shape — the geometry template a layout node renders as.",
       "properties": {
         "adjustments": {
-          "description": "Geometry adjustment values (dgm:adjLst).",
-          "items": {
-            "$ref": "#/definitions/AdjustOptions"
-          },
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/definitions/AdjustOptions"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Geometry adjustment values; null preserves an empty list (dgm:adjLst)."
         },
         "blip": {
-          "description": "Preview picture relationship id (dgm:shape `@r:blip`).",
-          "type": "string"
+          "description": "Preview picture relationship id; null preserves an empty attribute (dgm:shape `@r:blip`).",
+          "type": ["string", "null"]
         },
         "blipPlaceholder": {
           "description": "Use the picture placeholder (dgm:shape `@blipPhldr`).",
@@ -8380,6 +8722,15 @@
       "required": ["content"],
       "type": "object"
     },
+    "MaxChildrenOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "MediaAnimationType": {
       "description": "Media playback action: playAudio, playVideo, or \"play\" (media-type-agnostic).",
       "enum": ["playAudio", "playVideo", "play"],
@@ -8398,71 +8749,6 @@
           "type": "number"
         }
       },
-      "type": "object"
-    },
-    "ModelConnectionOptions": {
-      "additionalProperties": false,
-      "description": "dgm:cxn — one data-model connection.",
-      "properties": {
-        "destinationId": {
-          "type": "string"
-        },
-        "destinationOrder": {
-          "type": "number"
-        },
-        "modelId": {
-          "type": "string"
-        },
-        "parentTransitionId": {
-          "type": "string"
-        },
-        "presentationId": {
-          "type": "string"
-        },
-        "siblingTransitionId": {
-          "type": "string"
-        },
-        "sourceId": {
-          "type": "string"
-        },
-        "sourceOrder": {
-          "type": "number"
-        },
-        "type": {
-          "description": "Connection kind (dgm:cxn `@type`).",
-          "enum": ["parOf", "presOf", "presParOf", "unknownRelationship"],
-          "type": "string"
-        }
-      },
-      "required": ["modelId", "sourceId", "destinationId"],
-      "type": "object"
-    },
-    "ModelPointOptions": {
-      "additionalProperties": false,
-      "description": "dgm:pt — one data-model point (dgm:pt).",
-      "properties": {
-        "connectionId": {
-          "description": "Transition point owning connection (dgm:pt `@cxnId`, transition points only).",
-          "type": "string"
-        },
-        "modelId": {
-          "description": "Point identity (dgm:pt `@modelId`).",
-          "type": "string"
-        },
-        "propertySet": {
-          "$ref": "#/definitions/PointPropertySetOptions"
-        },
-        "text": {
-          "description": "Point text (dgm:t).",
-          "type": "string"
-        },
-        "type": {
-          "description": "Point kind (dgm:pt `@type`).",
-          "enum": ["node", "asst", "doc", "pres", "parTrans", "sibTrans"],
-          "type": "string"
-        }
-      },
-      "required": ["modelId"],
       "type": "object"
     },
     "ModifyVerifierOptions": {
@@ -9035,6 +9321,15 @@
       "description": "Style-part on/off state.",
       "enum": ["on", "off", "default"],
       "type": "string"
+    },
+    "OrgChartOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
     },
     "OtherwiseOptions": {
       "additionalProperties": false,
@@ -10212,22 +10507,10 @@
         "customText": {
           "type": "boolean"
         },
-        "hideGeometry": {
-          "type": "boolean"
-        },
-        "hideLastTransition": {
-          "type": "boolean"
-        },
         "layoutCategoryId": {
           "type": "string"
         },
         "layoutTypeId": {
-          "type": "string"
-        },
-        "lockTextEntry": {
-          "type": "boolean"
-        },
-        "moveWith": {
           "type": "string"
         },
         "placeholder": {
@@ -10238,6 +10521,10 @@
         },
         "presentationAssociationId": {
           "type": "string"
+        },
+        "presentationLayoutVariables": {
+          "$ref": "#/definitions/PresentationLayoutVariablesOptions",
+          "description": "Presentation layout variables (dgm:presLayoutVars)."
         },
         "presentationName": {
           "type": "string"
@@ -10257,11 +10544,9 @@
         "quickStyleTypeId": {
           "type": "string"
         },
-        "useDefault": {
-          "type": "boolean"
-        },
-        "zOrderOffset": {
-          "type": "number"
+        "style": {
+          "$ref": "#/definitions/DefaultShapeStyleOptions",
+          "description": "Shape style reference (dgm:style)."
         }
       },
       "type": "object"
@@ -10316,6 +10601,48 @@
       "enum": ["png", "jpg", "gif", "bmp", "tif", "ico", "emf", "wmf"],
       "type": "string"
     },
+    "PreferredChildrenOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "PresentationLayoutVariablesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "animateOneByOne": {
+          "$ref": "#/definitions/AnimateOneByOneOptions"
+        },
+        "animationLevel": {
+          "$ref": "#/definitions/AnimationLevelOptions"
+        },
+        "bulletEnabled": {
+          "$ref": "#/definitions/BulletEnabledOptions"
+        },
+        "direction": {
+          "$ref": "#/definitions/DiagramDirectionOptions"
+        },
+        "hierBranch": {
+          "$ref": "#/definitions/HierBranchOptions"
+        },
+        "maxChildren": {
+          "$ref": "#/definitions/MaxChildrenOptions"
+        },
+        "orgChart": {
+          "$ref": "#/definitions/OrgChartOptions"
+        },
+        "preferredChildren": {
+          "$ref": "#/definitions/PreferredChildrenOptions"
+        },
+        "resizeHandles": {
+          "$ref": "#/definitions/ResizeHandlesOptions"
+        }
+      },
+      "type": "object"
+    },
     "PresentationOptions": {
       "additionalProperties": false,
       "description": "Root options for a .pptx package — maps to presentation.xml plus its satellite parts.",
@@ -10328,8 +10655,16 @@
           "description": "Root relationship Type for docProps/app.xml; preserved for non-canonical producers. Round-trip only — do not hand-author.",
           "type": "string"
         },
+        "application": {
+          "description": "Generating application name, round-tripped from ODF meta:generator.",
+          "type": "string"
+        },
         "autoCompressPictures": {
           "type": "boolean"
+        },
+        "autoReload": {
+          "$ref": "#/definitions/AutoReloadOptions",
+          "description": "ODF automatic document reload behavior."
         },
         "bookmarkIdSeed": {
           "type": "number"
@@ -10446,6 +10781,10 @@
         "description": {
           "type": "string"
         },
+        "editingDuration": {
+          "$ref": "#/definitions/CalendarDurationOptions",
+          "description": "Editing duration expressed with explicit calendar components."
+        },
         "embedTrueTypeFonts": {
           "type": "boolean"
         },
@@ -10471,6 +10810,10 @@
         },
         "htmlPublish": {
           "$ref": "#/definitions/HtmlPublishPropertiesOptions"
+        },
+        "hyperlinkBehavior": {
+          "$ref": "#/definitions/HyperlinkBehaviorOptions",
+          "description": "ODF hyperlink target behavior."
         },
         "identifier": {
           "description": "Unique document identifier, round-tripped from dc:identifier.",
@@ -10567,6 +10910,10 @@
         "print": {
           "$ref": "#/definitions/PrintPropertiesOptions"
         },
+        "printedBy": {
+          "description": "Printed-by name, round-tripped from ODF meta:printed-by.",
+          "type": "string"
+        },
         "rawParts": {
           "description": "Parts generate() does not rebuild (handout masters, customXml, unknown extension parts), carried verbatim from a parsed source with bytes and content-type intact — do not hand-author.",
           "items": {
@@ -10634,6 +10981,10 @@
           "required": ["rId"],
           "type": "object"
         },
+        "statistics": {
+          "$ref": "#/definitions/DocumentStatisticsOptions",
+          "description": "ODF document statistics."
+        },
         "strictFirstAndLastChars": {
           "type": "boolean"
         },
@@ -10650,8 +11001,19 @@
           },
           "type": "array"
         },
+        "template": {
+          "$ref": "#/definitions/DocumentTemplateOptions",
+          "description": "ODF document template reference."
+        },
         "title": {
           "type": "string"
+        },
+        "userDefinedProperties": {
+          "description": "ODF user-defined properties, in source order.",
+          "items": {
+            "$ref": "#/definitions/UserDefinedMetadataOptions"
+          },
+          "type": "array"
         },
         "version": {
           "description": "Document version number, round-tripped from cp:version.",
@@ -11252,9 +11614,18 @@
       "type": "object"
     },
     "ResizeHandles": {
-      "description": "(dgm:resizeHandles `@val`).",
+      "description": "Diagram resize-handle behavior.",
       "enum": ["exact", "relative"],
       "type": "string"
+    },
+    "ResizeHandlesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "val": {
+          "$ref": "#/definitions/ResizeHandles"
+        }
+      },
+      "type": "object"
     },
     "RgbColorOptions": {
       "additionalProperties": false,
@@ -12891,6 +13262,10 @@
         "customerData": {
           "$ref": "#/definitions/TableOptions/properties/customerData"
         },
+        "dataModel": {
+          "$ref": "#/definitions/DataModelOptions",
+          "description": "Complete canonical data model; preferred when rebuilding without raw bytes."
+        },
         "description": {
           "$ref": "#/definitions/ShapeOptions/properties/description"
         },
@@ -13034,18 +13409,6 @@
       "additionalProperties": false,
       "description": "Verbatim source parts for byte-exact SmartArt round-trip. When set on a `SmartArtData` entry, the compiler re-emits these bytes under the diagram part names instead of rebuilding from the modeled XML.",
       "properties": {
-        "color": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/colorsN.xml source bytes."
-        },
-        "data": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/dataN.xml source bytes."
-        },
-        "dataRels": {
-          "$ref": "#/definitions/DataType",
-          "description": "Verbatim rels XML of the data part (its targets resolve beside the data part)."
-        },
         "drawing": {
           "$ref": "#/definitions/DataType",
           "description": "diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing snapshot (MS-ODRAWXML 2008 extension) cached beside the data model. Falls back to an empty spTree shell when absent."
@@ -13054,9 +13417,9 @@
           "description": "Source drawing part file name (for sparse packages such as drawing10.xml).",
           "type": "string"
         },
-        "layout": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/layoutN.xml source bytes."
+        "drawingRelationship": {
+          "description": "Whether the source data part's own rels referenced the drawing cache. Undefined means authoring input and therefore uses standard data-part wiring; false preserves slide-rel wiring found during parsing.",
+          "type": "boolean"
         },
         "media": {
           "description": "Images referenced by the data part's own rels (dgm:pt blipFill art).",
@@ -13074,10 +13437,6 @@
             "type": "object"
           },
           "type": "array"
-        },
-        "style": {
-          "$ref": "#/definitions/DataType",
-          "description": "diagrams/quickStyleN.xml source bytes."
         }
       },
       "type": "object"
@@ -13186,9 +13545,8 @@
         "descriptions": {
           "$ref": "#/definitions/LayoutDefinitionOptions/properties/descriptions"
         },
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "minVer": {
           "description": "Minimum Office version (dgm:styleDef `@minVer`).",
@@ -13219,9 +13577,8 @@
       "additionalProperties": false,
       "description": "dgm:styleLbl — formatting for one style slot.",
       "properties": {
-        "ext": {
-          "description": "Raw dgm:extLst inner XML — verbatim round-trip.",
-          "type": "string"
+        "extensions": {
+          "$ref": "#/definitions/LayoutDefinitionOptions/properties/extensions"
         },
         "name": {
           "description": "Slot name referenced by dgm:layoutNode `@styleLbl` (required).",
@@ -15225,6 +15582,113 @@
       "pattern": "^-?(\\d+(\\.\\d+)?|\\.\\d+)(mm|cm|in|pt|pc|pi|px)$",
       "type": "string"
     },
+    "UserDefinedMetadataOptions": {
+      "anyOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "float",
+              "type": "string"
+            },
+            "value": {
+              "type": "number"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "date",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "time",
+              "type": "string"
+            },
+            "value": {
+              "$ref": "#/definitions/CalendarDurationOptions"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "boolean",
+              "type": "string"
+            },
+            "value": {
+              "type": "boolean"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "string",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "const": "text",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "type", "value"],
+          "type": "object"
+        }
+      ],
+      "description": "ODF user-defined metadata value with an explicit XSD-style discriminant."
+    },
     "UserShapeConnectorOptions": {
       "additionalProperties": false,
       "properties": {
@@ -15508,27 +15972,48 @@
           "type": "boolean"
         },
         "childMaximum": {
-          "description": "Maximum children per parent (dgm:chMax `@val`).",
-          "type": "number"
+          "description": "Maximum children per parent (dgm:chMax `@val`); null preserves an omitted value.",
+          "type": ["number", "null"]
         },
         "childPreferred": {
-          "description": "Preferred children per parent (dgm:chPref `@val`).",
-          "type": "number"
+          "description": "Preferred children per parent (dgm:chPref `@val`); null preserves an omitted value.",
+          "type": ["number", "null"]
         },
         "direction": {
-          "$ref": "#/definitions/DiagramDirection",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DiagramDirection"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "Reading direction (dgm:dir `@val`)."
         },
         "hierarchyBranchStyle": {
-          "$ref": "#/definitions/HierBranch",
-          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`)."
+          "anyOf": [
+            {
+              "$ref": "#/definitions/HierBranch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Branch style for hierarchy layouts (dgm:hierBranch `@val`); null preserves an omitted value."
         },
         "organizationChart": {
           "description": "This is an organization chart (dgm:orgChart `@val`).",
           "type": "boolean"
         },
         "resizeHandles": {
-          "$ref": "#/definitions/ResizeHandles",
+          "anyOf": [
+            {
+              "$ref": "#/definitions/ResizeHandles"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "Resize-handle behavior (dgm:resizeHandles `@val`)."
         }
       },
@@ -15980,6 +16465,26 @@
       },
       "required": ["type", "position"],
       "type": "object"
+    },
+    "XsdDouble": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "const": "infinity",
+          "type": "string"
+        },
+        {
+          "const": "-infinity",
+          "type": "string"
+        },
+        {
+          "const": "nan",
+          "type": "string"
+        }
+      ],
+      "description": "XSD double's non-finite tokens are preserved as readable canonical values."
     }
   },
   "description": "Options for generating a PresentationML (.pptx) file. Mirrors the PresentationOptions TypeScript interface of @office-open/pptx.",

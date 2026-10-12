@@ -131,9 +131,7 @@ describe("parseChartDrawing alt text", () => {
     expect(result).toMatchObject({
       chart: {
         transformation: {
-          width: 5486400,
-          height: 3200400,
-          effectExtent: { l: 19050, t: 0, r: 19050, b: 0 },
+          effectExtent: { left: 19050, top: 0, right: 19050, bottom: 0 },
         },
       },
     });

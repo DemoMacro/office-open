@@ -1,4 +1,9 @@
 import type { RunOptions } from "@office-open/docx";
+import type {
+  OdfStyleFamily,
+  OdfStyleOverlayOptions,
+  OdfStylePropertyOverlay,
+} from "@office-open/odf";
 import {
   attributeString,
   childNamed,
@@ -12,29 +17,7 @@ import type { Element } from "@office-open/xml";
 import { OdtParseError } from "./error";
 import { parseTabStop, tabStopXml, type TabStop } from "./paragraph";
 
-export type OdfStyleFamily =
-  | "paragraph"
-  | "text"
-  | "graphic"
-  | "table"
-  | "table-column"
-  | "table-row"
-  | "table-cell"
-  | "section"
-  | "page-layout"
-  | "drawing-page";
-
-export interface OdtStylePropertyOverlay {
-  /** RNG-valid property element retained after canonical fields are mapped. */
-  name: string;
-  attributes: Record<string, string | number>;
-}
-
-export interface OdtAutomaticStyleOverlay {
-  name: string;
-  family: OdfStyleFamily;
-  properties: OdtStylePropertyOverlay[];
-}
+export type OdtAutomaticStyleOverlay = OdfStyleOverlayOptions;
 
 export type StyleMap = Map<
   string,
@@ -44,7 +27,7 @@ export type StyleMap = Map<
     pageBreakBefore?: boolean;
     tabStops?: TabStop[];
     family: OdfStyleFamily;
-    properties?: OdtStylePropertyOverlay[];
+    properties?: OdfStylePropertyOverlay[];
     character: CharacterProperties;
   }
 >;
@@ -202,8 +185,8 @@ export function automaticStyleOverlaysXml(
 }
 
 function overlayAttributesXml(
-  attributes: Record<string, string | number>,
-): Record<string, string | number> {
+  attributes: Record<string, string | number | boolean>,
+): Record<string, string | number | boolean> {
   return Object.fromEntries(
     Object.entries(attributes).map(([name, value]) => [
       name,
@@ -211,7 +194,7 @@ function overlayAttributesXml(
         ? value
         : isPercentAttribute(name)
           ? `${value}%`
-          : isLengthAttribute(name)
+          : typeof value === "number" && isLengthAttribute(name)
             ? emuToLength(value * 635)
             : value,
     ]),

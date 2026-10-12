@@ -18,10 +18,12 @@ const INTERFACE_SOURCE: Record<string, { interfaceName: string; file: string }> 
 };
 
 describe("extractInterfaceFields", () => {
-  it("reads a flat interface (CorePropertiesOptions, 19 fields, sorted)", () => {
+  it("reads a flat interface (CorePropertiesOptions, 28 fields, sorted)", () => {
     expect(
       extractInterfaceFields("CorePropertiesOptions", "packages/core/src/opc/core.ts"),
     ).toEqual([
+      "application",
+      "autoReload",
       "category",
       "childOrder",
       "contentStatus",
@@ -30,6 +32,8 @@ describe("extractInterfaceFields", () => {
       "creator",
       "defaultNamespace",
       "description",
+      "editingDuration",
+      "hyperlinkBehavior",
       "identifier",
       "keywords",
       "language",
@@ -37,9 +41,13 @@ describe("extractInterfaceFields", () => {
       "lastPrinted",
       "legacyMicrosoft",
       "modified",
+      "printedBy",
       "revision",
+      "statistics",
       "subject",
+      "template",
       "title",
+      "userDefinedProperties",
       "version",
     ]);
   });

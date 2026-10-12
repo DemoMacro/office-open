@@ -76,8 +76,8 @@ export type { LineShapeOptions, ConnectorOptions } from "./shape/line-shape";
 
 // Media
 export { Media } from "@office-open/core";
-export { createTransformation, type MediaTransformation } from "./media/media";
-export type { MediaData, MediaDataTransformation } from "./media/data";
+export { createTransformation } from "./media/media";
+export type { MediaData, MediaTransformation } from "./media/data";
 export type { VideoFrameOptions, VideoType, PosterType } from "./media/video-frame";
 export type {
   AudioFrameOptions,

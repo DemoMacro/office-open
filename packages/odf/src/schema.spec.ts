@@ -1,4 +1,4 @@
-import type { ChartSpaceOptions } from "@office-open/core";
+import type { ChartSpaceOptions, CorePropertiesOptions } from "@office-open/core";
 import { parse } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
@@ -9,13 +9,59 @@ import {
   generateDatabaseDocument,
   officeFormsXml,
   OdfSchemaError,
+  metaXml,
   parseOfficeForms,
+  parseMeta,
   parseChartBody,
   parseChartDocument,
   parseDatabaseDocument,
 } from "./index";
 
 describe("ODF schema codecs", () => {
+  it("round-trips the complete ODF metadata surface and rejects unknown metadata", () => {
+    const files = {
+      "meta.xml": metaXml({
+        creator: "Original Author",
+        lastModifiedBy: "Latest Author",
+        created: "2026-01-01T00:00:00Z",
+        modified: "2026-01-02T00:00:00Z",
+      }),
+    };
+    expect(parseMeta(files)).toMatchObject({
+      creator: "Original Author",
+      lastModifiedBy: "Latest Author",
+    });
+    const metadata: CorePropertiesOptions = {
+      application: "Application/1.0",
+      printedBy: "Printer",
+      editingDuration: { hours: 1, minutes: 2, seconds: 3.5 },
+      template: {
+        href: "https://example.invalid/template.ots",
+        actuate: "onRequest",
+        title: "Template",
+        modified: "2026-01-03T00:00:00Z",
+      },
+      autoReload: { href: "https://example.invalid/reload", show: "replace", delay: { days: 1 } },
+      hyperlinkBehavior: { targetFrameName: "_blank", show: "new" },
+      statistics: { pageCount: 2, wordCount: 12, nonWhitespaceCharacterCount: 70 },
+      userDefinedProperties: [
+        { name: "Number", type: "float", value: 1.5 },
+        { name: "Date", type: "date", value: "2026-01-01T00:00:00Z" },
+        { name: "Duration", type: "time", value: { minutes: 3 } },
+        { name: "Flag", type: "boolean", value: true },
+        { name: "Text", type: "string", value: "Value" },
+        { name: "Plain", type: "text", value: "Plain" },
+      ],
+    };
+    expect(parseMeta({ "meta.xml": metaXml(metadata) })).toMatchObject(metadata);
+    expect(() =>
+      parseMeta({
+        "meta.xml":
+          '<?xml version="1.0"?><office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"><office:meta><meta:unknown>Value</meta:unknown></office:meta></office:document-meta>',
+      }),
+    ).toThrow(OdfSchemaError);
+  });
+
   it("round-trips chart subdocuments through the shared chart model", () => {
     const chart: ChartDocumentOptions = {
       title: "Chart",

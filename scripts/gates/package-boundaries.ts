@@ -51,9 +51,25 @@ const ARCHITECTURE: Record<string, ArchitectureRule> = {
     runtime: new Set(["core", "odf"]),
     type: new Set(["core", "xml", "pptx"]),
   },
+  doc: {
+    runtime: new Set(["core"]),
+    type: new Set(["docx"]),
+  },
+  xls: {
+    runtime: new Set(["core"]),
+    type: new Set(["xlsx"]),
+  },
+  ppt: {
+    runtime: new Set(["core"]),
+    type: new Set(["pptx"]),
+  },
+  rtf: {
+    runtime: new Set(["core"]),
+    type: new Set(["docx"]),
+  },
 };
 
-const TARGET_PACKAGES = new Set(["odf", "odt", "ods", "odp"]);
+const TARGET_PACKAGES = new Set(["odf", "odt", "ods", "odp", "doc", "xls", "ppt", "rtf"]);
 
 function stripComments(source: string): string {
   return source

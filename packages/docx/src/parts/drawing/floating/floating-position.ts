@@ -219,14 +219,18 @@ export interface Floating {
   horizontalPosition: HorizontalPositionOptions;
   verticalPosition: VerticalPositionOptions;
   allowOverlap?: boolean;
+  /** Whether the drawing is hidden (wp:anchor/@hidden); omitted when the source attribute is absent. */
+  hidden?: boolean;
   lockAnchor?: boolean;
   behindDocument?: boolean;
   layoutInCell?: boolean;
   margins?: Margins;
   wrap?: TextWrapping;
   zIndex?: number;
-  /** Marker coordinates (wp:simplePos, EMU or universal measure); defaults to 0,0. */
+  /** Marker coordinates and simplePos switch (EMU or universal measure); coordinates default to 0,0. */
   simplePos?: {
+    /** Explicit wp:anchor/@simplePos value; omitted when the source attribute is absent. */
+    enabled?: boolean;
     /** Marker X coordinate in EMUs or universal measure. */
     x?: number | UniversalMeasure;
     /** Marker Y coordinate in EMUs or universal measure. */

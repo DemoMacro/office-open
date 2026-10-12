@@ -31,6 +31,7 @@ import {
   type GraphicStyle,
   type OcfManifestOptions,
   type OdfPackageFiles,
+  type OdfPackageMemberOptions,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
@@ -65,7 +66,7 @@ import {
 } from "./list";
 import { parseMasterHeaderFooter, parsePageLayout } from "./master-pages";
 import { parseNotesConfiguration } from "./notes";
-import type { OdtEmbeddedObjectOptions, OdtPackageMemberOptions } from "./package";
+import type { OdtEmbeddedObjectOptions } from "./package";
 import {
   bookmarkEndXml,
   declarationsXml,
@@ -479,7 +480,7 @@ function objectMembers(
   path: string,
   files: Record<string, string>,
   binaries: Record<string, Uint8Array>,
-): OdtPackageMemberOptions[] {
+): OdfPackageMemberOptions[] {
   return [
     ...Object.entries(files)
       .filter(([memberPath]) => memberPath.startsWith(`${path}/`))
@@ -497,7 +498,7 @@ function sourcePackageMembers(
   chartBodies: Map<string, ChartSpaceOptions>,
   embeddedObjects: Map<string, OdtEmbeddedObjectOptions>,
   usedBinaryPaths: Set<string>,
-): OdtPackageMemberOptions[] {
+): OdfPackageMemberOptions[] {
   const objectMemberPaths = new Set(
     [...embeddedObjects.values()].flatMap((object) => object.members.map((member) => member.path)),
   );

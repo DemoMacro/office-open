@@ -27,11 +27,14 @@ export interface LegacyField {
 
 /** Picture bytes and dimensions decoded from the Escher BStore container. */
 export interface LegacyPictureData {
-  type: "png" | "jpeg" | "gif" | "tiff" | "bmp" | "unknown";
+  type: "png" | "jpeg" | "gif" | "tiff" | "bmp" | "ico" | "emf" | "wmf" | "unknown";
   data: Uint8Array;
   width: number;
   height: number;
 }
+
+/** A picture shape resolved from the OfficeArt drawing group by its shape id. */
+export type LegacyPictureByShapeId = Map<number, LegacyPictureData>;
 
 /** Options produced by the legacy DOC reader. */
 export type LegacyDocumentOptions = DocumentOptions;

@@ -1,6 +1,6 @@
 import { CompoundFileReader } from "@office-open/core";
 
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";
 
 export function readCompoundFile(data: Uint8Array): CompoundFileReader {
   return new CompoundFileReader(data);
@@ -9,7 +9,7 @@ export function readCompoundFile(data: Uint8Array): CompoundFileReader {
 export function readRequiredStream(reader: CompoundFileReader, path: string): Uint8Array {
   const entry = reader.entry(path);
   if (!entry || entry.type !== "stream") {
-    throw new LegacyExcelError(`Invalid legacy XLS file: missing or unreadable ${path} stream`, {
+    throw new XlsParseError(`Invalid legacy XLS file: missing or unreadable ${path} stream`, {
       part: "stream",
       path,
       reason: "missing-required-stream",

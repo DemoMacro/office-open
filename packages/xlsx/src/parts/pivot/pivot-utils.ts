@@ -234,8 +234,8 @@ export interface PivotPageFieldOptions {
 
 /** Options for generating a pivot table from worksheet source data. */
 export interface SourcePivotTableOptions {
-  /** Input mode; omitted means source. */
-  mode?: "source";
+  /** Canonical pivot-table input mode. */
+  mode: "source";
   /** Pivot table name (default: "PivotTable{N}") */
   name?: string;
   /** Source data range, e.g. "A1:D11" — must be on the same or a different sheet */
@@ -361,10 +361,18 @@ export interface SourcePivotTableOptions {
   fieldOverrides?: PivotFieldOverrideOptions[];
 }
 
+/** One pivot table rebuilt from a complete package definition. */
+export interface DefinitionPivotTableOptions {
+  /** Canonical pivot-table input mode. */
+  mode: "definition";
+  /** Pivot cache relationship id or generated cache key. */
+  cacheId: number;
+  /** Complete pivot table definition round-tripped from pivotTable XML. */
+  definition: PivotTableDefinitionOptions;
+}
+
 /** One pivot table, either derived from source data or a complete definition. */
-export type PivotTableOptions =
-  | SourcePivotTableOptions
-  | { mode: "definition"; cacheId: number; definition: PivotTableDefinitionOptions };
+export type PivotTableOptions = SourcePivotTableOptions | DefinitionPivotTableOptions;
 
 /** Pivot format (CT_Format). */
 export interface PivotFormatOptions {

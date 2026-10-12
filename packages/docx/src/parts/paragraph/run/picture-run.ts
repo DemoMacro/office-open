@@ -25,9 +25,12 @@ import type {
  */
 import type { DocPropertiesOptions } from "@parts/drawing/doc-properties/doc-properties";
 import type { RunPropertiesOptions } from "@parts/paragraph/run/properties";
-import type { MediaTransformation } from "@shared/media";
 import { createTransformation } from "@shared/media";
-import type { MediaData, NonVisualPropertiesOptions } from "@shared/media/data";
+import type {
+  MediaData,
+  MediaTransformation,
+  NonVisualPropertiesOptions,
+} from "@shared/media/data";
 
 import type { Floating } from "../../drawing";
 import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "../../drawing/descriptor";

@@ -14,27 +14,19 @@
  */
 export interface EffectExtentProperties {
   /**
-   * ## Additional Extent on Top Edge
-   *
-   * Specifies the additional length, in EMUs, which shall be added to the top edge of the DrawingML object to determine its actual top edge including effects.
+   * Additional top extent in EMUs.
    */
   top: number;
   /**
-   * ## Additional Extent on Right Edge
-   *
-   * Specifies the additional length, in EMUs, which shall be added to the right edge of the DrawingML object to determine its actual right edge including effects.
+   * Additional right extent in EMUs.
    */
   right: number;
   /**
-   * ## Additional Extent on Bottom Edge
-   *
-   * Specifies the additional length, in EMUs, which shall be added to the bottom edge of the DrawingML object to determine its actual bottom edge including effects.
+   * Additional bottom extent in EMUs.
    */
   bottom: number;
   /**
-   * ## Additional Extent on Left Edge
-   *
-   * Specifies the additional length, in EMUs, which shall be added to the left edge of the DrawingML object to determine its actual left edge including effects.
+   * Additional left extent in EMUs.
    */
   left: number;
 }

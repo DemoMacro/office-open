@@ -227,6 +227,23 @@ describe("parseDocument RTF rich destinations", () => {
     expect(document.footnotes?.[0]?.children[0]).toEqual({
       paragraph: { children: [{ text: "Note" }] },
     });
+    expect(document.sections[0]?.children?.[0]).toEqual({
+      paragraph: { children: [{ footnoteReference: 0 }, { text: "Body" }] },
+    });
+  });
+
+  it("separates left and right header and footer slots", () => {
+    const document = parseDocument(
+      String.raw`{\rtf1{\headerl Left}{\headerr Right}{\footerl Left}{\footerr Right}}`,
+    );
+    expect(document.sections[0]?.headers).toEqual({
+      default: [{ paragraph: { children: [{ text: "Right" }] } }],
+      even: [{ paragraph: { children: [{ text: "Left" }] } }],
+    });
+    expect(document.sections[0]?.footers).toEqual({
+      default: [{ paragraph: { children: [{ text: "Right" }] } }],
+      even: [{ paragraph: { children: [{ text: "Left" }] } }],
+    });
   });
 
   it("projects direct hyperlinks, comments, and canonical shapes", () => {
@@ -373,7 +390,7 @@ describe("parseDocument RTF rich destinations", () => {
   });
 
   it("projects stylesheet metadata and body formatting", () => {
-    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}{\stylesheet{\s7 Base;\sbasedon7\snext7\shidden\spriority9\sqformat\ql\li120\sb240\brdrb\brdrw15\cbpat1}{\cs8 Link;\b\i}}\s7 Body}`;
+    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}{\stylesheet{\s7 Base;\sbasedon7\snext7\shidden\spriority9\sqformat\ql\li120\sb240\brdrb\brdrw15\cbpat1}{\cs8 Link;\b\i\strike\super\lang1033\caps\scaps\v\charscalex90}}\s7 Body}`;
     const styles = parseDocument(source).styles;
     expect(styles?.paragraphStyles?.[0]).toMatchObject({
       id: "rtf-style-7",
@@ -392,8 +409,45 @@ describe("parseDocument RTF rich destinations", () => {
     });
     expect(styles?.characterStyles?.[0]).toMatchObject({
       id: "rtf-character-style-8",
-      run: { bold: true, italic: true },
+      run: {
+        bold: true,
+        italic: true,
+        strike: true,
+        verticalAlign: "superscript",
+        language: { value: "en-US" },
+        allCaps: true,
+        smallCaps: true,
+        vanish: true,
+        scale: 90,
+      },
     });
+  });
+
+  it("projects table row and cell properties", () => {
+    const source = String.raw`{\rtf1{\colortbl;\red255\green0\blue0;}\trowd\trqc\trh300\clcbpat1\clvertalc\clbrdrt\brdrw15\cellx1000\cellx2000 Left\cell Right\cell\row}`;
+    const firstChild = parseDocument(source).sections[0]?.children?.[0];
+    const table = firstChild && "table" in firstChild ? firstChild.table : undefined;
+    expect(table).toEqual({
+      columnWidths: [1000, 2000],
+      rows: [
+        {
+          height: { value: 300, rule: "atLeast" },
+          rowAlignment: "center",
+          cells: [
+            {
+              shading: { type: "clear", fill: "FF0000" },
+              verticalAlign: "center",
+              borders: { top: { style: "single" } },
+              children: [{ paragraph: { children: [{ text: "Left" }] } }],
+            },
+            { children: [{ paragraph: { children: [{ text: "Right" }] } }] },
+          ],
+        },
+      ],
+    });
+    expect(() => parseDocument(String.raw`{\rtf1\clcbpat9\cellx1000\cell} `)).toThrow(
+      "\\clcbpat references an invalid color",
+    );
   });
 
   it("rejects an unlisted non-starred destination", () => {

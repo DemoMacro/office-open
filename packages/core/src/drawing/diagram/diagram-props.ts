@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { element } from "@office-open/xml";
+import { element, escapeXml, stringifyElement } from "@office-open/xml";
+import type { Element } from "@office-open/xml";
 
 import type { Shape3DOptions } from "../three-d/shape-3d";
 import { createShape3D } from "../three-d/shape-3d";
@@ -21,6 +22,33 @@ export interface DiagramExtensionListOptions {
 
 export interface DiagramExtensionOptions {
   uri: string;
+  /** Foreign-namespace child XML inside a:ext; omit for an empty extension. */
+  content?: string;
+}
+
+export function stringifyDiagramExtensions(
+  extensions?: readonly DiagramExtensionOptions[],
+): string {
+  if (!extensions?.length) return "";
+  const children = extensions
+    .map((extension) =>
+      extension.content === undefined
+        ? `<a:ext uri="${escapeXml(extension.uri)}"/>`
+        : `<a:ext uri="${escapeXml(extension.uri)}">${extension.content}</a:ext>`,
+    )
+    .join("");
+  return `<dgm:extLst>${children}</dgm:extLst>`;
+}
+
+export function parseDiagramExtensions(extLst: Element): DiagramExtensionOptions[] {
+  return (extLst.elements ?? [])
+    .filter((child) => child.name === "a:ext")
+    .map((extension) => ({
+      uri: String(extension.attributes?.["uri"] ?? ""),
+      ...(extension.elements?.length
+        ? { content: (extension.elements ?? []).map(stringifyElement).join("") }
+        : {}),
+    }));
 }
 
 /**
@@ -29,10 +57,15 @@ export interface DiagramExtensionOptions {
  * Generic extension list pattern used across OOXML.
  */
 export const createDiagramExtensionList = (options?: DiagramExtensionListOptions): string => {
+  if (!options?.extensions?.length) return "";
   const children: string[] = [];
   if (options?.extensions) {
     for (const ext of options.extensions) {
-      children.push(`<a:ext uri="${ext.uri}"/>`);
+      children.push(
+        ext.content === undefined
+          ? `<a:ext uri="${escapeXml(ext.uri)}"/>`
+          : `<a:ext uri="${escapeXml(ext.uri)}">${ext.content}</a:ext>`,
+      );
     }
   }
   return element("dgm:extLst", undefined, children);

@@ -248,7 +248,9 @@ function presentationContainer(
 
 function legacyPresentation(): Uint8Array {
   const textShape = presentationContainer(0xf004, [
-    presentationRecord(0xf00a, [...littleEndian32(2050), ...littleEndian32(544)]),
+    presentationRecord(0xf00a, [...littleEndian32(2050), ...littleEndian32(544)], {
+      instance: 202,
+    }),
     presentationRecord(0xf010, [
       ...(() => [0, 0x02, 0x40, 0x00, 0, 0x03, 0x00, 0])(),
       ...(() => [0, 0x04, 0x00, 0x00, 0, 0x05, 0x00, 0])(),

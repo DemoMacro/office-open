@@ -1,9 +1,27 @@
+import type {
+  TextCharacterPropertiesOptions,
+  TextParagraphPropertiesOptions,
+} from "@office-open/core";
 import type { TableOptions } from "@office-open/pptx";
 
 import type { RecordNode } from "../records";
+
+export interface LegacyTextStyleCollection {
+  readonly characters: number;
+  readonly paragraph?: TextParagraphPropertiesOptions;
+  readonly character?: TextCharacterPropertiesOptions;
+}
+
+export interface LegacyTextStyle {
+  readonly paragraphs: readonly LegacyTextStyleCollection[];
+  readonly characters: readonly LegacyTextStyleCollection[];
+}
+
 export interface TextEntry {
   readonly placeholderType: number;
   readonly text: string;
+  readonly placeholderSize?: "half" | "quarter";
+  readonly styles?: LegacyTextStyle;
 }
 
 export type TableCell = NonNullable<TableOptions["rows"]>[number]["cells"][number];
@@ -24,6 +42,7 @@ export interface DrawingContext {
   readonly pictures: readonly (LegacyPicture | undefined)[];
   readonly usedEntryIndexes: Set<number>;
   readonly hyperlinks: ReadonlyMap<number, { url?: string; tooltip?: string }>;
+  readonly fonts: ReadonlyMap<number, string>;
 }
 
 export interface LegacyTextHyperlink {

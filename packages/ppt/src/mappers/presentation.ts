@@ -1,6 +1,7 @@
 import { CompoundFileReader } from "@office-open/core";
 import type { PresentationOptions } from "@office-open/pptx";
 
+import { PptParseError } from "../errors";
 import { assertCfbSignature, readStream, readSummaryInformation } from "../parts/container";
 import {
   assertNotEncrypted,
@@ -9,13 +10,7 @@ import {
   readPersistReferences,
   readStreamOffset,
 } from "../parts/persist";
-import {
-  LegacyPowerPointError,
-  RecordType,
-  findDirect,
-  readInt32,
-  readRecordHeader,
-} from "../records";
+import { RecordType, findDirect, readInt32, readRecordHeader } from "../records";
 import {
   CURRENT_USER_STREAM,
   ENCRYPTED_TOKEN,
@@ -23,10 +18,11 @@ import {
   POWERPOINT_DOCUMENT_STREAM,
 } from "./constants";
 import { decryptPowerPointDocument } from "./container";
+import { readFontNames } from "./fonts";
 import type { DrawingContext } from "./models";
 import { readPictureStore } from "./pictures";
 import { readSlideTextGroups } from "./slide-text";
-import { readMaster, readSlide } from "./slides";
+import { readMaster, readNotesPersistReferences, readSlide } from "./slides";
 import { readHyperlinkTargets, masterUnitsToEmu } from "./text";
 
 /**
@@ -43,7 +39,7 @@ export function parsePresentation(
   options?: LegacyParseOptions,
 ): PresentationOptions {
   if (!(data instanceof Uint8Array)) {
-    throw new LegacyPowerPointError("parsePresentation expects a Uint8Array", {
+    throw new PptParseError("parsePresentation expects a Uint8Array", {
       part: "container",
       path: "/",
       reason: "invalid-input-type",
@@ -55,7 +51,7 @@ export function parsePresentation(
   try {
     reader = new CompoundFileReader(data);
   } catch (error) {
-    throw new LegacyPowerPointError(
+    throw new PptParseError(
       `Invalid CFB container: ${error instanceof Error ? error.message : String(error)}`,
       { part: "container", path: "/", reason: "invalid-container" },
     );
@@ -68,7 +64,7 @@ export function parsePresentation(
   const currentUserView = createView(currentUser);
 
   if (currentUser.byteLength < 28) {
-    throw new LegacyPowerPointError(
+    throw new PptParseError(
       "Unsupported or corrupt legacy PowerPoint file: Current User atom is too short",
       {
         part: "stream",
@@ -82,7 +78,7 @@ export function parsePresentation(
     );
   }
   if (currentUserView.getUint16(2, true) !== RecordType.currentUserAtom) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid Current User atom", {
+    throw new PptParseError("Corrupt legacy PowerPoint file: invalid Current User atom", {
       part: "stream",
       path: CURRENT_USER_STREAM,
       recordType: currentUserView.getUint16(2, true),
@@ -107,7 +103,7 @@ export function parsePresentation(
     currentUser = new Uint8Array(currentUser);
     createView(currentUser).setUint32(12, NON_ENCRYPTED_TOKEN, true);
   } else if (encryptionToken !== NON_ENCRYPTED_TOKEN) {
-    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported", {
+    throw new PptParseError("Encrypted legacy PowerPoint files are not supported", {
       part: "stream",
       path: CURRENT_USER_STREAM,
       recordName: "CurrentUserAtom",
@@ -125,7 +121,7 @@ export function parsePresentation(
   );
   const userEdit = readRecordHeader(documentView, editOffset);
   if (userEdit.type !== RecordType.userEditAtom || userEdit.length < 28) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid UserEditAtom", {
+    throw new PptParseError("Corrupt legacy PowerPoint file: invalid UserEditAtom", {
       part: "record",
       path: POWERPOINT_DOCUMENT_STREAM,
       recordType: userEdit.type,
@@ -140,14 +136,13 @@ export function parsePresentation(
   const documentReference = readInt32(documentView, userEdit, 16);
   const documentOffset = persistReferences.get(documentReference);
   if (documentOffset === undefined) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint file: missing document persist object",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint file: missing document persist object");
   }
 
   const documentRecord = readPersistedRecord(documentView, documentOffset, [RecordType.document]);
   assertNotEncrypted(documentRecord);
   const hyperlinkTargets = readHyperlinkTargets(documentView, documentRecord);
+  const fontNames = readFontNames(documentView, documentRecord);
 
   const documentAtom = findDirect(documentRecord, RecordType.documentAtom);
   const size = documentAtom
@@ -157,9 +152,9 @@ export function parsePresentation(
       }
     : undefined;
 
-  const slideGroups = readSlideTextGroups(documentView, documentRecord, "slide");
-  const notesGroups = readSlideTextGroups(documentView, documentRecord, "notes");
-  const masterGroups = readSlideTextGroups(documentView, documentRecord, "master");
+  const slideGroups = readSlideTextGroups(documentView, documentRecord, "slide", fontNames);
+  const notesReferences = readNotesPersistReferences(documentView, persistReferences);
+  const masterGroups = readSlideTextGroups(documentView, documentRecord, "master", fontNames);
   const masterNames = new Map<number, string>();
   const masters = masterGroups.map((group, index) => {
     const name = `Legacy Master ${index + 1}`;
@@ -175,6 +170,7 @@ export function parsePresentation(
         pictures,
         usedEntryIndexes: new Set(),
         hyperlinks: hyperlinkTargets,
+        fonts: fontNames,
       },
       name,
     );
@@ -186,6 +182,7 @@ export function parsePresentation(
       pictures,
       usedEntryIndexes: new Set(),
       hyperlinks: hyperlinkTargets,
+      fonts: fontNames,
     };
     return readSlide(
       documentView,
@@ -194,7 +191,7 @@ export function parsePresentation(
       context,
       defaultMaster,
       masterNames,
-      notesGroups,
+      notesReferences,
     );
   });
   const result: PresentationOptions = {};

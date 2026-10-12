@@ -12,6 +12,8 @@ export interface PptParseContext {
   readonly recordName?: string;
   /** Escher OPT property id when the failure is scoped to one property. */
   readonly propertyId?: number;
+  /** Notes identifier from SlideAtom when the failure is scoped to notes. */
+  readonly notesId?: number;
   /** Stream-relative byte offset at which validation failed. */
   readonly offset?: number;
   /** Required or declared field/record length in bytes. */

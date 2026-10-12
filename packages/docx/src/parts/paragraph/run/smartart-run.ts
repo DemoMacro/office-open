@@ -10,6 +10,7 @@
 import type { LongHexNumber } from "@office-open/core";
 import type {
   ColorDefinitionOptions,
+  DataModelOptions,
   LayoutDefinitionOptions,
   SmartArtRawParts,
   StyleDefinitionOptions,
@@ -37,6 +38,8 @@ export interface SmartArtNode {
 export interface SmartArtOptions {
   /** Tree-shaped data for the diagram content. */
   nodes: SmartArtNode[];
+  /** Complete data model for points, connections, properties, and metadata. */
+  dataModel?: DataModelOptions;
   /** Display dimensions */
   transformation: MediaTransformation;
   /** Floating positioning */

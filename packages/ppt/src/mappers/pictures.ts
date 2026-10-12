@@ -1,6 +1,6 @@
+import { PptParseError } from "../errors";
 import { createView } from "../parts/persist";
 import {
-  LegacyPowerPointError,
   isZeroPadding,
   readRecordHeader,
   recordBody,
@@ -32,7 +32,7 @@ function readPictureRecordRange(view: DataView, offset: number, end: number): Re
     try {
       header = readRecordHeader(view, cursor, end);
     } catch (error) {
-      if (!(error instanceof LegacyPowerPointError)) throw error;
+      if (!(error instanceof PptParseError)) throw error;
       break;
     }
     records.push({ ...header, children: [] });
@@ -49,7 +49,7 @@ function readIsolatedPicture(view: DataView, record: RecordNode): LegacyPicture 
       ? readPictureRecord(view, record)
       : readEmbeddedPicture(record, recordBody(view, record));
   } catch (error) {
-    if (!(error instanceof LegacyPowerPointError)) throw error;
+    if (!(error instanceof PptParseError)) throw error;
     return undefined;
   }
 }
@@ -60,19 +60,19 @@ function isPictureRecord(record: RecordNode): boolean {
 
 function readPictureRecord(view: DataView, bse: RecordNode): LegacyPicture | undefined {
   if (bse.length < 36) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed Pictures stream");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed Pictures stream");
   }
 
   const nameLength = view.getUint8(bse.offset + 8 + 33);
   const blipOffset = bse.offset + 8 + 36 + nameLength;
   if (blipOffset === bse.end) return undefined;
   if (blipOffset + 8 > bse.end) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed Pictures stream");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed Pictures stream");
   }
 
   const blip = readRecordHeader(view, blipOffset, bse.end);
   if (blip.end !== bse.end) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed Pictures stream");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed Pictures stream");
   }
   const body = recordBody(view, blip);
   return readEmbeddedPicture(blip, body);
@@ -82,7 +82,7 @@ function readEmbeddedPicture(blip: RecordHeader, body: Uint8Array): LegacyPictur
   const skip = picturePayloadOffset(blip);
   if (skip === undefined) return undefined;
   if (skip > body.byteLength) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed picture data");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed picture data");
   }
   const data = body.slice(skip);
   if (blip.type === 0xf01f) return { type: "bmp", data: bitmapFromDib(data) };
@@ -110,7 +110,7 @@ function picturePayloadOffset(blip: RecordHeader): number | undefined {
   } else {
     return undefined;
   }
-  throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: unsupported picture variant");
+  throw new PptParseError("Corrupt legacy PowerPoint file: unsupported picture variant");
 }
 
 function pictureType(type: number): LegacyPicture["type"] {
@@ -123,7 +123,7 @@ function pictureType(type: number): LegacyPicture["type"] {
 
 function bitmapFromDib(dib: Uint8Array): Uint8Array {
   if (dib.byteLength < 40) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed picture data");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed picture data");
   }
   const view = new DataView(dib.buffer, dib.byteOffset, dib.byteLength);
   const headerSize = view.getUint32(0, true);
@@ -139,7 +139,7 @@ function bitmapFromDib(dib: Uint8Array): Uint8Array {
     (compression !== 0 && compression !== 3) ||
     pixelOffset > dib.byteLength
   ) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: malformed picture data");
+    throw new PptParseError("Corrupt legacy PowerPoint file: malformed picture data");
   }
   const bitmap = new Uint8Array(14 + dib.byteLength);
   const output = new DataView(bitmap.buffer);

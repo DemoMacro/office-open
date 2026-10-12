@@ -84,7 +84,12 @@ export function parseCharacterFkp(
   return ranges.sort((left, right) => left.cpStart - right.cpStart || left.cpEnd - right.cpEnd);
 }
 
-export function parseParagraphFkp(word: Uint8Array, page: number): ParagraphRange[] {
+export function parseParagraphFkp(
+  word: Uint8Array,
+  page: number,
+  pieces: Piece[],
+  cpEndLimit: number,
+): ParagraphRange[] {
   requireRange(
     word,
     page,
@@ -110,10 +115,6 @@ export function parseParagraphFkp(word: Uint8Array, page: number): ParagraphRang
     const entryOffset = page + (count + 1) * 4 + index * 13;
     const propertyOffset = word[entryOffset]!;
     if (fcEnd <= fcStart) throw new DocParseError("Invalid DOC paragraph FKP: invalid FC range");
-    if (propertyOffset === 0) {
-      ranges.push({ cpStart: fcStart, cpEnd: fcEnd, properties: {} });
-      continue;
-    }
     const propertiesStart = page + propertyOffset * 2;
     const wordCount = word[propertiesStart]!;
     const grpprlStart = propertiesStart + (wordCount === 0 ? 4 : 3);
@@ -128,7 +129,14 @@ export function parseParagraphFkp(word: Uint8Array, page: number): ParagraphRang
     const properties = parseParagraphProperties(
       word.subarray(grpprlStart, grpprlStart + propertiesLength),
     );
-    ranges.push({ cpStart: fcStart, cpEnd: fcEnd, properties });
+    const overlaps = overlappingPieces(pieces, cpEndLimit, fcStart, fcEnd);
+    if (overlaps.length > 0) {
+      ranges.push({
+        cpStart: Math.min(...overlaps.map((overlap) => overlap.cpStart)),
+        cpEnd: Math.max(...overlaps.map((overlap) => overlap.cpEnd)),
+        properties,
+      });
+    }
   }
   return ranges;
 }

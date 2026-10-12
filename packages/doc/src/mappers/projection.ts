@@ -45,6 +45,8 @@ export function projectChildren(
       ) {
         boundaries.add(index);
       }
+      if (paragraph[index]!.complexField) boundaries.add(index);
+      if (paragraph[index]!.picture) boundaries.add(index);
     }
     const sortedBoundaries = [...boundaries].sort((left, right) => left - right);
     const runs: ParagraphChild[] = [];
@@ -55,14 +57,43 @@ export function projectChildren(
         .slice(start, end)
         .map((character) => character.value)
         .join("");
+      const revisionChildren: ParagraphChild[] = [];
+      if (start + 1 === end) {
+        const character = paragraph[start]!;
+        if (character.picture) {
+          if (character.picture.type === "unknown") {
+            throw new DocParseError("Unknown DOC picture format has no canonical picture mapping");
+          }
+          const type =
+            character.picture.type === "jpeg"
+              ? "jpg"
+              : character.picture.type === "tiff"
+                ? "tif"
+                : character.picture.type;
+          runs.push({
+            picture: {
+              type,
+              data: character.picture.data,
+              transformation: {
+                width: character.picture.width,
+                height: character.picture.height,
+              },
+            },
+          });
+          continue;
+        }
+      }
       if (text.length === 0) continue;
       const cp = paragraph[start]!.cp;
+      if (paragraph[start]!.complexField) {
+        runs.push({ complexField: { instruction: paragraph[start]!.complexField } });
+        continue;
+      }
       const range = ranges.find((candidate) => candidate.cpStart <= cp && cp < candidate.cpEnd);
       const hyperlink = paragraph[start]!.hyperlink;
       const revision = paragraph[start]!.revision;
       const breakCount = text.split("\n").length - 1;
       const visibleText = text.replaceAll("\n", "");
-      const revisionChildren: ParagraphChild[] = [];
       if (breakCount > 0) revisionChildren.push({ break: breakCount });
       if (visibleText.length > 0 && hyperlink) {
         revisionChildren.push({
@@ -86,7 +117,10 @@ export function projectChildren(
         runs.push(...revisionChildren);
       }
     }
-    const plainText = paragraph.map((character) => character.value).join("");
+    const plainText = paragraph
+      .filter((character) => !character.complexField)
+      .map((character) => character.value)
+      .join("");
     const hasProperties = runs.some((run) =>
       Object.keys(run).some((key) => key !== "text" && key !== "break"),
     );

@@ -92,6 +92,7 @@ export type {
   pickAnchorOptions,
   PictureOptions,
   PivotCacheDefDescriptorOptions,
+  DefinitionPivotTableOptions,
   PivotFilterOptions,
   PivotPageFieldOptions,
   PivotTableDescriptorOptions,

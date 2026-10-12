@@ -1,7 +1,8 @@
-import type { StylesOptions } from "@office-open/docx";
+import type { RunOptions, StylesOptions } from "@office-open/docx";
 
 import { assertAllowed, registerColor, reject, type RtfGenerateContext } from "./context";
 import { control, rtfText } from "./escape";
+import { writeRunProperties } from "./run";
 
 type StyleOptions = Omit<
   NonNullable<StylesOptions["paragraphStyles"]>[number] &
@@ -107,46 +108,8 @@ function paragraphProperties(paragraph: object, context: RtfGenerateContext, pat
 }
 
 function runProperties(run: object, context: RtfGenerateContext, path: string): string {
-  assertAllowed(
-    run,
-    ["bold", "italic", "strike", "verticalAlign", "underline", "size", "color", "font"],
-    "styles",
-    `${path}.run`,
-  );
-  const options = run as {
-    bold?: boolean;
-    italic?: boolean;
-    strike?: boolean;
-    verticalAlign?: "baseline" | "subscript" | "superscript";
-    underline?: object;
-    size?: number | string;
-    color?: string | object;
-    font?: string | object;
-  };
-  let output = "";
-  if (options.bold !== undefined) output += control("b", options.bold ? 1 : 0);
-  if (options.italic !== undefined) output += control("i", options.italic ? 1 : 0);
-  if (options.underline) {
-    assertAllowed(options.underline, ["type"], "styles", `${path}.run.underline`);
-    output += control("ul");
-  }
-  if (options.size !== undefined) {
-    if (typeof options.size !== "number")
-      reject("styles", `${path}.run.size`, String(options.size), "RTF requires points");
-    output += control("fs", Math.round(options.size * 2));
-  }
-  if (options.color !== undefined) {
-    if (typeof options.color !== "string")
-      reject("styles", `${path}.run.color`, "value", "RTF requires a hex color");
-    output += control("cf", registerColor(context, options.color));
-  }
-  if (options.font !== undefined) {
-    if (typeof options.font !== "string")
-      reject("styles", `${path}.run.font`, "value", "RTF requires a font name");
-    const index = context.fonts.indexOf(options.font);
-    output += control("f", index === -1 ? context.fonts.push(options.font) - 1 : index);
-  }
-  return output;
+  void path;
+  return writeRunProperties(run as RunOptions, context);
 }
 
 export function writeStyles(
@@ -172,7 +135,18 @@ export function writeStyles(
       const path = type === "paragraph" ? `paragraphStyles[${index}]` : `characterStyles[${index}]`;
       assertAllowed(
         style,
-        ["id", "name", "basedOn", "next", "link", "hidden", "uiPriority", "quickFormat", type],
+        [
+          "id",
+          "name",
+          "basedOn",
+          "next",
+          "link",
+          "hidden",
+          "uiPriority",
+          "quickFormat",
+          "paragraph",
+          "run",
+        ],
         "styles",
         path,
       );

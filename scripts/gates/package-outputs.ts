@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const PACKAGES = path.join(ROOT, "packages");
-const CHECKED_PACKAGES = new Set(["odf", "odt", "ods", "odp"]);
+const CHECKED_PACKAGES = new Set(["odf", "odt", "ods", "odp", "doc", "xls", "ppt", "rtf"]);
 const OOXML_PEERS: Record<string, string> = {
   odt: "@office-open/docx",
   ods: "@office-open/xlsx",

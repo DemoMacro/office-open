@@ -5,7 +5,7 @@ export default defineConfig({
     entry: ["src/index.ts"],
     deps: {
       dts: {
-        alwaysBundle: ["@office-open/core", "@office-open/xlsx"],
+        alwaysBundle: ["@office-open/core"],
       },
     },
     shims: true,

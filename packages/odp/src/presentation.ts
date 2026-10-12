@@ -28,12 +28,13 @@ import {
   type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
+import type { OdfPackageMemberOptions } from "@office-open/odf";
 import type { PresentationOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
 import type { OdpChart, OdpImage } from "./drawing";
 import { OdpParseError } from "./error";
-import type { OdpPackageMemberOptions, OdpRuntimeOptions } from "./semantics";
+import type { OdpRuntimeOptions } from "./semantics";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
 import { parseStyleOverlays, parseTextStyles, styleOverlaysXml } from "./styles";
 
@@ -84,7 +85,7 @@ export function generatePresentation(options: OdpRuntimeOptions): Uint8Array {
   );
 }
 
-function addPackageFile(files: OdfPackageFiles, member: OdpPackageMemberOptions): void {
+function addPackageFile(files: OdfPackageFiles, member: OdfPackageMemberOptions): void {
   if (
     !member.path ||
     member.path.startsWith("/") ||
@@ -195,7 +196,7 @@ function sourcePackageMembers(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
-): OdpPackageMemberOptions[] {
+): OdfPackageMemberOptions[] {
   const mediaTypes = new Map(
     manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
   );

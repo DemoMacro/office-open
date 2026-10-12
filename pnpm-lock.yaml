@@ -123,6 +123,7 @@ importers:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
@@ -170,13 +171,13 @@ importers:
       '@office-open/odf':
         specifier: workspace:*
         version: link:../odf
+      '@office-open/xlsx':
+        specifier: workspace:*
+        version: link:../xlsx
     devDependencies:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
-      '@office-open/xlsx':
-        specifier: workspace:*
-        version: link:../xlsx
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
@@ -256,6 +257,7 @@ importers:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
       '@office-open/pptx':
         specifier: workspace:*
         version: link:../pptx
@@ -271,6 +273,10 @@ importers:
 
   packages/rtf:
     dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
+    devDependencies:
       '@office-open/docx':
         specifier: workspace:*
         version: link:../docx
@@ -280,6 +286,7 @@ importers:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
       '@office-open/xlsx':
         specifier: workspace:*
         version: link:../xlsx

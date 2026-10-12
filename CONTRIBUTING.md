@@ -20,7 +20,7 @@ The same command runs the pinned third-party corpus when it has been installed w
 
 ## Coverage Gates
 
-`pnpm coverage:xsd` reports schema-owned implementation coverage. `pnpm coverage:xsd-runtime` pairs structured XSD QNames with implementation ownership and spec-side runtime evidence. `pnpm coverage:ooxml-executable` is the strict executable bridge for registered schema families: each fixture must generate its part, validate it against its XSD, preserve its canonical projection through parse, and reproduce the same part on recompile. `pnpm coverage:canonical` verifies every part descriptor has a real or compiler-bridged bidirectional path. `pnpm coverage:odf` executes explicit ODF ownership fixtures, and `pnpm coverage:legacy` executes legacy/RTF capability probes.
+`pnpm coverage:xsd` reports schema-owned implementation coverage. `pnpm coverage:xsd-runtime` pairs structured XSD QNames with implementation ownership and spec-side runtime evidence. `pnpm coverage:ooxml-executable` is the strict executable bridge for registered schema families: each fixture must generate its part, validate it against its XSD, preserve its canonical projection through parse, and reproduce the same part on recompile. It writes a QName-level evidence manifest. `pnpm coverage:model` reruns that bridge and admits a modeled registry entry only when a passed case actually covers its QName. `pnpm coverage:canonical` verifies every part descriptor has a real or compiler-bridged bidirectional path. `pnpm coverage:odf` executes explicit ODF ownership fixtures, and `pnpm coverage:legacy` executes legacy/RTF capability probes.
 
 ## Project Structure
 

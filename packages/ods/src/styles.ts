@@ -7,6 +7,7 @@ import {
   xmlElement,
   type XmlAttributes,
 } from "@office-open/odf";
+import type { OdfStyleFamily, OdfStyleOverlayOptions } from "@office-open/odf";
 import type {
   AlignmentOptions,
   BorderOptions,
@@ -18,7 +19,6 @@ import type { Element } from "@office-open/xml";
 
 import { OdsParseError } from "./error";
 import { numFmtDataStyle } from "./numbering";
-import type { OdsStyleOverlay } from "./semantics";
 
 export interface DimensionStyle {
   width?: number;
@@ -46,7 +46,7 @@ export function addCellStyle(style: StyleOptions, styles: string[]): string {
   return styleName;
 }
 
-export function styleOverlaysXml(overlays: OdsStyleOverlay[] | undefined): string[] {
+export function styleOverlaysXml(overlays: OdfStyleOverlayOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
     xmlElement(
       "style:style",
@@ -269,11 +269,11 @@ const ODS_STYLE_PROPERTIES: Record<string, string[]> = {
   "drawing-page": ["style:drawing-page-properties"],
 };
 
-export function parseStyleOverlays(container: Element | undefined): OdsStyleOverlay[] {
-  const result: OdsStyleOverlay[] = [];
+export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {
+  const result: OdfStyleOverlayOptions[] = [];
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
-    const family = attributeString(style, "style:family") ?? "";
+    const family = attributeString(style, "style:family") as OdfStyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
     if (!ODS_STYLE_PROPERTIES[family]) {
       const reason = "unknown style family";
@@ -288,7 +288,7 @@ export function parseStyleOverlays(container: Element | undefined): OdsStyleOver
     const propertyElements = (style.elements ?? []).filter(
       (child) => child.type === "element" && child.name !== "style:tab-stops",
     );
-    const properties: OdsStyleOverlay["properties"] = [];
+    const properties: OdfStyleOverlayOptions["properties"] = [];
     for (const property of propertyElements) {
       const propertyName = property.name ?? "";
       if (!ODS_STYLE_PROPERTIES[family]!.includes(propertyName)) {
@@ -301,7 +301,7 @@ export function parseStyleOverlays(container: Element | undefined): OdsStyleOver
           reason,
         );
       }
-      const attributes: Record<string, string | number> = {};
+      const attributes: Record<string, string | number | boolean> = {};
       for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
         if (
           !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext):/.test(attribute)

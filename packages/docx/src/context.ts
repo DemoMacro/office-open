@@ -13,7 +13,7 @@ import {
   buildRootRelationships,
   type RelationshipType,
 } from "@office-open/core";
-import { ChartCollection } from "@office-open/core/chart";
+import { ChartCollection, ChartExCollection } from "@office-open/core/chart";
 import type { HyperlinkTarget, ReadContext, WriteContext } from "@office-open/core/descriptor";
 import { SmartArtCollection } from "@office-open/core/smartart";
 import type { ReproducibleScope } from "@office-open/core/util";
@@ -191,6 +191,7 @@ export class DocxWriteContext implements WriteContext {
   declare public numbering: Numbering;
   declare public media: Media<MediaData>;
   declare public charts: ChartCollection;
+  declare public chartExes: ChartExCollection;
   declare public smartArts: SmartArtCollection;
   declare public embeddings: EmbeddingCollection;
   declare public altChunks: AltChunkCollection;
@@ -282,7 +283,7 @@ export class DocxWriteContext implements WriteContext {
           data,
           fileName,
           type,
-          transformation: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
+          transformation: { width: 0, height: 0 },
         }) as MediaData,
       fileName,
     );
@@ -399,6 +400,7 @@ export class DocxWriteContext implements WriteContext {
 
     this.media = new Media<MediaData>();
     this.charts = new ChartCollection();
+    this.chartExes = new ChartExCollection();
     this.smartArts = new SmartArtCollection();
     this.embeddings = new EmbeddingCollection();
     this.altChunks = new AltChunkCollection();

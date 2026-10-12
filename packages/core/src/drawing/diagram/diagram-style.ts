@@ -9,9 +9,11 @@
 import { element } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import type { WriteContext } from "../../descriptor";
+import { stringifyShapeStyle } from "../../theme/style-matrix";
+import type { DefaultShapeStyleOptions } from "../../theme/theme-options";
 import { xsdHueDirection } from "../../util/mappings";
 import { parseColorChoiceElement } from "../color/color-descriptors";
-import { SchemeColor } from "../color/scheme-color";
 import type { SolidFillOptions } from "../color/solid-fill";
 import { createColorElement } from "../color/solid-fill";
 
@@ -26,29 +28,6 @@ export const FontCollectionIndex = {
   MINOR: "minor",
   NONE: "none",
 } as const;
-
-/** Reference into the theme style matrix (a:lnRef/fillRef/effectRef). */
-export interface DiagramStyleReferenceOptions {
-  /** Index into the theme style matrix (a:*Ref `@idx`) */
-  idx: number;
-}
-
-/** Font reference (a:fontRef) — idx is a FontCollectionIndex (major/minor/none). */
-export interface DiagramFontReferenceOptions {
-  /** Font collection index (FontCollectionIndex.MAJOR/MINOR/NONE) */
-  idx: string;
-}
-
-export interface DiagramStyleOptions {
-  /** Line reference (a:lnRef) */
-  lineReference?: DiagramStyleReferenceOptions;
-  /** Fill reference (a:fillRef) */
-  fillReference?: DiagramStyleReferenceOptions;
-  /** Effect reference (a:effectRef) */
-  effectReference?: DiagramStyleReferenceOptions;
-  /** Font reference (a:fontRef) */
-  fontReference?: DiagramFontReferenceOptions;
-}
 
 /**
  * Creates a dgm:style element (a:CT_ShapeStyle).
@@ -65,32 +44,23 @@ export interface DiagramStyleOptions {
  * </xsd:complexType>
  * ```
  */
-export const createDiagramStyle = (options?: DiagramStyleOptions): string => {
-  const children: string[] = [];
-
-  children.push(
-    element("a:lnRef", { idx: options?.lineReference?.idx ?? 1 }, [
-      createColorElement({ value: SchemeColor.ACCENT1 }),
-    ]),
-  );
-  children.push(
-    element("a:fillRef", { idx: options?.fillReference?.idx ?? 1 }, [
-      createColorElement({ value: SchemeColor.ACCENT1 }),
-    ]),
-  );
-  children.push(
-    element("a:effectRef", { idx: options?.effectReference?.idx ?? 0 }, [
-      createColorElement({ value: SchemeColor.ACCENT1 }),
-    ]),
-  );
-  children.push(
-    element("a:fontRef", { idx: options?.fontReference?.idx ?? "minor" }, [
-      createColorElement({ value: SchemeColor.TX1 }),
-    ]),
-  );
-
-  return element("dgm:style", undefined, children);
+const AUTHORING_WRITE_CONTEXT: WriteContext = {
+  addRelationship: () => "",
+  addMedia: () => "",
+  addHyperlink: () => {},
 };
+
+export const createDiagramStyle = (options?: DefaultShapeStyleOptions): string =>
+  stringifyShapeStyle(
+    {
+      lineReference: options?.lineReference ?? { index: 1, color: { value: "accent1" } },
+      fillReference: options?.fillReference ?? { index: 1, color: { value: "accent1" } },
+      effectReference: options?.effectReference ?? { index: 0, color: { value: "accent1" } },
+      fontReference: options?.fontReference ?? { collection: "minor", color: { value: "tx1" } },
+    },
+    AUTHORING_WRITE_CONTEXT,
+    "dgm:style",
+  );
 
 // ---------------------------------------------------------------------------
 // Color list elements (CT_Colors) — used for fillClrLst, linClrLst, etc.

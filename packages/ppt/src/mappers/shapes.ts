@@ -2,8 +2,8 @@ import type { TextBodyOptions } from "@office-open/core";
 import type { ShapePropertiesOptions } from "@office-open/core/drawing";
 import type { GroupOptions, ShapeOptions, SlideChild, TableOptions } from "@office-open/pptx";
 
+import { PptParseError } from "../errors";
 import {
-  LegacyPowerPointError,
   RecordType,
   findDescendant,
   findDirect,
@@ -15,14 +15,17 @@ import { TABLE_BOUND_TOLERANCE } from "./constants";
 import {
   CONNECTOR_TYPE_PRESETS,
   SHAPE_TYPE_PRESETS,
+  SHAPE_TYPE_WARPS,
   readShapeFlags,
   readShapeProperties,
   type EscherShapeStyle,
 } from "./escher-properties";
-import type { DrawingContext, TableCell } from "./models";
+import type { DrawingContext, TableCell, TextEntry } from "./models";
+import { readShapePlaceholder } from "./placeholders";
 import {
   applyClientHyperlinks,
-  collectEmbeddedText,
+  collectEmbeddedTextEntries,
+  legacyPlaceholder,
   createTextBody,
   masterUnitsToEmu,
 } from "./text";
@@ -60,9 +63,7 @@ function parseShapeGroup(
   depth: number,
 ): SlideChild[] {
   if (depth > 16) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint drawing: group depth limit exceeded",
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint drawing: group depth limit exceeded");
   }
 
   const children: SlideChild[] = [];
@@ -405,7 +406,12 @@ function parseShape(
   const optionsRecord = findDirect(container, RecordType.escherShapeProperties);
   const style = optionsRecord ? readShapeProperties(view, optionsRecord) : {};
   const flags = readShapeFlags(view, shapeRecord);
-  const text = readContainerText(view, container, context);
+  const { body: text, entry: textEntry } = readContainerText(view, container, context);
+  const placeholderMetadata = readShapePlaceholder(view, container);
+  const placeholder =
+    placeholderMetadata === null
+      ? undefined
+      : (placeholderMetadata?.placeholder ?? legacyPlaceholder(textEntry?.placeholderType));
   const position = {
     ...(shapeRecord.length >= 4 ? { id: readInt32(view, shapeRecord, 0) } : {}),
     x: masterUnitsToEmu(Math.min(bounds.left, bounds.right)),
@@ -415,7 +421,7 @@ function parseShape(
   };
 
   if (shapeRecord.instance === 75) {
-    return parsePictureShape(position, style, flags, text, context);
+    return parsePictureShape(position, style, flags, text, placeholderMetadata, context);
   }
   if (shapeRecord.instance === 20) {
     const lineProperties = endpointShapeProperties(style, context);
@@ -453,6 +459,42 @@ function parseShape(
   const properties: ShapeOptions["properties"] = {};
   const geometry = SHAPE_TYPE_PRESETS[shapeRecord.instance];
   if (geometry !== undefined) properties.geometry = geometry;
+  const textWarp = SHAPE_TYPE_WARPS[shapeRecord.instance];
+  const wordArtText =
+    text && textWarp
+      ? {
+          ...text,
+          bodyProperties: {
+            ...text.bodyProperties,
+            fromWordArt: true,
+            prstTxWarp: { preset: textWarp },
+          },
+        }
+      : text;
+  if (shapeRecord.instance === 0) {
+    if (!style.customGeometry) {
+      throw new PptParseError("Legacy PowerPoint freeform has no canonical geometry", {
+        part: "record",
+        recordType: shapeRecord.type,
+        recordName: "OfficeArtFSP",
+        byteRange: [shapeRecord.offset, shapeRecord.end],
+        reason: "missing-freeform-geometry",
+      });
+    }
+    properties.customGeometry = style.customGeometry;
+  } else if (
+    geometry === undefined &&
+    shapeRecord.instance !== 202 &&
+    SHAPE_TYPE_WARPS[shapeRecord.instance] === undefined
+  ) {
+    throw new PptParseError(`Unsupported legacy PowerPoint shape type ${shapeRecord.instance}`, {
+      part: "record",
+      recordType: shapeRecord.type,
+      recordName: "OfficeArtFSP",
+      byteRange: [shapeRecord.offset, shapeRecord.end],
+      reason: "unsupported-shape-type",
+    });
+  }
   const fill = resolveFill(style, context);
   if (fill) properties.fill = fill;
   if (style.outline) properties.outline = style.outline;
@@ -464,7 +506,16 @@ function parseShape(
       ...(flags.flipHorizontal ? { flipHorizontal: true } : {}),
       ...(flags.flipVertical ? { flipVertical: true } : {}),
       ...(Object.keys(properties).length > 0 ? { properties } : {}),
-      ...(text ? { textBox: true, textBody: text } : {}),
+      ...(wordArtText ? { textBox: true, textBody: wordArtText } : {}),
+      ...(placeholder !== undefined ? { placeholder } : {}),
+      ...(placeholderMetadata?.placeholderSize !== undefined
+        ? { placeholderSize: placeholderMetadata.placeholderSize }
+        : textEntry?.placeholderSize !== undefined
+          ? { placeholderSize: textEntry.placeholderSize }
+          : {}),
+      ...(placeholderMetadata?.placeholderIndex !== undefined
+        ? { placeholderIndex: placeholderMetadata.placeholderIndex }
+        : {}),
     },
   };
 }
@@ -474,6 +525,7 @@ function parsePictureShape(
   style: EscherShapeStyle,
   flags: ReturnType<typeof readShapeFlags>,
   text: TextBodyOptions | undefined,
+  placeholderMetadata: ReturnType<typeof readShapePlaceholder>,
   context: DrawingContext,
 ): SlideChild | undefined {
   const reference = style.blipReference;
@@ -488,6 +540,7 @@ function parsePictureShape(
             ...position,
             textBox: true,
             textBody: text,
+            ...placeholderOptions(placeholderMetadata),
           },
         }
       : undefined;
@@ -501,6 +554,7 @@ function parsePictureShape(
         ...(style.rotation !== undefined ? { rotation: style.rotation } : {}),
         type: picture.type,
         data: picture.data,
+        ...placeholderOptions(placeholderMetadata),
       },
     };
   }
@@ -533,6 +587,21 @@ function endpointShapeProperties(
   return properties;
 }
 
+function placeholderOptions(
+  metadata: ReturnType<typeof readShapePlaceholder>,
+): ShapeOptions | Record<string, never> {
+  if (!metadata) return {};
+  return {
+    ...(metadata.placeholder !== undefined ? { placeholder: metadata.placeholder } : {}),
+    ...(metadata.placeholderSize !== undefined
+      ? { placeholderSize: metadata.placeholderSize }
+      : {}),
+    ...(metadata.placeholderIndex !== undefined
+      ? { placeholderIndex: metadata.placeholderIndex }
+      : {}),
+  };
+}
+
 function resolveFill(style: EscherShapeStyle, context: DrawingContext) {
   if (style.fillType === 5) {
     const reference = style.fillBlipReference;
@@ -547,18 +616,26 @@ function resolveFill(style: EscherShapeStyle, context: DrawingContext) {
   return style.fill;
 }
 
+interface ContainerText {
+  readonly body: TextBodyOptions | undefined;
+  readonly entry: TextEntry | undefined;
+}
+
 export function readContainerText(
   view: DataView,
   container: RecordNode,
   context: DrawingContext,
-): TextBodyOptions | undefined {
+): ContainerText {
   const clientTextbox = findDirect(container, RecordType.escherClientTextbox);
-  if (!clientTextbox) return undefined;
+  if (!clientTextbox) return { body: undefined, entry: undefined };
 
-  const embeddedText = collectEmbeddedText(view, clientTextbox);
+  const embeddedText = collectEmbeddedTextEntries(view, clientTextbox, context.fonts);
   if (embeddedText.length > 0) {
     const body = createTextBody(embeddedText);
-    return applyClientHyperlinks(body, view, clientTextbox, context.hyperlinks);
+    return {
+      body: applyClientHyperlinks(body, view, clientTextbox, context.hyperlinks),
+      entry: embeddedText[0],
+    };
   }
 
   const reference = findDescendant(clientTextbox, RecordType.outlineTextReference);
@@ -567,8 +644,8 @@ export function readContainerText(
     const entry = context.entries[index];
     if (entry) {
       context.usedEntryIndexes.add(index);
-      return createTextBody([entry.text]);
+      return { body: createTextBody([entry]), entry };
     }
   }
-  return undefined;
+  return { body: undefined, entry: undefined };
 }

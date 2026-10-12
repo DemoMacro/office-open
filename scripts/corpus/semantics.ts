@@ -199,6 +199,9 @@ const VERSIONED_TRANSITIONAL_PREFIXES = [
 ] as const;
 
 function canonicalAttributeValue(name: string, value: string, elementName?: string): string {
+  if (value.endsWith("%") && Number.isFinite(Number(value.slice(0, -1)))) {
+    return String(Number(value.slice(0, -1)) * 1000);
+  }
   if (value === "on" || value === "true") return "1";
   if (value === "off" || value === "false") return "0";
   if (value === "t") return "1";
@@ -1046,7 +1049,7 @@ function compareNodes(
           detail: "source-only",
         });
       }
-    } else if (next !== value) {
+    } else if (!semanticAttributeValueEqual(value, next)) {
       diffs.push({
         category: "attribute",
         xpath: `${location}/@${name}`,
@@ -1201,6 +1204,18 @@ function compareNodes(
     if (childDiffs.length) return childDiffs;
   }
   return [];
+}
+
+/**
+ * ST_Percentage permits both scaled integers (`50000` = 50%) and percent
+ * literals (`50%`); writers may choose either equivalent serialization.
+ */
+function semanticAttributeValueEqual(left: string, right: string): boolean {
+  if (left === right) return true;
+  const scaled = (value: string) =>
+    value.endsWith("%") ? Number(value.slice(0, -1)) / 100 : Number(value);
+  if (!Number.isFinite(scaled(left)) || !Number.isFinite(scaled(right))) return false;
+  return scaled(left) === scaled(right);
 }
 
 /** Parts the writers always emit even when a minimal source omits them. */

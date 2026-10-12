@@ -1,5 +1,11 @@
-import type { TextBodyOptions, TextRunOptions } from "@office-open/core";
+import type {
+  ParagraphDescriptorOptions,
+  TextBodyOptions,
+  TextBreakOptions,
+  TextRunOptions,
+} from "@office-open/core";
 
+import { PptParseError } from "../errors";
 import {
   collectDescendants,
   decodeAnsi,
@@ -11,7 +17,10 @@ import {
   type RecordNode,
 } from "../records";
 import { EMU_PER_INCH, MASTER_UNITS_PER_INCH } from "./constants";
-import type { LegacyTextHyperlink } from "./models";
+import type { LegacyTextStyle, LegacyTextHyperlink, TextEntry } from "./models";
+import { parseTextStyle } from "./text-style";
+
+type PlaceholderType = "title" | "body" | "centerTitle";
 export function readHyperlinkTargets(
   view: DataView,
   document: RecordNode,
@@ -24,7 +33,14 @@ export function readHyperlinkTargets(
       const id = atom && atom.length >= 4 ? readInt32(view, atom, 0) : undefined;
       const url = strings[1] ? decodeUtf16(recordBody(view, strings[1])) : undefined;
       const tooltip = strings[0] ? decodeUtf16(recordBody(view, strings[0])) : undefined;
-      if (id === undefined || !url || url.includes(",")) continue;
+      if (id === undefined || !url) {
+        throw new PptParseError("Corrupt legacy PowerPoint hyperlink: missing target id or URL", {
+          part: "record",
+          recordType: link.type,
+          recordName: "HyperlinkContainer",
+          reason: "missing-hyperlink-target",
+        });
+      }
       targets.set(id, { url, tooltip });
     }
   }
@@ -79,32 +95,57 @@ export function applyClientHyperlinks(
   return body;
 }
 
-export function collectEmbeddedText(view: DataView, parent: RecordNode): string[] {
-  const text: string[] = [];
+export function collectEmbeddedTextEntries(
+  view: DataView,
+  parent: RecordNode,
+  fonts: ReadonlyMap<number, string>,
+): TextEntry[] {
+  const text: TextEntry[] = [];
   let placeholderType: number | undefined;
+  let placeholderSize: "half" | "quarter" | undefined;
   let value: string | undefined;
   let hasDateTime = false;
   let hasSlideNumber = false;
 
+  let pendingStyle: RecordNode | undefined;
   const flush = (): void => {
     if (value === undefined) return;
-    if (value === "*" && hasSlideNumber) text.push("1");
-    else if (value === "*" && hasDateTime) text.push("1/1/1");
-    else text.push(value);
+    if (value === "*" && hasSlideNumber) {
+      text.push({ placeholderType: 8, text: "1" });
+    } else if (value === "*" && hasDateTime) {
+      text.push({ placeholderType: 7, text: "1/1/1" });
+    } else {
+      const entry = {
+        placeholderType: placeholderType ?? -1,
+        ...(placeholderSize !== undefined ? { placeholderSize } : {}),
+        text: value,
+        ...(pendingStyle
+          ? { styles: parseTextStyle(view, pendingStyle, value.length, fonts) }
+          : {}),
+      };
+      text.push(entry);
+    }
+    pendingStyle = undefined;
     value = undefined;
   };
 
-  for (const child of flatten(parent)) {
+  const flattened = flatten(parent);
+  for (const child of flattened) {
     if (child.type === RecordType.textHeader) {
       flush();
       hasDateTime = false;
       hasSlideNumber = false;
       placeholderType = readInt32(view, child, 0);
+      placeholderSize =
+        placeholderType === 7 ? "half" : placeholderType === 8 ? "quarter" : undefined;
     } else if (placeholderType !== undefined && child.type === RecordType.textChars) {
       value = decodeUtf16(recordBody(view, child));
     } else if (placeholderType !== undefined && child.type === RecordType.textBytes) {
       value = decodeAnsi(recordBody(view, child));
-    } else if (child.type === RecordType.dateTimeAtom) {
+    } else if (child.type === RecordType.styleTextPropAtom) {
+      pendingStyle = child;
+      flush();
+    } else if (child.type === RecordType.dateTimeMetaCharAtom) {
       hasDateTime = true;
     } else if (child.type === RecordType.slideNumberAtom) {
       hasSlideNumber = true;
@@ -112,6 +153,24 @@ export function collectEmbeddedText(view: DataView, parent: RecordNode): string[
   }
   flush();
   return text;
+}
+
+export function collectEmbeddedText(
+  view: DataView,
+  parent: RecordNode,
+  fonts: ReadonlyMap<number, string>,
+): string[] {
+  return collectEmbeddedTextEntries(view, parent, fonts).map((entry) => entry.text);
+}
+
+export function legacyPlaceholder(
+  placeholderType: number | undefined,
+): PlaceholderType | undefined {
+  if (placeholderType === 0) return "title";
+  if (placeholderType === 1 || placeholderType === 5 || placeholderType === 7) return "body";
+  if (placeholderType === 6) return "centerTitle";
+  if (placeholderType === 2) return "body";
+  return undefined;
 }
 
 export function flatten(record: RecordNode): RecordNode[] {
@@ -126,11 +185,88 @@ export function flatten(record: RecordNode): RecordNode[] {
   return output;
 }
 
-export function createTextBody(text: readonly string[]): TextBodyOptions {
-  const paragraphs = text
-    .flatMap((value) => splitParagraphs(value))
-    .map((value) => ({ children: [{ text: value }] satisfies TextRunOptions[] }));
+export function createTextBody(text: readonly (string | TextEntry)[]): TextBodyOptions {
+  const paragraphs = text.flatMap((entry) =>
+    typeof entry === "string"
+      ? createPlainParagraphs(entry)
+      : createStyledParagraphs(entry.text, entry.styles),
+  );
   return paragraphs.length > 0 ? { paragraphs } : {};
+}
+
+function createPlainParagraphs(value: string): ParagraphDescriptorOptions[] {
+  return splitParagraphs(value).map((paragraph) => ({ children: [{ text: paragraph }] }));
+}
+
+interface ParagraphSlice {
+  readonly text: string;
+  readonly start: number;
+  readonly end: number;
+}
+
+function paragraphSlices(value: string): ParagraphSlice[] {
+  const slices: ParagraphSlice[] = [];
+  let start = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    if (value[index] !== "\r") continue;
+    slices.push({ text: value.slice(start, index), start, end: index });
+    index += value[index + 1] === "\n" ? 1 : 0;
+    start = index + 1;
+  }
+  if (start < value.length || slices.length === 0) {
+    slices.push({ text: value.slice(start), start, end: value.length });
+  }
+  return slices.map((slice) => ({
+    ...slice,
+    text: slice.text.replace(/[\n\v]/g, "\n"),
+  }));
+}
+
+function styleRuns(
+  text: string,
+  style: LegacyTextStyle["characters"][number] | undefined,
+): (TextRunOptions | TextBreakOptions)[] {
+  const output: (TextRunOptions | TextBreakOptions)[] = [];
+  let segmentStart = 0;
+  for (const [index, character] of text.split("").entries()) {
+    if (character !== "\n" && character !== "\v") continue;
+    if (index > segmentStart) {
+      output.push({ ...style?.character, text: text.slice(segmentStart, index) });
+    }
+    output.push({ break: true, ...(style?.character ? { properties: style.character } : {}) });
+    segmentStart = index + 1;
+  }
+  if (segmentStart < text.length) {
+    output.push({ ...style?.character, text: text.slice(segmentStart) });
+  }
+  return output;
+}
+
+function createStyledParagraphs(
+  value: string,
+  styles: LegacyTextStyle | undefined,
+): ParagraphDescriptorOptions[] {
+  if (!styles) return createPlainParagraphs(value);
+
+  return paragraphSlices(value).map((paragraph) => {
+    const paragraphStyle = styles.paragraphs.find((style) => paragraph.start < style.characters);
+    let styleStart = 0;
+    const runs = styles.characters.flatMap((style) => {
+      const styleEnd = styleStart + style.characters;
+      const start = Math.max(styleStart, paragraph.start);
+      const end = Math.min(styleEnd, paragraph.end);
+      const result =
+        start >= end
+          ? []
+          : styleRuns(paragraph.text.slice(start - paragraph.start, end - paragraph.start), style);
+      styleStart = styleEnd;
+      return result;
+    });
+    return {
+      ...(paragraphStyle?.paragraph ? { properties: paragraphStyle.paragraph } : {}),
+      children: runs.length > 0 ? runs : [{ text: paragraph.text }],
+    };
+  });
 }
 
 export function splitParagraphs(value: string): string[] {

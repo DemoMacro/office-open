@@ -7,21 +7,11 @@
  *
  * @module
  */
-import { convertEmuToPixels, convertToEmu } from "@office-open/core";
-import type { UniversalMeasure } from "@office-open/core";
+import { convertToEmu } from "@office-open/core";
 
-import type { MediaDataTransformation } from "./data";
+import type { MediaTransformation } from "./data";
 
-export interface MediaTransformation {
-  width: number | UniversalMeasure;
-  height: number | UniversalMeasure;
-}
-
-export const createTransformation = (options: MediaTransformation): MediaDataTransformation => {
-  const cx = convertToEmu(options.width);
-  const cy = convertToEmu(options.height);
-  return {
-    emus: { x: cx, y: cy },
-    pixels: { x: Math.round(convertEmuToPixels(cx)), y: Math.round(convertEmuToPixels(cy)) },
-  };
-};
+export const createTransformation = (options: MediaTransformation): MediaTransformation => ({
+  width: convertToEmu(options.width),
+  height: convertToEmu(options.height),
+});

@@ -113,7 +113,7 @@ export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">)
           type,
           data,
           fileName,
-          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+          transformation: { width: 0, height: 0 },
         }) as MediaData,
       m.fileName,
     );

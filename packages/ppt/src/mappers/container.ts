@@ -4,14 +4,9 @@ import {
   verifyRc4CryptoApiPassword,
 } from "@office-open/core";
 
+import { PptParseError } from "../errors";
 import { readPersistReferences, readStreamOffset } from "../parts/persist";
-import {
-  LegacyPowerPointError,
-  RecordType,
-  readRecordHeader,
-  readUint32,
-  type RecordHeader,
-} from "../records";
+import { RecordType, readRecordHeader, readUint32, type RecordHeader } from "../records";
 import { POWERPOINT_DOCUMENT_STREAM } from "./constants";
 export function decryptPowerPointDocument(
   encryptedView: DataView,
@@ -19,7 +14,7 @@ export function decryptPowerPointDocument(
   password?: string,
 ): Uint8Array {
   if (password === undefined) {
-    throw new LegacyPowerPointError("Encrypted legacy PowerPoint files are not supported", {
+    throw new PptParseError("Encrypted legacy PowerPoint files are not supported", {
       part: "stream",
       path: POWERPOINT_DOCUMENT_STREAM,
       recordName: "UserEditAtom",
@@ -28,23 +23,20 @@ export function decryptPowerPointDocument(
     });
   }
   if (userEdit.length < 32) {
-    throw new LegacyPowerPointError(
-      "Corrupt legacy PowerPoint file: invalid encryption reference",
-      {
-        part: "record",
-        path: POWERPOINT_DOCUMENT_STREAM,
-        recordName: "UserEditAtom",
-        offset: userEdit.offset,
-        length: 32,
-        reason: "invalid-record-length",
-      },
-    );
+    throw new PptParseError("Corrupt legacy PowerPoint file: invalid encryption reference", {
+      part: "record",
+      path: POWERPOINT_DOCUMENT_STREAM,
+      recordName: "UserEditAtom",
+      offset: userEdit.offset,
+      length: 32,
+      reason: "invalid-record-length",
+    });
   }
   const references = readPersistReferences(encryptedView, userEdit.offset);
   const encryptionReference = readUint32(encryptedView, userEdit, 28);
   const encryptionOffset = references.get(encryptionReference);
   if (encryptionOffset === undefined) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: missing encryption record", {
+    throw new PptParseError("Corrupt legacy PowerPoint file: missing encryption record", {
       part: "record",
       path: POWERPOINT_DOCUMENT_STREAM,
       recordType: encryptionReference,
@@ -54,7 +46,7 @@ export function decryptPowerPointDocument(
   }
   const encryptionRecord = readRecordHeader(encryptedView, encryptionOffset);
   if (encryptionRecord.type !== RecordType.documentEncryptionAtom) {
-    throw new LegacyPowerPointError("Corrupt legacy PowerPoint file: invalid encryption record", {
+    throw new PptParseError("Corrupt legacy PowerPoint file: invalid encryption record", {
       part: "record",
       path: POWERPOINT_DOCUMENT_STREAM,
       recordType: encryptionRecord.type,
@@ -71,7 +63,7 @@ export function decryptPowerPointDocument(
   );
   const { keySizeBits, verifier } = parseRc4CryptoApiHeader(encryptionData, 4);
   if (!verifyRc4CryptoApiPassword(password, verifier, keySizeBits)) {
-    throw new LegacyPowerPointError("Invalid legacy PowerPoint password", {
+    throw new PptParseError("Invalid legacy PowerPoint password", {
       part: "record",
       path: POWERPOINT_DOCUMENT_STREAM,
       recordType: RecordType.documentEncryptionAtom,

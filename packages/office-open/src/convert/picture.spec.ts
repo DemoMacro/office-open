@@ -1,4 +1,4 @@
-import type { PictureOptions as DocxPictureOptions } from "@office-open/docx";
+import type { MediaTransformation, PictureOptions as DocxPictureOptions } from "@office-open/docx";
 import type { PictureOptions as PptxPictureOptions } from "@office-open/pptx";
 import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
@@ -17,11 +17,12 @@ describe("toDocxPicture (pptx → docx)", () => {
       height: 400,
     };
     const docx = toDocxPicture(pptx);
+    const transformation = docx.transformation as MediaTransformation;
     expect(docx.type).toBe("png");
     expect(docx.data).toBe(data);
-    expect(docx.transformation.width).toBe(300);
-    expect(docx.transformation.height).toBe(400);
-    expect(docx.transformation.offset).toEqual({ left: 100, top: 200 });
+    expect(transformation.width).toBe(300);
+    expect(transformation.height).toBe(400);
+    expect(transformation.offset).toEqual({ x: 100, y: 200 });
   });
 
   it("omits offset when pptx has no x/y", () => {
@@ -31,7 +32,7 @@ describe("toDocxPicture (pptx → docx)", () => {
       width: 10,
       height: 20,
     };
-    expect(toDocxPicture(pptx).transformation.offset).toBeUndefined();
+    expect((toDocxPicture(pptx).transformation as MediaTransformation).offset).toBeUndefined();
   });
 });
 

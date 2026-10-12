@@ -149,9 +149,11 @@ export function compileDocumentEntries(
           const mediaCount = documentMedia.referenced.length;
           const embeddingCount = documentEmbeddings.referenced.length;
           const chartKeys = ctx.charts.array.map((c) => c.key);
-          const smartArtKeys = ctx.smartArts.array.map((s) => s.key);
           const chartOffset = documentRelationshipCount + mediaCount + embeddingCount;
-          const smartArtOffset = chartOffset + chartKeys.length;
+          const chartExKeys = ctx.chartExes.array.map((c) => c.key);
+          const chartExOffset = chartOffset + chartKeys.length;
+          const smartArtOffset = chartExOffset + chartExKeys.length;
+          const smartArtKeys = ctx.smartArts.array.map((s) => s.key);
 
           // Build combined replacement entries for charts, smartart, and numbering
           const entries: Array<{ prefix?: string; key: string; value: string }> = [];
@@ -170,6 +172,24 @@ export function compileDocumentEntries(
               prefix: "chart:",
               key,
               value: sourceRid !== undefined ? `rId${sourceRid}` : formatId(chartOffset, i, "rId"),
+            });
+          }
+          for (const [i, key] of chartExKeys.entries()) {
+            const chartExTarget = documentRelationshipTarget(
+              ctx.chartExes.array[i]?.sourcePath ?? `word/charts/chartEx${i + 1}.xml`,
+              documentPath,
+            );
+            const sourceRid = sourceRidFor(
+              ctx._options.passthroughRelationships,
+              documentPath,
+              RELATIONSHIP_TYPES.chartEx,
+              chartExTarget,
+            );
+            entries.push({
+              prefix: "chartex:",
+              key,
+              value:
+                sourceRid !== undefined ? `rId${sourceRid}` : formatId(chartExOffset, i, "rId"),
             });
           }
           const saPrefixes = ["smartart:", "smartart-lo:", "smartart-qs:", "smartart-cs:"];
@@ -246,6 +266,29 @@ export function compileDocumentEntries(
           );
         }
 
+        const chartExOffset =
+          documentRelationshipCount +
+          documentMedia.referenced.length +
+          documentEmbeddings.referenced.length +
+          ctx.charts.array.length;
+        for (let i = 0; i < ctx.chartExes.array.length; i++) {
+          const target = documentRelationshipTarget(
+            ctx.chartExes.array[i]?.sourcePath ?? `word/charts/chartEx${i + 1}.xml`,
+            documentPath,
+          );
+          const sourceRid = sourceRidFor(
+            ctx._options.passthroughRelationships,
+            documentPath,
+            RELATIONSHIP_TYPES.chartEx,
+            target,
+          );
+          ctx.document.relationships.addRelationship(
+            sourceRid ?? chartExOffset + i,
+            RELATIONSHIP_TYPES.chartEx,
+            target,
+          );
+        }
+
         addSmartArtRelationships(
           ctx.smartArts.array.map((s) => s.key),
           (id, type, target) => {
@@ -254,7 +297,8 @@ export function compileDocumentEntries(
           documentRelationshipCount +
             documentMedia.referenced.length +
             documentEmbeddings.referenced.length +
-            ctx.charts.array.length,
+            ctx.charts.array.length +
+            ctx.chartExes.array.length,
           0,
           {
             pathPrefix: "",

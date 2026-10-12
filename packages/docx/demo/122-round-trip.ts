@@ -413,7 +413,7 @@ async function main() {
           paragraph: {
             children: [
               "The formula E=mc",
-              { math: { children: [{ text: "2" }] } },
+              { math: { equations: [[{ text: "2" }]] } },
               " uses a ",
               { symbolRun: { char: "F021", symbolFont: "Wingdings" } },
               " symbol.",
@@ -426,10 +426,8 @@ async function main() {
             children: [
               {
                 math: {
-                  children: [
-                    "x",
-                    " = ",
-                    { fraction: { numerator: ["a + b"], denominator: ["c"] } },
+                  equations: [
+                    ["x", " = ", { fraction: { numerator: ["a + b"], denominator: ["c"] } }],
                   ],
                 },
               },
@@ -442,14 +440,16 @@ async function main() {
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      sum: {
-                        children: [{ superScript: { children: ["x"], superScript: ["2"] } }],
-                        subScript: ["i=0"],
-                        superScript: ["n"],
+                  equations: [
+                    [
+                      {
+                        sum: {
+                          children: [{ superScript: { children: ["x"], superScript: ["2"] } }],
+                          subScript: ["i=0"],
+                          superScript: ["n"],
+                        },
                       },
-                    },
+                    ],
                   ],
                 },
               },
@@ -462,15 +462,17 @@ async function main() {
             children: [
               {
                 math: {
-                  children: [
-                    {
-                      integral: {
-                        children: ["x"],
-                        subScript: ["0"],
-                        superScript: ["1"],
+                  equations: [
+                    [
+                      {
+                        integral: {
+                          children: ["x"],
+                          subScript: ["0"],
+                          superScript: ["1"],
+                        },
                       },
-                    },
-                    " dx",
+                      " dx",
+                    ],
                   ],
                 },
               },
@@ -483,7 +485,7 @@ async function main() {
             children: [
               {
                 math: {
-                  children: [{ radical: { children: ["x", " + ", "1"] } }],
+                  equations: [[{ radical: { children: ["x", " + ", "1"] } }]],
                 },
               },
             ],
@@ -495,9 +497,11 @@ async function main() {
             children: [
               {
                 math: {
-                  children: [
-                    { subScript: { children: ["a"], subScript: ["n"] } },
-                    { subSuperScript: { children: ["x"], subScript: ["i"], superScript: ["2"] } },
+                  equations: [
+                    [
+                      { subScript: { children: ["a"], subScript: ["n"] } },
+                      { subSuperScript: { children: ["x"], subScript: ["i"], superScript: ["2"] } },
+                    ],
                   ],
                 },
               },

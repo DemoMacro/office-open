@@ -1,7 +1,22 @@
-import type { CellOptions, FormulaOptions, RowOptions, StyleOptions } from "@office-open/xlsx";
+import type {
+  CellOptions,
+  FontOptions,
+  FormulaOptions,
+  RowOptions,
+  StyleOptions,
+} from "@office-open/xlsx";
 
-import { LegacyExcelError } from "../errors";
-import type { SheetState, TxoTextPart, WorkbookState } from "./models";
+import { XlsParseError } from "../errors";
+import type { SheetState, TxoTextPart, WorkbookState, XfStyle } from "./models";
+const DEFAULT_FONT: FontOptions = {
+  size: 10,
+  bold: false,
+  italic: false,
+  color: { indexed: 0 },
+  underline: false,
+  font: "Arial",
+};
+
 export function decodeRk(value: number): number {
   const divideBy100 = (value & 0x01) !== 0;
   const isInteger = (value & 0x02) !== 0;
@@ -54,12 +69,53 @@ export function ensureRow(sheet: SheetState, rowNumber: number): RowOptions {
 }
 
 export function cellStyle(style: number, state: WorkbookState): number | StyleOptions {
-  const xf = state.styleTable.get(style);
+  const xf = resolveXf(style, state, new Set());
   if (!xf) return style;
-  const font = state.fonts[xf.fontIndex ?? -1];
-  const format =
-    xf.numberFormatId === undefined ? undefined : state.numberFormats.get(xf.numberFormatId);
-  return { font, numFmt: format };
+  const result: StyleOptions = {};
+  const font = state.fonts[xf.fontIndex];
+  if (font) {
+    result.font = font;
+  } else if (xf.fontIndex === state.fonts.length) {
+    result.font = DEFAULT_FONT;
+  } else {
+    throw new XlsParseError("Invalid legacy XLS file: extended format references missing font", {
+      part: "stream",
+      path: "Workbook/globals/XF",
+      recordType: 0x00e0,
+      recordName: "XF",
+      reason: "missing-font",
+    });
+  }
+  const format = state.numberFormats.get(xf.numberFormatId);
+  if (format) result.numFmt = format;
+  if (xf.fill) result.fill = xf.fill;
+  if (xf.border) result.border = xf.border;
+  if (xf.alignment) result.alignment = xf.alignment;
+  if (xf.protection) result.protection = xf.protection;
+  if (xf.quotePrefix) result.quotePrefix = true;
+  return result;
+}
+
+function resolveXf(
+  styleIndex: number,
+  state: WorkbookState,
+  visited: Set<number>,
+): XfStyle | undefined {
+  const xf = state.styleTable.get(styleIndex);
+  if (!xf || xf.isStyle || visited.has(styleIndex)) return xf;
+  visited.add(styleIndex);
+  const parent = resolveXf(xf.parentIndex, state, visited);
+  if (!parent) return xf;
+  const used = xf.usedAttributes;
+  return {
+    ...xf,
+    fontIndex: used.font ? xf.fontIndex : parent.fontIndex,
+    numberFormatId: used.format ? xf.numberFormatId : parent.numberFormatId,
+    alignment: xf.alignment ?? parent.alignment,
+    border: xf.border ?? parent.border,
+    fill: xf.fill ?? parent.fill,
+    protection: xf.protection ?? parent.protection,
+  };
 }
 
 export function makeCell(
@@ -96,7 +152,7 @@ export function errorLiteral(code: number): string {
   };
   const literal = literals[code];
   if (!literal)
-    throw new LegacyExcelError(
+    throw new XlsParseError(
       `Invalid legacy XLS file: unknown formula error code 0x${code.toString(16)}`,
     );
   return literal;

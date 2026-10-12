@@ -7,6 +7,7 @@ import { writeFieldChild } from "./field";
 import { writeDrawingChild } from "./shape-picture";
 
 const RUN_PROPERTIES = [
+  "additionRsid",
   "bold",
   "italic",
   "underline",
@@ -33,6 +34,18 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
   return [
     run.bold === true ? control("b") : "",
     run.bold === false ? control("b", 0) : "",
+    run.additionRsid === undefined
+      ? ""
+      : control(
+          "insrsid",
+          Number.parseInt(run.additionRsid, 16) ||
+            reject(
+              "run",
+              "run.additionRsid",
+              run.additionRsid,
+              "RTF writer requires hexadecimal revision save IDs",
+            ),
+        ),
     run.italic === true ? control("i") : "",
     run.italic === false ? control("i", 0) : "",
     run.strike === true ? control("strike") : "",

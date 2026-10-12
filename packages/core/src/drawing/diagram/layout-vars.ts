@@ -8,7 +8,12 @@
  */
 import { element } from "@office-open/xml";
 
-import { xsdAnimLevel, xsdHierBranch } from "../../util/mappings";
+import {
+  xsdAnimLevel,
+  xsdDiagramDirection,
+  xsdHierBranch,
+  xsdResizeHandles,
+} from "../../util/mappings";
 
 // ---------------------------------------------------------------------------
 // dgm:adj — adjustment handle (CT_Adj)
@@ -82,6 +87,37 @@ export const createPreferredChildren = (options?: PreferredChildrenOptions): str
   options?.val !== undefined ? `<dgm:chPref val="${options.val}"/>` : "<dgm:chPref/>";
 
 // ---------------------------------------------------------------------------
+// dgm:bulletEnabled — bullet visibility (CT_BulletEnabled)
+// ---------------------------------------------------------------------------
+
+export interface BulletEnabledOptions {
+  val?: boolean;
+}
+
+/** Creates a dgm:bulletEnabled element. */
+export const createBulletEnabled = (options?: BulletEnabledOptions): string =>
+  options?.val !== undefined
+    ? `<dgm:bulletEnabled val="${options.val ? 1 : 0}"/>`
+    : "<dgm:bulletEnabled/>";
+
+// ---------------------------------------------------------------------------
+// dgm:dir — reading direction (CT_Direction)
+// ---------------------------------------------------------------------------
+
+/** Diagram reading direction (ST_Direction). */
+export type DiagramDirection = "normal" | "reversed";
+
+export interface DiagramDirectionOptions {
+  val?: DiagramDirection;
+}
+
+/** Creates a dgm:dir element. */
+export const createDiagramDirection = (options?: DiagramDirectionOptions): string =>
+  options?.val !== undefined
+    ? `<dgm:dir val="${xsdDiagramDirection.to(options.val)}"/>`
+    : "<dgm:dir/>";
+
+// ---------------------------------------------------------------------------
 // dgm:orgChart — organization chart flag (CT_OrgChart)
 // ---------------------------------------------------------------------------
 
@@ -118,9 +154,12 @@ export interface PresentationLayoutVariablesOptions {
   orgChart?: OrgChartOptions;
   maxChildren?: MaxChildrenOptions;
   preferredChildren?: PreferredChildrenOptions;
+  bulletEnabled?: BulletEnabledOptions;
+  direction?: DiagramDirectionOptions;
   animateOneByOne?: AnimateOneByOneOptions;
   animationLevel?: AnimationLevelOptions;
   hierBranch?: HierBranchOptions;
+  resizeHandles?: ResizeHandlesOptions;
 }
 
 /**
@@ -150,12 +189,32 @@ export const createPresentationLayoutVariables = (
   if (options?.orgChart) children.push(createOrgChart(options.orgChart));
   if (options?.maxChildren) children.push(createMaxChildren(options.maxChildren));
   if (options?.preferredChildren) children.push(createPreferredChildren(options.preferredChildren));
+  if (options?.bulletEnabled) children.push(createBulletEnabled(options.bulletEnabled));
+  if (options?.direction) children.push(createDiagramDirection(options.direction));
   if (options?.animateOneByOne) children.push(createAnimateOneByOne(options.animateOneByOne));
   if (options?.animationLevel) children.push(createAnimationLevel(options.animationLevel));
   if (options?.hierBranch) children.push(createHierBranch(options.hierBranch));
+  if (options?.resizeHandles) children.push(createResizeHandles(options.resizeHandles));
 
   return element("dgm:presLayoutVars", undefined, children);
 };
+
+// ---------------------------------------------------------------------------
+// dgm:resizeHandles — resize-handle behavior (CT_ResizeHandles)
+// ---------------------------------------------------------------------------
+
+/** Diagram resize-handle behavior (ST_ResizeHandlesStr). */
+export type ResizeHandles = "exact" | "relative";
+
+export interface ResizeHandlesOptions {
+  val?: ResizeHandles;
+}
+
+/** Creates a dgm:resizeHandles element. */
+export const createResizeHandles = (options?: ResizeHandlesOptions): string =>
+  options?.val !== undefined
+    ? `<dgm:resizeHandles val="${xsdResizeHandles.to(options.val)}"/>`
+    : "<dgm:resizeHandles/>";
 
 // ---------------------------------------------------------------------------
 // dgm:adjLst — adjustment list (CT_AdjLst)

@@ -15,14 +15,6 @@ import type { StyleDefinitionOptions } from "./style-definition";
  * diagram part names instead of rebuilding from the modeled XML.
  */
 export interface SmartArtRawParts {
-  /** diagrams/dataN.xml source bytes. */
-  data?: DataType;
-  /** diagrams/layoutN.xml source bytes. */
-  layout?: DataType;
-  /** diagrams/quickStyleN.xml source bytes. */
-  style?: DataType;
-  /** diagrams/colorsN.xml source bytes. */
-  color?: DataType;
   /**
    * diagrams/drawingN.xml source bytes — the pre-rendered dsp:drawing
    * snapshot (MS-ODRAWXML 2008 extension) cached beside the data model.
@@ -31,10 +23,14 @@ export interface SmartArtRawParts {
   drawing?: DataType;
   /** Source drawing part file name (for sparse packages such as drawing10.xml). */
   drawingFileName?: string;
+  /**
+   * Whether the source data part's own rels referenced the drawing cache.
+   * Undefined means authoring input and therefore uses standard data-part
+   * wiring; false preserves slide-rel wiring found during parsing.
+   */
+  drawingRelationship?: boolean;
   /** Images referenced by the data part's own rels (dgm:pt blipFill art). */
   media?: { fileName: string; data: DataType }[];
-  /** Verbatim rels XML of the data part (its targets resolve beside the data part). */
-  dataRels?: DataType;
 }
 
 /** Source package paths preserved by round-trip; compiler-only. */

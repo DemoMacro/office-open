@@ -12,10 +12,13 @@ export {
   createAdjustList,
   createAnimationLevel,
   createAnimateOneByOne,
+  createBulletEnabled,
+  createDiagramDirection,
   createMaxChildren,
   createPreferredChildren,
   createOrgChart,
   createHierBranch,
+  createResizeHandles,
   createPresentationLayoutVariables,
 } from "./layout-vars";
 export type {
@@ -25,8 +28,11 @@ export type {
   AnimateOneByOneOptions,
   MaxChildrenOptions,
   PreferredChildrenOptions,
+  BulletEnabledOptions,
+  DiagramDirectionOptions,
   OrgChartOptions,
   HierBranchOptions,
+  ResizeHandlesOptions,
   PresentationLayoutVariablesOptions,
   AnimationLevel,
   AnimateOneByOne,
@@ -41,6 +47,18 @@ export {
   createLayoutDefinitionHeaderList,
   createStyleDefinitionHeader,
   createStyleDefinitionHeaderList,
+  colorsDefinitionHeaderDesc,
+  colorsDefinitionHeaderListDesc,
+  layoutDefinitionHeaderDesc,
+  layoutDefinitionHeaderListDesc,
+  parseColorsDefinitionHeader,
+  parseColorsDefinitionHeaderList,
+  parseLayoutDefinitionHeader,
+  parseLayoutDefinitionHeaderList,
+  parseStyleDefinitionHeader,
+  parseStyleDefinitionHeaderList,
+  styleDefinitionHeaderDesc,
+  styleDefinitionHeaderListDesc,
 } from "./headers";
 export type {
   DiagramNameOptions,
@@ -69,7 +87,6 @@ export {
   FontCollectionIndex,
 } from "./diagram-style";
 export type {
-  DiagramStyleOptions,
   ColorListOptions,
   ColorStyleLabelOptions,
   StyleMatrixIndex,

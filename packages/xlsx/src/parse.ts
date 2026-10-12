@@ -25,6 +25,13 @@ import {
 import type { DataType } from "@office-open/core";
 import { chartSpaceDesc, userShapesDesc, type ExternalDataOptions } from "@office-open/core/chart";
 import type { ReadContext } from "@office-open/core/descriptor";
+import {
+  parseColorDefinition,
+  parseDataModelOptions,
+  parseLayoutDefinition,
+  parseStyleDefinition,
+  type DataModelOptions,
+} from "@office-open/core/smartart";
 import { themeOverrideDesc, type ThemeOverrideOptions } from "@office-open/core/theme";
 import { themeDesc } from "@office-open/core/theme";
 import type { Element } from "@office-open/xml";
@@ -80,6 +87,7 @@ import type {
   WorksheetChartOptions,
   WorksheetWebExtensionOptions,
   WorksheetSmartArtOptions,
+  SmartArtNode,
   PictureOptions,
   WorksheetContentPartOptions,
   WorksheetOptions,
@@ -145,6 +153,53 @@ function sortByNumber(paths: string[]): string[] {
     .map((p) => ({ p, n: parseInt(p.match(LEADING_PATH_NUMBER)?.[1] ?? "0", 10) }))
     .sort((a, b) => a.n - b.n)
     .map(({ p }) => p);
+}
+
+function parseSmartArtNodes(
+  dataElement: Element | undefined,
+  model: DataModelOptions | undefined,
+): SmartArtNode[] {
+  const nodeText = new Map<string, string>();
+  const pointList = dataElement ? findChild(dataElement, "dgm:ptLst") : undefined;
+  for (const point of pointList?.elements ?? []) {
+    if (point.name !== "dgm:pt" || attr(point, "type") !== "node") continue;
+    const textElement = findChild(point, "dgm:t");
+    if (!textElement) continue;
+    const text = (function readText(element: Element): string {
+      return (
+        (element.type === "text" ? String(element.text ?? "") : "") +
+        (element.elements ?? []).map(readText).join("")
+      );
+    })(textElement);
+    const modelId = attr(point, "modelId");
+    if (modelId) nodeText.set(modelId, text);
+  }
+  const children = new Map<string, { id: string; order: number }[]>();
+  for (const connection of model?.connections ?? []) {
+    if (connection.type !== undefined && connection.type !== "parOf") continue;
+    const list = children.get(connection.sourceId) ?? [];
+    list.push({
+      id: connection.destinationId,
+      order: connection.sourceOrder ?? connection.destinationOrder ?? list.length,
+    });
+    children.set(connection.sourceId, list);
+  }
+  const build = (id: string): SmartArtNode => {
+    const childNodes = (children.get(id) ?? [])
+      .slice()
+      .sort((left, right) => left.order - right.order)
+      .filter((child) => nodeText.has(child.id))
+      .map((child) => build(child.id));
+    return {
+      text: nodeText.get(id) ?? "",
+      ...(childNodes.length > 0 ? { children: childNodes } : {}),
+    };
+  };
+  return (children.get("0") ?? [])
+    .slice()
+    .sort((left, right) => left.order - right.order)
+    .filter((child) => nodeText.has(child.id))
+    .map((child) => build(child.id));
 }
 
 function graphicDataUris(element: Element, uris: string[] = []): string[] {
@@ -842,6 +897,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
   const absorbedUserShapesParts = new Set<string>();
   const absorbedChartThemeOverrides = new Set<string>();
   const absorbedWebExtensionParts = new Set<string>();
+  const absorbedSmartArtParts = new Set<string>();
   const absorbedWebExtensionRels = new Set<string>();
   for (const wsPath of xlsx.worksheets) {
     const wsEl = xlsx.doc.get(wsPath, WORKSHEET_PARSE_OPTIONS);
@@ -1183,13 +1239,41 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
           const quickStylePath = readContext.resolveWorksheetRel(dr.target, anchor.quickStyleRId);
           const colorsPath = readContext.resolveWorksheetRel(dr.target, anchor.colorsRId);
           if (!dataPath || !layoutPath || !quickStylePath || !colorsPath) continue;
+          absorbedSmartArtParts.add(dataPath);
+          absorbedSmartArtParts.add(layoutPath);
+          absorbedSmartArtParts.add(quickStylePath);
+          absorbedSmartArtParts.add(colorsPath);
+          const dataElement = xlsx.doc.get(dataPath);
+          const dataModel = readContext.withPart(dataPath, () =>
+            parseDataModelOptions(dataElement, readContext),
+          );
+          const layoutElement = xlsx.doc.get(layoutPath);
+          const styleElement = xlsx.doc.get(quickStylePath);
+          const colorElement = xlsx.doc.get(colorsPath);
           smartArts.push({
             ...pickAnchorOptions(anchor),
             ...pickNonVisualDrawingProperties(anchor),
+            nodes: parseSmartArtNodes(dataElement, dataModel),
             dataPath,
             layoutPath,
             quickStylePath,
             colorsPath,
+            ...(dataModel ? { dataModel } : {}),
+            ...(layoutElement
+              ? {
+                  layout: parseLayoutDefinition(layoutElement),
+                }
+              : {}),
+            ...(styleElement
+              ? {
+                  style: parseStyleDefinition(styleElement),
+                }
+              : {}),
+            ...(colorElement
+              ? {
+                  color: parseColorDefinition(colorElement),
+                }
+              : {}),
             ...(anchor.frameLocks ? { frameLocks: anchor.frameLocks } : {}),
             ...(anchor.macro !== undefined ? { macro: anchor.macro } : {}),
             ...(anchor.zOrder !== undefined ? { zOrder: anchor.zOrder } : {}),
@@ -1803,6 +1887,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     ...absorbedUserShapesParts,
     ...absorbedChartThemeOverrides,
     ...absorbedWebExtensionParts,
+    ...absorbedSmartArtParts,
     ...absorbedWebExtensionRels,
     ...pivotCaches.flatMap((cache) => [
       cache.definitionPath,

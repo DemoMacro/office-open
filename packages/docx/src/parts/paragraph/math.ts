@@ -7,7 +7,11 @@
  * @module
  */
 
+import type { ChangedProperties } from "@shared/track-revision/track-revision";
+
 import type { RunPropertiesOptions } from "./run/properties";
+import type { RunPropertiesChangeOptions } from "./run/properties";
+import type { RunOptions } from "./run/run";
 
 // ── MathRunProperties ──
 
@@ -32,6 +36,27 @@ export interface MathRunPropertiesOptions {
   align?: boolean;
 }
 
+/** Argument properties (`m:argPr`, CT_OMathArgPr). */
+export interface MathArgumentPropertiesOptions {
+  /** Argument size scale (`m:argSz/@m:val`; 1 = 100%, 2 = 200%). */
+  size?: number;
+}
+
+/** Control-character formatting (`m:ctrlPr`, CT_CtrlPr). */
+export type MathControlPropertiesOptions =
+  | { runProperties?: RunPropertiesOptions }
+  | {
+      insertion: ChangedProperties & {
+        deletion?: RunPropertiesChangeOptions;
+        runProperties?: RunPropertiesOptions;
+      };
+    }
+  | {
+      deletion: ChangedProperties & {
+        runProperties?: RunPropertiesOptions;
+      };
+    };
+
 // ── Math structure properties ──
 
 /** Delimiter properties (CT_DPr) — bracket characters, growth, shape. */
@@ -47,7 +72,7 @@ export interface MathDelimiterProperties {
   /** Delimiter shape — centered or match (m:shp, ST_Shp). */
   shape?: "centered" | "match";
   /** Control-character formatting (m:dPr/m:ctrlPr → w:rPr). */
-  controlProperties?: RunPropertiesOptions;
+  controlProperties?: MathControlPropertiesOptions;
 }
 
 /** N-ary operator limit location (ST_LimLoc). */
@@ -194,46 +219,53 @@ export type MathInput =
       runProperties?: RunPropertiesOptions;
     }
   | {
+      /** Mixed Word run content (w:EG_RunInnerContent mixed with m:t). */
+      children: NonNullable<RunOptions["children"]>;
+      properties?: MathRunPropertiesOptions;
+      /** Run text formatting (w:rPr inside m:r). */
+      runProperties?: RunPropertiesOptions;
+    }
+  | {
       /** Trailing m:ctrlPr inside an argument element (m:e/m:num/m:den...,
        *  CT_OMathArg) — carried as a children-array member so its position
        *  round-trips. */
-      argumentControlProperties: RunPropertiesOptions;
+      argumentControlProperties: MathControlPropertiesOptions;
     }
   | {
       fraction: {
         numerator: MathInput[];
         denominator: MathInput[];
         fractionType?: string;
-        /** Argument size scaling for the numerator (m:num/m:argPr/m:argSz). */
-        numeratorArgumentSize?: number;
-        /** Argument size scaling for the denominator (m:den/m:argPr/m:argSz). */
-        denominatorArgumentSize?: number;
+        /** Numerator argument properties (m:num/m:argPr). */
+        numeratorArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Denominator argument properties (m:den/m:argPr). */
+        denominatorArgumentProperties?: MathArgumentPropertiesOptions;
         /** Control-character formatting (m:fPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
       superScript: {
         children: MathInput[];
         superScript: MathInput[];
-        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
-        baseArgumentSize?: number;
-        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
-        superScriptArgumentSize?: number;
+        /** Base argument properties (m:e/m:argPr). */
+        baseArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Superscript argument properties (m:sup/m:argPr). */
+        superScriptArgumentProperties?: MathArgumentPropertiesOptions;
         /** Control-character formatting (m:sSupPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
       subScript: {
         children: MathInput[];
         subScript: MathInput[];
-        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
-        baseArgumentSize?: number;
-        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
-        subScriptArgumentSize?: number;
+        /** Base argument properties (m:e/m:argPr). */
+        baseArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Subscript argument properties (m:sub/m:argPr). */
+        subScriptArgumentProperties?: MathArgumentPropertiesOptions;
         /** Control-character formatting (m:sSubPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -241,16 +273,16 @@ export type MathInput =
         children: MathInput[];
         subScript: MathInput[];
         superScript: MathInput[];
-        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
-        baseArgumentSize?: number;
-        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
-        subScriptArgumentSize?: number;
-        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
-        superScriptArgumentSize?: number;
+        /** Base argument properties (m:e/m:argPr). */
+        baseArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Subscript argument properties (m:sub/m:argPr). */
+        subScriptArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Superscript argument properties (m:sup/m:argPr). */
+        superScriptArgumentProperties?: MathArgumentPropertiesOptions;
         /** Align sub/super scripts (m:sSubSupPr/m:alnScr). */
         alignScript?: boolean;
         /** Control-character formatting (m:sSubSupPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -258,14 +290,14 @@ export type MathInput =
         children: MathInput[];
         subScript: MathInput[];
         superScript: MathInput[];
-        /** Argument size scaling for the subscript (m:sub/m:argPr/m:argSz). */
-        subScriptArgumentSize?: number;
-        /** Argument size scaling for the superscript (m:sup/m:argPr/m:argSz). */
-        superScriptArgumentSize?: number;
-        /** Argument size scaling for the base (m:e/m:argPr/m:argSz). */
-        baseArgumentSize?: number;
+        /** Subscript argument properties (m:sub/m:argPr). */
+        subScriptArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Superscript argument properties (m:sup/m:argPr). */
+        superScriptArgumentProperties?: MathArgumentPropertiesOptions;
+        /** Base argument properties (m:e/m:argPr). */
+        baseArgumentProperties?: MathArgumentPropertiesOptions;
         /** Control-character formatting (m:sPrePr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -275,7 +307,7 @@ export type MathInput =
         /** Radical properties (m:radPr). */
         properties?: MathRadicalProperties;
         /** Control-character formatting (m:radPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -285,7 +317,7 @@ export type MathInput =
         superScript?: MathInput[];
         properties?: MathNaryProperties;
         /** Control-character formatting (m:naryPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -295,7 +327,20 @@ export type MathInput =
         superScript?: MathInput[];
         properties?: MathNaryProperties;
         /** Control-character formatting (m:naryPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
+      };
+    }
+  | {
+      /** Any OMML n-ary operator not represented by the sum/integral sugar. */
+      nary: {
+        /** Exact operator character (m:naryPr/m:chr, for example ∏). */
+        character: string;
+        children: MathInput[];
+        subScript?: MathInput[];
+        superScript?: MathInput[];
+        properties?: MathNaryProperties;
+        /** Control-character formatting (m:naryPr/m:ctrlPr). */
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -303,7 +348,7 @@ export type MathInput =
         children: MathInput[];
         limit: MathInput[];
         /** Control-character formatting (m:limLowPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -311,7 +356,7 @@ export type MathInput =
         children: MathInput[];
         limit: MathInput[];
         /** Control-character formatting (m:limUppPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -319,7 +364,7 @@ export type MathInput =
         children: MathInput[];
         name: MathInput[];
         /** Control-character formatting (m:funcPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -329,7 +374,7 @@ export type MathInput =
         /** Matrix properties (m:mPr). */
         properties?: MathMatrixProperties;
         /** Control-character formatting (m:mPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -378,7 +423,7 @@ export type MathInput =
         /** Border-box properties (m:borderBoxPr). */
         properties?: MathBorderBoxProperties;
         /** Control-character formatting (m:borderBoxPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -387,7 +432,7 @@ export type MathInput =
         /** Box properties (m:boxPr). */
         properties?: MathBoxProperties;
         /** Control-character formatting (m:boxPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -396,7 +441,7 @@ export type MathInput =
         /** Group-character properties (m:groupChrPr). */
         properties?: MathGroupCharacterProperties;
         /** Control-character formatting (m:groupChrPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -405,7 +450,7 @@ export type MathInput =
         /** Phantom properties (m:phantPr). */
         properties?: MathPhantomProperties;
         /** Control-character formatting (m:phantPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -414,7 +459,7 @@ export type MathInput =
         /** Equation-array properties (m:eqArrPr). */
         properties?: MathEquationArrayProperties;
         /** Control-character formatting (m:eqArrPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -422,7 +467,7 @@ export type MathInput =
         children: MathInput[];
         accentCharacter?: string;
         /** Control-character formatting (m:accPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     }
   | {
@@ -430,6 +475,6 @@ export type MathInput =
         children: MathInput[];
         type: "top" | "bot";
         /** Control-character formatting (m:barPr/m:ctrlPr). */
-        controlProperties?: RunPropertiesOptions;
+        controlProperties?: MathControlPropertiesOptions;
       };
     };

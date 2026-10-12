@@ -18,6 +18,24 @@ import { odfColor, parseBorder } from "./styles";
 
 /** Translates an Excel numFmt code into the matching ODF data style element. */
 export function numFmtDataStyle(numFmt: string): { name: string; children: string[] } {
+  const currency = /^\[\$([^-\]]+)(?:-[^\]]+)?\]/u.exec(numFmt);
+  if (currency) {
+    const symbol = currency[1]!;
+    const core = numFmt.slice(currency[0].length);
+    const decimals = core.split(".")[1];
+    const digits = Math.max(1, (core.split(".")[0] ?? "").replace(/[#,]/g, "").length);
+    return {
+      name: "number:currency-style",
+      children: [
+        xmlElement("number:currency-symbol", undefined, [symbol]),
+        xmlElement("number:number", {
+          "number:decimal-places": decimals?.length,
+          "number:min-integer-digits": digits,
+          "number:grouping": core.includes(",") || undefined,
+        }),
+      ],
+    };
+  }
   const percent = numFmt.endsWith("%");
   const core = percent ? numFmt.slice(0, -1) : numFmt;
   const tokens = core.match(/yyyy|yy|mm|dd|hh|ss|:/g);
@@ -87,6 +105,7 @@ export function parseNumberStyles(container: Element | undefined): Map<string, S
     if (
       element.name === "number:number-style" ||
       element.name === "number:percentage-style" ||
+      element.name === "number:currency-style" ||
       element.name === "number:date-style" ||
       element.name === "number:time-style"
     ) {
@@ -175,6 +194,9 @@ export function dataStyleNumFmt(element: Element): string | undefined {
         );
         break;
       }
+      case "number:currency-symbol":
+        parts.push(`[$${textOf(child)}]`);
+        break;
       case "number:year":
         parts.push(long ? "yyyy" : "yy");
         break;

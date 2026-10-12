@@ -28,8 +28,22 @@ describe("layoutDefDesc", () => {
       sampleData: {
         dataModel: {
           points: [
-            { modelId: "1", text: "One", type: "node" },
-            { modelId: "2", text: "Two", type: "node" },
+            {
+              modelId: "1",
+              type: "node",
+              textBody: {
+                bodyProperties: {},
+                paragraphs: [{ endParagraphProperties: false, text: "One" }],
+              },
+            },
+            {
+              modelId: "2",
+              type: "node",
+              textBody: {
+                bodyProperties: {},
+                paragraphs: [{ endParagraphProperties: false, text: "Two" }],
+              },
+            },
           ],
           connections: [
             {
@@ -43,6 +57,7 @@ describe("layoutDefDesc", () => {
           ],
         },
       },
+      extensions: [{ uri: "urn:layout-ext", content: '<foo:layout bar="1"/>' }],
       layoutNode: {
         name: "diagram",
         styleLabel: "node1",
@@ -124,9 +139,58 @@ describe("layoutDefDesc", () => {
     expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
   });
 
+  it("round-trips variable elements with omitted values", () => {
+    const opts: LayoutDefinitionOptions = {
+      layoutNode: {
+        children: [
+          {
+            variables: {
+              childMaximum: null,
+              childPreferred: null,
+              direction: null,
+              hierarchyBranchStyle: null,
+              resizeHandles: "exact",
+            },
+          },
+        ],
+      },
+    };
+    expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
+  });
+
+  it("round-trips explicit empty shape details", () => {
+    const opts: LayoutDefinitionOptions = {
+      layoutNode: {
+        children: [{ shape: { type: "none", blip: null, adjustments: null } }],
+      },
+    };
+    expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
+  });
+
+  it("round-trips non-finite numeric rule attributes", () => {
+    const opts: LayoutDefinitionOptions = {
+      layoutNode: {
+        children: [
+          {
+            rules: [{ type: "primFontSz", value: "nan", factor: "infinity", maximum: "-infinity" }],
+          },
+        ],
+      },
+    };
+    expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
+  });
+
   it("round-trips a minimal layout definition", () => {
     const opts: LayoutDefinitionOptions = { layoutNode: { children: [] } };
     expect(roundTrip(layoutDefDesc, opts)).toEqual({ layoutNode: {} });
+  });
+
+  it("round-trips foreign-namespace extension content", () => {
+    const opts: LayoutDefinitionOptions = {
+      layoutNode: { name: "diagram" },
+      extensions: [{ uri: "urn:layout-ext", content: '<foo:layout bar="1"/>' }],
+    };
+    expect(roundTrip(layoutDefDesc, opts)).toEqual(opts);
   });
 });
 
@@ -156,6 +220,14 @@ describe("styleDefDesc", () => {
         },
         { name: "node1", textProperties: { shape3d: { z: 50 } } },
       ],
+      extensions: [{ uri: "urn:style-ext" }],
+    };
+    expect(roundTrip(styleDefDesc, opts)).toEqual(opts);
+  });
+
+  it("round-trips an empty text properties element", () => {
+    const opts: StyleDefinitionOptions = {
+      styleLabels: [{ name: "node0", textProperties: {} }],
     };
     expect(roundTrip(styleDefDesc, opts)).toEqual(opts);
   });
@@ -178,6 +250,7 @@ describe("colorsDefDesc", () => {
           textFillColorList: { meth: "repeat" },
         },
       ],
+      extensions: [{ uri: "urn:color-ext" }],
     };
     expect(roundTrip(colorsDefDesc, opts)).toEqual(opts);
   });

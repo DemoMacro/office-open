@@ -29,11 +29,11 @@ function writeDestinations(section: SectionOptions, path: string): string {
   for (const kind of ["headers", "footers"] as const) {
     const destinations = section[kind];
     if (!destinations) continue;
-    assertAllowed(destinations, ["default", "first"], kind, `${path}.${kind}`);
-    for (const slot of ["default", "first"] as const) {
+    assertAllowed(destinations, ["default", "even", "first"], kind, `${path}.${kind}`);
+    for (const slot of ["default", "even", "first"] as const) {
       const blocks = destinations[slot];
       if (blocks === undefined) continue;
-      const suffix = slot === "first" ? "f" : "";
+      const suffix = slot === "first" ? "f" : slot === "even" ? "l" : "";
       result += `{\\${kind.slice(0, -1)}${suffix} `;
       for (const [index, child] of blocks.entries()) {
         if (!("paragraph" in child) || typeof child.paragraph === "string") {
@@ -51,37 +51,6 @@ function writeDestinations(section: SectionOptions, path: string): string {
     }
   }
   return result;
-}
-
-function writeFootnotes(options: DocumentOptions): string {
-  if (!options.footnotes) return "";
-  return options.footnotes
-    .map((footnote, index) => {
-      assertAllowed(footnote, ["children"], "footnote", `footnotes[${index}]`);
-      const blocks = footnote.children
-        .map((child, childIndex) => {
-          if (
-            typeof child !== "object" ||
-            child === null ||
-            !("paragraph" in child) ||
-            typeof child.paragraph === "string"
-          ) {
-            reject(
-              "footnote",
-              `footnotes[${index}].children[${childIndex}]`,
-              "child",
-              "RTF footnotes contain paragraphs",
-            );
-          }
-          return `${destinationText(
-            child.paragraph,
-            `footnotes[${index}].children[${childIndex}].paragraph`,
-          )}${control("par")}`;
-        })
-        .join("");
-      return `{\\footnote ${blocks}}`;
-    })
-    .join("");
 }
 
 function writeMetadata(options: DocumentOptions): string {
@@ -256,13 +225,13 @@ export function writeRtf(options: DocumentOptions): string {
   );
   const references: NumberingReferences = new Map();
   const context = createContext();
+  context.footnotes = options.footnotes;
   const first = options.sections[0] ?? { children: [] };
   const body = [
     writeMetadata(options),
     writeStyles(options.styles, context),
     writeNumberingTable(options.numbering, references),
     writeDestinations(first, "sections[0]"),
-    writeFootnotes(options),
     writeSections(options, references, context),
   ].join("");
   const tables = `${writeFontTable(context)}${writeColorTable(context)}`;

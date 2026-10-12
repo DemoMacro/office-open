@@ -2,7 +2,7 @@ import { DocParseError } from "../errors";
 import type { NumberPair } from "../streams/pieces";
 import { readUint16, readUint32, requireRange } from "./binary";
 import { FKP_LENGTH } from "./constants";
-import type { BinTableEntry, TextboxBoundary } from "./models";
+import type { BinTableEntry, StoryBoundary, TextboxBoundary } from "./models";
 export function parseBinTable(
   table: Uint8Array,
   range: NumberPair,
@@ -42,7 +42,7 @@ export function parseNoteBoundaries(
   table: Uint8Array,
   range: NumberPair,
   storyLength: number,
-): TextboxBoundary[] {
+): StoryBoundary[] {
   if (storyLength === 0) return [];
   if (range.length === 0) {
     throw new DocParseError("Invalid Word document: note boundary table is missing");
@@ -55,8 +55,12 @@ export function parseNoteBoundaries(
   const cps = Array.from({ length: range.length / 4 }, (_, index) =>
     readUint32(table, range.offset + index * 4, message),
   );
-  if (cps.slice(0, -2).some((cp) => cp >= storyLength)) {
+  const boundaries = cps.slice(0, -2);
+  if (boundaries.some((cp) => cp >= storyLength)) {
     throw new DocParseError("Invalid DOC note table: CP boundary is outside the story");
+  }
+  if (boundaries.some((cp, index) => index > 0 && cp < boundaries[index - 1]!)) {
+    throw new DocParseError("Invalid DOC note table: CP boundaries are not monotonic");
   }
   if (cps[cps.length - 2] !== storyLength - 1) {
     throw new DocParseError("Invalid DOC note table: final boundary is invalid");
@@ -71,7 +75,7 @@ export function parseHeaderStreams(
   table: Uint8Array,
   plcfhddText: NumberPair,
   storyLength: number,
-): TextboxBoundary[] {
+): StoryBoundary[] {
   if (storyLength === 0) return [];
   if (plcfhddText.length === 0) {
     throw new DocParseError("Invalid Word document: header boundary table is missing");
@@ -84,8 +88,12 @@ export function parseHeaderStreams(
   const cps = Array.from({ length: plcfhddText.length / 4 }, (_, index) =>
     readUint32(table, plcfhddText.offset + index * 4, message),
   );
-  if (cps.slice(0, -2).some((cp) => cp >= storyLength)) {
+  const boundaries = cps.slice(0, -2);
+  if (boundaries.some((cp) => cp >= storyLength)) {
     throw new DocParseError("Invalid DOC header table: CP boundary is outside the story");
+  }
+  if (boundaries.some((cp, index) => index > 0 && cp < boundaries[index - 1]!)) {
+    throw new DocParseError("Invalid DOC header table: CP boundaries are not monotonic");
   }
   if (cps[cps.length - 2] !== storyLength - 1) {
     throw new DocParseError("Invalid DOC header table: final boundary is invalid");
@@ -106,7 +114,7 @@ export function parseTextboxBoundaries(
   }
   const message = "Invalid DOC textbox table: it is outside the table stream";
   requireRange(table, range.offset, range.length, message);
-  if (range.length < 4 || (range.length - 4) % 26 !== 0) {
+  if (range.length < 4 || (range.length - 4) % 22 !== 0) {
     throw new DocParseError("Invalid DOC textbox table: malformed CP and textbox counts", {
       part: "table",
       path: "PlcftxbxTxt",
@@ -116,7 +124,7 @@ export function parseTextboxBoundaries(
       reason: "invalid-record-length",
     });
   }
-  const count = (range.length - 4) / 26;
+  const count = (range.length - 4) / 22;
   const boundaries: TextboxBoundary[] = [];
   const cps: number[] = [];
   for (let index = 0; index <= count; index++) {
@@ -127,14 +135,47 @@ export function parseTextboxBoundaries(
     cps.push(cp);
   }
   if (count === 0) return [];
-  if (cps[0] !== 0 || cps[count]! > storyLength) {
+  if (cps[0] !== 0 || cps.slice(0, -1).some((cp) => cp >= storyLength)) {
     throw new DocParseError("Invalid DOC textbox table: boundaries do not fit the story");
   }
   const recordsOffset = range.offset + (count + 1) * 4;
   for (let index = 0; index < count - 1; index++) {
-    const reusable =
-      index === count - 1 || readUint16(table, recordsOffset + index * 22 + 8, message) !== 0;
-    if (!reusable) boundaries.push({ start: cps[index]!, end: cps[index + 1]! });
+    const entryOffset = recordsOffset + index * 22;
+    const reusable = readUint16(table, entryOffset + 8, message) !== 0;
+    const start = cps[index]!;
+    const end = cps[index + 1]!;
+    if (reusable) {
+      if (end - start !== 1) {
+        throw new DocParseError("Invalid DOC textbox table: reusable boundary is not empty", {
+          part: "table",
+          path: "PlcftxbxTxt/FTXBXS",
+          recordIndex: index,
+          byteRange: [entryOffset, entryOffset + 22],
+          reason: "invalid-reusable-boundary",
+        });
+      }
+      continue;
+    }
+    if (end - start <= 1) {
+      throw new DocParseError("Invalid DOC textbox table: actual boundary is empty", {
+        part: "table",
+        path: "PlcftxbxTxt/FTXBXS",
+        recordIndex: index,
+        byteRange: [entryOffset, entryOffset + 22],
+        reason: "invalid-actual-boundary",
+      });
+    }
+    const shapeId = readUint32(table, entryOffset + 14, message);
+    if (shapeId === 0) {
+      throw new DocParseError("Invalid DOC textbox table: actual textbox has no shape", {
+        part: "table",
+        path: "PlcftxbxTxt/FTXBXS/lid",
+        recordIndex: index,
+        byteRange: [entryOffset, entryOffset + 22],
+        reason: "missing-shape",
+      });
+    }
+    boundaries.push({ start, end, shapeId });
   }
-  return boundaries.filter((item) => item.end > item.start);
+  return boundaries;
 }

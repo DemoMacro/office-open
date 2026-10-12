@@ -16,6 +16,12 @@ export interface DocParseContext {
   readonly length?: number;
   /** Inclusive stream-relative byte range, when a malformed range is known. */
   readonly byteRange?: readonly [number, number];
+  /** Zero-based index of the failed record within its parent PLC, when known. */
+  readonly recordIndex?: number;
+  /** Shape identifier referenced by the failed record, when known. */
+  readonly shapeId?: number;
+  /** Main-document character position referenced by the failed record, when known. */
+  readonly characterPosition?: number;
   /** Stable machine-readable failure category. */
   readonly reason: string;
 }

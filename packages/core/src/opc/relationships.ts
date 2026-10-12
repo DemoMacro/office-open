@@ -29,6 +29,7 @@ export const RELATIONSHIP_TYPES = {
   bibliography: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/bibliography",
   calcChain: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain",
   chart: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart",
+  chartEx: "http://schemas.microsoft.com/office/2014/relationships/chartEx",
   chartUserShapes:
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartUserShapes",
   chartsheet: "http://schemas.openxmlformats.org/officeDocument/2006/relationships/chartsheet",

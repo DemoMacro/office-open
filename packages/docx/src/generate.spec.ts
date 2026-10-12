@@ -411,9 +411,9 @@ describe("picture media dedup", () => {
                           type: "png",
                           data: new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10, 1, 2]),
                           transformation: {
-                            offset: { pixels: { x: 0, y: 0 }, emus: { x: 0, y: 0 } },
-                            pixels: { x: 100, y: 100 },
-                            emus: { x: emu(100), y: emu(100) },
+                            offset: { x: 0, y: 0 },
+                            width: emu(100),
+                            height: emu(100),
                           },
                         } as GroupChildMediaData,
                       ],
@@ -486,9 +486,9 @@ describe("picture media dedup", () => {
 
   it("re-registers group chart children on a reused options object", () => {
     const mediaTransformation = {
-      emus: { x: 952500, y: 952500 },
-      pixels: { x: 100, y: 100 },
-      offset: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+      width: 952500,
+      height: 952500,
+      offset: { x: 0, y: 0 },
     };
     const options = {
       sections: [

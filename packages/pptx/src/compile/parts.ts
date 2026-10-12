@@ -11,11 +11,11 @@ import {
   RELATIONSHIP_TYPES,
   Relationships,
   PPTX_PARTS,
-  remapSmartArtDrawingTarget,
   toUint8Array,
   getReferencedMedia,
   replacePlaceholders,
   resolverFromRegistry,
+  withDiagramNamespaces,
 } from "@office-open/core";
 import type { Zippable } from "@office-open/core";
 import { partPathToRelsPath } from "@office-open/core";
@@ -133,7 +133,7 @@ export function compileTailParts(
   const allSmartArts = [
     ...smartArts.array.map((s) => ({
       key: s.key,
-      dataModelXml: XML_DECL + s.dataModelXml,
+      dataModelXml: s.dataModelXml,
       layout: s.layout,
       style: s.style,
       color: s.color,
@@ -149,44 +149,52 @@ export function compileTailParts(
     })),
   ];
   for (const [i, sa] of allSmartArts.entries()) {
-    files[`ppt/diagrams/data${i + 1}.xml`] =
-      sa.raw?.data !== undefined ? toUint8Array(sa.raw.data) : encoder.encode(sa.dataModelXml);
-    files[`ppt/diagrams/layout${i + 1}.xml`] =
-      sa.raw?.layout !== undefined
-        ? toUint8Array(sa.raw.layout)
-        : encoder.encode(
-            typeof sa.layout === "string"
-              ? getLayoutXml(sa.layout)
-              : stringifyLayoutDefinitionPart(sa.layout),
-          );
-    files[`ppt/diagrams/quickStyle${i + 1}.xml`] =
-      sa.raw?.style !== undefined
-        ? toUint8Array(sa.raw.style)
-        : encoder.encode(
-            typeof sa.style === "string"
-              ? getStyleXml(sa.style)
-              : stringifyStyleDefinitionPart(sa.style),
-          );
-    files[`ppt/diagrams/colors${i + 1}.xml`] =
-      sa.raw?.color !== undefined
-        ? toUint8Array(sa.raw.color)
-        : encoder.encode(
-            typeof sa.color === "string"
-              ? getColorXml(sa.color)
-              : stringifyColorDefinitionPart(sa.color),
-          );
+    const drawingRelationship =
+      sa.raw?.drawing !== undefined && sa.raw.drawingRelationship !== false;
+    const mediaIds = new Map(
+      (sa.raw?.media ?? []).map((media, mediaIndex) => [
+        media.fileName,
+        `rId${(drawingRelationship ? 2 : 1) + mediaIndex}`,
+      ]),
+    );
+    const dataBody = replacePlaceholders(sa.dataModelXml, mediaIds).replace(/^<\?xml[^>]*\?>/, "");
+    files[`ppt/diagrams/data${i + 1}.xml`] = encoder.encode(
+      XML_DECL + withDiagramNamespaces(dataBody),
+    );
+    files[`ppt/diagrams/layout${i + 1}.xml`] = encoder.encode(
+      typeof sa.layout === "string"
+        ? getLayoutXml(sa.layout)
+        : stringifyLayoutDefinitionPart(sa.layout),
+    );
+    files[`ppt/diagrams/quickStyle${i + 1}.xml`] = encoder.encode(
+      typeof sa.style === "string" ? getStyleXml(sa.style) : stringifyStyleDefinitionPart(sa.style),
+    );
+    files[`ppt/diagrams/colors${i + 1}.xml`] = encoder.encode(
+      typeof sa.color === "string" ? getColorXml(sa.color) : stringifyColorDefinitionPart(sa.color),
+    );
     const drawingFileName = sa.raw?.drawingFileName ?? `drawing${i + 1}.xml`;
-    if (sa.raw?.drawing !== undefined) {
+    if (drawingRelationship && sa.raw?.drawing !== undefined) {
       files[`ppt/diagrams/${drawingFileName}`] = toUint8Array(sa.raw.drawing);
     } else if (sa.raw === undefined) {
       files[`ppt/diagrams/drawing${i + 1}.xml`] = encoder.encode(DEFAULT_DRAWING_XML);
     }
-    if (sa.raw?.dataRels !== undefined) {
-      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = toUint8Array(
-        drawingFileName === `drawing${i + 1}.xml`
-          ? remapSmartArtDrawingTarget(sa.raw.dataRels, `drawing${i + 1}.xml`)
-          : sa.raw.dataRels,
+    const dataRels = new Relationships(`ppt/diagrams/data${i + 1}.xml`);
+    if (drawingRelationship) {
+      dataRels.addRelationship(
+        1,
+        RELATIONSHIP_TYPES.diagramDrawingMs,
+        drawingFileName === `drawing${i + 1}.xml` ? `drawing${i + 1}.xml` : drawingFileName,
       );
+    }
+    for (const [mediaIndex, media] of (sa.raw?.media ?? []).entries()) {
+      dataRels.addRelationship(
+        (drawingRelationship ? 2 : 1) + mediaIndex,
+        RELATIONSHIP_TYPES.image,
+        `../media/${media.fileName}`,
+      );
+    }
+    if (dataRels.relationshipCount > 0) {
+      files[`ppt/diagrams/_rels/data${i + 1}.xml.rels`] = encoder.encode(dataRels.serialize());
     }
   }
 

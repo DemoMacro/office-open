@@ -51,7 +51,7 @@ import type { MailMergeOptions } from "@parts/settings/settings";
 
 import { stringifyDocumentXml, stringifyBodyChild, type BodyContext } from "./body";
 import { compileDocumentEntries } from "./compile/document";
-import { compileChartParts, compileSmartArtParts } from "./compile/drawings";
+import { compileChartExParts, compileChartParts, compileSmartArtParts } from "./compile/drawings";
 import { compileGlossaryParts } from "./compile/glossary";
 import { compileHeaderFooterParts } from "./compile/headerfooter";
 import { compileNotesParts } from "./compile/notes";
@@ -82,6 +82,7 @@ const decoder = new TextDecoder();
 const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
 
 const DOCX_THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml";
+const DOCX_CHART_EX_CONTENT_TYPE = "application/vnd.ms-office.chartex+xml";
 
 function bindThemeMedia(xml: string, ctx: DocxWriteContext, rels: Relationships): string {
   const names = new Set(ctx.media.array.map((media) => media.fileName));
@@ -318,6 +319,12 @@ export function compileDocument(
                 },
               ]
             : []),
+          ...ctx.chartExes.array.map((chartEx, index) => ({
+            path:
+              chartEx.sourcePath ??
+              `word/charts/chartEx${Number(chartEx.key.replace(/^chartEx_/, "")) || index + 1}.xml`,
+            contentType: DOCX_CHART_EX_CONTENT_TYPE,
+          })),
           ...(ctx.glossaryOptions
             ? [
                 {
@@ -467,6 +474,7 @@ interface XmlifyedFileMapping {
   FontTableRelationships?: XmlifyedFile;
   Bibliography?: XmlifyedFile;
   Charts?: XmlifyedFile[];
+  ChartEx?: XmlifyedFile[];
   DiagramData?: XmlifyedFile[];
   DiagramLayout?: XmlifyedFile[];
   DiagramStyle?: XmlifyedFile[];
@@ -758,6 +766,7 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
         }
       : {}),
     ...compileChartParts(ctx),
+    ...compileChartExParts(ctx),
     ...compileSmartArtParts(ctx),
     ...(ctx.altChunks.array.length > 0
       ? {

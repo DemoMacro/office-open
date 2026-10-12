@@ -77,7 +77,7 @@ import type { DocxReadContext, DocxWriteContext, BodyContext } from "./context";
 import { tableDesc, altChunkDesc, sdtBlockDesc, customXmlBlockDesc, subDocDesc } from "./parts";
 import { parseCustomXmlProperties } from "./parts/bodychildren";
 import { stringifyChildDispatch, stringifyRunInline } from "./parts/inline";
-import { parseMathChildren } from "./parts/paragraph/math/stringify";
+import { parseMathChildren, parseMathParagraph } from "./parts/paragraph/math/stringify";
 import type {
   ComplexFieldInstructionMember,
   ComplexFieldOptions,
@@ -304,7 +304,7 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
               type: m.type,
               data,
               fileName,
-              transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+              transformation: { width: 0, height: 0 },
             }) as MediaData,
           m.fileName,
         );
@@ -327,7 +327,7 @@ function stringifyDocumentBackground(opts: DocumentBackgroundOptions, ctx: BodyC
           type: image.type as "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf",
           data: rawData,
           fileName: name,
-          transformation: { emus: { x: 0, y: 0 }, pixels: { x: 0, y: 0 } },
+          transformation: { width: 0, height: 0 },
         }) as MediaData,
     );
 
@@ -1515,6 +1515,10 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpgGroup.vmlFallback = altFallback;
       drawingChild.wpgGroup.vmlFallbackMedia = altFallbackMedia;
       if (altRequires) drawingChild.wpgGroup.mcChoiceRequires = altRequires;
+    } else if ("wordprocessingCanvas" in drawingChild) {
+      drawingChild.wordprocessingCanvas.vmlFallback = altFallback;
+      drawingChild.wordprocessingCanvas.vmlFallbackMedia = altFallbackMedia;
+      if (altRequires) drawingChild.wordprocessingCanvas.mcChoiceRequires = altRequires;
     } else if ("unsupportedDrawing" in drawingChild) {
       drawingChild.unsupportedDrawing.vmlFallback = altFallback;
       drawingChild.unsupportedDrawing.vmlFallbackMedia = altFallbackMedia;
@@ -1528,8 +1532,12 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpsShape.runProperties = runProperties;
     } else if ("wpgGroup" in drawingChild) {
       drawingChild.wpgGroup.runProperties = runProperties;
+    } else if ("wordprocessingCanvas" in drawingChild) {
+      drawingChild.wordprocessingCanvas.runProperties = runProperties;
     } else if ("chart" in drawingChild) {
       drawingChild.chart.runProperties = runProperties;
+    } else if ("chartEx" in drawingChild) {
+      drawingChild.chartEx.runProperties = runProperties;
     } else if ("smartArt" in drawingChild) {
       drawingChild.smartArt.runProperties = runProperties;
     } else if ("unsupportedDrawing" in drawingChild) {
@@ -1540,7 +1548,10 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     if ("picture" in drawingChild) drawingChild.picture.additionRsid = additionRsid;
     else if ("wpsShape" in drawingChild) drawingChild.wpsShape.additionRsid = additionRsid;
     else if ("wpgGroup" in drawingChild) drawingChild.wpgGroup.additionRsid = additionRsid;
+    else if ("wordprocessingCanvas" in drawingChild)
+      drawingChild.wordprocessingCanvas.additionRsid = additionRsid;
     else if ("chart" in drawingChild) drawingChild.chart.additionRsid = additionRsid;
+    else if ("chartEx" in drawingChild) drawingChild.chartEx.additionRsid = additionRsid;
     else if ("smartArt" in drawingChild) drawingChild.smartArt.additionRsid = additionRsid;
     else if ("unsupportedDrawing" in drawingChild)
       drawingChild.unsupportedDrawing.additionRsid = additionRsid;
@@ -1549,7 +1560,10 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
     if ("picture" in drawingChild) drawingChild.picture.deletionRsid = deletionRsid;
     else if ("wpsShape" in drawingChild) drawingChild.wpsShape.deletionRsid = deletionRsid;
     else if ("wpgGroup" in drawingChild) drawingChild.wpgGroup.deletionRsid = deletionRsid;
+    else if ("wordprocessingCanvas" in drawingChild)
+      drawingChild.wordprocessingCanvas.deletionRsid = deletionRsid;
     else if ("chart" in drawingChild) drawingChild.chart.deletionRsid = deletionRsid;
+    else if ("chartEx" in drawingChild) drawingChild.chartEx.deletionRsid = deletionRsid;
     else if ("smartArt" in drawingChild) drawingChild.smartArt.deletionRsid = deletionRsid;
   }
   if (runPropertiesRsid) {
@@ -1558,7 +1572,10 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpsShape.runPropertiesRsid = runPropertiesRsid;
     else if ("wpgGroup" in drawingChild)
       drawingChild.wpgGroup.runPropertiesRsid = runPropertiesRsid;
+    else if ("wordprocessingCanvas" in drawingChild)
+      drawingChild.wordprocessingCanvas.runPropertiesRsid = runPropertiesRsid;
     else if ("chart" in drawingChild) drawingChild.chart.runPropertiesRsid = runPropertiesRsid;
+    else if ("chartEx" in drawingChild) drawingChild.chartEx.runPropertiesRsid = runPropertiesRsid;
     else if ("smartArt" in drawingChild)
       drawingChild.smartArt.runPropertiesRsid = runPropertiesRsid;
     else if ("unsupportedDrawing" in drawingChild)
@@ -1573,8 +1590,12 @@ function parseDrawingRunChild(child: Element, ctx: DocxReadContext): ParagraphCh
       drawingChild.wpsShape.lastRenderedPageBreak = true;
     } else if ("wpgGroup" in drawingChild) {
       drawingChild.wpgGroup.lastRenderedPageBreak = true;
+    } else if ("wordprocessingCanvas" in drawingChild) {
+      drawingChild.wordprocessingCanvas.lastRenderedPageBreak = true;
     } else if ("chart" in drawingChild) {
       drawingChild.chart.lastRenderedPageBreak = true;
+    } else if ("chartEx" in drawingChild) {
+      drawingChild.chartEx.lastRenderedPageBreak = true;
     } else if ("smartArt" in drawingChild) {
       drawingChild.smartArt.lastRenderedPageBreak = true;
     } else if ("unsupportedDrawing" in drawingChild) {
@@ -2000,25 +2021,11 @@ function parseRunLevelChildren(
         break;
       }
       case "m:oMath": {
-        const mathChildren = parseMathChildren(child);
-        childList.push({ math: { children: mathChildren } });
+        childList.push({ math: { equations: [parseMathChildren(child, ctx)] } });
         break;
       }
       case "m:oMathPara": {
-        // Display math: m:oMathParaPr/m:jc + the inline equation it wraps.
-        const jcEl = findChild(findChild(child, "m:oMathParaPr") ?? child, "m:jc");
-        const jc = jcEl
-          ? (attr(jcEl, "m:val") as "left" | "right" | "center" | "centerGroup" | undefined)
-          : undefined;
-        const oMathEl = findChild(child, "m:oMath");
-        const mathChildren = oMathEl ? parseMathChildren(oMathEl) : [];
-        childList.push({
-          math: {
-            children: mathChildren,
-            display: true,
-            ...(jc ? { justification: jc } : {}),
-          },
-        });
+        childList.push({ math: { ...parseMathParagraph(child, ctx), display: true } });
         break;
       }
       case "w:ins": {

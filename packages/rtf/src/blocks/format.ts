@@ -63,6 +63,7 @@ export const CONTENT_GROUP_CONTROLS = new Set([
 export function isFormatChanged(left: RunFormat, right: RunFormat): boolean {
   return (
     [
+      "additionRsid",
       "bold",
       "italic",
       "underline",

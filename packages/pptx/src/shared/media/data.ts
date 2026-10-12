@@ -1,17 +1,15 @@
-export interface MediaDataTransformation {
-  pixels: {
-    x: number;
-    y: number;
-  };
-  emus: {
-    x: number;
-    y: number;
-  };
+import type { UniversalMeasure } from "@office-open/core";
+
+export interface MediaTransformation {
+  /** Display width in EMUs, or a universal measure such as `"25.4mm"`. */
+  width: number | UniversalMeasure;
+  /** Display height in EMUs, or a universal measure such as `"25.4mm"`. */
+  height: number | UniversalMeasure;
 }
 
 interface CoreMediaData {
   fileName: string;
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   data: Uint8Array;
 }
 

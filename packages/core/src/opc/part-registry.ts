@@ -97,8 +97,6 @@ export const DOCX_PARTS = {
     "docProps/thumbnail.",
     "word/charts/style",
     "word/charts/colors",
-    "word/charts/chartEx",
-    "word/charts/_rels/chartEx",
     // AltChunk payload folders, digital-signature stores, and the VBA
     // project's companion data — opaque independent package members.
     "word/afchunks/",

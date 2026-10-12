@@ -1,8 +1,9 @@
-import type { WorksheetOptions } from "@office-open/xlsx";
+import type { NoteAnchorOptions, WorksheetOptions } from "@office-open/xlsx";
 
-import { LegacyExcelError } from "../errors";
+import { XlsParseError } from "../errors";
+import type { BiffRecord } from "../records";
 import { RecordCode, isClearedFilePass, recordsFrom } from "../records";
-import { escherPictures } from "../records/escher";
+import { escherAnchors, escherDrawings } from "../records/escher";
 import { decodeFormula } from "../records/formula";
 import { assertRegisteredBiffRecord } from "../records/registry";
 import {
@@ -34,6 +35,42 @@ import type {
 } from "./models";
 import { readCString } from "./workbook-globals";
 import { parseHyperlink } from "./workbook-globals";
+
+function formulaDecodeError(error: unknown, record: BiffRecord): XlsParseError {
+  const source = error instanceof XlsParseError ? error : undefined;
+  return new XlsParseError(
+    source?.message ?? "Invalid legacy XLS file: malformed formula token stream",
+    {
+      part: "stream",
+      recordType: record.code,
+      recordName: "FORMULA",
+      offset: record.start,
+      reason: "malformed-formula",
+      cause: error,
+    },
+  );
+}
+
+function setCellFormula(
+  sheet: SheetState,
+  row: number,
+  column: number,
+  state: WorkbookState,
+  formula: NonNullable<ReturnType<typeof formulaOptions>>,
+): void {
+  const rowOptions = ensureRow(sheet, row);
+  const cell = rowOptions.cells?.find(
+    (candidate) => candidate.reference === reference(row, column),
+  );
+  if (cell) {
+    cell.formula = formula;
+    return;
+  }
+  rowOptions.cells?.push({
+    ...makeCell(row, column, 0, cachedFormulaResult(new Uint8Array(8)), state),
+    formula,
+  });
+}
 export function parseWorksheetStream(
   stream: Uint8Array,
   position: number,
@@ -50,6 +87,17 @@ export function parseWorksheetStream(
   let noteObjectId: number | undefined;
   let sharedFormulaIndex = 0;
   const worksheetExtras: Partial<WorksheetOptions> = {};
+  const noteAnchorsByObjectId = new Map<number, NoteAnchorOptions>();
+
+  const addDrawings = (bytes: Uint8Array) => {
+    const drawings = escherDrawings(bytes, state.drawingImages);
+    if (drawings.images.length) worksheetExtras.images = drawings.images;
+    if (drawings.shapes.length) worksheetExtras.shapes = drawings.shapes;
+    if (drawings.connectors.length) worksheetExtras.connectors = drawings.connectors;
+    for (const { anchor, shapeId } of escherAnchors(bytes)) {
+      if (shapeId !== undefined) noteAnchorsByObjectId.set(shapeId, anchor);
+    }
+  };
 
   for (const record of recordsFrom(stream, position, state.version, false)) {
     if (BEGIN_OF_FILE_CODES.has(record.code)) {
@@ -57,21 +105,21 @@ export function parseWorksheetStream(
       continue;
     }
     if (depth === 0) continue;
+    if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
+      throw new XlsParseError("Encrypted legacy XLS files are not supported");
     if (record.code === RecordCode.EndOfFile) {
+      if (depth === 1 && currentDrawing) addDrawings(concatBytes(currentDrawing));
       depth--;
       if (depth === 0) return { ...sheet, extras: worksheetExtras };
       continue;
     }
     if (depth !== 1) continue;
-
-    if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new LegacyExcelError("Encrypted legacy XLS files are not supported");
     if (
       currentDrawing &&
       record.code !== RecordCode.Continue &&
       record.code !== RecordCode.MsoDrawing
     ) {
-      worksheetExtras.images = escherPictures(concatBytes(currentDrawing), state.drawingImages);
+      addDrawings(concatBytes(currentDrawing));
       currentDrawing = undefined;
     }
     if (currentDrawing && record.code === RecordCode.Continue) {
@@ -107,7 +155,7 @@ export function parseWorksheetStream(
               ? readBiff2String(record.body).value
               : readBiff35String(record.body).value;
       } catch {
-        throw new LegacyExcelError("Invalid legacy XLS file: truncated formula string");
+        throw new XlsParseError("Invalid legacy XLS file: truncated formula string");
       }
       ensureRow(sheet, pendingFormula.row).cells!.push({
         ...makeCell(
@@ -132,7 +180,7 @@ export function parseWorksheetStream(
       case RecordCode.Dimensions: {
         const minimumLength = state.version === 8 ? 14 : state.version === 2 ? 8 : 10;
         if (record.body.byteLength < minimumLength) {
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated dimensions");
+          throw new XlsParseError("Invalid legacy XLS file: truncated dimensions");
         }
         const view = new DataView(
           record.body.buffer,
@@ -158,7 +206,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.Row: {
         if (record.body.byteLength < 16)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated row");
+          throw new XlsParseError("Invalid legacy XLS file: truncated row");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -181,7 +229,7 @@ export function parseWorksheetStream(
       case RecordCode.Blank:
       case RecordCode.Biff2Blank: {
         if (record.body.byteLength < 6)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated blank cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated blank cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -199,7 +247,7 @@ export function parseWorksheetStream(
       case RecordCode.BoolErr:
       case RecordCode.Biff2BoolErr: {
         if (record.body.byteLength < 8)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated boolean/error cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated boolean/error cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -217,7 +265,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.MulBlank: {
         if (record.body.byteLength < 10)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated multiple blank cells");
+          throw new XlsParseError("Invalid legacy XLS file: truncated multiple blank cells");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -228,7 +276,7 @@ export function parseWorksheetStream(
         const lastColumn = view.getUint16(record.body.byteLength - 2, true);
         const count = lastColumn - firstColumn + 1;
         if (record.body.byteLength < 6 + count * 2) {
-          throw new LegacyExcelError(
+          throw new XlsParseError(
             "Invalid legacy XLS file: multiple blank cell range is truncated",
           );
         }
@@ -244,7 +292,7 @@ export function parseWorksheetStream(
       case RecordCode.Number: {
         if (state.version === 2) {
           if (record.body.byteLength < 15)
-            throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 number cell");
+            throw new XlsParseError("Invalid legacy XLS file: truncated BIFF2 number cell");
           const view = new DataView(
             record.body.buffer,
             record.body.byteOffset,
@@ -256,7 +304,7 @@ export function parseWorksheetStream(
           break;
         }
         if (record.body.byteLength < 14)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated number cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated number cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -271,7 +319,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.Biff2Integer: {
         if (record.body.byteLength < 9)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 integer cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated BIFF2 integer cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -290,7 +338,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.Label: {
         if (record.body.byteLength < 7)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -306,14 +354,14 @@ export function parseWorksheetStream(
               ? readBiff8String(record.body, 6)
               : readBiff35String(record.body, 6);
         } catch {
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated label cell");
         }
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.Biff2Label: {
         if (record.body.byteLength < 8)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated BIFF2 label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -323,7 +371,7 @@ export function parseWorksheetStream(
         try {
           text = readBiff2String(record.body, 7);
         } catch {
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated BIFF2 label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated BIFF2 label cell");
         }
         ensureRow(sheet, view.getUint16(0, true)).cells!.push(
           makeCell(view.getUint16(0, true), view.getUint16(2, true), 0, text.value, state),
@@ -332,7 +380,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.RichLabel: {
         if (record.body.byteLength < 7)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated rich label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated rich label cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -345,14 +393,14 @@ export function parseWorksheetStream(
         try {
           text = readBiff8String(record.body, 6);
         } catch {
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated rich label cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated rich label cell");
         }
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, text.value, state));
         break;
       }
       case RecordCode.LabelSst: {
         if (record.body.byteLength < 10)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated shared string cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated shared string cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -364,13 +412,13 @@ export function parseWorksheetStream(
         const index = view.getUint32(6, true);
         const value = state.sharedStrings[index];
         if (value === undefined)
-          throw new LegacyExcelError(`Invalid legacy XLS file: missing shared string ${index}`);
+          throw new XlsParseError(`Invalid legacy XLS file: missing shared string ${index}`);
         ensureRow(sheet, row).cells!.push(makeCell(row, column, style, value, state));
         break;
       }
       case RecordCode.Rk: {
         if (record.body.byteLength < 10)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated RK cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated RK cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -385,7 +433,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.MulRk: {
         if (record.body.byteLength < 10)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated multiple RK cells");
+          throw new XlsParseError("Invalid legacy XLS file: truncated multiple RK cells");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -396,9 +444,7 @@ export function parseWorksheetStream(
         const lastColumn = view.getUint16(record.body.byteLength - 2, true);
         const count = lastColumn - firstColumn + 1;
         if (record.body.byteLength < 6 + count * 6) {
-          throw new LegacyExcelError(
-            "Invalid legacy XLS file: multiple RK cell range is truncated",
-          );
+          throw new XlsParseError("Invalid legacy XLS file: multiple RK cell range is truncated");
         }
         const rowOptions = ensureRow(sheet, row);
         for (let index = 0; index < count; index++) {
@@ -412,7 +458,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.Formula: {
         if (record.body.byteLength < 22)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated formula cell");
+          throw new XlsParseError("Invalid legacy XLS file: truncated formula cell");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -426,14 +472,18 @@ export function parseWorksheetStream(
         let expression: string | undefined;
         if (tokenLength > 0) {
           const tokens = record.body.subarray(22, 22 + tokenLength);
+          const arrayData = record.body.subarray(22 + tokenLength);
           try {
-            expression = decodeFormula(tokens, {
-              baseRow: row,
-              baseColumn: column,
-              sheetNameByExternIndex: (index) => state.externSheetNames.get(index),
-            }).formula;
-          } catch {
-            expression = undefined;
+            expression =
+              decodeFormula(tokens, {
+                baseRow: row,
+                baseColumn: column,
+                formulaVersion: state.version,
+                sheetNameByExternIndex: (index) => state.externSheetNames.get(index),
+                arrayData,
+              }).formula || undefined;
+          } catch (error) {
+            throw formulaDecodeError(error, record);
           }
         }
         if (result === undefined) {
@@ -449,35 +499,52 @@ export function parseWorksheetStream(
         break;
       }
       case RecordCode.SharedFormula: {
-        if (record.body.byteLength < 10 || !formula) break;
+        if (record.body.byteLength < 10) {
+          throw new XlsParseError("Invalid legacy XLS file: truncated shared formula", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "SHRFMLA",
+            offset: record.start,
+            length: 10,
+            reason: "invalid-record-length",
+          });
+        }
+        const sharedView = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        const sharedRow = sharedView.getUint16(0, true);
+        const sharedColumn = sharedView.getUint16(4, true);
         const tokens = record.body.subarray(10);
         try {
           const decoded = decodeFormula(tokens, {
-            baseRow: formula.row,
-            baseColumn: formula.column,
+            baseRow: sharedRow,
+            baseColumn: sharedColumn,
+            formulaVersion: state.version,
             sheetNameByExternIndex: (index) => state.externSheetNames.get(index),
           });
-          ensureRow(sheet, formula.row).cells!.push({
-            ...makeCell(
-              formula.row,
-              formula.column,
-              formula.style,
-              cachedFormulaResult(new Uint8Array(8)),
-              state,
-            ),
-            formula: {
-              formula: decoded.formula,
-              type: "shared",
-              sharedIndex: sharedFormulaIndex++,
-            },
+          setCellFormula(sheet, sharedRow, sharedColumn, state, {
+            formula: decoded.formula,
+            type: "shared",
+            sharedIndex: sharedFormulaIndex++,
           });
-        } catch {
-          break;
+        } catch (error) {
+          throw formulaDecodeError(error, record);
         }
         break;
       }
       case RecordCode.ArrayFormula: {
-        if (record.body.byteLength < 14 || !formula) break;
+        if (record.body.byteLength < 14) {
+          throw new XlsParseError("Invalid legacy XLS file: truncated array formula", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "ARRAY",
+            offset: record.start,
+            length: 14,
+            reason: "invalid-record-length",
+          });
+        }
         const firstRow = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -501,28 +568,24 @@ export function parseWorksheetStream(
         const referenceText = `${reference(firstRow, firstColumn)}:${reference(lastRow, lastColumn)}`;
         try {
           const decoded = decodeFormula(record.body.subarray(14), {
-            baseRow: formula.row,
-            baseColumn: formula.column,
+            baseRow: firstRow,
+            baseColumn: firstColumn,
+            formulaVersion: state.version,
             sheetNameByExternIndex: (index) => state.externSheetNames.get(index),
           });
-          ensureRow(sheet, formula.row).cells!.push({
-            ...makeCell(
-              formula.row,
-              formula.column,
-              formula.style,
-              cachedFormulaResult(new Uint8Array(8)),
-              state,
-            ),
-            formula: { formula: decoded.formula, type: "array", reference: referenceText },
+          setCellFormula(sheet, firstRow, firstColumn, state, {
+            formula: decoded.formula,
+            type: "array",
+            reference: referenceText,
           });
-        } catch {
-          break;
+        } catch (error) {
+          throw formulaDecodeError(error, record);
         }
         break;
       }
       case RecordCode.ColInfo: {
         if (record.body.byteLength < 10)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated COLINFO");
+          throw new XlsParseError("Invalid legacy XLS file: truncated COLINFO");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -563,34 +626,41 @@ export function parseWorksheetStream(
         break;
       }
       case RecordCode.Hyperlink: {
-        try {
-          worksheetExtras.hyperlinks = [
-            ...(worksheetExtras.hyperlinks ?? []),
-            parseHyperlink(record.body),
-          ];
-        } catch {
-          // Malformed hyperlink metadata is auxiliary and can be omitted.
-        }
+        worksheetExtras.hyperlinks = [
+          ...(worksheetExtras.hyperlinks ?? []),
+          parseHyperlink(record.body),
+        ];
         break;
       }
       case RecordCode.Obj: {
-        if (record.body.byteLength >= 8) {
-          const view = new DataView(
-            record.body.buffer,
-            record.body.byteOffset,
-            record.body.byteLength,
-          );
-          const objectId = view.getUint16(6, true);
-          if (view.getUint16(4, true) === 0x0019) {
-            noteObjectId = objectId;
-          }
+        if (record.body.byteLength < 8) {
+          throw new XlsParseError("Invalid legacy XLS file: truncated OBJ", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "OBJ",
+            offset: record.start,
+            length: 8,
+            reason: "invalid-record-length",
+          });
         }
+        const view = new DataView(
+          record.body.buffer,
+          record.body.byteOffset,
+          record.body.byteLength,
+        );
+        if (view.getUint16(4, true) === 0x0019) noteObjectId = view.getUint16(6, true);
         break;
       }
       case RecordCode.Txo: {
         if (record.body.byteLength < 18) {
-          txo = undefined;
-          break;
+          throw new XlsParseError("Invalid legacy XLS file: truncated TXO", {
+            part: "stream",
+            recordType: record.code,
+            recordName: "TXO",
+            offset: record.start,
+            length: 18,
+            reason: "invalid-record-length",
+          });
         }
         const view = new DataView(
           record.body.buffer,
@@ -609,7 +679,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.Note: {
         if (record.body.byteLength < 8)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated NOTE");
+          throw new XlsParseError("Invalid legacy XLS file: truncated NOTE");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -624,6 +694,7 @@ export function parseWorksheetStream(
           encodingForCodepage(state.codepage),
         ).value;
         const noteText = txoTextByObjectId.get(objectId)?.text ?? "";
+        const anchor = noteAnchorsByObjectId.get(objectId);
         worksheetExtras.comments = [
           ...(worksheetExtras.comments ?? []),
           {
@@ -631,8 +702,14 @@ export function parseWorksheetStream(
             author,
             text: noteText,
             visible: (view.getUint16(4, true) & 0x0002) !== 0,
-            size: { width: 108, height: 59.25 },
-            anchor: { from: { col: column, row }, to: { col: column + 1, row: row + 1 } },
+            ...(anchor
+              ? { anchor }
+              : {
+                  anchor: {
+                    from: { col: column, row },
+                    to: { col: column + 1, row: row + 1 },
+                  },
+                }),
           },
         ];
         break;
@@ -644,7 +721,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.CondFmt: {
         if (record.body.byteLength < 14)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated CONDFMT");
+          throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -652,7 +729,7 @@ export function parseWorksheetStream(
         );
         const rangeCount = view.getUint16(12, true);
         if (record.body.byteLength < 14 + rangeCount * 8)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated CONDFMT ranges");
+          throw new XlsParseError("Invalid legacy XLS file: truncated CONDFMT ranges");
         const range = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -670,7 +747,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.ConditionalFormat: {
         if (!conditional || record.body.byteLength < 12)
-          throw new LegacyExcelError(
+          throw new XlsParseError(
             "Invalid legacy XLS file: conditional format rule outside CONDFMT",
           );
         const view = new DataView(
@@ -692,7 +769,11 @@ export function parseWorksheetStream(
           const bytes = record.body.subarray(offset, offset + length);
           offset += length;
           try {
-            return decodeFormula(bytes, { baseRow: 0, baseColumn: 0 }).formula;
+            return decodeFormula(bytes, {
+              baseRow: 0,
+              baseColumn: 0,
+              arrayData: record.body.subarray(offset),
+            }).formula;
           } catch {
             return `#FORMULA_${length}`;
           }
@@ -748,7 +829,7 @@ export function parseWorksheetStream(
       case RecordCode.TopMargin:
       case RecordCode.BottomMargin: {
         if (record.body.byteLength < 8)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated page margin");
+          throw new XlsParseError("Invalid legacy XLS file: truncated page margin");
         const value = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -768,7 +849,7 @@ export function parseWorksheetStream(
       }
       case RecordCode.PageSetup: {
         if (record.body.byteLength < 32)
-          throw new LegacyExcelError("Invalid legacy XLS file: truncated PAGESETUP");
+          throw new XlsParseError("Invalid legacy XLS file: truncated PAGESETUP");
         const view = new DataView(
           record.body.buffer,
           record.body.byteOffset,
@@ -797,6 +878,6 @@ export function parseWorksheetStream(
   }
 
   if (depth !== 0)
-    throw new LegacyExcelError("Invalid legacy XLS file: sheet stream has no Begin Of File");
+    throw new XlsParseError("Invalid legacy XLS file: sheet stream has no Begin Of File");
   return { ...sheet, extras: worksheetExtras };
 }

@@ -1,5 +1,5 @@
 import { CompoundFileReader } from "@office-open/core";
-import type { DocumentOptions, ParagraphChild, SectionChild } from "@office-open/docx";
+import type { DocumentOptions, SectionChild } from "@office-open/docx";
 
 import { readSummaryInformation } from "../cfb/container";
 import { decryptWordStreams } from "../cfb/encryption";
@@ -7,6 +7,7 @@ import { DocParseError } from "../errors";
 import type { LegacyRevisionRange } from "../records/models";
 import {
   parseBookmarks,
+  parseBodyPictureAnchors,
   parseFields,
   parseLists,
   parsePictures,
@@ -21,7 +22,7 @@ import { applyBookmarks } from "./bookmarks";
 import { parseCommentRanges } from "./comment-ranges";
 import { FLAG_ENCRYPTED, FLAG_TABLE_ONE } from "./constants";
 import { parseFib } from "./fib";
-import { overlappingPieces, parseCharacterFkp, parseParagraphFkp } from "./fkp";
+import { parseCharacterFkp, parseParagraphFkp } from "./fkp";
 import { legacyChildren, parseLegacyFib, parseLegacyText } from "./legacy-text";
 import { noOpFibTableRecord } from "./no-op-records";
 import { applyTables } from "./paragraph-projection";
@@ -98,7 +99,24 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   if (fib.totalCharacters > pieces[pieces.length - 1]!.cpEnd) {
     throw new DocParseError("Invalid Word document: main text extends beyond the piece table");
   }
-  const characters = projectText(pieces, word, fib.totalCharacters);
+  const picturesByShapeId =
+    fib.drawing.length === 0
+      ? new Map()
+      : parseRequired(
+          { part: "data", path: "Escher/DggInfo", recordType: 50, recordName: "fcDggInfo" },
+          () =>
+            parsePictures(
+              table.subarray(fib.drawing.offset, fib.drawing.offset + fib.drawing.length),
+              dataStream ?? new Uint8Array(),
+            ),
+        );
+  const shapeIdByCp =
+    fib.bodyShapes.length === 0
+      ? new Map()
+      : parseRequired({ part: "table", path: "PlcspaMom", recordName: "fcPlcspaMom" }, () =>
+          parseBodyPictureAnchors(table, fib.bodyShapes),
+        );
+  const characters = projectText(pieces, word, fib.totalCharacters, picturesByShapeId, shapeIdByCp);
   const characterEntries = parseRequired(
     { part: "table", path: "PlcfbteChpx", recordType: 12, recordName: "fcPlcfbteChpx" },
     () => parseBinTable(table, fib.characterBinTable, "character"),
@@ -111,22 +129,11 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const paragraphRanges = parseRequired(
     { part: "table", path: "PlcfbtePapx", recordType: 13, recordName: "fcPlcfbtePapx" },
     () => parseBinTable(table, fib.paragraphBinTable, "paragraph"),
-  )
-    .flatMap((entry) =>
-      parseRequired({ part: "stream", path: "WordDocument/FKP", recordName: "PAPX FKP" }, () =>
-        parseParagraphFkp(word, entry.page),
-      ),
-    )
-    .map((range) => {
-      const overlaps = overlappingPieces(pieces, fib.totalCharacters, range.cpStart, range.cpEnd);
-      if (overlaps.length === 0) return undefined;
-      return {
-        cpStart: Math.min(...overlaps.map((overlap) => overlap.cpStart)),
-        cpEnd: Math.max(...overlaps.map((overlap) => overlap.cpEnd)),
-        properties: range.properties,
-      };
-    })
-    .filter((range) => range !== undefined);
+  ).flatMap((entry) =>
+    parseRequired({ part: "stream", path: "WordDocument/FKP", recordName: "PAPX FKP" }, () =>
+      parseParagraphFkp(word, entry.page, pieces, fib.totalCharacters),
+    ),
+  );
 
   const ranges = [
     { start: 0, end: fib.ccpText },
@@ -176,6 +183,16 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           () => parseFields(rawCharacters, table, fib.fields),
         );
   applyHyperlinkFields(characters, fields, rawCharacters);
+  const fieldInstructionsByCp = new Map(
+    fields
+      .filter((field) => !/^HYPERLINK\b/i.test(field.instruction.trim()))
+      .map((field) => [field.start, field.instruction]),
+  );
+  for (const character of characters) {
+    if (character.complexField !== undefined) {
+      character.complexField = fieldInstructionsByCp.get(character.cp) ?? "";
+    }
+  }
   const revisions: LegacyRevisionRange[] =
     fib.comments.length === 0
       ? []
@@ -196,18 +213,6 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       }
     }
   }
-  const pictures =
-    fib.drawing.length > 0 && dataStream
-      ? parseTolerant(
-          { part: "data", path: "Escher/DggInfo", recordType: 50, recordName: "fcDggInfo" },
-          [],
-          () =>
-            parsePictures(
-              table.subarray(fib.drawing.offset, fib.drawing.offset + fib.drawing.length),
-              dataStream,
-            ),
-        )
-      : [];
   const lists: ReturnType<typeof parseLists> | undefined =
     fib.list.length === 0 && fib.listOverrides.length === 0
       ? undefined
@@ -221,15 +226,22 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
   const textboxStart = endnoteStart + fib.ccpEndnotes;
   const headerTextboxStart = textboxStart + fib.ccpTextboxes;
 
-  const projectedChildren = projectStory(
-    characters,
-    characterRanges,
-    0,
-    fib.ccpText,
-    paragraphRanges,
-  );
-  const sectionChildren = applyTables(projectedChildren, paragraphRanges, characters);
-  const sectionChildrenWithBookmarks = applyBookmarks(sectionChildren, bookmarks, characters);
+  const sectionChildGroups = sectionModels.map((sectionModel, index) => {
+    const start = sectionModel.mainStart ?? sectionModels[index - 1]?.mainEnd ?? 0;
+    const end = sectionModel.mainEnd ?? fib.ccpText;
+    const projected = projectStory(
+      characters,
+      characterRanges,
+      start,
+      Math.min(end, fib.ccpText),
+      paragraphRanges,
+    );
+    return applyBookmarks(
+      applyTables(projected, paragraphRanges, characters),
+      bookmarks,
+      characters,
+    );
+  });
   const headerStories =
     fib.ccpHeaders === 0 || noOpFibTableRecord(11, fib.headerTable)
       ? []
@@ -238,8 +250,8 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           [],
           () => parseHeaderStreams(table, fib.headerTable, fib.ccpHeaders),
         );
-  const headerStoryChildren = (index: number): SectionChild[] => {
-    const story = headerStories[index];
+  const headerStoryChildren = (sectionIndex: number, groupSlot: number): SectionChild[] => {
+    const story = headerStories[6 + sectionIndex * 6 + groupSlot];
     if (!story) return [];
     return projectStory(
       characters,
@@ -248,12 +260,6 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       headerStart + story.end,
     ).filter((child) => !("paragraph" in child && child.paragraph === ""));
   };
-  const defaultHeaderChildren = headerStoryChildren(7);
-  const evenHeaderChildren = headerStoryChildren(6);
-  const firstHeaderChildren = headerStoryChildren(10);
-  const defaultFooterChildren = headerStoryChildren(9);
-  const evenFooterChildren = headerStoryChildren(8);
-  const firstFooterChildren = headerStoryChildren(11);
   const textboxBoundaries =
     fib.ccpTextboxes > 0 && !noOpFibTableRecord(56, fib.textboxTable)
       ? parseTolerant(
@@ -262,8 +268,34 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           () => parseTextboxBoundaries(table, fib.textboxTable, fib.ccpTextboxes),
         )
       : [];
+  const anchorCpByShapeId = new Map(
+    [...shapeIdByCp].map(([characterPosition, shapeId]) => [shapeId, characterPosition]),
+  );
   for (const boundary of textboxBoundaries) {
-    sectionChildren.push({
+    const anchorCp = anchorCpByShapeId.get(boundary.shapeId);
+    if (anchorCp === undefined) {
+      throw new DocParseError("Invalid DOC textbox anchor: shape is not anchored in main text", {
+        part: "table",
+        path: "PlcftxbxTxt/FTXBXS/lid",
+        shapeId: boundary.shapeId,
+        reason: "missing-anchor",
+      });
+    }
+    const sectionIndex = sectionModels.findIndex((sectionModel, index) => {
+      const start = sectionModel.mainStart ?? sectionModels[index - 1]?.mainEnd ?? 0;
+      const end = sectionModel.mainEnd ?? fib.ccpText;
+      return anchorCp >= start && anchorCp < end;
+    });
+    if (sectionIndex === -1) {
+      throw new DocParseError("Invalid DOC textbox anchor: main-text position has no section", {
+        part: "table",
+        path: "PlcspaMom",
+        shapeId: boundary.shapeId,
+        characterPosition: anchorCp,
+        reason: "unmapped-section",
+      });
+    }
+    sectionChildGroups[sectionIndex]?.push({
       textbox: {
         children: projectStory(
           characters,
@@ -287,8 +319,16 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
           () => parseTextboxBoundaries(table, fib.headerTextboxTable, fib.ccpHeaderTextboxes),
         )
       : [];
+  const sectionHeaderStories = sectionModels.map((_, sectionIndex) => ({
+    defaultHeader: headerStoryChildren(sectionIndex, 1),
+    evenHeader: headerStoryChildren(sectionIndex, 0),
+    firstHeader: headerStoryChildren(sectionIndex, 4),
+    defaultFooter: headerStoryChildren(sectionIndex, 3),
+    evenFooter: headerStoryChildren(sectionIndex, 2),
+    firstFooter: headerStoryChildren(sectionIndex, 5),
+  }));
   for (const boundary of headerTextboxBoundaries) {
-    defaultHeaderChildren.push({
+    sectionHeaderStories[0]?.defaultHeader.push({
       textbox: {
         children: projectStory(
           characters,
@@ -300,69 +340,89 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
     });
   }
 
-  const sectionGeometry = sectionModels[0] ?? {};
-  const hasPageSize = sectionGeometry.width !== undefined && sectionGeometry.height !== undefined;
-  const hasPageMargin =
-    sectionGeometry.marginTop !== undefined ||
-    sectionGeometry.marginRight !== undefined ||
-    sectionGeometry.marginBottom !== undefined ||
-    sectionGeometry.marginLeft !== undefined;
-  const sectionProperties = {
-    ...(hasPageSize
-      ? {
-          pageSize: {
-            width: sectionGeometry.width!,
-            height: sectionGeometry.height!,
-            ...(sectionGeometry.orientation ? { orientation: sectionGeometry.orientation } : {}),
-          },
-        }
-      : {}),
-    ...(hasPageMargin
-      ? {
-          pageMargin: {
-            ...(sectionGeometry.marginTop !== undefined ? { top: sectionGeometry.marginTop } : {}),
-            ...(sectionGeometry.marginRight !== undefined
-              ? { right: sectionGeometry.marginRight }
-              : {}),
-            ...(sectionGeometry.marginBottom !== undefined
-              ? { bottom: sectionGeometry.marginBottom }
-              : {}),
-            ...(sectionGeometry.marginLeft !== undefined
-              ? { left: sectionGeometry.marginLeft }
-              : {}),
-          },
-        }
-      : {}),
-  };
   const result: DocumentOptions = {
-    sections: [
-      {
-        children: sectionChildrenWithBookmarks,
-        ...(Object.keys(sectionProperties).length > 0 ? { properties: sectionProperties } : {}),
-        ...(defaultHeaderChildren.length > 0 ||
-        evenHeaderChildren.length > 0 ||
-        firstHeaderChildren.length > 0
+    sections: sectionModels.map((sectionModel, index) => {
+      const hasPageSize = sectionModel.width !== undefined && sectionModel.height !== undefined;
+      const hasPageMargin =
+        sectionModel.marginTop !== undefined ||
+        sectionModel.marginRight !== undefined ||
+        sectionModel.marginBottom !== undefined ||
+        sectionModel.marginLeft !== undefined;
+      return {
+        children: sectionChildGroups[index] ?? [],
+        ...(hasPageSize || hasPageMargin
+          ? {
+              properties: {
+                ...(hasPageSize
+                  ? {
+                      pageSize: {
+                        width: sectionModel.width!,
+                        height: sectionModel.height!,
+                        ...(sectionModel.orientation
+                          ? { orientation: sectionModel.orientation }
+                          : {}),
+                      },
+                    }
+                  : {}),
+                ...(hasPageMargin
+                  ? {
+                      pageMargin: {
+                        ...(sectionModel.marginTop !== undefined
+                          ? { top: sectionModel.marginTop }
+                          : {}),
+                        ...(sectionModel.marginRight !== undefined
+                          ? { right: sectionModel.marginRight }
+                          : {}),
+                        ...(sectionModel.marginBottom !== undefined
+                          ? { bottom: sectionModel.marginBottom }
+                          : {}),
+                        ...(sectionModel.marginLeft !== undefined
+                          ? { left: sectionModel.marginLeft }
+                          : {}),
+                      },
+                    }
+                  : {}),
+              },
+            }
+          : {}),
+        ...(sectionHeaderStories[index] &&
+        (sectionHeaderStories[index]!.defaultHeader.length > 0 ||
+          sectionHeaderStories[index]!.evenHeader.length > 0 ||
+          sectionHeaderStories[index]!.firstHeader.length > 0)
           ? {
               headers: {
-                ...(defaultHeaderChildren.length > 0 ? { default: defaultHeaderChildren } : {}),
-                ...(evenHeaderChildren.length > 0 ? { even: evenHeaderChildren } : {}),
-                ...(firstHeaderChildren.length > 0 ? { first: firstHeaderChildren } : {}),
+                ...(sectionHeaderStories[index]!.defaultHeader.length > 0
+                  ? { default: sectionHeaderStories[index]!.defaultHeader }
+                  : {}),
+                ...(sectionHeaderStories[index]!.evenHeader.length > 0
+                  ? { even: sectionHeaderStories[index]!.evenHeader }
+                  : {}),
+                ...(sectionHeaderStories[index]!.firstHeader.length > 0
+                  ? { first: sectionHeaderStories[index]!.firstHeader }
+                  : {}),
               },
             }
           : {}),
-        ...(defaultFooterChildren.length > 0 ||
-        evenFooterChildren.length > 0 ||
-        firstFooterChildren.length > 0
+        ...(sectionHeaderStories[index] &&
+        (sectionHeaderStories[index]!.defaultFooter.length > 0 ||
+          sectionHeaderStories[index]!.evenFooter.length > 0 ||
+          sectionHeaderStories[index]!.firstFooter.length > 0)
           ? {
               footers: {
-                ...(defaultFooterChildren.length > 0 ? { default: defaultFooterChildren } : {}),
-                ...(evenFooterChildren.length > 0 ? { even: evenFooterChildren } : {}),
-                ...(firstFooterChildren.length > 0 ? { first: firstFooterChildren } : {}),
+                ...(sectionHeaderStories[index]!.defaultFooter.length > 0
+                  ? { default: sectionHeaderStories[index]!.defaultFooter }
+                  : {}),
+                ...(sectionHeaderStories[index]!.evenFooter.length > 0
+                  ? { even: sectionHeaderStories[index]!.evenFooter }
+                  : {}),
+                ...(sectionHeaderStories[index]!.firstFooter.length > 0
+                  ? { first: sectionHeaderStories[index]!.firstFooter }
+                  : {}),
               },
             }
           : {}),
-      },
-    ],
+      };
+    }),
     ...(stylesheet.styles.length > 0
       ? {
           styles: {
@@ -434,29 +494,5 @@ export function parseInternal(data: Uint8Array, password?: string): DocumentOpti
       : {}),
   };
   Object.assign(result, metadata);
-  const section = result.sections[0];
-  if (section) {
-    const canonicalFields = fields
-      .filter((field) => !/^HYPERLINK\b/i.test(field.instruction.trim()))
-      .map((field) => ({ complexField: { instruction: field.instruction } }));
-    const canonicalPictures = pictures.map((picture): ParagraphChild => {
-      if (picture.type === "unknown") {
-        throw new DocParseError("Unknown DOC picture format has no canonical picture mapping");
-      }
-      const type = picture.type === "jpeg" ? "jpg" : picture.type === "tiff" ? "tif" : picture.type;
-      return {
-        picture: {
-          type,
-          data: picture.data,
-          transformation: { width: picture.width, height: picture.height },
-        },
-      };
-    });
-    section.children = [
-      ...canonicalPictures.map((picture) => ({ paragraph: { children: [picture] } })),
-      ...canonicalFields.map((field) => ({ paragraph: { children: [field] } })),
-      ...section.children,
-    ];
-  }
   return result;
 }

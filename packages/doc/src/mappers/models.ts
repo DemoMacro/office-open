@@ -1,5 +1,6 @@
 import type { RunOptions } from "@office-open/docx";
 
+import type { LegacyPictureData } from "../records/models";
 import type { NumberPair } from "../streams/pieces";
 
 export interface Fib {
@@ -26,6 +27,8 @@ export interface Fib {
   bookmarkStarts: NumberPair;
   bookmarkEnds: NumberPair;
   fields: NumberPair;
+  bodyShapes: NumberPair;
+  headerShapes: NumberPair;
   comments: NumberPair;
   drawing: NumberPair;
   list: NumberPair;
@@ -44,9 +47,13 @@ export interface CharacterRange {
   properties: RunOptions;
 }
 
-export interface TextboxBoundary {
+export interface StoryBoundary {
   start: number;
   end: number;
+}
+
+export interface TextboxBoundary extends StoryBoundary {
+  shapeId: number;
 }
 
 export interface ParagraphRange {
@@ -84,7 +91,9 @@ export interface LegacyParagraphProperties {
 export interface TextCharacter {
   value: string;
   cp: number;
+  complexField?: string;
   paragraphEnd?: boolean;
   hyperlink?: { url?: string; anchor?: string };
+  picture?: LegacyPictureData;
   revision?: { inserted: boolean };
 }

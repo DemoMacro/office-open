@@ -11,13 +11,18 @@
 
 export { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 
+import { parse as parseXml } from "@office-open/xml";
+
 import type { ColorListOptions } from "../drawing/diagram/diagram-style";
 import type { Scene3DOptions } from "../drawing/three-d/scene-3d";
 import { COLOR_CATEGORIES, LAYOUT_CATEGORIES, STYLE_CATEGORIES } from "./categories";
 import { stringifyColorDefinitionPart, type ColorDefinitionOptions } from "./color-definition";
-import type { ModelPointOptions } from "./data-model/data-model";
+import { parseColorDefinition } from "./color-definition";
+import type { DataModelPointOptions } from "./data-model/data-model";
 import { stringifyLayoutDefinitionPart, type LayoutDefinitionOptions } from "./layout-definition";
+import { parseLayoutDefinition } from "./layout-definition";
 import { stringifyStyleDefinitionPart, type StyleDefinitionOptions } from "./style-definition";
+import { parseStyleDefinition } from "./style-definition";
 
 // ---------------------------------------------------------------------------
 // Layout XML — full for "default", stubs for everything else
@@ -27,7 +32,7 @@ const BUILTIN_ACCENTS = ["accent1", "accent2", "accent3", "accent4", "accent5", 
 
 /** Sample-model point list shared by the layout stubs: a doc point plus placeholders. */
 function samplePoints(count: number): LayoutDefinitionOptions["sampleData"] {
-  const points: ModelPointOptions[] = [
+  const points: DataModelPointOptions[] = [
     { modelId: "0", type: "doc" },
     ...Array.from({ length: count }, (_, i) => ({
       modelId: String(i + 1),
@@ -322,6 +327,44 @@ export function getColorXml(colorId: string): string {
     ],
   };
   return stringifyColorDefinitionPart(colors);
+}
+
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (typeof value !== "object" || value === null) return JSON.stringify(value) ?? "null";
+  const entries = Object.entries(value)
+    .filter(([, item]) => item !== undefined)
+    .sort(([left], [right]) => left.localeCompare(right));
+  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+}
+
+function definitionsEqual(left: unknown, right: unknown): boolean {
+  return canonicalJson(left) === canonicalJson(right);
+}
+
+function builtInElement(xml: string) {
+  return parseXml(xml).elements?.[0];
+}
+
+/** Fold a parsed definition only when it is semantically identical to the built-in stub. */
+export function isBuiltinLayoutDefinition(
+  id: string,
+  definition: LayoutDefinitionOptions,
+): boolean {
+  const element = builtInElement(getLayoutXml(id));
+  return !!element && definitionsEqual(definition, parseLayoutDefinition(element));
+}
+
+/** Fold a parsed definition only when it is semantically identical to the built-in stub. */
+export function isBuiltinStyleDefinition(id: string, definition: StyleDefinitionOptions): boolean {
+  const element = builtInElement(getStyleXml(id));
+  return !!element && definitionsEqual(definition, parseStyleDefinition(element));
+}
+
+/** Fold a parsed definition only when it is semantically identical to the built-in stub. */
+export function isBuiltinColorDefinition(id: string, definition: ColorDefinitionOptions): boolean {
+  const element = builtInElement(getColorXml(id));
+  return !!element && definitionsEqual(definition, parseColorDefinition(element));
 }
 
 /** Minimal drawing cache for SmartArt (Office apps auto-regenerate this on open) */

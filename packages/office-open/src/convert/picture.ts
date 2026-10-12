@@ -27,7 +27,14 @@ import type { PictureOptions as DocxPictureOptions } from "@office-open/docx";
 import type { PictureOptions as PptxPictureOptions } from "@office-open/pptx";
 import type { PictureOptions as XlsxPictureOptions } from "@office-open/xlsx";
 
-import { DEFAULT_COL_EMU, DEFAULT_ROW_EMU, emuToCell, toEmu } from "./position";
+import {
+  boxFromDocx,
+  boxToDocxTransformation,
+  DEFAULT_COL_EMU,
+  DEFAULT_ROW_EMU,
+  emuToCell,
+  toEmu,
+} from "./position";
 
 // ── base readers: each package → shared BasePictureOptions ──
 
@@ -129,13 +136,12 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
       type: docxType(base.type),
       data: base.data,
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
-      transformation: {
-        width: p.width ?? 0,
-        height: p.height ?? 0,
-        ...(p.x !== undefined || p.y !== undefined
-          ? { offset: { left: p.x ?? 0, top: p.y ?? 0 } }
-          : {}),
-      },
+      transformation: boxToDocxTransformation({
+        x: toEmu(p.x),
+        y: toEmu(p.y),
+        width: toEmu(p.width),
+        height: toEmu(p.height),
+      }),
       ...altTextFromBase(base),
     };
   }
@@ -146,11 +152,12 @@ export function toDocxPicture(source: PptxPictureOptions | XlsxPictureOptions): 
     type: docxType(base.type),
     data: base.data,
     ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
-    transformation: {
+    transformation: boxToDocxTransformation({
+      x: (x.col - 1) * DEFAULT_COL_EMU,
+      y: (x.row - 1) * DEFAULT_ROW_EMU,
       width: 0,
       height: 0,
-      offset: { left: (x.col - 1) * DEFAULT_COL_EMU, top: (x.row - 1) * DEFAULT_ROW_EMU },
-    },
+    }),
     ...altTextFromBase(base),
   };
 }
@@ -166,14 +173,15 @@ export function toPptxPicture(source: DocxPictureOptions | XlsxPictureOptions): 
   if ("transformation" in source) {
     const d = source as DocxPictureOptions;
     const base = baseFromDocx(d);
-    const t = d.transformation;
+    const box = boxFromDocx(d.transformation);
     return {
       type: pptxType(base.type),
       data: base.data,
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
-      width: t.width,
-      height: t.height,
-      ...(t.offset ? { x: t.offset.left, y: t.offset.top } : {}),
+      width: box.width,
+      height: box.height,
+      x: box.x,
+      y: box.y,
       ...pickNonVisualDrawingProperties(base),
     };
   }
@@ -203,14 +211,13 @@ export function toXlsxPicture(source: DocxPictureOptions | PptxPictureOptions): 
   if ("transformation" in source) {
     const d = source as DocxPictureOptions;
     const base = baseFromDocx(d);
-    const left = toEmu(d.transformation.offset?.left);
-    const top = toEmu(d.transformation.offset?.top);
+    const anchorBox = boxFromDocx(d.transformation);
     return {
       data: base.data,
       type: xlsxType(base.type),
       ...(base.sourceUrl !== undefined ? { sourceUrl: base.sourceUrl } : {}),
-      col: emuToCell(left, DEFAULT_COL_EMU),
-      row: emuToCell(top, DEFAULT_ROW_EMU),
+      col: emuToCell(anchorBox.x, DEFAULT_COL_EMU),
+      row: emuToCell(anchorBox.y, DEFAULT_ROW_EMU),
       ...pickNonVisualDrawingProperties(base),
     };
   }

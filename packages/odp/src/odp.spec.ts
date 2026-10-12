@@ -10,6 +10,18 @@ describe("ODP codec", () => {
     expect(parsed.slides?.[0]?.notes).toBe("ODP");
   });
 
+  it("round-trips slide names and master bindings", () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page draw:name="Overview" draw:master-page-name="Master"/></office:presentation></office:body></office:document-content>`;
+    const source = parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(source.slides?.[0]).toMatchObject({ name: "Overview", master: "Master" });
+    expect(parsePresentation(generatePresentation(source)).slides?.[0]).toMatchObject({
+      name: "Overview",
+      master: "Master",
+    });
+  });
+
   it("requires an embedded object body but tolerates a missing replacement", () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="1cm" svg:height="1cm"><draw:object-ole xlink:href="./Object 1" xlink:type="simple"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
     const source = generateOcf("application/vnd.oasis.opendocument.presentation", {
@@ -60,6 +72,36 @@ describe("ODP codec", () => {
     expect(
       parsePresentation(generatePresentation(options)).slides?.[0]?.children?.[0],
     ).toMatchObject({ picture: { sourceUrl: "../images/logo.png" } });
+  });
+
+  it("round-trips line breaks and hyperlink runs", () => {
+    const options: OdpRuntimeOptions = {
+      slides: [
+        {
+          children: [
+            {
+              shape: {
+                textBody: {
+                  paragraphs: [
+                    { children: ["A", { break: true }, "B"] },
+                    { children: [{ text: "Link", hyperlink: { url: "https://example.com/" } }] },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const child = parsePresentation(generatePresentation(options)).slides?.[0]?.children?.[0];
+    if (!child || !("shape" in child)) throw new TypeError("Expected a shape child");
+    const paragraphs = (child.shape?.textBody?.paragraphs ?? []).filter(
+      (paragraph) => typeof paragraph !== "string",
+    );
+    expect(paragraphs[0]?.children).toEqual(["A", { break: true }, "B"]);
+    expect(paragraphs[1]?.children).toEqual([
+      { text: "Link", hyperlink: { url: "https://example.com/" } },
+    ]);
   });
 
   it("restores percent and length semantics in style overlays", () => {

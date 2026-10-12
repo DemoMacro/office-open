@@ -60,14 +60,16 @@ export async function parseDocument(
 
   switch (info.format) {
     case "doc":
-      return parseDocDocument(data, options);
+      return parseDocDocument(data, options) as DocumentOptions;
     case "docx":
     case "docm":
     case "dotx":
     case "dotm":
       return parseDocxDocument(data);
     case "rtf":
-      return parseRtfDocument(typeof input === "string" ? input : new TextDecoder().decode(input));
+      return parseRtfDocument(
+        typeof input === "string" ? input : new TextDecoder().decode(input),
+      ) as DocumentOptions;
     case "odt":
       return parseOdtDocument(data) as DocumentOptions;
     default:
@@ -96,7 +98,11 @@ export async function generateDocument<
   }
 
   if (format === "rtf") {
-    return convertOutput(generateRtfDocument(options), outputType, RTF_MIME_TYPE);
+    return convertOutput(
+      generateRtfDocument(options as Parameters<typeof generateRtfDocument>[0]),
+      outputType,
+      RTF_MIME_TYPE,
+    );
   }
 
   return generateDocxDocument(

@@ -42,6 +42,22 @@ export interface CorePropertiesOptions {
   language?: string;
   /** Document version number, round-tripped from cp:version. */
   version?: string;
+  /** Generating application name, round-tripped from ODF meta:generator. */
+  application?: string;
+  /** Printed-by name, round-tripped from ODF meta:printed-by. */
+  printedBy?: string;
+  /** Editing duration expressed with explicit calendar components. */
+  editingDuration?: CalendarDurationOptions;
+  /** ODF document template reference. */
+  template?: DocumentTemplateOptions;
+  /** ODF automatic document reload behavior. */
+  autoReload?: AutoReloadOptions;
+  /** ODF hyperlink target behavior. */
+  hyperlinkBehavior?: HyperlinkBehaviorOptions;
+  /** ODF document statistics. */
+  statistics?: DocumentStatisticsOptions;
+  /** ODF user-defined properties, in source order. */
+  userDefinedProperties?: UserDefinedMetadataOptions[];
   /**
    * Emit the core-properties vocabulary as the default namespace — the ISO
    * strict binding, where the source root is `<coreProperties xmlns=…>` and
@@ -54,6 +70,66 @@ export interface CorePropertiesOptions {
   /** Source child order as canonical field keys; round-trip only. */
   childOrder?: CorePropertiesChild[];
 }
+
+/** ISO 8601 duration components; omitted components are zero. */
+export interface CalendarDurationOptions {
+  negative?: true;
+  years?: number;
+  months?: number;
+  days?: number;
+  hours?: number;
+  minutes?: number;
+  seconds?: number;
+}
+
+/** ODF template reference; xlink:type is fixed to "simple" by the schema. */
+export interface DocumentTemplateOptions {
+  href: string;
+  actuate?: "onRequest";
+  title?: string;
+  modified?: string;
+}
+
+/** ODF automatic reload; xlink:type is fixed to "simple" by the schema. */
+export interface AutoReloadOptions {
+  href?: string;
+  show?: "replace" | "onLoad";
+  delay?: CalendarDurationOptions;
+}
+
+/** ODF hyperlink target behavior. */
+export interface HyperlinkBehaviorOptions {
+  targetFrameName?: string;
+  show?: "new" | "replace";
+}
+
+/** ODF document statistic counts. */
+export interface DocumentStatisticsOptions {
+  pageCount?: number;
+  tableCount?: number;
+  drawCount?: number;
+  imageCount?: number;
+  oleObjectCount?: number;
+  objectCount?: number;
+  paragraphCount?: number;
+  wordCount?: number;
+  characterCount?: number;
+  frameCount?: number;
+  sentenceCount?: number;
+  syllableCount?: number;
+  nonWhitespaceCharacterCount?: number;
+  rowCount?: number;
+  cellCount?: number;
+}
+
+/** ODF user-defined metadata value with an explicit XSD-style discriminant. */
+export type UserDefinedMetadataOptions =
+  | { name: string; type: "float"; value: number }
+  | { name: string; type: "date"; value: string }
+  | { name: string; type: "time"; value: CalendarDurationOptions }
+  | { name: string; type: "boolean"; value: boolean }
+  | { name: string; type: "string"; value: string }
+  | { name: string; type: "text"; value: string };
 
 const LEGACY_CORE_PROPERTIES_NAMESPACE =
   "http://schemas.microsoft.com/package/2005/06/metadata/core-properties";

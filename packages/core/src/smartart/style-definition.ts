@@ -13,11 +13,15 @@
 
 import { attr, attrs, findChild } from "@office-open/xml";
 import { OOXML_XML_DECLARATION } from "@office-open/xml";
-import { stringify as stringifyInnerXml } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { CustomDescriptor } from "../descriptor";
 import type { ReadContext, WriteContext } from "../descriptor/context";
+import {
+  createDiagramExtensionList,
+  parseDiagramExtensions,
+  type DiagramExtensionOptions,
+} from "../drawing/diagram/diagram-props";
 import type {
   DiagramCategoryOptions,
   DiagramDescriptionOptions,
@@ -50,8 +54,8 @@ export interface StyleLabelOptions {
   textProperties?: TextProperties3DOptions;
   /** Theme style-matrix references (dgm:style, a:CT_ShapeStyle). */
   style?: DefaultShapeStyleOptions;
-  /** Raw dgm:extLst inner XML — verbatim round-trip. */
-  ext?: string;
+  /** Foreign-namespace extensions (dgm:extLst). */
+  extensions?: DiagramExtensionOptions[];
 }
 
 /** dgm:styleDef (CT_StyleDefinition) — the quickStyle part root. */
@@ -70,8 +74,8 @@ export interface StyleDefinitionOptions {
   scene3d?: Scene3DOptions;
   /** Style slots, at least one in a real part (dgm:styleLbl*). */
   styleLabels?: StyleLabelOptions[];
-  /** Raw dgm:extLst inner XML — verbatim round-trip. */
-  ext?: string;
+  /** Foreign-namespace extensions (dgm:extLst). */
+  extensions?: DiagramExtensionOptions[];
 }
 
 // Noop contexts: style definitions hold theme references and plain colors,
@@ -103,7 +107,7 @@ function stringifyTextProperties(o: TextProperties3DOptions, ctx: WriteContext):
     : o.flatText !== undefined
       ? `<a:flatTx${attrs({ z: o.flatText })}/>`
       : "";
-  return body ? `<dgm:txPr>${body}</dgm:txPr>` : "";
+  return `<dgm:txPr>${body}</dgm:txPr>`;
 }
 
 function stringifyStyleLabel(o: StyleLabelOptions, ctx: WriteContext): string {
@@ -113,7 +117,7 @@ function stringifyStyleLabel(o: StyleLabelOptions, ctx: WriteContext): string {
   if (o.textProperties) body += stringifyTextProperties(o.textProperties, ctx);
   if (o.style) body += renamespaceTag("style", stringifyShapeStyle(o.style, ctx));
   // CT_StyleLabel declares extLst locally — the element is dgm-namespaced
-  if (o.ext) body += `<dgm:extLst>${o.ext}</dgm:extLst>`;
+  body += createDiagramExtensionList({ extensions: o.extensions });
   return `<dgm:styleLbl${attrs({ name: o.name })}>${body}</dgm:styleLbl>`;
 }
 
@@ -141,7 +145,7 @@ export function stringifyStyleDefinition(o: StyleDefinitionOptions): string {
       ? renamespaceTag("scene3d", scene3DDesc.stringify(o.scene3d, DIRECT_WRITE_CTX) ?? "")
       : "") +
     (o.styleLabels ?? []).map((l) => stringifyStyleLabel(l, DIRECT_WRITE_CTX)).join("") +
-    (o.ext ? `<dgm:extLst>${o.ext}</dgm:extLst>` : "");
+    createDiagramExtensionList({ extensions: o.extensions });
   return `<dgm:styleDef${attrs({ uniqueId: o.uniqueId, minVer: o.minVer })}>${body}</dgm:styleDef>`;
 }
 
@@ -170,7 +174,10 @@ function parseStyleLabel(el: Element): StyleLabelOptions {
   const style = findChild(el, "dgm:style");
   if (style) result.style = parseShapeStyle(style, DIRECT_READ_CTX);
   const extLst = findChild(el, "dgm:extLst") ?? findChild(el, "a:extLst");
-  if (extLst) result.ext = stringifyInnerXml(extLst);
+  if (extLst) {
+    const extensions = parseDiagramExtensions(extLst);
+    if (extensions.length) result.extensions = extensions;
+  }
   return result as StyleLabelOptions;
 }
 
@@ -215,7 +222,10 @@ export function parseStyleDefinition(el: Element): StyleDefinitionOptions {
   }
   if (styleLabels.length) result.styleLabels = styleLabels;
   const extLst = findChild(root, "dgm:extLst") ?? findChild(root, "a:extLst");
-  if (extLst) result.ext = stringifyInnerXml(extLst);
+  if (extLst) {
+    const extensions = parseDiagramExtensions(extLst);
+    if (extensions.length) result.extensions = extensions;
+  }
   return result as StyleDefinitionOptions;
 }
 

@@ -292,6 +292,10 @@ function integerToken(value: number): Uint8Array {
   return bytes;
 }
 
+function sharedExpressionToken(row: number, column: number): Uint8Array {
+  return concat([new Uint8Array([0x01]), uint16Body([row, column])]);
+}
+
 function referenceToken(row: number, column: number): Uint8Array {
   const bytes = new Uint8Array(5);
   bytes[0] = 0x24;
@@ -352,13 +356,70 @@ function clientAnchor(): Uint8Array {
 function msodrawingAnchor(): Uint8Array {
   const anchor = clientAnchor();
   const sp = new Uint8Array(8);
-  new DataView(sp.buffer).setInt32(4, 1025, true);
+  const spView = new DataView(sp.buffer);
+  spView.setInt32(0, 1025, true);
+  spView.setUint32(4, 0x0004, true);
   const opt = uint16Body([0x0104, 0, 0]);
   const spContainerBody = concat([
     escherHeader(0xf00a, 2, sp.byteLength),
     sp,
     escherHeader(0xf00b, 3, opt.byteLength),
     opt,
+    escherHeader(0xf010, 1, anchor.byteLength),
+    anchor,
+  ]);
+  const spgrBody = concat([
+    escherHeader(0xf004, 0x000f, spContainerBody.byteLength),
+    spContainerBody,
+  ]);
+  const dgBody = concat([escherHeader(0xf003, 0x000f, spgrBody.byteLength), spgrBody]);
+  const dggBody = concat([escherHeader(0xf002, 0x000f, dgBody.byteLength), dgBody]);
+  return record(0x00ec, concat([escherHeader(0xf000, 0x000f, dggBody.byteLength), dggBody]));
+}
+
+function msodrawingOrphanProperties(): Uint8Array {
+  const opt = uint16Body([0x0104, 0, 0]);
+  const dggBody = concat([escherHeader(0xf000, 0x000f, opt.byteLength), opt]);
+  return record(0x00ec, dggBody);
+}
+
+function msodrawingShape(
+  instance: number,
+  flags: number,
+  shapeId: number,
+  properties?: Uint8Array,
+): Uint8Array {
+  const anchor = clientAnchor();
+  const sp = new Uint8Array(8);
+  const spView = new DataView(sp.buffer);
+  spView.setInt32(0, shapeId, true);
+  spView.setUint32(4, flags | 0x0004, true);
+  const spContainerBody = concat([
+    escherHeader(0xf00a, instance, sp.byteLength),
+    sp,
+    ...(properties ? [escherHeader(0xf00b, 1, properties.byteLength), properties] : []),
+    escherHeader(0xf010, 1, anchor.byteLength),
+    anchor,
+  ]);
+  const spgrBody = concat([
+    escherHeader(0xf004, 0x000f, spContainerBody.byteLength),
+    spContainerBody,
+  ]);
+  const dgBody = concat([escherHeader(0xf003, 0x000f, spgrBody.byteLength), spgrBody]);
+  const dggBody = concat([escherHeader(0xf002, 0x000f, dgBody.byteLength), dgBody]);
+  return record(0x00ec, concat([escherHeader(0xf000, 0x000f, dggBody.byteLength), dggBody]));
+}
+
+function msodrawingNote(shapeId: number): Uint8Array {
+  const anchor = clientAnchor();
+  const sp = new Uint8Array(8);
+  const spView = new DataView(sp.buffer);
+  spView.setInt32(0, shapeId, true);
+  spView.setUint32(4, 0x0004, true);
+  const spContainerBody = concat([
+    escherHeader(0xf00a, 1, sp.byteLength),
+    sp,
+    escherHeader(0xf011, 1, 0),
     escherHeader(0xf010, 1, anchor.byteLength),
     anchor,
   ]);
@@ -400,15 +461,30 @@ function fontRecord(name: string): Uint8Array {
 }
 
 function xfRecord(fontIndex: number, numberFormatId: number): Uint8Array {
-  return record(0x00e0, uint16Body([fontIndex, numberFormatId, 0, 0, 0, 0]));
+  const body = new Uint8Array(20);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, fontIndex, true);
+  view.setUint16(2, numberFormatId, true);
+  view.setUint16(4, 0x0001, true);
+  body[9] = 0xfc;
+  return record(0x00e0, body);
+}
+
+function styleXfRecord(fontIndex: number): Uint8Array {
+  const body = new Uint8Array(20);
+  const view = new DataView(body.buffer);
+  view.setUint16(0, fontIndex, true);
+  view.setUint16(4, 0x0005, true);
+  body[9] = 0xfc;
+  return record(0x00e0, body);
 }
 
 function nameRecord(name: string, tokens: Uint8Array): Uint8Array {
-  const encodedName = shortBiff8String(name);
+  const encodedName = shortBiff8String(name).slice(1);
   const body = new Uint8Array(14);
   const view = new DataView(body.buffer);
   view.setUint16(0, 0, true);
-  body[2] = name.length;
+  body[3] = name.length;
   view.setUint16(4, tokens.byteLength, true);
   view.setUint16(8, 0, true);
   return record(0x0018, concat([body, encodedName, tokens]));
@@ -417,7 +493,18 @@ function nameRecord(name: string, tokens: Uint8Array): Uint8Array {
 function supbookRecord(target: string, sheets: readonly string[]): Uint8Array {
   return record(
     0x01ae,
-    concat([uint16Body([sheets.length]), biff8String(target), ...sheets.map(shortBiff8String)]),
+    concat([
+      uint16Body([sheets.length, target.length]),
+      biff8String(target).slice(2),
+      ...sheets.map(shortBiff8String),
+    ]),
+  );
+}
+
+function partialSupbookRecord(target: string, sheet: string): Uint8Array {
+  return record(
+    0x01ae,
+    concat([uint16Body([2, target.length]), biff8String(target).slice(2), shortBiff8String(sheet)]),
   );
 }
 
@@ -471,10 +558,10 @@ function objRecord(objectId: number): Uint8Array {
   return record(0x005d, uint16Body([0x0015, 18, 0x0019, objectId, 0]));
 }
 
-function sharedFormulaRecord(tokens: Uint8Array): Uint8Array {
+function sharedFormulaRecord(tokens: Uint8Array, row = 1): Uint8Array {
   const header = new Uint8Array(10);
   const view = new DataView(header.buffer);
-  view.setUint16(0, 0, true);
+  view.setUint16(0, row, true);
   view.setUint16(2, 0, true);
   view.setUint16(8, 1, true);
   return record(0x04bc, concat([header, tokens]));
@@ -981,6 +1068,88 @@ describe("parseWorkbook", () => {
     });
   });
 
+  it("uses the implicit default font for built-in style formats", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1, 1)] }],
+      [],
+      [],
+      [fontRecord("Test"), xfRecord(0, 0), styleXfRecord(1)],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").style).toEqual({
+      font: {
+        size: 10,
+        bold: false,
+        italic: false,
+        color: { indexed: 0 },
+        underline: false,
+        font: "Arial",
+      },
+    });
+
+    const invalid = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1, 1)] }],
+      [],
+      [],
+      [fontRecord("Test"), xfRecord(0, 0), styleXfRecord(2)],
+    );
+    expect(() => parseWorkbook(xls(invalid))).toThrow(/missing font/);
+  });
+
+  it("projects the complete XF format and inherits parent style attributes", () => {
+    const parentXf = new Uint8Array(20);
+    const cellXf = new Uint8Array(20);
+    const parentView = new DataView(parentXf.buffer);
+    const cellView = new DataView(cellXf.buffer);
+    parentView.setUint16(4, 0x0004, true);
+    parentView.setUint16(6, 0x0012, true);
+    parentXf[9] = 0x8c;
+    parentView.setUint32(10, 0x00000001, true);
+    parentView.setUint32(12, 0x00000008, true);
+    parentView.setUint32(14, 0x04000000, true);
+    parentView.setUint16(18, 0x2088, true);
+    cellView.setUint16(2, 164, true);
+    cellXf[9] = 0x0c;
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1, 1)] }],
+      [],
+      [],
+      [
+        fontRecord("Arial"),
+        formatRecord(164, "0.0%"),
+        record(0x0092, concat([uint16Body([1]), new Uint8Array([255, 0, 0, 255])])),
+        record(0x00e0, parentXf),
+        record(0x00e0, cellXf),
+      ],
+    );
+    const parsed = parseWorkbook(xls(data));
+    expect(cell((parsed.worksheets ?? [])[0]!, "A1").style).toMatchObject({
+      numFmt: "0.0%",
+      alignment: { horizontal: "center", vertical: "center" },
+      border: { left: { style: "thin", color: { rgb: "FF0000ff" } } },
+      fill: {
+        type: "pattern",
+        patternType: "solid",
+        foregroundColor: { rgb: "FF0000ff" },
+        backgroundColor: { indexed: 65 },
+      },
+    });
+  });
+
+  it("rejects truncated XF records", () => {
+    const data = workbook(
+      8,
+      [{ name: "Sheet", cells: [numberCell(0, 0, 1)] }],
+      [],
+      [],
+      [record(0x00e0, uint16Body([0, 0]))],
+    );
+    expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+  });
+
   it("parses PALETTE colors", () => {
     const colors = new Uint8Array([255, 0, 0, 255]);
     const data = workbook(
@@ -1062,13 +1231,13 @@ describe("parseWorkbook", () => {
       [],
       [],
       [
-        record(0x01ae, concat([uint16Body([1, 0x0401]), ...["Local"].map(shortBiff8String)])),
+        record(0x01ae, uint16Body([1, 0x0401])),
         externSheetRecord(),
         nameRecord("Link", externalReferenceToken(1)),
       ],
     );
     expect(parseWorkbook(xls(internalData)).definedNames).toEqual([
-      expect.objectContaining({ name: "Link", value: "Local!$A$1" }),
+      expect.objectContaining({ name: "Link", value: "Sheet!$A$1" }),
     ]);
     expect(parseWorkbook(xls(internalData)).externalLinks).toBeUndefined();
 
@@ -1112,7 +1281,45 @@ describe("parseWorkbook", () => {
     });
   });
 
-  it("tolerates unknown records and malformed auxiliary structures with warnings", () => {
+  it("tolerates truncated SUPBOOK sheet lists", () => {
+    const warnings: string[] = [];
+    const warn = console.warn;
+    console.warn = (message: string) => warnings.push(message);
+    try {
+      const data = workbook(
+        8,
+        [{ name: "Sheet", cells: [] }],
+        [],
+        [],
+        [partialSupbookRecord("external.xlsx", "Data"), externSheetRecord()],
+      );
+      const parsed = parseWorkbook(xls(data));
+      expect(parsed.externalLinks?.[0]?.externalBook).toEqual({
+        target: "external.xlsx",
+        sheetNames: ["Data"],
+      });
+      expect(warnings.some((message) => message.includes("truncated-sheet-list"))).toBe(true);
+    } finally {
+      console.warn = warn;
+    }
+
+    const missingReference = workbook(
+      8,
+      [{ name: "Sheet", cells: [] }],
+      [],
+      [],
+      [
+        partialSupbookRecord("external.xlsx", "Data"),
+        record(0x0017, uint16Body([1, 0, 1, 1])),
+        nameRecord("Link", externalReferenceToken(1)),
+      ],
+    );
+    expect(parseWorkbook(xls(missingReference)).definedNames).toEqual([
+      expect.objectContaining({ name: "Link", value: "#REF!!$A$1" }),
+    ]);
+  });
+
+  it("tolerates unknown records but rejects malformed auxiliary structures", () => {
     const warnings: string[] = [];
     const warn = console.warn;
     console.warn = (message: string) => warnings.push(message);
@@ -1129,7 +1336,6 @@ describe("parseWorkbook", () => {
       expect(warnings.some((message) => message.includes("unknown-record"))).toBe(true);
       expect(warnings.some((message) => message.includes("0xffff"))).toBe(true);
 
-      warnings.length = 0;
       const malformedSupbook = workbook(
         8,
         [{ name: "Sheet", cells: [] }],
@@ -1137,10 +1343,7 @@ describe("parseWorkbook", () => {
         [],
         [record(0x01ae, new Uint8Array(1))],
       );
-      parseWorkbook(xls(malformedSupbook));
-      expect(warnings.some((message) => message.includes("truncated-supbook"))).toBe(true);
-
-      warnings.length = 0;
+      expect(() => parseWorkbook(xls(malformedSupbook))).toThrow(/truncated SUPBOOK/);
       const malformedName = workbook(
         8,
         [{ name: "Sheet", cells: [] }],
@@ -1148,10 +1351,7 @@ describe("parseWorkbook", () => {
         [],
         [nameRecord("Broken", new Uint8Array([0xff]))],
       );
-      parseWorkbook(xls(malformedName));
-      expect(warnings.some((message) => message.includes("invalid-defined-name-formula"))).toBe(
-        true,
-      );
+      expect(() => parseWorkbook(xls(malformedName))).toThrow(/unsupported formula token 0xff/);
     } finally {
       console.warn = warn;
     }
@@ -1196,10 +1396,36 @@ describe("parseWorkbook", () => {
         author: "Ada",
         text: "note",
         visible: false,
-        size: { width: 108, height: 59.25 },
         anchor: { from: { col: 3, row: 2 }, to: { col: 4, row: 3 } },
       },
     ]);
+  });
+
+  it("projects NOTE placement from its Escher anchor", () => {
+    const text = new TextEncoder().encode("note");
+    const runs = new Uint8Array(8);
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          objRecord(7),
+          txoRecord(4, 8),
+          record(0x003c, concat([new Uint8Array([0]), text])),
+          record(0x003c, runs),
+          msodrawingNote(7),
+          noteRecord(2, 3, 7, "Ada"),
+        ],
+      },
+    ]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.shapes).toBeUndefined();
+    expect(worksheet.comments?.[0]).toMatchObject({
+      cell: "D3",
+      anchor: {
+        from: { col: 2, row: 1, colOff: 0, rowOff: 0 },
+        to: { col: 4, row: 3, colOff: 0, rowOff: 0 },
+      },
+    });
   });
 
   it("associates multiple TXO notes and decodes UTF-16 continuations", () => {
@@ -1251,6 +1477,109 @@ describe("parseWorkbook", () => {
     expect(imageData instanceof Uint8Array ? imageData[0] : undefined).toBe(0x89);
   });
 
+  it("parses Escher shapes and connectors separately from pictures", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [msodrawingShape(1, 0, 1026), msodrawingShape(32, 0x0100, 1027)],
+      },
+    ]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.images).toBeUndefined();
+    expect(worksheet.shapes?.[0]).toMatchObject({
+      name: "Shape 1",
+      shapeId: 1026,
+      properties: { geometry: "rect" },
+    });
+    expect(worksheet.connectors?.[0]).toMatchObject({
+      name: "Connector 2",
+      shapeId: 1027,
+      properties: { geometry: "straightConnector1" },
+    });
+  });
+
+  it("maps equivalent Escher shape and connector instances", () => {
+    const expectedShapes: readonly [number, string][] = [
+      [1, "rect"],
+      [12, "star5"],
+      [13, "rightArrow"],
+      [20, "line"],
+      [41, "callout1"],
+      [58, "star8"],
+      [95, "blockArc"],
+      [121, "flowChartPunchedCard"],
+      [177, "flowChartOffpageConnector"],
+      [187, "star4"],
+      [190, "actionButtonHome"],
+      [200, "actionButtonMovie"],
+    ];
+    const expectedConnectors: readonly [number, string][] = [
+      [32, "straightConnector1"],
+      [36, "bentConnector5"],
+      [40, "curvedConnector5"],
+    ];
+    for (const [index, [instance, geometry]] of expectedShapes.entries()) {
+      const data = workbook(8, [
+        { name: "Sheet", cells: [msodrawingShape(instance, 0, 2000 + index)] },
+      ]);
+      const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+      expect(worksheet.shapes?.[0]?.properties.geometry).toBe(geometry);
+    }
+    for (const [index, [instance, geometry]] of expectedConnectors.entries()) {
+      const data = workbook(8, [
+        { name: "Sheet", cells: [msodrawingShape(instance, 0x0100, 3000 + index)] },
+      ]);
+      const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+      expect(worksheet.connectors?.[0]?.properties.geometry).toBe(geometry);
+    }
+  });
+
+  it("rejects unsupported Escher visual instances", () => {
+    const data = workbook(8, [{ name: "Sheet", cells: [msodrawingShape(24, 0, 1026)] }]);
+    expect(() => parseWorkbook(xls(data))).toThrow(XlsParseError);
+  });
+
+  it("projects Escher text-box and picture-frame instances canonically", () => {
+    const textBox = workbook(8, [{ name: "Sheet", cells: [msodrawingShape(202, 0, 1026)] }]);
+    const textBoxSheet = (parseWorkbook(xls(textBox)).worksheets ?? [])[0]!;
+    expect(textBoxSheet.shapes?.[0]).toMatchObject({
+      name: "Text Box 1",
+      shapeId: 1026,
+      textBox: true,
+      properties: { geometry: "rect" },
+    });
+
+    const picture = workbook(
+      8,
+      [
+        {
+          name: "Sheet",
+          cells: [msodrawingShape(75, 0, 1027, uint16Body([0x4104, 0, 0]))],
+        },
+      ],
+      [],
+      [],
+      [msodrawingGroup()],
+    );
+    const pictureSheet = (parseWorkbook(xls(picture)).worksheets ?? [])[0]!;
+    expect(pictureSheet.images?.[0]).toMatchObject({ shapeId: 1027, type: "png" });
+    expect(pictureSheet.shapes).toBeUndefined();
+
+    const missingPicture = workbook(8, [{ name: "Sheet", cells: [msodrawingShape(75, 0, 1027)] }]);
+    expect(() => parseWorkbook(xls(missingPicture))).toThrow(/missing Escher picture stream/);
+  });
+
+  it("accepts document-level Escher properties", () => {
+    const data = workbook(8, [
+      { name: "Sheet", cells: [msodrawingOrphanProperties(), numberCell(0, 0, 1)] },
+    ]);
+    const worksheet = (parseWorkbook(xls(data)).worksheets ?? [])[0]!;
+    expect(worksheet.images).toBeUndefined();
+    expect(worksheet.shapes).toBeUndefined();
+    expect(worksheet.connectors).toBeUndefined();
+    expect(cell(worksheet, "A1").value).toBe(1);
+  });
+
   it("parses CONDFMT and CF rules", () => {
     const data = workbook(8, [
       { name: "Sheet", cells: [condfmtRecord(), conditionalFormatRecord()] },
@@ -1285,7 +1614,7 @@ describe("parseWorkbook", () => {
         cells: [
           formulaCellTokens(0, 0, numericResult(42), integerToken(42)),
           formulaCellTokens(1, 0, typedResult(0xff)),
-          sharedFormulaRecord(integerToken(21)),
+          sharedFormulaRecord(integerToken(21), 1),
           formulaCellTokens(2, 0, typedResult(0xff)),
           arrayFormulaRecord(integerToken(7)),
         ],
@@ -1299,6 +1628,76 @@ describe("parseWorkbook", () => {
       formula: "7",
       type: "array",
       reference: "A3:A4",
+    });
+  });
+
+  it("parses formula cells that use variable function tokens", () => {
+    const data = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(
+            0,
+            0,
+            numericResult(42),
+            Uint8Array.from([0x44, 0, 0, 0, 0x40, 0x41, 1, 4, 0]),
+          ),
+        ],
+      },
+    ]);
+    expect(cell((parseWorkbook(xls(data)).worksheets ?? [])[0]!, "A1").formula).toEqual({
+      formula: "SUM($A$1)",
+    });
+  });
+
+  it("rejects malformed formula records structurally", () => {
+    const malformed = workbook(8, [
+      { name: "Sheet", cells: [formulaCellTokens(0, 0, numericResult(1), new Uint8Array([0xff]))] },
+    ]);
+    try {
+      parseWorkbook(xls(malformed));
+      throw new Error("expected malformed FORMULA to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(XlsParseError);
+      expect((error as XlsParseError).context).toMatchObject({
+        part: "stream",
+        recordType: 0x0006,
+        recordName: "FORMULA",
+        reason: "malformed-formula",
+      });
+    }
+  });
+
+  it("decodes shared expression and class-qualified list tokens", () => {
+    const shared = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(0, 0, typedResult(0xff), sharedExpressionToken(0, 0)),
+          sharedFormulaRecord(integerToken(21), 0),
+        ],
+      },
+    ]);
+    expect(cell(parseWorkbook(xls(shared)).worksheets![0]!, "A1").formula).toMatchObject({
+      formula: "21",
+      type: "shared",
+    });
+
+    const list = workbook(8, [
+      {
+        name: "Sheet",
+        cells: [
+          formulaCellTokens(
+            0,
+            0,
+            numericResult(0),
+            concat([integerToken(1), integerToken(2), new Uint8Array([0x50])]),
+          ),
+        ],
+      },
+    ]);
+    expect(cell(parseWorkbook(xls(list)).worksheets![0]!, "A1").formula).toEqual({
+      formula: "1,2",
     });
   });
 

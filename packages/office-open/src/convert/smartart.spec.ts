@@ -1,4 +1,4 @@
-import type { SmartArtOptions as DocxSmartArt } from "@office-open/docx";
+import type { MediaTransformation, SmartArtOptions as DocxSmartArt } from "@office-open/docx";
 import type { SmartArtOptions as PptxSmartArt } from "@office-open/pptx";
 import { describe, expect, it } from "vitest";
 
@@ -17,10 +17,11 @@ describe("toDocxSmartArt (pptx → docx)", () => {
       color: "colorful1",
     };
     const docx = toDocxSmartArt(pptx);
+    const transformation = docx.transformation as MediaTransformation;
     expect(docx.nodes).toEqual([{ text: "Root", children: [{ text: "Child" }] }]);
-    expect(docx.transformation.width).toBe(300);
-    expect(docx.transformation.height).toBe(400);
-    expect(docx.transformation.offset).toEqual({ left: 100, top: 200 });
+    expect(transformation.width).toBe(300);
+    expect(transformation.height).toBe(400);
+    expect(transformation.offset).toEqual({ x: 100, y: 200 });
     expect(docx.layout).toBe("process1");
     expect(docx.style).toBe("moderate1");
     expect(docx.color).toBe("colorful1");
@@ -28,7 +29,7 @@ describe("toDocxSmartArt (pptx → docx)", () => {
 
   it("omits offset when pptx has no x/y", () => {
     const pptx: PptxSmartArt = { nodes: [], width: 10, height: 20 };
-    expect(toDocxSmartArt(pptx).transformation.offset).toBeUndefined();
+    expect((toDocxSmartArt(pptx).transformation as MediaTransformation).offset).toBeUndefined();
   });
 });
 
@@ -36,7 +37,7 @@ describe("toPptxSmartArt (docx → pptx)", () => {
   it("maps transformation to absolute x/y and rebuilds nodes", () => {
     const docx: DocxSmartArt = {
       nodes: [{ text: "A", children: [{ text: "B" }] }],
-      transformation: { width: 50, height: 60, offset: { left: 10, top: 20 } },
+      transformation: { width: 50, height: 60, offset: { x: 10, y: 20 } },
       layout: "hierarchy1",
     };
     const pptx = toPptxSmartArt(docx);

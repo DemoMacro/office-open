@@ -1,5 +1,10 @@
-import type { BaseMediaEntry, PictureLockingOptions } from "@office-open/core";
-import type { ChartSpaceOptions } from "@office-open/core";
+import type { BaseMediaEntry, PictureLockingOptions, UniversalMeasure } from "@office-open/core";
+import type { ChartExSpaceOptions, ChartSpaceOptions } from "@office-open/core";
+import type {
+  BackgroundFormattingOptions,
+  OfficeArtExtensionOptions,
+  WholeE2oFormattingOptions,
+} from "@office-open/core/drawing";
 import type { BlipCompression } from "@office-open/core/drawing";
 import type {
   BlackWhiteMode,
@@ -15,37 +20,23 @@ import type { HyperlinkOptions } from "@parts/drawing/doc-properties/doc-propert
 import type { ShapeCoreOptions } from "@parts/drawing/inline/graphic/graphic-data/wps";
 import type { UnsupportedGroupChildMediaData } from "@parts/paragraph/run/unsupported-drawing-run";
 
-export interface MediaDataTransformation {
+export interface MediaTransformation {
+  /** Display width in EMUs, or a universal measure such as `"25.4mm"`. */
+  width: number | UniversalMeasure;
+  /** Display height in EMUs, or a universal measure such as `"25.4mm"`. */
+  height: number | UniversalMeasure;
+  /** Drawing offset in EMUs, or universal measures. */
   offset?: {
-    pixels: {
-      x: number;
-      y: number;
-    };
-    emus?: {
-      x: number;
-      y: number;
-    };
-  };
-  pixels: {
-    /** Width in pixels */
-    x: number;
-    /** Height in pixels */
-    y: number;
-  };
-  /** Display dimensions in EMUs (English Metric Units) */
-  emus: {
-    /** Width in EMUs (1 inch = 914400 EMUs) */
-    x: number;
-    /** Height in EMUs (1 inch = 914400 EMUs) */
-    y: number;
+    x?: number | UniversalMeasure;
+    y?: number | UniversalMeasure;
   };
   /**
    * Shape extent from pic:spPr/a:xfrm/a:ext in EMUs when it differs from
    * wp:extent; omitted when the two source sizes agree.
    */
   shapeExtent?: {
-    x: number;
-    y: number;
+    width: number;
+    height: number;
   };
   /** Whether to flip the image horizontally (a:xfrm @flipH). */
   flipHorizontal?: boolean;
@@ -58,7 +49,19 @@ export interface MediaDataTransformation {
    * the source wrapper. When absent (generation path), the descriptor computes
    * it from the shape's effects.
    */
-  effectExtent?: { l: number; t: number; r: number; b: number };
+  effectExtent?: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  };
+  /** Wrapper-level wp:inline distances in EMUs; wp:anchor distances use Floating.margins. */
+  inlineDistances?: {
+    top?: number;
+    right?: number;
+    bottom?: number;
+    left?: number;
+  };
 }
 
 /**
@@ -90,7 +93,7 @@ export interface NonVisualPropertiesOptions extends NonVisualDrawingPropertiesOp
  */
 export interface CoreMediaData extends BaseMediaEntry {
   /** Transformation settings for display */
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   /** Source rectangle for image cropping */
   sourceRectangle?: SourceRectangleOptions;
   /** Rendering resolution in DPI (pic:blipFill/@dpi). */
@@ -146,7 +149,7 @@ export interface SvgMediaData {
 export interface LinkedPictureMediaData {
   type: RegularMediaData["type"];
   sourceUrl: string;
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   /** Rendering resolution in DPI (pic:blipFill/@dpi). */
   dpi?: number;
   /** Whether the image rotates with its shape frame (pic:blipFill/@rotWithShape). */
@@ -167,7 +170,7 @@ export interface LinkedPictureMediaData {
 
 export interface ShapeMediaData {
   type: "wps";
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   data: ShapeCoreOptions;
   /** Exact namespace URI on a:graphicData for legacy WPS dialects (round-trip). */
   graphicDataUri?: string;
@@ -183,6 +186,7 @@ export type GroupChildMediaData = (
   | MediaData
   | GroupMediaData
   | ChartMediaData
+  | ChartExMediaData
   | ContentPartMediaData
   | UnsupportedGroupChildMediaData
 ) &
@@ -190,7 +194,7 @@ export type GroupChildMediaData = (
 
 export interface GroupMediaData {
   type: "wpg";
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   children: GroupChildMediaData[];
   /** Child coordinate system offset X (a:chOff @x, EMU). */
   childOffsetX?: number;
@@ -208,6 +212,15 @@ export interface GroupMediaData {
   groupShapeLocks?: GroupShapeLocksOptions;
 }
 
+export interface CanvasMediaData {
+  type: "wpc";
+  transformation: MediaTransformation;
+  children: GroupChildMediaData[];
+  background?: BackgroundFormattingOptions;
+  whole?: WholeE2oFormattingOptions;
+  extensions?: OfficeArtExtensionOptions[];
+}
+
 /**
  * Chart media data — references a chart part via placeholder.
  *
@@ -217,7 +230,7 @@ export interface GroupMediaData {
  */
 export interface ChartMediaData {
   type: "chart";
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   chartKey?: string;
   /**
    * Chart payload for a group-nested chart (wpg:graphicFrame). Present on the
@@ -232,6 +245,16 @@ export interface ChartMediaData {
   graphicFrameLocks?: GraphicFrameLocksOptions | null;
 }
 
+export interface ChartExMediaData {
+  type: "chartEx";
+  transformation: MediaTransformation;
+  chartExKey?: string;
+  /** Group-nested payload preserved through round-trip parsing. */
+  chartExOptions?: ChartExSpaceOptions;
+  nonVisualProperties?: NonVisualPropertiesOptions;
+  graphicFrameLocks?: GraphicFrameLocksOptions | null;
+}
+
 /**
  * References an opaque part via r:id — the source r:id passes through
  * verbatim (relationship not re-registered). At run level only `referenceId`
@@ -242,7 +265,7 @@ export interface ContentPartOptions {
   /** Relationship id from the source document (r:id, round-trip passthrough). */
   referenceId: string;
   /** Placement transform (xfrm) */
-  transformation?: MediaDataTransformation;
+  transformation?: MediaTransformation;
   /** Non-visual content part properties (cNvPr + cNvContentPartPr). */
   nonVisualProperties?: NonVisualPropertiesOptions & {
     contentPart?: NonVisualContentPartPropertiesOptions;
@@ -254,7 +277,7 @@ export interface ContentPartOptions {
 /** Group-child / drawing-data form of {@link ContentPartOptions}. */
 export interface ContentPartMediaData extends ContentPartOptions {
   type: "contentPart";
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
 }
 
 /**
@@ -262,7 +285,7 @@ export interface ContentPartMediaData extends ContentPartOptions {
  */
 export interface SmartArtMediaData {
   type: "smartart";
-  transformation: MediaDataTransformation;
+  transformation: MediaTransformation;
   smartArtKey: string;
 }
 
@@ -271,7 +294,9 @@ export type ExtendedMediaData =
   | LinkedPictureMediaData
   | ShapeMediaData
   | GroupMediaData
+  | CanvasMediaData
   | ChartMediaData
+  | ChartExMediaData
   | SmartArtMediaData
   | ContentPartMediaData;
 

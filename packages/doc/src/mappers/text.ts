@@ -1,3 +1,4 @@
+import type { LegacyPictureByShapeId } from "../records/models";
 import type { Piece } from "../streams/pieces";
 import { requireRange } from "./binary";
 import type { TextCharacter } from "./models";
@@ -75,7 +76,13 @@ function normalizeCharacter(value: string): string | undefined {
   }
 }
 
-export function projectText(pieces: Piece[], word: Uint8Array, ccpText: number): TextCharacter[] {
+export function projectText(
+  pieces: Piece[],
+  word: Uint8Array,
+  ccpText: number,
+  picturesByShapeId: LegacyPictureByShapeId = new Map(),
+  shapeIdByCp: ReadonlyMap<number, number> = new Map(),
+): TextCharacter[] {
   const characters: TextCharacter[] = [];
   const fieldResults: boolean[] = [];
   for (const piece of pieces) {
@@ -86,6 +93,7 @@ export function projectText(pieces: Piece[], word: Uint8Array, ccpText: number):
       const source = decoded[index]!;
       if (source === "\x13") {
         fieldResults.push(false);
+        characters.push({ value: "", cp: piece.cpStart + index, complexField: "" });
         continue;
       }
       if (source === "\x14") {
@@ -97,12 +105,19 @@ export function projectText(pieces: Piece[], word: Uint8Array, ccpText: number):
         continue;
       }
       if (fieldResults.at(-1) === false) continue;
+      const cp = piece.cpStart + index;
+      if (source === "\x08") {
+        const shapeId = shapeIdByCp.get(cp);
+        const picture = shapeId === undefined ? undefined : picturesByShapeId.get(shapeId);
+        if (picture) characters.push({ value: "", cp, picture });
+        continue;
+      }
       const value = normalizeCharacter(source);
       const isParagraphEnd = value === "\r" || value === "\x07" || value === "\x0c";
       if (isParagraphEnd) {
-        characters.push({ value: "", cp: piece.cpStart + index, paragraphEnd: true });
+        characters.push({ value: "", cp, paragraphEnd: true });
       } else if (value !== undefined) {
-        characters.push({ value, cp: piece.cpStart + index });
+        characters.push({ value, cp });
       }
     }
   }

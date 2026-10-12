@@ -122,3 +122,11 @@ export {
   type GraphicStyle,
 } from "./drawing/graphic-style";
 export { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./drawing/preset-geometry";
+
+export {
+  type OdfPackageMemberOptions,
+  type OdfPackageOverlayOptions,
+  type OdfStyleFamily,
+  type OdfStyleOverlayOptions,
+  type OdfStylePropertyOverlay,
+} from "./package-overlay";
