@@ -49,9 +49,10 @@ export function compileTextBoxParts(ctx: DocxWriteContext): CompiledTextBoxPart[
       addRelationship: (type, target, mode) => ctx.addRelationship(type, target, mode),
       addMedia: (data, type, fileName) => ctx.addMedia(data, type, fileName),
       addHyperlink: (key, target) => ctx.addHyperlink(key, target),
-      stringifyChild: undefined as unknown as BodyContext["stringifyChild"],
+      stringifyChild(child) {
+        return stringifyBodyChild(child, bodyCtx);
+      },
     };
-    bodyCtx.stringifyChild = (child) => stringifyBodyChild(child, bodyCtx);
     const children = (optionsPart.children ?? [])
       .map((child) => stringifyWpsTextBoxChild(child, bodyCtx))
       .join("");

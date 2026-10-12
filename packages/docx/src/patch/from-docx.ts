@@ -1,4 +1,9 @@
-import { RELATIONSHIP_TYPES, IMAGE_MEDIA_CONTENT_TYPES, TargetModeType } from "@office-open/core";
+import {
+  RELATIONSHIP_TYPES,
+  IMAGE_MEDIA_CONTENT_TYPES,
+  Relationships,
+  TargetModeType,
+} from "@office-open/core";
 import {
   DOCX_NS,
   OoxmlMimeType,
@@ -35,12 +40,10 @@ import type { CommentOptions } from "@parts/paragraph/run/comment-run";
 import type { RunOptions } from "@parts/paragraph/run/run";
 import { tableDesc } from "@parts/table/descriptor";
 import type { TableOptions } from "@parts/table/table";
-import { Media } from "@shared/media";
-import type { MediaData } from "@shared/media/data";
 import type { SectionChild, SectionOptions } from "@shared/section";
 
-import type { BodyContext } from "../context";
-import type { ViewWrapper } from "../context";
+import { stringifyBodyChild } from "../body";
+import { DocxWriteContext, type BodyContext } from "../context";
 
 /** Reusable TextEncoder (stateless, safe to share). */
 const encoder = new TextEncoder();
@@ -55,6 +58,21 @@ const HYPERLINK_REL_TYPE = RELATIONSHIP_TYPES.hyperlink;
  * flush appends before hyperlinks. Rewritten on allocation (see flush).
  */
 const HYPERLINK_TEMP_ID_BASE = 9_000_000;
+
+type RelationshipTargetMode = (typeof TargetModeType)[keyof typeof TargetModeType];
+
+/** Captures relationships while keeping the real `Relationships` type intact. */
+class PatchRelationships extends Relationships {
+  constructor(private readonly nextId: (target: string) => number) {
+    super();
+  }
+
+  public override add(type: string, target: string, targetMode?: RelationshipTargetMode): number {
+    const id = this.nextId(target);
+    this.addRelationship(id, type, target, targetMode);
+    return id;
+  }
+}
 
 /** A comment injected by patch — same as CommentOptions but without an id
  *  (the patch assigns continuation ids). */
@@ -83,33 +101,30 @@ interface AssignedComment {
  * Captures hyperlink and image relationships for post-processing.
  */
 function createPatchContext(
-  file: { media: Media<MediaData> },
+  file: DocxWriteContext,
   hyperlinkSink: Array<{ id: string; link: string }>,
 ): BodyContext {
-  return {
-    fileData: file as unknown as BodyContext["fileData"],
-    file: file as unknown as BodyContext["file"],
+  const context: BodyContext = {
+    fileData: file,
+    file,
     viewWrapper: {
-      relationships: {
+      relationships: new PatchRelationships((target) => {
         // Temporary ids far above any real rIdN a part can carry — the
         // rendered r:id is rewritten to the allocated id when the
         // relationships flush (media first, hyperlinks after) appends them.
-        add: (_type: string, target: string) => {
-          const id = HYPERLINK_TEMP_ID_BASE + hyperlinkSink.length + 1;
-          hyperlinkSink.push({ id: String(id), link: target });
-          return id;
-        },
-        // No registered relationships to share here — every patched-in
-        // hyperlink allocates its own temp id via add.
-        idOf: () => undefined,
-        relationshipCount: 0,
-      },
-    } as unknown as BodyContext["viewWrapper"],
-    stringifyChild: () => "",
-    addRelationship: () => "",
-    addMedia: () => "",
-    addHyperlink: () => {},
+        const id = HYPERLINK_TEMP_ID_BASE + hyperlinkSink.length + 1;
+        hyperlinkSink.push({ id: String(id), link: target });
+        return id;
+      }),
+    },
+    stringifyChild(child) {
+      return stringifyBodyChild(child, context);
+    },
+    addRelationship: (type, target, mode) => file.addRelationship(type, target, mode),
+    addMedia: (data, type, fileName) => file.addMedia(data, type, fileName),
+    addHyperlink: (key, target) => file.addHyperlink(key, target),
   };
+  return context;
 }
 
 /**
@@ -415,8 +430,8 @@ export const patchDocument = async <T extends OutputType = OutputType>({
 }: PatchDocumentOptions<T>): Promise<OutputByType[T]> => {
   const zipContent = unzipSync(toUint8Array(data));
   const contexts = new Map<string, BodyContext>();
-  const media = new Media<MediaData>();
-  const file = { media } as BodyContext["file"];
+  const file = new DocxWriteContext({ sections: [] });
+  const media = file.media;
 
   // Resolve comment ids by continuation from any existing word/comments.xml.
   const assignedComments = buildAssignedComments(zipContent, comments);
@@ -457,29 +472,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
     if (key.startsWith("word/") && !key.endsWith(".xml.rels")) {
       const hyperlinkSink: Array<{ id: string; link: string }> = [];
 
-      const context: BodyContext = {
-        fileData: file,
-        file,
-        viewWrapper: {
-          relationships: {
-            // Sequential ids, mirroring Relationships.add. The bare number is
-            // stored — appendRelationship adds the rId prefix when flushing.
-            add: (_: string, target: string) => {
-              hyperlinkRelationshipAdditions.push({
-                hyperlink: {
-                  id: String(hyperlinkRelationshipAdditions.length + 1),
-                  link: target,
-                },
-                key,
-              });
-            },
-          },
-        } as unknown as ViewWrapper,
-        stringifyChild: () => "",
-        addRelationship: () => "",
-        addMedia: () => "",
-        addHyperlink: () => {},
-      };
+      const context = createPatchContext(file, hyperlinkSink);
       contexts.set(key, context);
 
       if (!placeholderDelimiters?.start.trim() || !placeholderDelimiters?.end.trim()) {
@@ -489,8 +482,7 @@ export const patchDocument = async <T extends OutputType = OutputType>({
       const { start, end } = placeholderDelimiters;
 
       // Create compile-path context for stringifying patch children
-      const patchCtx = createPatchContext(file, hyperlinkSink);
-      currentPatchCtx = patchCtx;
+      currentPatchCtx = context;
 
       // Anchor placeholder comments BEFORE substitution, wrapping the {{key}} run.
       if (key === "word/document.xml") {
@@ -802,7 +794,7 @@ function wrapPlaceholderComment(json: Element, placeholder: string, commentId: n
 function mergeCommentsPart(
   map: Map<string, Element>,
   assigned: AssignedComment[],
-  file: { media: Media<MediaData> },
+  file: DocxWriteContext,
 ): void {
   const newOpts: CommentOptions[] = assigned.map((ac) => ({ id: ac.id, ...ac.options }));
   const ctx = createPatchContext(file, []);

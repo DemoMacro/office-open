@@ -9,7 +9,7 @@
  */
 import type { DataType } from "@office-open/core";
 
-import type { CharacterSet } from "./font";
+import { type CharacterSet } from "./font";
 
 // <xsd:complexType name="CT_FontsList">
 //     <xsd:sequence>

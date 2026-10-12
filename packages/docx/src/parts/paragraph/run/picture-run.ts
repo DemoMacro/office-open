@@ -38,7 +38,7 @@ import type { DrawingExtensionIds, GraphicFrameLocksOptions } from "../../drawin
 /**
  * Core options for picture configuration.
  */
-interface CorePictureOptions {
+export interface CorePictureOptions {
   transformation: MediaTransformation;
   /** Rendering resolution in DPI (pic:blipFill/@dpi). */
   dpi?: number;
@@ -92,7 +92,7 @@ interface CorePictureOptions {
   blackWhiteMode?: BlackWhiteMode;
 }
 
-interface RegularPictureOptions {
+export interface RegularPictureOptions {
   type: "jpg" | "png" | "gif" | "bmp" | "tif" | "ico" | "emf" | "wmf";
   /**
    * Image binary. Absent on a linked-only picture (external sourceUrl, no
@@ -109,7 +109,7 @@ interface RegularPictureOptions {
   partPath?: string;
 }
 
-interface SvgMediaOptions {
+export interface SvgMediaOptions {
   type: "svg";
   data: DataType;
   /**

@@ -19,7 +19,11 @@
 
 import { RELATIONSHIP_TYPES, type ReproducibleScope, TargetModeType } from "@office-open/core";
 import { convertToEmu, uniqueNumericIdCreator } from "@office-open/core";
-import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
+import {
+  NOOP_WRITE_CONTEXT,
+  type CustomDescriptor,
+  type ReadContext,
+} from "@office-open/core/descriptor";
 import type {
   BlackWhiteMode,
   BlipEffectsOptions,
@@ -72,8 +76,7 @@ import type { SectionChild } from "@shared/section";
 import type { BodyContext, DocxReadContext } from "../../context";
 import type { DocumentNamespaceDialect } from "../document/document-attributes";
 import type { DocPropertiesOptions, HyperlinkOptions } from "./doc-properties/doc-properties";
-// Import parse function from drawing-parse.ts (parse path)
-import { parseDrawingRun } from "./drawing-parse";
+import { parseDrawingRun, type DrawingChild } from "./drawing-parse";
 import type { Floating, HorizontalPositionOptions, VerticalPositionOptions } from "./floating";
 import { HorizontalPositionRelativeFrom, VerticalPositionRelativeFrom } from "./floating";
 // wpg/wps types only
@@ -89,13 +92,6 @@ import type {
 } from "./inline/graphic/graphic-data/wps/wps-shape";
 import { TextWrappingSide, TextWrappingType } from "./text-wrap";
 import type { TextWrapping, WrapPolygon } from "./text-wrap";
-
-// Noop context for drawingml descriptors that don't use WriteContext
-const NOOP_CTX: WriteContext = {
-  addRelationship: () => "",
-  addMedia: () => "",
-  addHyperlink: () => {},
-};
 
 // ── Options ──
 
@@ -397,7 +393,7 @@ function stringifyBlipFill(
   const extLstXml = extParts.length > 0 ? `<a:extLst>${extParts.join("")}</a:extLst>` : "";
 
   // Blip effects
-  const blipEffectsXml = blipEffects ? stringifyBlipEffects(blipEffects, NOOP_CTX) : "";
+  const blipEffectsXml = blipEffects ? stringifyBlipEffects(blipEffects, NOOP_WRITE_CONTEXT) : "";
 
   // CT_Blip orders the effect choice before the trailing extLst
   const blipContent = blipEffectsXml + extLstXml;
@@ -463,7 +459,7 @@ function stringifyShapeProps(
       scene3d,
       shape3d,
     },
-    NOOP_CTX,
+    NOOP_WRITE_CONTEXT,
   );
   const bwAttr = blackWhiteMode ? ` bwMode="${blackWhiteMode}"` : "";
   return `<pic:spPr${bwAttr}>${spPr ?? ""}</pic:spPr>`;
@@ -493,7 +489,7 @@ function stringifyNvPicPr(
   const picLocksXml =
     locks === null
       ? ""
-      : (pictureLockingDesc.stringify(locks ?? { noChangeAspect: true }, NOOP_CTX) ?? "");
+      : (pictureLockingDesc.stringify(locks ?? { noChangeAspect: true }, NOOP_WRITE_CONTEXT) ?? "");
   return `<pic:nvPicPr>${cNvPrXml}<pic:cNvPicPr${cNvPicPrAttr}>${picLocksXml}</pic:cNvPicPr></pic:nvPicPr>`;
 }
 
@@ -626,10 +622,15 @@ function stringifyNonVisualShapeProperties(opts: NonVisualShapePropertiesOptions
   // wps:cNvCnPr (connector). Each carries its optional locks element.
   if (opts.connector) {
     xml += opts.connectorLocking
-      ? `<wps:cNvCnPr>${connectorLockingDesc.stringify(opts.connectorLocking, NOOP_CTX)}</wps:cNvCnPr>`
+      ? `<wps:cNvCnPr>${connectorLockingDesc.stringify(
+          opts.connectorLocking,
+          NOOP_WRITE_CONTEXT,
+        )}</wps:cNvCnPr>`
       : "<wps:cNvCnPr/>";
   } else {
-    const locks = opts.locking ? (shapeLockingDesc.stringify(opts.locking, NOOP_CTX) ?? "") : "";
+    const locks = opts.locking
+      ? (shapeLockingDesc.stringify(opts.locking, NOOP_WRITE_CONTEXT) ?? "")
+      : "";
     const txBox = opts.textBox !== undefined ? ` txBox="${opts.textBox}"` : "";
     xml += locks ? `<wps:cNvSpPr${txBox}>${locks}</wps:cNvSpPr>` : `<wps:cNvSpPr${txBox}/>`;
   }
@@ -1413,6 +1414,10 @@ function stringifyAnchor(
 
 // ── Descriptor ──
 
+function isDocxReadContext(ctx: ReadContext): ctx is DocxReadContext {
+  return "docx" in ctx && "currentPart" in ctx;
+}
+
 /**
  * Drawing descriptor for DOCX `<w:drawing>` elements.
  *
@@ -1425,7 +1430,11 @@ function stringifyAnchor(
  * const xml = drawingDesc.stringify({ mediaData, docProperties: opts.altText, floating: opts.floating }, ctx);
  * ```
  */
-export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext> = {
+export const drawingDesc: CustomDescriptor<
+  DrawingDescriptorOptions,
+  BodyContext,
+  DrawingChild | undefined
+> = {
   kind: "custom",
 
   stringify(opts, ctx) {
@@ -1439,7 +1448,10 @@ export const drawingDesc: CustomDescriptor<DrawingDescriptorOptions, BodyContext
   },
 
   parse(el, ctx) {
-    const result = parseDrawingRun(el, ctx as DocxReadContext);
-    return (result ?? {}) as unknown as DrawingDescriptorOptions;
+    if (!isDocxReadContext(ctx)) {
+      throw new TypeError("Drawing parsing requires a DOCX read context");
+    }
+    const result = parseDrawingRun(el, ctx);
+    return result;
   },
 };

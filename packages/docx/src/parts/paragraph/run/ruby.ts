@@ -1,4 +1,8 @@
+import type { ObjectElementOptions } from "@parts/object";
+import type { PictOptions } from "@parts/pict";
+
 import type { RunOptions } from "./run";
+import type { SymbolRunOptions } from "./symbol-run";
 
 /** Ruby alignment values (ST_RubyAlign). */
 export const RubyAlign = {
@@ -28,7 +32,13 @@ export interface RubyPropertiesOptions {
 
 /** Formatted runs inside ruby text or ruby base content (CT_RubyContent). */
 export interface RubyContentOptions {
-  children?: (RunOptions | string)[];
+  children?: (
+    | RunOptions
+    | { symbolRun: SymbolRunOptions }
+    | { object: ObjectElementOptions }
+    | { pict: PictOptions }
+    | string
+  )[];
 }
 
 /** A ruby annotation (CT_Ruby). */

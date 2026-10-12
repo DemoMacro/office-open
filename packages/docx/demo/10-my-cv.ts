@@ -54,6 +54,11 @@ interface Achievement {
   readonly name: string;
 }
 
+interface Period {
+  readonly month: number;
+  readonly year: number;
+}
+
 const experiences: Experience[] = [
   {
     company: {
@@ -344,7 +349,7 @@ class DocumentCreator {
     };
   }
 
-  public createSkillList(skills: any[]): SectionChild {
+  public createSkillList(skills: readonly Skill[]): SectionChild {
     return {
       paragraph: {
         children: [skills.map((skill) => skill.name).join(", ") + "."],
@@ -352,18 +357,15 @@ class DocumentCreator {
     };
   }
 
-  public createAchievementsList(achievements: any[]): SectionChild[] {
-    return achievements.map(
-      (achievement) =>
-        ({
-          paragraph: {
-            bullet: {
-              level: 0,
-            },
-            text: achievement.name,
-          },
-        }) as SectionChild,
-    );
+  public createAchievementsList(achievements: readonly Achievement[]): SectionChild[] {
+    return achievements.map((achievement): SectionChild => ({
+      paragraph: {
+        bullet: {
+          level: 0,
+        },
+        text: achievement.name,
+      },
+    }));
   }
 
   public createInterests(interests: string): SectionChild {
@@ -378,11 +380,20 @@ class DocumentCreator {
     return text.split("\n\n");
   }
 
-  public createPositionDateText(startDate: any, endDate: any, isCurrent: boolean): string {
+  public createPositionDateText(
+    startDate: Period,
+    endDate: Period | undefined,
+    isCurrent: boolean,
+  ): string {
     const startDateText = this.getMonthFromInt(startDate.month) + ". " + startDate.year;
-    const endDateText = isCurrent
-      ? "Present"
-      : `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;
+    let endDateText = "";
+    if (isCurrent) {
+      endDateText = "Present";
+    } else if (endDate) {
+      endDateText = `${this.getMonthFromInt(endDate.month)}. ${endDate.year}`;
+    } else {
+      throw new Error("A dated experience requires an end date.");
+    }
 
     return `${startDateText} - ${endDateText}`;
   }

@@ -1,4 +1,5 @@
 import {
+  type DataType,
   encodeUriPath,
   RELATIONSHIP_TYPES,
   type ReproducibleScope,
@@ -35,21 +36,63 @@ export type FontTableFont = FontTableFaces<EmbeddedFontPartWithKey>;
 /** A font declaration whose faces are ready for compilation. */
 export type NormalizedFontTableFont = FontTableFaces<NormalizedEmbeddedFontPart>;
 
-export type EmbeddedFontPartWithKey = EmbeddedFontPartOptions & {
+type EmbeddedFontPartBase = Omit<EmbeddedFontPartOptions, "data">;
+
+export type EmbeddedFontPartWithKey = EmbeddedFontPartBase & {
   /** Relationship id assigned to the embedded face (only parts carrying data). */
   embedRid?: string;
-  /** Normalized font bytes (Uint8Array regardless of the input form). */
-  data?: Uint8Array;
+  /** Font bytes in either authoring or normalized form. */
+  data?: DataType;
 };
 
-/** Compile-time face with normalized bytes and an assigned obfuscation key. */
-export type NormalizedEmbeddedFontPart = EmbeddedFontPartWithKey & {
-  fontKey: string;
-};
+/** Compile-time face with normalized bytes; data-carrying faces carry a key. */
+export type NormalizedEmbeddedFontPart =
+  | (EmbeddedFontPartBase & {
+      embedRid?: string;
+      data?: undefined;
+      fontKey?: string;
+    })
+  | (EmbeddedFontPartBase & {
+      embedRid?: string;
+      data: Uint8Array;
+      fontKey: string;
+    });
 
 /** XML element name for one embedded font face. */
 export function embeddedFontElementName(partName: EmbeddedFontPartName): string {
   return `w:${partName}`;
+}
+
+/** Drops compile-only relationship wiring from a parse result. */
+export function toPublicEmbeddedFont(part: EmbeddedFontPartWithKey): EmbeddedFontPartOptions {
+  const { embedRid: _embedRid, ...options } = part;
+  return options;
+}
+
+/** Converts a resolved font-table parse result to the public canonical model. */
+export function toPublicFontTableFont(font: FontTableFont): EmbeddedFontOptions {
+  const publicFont: EmbeddedFontOptions = { ...font };
+  if (font.embedRegular) publicFont.embedRegular = toPublicEmbeddedFont(font.embedRegular);
+  if (font.embedBold) publicFont.embedBold = toPublicEmbeddedFont(font.embedBold);
+  if (font.embedItalic) publicFont.embedItalic = toPublicEmbeddedFont(font.embedItalic);
+  if (font.embedBoldItalic) {
+    publicFont.embedBoldItalic = toPublicEmbeddedFont(font.embedBoldItalic);
+  }
+  return publicFont;
+}
+
+function normalizeEmbeddedFontPart(
+  part: EmbeddedFontPartOptions | undefined,
+  reproducible?: ReproducibleScope,
+): NormalizedEmbeddedFontPart | undefined {
+  if (!part) return undefined;
+  const { data, ...options } = part;
+  if (data === undefined) return options;
+  return {
+    ...options,
+    data: toUint8Array(data),
+    fontKey: options.fontKey ?? reproducible?.nextUuid() ?? uniqueUuid(),
+  };
 }
 
 /** Default .odttf package path for a face; regular keeps the legacy compact name. */
@@ -64,9 +107,9 @@ export function defaultEmbeddedFontPath(
 }
 
 /** Owned embedded parts in CT_Font order. */
-export function embeddedFontParts<
-  TPart extends EmbeddedFontPartWithKey | NormalizedEmbeddedFontPart,
->(font: FontTableFaces<TPart>): [EmbeddedFontPartName, TPart][] {
+export function embeddedFontParts<TPart extends EmbeddedFontPartOptions>(
+  font: FontTableFaces<TPart>,
+): [EmbeddedFontPartName, TPart & { embedRid?: string }][] {
   return EMBEDDED_FONT_PART_NAMES.flatMap((partName) => {
     const part = font[partName];
     return part ? [[partName, part] as const] : [];
@@ -102,19 +145,13 @@ export class FontWrapper implements ViewWrapper {
     // bytes to embed but must still round-trip into fontTable.xml. Only fonts
     // with binary data receive a fontKey + relationship for the .odttf part.
     this.fontOptionsWithKey = options.map((o): NormalizedFontTableFont => {
-      const font = { ...o } as NormalizedFontTableFont;
-      for (const partName of EMBEDDED_FONT_PART_NAMES) {
-        const part = font[partName];
-        if (!part || part.data === undefined) continue;
-        const partWithKey: NormalizedEmbeddedFontPart = {
-          ...part,
-          data: toUint8Array(part.data),
-          fontKey: part.fontKey ?? reproducible?.nextUuid() ?? uniqueUuid(),
-        };
-        font[partName] = {
-          ...partWithKey,
-        };
-      }
+      const font: NormalizedFontTableFont = {
+        ...o,
+        embedRegular: normalizeEmbeddedFontPart(o.embedRegular, reproducible),
+        embedBold: normalizeEmbeddedFontPart(o.embedBold, reproducible),
+        embedItalic: normalizeEmbeddedFontPart(o.embedItalic, reproducible),
+        embedBoldItalic: normalizeEmbeddedFontPart(o.embedBoldItalic, reproducible),
+      };
       return font;
     });
     this.relationships = new Relationships();

@@ -182,6 +182,9 @@ export type TrackChangeChild =
       endRPrXml?: string;
     }
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
+  | { symbolRun: SymbolRunOptions }
+  | { object: ObjectElementOptions }
+  | { pict: PictOptions }
   // Drawings inserted as revisions (w:ins around the drawing's w:r)
   | { picture: PictureOptions }
   | { chart: ChartOptions }

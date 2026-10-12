@@ -107,10 +107,6 @@ function isTrackedCommentReferenceRun(value: object): value is TrackedCommentRef
   return "commentReference" in value && typeof value.commentReference === "number";
 }
 
-function isUntrackedRun(value: RunOptions | TrackedCommentReferenceRun): value is RunOptions {
-  return !isTrackedCommentReferenceRun(value);
-}
-
 // ── Run ──
 
 /**
@@ -1640,7 +1636,9 @@ function parseTrackChangeRuns(el: Element, ctx: DocxReadContext): TrackChangeChi
           children: [{ commentReference }],
         });
         continue;
-      } else if (isUntrackedRun(runOpts)) out.push(runOpts);
+      } else if (!("commentReference" in runOpts)) {
+        out.push(runOpts);
+      }
     } else if (sub.name === "w:commentRangeStart") {
       const m = parseMarkupRangeOptions(sub);
       if (m) out.push({ commentRangeStart: m });
@@ -2439,7 +2437,7 @@ export function parseParagraph(el: Element, ctx: DocxReadContext): ParagraphOpti
   // array — run boundaries carry spelling-check and session-edit history and
   // must round-trip instead of merging into one emitted run.
   if (childList.length === 1) {
-    const only = childList[0] as unknown;
+    const only = childList[0];
     if (isTextOnlyRun(only) && only.text) {
       opts.text = only.text;
       return opts as ParagraphOptions;

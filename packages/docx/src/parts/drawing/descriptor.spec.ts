@@ -35,6 +35,7 @@ writeCtx.stringifyChild = (child) => stringifyBodyChild(child, writeCtx);
 setBodyParseChild(parseSectionChild);
 
 const readContextData = {
+  currentPart: "word/document.xml",
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
@@ -69,6 +70,7 @@ function makeImageMediaData() {
 const mediaMap = new Map([["{image1.png}", "word/media/image1.png"]]);
 const hyperlinkMap = new Map([["rId1", "https://example.com/"]]);
 const mediaReadCtx = {
+  currentPart: "word/document.xml",
   // parsePictureRun resolves the blip embed via resolveRelationship (per-part
   // rels, falling back to partRefs.media) — mirror that here.
   resolveRelationship: (rId: string) => mediaMap.get(rId),
@@ -289,12 +291,11 @@ describe("drawingDesc round-trip", () => {
     expect(xml).toContain("smartart1");
   });
 
-  it("parse returns an object for inline image", () => {
+  it("returns undefined when inline image media cannot be resolved", () => {
     const result = roundTrip({
       mediaData: makeImageMediaData(),
     });
-    // parse returns {} when mediaPath can't be resolved
-    expect(result).toBeDefined();
+    expect(result).toBeUndefined();
   });
 
   it("stringifies graphic with xmlns:a namespace", () => {

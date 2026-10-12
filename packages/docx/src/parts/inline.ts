@@ -220,7 +220,13 @@ function textElementXml(tag: string, text: string, preserve?: boolean): string {
 function stringifyRubyContent(opts: RubyOptions["text"], ctx: BodyContext): string {
   return (
     opts.children
-      ?.map((child) => stringifyRunInline(typeof child === "string" ? { text: child } : child, ctx))
+      ?.map((child) => {
+        if (typeof child === "string") return stringifyRunInline({ text: child }, ctx);
+        if ("symbolRun" in child || "object" in child || "pict" in child) {
+          return stringifyChildDispatch(child, ctx) ?? "";
+        }
+        return stringifyRunInline(child, ctx);
+      })
       .join("") ?? ""
   );
 }

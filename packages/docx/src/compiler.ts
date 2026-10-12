@@ -531,11 +531,10 @@ function xmlifyContext(ctx: DocxWriteContext): XmlifyedFileMapping {
       addMedia: (data: Uint8Array, type: string, fileName?: string) =>
         ctx.addMedia(data, type, fileName),
       addHyperlink: (key, target) => ctx.addHyperlink(key, target),
-      // Assigned after the literal: stringifyBodyChild needs this context, which
-      // is only bound once the literal finishes initializing.
-      stringifyChild: undefined as unknown as DocxContext["stringifyChild"],
+      stringifyChild(child) {
+        return stringifyBodyChild(child, bodyCtx);
+      },
     };
-    bodyCtx.stringifyChild = (child) => stringifyBodyChild(child, bodyCtx);
     return bodyCtx;
   };
 

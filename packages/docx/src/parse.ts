@@ -31,7 +31,8 @@ import { customPropertiesDesc } from "@parts/custom-properties";
 import { customizationsDesc } from "@parts/customizations/descriptor";
 import { endnotesDesc } from "@parts/endnotes/descriptor";
 import { fontTableDesc } from "@parts/fonts/descriptor";
-import { embeddedFontParts, type FontTableFont } from "@parts/fonts/font-wrapper";
+import type { EmbeddedFontOptions } from "@parts/fonts/font-table";
+import { embeddedFontParts, toPublicFontTableFont } from "@parts/fonts/font-wrapper";
 import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
 import { setNotesParseChild } from "@parts/notes/shared";
@@ -188,7 +189,7 @@ export interface DocxDocument {
  * instead of re-obfuscating (the fontKey already matches the bytes).
  */
 function resolveEmbeddedFontData(
-  fonts: FontTableFont[],
+  fonts: EmbeddedFontOptions[],
   doc: ParsedArchive,
   fontTablePath = "word/fontTable.xml",
 ): void {
@@ -813,9 +814,9 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
     const ftResult = fontTableDesc.parse(docx.fontTable, ctx);
     if (ftResult.fonts && ftResult.fonts.length > 0) {
       resolveEmbeddedFontData(ftResult.fonts, docx.doc);
-      // embedRid is a resolve-time lookup key — the FontWrapper reassigns it
-      // on generate, so it must not leak into the public options JSON.
-      opts.fonts = ftResult.fonts;
+      // Relationship IDs are resolve-time-only and stripped by the font-table
+      // descriptor; FontWrapper assigns fresh IDs on generate.
+      opts.fonts = ftResult.fonts.map(toPublicFontTableFont);
     }
   }
 

@@ -21,6 +21,7 @@ import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { attr, attrMeasure, escapeXml, findChild, textOf } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
+import { DocxParseError } from "../../errors";
 import {
   documentNamespaceAttributesInDialect,
   documentNamespaceDialect,
@@ -49,6 +50,48 @@ import type {
   DocumentEndnotePropertiesOptions,
   ShapeDefaultsOptions,
 } from "./settings";
+
+const SETTINGS_VIEWS = ["none", "print", "outline", "masterPages", "normal", "web"] as const;
+
+const SETTINGS_CHARACTER_SPACING = [
+  "compressPunctuation",
+  "compressPunctuationAndJapaneseKana",
+  "doNotCompress",
+] as const;
+
+const POSITIVE_MEASURE_PATTERN = /^\d+(?:\.\d+)?(?:mm|cm|in|pt|pc|pi)$/;
+
+function isSettingsView(value: string): value is (typeof SETTINGS_VIEWS)[number] {
+  return (SETTINGS_VIEWS as readonly string[]).includes(value);
+}
+
+function isCharacterSpacingControl(
+  value: string,
+): value is (typeof SETTINGS_CHARACTER_SPACING)[number] {
+  return (SETTINGS_CHARACTER_SPACING as readonly string[]).includes(value);
+}
+
+function assignSetting<K extends keyof SettingsOptions>(
+  options: SettingsOptions,
+  key: K,
+  value: SettingsOptions[K],
+): void {
+  if (value !== undefined) options[key] = value;
+}
+
+function parsePositiveMeasure(value: string | number): number | PositiveUniversalMeasure {
+  if (typeof value === "number") {
+    if (value >= 0) return value;
+  } else if (POSITIVE_MEASURE_PATTERN.test(value)) {
+    return value as PositiveUniversalMeasure;
+  }
+  throw new DocxParseError(
+    `Invalid positive measurement "${value}".`,
+    "word/settings.xml",
+    "w:defaultTabStop",
+    "invalid-measure",
+  );
+}
 
 /** Derive the namespace-prefixed val attribute from the element tag. */
 function valAttr(tag: string): string {
@@ -298,7 +341,9 @@ function parseFtnEdnPr(
 
 /** Apply one w:compatSetting entry to a compatibility options object: named
  *  sugar fields first, remaining entries accumulate into compatSettings[]. */
-function applyCompatSetting(target: Record<string, unknown>, child: Element): void {
+type CompatibilityAccumulator = { [K in keyof CompatibilityOptions]: unknown };
+
+function applyCompatSetting(target: CompatibilityAccumulator, child: Element): void {
   const name = attr(child, "w:name");
   const val = attr(child, "w:val");
   if (name === undefined || val === undefined) return;
@@ -1144,7 +1189,7 @@ export const settingsDesc: CustomDescriptor<
   },
 
   parse(el, _ctx) {
-    const opts: Record<string, unknown> = {};
+    const opts: SettingsOptions = {};
 
     // writeProtection (CT_WriteProtection)
     const wpEl = findChild(el, "w:writeProtection");
@@ -1157,7 +1202,17 @@ export const settingsDesc: CustomDescriptor<
 
     // view → w:view/@w:val
     const viewVal = readStr(findChild(el, "w:view"), "w:val");
-    if (viewVal) opts.view = viewVal;
+    if (viewVal !== undefined) {
+      if (!isSettingsView(viewVal)) {
+        throw new DocxParseError(
+          `Invalid settings view "${viewVal}".`,
+          "word/settings.xml",
+          "w:view",
+          "invalid-enumeration",
+        );
+      }
+      opts.view = viewVal;
+    }
 
     // zoom → w:zoom/@w:percent, @w:val
     const zoomEl = findChild(el, "w:zoom");
@@ -1171,60 +1226,60 @@ export const settingsDesc: CustomDescriptor<
     }
 
     // CT_OnOff scalar settings (presence = true unless w:val is explicitly false)
-    const onOffScalar: [string, string][] = [
-      ["removePersonalInformation", "w:removePersonalInformation"],
-      ["removeDateAndTime", "w:removeDateAndTime"],
-      ["doNotDisplayPageBoundaries", "w:doNotDisplayPageBoundaries"],
-      ["displayBackgroundShape", "w:displayBackgroundShape"],
-      ["printPostScriptOverText", "w:printPostScriptOverText"],
-      ["printFractionalCharacterWidth", "w:printFractionalCharacterWidth"],
-      ["printFormsData", "w:printFormsData"],
-      ["embedTrueTypeFonts", "w:embedTrueTypeFonts"],
-      ["embedSystemFonts", "w:embedSystemFonts"],
-      ["saveSubsetFonts", "w:saveSubsetFonts"],
-      ["saveFormsData", "w:saveFormsData"],
-      ["mirrorMargins", "w:mirrorMargins"],
-      ["alignBordersAndEdges", "w:alignBordersAndEdges"],
-      ["bordersDoNotSurroundHeader", "w:bordersDoNotSurroundHeader"],
-      ["bordersDoNotSurroundFooter", "w:bordersDoNotSurroundFooter"],
-      ["gutterAtTop", "w:gutterAtTop"],
-      ["hideSpellingErrors", "w:hideSpellingErrors"],
-      ["hideGrammaticalErrors", "w:hideGrammaticalErrors"],
-      ["formsDesign", "w:formsDesign"],
-      ["linkStyles", "w:linkStyles"],
-      ["trackRevisions", "w:trackRevisions"],
-      ["doNotTrackMoves", "w:doNotTrackMoves"],
-      ["doNotTrackFormatting", "w:doNotTrackFormatting"],
-      ["autoFormatOverride", "w:autoFormatOverride"],
-      ["styleLockTheme", "w:styleLockTheme"],
-      ["styleLockQFSet", "w:styleLockQFSet"],
-      ["showEnvelope", "w:showEnvelope"],
-      ["evenAndOddHeaders", "w:evenAndOddHeaders"],
-      ["bookFoldRevPrinting", "w:bookFoldRevPrinting"],
-      ["bookFoldPrinting", "w:bookFoldPrinting"],
-      ["doNotUseMarginsForDrawingGridOrigin", "w:doNotUseMarginsForDrawingGridOrigin"],
-      ["doNotShadeFormData", "w:doNotShadeFormData"],
-      ["noPunctuationKerning", "w:noPunctuationKerning"],
-      ["printTwoOnOne", "w:printTwoOnOne"],
-      ["strictFirstAndLastChars", "w:strictFirstAndLastChars"],
-      ["savePreviewPicture", "w:savePreviewPicture"],
-      ["doNotValidateAgainstSchema", "w:doNotValidateAgainstSchema"],
-      ["saveInvalidXml", "w:saveInvalidXml"],
-      ["ignoreMixedContent", "w:ignoreMixedContent"],
-      ["alwaysShowPlaceholderText", "w:alwaysShowPlaceholderText"],
-      ["doNotDemarcateInvalidXml", "w:doNotDemarcateInvalidXml"],
-      ["saveXmlDataOnly", "w:saveXmlDataOnly"],
-      ["useXSLTWhenSaving", "w:useXSLTWhenSaving"],
-      ["showXMLTags", "w:showXMLTags"],
-      ["alwaysMergeEmptyNamespace", "w:alwaysMergeEmptyNamespace"],
-      ["updateFields", "w:updateFields"],
-      ["doNotIncludeSubdocsInStats", "w:doNotIncludeSubdocsInStats"],
-      ["doNotAutoCompressPictures", "w:doNotAutoCompressPictures"],
-      ["doNotEmbedSmartTags", "w:doNotEmbedSmartTags"],
+    const onOffScalar: Array<{ key: keyof SettingsOptions; tag: string }> = [
+      { key: "removePersonalInformation", tag: "w:removePersonalInformation" },
+      { key: "removeDateAndTime", tag: "w:removeDateAndTime" },
+      { key: "doNotDisplayPageBoundaries", tag: "w:doNotDisplayPageBoundaries" },
+      { key: "displayBackgroundShape", tag: "w:displayBackgroundShape" },
+      { key: "printPostScriptOverText", tag: "w:printPostScriptOverText" },
+      { key: "printFractionalCharacterWidth", tag: "w:printFractionalCharacterWidth" },
+      { key: "printFormsData", tag: "w:printFormsData" },
+      { key: "embedTrueTypeFonts", tag: "w:embedTrueTypeFonts" },
+      { key: "embedSystemFonts", tag: "w:embedSystemFonts" },
+      { key: "saveSubsetFonts", tag: "w:saveSubsetFonts" },
+      { key: "saveFormsData", tag: "w:saveFormsData" },
+      { key: "mirrorMargins", tag: "w:mirrorMargins" },
+      { key: "alignBordersAndEdges", tag: "w:alignBordersAndEdges" },
+      { key: "bordersDoNotSurroundHeader", tag: "w:bordersDoNotSurroundHeader" },
+      { key: "bordersDoNotSurroundFooter", tag: "w:bordersDoNotSurroundFooter" },
+      { key: "gutterAtTop", tag: "w:gutterAtTop" },
+      { key: "hideSpellingErrors", tag: "w:hideSpellingErrors" },
+      { key: "hideGrammaticalErrors", tag: "w:hideGrammaticalErrors" },
+      { key: "formsDesign", tag: "w:formsDesign" },
+      { key: "linkStyles", tag: "w:linkStyles" },
+      { key: "trackRevisions", tag: "w:trackRevisions" },
+      { key: "doNotTrackMoves", tag: "w:doNotTrackMoves" },
+      { key: "doNotTrackFormatting", tag: "w:doNotTrackFormatting" },
+      { key: "autoFormatOverride", tag: "w:autoFormatOverride" },
+      { key: "styleLockTheme", tag: "w:styleLockTheme" },
+      { key: "styleLockQFSet", tag: "w:styleLockQFSet" },
+      { key: "showEnvelope", tag: "w:showEnvelope" },
+      { key: "evenAndOddHeaders", tag: "w:evenAndOddHeaders" },
+      { key: "bookFoldRevPrinting", tag: "w:bookFoldRevPrinting" },
+      { key: "bookFoldPrinting", tag: "w:bookFoldPrinting" },
+      { key: "doNotUseMarginsForDrawingGridOrigin", tag: "w:doNotUseMarginsForDrawingGridOrigin" },
+      { key: "doNotShadeFormData", tag: "w:doNotShadeFormData" },
+      { key: "noPunctuationKerning", tag: "w:noPunctuationKerning" },
+      { key: "printTwoOnOne", tag: "w:printTwoOnOne" },
+      { key: "strictFirstAndLastChars", tag: "w:strictFirstAndLastChars" },
+      { key: "savePreviewPicture", tag: "w:savePreviewPicture" },
+      { key: "doNotValidateAgainstSchema", tag: "w:doNotValidateAgainstSchema" },
+      { key: "saveInvalidXml", tag: "w:saveInvalidXml" },
+      { key: "ignoreMixedContent", tag: "w:ignoreMixedContent" },
+      { key: "alwaysShowPlaceholderText", tag: "w:alwaysShowPlaceholderText" },
+      { key: "doNotDemarcateInvalidXml", tag: "w:doNotDemarcateInvalidXml" },
+      { key: "saveXmlDataOnly", tag: "w:saveXmlDataOnly" },
+      { key: "useXSLTWhenSaving", tag: "w:useXSLTWhenSaving" },
+      { key: "showXMLTags", tag: "w:showXMLTags" },
+      { key: "alwaysMergeEmptyNamespace", tag: "w:alwaysMergeEmptyNamespace" },
+      { key: "updateFields", tag: "w:updateFields" },
+      { key: "doNotIncludeSubdocsInStats", tag: "w:doNotIncludeSubdocsInStats" },
+      { key: "doNotAutoCompressPictures", tag: "w:doNotAutoCompressPictures" },
+      { key: "doNotEmbedSmartTags", tag: "w:doNotEmbedSmartTags" },
     ];
-    for (const [key, tag] of onOffScalar) {
+    for (const { key, tag } of onOffScalar) {
       const v = readOnOffValue(findChild(el, tag));
-      if (v !== undefined) opts[key] = v;
+      assignSetting(opts, key, v);
     }
 
     // activeWritingStyle → w:activeWritingStyle[] (multiple)
@@ -1358,7 +1413,7 @@ export const settingsDesc: CustomDescriptor<
 
     // defaultTabStop → w:defaultTabStop/@w:val
     const defaultTabStop = attrMeasure(findChild(el, "w:defaultTabStop"), "w:val");
-    if (defaultTabStop !== undefined) opts.defaultTabStop = defaultTabStop;
+    if (defaultTabStop !== undefined) opts.defaultTabStop = parsePositiveMeasure(defaultTabStop);
 
     // hyphenation — sibling CT_Settings elements, flattened onto the root
     const autoHyph = readOnOffValue(findChild(el, "w:autoHyphenation"));
@@ -1379,32 +1434,39 @@ export const settingsDesc: CustomDescriptor<
     if (bookFoldSheets !== undefined) opts.bookFoldPrintingSheets = bookFoldSheets;
 
     // drawing grid numerics
-    const drawNum: [string, string][] = [
-      ["drawingGridHorizontalSpacing", "w:drawingGridHorizontalSpacing"],
-      ["drawingGridVerticalSpacing", "w:drawingGridVerticalSpacing"],
-      ["displayHorizontalDrawingGridEvery", "w:displayHorizontalDrawingGridEvery"],
-      ["displayVerticalDrawingGridEvery", "w:displayVerticalDrawingGridEvery"],
-      ["drawingGridHorizontalOrigin", "w:drawingGridHorizontalOrigin"],
-      ["drawingGridVerticalOrigin", "w:drawingGridVerticalOrigin"],
+    const drawNum: Array<{ key: keyof SettingsOptions; tag: string }> = [
+      { key: "drawingGridHorizontalSpacing", tag: "w:drawingGridHorizontalSpacing" },
+      { key: "drawingGridVerticalSpacing", tag: "w:drawingGridVerticalSpacing" },
+      { key: "displayHorizontalDrawingGridEvery", tag: "w:displayHorizontalDrawingGridEvery" },
+      { key: "displayVerticalDrawingGridEvery", tag: "w:displayVerticalDrawingGridEvery" },
+      { key: "drawingGridHorizontalOrigin", tag: "w:drawingGridHorizontalOrigin" },
+      { key: "drawingGridVerticalOrigin", tag: "w:drawingGridVerticalOrigin" },
     ];
-    for (const [key, tag] of drawNum) {
+    for (const { key, tag } of drawNum) {
       const v = readNum(findChild(el, tag), "w:val");
-      if (v !== undefined) opts[key] = v;
+      assignSetting(opts, key, v);
     }
 
     // characterSpacingControl → w:characterSpacingControl/@w:val
     const characterSpacingControl = readStr(findChild(el, "w:characterSpacingControl"), "w:val");
     if (characterSpacingControl) {
-      opts.characterSpacingControl =
-        characterSpacingControl as SettingsOptions["characterSpacingControl"];
+      if (!isCharacterSpacingControl(characterSpacingControl)) {
+        throw new DocxParseError(
+          `Invalid character spacing control "${characterSpacingControl}".`,
+          "word/settings.xml",
+          "w:characterSpacingControl",
+          "invalid-enumeration",
+        );
+      }
+      opts.characterSpacingControl = characterSpacingControl;
     }
 
     // noLineBreaksAfter/Before → w:noLineBreaksAfter/Before (w:lang, w:val)
-    const lineBreakPairs: [string, string][] = [
-      ["noLineBreaksAfter", "w:noLineBreaksAfter"],
-      ["noLineBreaksBefore", "w:noLineBreaksBefore"],
+    const lineBreakPairs: Array<{ key: keyof SettingsOptions; tag: string }> = [
+      { key: "noLineBreaksAfter", tag: "w:noLineBreaksAfter" },
+      { key: "noLineBreaksBefore", tag: "w:noLineBreaksBefore" },
     ];
-    for (const [key, tag] of lineBreakPairs) {
+    for (const { key, tag } of lineBreakPairs) {
       const lbEl = findChild(el, tag);
       if (!lbEl) continue;
       const entry: Record<string, string> = {};
@@ -1412,7 +1474,7 @@ export const settingsDesc: CustomDescriptor<
       if (lang) entry.lang = lang;
       const val = attr(lbEl, "w:val");
       if (val) entry.val = val;
-      if (Object.keys(entry).length > 0) opts[key] = entry;
+      if (Object.keys(entry).length > 0) assignSetting(opts, key, entry);
     }
 
     // saveThroughXslt → w:saveThroughXslt (r:id, w:solutionID)
@@ -1455,8 +1517,8 @@ export const settingsDesc: CustomDescriptor<
     // they re-emit at their XSD position inside w:compat.
     for (const child of el.elements ?? []) {
       if (child.type === "element" && child.name === "w:compatSetting") {
-        compat = compat ?? ({} as CompatibilityOptions);
-        applyCompatSetting(compat as unknown as Record<string, unknown>, child);
+        compat ??= {};
+        applyCompatSetting(compat, child);
       }
     }
     opts.compatibility = compat ?? false;
@@ -1568,7 +1630,7 @@ export const settingsDesc: CustomDescriptor<
         w: parseInt(attr(rmilEl, "w:w") ?? "0", 10),
         h: parseInt(attr(rmilEl, "w:h") ?? "0", 10),
         fontSz: parseInt(attr(rmilEl, "w:fontSz") ?? "0", 10),
-      } as ReadModeInkLockDownOptions;
+      };
     }
 
     // smartTagType → w:smartTagType[] (multiple)
@@ -1616,7 +1678,7 @@ export const settingsDesc: CustomDescriptor<
     const w15DocIdText = textOf(findChild(el, "w15:docId"));
     if (w15DocIdText !== undefined && w15DocIdText !== "") opts.w15DocIdText = w15DocIdText;
 
-    return opts as unknown as SettingsOptions;
+    return opts;
   },
 };
 

@@ -5,7 +5,13 @@
  *
  * @module
  */
-import type { ChartExSpaceOptions, ChartSpaceOptions, UniversalMeasure } from "@office-open/core";
+import {
+  type BlipCompression,
+  convertToEmu,
+  type ChartExSpaceOptions,
+  type ChartSpaceOptions,
+  type UniversalMeasure,
+} from "@office-open/core";
 import {
   parseOnOff,
   partPathToRelsPath,
@@ -71,8 +77,12 @@ import type { Element } from "@office-open/xml";
 import { parseRegisteredBodyChild } from "@parts/bodychildren";
 import type { ChartExOptions } from "@parts/paragraph/run/chart-ex-run";
 import type { ChartOptions } from "@parts/paragraph/run/chart-run";
-import type { PictureOptions } from "@parts/paragraph/run/picture-run";
-import type { SmartArtOptions } from "@parts/paragraph/run/smartart-run";
+import type {
+  CorePictureOptions,
+  PictureOptions,
+  SvgMediaOptions,
+} from "@parts/paragraph/run/picture-run";
+import type { SmartArtNode, SmartArtOptions } from "@parts/paragraph/run/smartart-run";
 import type {
   UnsupportedDrawingOptions,
   XmlElementData,
@@ -93,6 +103,36 @@ const chartSourceRelationships = new WeakMap<
 >();
 
 const chartSourcePaths = new WeakMap<object, string>();
+
+const BLIP_COMPRESSIONS: ReadonlySet<string> = new Set<BlipCompression>([
+  "email",
+  "screen",
+  "print",
+  "hqprint",
+  "none",
+]);
+
+const BLACK_WHITE_MODES: ReadonlySet<string> = new Set<BlackWhiteMode>([
+  "clr",
+  "auto",
+  "gray",
+  "ltGray",
+  "invGray",
+  "grayWhite",
+  "blackGray",
+  "blackWhite",
+  "black",
+  "white",
+  "hidden",
+]);
+
+function isBlipCompression(value: string): value is BlipCompression {
+  return BLIP_COMPRESSIONS.has(value);
+}
+
+function isBlackWhiteMode(value: string): value is BlackWhiteMode {
+  return BLACK_WHITE_MODES.has(value);
+}
 
 interface SmartArtSourcePaths {
   data?: string;
@@ -697,7 +737,8 @@ export function parsePictureRun(
 
   const transformation = readAnchorTransformation(info);
 
-  let imageOpts: Record<string, unknown>;
+  let embeddedData: Uint8Array | undefined;
+  let imageOpts: PictureOptions;
   if (rEmbed) {
     // Resolve the media path against the current part's relationships
     const mediaPath = ctx.resolveRelationship(rEmbed);
@@ -706,6 +747,7 @@ export function parsePictureRun(
     // Read image data from ZIP
     const imageData = ctx.docx.doc.getRaw(mediaPath);
     if (!imageData) return undefined;
+    embeddedData = imageData;
 
     imageOpts = {
       type: imageTypeFromPath(mediaPath),
@@ -733,7 +775,12 @@ export function parsePictureRun(
 
   // Blip compression state (a:blip @cstate)
   const cstate = attr(blip, "cstate");
-  if (cstate !== undefined) imageOpts.compression = cstate;
+  if (cstate !== undefined) {
+    if (!isBlipCompression(cstate)) {
+      invalidDrawingModel(ctx, blip, "a:blip/@cstate", `unknown compression: ${cstate}`);
+    }
+    imageOpts.compression = cstate;
+  }
 
   // Blip-fill crop (pic:blipFill/a:srcRect)
   const blipFill = findFirst(el, "pic:blipFill");
@@ -757,7 +804,12 @@ export function parsePictureRun(
   const picSpPr = findFirst(el, "pic:spPr");
   if (picSpPr) {
     const bwMode = attr(picSpPr, "bwMode");
-    if (bwMode) imageOpts.blackWhiteMode = bwMode;
+    if (bwMode) {
+      if (!isBlackWhiteMode(bwMode)) {
+        invalidDrawingModel(ctx, picSpPr, "pic:spPr/@bwMode", `unknown mode: ${bwMode}`);
+      }
+      imageOpts.blackWhiteMode = bwMode;
+    }
     const fill = readShapeFill(picSpPr, ctx);
     if (fill) imageOpts.fill = fill;
     const prstGeom = findChild(picSpPr, "a:prstGeom");
@@ -778,21 +830,14 @@ export function parsePictureRun(
     // lossless across round-trip.
     const xfrm = findChild(picSpPr, "a:xfrm");
     if (xfrm) {
-      const transform = imageOpts.transformation as {
-        width: number;
-        height: number;
-        shapeExtent?: { width: number; height: number };
-        rotation?: number;
-        flipHorizontal?: boolean;
-        flipVertical?: boolean;
-      };
+      const transform = imageOpts.transformation;
       const shapeExt = findChild(xfrm, "a:ext");
       const shapeCx = attrNum(shapeExt, "cx");
       const shapeCy = attrNum(shapeExt, "cy");
       if (shapeExt && (shapeCx !== undefined || shapeCy !== undefined)) {
         transform.shapeExtent = {
-          width: shapeCx ?? transform.width,
-          height: shapeCy ?? transform.height,
+          width: shapeCx ?? convertToEmu(transform.width),
+          height: shapeCy ?? convertToEmu(transform.height),
         };
       }
       const rot = attrNum(xfrm, "rot");
@@ -829,22 +874,40 @@ export function parsePictureRun(
   // both branches; otherwise the SVG is dropped on round-trip.
   const svg = readBlipSvg(blip, ctx);
   if (svg) {
-    if (rEmbed) {
-      // The embedded copy becomes the raster fallback (type/data/media name).
-      imageOpts.fallback = {
-        type: imageOpts.type,
-        data: imageOpts.data,
-        fileName: imageOpts.fileName,
-      };
+    if (embeddedData === undefined) {
+      invalidDrawingModel(
+        ctx,
+        blip,
+        "a:blip/a:extLst/a:ext/asvg:svgBlip",
+        "an SVG image requires an embedded raster fallback",
+      );
     }
-    imageOpts.type = "svg";
-    imageOpts.data = svg.data;
-    // The vector part keeps the svg source name; the raster fallback keeps the
-    // blip's original media name.
-    imageOpts.fileName = svg.fileName;
+    // The vector part keeps the SVG source path; the raster fallback keeps the
+    // embedded image's original name and OPC path.
+    const {
+      type: rasterType,
+      data: _rasterData,
+      fileName: rasterFileName,
+      partPath: rasterPartPath,
+      ...coreImage
+    } = imageOpts;
+    const svgImage: SvgMediaOptions & CorePictureOptions = {
+      type: "svg",
+      data: svg.data,
+      fileName: svg.fileName,
+      partPath: svg.partPath,
+      fallback: {
+        type: rasterType,
+        data: embeddedData,
+        fileName: rasterFileName,
+        ...(rasterPartPath ? { partPath: rasterPartPath } : {}),
+      },
+      ...coreImage,
+    };
+    imageOpts = svgImage;
   }
 
-  return { picture: imageOpts as unknown as PictureOptions };
+  return { picture: imageOpts };
 }
 
 /**
@@ -878,7 +941,7 @@ function readBlipUseLocalDpi(blip: Element): { value: boolean; uri: string } | u
 function readBlipSvg(
   blip: Element,
   ctx: DocxReadContext,
-): { data: Uint8Array; fileName: string } | undefined {
+): { data: Uint8Array; fileName: string; partPath: string } | undefined {
   const extLst = findChild(blip, "a:extLst");
   if (!extLst) return undefined;
   for (const ext of extLst.elements ?? []) {
@@ -891,7 +954,7 @@ function readBlipSvg(
       if (!svgPath) return undefined;
       const data = ctx.docx.doc.getRaw(svgPath);
       if (!data) return undefined;
-      return { data, fileName: svgPath.split("/").pop() ?? svgPath };
+      return { data, fileName: svgPath.split("/").pop() ?? svgPath, partPath: svgPath };
     }
   }
   return undefined;
@@ -2116,8 +2179,13 @@ function parseSmartArtDrawing(
   const dataEl = ctx.docx.doc.get(dataPath);
   if (!dataEl) return undefined;
 
-  const opts = parseSmartArtDataXml(dataEl);
-  if (!opts) return undefined;
+  const info = parseAnchorOrInline(el, ctx);
+  const parsedData = parseSmartArtDataXml(dataEl);
+  if (!parsedData) return undefined;
+  const opts: SmartArtOptions = {
+    ...parsedData,
+    transformation: readAnchorTransformation(info ?? {}),
+  };
   const dataModel = ctx.withPart(dataPath, () => parseDataModelOptions(dataEl, ctx));
   if (dataModel) opts.dataModel = dataModel;
   consumePartPath(ctx, dataPath);
@@ -2170,15 +2238,12 @@ function parseSmartArtDrawing(
 
   // Anchor wrapper locks: null (source had no wp:cNvGraphicFramePr) must
   // survive so stringify does not inject the authoring default.
-  const info = parseAnchorOrInline(el, ctx);
   if (info?.graphicFrameLocks !== undefined) opts.graphicFrameLocks = info.graphicFrameLocks;
   if (info?.altText) opts.altText = info.altText;
   if (info?.floating) opts.floating = info.floating;
   if (info?.extensionIds) opts.extensionIds = info.extensionIds;
 
-  (opts as Record<string, unknown>).transformation = readAnchorTransformation(info ?? {});
-
-  return { smartArt: opts as unknown as SmartArtOptions };
+  return { smartArt: opts };
 }
 
 /** Resolve a dgm:relIds attribute through a part-kind map to its part path. */
@@ -2269,11 +2334,14 @@ function matchDrawingPartByIndex(dataPath: string, drawingPaths: string[]): stri
 /**
  * Parse dgm:dataModel element into SmartArtOptions.
  */
-function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined {
+type ParsedSmartArtData = Pick<SmartArtOptions, "nodes"> &
+  Partial<Pick<SmartArtOptions, "layout" | "style" | "color">>;
+
+function parseSmartArtDataXml(el: Element): ParsedSmartArtData | undefined {
   const ptLst = findChild(el, "dgm:ptLst");
   if (!ptLst) return undefined;
 
-  const opts: Record<string, unknown> = {};
+  const opts: ParsedSmartArtData = { nodes: [] };
   const nodeMap = new Map<string, string>(); // modelId → text
 
   for (const pt of ptLst.elements ?? []) {
@@ -2306,7 +2374,6 @@ function parseSmartArtDataXml(el: Element): Record<string, unknown> | undefined 
   // Build tree from connections
   const cxnLst = findChild(el, "dgm:cxnLst");
   if (!cxnLst) {
-    opts.nodes = [];
     return opts;
   }
 
@@ -2337,7 +2404,7 @@ function buildSmartArtNode(
   id: string,
   nodeMap: Map<string, string>,
   childrenMap: Map<string, string[]>,
-): { text: string; children?: unknown[] } {
+): SmartArtNode {
   const text = nodeMap.get(id) ?? "";
   const childIds = childrenMap.get(id) ?? [];
 

@@ -6,13 +6,14 @@
  * @module
  */
 
-import type { CustomDescriptor } from "@office-open/core/descriptor";
+import type { CustomDescriptor, WriteContext } from "@office-open/core/descriptor";
 import { attr, attrBool, escapeXml, findChild } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 import {
   DocumentAttributeNamespaces,
   documentNamespaceAttributes,
 } from "@parts/document/document-attributes";
+import { CharacterSet } from "@parts/fonts/font";
 import type {
   EmbeddedFontOptions,
   EmbeddedFontPartName,
@@ -63,6 +64,12 @@ const EMBED_FONT_ELEMENTS: readonly EmbeddedFontPartName[] = [
   "embedItalic",
   "embedBoldItalic",
 ];
+
+const CHARACTER_SET_VALUES = new Set<string>(Object.values(CharacterSet));
+
+function isCharacterSet(value: string): value is NonNullable<EmbeddedFontOptions["characterSet"]> {
+  return CHARACTER_SET_VALUES.has(value);
+}
 
 function embeddedFontXml(partName: EmbeddedFontPartName, part: EmbeddedFontPartWithKey): string {
   if (part.embedRid === undefined) return "";
@@ -115,7 +122,11 @@ function fontXml(font: FontTableFont): string {
 
 // ── Descriptor ──
 
-export const fontTableDesc: CustomDescriptor<FontTableInput> = {
+export const fontTableDesc: CustomDescriptor<
+  FontTableInput,
+  WriteContext,
+  { fonts: FontTableFont[] }
+> = {
   kind: "custom",
 
   stringify(opts, _ctx) {
@@ -173,7 +184,17 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
       const charsetEl = findChild(child, "w:charset");
       if (charsetEl) {
         const val = attr(charsetEl, "w:val");
-        if (val) font.characterSet = val as EmbeddedFontOptions["characterSet"];
+        if (val !== undefined) {
+          if (!isCharacterSet(val)) {
+            throw new DocxParseError(
+              `Invalid font character set "${val}".`,
+              "word/fontTable.xml",
+              "w:charset",
+              "invalid-enumeration",
+            );
+          }
+          font.characterSet = val;
+        }
         const csName = attr(charsetEl, "w:characterSet");
         if (csName) font.characterSetName = csName;
       }

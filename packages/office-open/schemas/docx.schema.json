@@ -20549,6 +20549,39 @@
                 "$ref": "#/definitions/RunOptions"
               },
               {
+                "additionalProperties": false,
+                "properties": {
+                  "symbolRun": {
+                    "$ref": "#/definitions/SymbolRunOptions"
+                  }
+                },
+                "required": ["symbolRun"],
+                "title": "symbolRun",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "object": {
+                    "$ref": "#/definitions/ObjectElementOptions"
+                  }
+                },
+                "required": ["object"],
+                "title": "object",
+                "type": "object"
+              },
+              {
+                "additionalProperties": false,
+                "properties": {
+                  "pict": {
+                    "$ref": "#/definitions/PictOptions"
+                  }
+                },
+                "required": ["pict"],
+                "title": "pict",
+                "type": "object"
+              },
+              {
                 "type": "string"
               }
             ]
@@ -28867,6 +28900,39 @@
           },
           "required": ["proofErr"],
           "title": "proofErr",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "symbolRun": {
+              "$ref": "#/definitions/SymbolRunOptions"
+            }
+          },
+          "required": ["symbolRun"],
+          "title": "symbolRun",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "object": {
+              "$ref": "#/definitions/ObjectElementOptions"
+            }
+          },
+          "required": ["object"],
+          "title": "object",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "pict": {
+              "$ref": "#/definitions/PictOptions"
+            }
+          },
+          "required": ["pict"],
+          "title": "pict",
           "type": "object"
         },
         {

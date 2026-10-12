@@ -3,7 +3,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 import { generateDocument, parseDocument, parseArchive } from "@office-open/docx";
-import type { SectionOptions } from "@office-open/docx";
+import type { SectionChild, SectionOptions } from "@office-open/docx";
 import { parse, stringify } from "@office-open/xml";
 import { strFromU8 } from "fflate";
 
@@ -972,7 +972,9 @@ async function main() {
   // Verify customXml (section 15)
   const sec15 = parsed.sections![14];
   if (!sec15) throw new Error("section 15 not found in parsed document");
-  const customXmlChild = sec15.children!.find((c: any) => "customXml" in c) as any;
+  const customXmlChild = sec15.children?.find(
+    (child): child is Extract<SectionChild, { customXml: unknown }> => "customXml" in child,
+  );
   assert("customXml element parsed", customXmlChild?.customXml?.element === "myElement");
   assert("customXml uri parsed", customXmlChild?.customXml?.uri === "http://example.com/ns");
   assert(
@@ -985,17 +987,13 @@ async function main() {
   );
 
   // Verify section properties textDirection
-  const sec15Props = sec15.properties as any;
-  assert("textDirection parsed", sec15Props?.textDirection === "lrTb");
+  assert("textDirection parsed", sec15.properties?.textDirection === "lrTb");
 
   // Verify webSettings
-  assert("webSettings parsed", (parsed as any).webSettings !== undefined);
-  assert(
-    "webSettings.optimizeForBrowser parsed",
-    (parsed as any).webSettings?.optimizeForBrowser === true,
-  );
-  assert("webSettings.allowPNG parsed", (parsed as any).webSettings?.allowPNG === true);
-  assert("webSettings.pixelsPerInch parsed", (parsed as any).webSettings?.pixelsPerInch === 96);
+  assert("webSettings parsed", parsed.webSettings !== undefined);
+  assert("webSettings.optimizeForBrowser parsed", parsed.webSettings?.optimizeForBrowser === true);
+  assert("webSettings.allowPNG parsed", parsed.webSettings?.allowPNG === true);
+  assert("webSettings.pixelsPerInch parsed", parsed.webSettings?.pixelsPerInch === 96);
 
   // 5. Round-trip: re-generate from parsed data → verify structural consistency
   console.log("\n--- Round-trip validation ---");

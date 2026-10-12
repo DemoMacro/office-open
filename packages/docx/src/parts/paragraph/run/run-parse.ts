@@ -452,8 +452,24 @@ export type ParsedRunChild =
   | { symbolRun: SymbolRunOptions }
   | { positionalTab: PositionalTabOptions };
 
+type ParsedSymbolRunChild = Extract<ParsedRunChild, { symbolRun: SymbolRunOptions }>;
+type ParsedObjectChild = Extract<ParsedRunChild, { object: ObjectElementOptions }>;
+type ParsedPictChild = Extract<ParsedRunChild, { pict: PictOptions }>;
+
+function isSymbolRunChild(child: ParsedRunChild): child is ParsedSymbolRunChild {
+  return typeof child === "object" && "symbolRun" in child;
+}
+
+function isObjectChild(child: ParsedRunChild): child is ParsedObjectChild {
+  return typeof child === "object" && "object" in child;
+}
+
+function isPictChild(child: ParsedRunChild): child is ParsedPictChild {
+  return typeof child === "object" && "pict" in child;
+}
+
 function parseRubyContent(el: Element, ctx: DocxReadContext): RubyContentOptions {
-  const children: (RunOptions | string)[] = [];
+  const children: NonNullable<RubyContentOptions["children"]> = [];
   for (const child of el.elements ?? []) {
     if (child.type !== "element" || child.name !== "w:r") continue;
     const run = parsedRunToOptions(parseRun(child, ctx));
@@ -878,7 +894,12 @@ const SYMBOL_TO_CHILD = new Map<symbol, Record<string, true>>([
 
 export function parsedRunToOptions(
   parsed: ReturnType<typeof parseRun>,
-): RunOptions | { commentReference: number } {
+):
+  | RunOptions
+  | { commentReference: number }
+  | ParsedSymbolRunChild
+  | ParsedObjectChild
+  | ParsedPictChild {
   const contentChildren = parsed.children;
   const first = contentChildren[0];
   const firstUnpreservedText =
@@ -954,12 +975,9 @@ export function parsedRunToOptions(
   // extends RunOptions, so the run properties merge into the symbolRun itself —
   // the stringify path serializes them from there. Without this a sym run
   // carrying w:rPr falls through to the text collection loop and is dropped.
-  const symbolIdx = nonRefChildren.findIndex(
-    (c) => typeof c === "object" && c !== null && "symbolRun" in c,
-  );
-  if (symbolIdx >= 0 && nonRefChildren.length === 1) {
-    const sym = (nonRefChildren[symbolIdx] as unknown as { symbolRun: Record<string, unknown> })
-      .symbolRun;
+  const symbolChild = nonRefChildren.find(isSymbolRunChild);
+  if (symbolChild && nonRefChildren.length === 1) {
+    const sym = symbolChild.symbolRun;
     return {
       symbolRun: {
         ...parsed.properties,
@@ -968,41 +986,35 @@ export function parsedRunToOptions(
         ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
         ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
       },
-    } as unknown as RunOptions;
+    };
   }
 
   // If the run contains only an OLE object (w:object), return it directly with
   // any run properties — an OLE object occupies its own run. Mixed with other
   // content it stays in children[] (handled below, order-preserving).
-  const objectIdx = nonRefChildren.findIndex(
-    (c) => typeof c === "object" && c !== null && "object" in c,
-  );
-  if (objectIdx >= 0 && nonRefChildren.length === 1) {
-    const objectChild = nonRefChildren[objectIdx] as { object: ObjectElementOptions };
+  const objectChild = nonRefChildren.find(isObjectChild);
+  if (objectChild && nonRefChildren.length === 1) {
     return {
       ...parsed.properties,
       ...objectChild,
       ...(parsed.additionRsid ? { additionRsid: parsed.additionRsid } : {}),
       ...(parsed.runPropertiesRsid ? { runPropertiesRsid: parsed.runPropertiesRsid } : {}),
       ...(parsed.deletionRsid ? { deletionRsid: parsed.deletionRsid } : {}),
-    } as unknown as RunOptions;
+    };
   }
 
   // A VML picture (w:pict) likewise occupies its own run when alone.
-  const pictIdx = nonRefChildren.findIndex(
-    (c) => typeof c === "object" && c !== null && "pict" in c,
-  );
-  if (pictIdx >= 0 && nonRefChildren.length === 1) {
-    const pictChild = nonRefChildren[pictIdx] as unknown as { pict: PictOptions };
+  const pictChild = nonRefChildren.find(isPictChild);
+  if (pictChild && nonRefChildren.length === 1) {
     if (parsed.additionRsid) pictChild.pict.runAdditionRsid = parsed.additionRsid;
     if (parsed.runPropertiesRsid) pictChild.pict.runPropertiesRsid = parsed.runPropertiesRsid;
     if (parsed.deletionRsid) pictChild.pict.runDeletionRsid = parsed.deletionRsid;
-    return { ...parsed.properties, ...pictChild } as unknown as RunOptions;
+    return { ...parsed.properties, ...pictChild };
   }
-  const hasBlockChild = objectIdx >= 0 || pictIdx >= 0;
+  const hasBlockChild = objectChild !== undefined || pictChild !== undefined;
   // A symbol run mixed with other content must stay in children[] form — the
   // text collection loop below would otherwise drop the symbolRun wrapper.
-  const hasMixedSymbol = symbolIdx >= 0 && nonRefChildren.length > 1;
+  const hasMixedSymbol = symbolChild !== undefined && nonRefChildren.length > 1;
 
   // Collect text and breaks
   const textParts: string[] = [];
