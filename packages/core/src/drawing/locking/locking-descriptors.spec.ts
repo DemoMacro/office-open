@@ -86,6 +86,15 @@ describe("groupLockingDesc", () => {
     expect(result.noUngrp).toBe(true);
     expect(result.noSelect).toBe(false);
   });
+
+  it("ignores shape-only locking attributes", () => {
+    const doc = parseXml('<a:grpSpLocks noEditPoints="1" noUngrp="1"/>');
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parse(groupLockingDesc, el, {} as ReadContext);
+    expect(result.noUngrp).toBe(true);
+    expect((result as Record<string, boolean | undefined>).noEditPoints).toBeUndefined();
+  });
 });
 
 describe("graphicFrameLockingDesc", () => {
@@ -99,6 +108,15 @@ describe("graphicFrameLockingDesc", () => {
     expect(result.noGrp).toBe(true);
     expect(result.noDrilldown).toBe(true);
     expect(result.noSelect).toBe(false);
+  });
+
+  it("ignores picture-only locking attributes", () => {
+    const doc = parseXml('<a:graphicFrameLocks noCrop="1" noDrilldown="1"/>');
+    const el = doc.elements?.[0];
+    if (!el) throw new Error("parsed document has no root element");
+    const result = parse(graphicFrameLockingDesc, el, {} as ReadContext);
+    expect(result.noDrilldown).toBe(true);
+    expect((result as Record<string, boolean | undefined>).noCrop).toBeUndefined();
   });
 });
 

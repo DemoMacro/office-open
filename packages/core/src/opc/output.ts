@@ -78,10 +78,11 @@ export const convertOutput = <T extends OutputType>(
     case "binarystring":
       return strFromU8(data, true) as OutputByType[T];
     case "array":
-      return [...data] as unknown as OutputByType[T];
-    /* V8 ignore next */
-    default:
-      return data as unknown as OutputByType[T];
+      return [...data] as OutputByType["array"] as OutputByType[T];
+    default: {
+      const unsupportedType: never = type;
+      throw new TypeError(`Unsupported output type: ${String(unsupportedType)}`);
+    }
   }
 };
 /* V8 ignore stop */

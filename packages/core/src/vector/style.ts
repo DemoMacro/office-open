@@ -97,7 +97,7 @@ const NUMERIC = /^-?\d+(\.\d+)?$/;
  * {@link stringifyVmlStyle}. Keys outside the map are dropped.
  */
 export function parseVmlShapeStyle(record: Record<string, string>): VmlShapeStyle {
-  const style: Partial<Record<keyof VmlShapeStyle, unknown>> = {};
+  const style: Partial<Record<keyof VmlShapeStyle, string | number | boolean>> = {};
   for (const [key, value] of Object.entries(record)) {
     const field = keyToStyleMap[key];
     if (!field) continue;
@@ -109,7 +109,7 @@ export function parseVmlShapeStyle(record: Record<string, string>): VmlShapeStyl
       style[field] = value;
     }
   }
-  return style as unknown as VmlShapeStyle;
+  return style as VmlShapeStyle;
 }
 
 /**

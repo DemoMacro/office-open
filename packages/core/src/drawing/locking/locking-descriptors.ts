@@ -32,16 +32,39 @@ const BASE_LOCKING_KEYS: readonly (keyof BaseLockingOptions & string)[] = [
   "noChangeShapeType",
 ];
 
-const SHAPE_EXTRA_KEYS: readonly (keyof ShapeLockingOptions & string)[] = ["noTextEdit"];
-const PICTURE_EXTRA_KEYS: readonly (keyof PictureLockingOptions & string)[] = ["noCrop"];
-const GROUP_EXTRA_KEYS: readonly (keyof GroupLockingOptions & string)[] = ["noUngrp"];
-const FRAME_EXTRA_KEYS: readonly (keyof GraphicFrameLockingOptions & string)[] = ["noDrilldown"];
+const SHAPE_LOCKING_KEYS: readonly (keyof ShapeLockingOptions & string)[] = [
+  ...BASE_LOCKING_KEYS,
+  "noTextEdit",
+];
+const PICTURE_LOCKING_KEYS: readonly (keyof PictureLockingOptions & string)[] = [
+  ...BASE_LOCKING_KEYS,
+  "noCrop",
+];
+const GROUP_LOCKING_KEYS: readonly (keyof GroupLockingOptions & string)[] = [
+  "noGrp",
+  "noUngrp",
+  "noSelect",
+  "noRot",
+  "noChangeAspect",
+  "noMove",
+  "noResize",
+];
+const FRAME_LOCKING_KEYS: readonly (keyof GraphicFrameLockingOptions & string)[] = [
+  "noGrp",
+  "noDrilldown",
+  "noSelect",
+  "noChangeAspect",
+  "noMove",
+  "noResize",
+];
+
+type LockingOptions = BaseLockingOptions | GroupLockingOptions | GraphicFrameLockingOptions;
 
 // ── Helper: stringify boolean attributes ──
 
-function stringifyLockingAttrs(
-  opts: Readonly<Record<string, boolean | undefined>>,
-  keys: readonly string[],
+function stringifyLockingAttrs<T extends LockingOptions>(
+  opts: T,
+  keys: readonly (keyof T & string)[],
 ): string {
   const parts: string[] = [];
   for (const key of keys) {
@@ -52,36 +75,36 @@ function stringifyLockingAttrs(
   return parts.length ? " " + parts.join(" ") : "";
 }
 
-function readLockingAttrs(el: XmlElement, keys: readonly string[]): Record<string, boolean> {
-  const result: Record<string, boolean> = {};
-  if (!el.attributes) return result;
+function readLockingAttrs<T extends LockingOptions, K extends keyof T & string>(
+  el: XmlElement,
+  keys: readonly K[],
+): T {
+  const result: Partial<Record<K, boolean>> = {};
+  const attrs = el.attributes;
+  if (!attrs) return result as T;
   for (const key of keys) {
-    const val = el.attributes[key];
+    const val = attrs[key];
     if (val !== undefined) result[key] = parseOnOff(val) ?? false;
   }
-  return result;
+  return result as T;
 }
 
 /** One locking descriptor: element tag plus the base keys and any extras. */
-function createLockingDesc<T extends BaseLockingOptions>(
+function createLockingDesc<T extends LockingOptions>(
   tag: string,
-  extraKeys: readonly string[] = [],
+  keys: readonly (keyof T & string)[],
 ): CustomDescriptor<T> {
-  const allKeys = [...BASE_LOCKING_KEYS, ...extraKeys];
   return {
     kind: "custom",
     stringify(opts, _ctx) {
-      const attrStr = stringifyLockingAttrs(
-        opts as unknown as Record<string, boolean | undefined>,
-        allKeys,
-      );
+      const attrStr = stringifyLockingAttrs(opts, keys);
       // An empty <a:*Locks/> container is meaningful (locks present, none set)
       // and round-trips as {} — only an absent container stays undefined.
       if (!attrStr) return `<${tag}/>`;
       return `<${tag}${attrStr}/>`;
     },
     parse(el, _ctx) {
-      return readLockingAttrs(el, allKeys) as unknown as T;
+      return readLockingAttrs(el, keys);
     },
   };
 }
@@ -89,17 +112,17 @@ function createLockingDesc<T extends BaseLockingOptions>(
 // ── Locking descriptors ──
 
 export const shapeLockingDesc: CustomDescriptor<ShapeLockingOptions> =
-  createLockingDesc<ShapeLockingOptions>("a:spLocks", SHAPE_EXTRA_KEYS);
+  createLockingDesc<ShapeLockingOptions>("a:spLocks", SHAPE_LOCKING_KEYS);
 
 export const pictureLockingDesc: CustomDescriptor<PictureLockingOptions> =
-  createLockingDesc<PictureLockingOptions>("a:picLocks", PICTURE_EXTRA_KEYS);
+  createLockingDesc<PictureLockingOptions>("a:picLocks", PICTURE_LOCKING_KEYS);
 
 export const groupLockingDesc: CustomDescriptor<GroupLockingOptions> =
-  createLockingDesc<GroupLockingOptions>("a:grpSpLocks", GROUP_EXTRA_KEYS);
+  createLockingDesc<GroupLockingOptions>("a:grpSpLocks", GROUP_LOCKING_KEYS);
 
 export const graphicFrameLockingDesc: CustomDescriptor<GraphicFrameLockingOptions> =
-  createLockingDesc<GraphicFrameLockingOptions>("a:graphicFrameLocks", FRAME_EXTRA_KEYS);
+  createLockingDesc<GraphicFrameLockingOptions>("a:graphicFrameLocks", FRAME_LOCKING_KEYS);
 
 // CT_ConnectorLocking = AG_Locking (base keys only)
 export const connectorLockingDesc: CustomDescriptor<ConnectorLockingOptions> =
-  createLockingDesc<ConnectorLockingOptions>("a:cxnSpLocks");
+  createLockingDesc<ConnectorLockingOptions>("a:cxnSpLocks", BASE_LOCKING_KEYS);

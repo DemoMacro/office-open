@@ -457,7 +457,7 @@ const PATH_ATTR: readonly VmlAttrSpec[] = [{ field: "path", attr: "path", kind: 
 
 /** Serialize the shared attribute vocabulary (style special-cased) plus extras. */
 function stringifyShapeAttrs(
-  opts: Record<string, unknown>,
+  opts: VmlBaseShapeFields,
   extraSpecs: readonly VmlAttrSpec[] = [],
 ): string {
   let attrStr = stringifyVmlAttributes(opts, [...ALL_SHAPE_ATTRS, ...extraSpecs, ...PATH_ATTR]);
@@ -658,7 +658,7 @@ function parseShapeElements(el: XmlElement, out: Record<string, unknown>): void 
 /** Generic shape element serializer: tag + shared/extra attrs + children. */
 function stringifyShapeElement(
   tag: string,
-  opts: Record<string, unknown>,
+  opts: VmlBaseShapeFields,
   extraSpecs: readonly VmlAttrSpec[] = [],
   childrenXml = "",
 ): string {
@@ -684,12 +684,7 @@ export function stringifyVmlShape(opts: VmlShapeOptions): string {
     children += stringifyVmlEquationXml(opts.equationxmlElement);
   }
   if (opts.iscomment !== undefined) children += stringifyVmlIsComment(opts.iscomment);
-  return stringifyShapeElement(
-    "v:shape",
-    opts as unknown as Record<string, unknown>,
-    SHAPE_EXTRA_ATTRS,
-    children,
-  );
+  return stringifyShapeElement("v:shape", opts, SHAPE_EXTRA_ATTRS, children);
 }
 
 /** Parse a v:shape element. */
@@ -715,12 +710,7 @@ export function stringifyVmlShapetype(opts: VmlShapetypeOptions): string {
   // CT_Shapetype is a sequence: the o:complex extension slot comes last.
   let children = stringifyShapeElements(opts);
   if (opts.complex !== undefined) children += stringifyVmlComplex(opts.complex);
-  return stringifyShapeElement(
-    "v:shapetype",
-    opts as unknown as Record<string, unknown>,
-    SHAPETYPE_EXTRA_ATTRS,
-    children,
-  );
+  return stringifyShapeElement("v:shapetype", opts, SHAPETYPE_EXTRA_ATTRS, children);
 }
 
 /** Parse a v:shapetype element. */
@@ -859,10 +849,7 @@ export function stringifyVmlBackground(opts: VmlBackgroundOptions): string {
   // CT_Background carries AG_Id + AG_Fill + the o:bw* attributes only — it is
   // not an AG_AllCoreAttributes host, so it must not join the shared shape
   // attribute table (that would double-emit id).
-  const attrStr = stringifyVmlAttributes(
-    opts as unknown as Record<string, unknown>,
-    BACKGROUND_ATTRS,
-  );
+  const attrStr = stringifyVmlAttributes(opts, BACKGROUND_ATTRS);
   const fillXml = opts.fill !== undefined ? stringifyVmlFill(opts.fill) : "";
   return fillXml !== ""
     ? `<v:background${attrStr}>${fillXml}</v:background>`
@@ -886,12 +873,7 @@ export function parseVmlBackground(el: XmlElement): VmlBackgroundOptions {
 
 /** Serialize v:arc. */
 export function stringifyVmlArc(opts: VmlArcOptions): string {
-  return stringifyShapeElement(
-    "v:arc",
-    opts as unknown as Record<string, unknown>,
-    ARC_ATTRS,
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:arc", opts, ARC_ATTRS, stringifyShapeElements(opts));
 }
 
 /** Parse a v:arc element. */
@@ -904,12 +886,7 @@ export function parseVmlArc(el: XmlElement): VmlArcOptions {
 
 /** Serialize v:curve. */
 export function stringifyVmlCurve(opts: VmlCurveOptions): string {
-  return stringifyShapeElement(
-    "v:curve",
-    opts as unknown as Record<string, unknown>,
-    CURVE_ATTRS,
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:curve", opts, CURVE_ATTRS, stringifyShapeElements(opts));
 }
 
 /** Parse a v:curve element. */
@@ -922,12 +899,7 @@ export function parseVmlCurve(el: XmlElement): VmlCurveOptions {
 
 /** Serialize v:image. */
 export function stringifyVmlImage(opts: VmlImageOptions): string {
-  return stringifyShapeElement(
-    "v:image",
-    opts as unknown as Record<string, unknown>,
-    IMAGE_ATTRS,
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:image", opts, IMAGE_ATTRS, stringifyShapeElements(opts));
 }
 
 /** Parse a v:image element. */
@@ -940,12 +912,7 @@ export function parseVmlImage(el: XmlElement): VmlImageOptions {
 
 /** Serialize v:line. */
 export function stringifyVmlLine(opts: VmlLineOptions): string {
-  return stringifyShapeElement(
-    "v:line",
-    opts as unknown as Record<string, unknown>,
-    LINE_ATTRS,
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:line", opts, LINE_ATTRS, stringifyShapeElements(opts));
 }
 
 /** Parse a v:line element. */
@@ -958,12 +925,7 @@ export function parseVmlLine(el: XmlElement): VmlLineOptions {
 
 /** Serialize v:oval. */
 export function stringifyVmlOval(opts: VmlOvalOptions): string {
-  return stringifyShapeElement(
-    "v:oval",
-    opts as unknown as Record<string, unknown>,
-    [],
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:oval", opts, [], stringifyShapeElements(opts));
 }
 
 /** Parse a v:oval element. */
@@ -978,12 +940,7 @@ export function parseVmlOval(el: XmlElement): VmlOvalOptions {
 export function stringifyVmlPolyline(opts: VmlPolylineOptions): string {
   const children =
     stringifyShapeElements(opts) + (opts.ink !== undefined ? stringifyVmlInk(opts.ink) : "");
-  return stringifyShapeElement(
-    "v:polyline",
-    opts as unknown as Record<string, unknown>,
-    POLYLINE_ATTRS,
-    children,
-  );
+  return stringifyShapeElement("v:polyline", opts, POLYLINE_ATTRS, children);
 }
 
 /** Parse a v:polyline element. */
@@ -1002,12 +959,7 @@ export function parseVmlPolyline(el: XmlElement): VmlPolylineOptions {
 
 /** Serialize v:rect. */
 export function stringifyVmlRect(opts: VmlRectOptions): string {
-  return stringifyShapeElement(
-    "v:rect",
-    opts as unknown as Record<string, unknown>,
-    [],
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:rect", opts, [], stringifyShapeElements(opts));
 }
 
 /** Parse a v:rect element. */
@@ -1020,12 +972,7 @@ export function parseVmlRect(el: XmlElement): VmlRectOptions {
 
 /** Serialize v:roundrect. */
 export function stringifyVmlRoundRect(opts: VmlRoundRectOptions): string {
-  return stringifyShapeElement(
-    "v:roundrect",
-    opts as unknown as Record<string, unknown>,
-    ROUNDRECT_ATTRS,
-    stringifyShapeElements(opts),
-  );
+  return stringifyShapeElement("v:roundrect", opts, ROUNDRECT_ATTRS, stringifyShapeElements(opts));
 }
 
 /** Parse a v:roundrect element. */

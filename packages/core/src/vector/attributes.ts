@@ -252,13 +252,10 @@ export function parseVmlTrueFalse(value: string): boolean {
  * space included when non-empty). The `style` field of
  * {@link VmlCoreAttributes} joins here so callers need a single call.
  */
-export function stringifyVmlAttributes(
-  opts: Record<string, unknown>,
-  specs: readonly VmlAttrSpec[],
-): string {
+export function stringifyVmlAttributes(opts: object, specs: readonly VmlAttrSpec[]): string {
   const parts: string[] = [];
   for (const spec of specs) {
-    const value = opts[spec.field];
+    const value = (opts as Record<string, unknown>)[spec.field];
     if (value === undefined) continue;
     const text =
       spec.kind === "trueFalse"

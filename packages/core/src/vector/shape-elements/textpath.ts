@@ -74,7 +74,7 @@ function parseVmlTextPathStyle(styleStr: string): VmlTextPathStyle {
     const field = KEY_TO_TEXT_PATH_FIELD[key];
     if (field) style[field] = val;
   }
-  return style as VmlTextPathStyle;
+  return style;
 }
 
 /** v:textpath options (CT_TextPath). */
@@ -101,10 +101,7 @@ const TEXT_PATH_ATTRS: readonly VmlAttrSpec[] = [
 
 /** Serialize v:textpath. */
 export function stringifyVmlTextPath(opts: VmlTextPathOptions): string {
-  const attrStr = stringifyVmlAttributes(
-    opts as unknown as Record<string, unknown>,
-    TEXT_PATH_ATTRS,
-  );
+  const attrStr = stringifyVmlAttributes(opts, TEXT_PATH_ATTRS);
   if (opts.style !== undefined) {
     return `<v:textpath${attrStr} style="${escapeXml(stringifyVmlTextPathStyle(opts.style))}"/>`;
   }
