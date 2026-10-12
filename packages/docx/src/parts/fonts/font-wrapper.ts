@@ -69,7 +69,7 @@ export function embeddedFontParts<
 >(font: FontTableFaces<TPart>): [EmbeddedFontPartName, TPart][] {
   return EMBEDDED_FONT_PART_NAMES.flatMap((partName) => {
     const part = font[partName];
-    return part ? [[partName, part as TPart] as const] : [];
+    return part ? [[partName, part] as const] : [];
   });
 }
 

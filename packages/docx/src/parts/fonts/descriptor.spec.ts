@@ -2,6 +2,7 @@ import type { ReadContext } from "@office-open/core/descriptor";
 import { parse as parseXml } from "@office-open/xml";
 import { describe, expect, it } from "vite-plus/test";
 
+import { DocxParseError } from "../../errors";
 import { fontTableDesc } from "./descriptor";
 import type { FontTableInput } from "./descriptor";
 
@@ -119,6 +120,16 @@ describe("fontTableDesc round-trip", () => {
   it("round-trips empty fonts", () => {
     const result = roundTrip({ fonts: [] });
     expect(result.fonts).toHaveLength(0);
+  });
+
+  it("rejects a font declaration without required @w:name", () => {
+    const xml =
+      '<w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+      '<w:font><w:pitch w:val="variable"/></w:font></w:fonts>';
+    const el = parseXml(xml).elements?.[0];
+    if (!el) throw new Error("no root");
+
+    expect(() => fontTableDesc.parse(el, readCtx)).toThrow(DocxParseError);
   });
 
   it("round-trips a markup-compatibility gated font declaration", () => {

@@ -13,13 +13,18 @@ import {
   DocumentAttributeNamespaces,
   documentNamespaceAttributes,
 } from "@parts/document/document-attributes";
-import type { FontSignature } from "@parts/fonts/font-table";
-import type { EmbeddedFontOptions, EmbeddedFontPartName } from "@parts/fonts/font-table";
+import type {
+  EmbeddedFontOptions,
+  EmbeddedFontPartName,
+  FontSignature,
+} from "@parts/fonts/font-table";
 import {
   embeddedFontElementName,
   type FontTableFont,
   type EmbeddedFontPartWithKey,
 } from "@parts/fonts/font-wrapper";
+
+import { DocxParseError } from "../../errors";
 
 // ── Input ──
 
@@ -69,10 +74,6 @@ function embeddedFontXml(partName: EmbeddedFontPartName, part: EmbeddedFontPartW
 }
 
 function fontXml(font: FontTableFont): string {
-  const embeddedFaces = font as unknown as Record<
-    EmbeddedFontPartName,
-    EmbeddedFontPartWithKey | undefined
-  >;
   const parts: string[] = [`<w:font w:name="${escapeXml(font.name)}">`];
 
   // CT_Font child order (wml.xsd): altName, panose1, charset, family,
@@ -88,9 +89,7 @@ function fontXml(font: FontTableFont): string {
       : "";
     parts.push(`<w:charset${valAttr}${csAttr}/>`);
   }
-  const hasEmbeddedFace = EMBED_FONT_ELEMENTS.some(
-    (name) => embeddedFaces[name]?.embedRid !== undefined,
-  );
+  const hasEmbeddedFace = EMBED_FONT_ELEMENTS.some((name) => font[name]?.embedRid !== undefined);
   const family = font.family ?? (hasEmbeddedFace ? "auto" : undefined);
   if (family) parts.push(`<w:family w:val="${escapeXml(family)}"/>`);
   if (font.notTrueType !== undefined) {
@@ -106,7 +105,7 @@ function fontXml(font: FontTableFont): string {
     );
   }
   for (const partName of EMBED_FONT_ELEMENTS) {
-    const part = embeddedFaces[partName];
+    const part = font[partName];
     if (part) parts.push(embeddedFontXml(partName, part));
   }
 
@@ -147,10 +146,17 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
   parse(el, _ctx) {
     const fonts: FontTableFont[] = [];
     const pushFont = (child: Element, requires?: string) => {
-      const font: Partial<FontTableFont> = {};
+      const rawName = child.attributes?.["w:name"];
+      if (!rawName) {
+        throw new DocxParseError(
+          "Font declaration is missing required @w:name.",
+          "word/fontTable.xml",
+          "w:font",
+          "missing-required-attribute",
+        );
+      }
+      const font: FontTableFont = { name: String(rawName) };
       if (requires) font.requires = requires;
-      const name = child.attributes?.["w:name"];
-      if (name) font.name = String(name);
 
       const altNameEl = findChild(child, "w:altName");
       if (altNameEl) {
@@ -215,23 +221,18 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
         if (rid) part.embedRid = rid;
         const subsetted = attrBool(embedEl, "w:subsetted");
         if (subsetted !== undefined) part.subsetted = subsetted;
-        (font as Record<EmbeddedFontPartName, EmbeddedFontPartWithKey | undefined>)[partName] =
-          part;
+        font[partName] = part;
       }
       // Mirror the stringify-side defaults so a round-trip of a minimal
       // embedded face (family/pitch/sig filled in by the writer) parses back
       // to the same model instead of gaining explicit fields.
-      const embeddedFaces = font as unknown as Record<
-        EmbeddedFontPartName,
-        EmbeddedFontPartWithKey | undefined
-      >;
-      if (EMBED_FONT_ELEMENTS.some((name) => embeddedFaces[name]?.embedRid !== undefined)) {
+      if (EMBED_FONT_ELEMENTS.some((name) => font[name]?.embedRid !== undefined)) {
         font.family ??= "auto";
         font.pitch ??= "variable";
         font.sig ??= DEFAULT_SIG;
       }
 
-      fonts.push(font as FontTableFont);
+      fonts.push(font);
     };
     for (const child of el.elements ?? []) {
       if (child.name === "w:font") {
