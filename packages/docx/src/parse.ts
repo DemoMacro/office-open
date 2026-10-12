@@ -31,7 +31,7 @@ import { customPropertiesDesc } from "@parts/custom-properties";
 import { customizationsDesc } from "@parts/customizations/descriptor";
 import { endnotesDesc } from "@parts/endnotes/descriptor";
 import { fontTableDesc } from "@parts/fonts/descriptor";
-import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
+import { embeddedFontParts, type FontTableFont } from "@parts/fonts/font-wrapper";
 import { footnotesDesc } from "@parts/footnotes/descriptor";
 import { glossaryDesc } from "@parts/glossary-document";
 import { setNotesParseChild } from "@parts/notes/shared";
@@ -188,7 +188,7 @@ export interface DocxDocument {
  * instead of re-obfuscating (the fontKey already matches the bytes).
  */
 function resolveEmbeddedFontData(
-  fonts: EmbeddedFontOptionsWithKey[],
+  fonts: FontTableFont[],
   doc: ParsedArchive,
   fontTablePath = "word/fontTable.xml",
 ): void {
@@ -204,18 +204,20 @@ function resolveEmbeddedFontData(
     if (id && target) ridToPath.set(id, resolveRelationshipTarget(fontTablePath, target));
   }
   for (const font of fonts) {
-    if (!font.embedRid) continue;
-    const odttfPath = ridToPath.get(font.embedRid);
-    if (!odttfPath) continue;
-    // The Target is a URI (escaped); the ZIP entry may carry the raw name.
-    // Look up both forms and store the decoded path so compileDocument
-    // re-escapes it exactly once.
-    const decoded = decodeUriPath(odttfPath);
-    const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
-    if (bytes) {
-      font.data = Buffer.from(bytes);
-      font.rawOdttf = true;
-      font.odttfPath = decoded;
+    for (const [, part] of embeddedFontParts(font)) {
+      if (!part.embedRid) continue;
+      const odttfPath = ridToPath.get(part.embedRid);
+      if (!odttfPath) continue;
+      // The Target is a URI (escaped); the ZIP entry may carry the raw name.
+      // Look up both forms and store the decoded path so compileDocument
+      // re-escapes it exactly once.
+      const decoded = decodeUriPath(odttfPath);
+      const bytes = doc.getRaw(odttfPath) ?? doc.getRaw(decoded);
+      if (bytes) {
+        part.data = Buffer.from(bytes);
+        part.rawOdttf = true;
+        part.odttfPath = decoded;
+      }
     }
   }
 }
@@ -813,7 +815,7 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
       resolveEmbeddedFontData(ftResult.fonts, docx.doc);
       // embedRid is a resolve-time lookup key — the FontWrapper reassigns it
       // on generate, so it must not leak into the public options JSON.
-      opts.fonts = ftResult.fonts.map(({ embedRid: _embedRid, ...font }) => font);
+      opts.fonts = ftResult.fonts;
     }
   }
 

@@ -11,7 +11,15 @@ const FONT_DATA = new Uint8Array(64).fill(0x42);
 
 const options = (name: string) => ({
   sections: [{ children: [{ paragraph: { children: ["Embedded font"] } }] }],
-  fonts: [{ name, data: FONT_DATA, fontKey: "00000000-0000-0000-0000-000000000000" }],
+  fonts: [
+    {
+      name,
+      embedRegular: {
+        data: FONT_DATA,
+        fontKey: "00000000-0000-0000-0000-000000000000",
+      },
+    },
+  ],
 });
 
 describe("embedded font part names", () => {
@@ -26,7 +34,7 @@ describe("embedded font part names", () => {
 
   it("round-trips a non-ASCII font name through parse and re-generation", async () => {
     const parsed = await parseDocument(await generateDocument(options("Café Font")));
-    expect(parsed.fonts?.[0]?.odttfPath).toBe("word/fonts/Café Font.odttf");
+    expect(parsed.fonts?.[0]?.embedRegular?.odttfPath).toBe("word/fonts/Café Font.odttf");
 
     const zip = unzipSync(await generateDocument(parsed));
     expect(zip["word/fonts/Caf%C3%A9%20Font.odttf"]).toBeDefined();
@@ -43,7 +51,7 @@ describe("embedded font part names", () => {
     delete files["word/fonts/My%20Font.odttf"];
 
     const parsed = await parseDocument(zipSync(files));
-    expect(parsed.fonts?.[0]?.odttfPath).toBe("word/fonts/My Font.odttf");
-    expect(parsed.fonts?.[0]?.data).toBeDefined();
+    expect(parsed.fonts?.[0]?.embedRegular?.odttfPath).toBe("word/fonts/My Font.odttf");
+    expect(parsed.fonts?.[0]?.embedRegular?.data).toBeDefined();
   });
 });

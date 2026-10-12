@@ -9492,7 +9492,7 @@
     },
     "EmbeddedFontOptions": {
       "additionalProperties": false,
-      "description": "An embedded font (fontTable.xml w:font with w:embedRegular parts). Author with name/data only; the round-trip fields (rawOdttf/odttfPath/fontKey/ subsetted) carry source-file obfuscation state — do not hand-author.",
+      "description": "A font declaration. Author with `name` and up to four embedded faces; each face's round-trip fields carry source-file obfuscation state — do not hand-author.",
       "properties": {
         "altName": {
           "description": "Alternative font name",
@@ -9527,16 +9527,24 @@
           "description": "IANA character set name (w:charset/`@w:characterSet`, e.g. \"ISO-8859-1\").",
           "type": "string"
         },
-        "data": {
-          "$ref": "#/definitions/DataType",
-          "description": "Font file data (TTF, OTF): raw bytes, ArrayBuffer, or a base64 data URL."
+        "embedBold": {
+          "$ref": "#/definitions/EmbeddedFontPartOptions",
+          "description": "Embedded bold face (w:embedBold)."
+        },
+        "embedBoldItalic": {
+          "$ref": "#/definitions/EmbeddedFontPartOptions",
+          "description": "Embedded bold-italic face (w:embedBoldItalic)."
+        },
+        "embedItalic": {
+          "$ref": "#/definitions/EmbeddedFontPartOptions",
+          "description": "Embedded italic face (w:embedItalic)."
+        },
+        "embedRegular": {
+          "$ref": "#/definitions/EmbeddedFontPartOptions",
+          "description": "Embedded regular face (w:embedRegular)."
         },
         "family": {
           "description": "Font family classification (e.g. \"auto\", \"roman\", \"swiss\")",
-          "type": "string"
-        },
-        "fontKey": {
-          "description": "Internal round-trip: the obfuscation GUID (`w:fontKey`) read back from fontTable.xml, preserved verbatim so re-generated tables keep the same key. Undefined on authoring — a fresh key is generated for embedded fonts.",
           "type": "string"
         },
         "name": {
@@ -9547,10 +9555,6 @@
           "description": "Font is not a TrueType font (w:notTrueType). Word writes the bare element for true; `false` emits w:val=\"0\" explicitly.",
           "type": "boolean"
         },
-        "odttfPath": {
-          "description": "Internal: original .odttf part path (round-trip); preserves source file name.",
-          "type": "string"
-        },
         "panose1": {
           "description": "PANOSE-1 classification (10-digit hex string)",
           "type": "string"
@@ -9559,10 +9563,6 @@
           "description": "Font pitch (e.g. \"fixed\", \"variable\")",
           "type": "string"
         },
-        "rawOdttf": {
-          "description": "Internal round-trip flag: when set, `data` holds already-obfuscated .odttf bytes that must be copied verbatim instead of re-obfuscated.",
-          "type": "boolean"
-        },
         "requires": {
           "description": "Markup-compatibility namespace prefix gating this declaration (`mc:AlternateContent/mc:Choice/@Requires`, e.g. \"wpc\"). When set, the font is emitted inside an AlternateContent/Choice wrapper.",
           "type": "string"
@@ -9570,13 +9570,36 @@
         "sig": {
           "$ref": "#/definitions/FontSignature",
           "description": "Font signature (Unicode/code-page bitfields)"
-        },
-        "subsetted": {
-          "description": "Embedded font is subsetted rather than complete. Round-trip flag preserved from source embedRegular.",
-          "type": "boolean"
         }
       },
       "required": ["name"],
+      "type": "object"
+    },
+    "EmbeddedFontPartOptions": {
+      "additionalProperties": false,
+      "description": "One embedded font face (w:embedRegular, w:embedBold, …).",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataType",
+          "description": "Font file data (TTF, OTF): raw bytes, ArrayBuffer, or a base64 data URL."
+        },
+        "fontKey": {
+          "description": "Round-trip only: obfuscation GUID (`w:fontKey`) preserved verbatim. Undefined on authoring — a fresh key is generated for embedded fonts.",
+          "type": "string"
+        },
+        "odttfPath": {
+          "description": "Round-trip only: original .odttf part path; preserves the source name.",
+          "type": "string"
+        },
+        "rawOdttf": {
+          "description": "Round-trip only: `data` holds already-obfuscated .odttf bytes that must be copied verbatim instead of re-obfuscated.",
+          "type": "boolean"
+        },
+        "subsetted": {
+          "description": "Embedded font is subsetted rather than complete.",
+          "type": "boolean"
+        }
+      },
       "type": "object"
     },
     "EncryptedContainerOptions": {

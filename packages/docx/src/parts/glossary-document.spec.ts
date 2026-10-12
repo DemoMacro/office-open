@@ -403,7 +403,7 @@ describe("glossary companion parts", () => {
     expect(glossary?.webSettings).toEqual({});
     expect(glossary?.numbering?.abstractNumberings?.length).toBe(1);
     expect(glossary?.fonts?.[0]?.name).toBe("Emb");
-    expect(glossary?.fonts?.[0]?.data).toBeDefined();
+    expect(glossary?.fonts?.[0]?.embedRegular?.data).toBeDefined();
 
     const output = unzipSync(generateDocumentSync(options, { type: "uint8array" }));
     const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);

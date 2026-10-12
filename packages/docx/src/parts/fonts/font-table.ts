@@ -27,23 +27,34 @@ export interface FontSignature {
   csb1: string;
 }
 
+/** One embedded font face (w:embedRegular, w:embedBold, …). */
+export interface EmbeddedFontPartOptions {
+  /** Font file data (TTF, OTF): raw bytes, ArrayBuffer, or a base64 data URL. */
+  data?: DataType;
+  /**
+   * Round-trip only: `data` holds already-obfuscated .odttf bytes that must
+   * be copied verbatim instead of re-obfuscated.
+   */
+  rawOdttf?: boolean;
+  /** Round-trip only: original .odttf part path; preserves the source name. */
+  odttfPath?: string;
+  /**
+   * Round-trip only: obfuscation GUID (`w:fontKey`) preserved verbatim.
+   * Undefined on authoring — a fresh key is generated for embedded fonts.
+   */
+  fontKey?: string;
+  /** Embedded font is subsetted rather than complete (CT_FontRel `@subsetted`). */
+  subsetted?: boolean;
+}
+
 /**
- * Options for embedding a font in the document.
- *
- * `data` is optional: a parsed font table carries metadata-only declarations
- * (name/family/pitch/sig/...) for non-embedded fonts, which have no bytes to
- * embed and must still round-trip into fontTable.xml.
- */
-/**
- * An embedded font (fontTable.xml w:font with w:embedRegular parts). Author
- * with name/data only; the round-trip fields (rawOdttf/odttfPath/fontKey/
- * subsetted) carry source-file obfuscation state — do not hand-author.
+ * A font declaration. Author with `name` and up to four embedded faces; each
+ * face's round-trip fields carry source-file obfuscation state — do not
+ * hand-author.
  */
 export interface EmbeddedFontOptions {
   /** Font family name */
   name: string;
-  /** Font file data (TTF, OTF): raw bytes, ArrayBuffer, or a base64 data URL. */
-  data?: DataType;
   /** Character set/encoding for the font */
   characterSet?: (typeof CharacterSet)[keyof typeof CharacterSet];
   /** IANA character set name (w:charset/`@w:characterSet`, e.g. "ISO-8859-1"). */
@@ -63,24 +74,14 @@ export interface EmbeddedFontOptions {
   altName?: string;
   /** Font signature (Unicode/code-page bitfields) */
   sig?: FontSignature;
-  /**
-   * Internal round-trip flag: when set, `data` holds already-obfuscated
-   * .odttf bytes that must be copied verbatim instead of re-obfuscated.
-   */
-  rawOdttf?: boolean;
-  /** Internal: original .odttf part path (round-trip); preserves source file name. */
-  odttfPath?: string;
-  /**
-   * Internal round-trip: the obfuscation GUID (`w:fontKey`) read back from
-   * fontTable.xml, preserved verbatim so re-generated tables keep the same key.
-   * Undefined on authoring — a fresh key is generated for embedded fonts.
-   */
-  fontKey?: string;
-  /**
-   * Embedded font is subsetted rather than complete (CT_FontRel `@subsetted`).
-   * Round-trip flag preserved from source embedRegular.
-   */
-  subsetted?: boolean;
+  /** Embedded regular face (w:embedRegular). */
+  embedRegular?: EmbeddedFontPartOptions;
+  /** Embedded bold face (w:embedBold). */
+  embedBold?: EmbeddedFontPartOptions;
+  /** Embedded italic face (w:embedItalic). */
+  embedItalic?: EmbeddedFontPartOptions;
+  /** Embedded bold-italic face (w:embedBoldItalic). */
+  embedBoldItalic?: EmbeddedFontPartOptions;
   /**
    * Markup-compatibility namespace prefix gating this declaration
    * (`mc:AlternateContent/mc:Choice/@Requires`, e.g. "wpc"). When set, the
@@ -88,3 +89,13 @@ export interface EmbeddedFontOptions {
    */
   requires?: string;
 }
+
+/** Embedded face element names in CT_Font order. */
+export const EMBEDDED_FONT_PART_NAMES = [
+  "embedRegular",
+  "embedBold",
+  "embedItalic",
+  "embedBoldItalic",
+] as const;
+
+export type EmbeddedFontPartName = (typeof EMBEDDED_FONT_PART_NAMES)[number];

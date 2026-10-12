@@ -22,7 +22,8 @@ import {
 } from "@office-open/core";
 import type { CustomDescriptor } from "@office-open/core/descriptor";
 import { documentNamespaceDialect } from "@parts/document/document-attributes";
-import { FontWrapper } from "@parts/fonts/font-wrapper";
+import { EMBEDDED_FONT_PART_NAMES } from "@parts/fonts/font-table";
+import { defaultEmbeddedFontPath, embeddedFontParts, FontWrapper } from "@parts/fonts/font-wrapper";
 import type { NoteChild, NotesData } from "@parts/notes/shared";
 import { DefaultStylesFactory, stringifyDocDefaults } from "@parts/styles/factory";
 import type { StylesOptions } from "@parts/styles/styles";
@@ -166,14 +167,20 @@ export function compileGlossaryParts(
   let glossaryFontTable: FontWrapper | undefined;
   if (glossary.fonts?.length) {
     const taken = new Set(
-      ctx.fontTable.fontOptionsWithKey.map(
-        (font) => font.odttfPath ?? `word/fonts/${font.name.split(".")[0]}.odttf`,
+      ctx.fontTable.fontOptionsWithKey.flatMap((font) =>
+        embeddedFontParts(font).map(
+          ([partName, part]) => part.odttfPath ?? defaultEmbeddedFontPath(font.name, partName),
+        ),
       ),
     );
     for (const font of glossary.fonts) {
-      if (font.data === undefined || font.odttfPath) continue;
-      const fallback = `word/fonts/${font.name.split(".")[0]}.odttf`;
-      if (taken.has(fallback)) font.odttfPath = `word/fonts/glossary/${font.name}.odttf`;
+      for (const partName of EMBEDDED_FONT_PART_NAMES) {
+        const part = font[partName];
+        if (!part || part.data === undefined || part.odttfPath) continue;
+        const fallback = defaultEmbeddedFontPath(font.name, partName);
+        if (taken.has(fallback))
+          part.odttfPath = `word/fonts/glossary/${font.name}.${partName}.odttf`;
+      }
     }
     glossaryFontTable = new FontWrapper(glossary.fonts, ctx.reproducible, "glossary");
   }

@@ -7,7 +7,7 @@ import { CharacterSet, generateDocument } from "@office-open/docx";
 const font = readFileSync("./demo/assets/Pacifico.ttf");
 
 const buffer = await generateDocument({
-  fonts: [{ characterSet: CharacterSet.ANSI, data: font, name: "Pacifico" }],
+  fonts: [{ characterSet: CharacterSet.ANSI, embedRegular: { data: font }, name: "Pacifico" }],
   sections: [
     {
       children: [

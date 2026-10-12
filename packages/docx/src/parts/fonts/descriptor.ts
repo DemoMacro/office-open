@@ -14,12 +14,17 @@ import {
   documentNamespaceAttributes,
 } from "@parts/document/document-attributes";
 import type { FontSignature } from "@parts/fonts/font-table";
-import type { EmbeddedFontOptionsWithKey } from "@parts/fonts/font-wrapper";
+import type { EmbeddedFontOptions, EmbeddedFontPartName } from "@parts/fonts/font-table";
+import {
+  embeddedFontElementName,
+  type FontTableFont,
+  type EmbeddedFontPartWithKey,
+} from "@parts/fonts/font-wrapper";
 
 // ── Input ──
 
 export interface FontTableInput {
-  fonts: EmbeddedFontOptionsWithKey[];
+  fonts: FontTableFont[];
 }
 
 // ── XML helpers ──
@@ -47,7 +52,27 @@ const DEFAULT_SIG: FontSignature = {
   csb1: "00000000",
 };
 
-function fontXml(font: EmbeddedFontOptionsWithKey): string {
+const EMBED_FONT_ELEMENTS: readonly EmbeddedFontPartName[] = [
+  "embedRegular",
+  "embedBold",
+  "embedItalic",
+  "embedBoldItalic",
+];
+
+function embeddedFontXml(partName: EmbeddedFontPartName, part: EmbeddedFontPartWithKey): string {
+  if (part.embedRid === undefined) return "";
+  // ST_Guid is uppercase in canonical form — the SDK validator rejects a
+  // lowercase fontKey even though ISO's lexical space allows both cases.
+  const attrs = [`r:id="${part.embedRid}"`, `w:fontKey="{${(part.fontKey ?? "").toUpperCase()}}"`];
+  if (part.subsetted !== undefined) attrs.push(`w:subsetted="${part.subsetted ? 1 : 0}"`);
+  return `<${embeddedFontElementName(partName)} ${attrs.join(" ")}/>`;
+}
+
+function fontXml(font: FontTableFont): string {
+  const embeddedFaces = font as unknown as Record<
+    EmbeddedFontPartName,
+    EmbeddedFontPartWithKey | undefined
+  >;
   const parts: string[] = [`<w:font w:name="${escapeXml(font.name)}">`];
 
   // CT_Font child order (wml.xsd): altName, panose1, charset, family,
@@ -63,26 +88,26 @@ function fontXml(font: EmbeddedFontOptionsWithKey): string {
       : "";
     parts.push(`<w:charset${valAttr}${csAttr}/>`);
   }
-  const family = font.family ?? (font.embedRid ? "auto" : undefined);
+  const hasEmbeddedFace = EMBED_FONT_ELEMENTS.some(
+    (name) => embeddedFaces[name]?.embedRid !== undefined,
+  );
+  const family = font.family ?? (hasEmbeddedFace ? "auto" : undefined);
   if (family) parts.push(`<w:family w:val="${escapeXml(family)}"/>`);
   if (font.notTrueType !== undefined) {
     parts.push(font.notTrueType ? "<w:notTrueType/>" : '<w:notTrueType w:val="0"/>');
   }
-  const pitch = font.pitch ?? (font.embedRid ? "variable" : undefined);
+  const pitch = font.pitch ?? (hasEmbeddedFace ? "variable" : undefined);
   if (pitch) parts.push(`<w:pitch w:val="${escapeXml(pitch)}"/>`);
-  const sig = font.sig ?? (font.embedRid ? DEFAULT_SIG : undefined);
+  const sig = font.sig ?? (hasEmbeddedFace ? DEFAULT_SIG : undefined);
   if (sig) {
     parts.push(
       `<w:sig w:usb0="${sig.usb0}" w:usb1="${sig.usb1}" w:usb2="${sig.usb2}" ` +
         `w:usb3="${sig.usb3}" w:csb0="${sig.csb0}" w:csb1="${sig.csb1}"/>`,
     );
   }
-  if (font.embedRid) {
-    // ST_Guid is uppercase in canonical form — the SDK validator rejects a
-    // lowercase fontKey even though ISO's lexical space allows both cases.
-    const embedAttrs = [`r:id="${font.embedRid}"`, `w:fontKey="{${font.fontKey.toUpperCase()}}"`];
-    if (font.subsetted !== undefined) embedAttrs.push(`w:subsetted="${font.subsetted ? 1 : 0}"`);
-    parts.push(`<w:embedRegular ${embedAttrs.join(" ")}/>`);
+  for (const partName of EMBED_FONT_ELEMENTS) {
+    const part = embeddedFaces[partName];
+    if (part) parts.push(embeddedFontXml(partName, part));
   }
 
   parts.push("</w:font>");
@@ -120,9 +145,9 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
   },
 
   parse(el, _ctx) {
-    const fonts: EmbeddedFontOptionsWithKey[] = [];
+    const fonts: FontTableFont[] = [];
     const pushFont = (child: Element, requires?: string) => {
-      const font: Partial<EmbeddedFontOptionsWithKey> = { fontKey: "" };
+      const font: Partial<FontTableFont> = {};
       if (requires) font.requires = requires;
       const name = child.attributes?.["w:name"];
       if (name) font.name = String(name);
@@ -142,7 +167,7 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
       const charsetEl = findChild(child, "w:charset");
       if (charsetEl) {
         const val = attr(charsetEl, "w:val");
-        if (val) font.characterSet = val as EmbeddedFontOptionsWithKey["characterSet"];
+        if (val) font.characterSet = val as EmbeddedFontOptions["characterSet"];
         const csName = attr(charsetEl, "w:characterSet");
         if (csName) font.characterSetName = csName;
       }
@@ -180,29 +205,33 @@ export const fontTableDesc: CustomDescriptor<FontTableInput> = {
         if (Object.values(sig).some(Boolean)) font.sig = sig;
       }
 
-      // Obfuscation key + relationship id from embedRegular (the .odttf bytes
-      // are resolved separately by parse.ts via fontTable.xml.rels).
-      const embedEl = findChild(child, "w:embedRegular");
-      if (embedEl) {
+      for (const partName of EMBED_FONT_ELEMENTS) {
+        const embedEl = findChild(child, embeddedFontElementName(partName));
+        if (!embedEl) continue;
+        const part: EmbeddedFontPartWithKey = {};
         const rawKey = attr(embedEl, "w:fontKey");
-        if (rawKey) {
-          font.fontKey = rawKey.replace(/^\{\{|\}\}$/g, "").replace(/^\{|\}$/g, "");
-        }
+        if (rawKey) part.fontKey = rawKey.replace(/^\{\{|\}\}$/g, "").replace(/^\{|\}$/g, "");
         const rid = attr(embedEl, "r:id");
-        if (rid) font.embedRid = rid;
+        if (rid) part.embedRid = rid;
         const subsetted = attrBool(embedEl, "w:subsetted");
-        if (subsetted !== undefined) font.subsetted = subsetted;
+        if (subsetted !== undefined) part.subsetted = subsetted;
+        (font as Record<EmbeddedFontPartName, EmbeddedFontPartWithKey | undefined>)[partName] =
+          part;
       }
       // Mirror the stringify-side defaults so a round-trip of a minimal
-      // embedRegular (family/pitch/sig filled in by the writer) parses back
+      // embedded face (family/pitch/sig filled in by the writer) parses back
       // to the same model instead of gaining explicit fields.
-      if (font.embedRid) {
+      const embeddedFaces = font as unknown as Record<
+        EmbeddedFontPartName,
+        EmbeddedFontPartWithKey | undefined
+      >;
+      if (EMBED_FONT_ELEMENTS.some((name) => embeddedFaces[name]?.embedRid !== undefined)) {
         font.family ??= "auto";
         font.pitch ??= "variable";
         font.sig ??= DEFAULT_SIG;
       }
 
-      fonts.push(font as EmbeddedFontOptionsWithKey);
+      fonts.push(font as FontTableFont);
     };
     for (const child of el.elements ?? []) {
       if (child.name === "w:font") {

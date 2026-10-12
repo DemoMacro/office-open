@@ -10,7 +10,7 @@ const OTHER_DATE = "2025-02-03T04:05:06.000Z";
 /** Fonts and comments exercise the scope-driven id and date readers. */
 const options = (): DocumentOptions => ({
   sections: [{ children: [{ paragraph: { children: ["Reproducible"] } }] }],
-  fonts: [{ name: "ReproFont", data: new Uint8Array(64).fill(3) }],
+  fonts: [{ name: "ReproFont", embedRegular: { data: new Uint8Array(64).fill(3) } }],
   comments: [{ id: 1, author: "A", children: [{ children: ["note"] }] }],
 });
 

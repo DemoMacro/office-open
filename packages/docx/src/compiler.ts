@@ -46,6 +46,7 @@ import {
   documentNamespaceDialect,
   type DocumentNamespaceDialect,
 } from "@parts/document/document-attributes";
+import { defaultEmbeddedFontPath, embeddedFontParts } from "@parts/fonts/font-wrapper";
 import { obfuscate } from "@parts/fonts/obfuscate-ttf-to-odttf";
 import type { MailMergeOptions } from "@parts/settings/settings";
 
@@ -259,19 +260,25 @@ export function compileDocument(
   // Font files — only fonts carrying binary data produce a .odttf part.
   // Round-tripped fonts (rawOdttf) keep their original obfuscated bytes.
   for (const font of ctx.fontTable.fontOptionsWithKey) {
-    if (font.data === undefined) continue;
-    const [nameWithoutExtension] = font.name.split(".");
-    // Pack the font part under the URI-escaped path so the ZIP item name
-    // equals the escaped rel Target byte-for-byte (readers resolve the
-    // Target as a URI; an unescaped part name with spaces never matches).
-    const filePath = encodeUriPath(font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`);
-    files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
+    for (const [partName, part] of embeddedFontParts(font)) {
+      if (part.data === undefined) continue;
+      // Pack the font part under the URI-escaped path so the ZIP item name
+      // equals the escaped rel Target byte-for-byte (readers resolve the
+      // Target as a URI; an unescaped part name with spaces never matches).
+      const filePath = encodeUriPath(
+        part.odttfPath ?? defaultEmbeddedFontPath(font.name, partName),
+      );
+      files[filePath] = part.rawOdttf ? part.data : obfuscate(part.data, part.fontKey);
+    }
   }
   for (const font of ctx.glossaryFontTable?.fontOptionsWithKey ?? []) {
-    if (font.data === undefined) continue;
-    const [nameWithoutExtension] = font.name.split(".");
-    const filePath = encodeUriPath(font.odttfPath ?? `word/fonts/${nameWithoutExtension}.odttf`);
-    files[filePath] = font.rawOdttf ? font.data : obfuscate(font.data, font.fontKey);
+    for (const [partName, part] of embeddedFontParts(font)) {
+      if (part.data === undefined) continue;
+      const filePath = encodeUriPath(
+        part.odttfPath ?? defaultEmbeddedFontPath(font.name, partName, "glossary"),
+      );
+      files[filePath] = part.rawOdttf ? part.data : obfuscate(part.data, part.fontKey);
+    }
   }
 
   // [Content_Types].xml is serialized last: parts register their media/fonts

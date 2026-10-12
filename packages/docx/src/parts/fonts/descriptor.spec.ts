@@ -23,21 +23,22 @@ function roundTrip(opts: FontTableInput) {
 describe("fontTableDesc round-trip", () => {
   it("round-trips a single font", () => {
     const result = roundTrip({
-      fonts: [{ name: "Arial", fontKey: "abc-123", data: Buffer.from([]), embedRid: "rId1" }],
+      fonts: [
+        {
+          name: "Arial",
+          embedRegular: { fontKey: "abc-123", data: Buffer.from([]), embedRid: "rId1" },
+        },
+      ],
     });
     expect(result.fonts).toHaveLength(1);
     expect(result.fonts[0]?.name).toBe("Arial");
     // The key is canonicalized to uppercase on emit (ST_Guid canonical form)
-    expect(result.fonts[0]?.fontKey).toBe("ABC-123");
+    expect(result.fonts[0]?.embedRegular?.fontKey).toBe("ABC-123");
   });
 
   it("round-trips multiple fonts", () => {
     const result = roundTrip({
-      fonts: [
-        { name: "Arial", fontKey: "key-1", data: Buffer.from([]) },
-        { name: "Times New Roman", fontKey: "key-2", data: Buffer.from([]) },
-        { name: "Calibri", fontKey: "key-3", data: Buffer.from([]) },
-      ],
+      fonts: [{ name: "Arial" }, { name: "Times New Roman" }, { name: "Calibri" }],
     });
     expect(result.fonts).toHaveLength(3);
     expect(result.fonts[0]?.name).toBe("Arial");
@@ -47,7 +48,7 @@ describe("fontTableDesc round-trip", () => {
 
   it("round-trips font with characterSet", () => {
     const result = roundTrip({
-      fonts: [{ name: "Wingdings", fontKey: "wd-key", data: Buffer.from([]), characterSet: "02" }],
+      fonts: [{ name: "Wingdings", characterSet: "02" }],
     });
     expect(result.fonts[0]?.characterSet).toBe("02");
   });
@@ -56,8 +57,8 @@ describe("fontTableDesc round-trip", () => {
     const xml = fontTableDesc.stringify(
       {
         fonts: [
-          { name: "Arial", fontKey: "", notTrueType: true },
-          { name: "Courier New", fontKey: "", notTrueType: false },
+          { name: "Arial", notTrueType: true },
+          { name: "Courier New", notTrueType: false },
         ],
       },
       writeCtx,
@@ -76,8 +77,6 @@ describe("fontTableDesc round-trip", () => {
       fonts: [
         {
           name: "Wingdings",
-          fontKey: "wd-key",
-          data: Buffer.from([]),
           characterSet: "02",
           characterSetName: "ISO-8859-1",
         },
@@ -90,10 +89,31 @@ describe("fontTableDesc round-trip", () => {
   it("round-trips font key stripping braces", () => {
     const result = roundTrip({
       fonts: [
-        { name: "TestFont", fontKey: "some-key-value", data: Buffer.from([]), embedRid: "rId1" },
+        {
+          name: "TestFont",
+          embedRegular: { fontKey: "some-key-value", data: Buffer.from([]), embedRid: "rId1" },
+        },
       ],
     });
-    expect(result.fonts[0]?.fontKey).toBe("SOME-KEY-VALUE");
+    expect(result.fonts[0]?.embedRegular?.fontKey).toBe("SOME-KEY-VALUE");
+  });
+
+  it("round-trips all embedded faces", () => {
+    const result = roundTrip({
+      fonts: [
+        {
+          name: "Family",
+          embedRegular: { fontKey: "regular", data: Buffer.from([]), embedRid: "rId1" },
+          embedBold: { fontKey: "bold", data: Buffer.from([]), embedRid: "rId2" },
+          embedItalic: { fontKey: "italic", data: Buffer.from([]), embedRid: "rId3" },
+          embedBoldItalic: { fontKey: "bolditalic", data: Buffer.from([]), embedRid: "rId4" },
+        },
+      ],
+    });
+    expect(result.fonts[0]?.embedRegular?.fontKey).toBe("REGULAR");
+    expect(result.fonts[0]?.embedBold?.fontKey).toBe("BOLD");
+    expect(result.fonts[0]?.embedItalic?.fontKey).toBe("ITALIC");
+    expect(result.fonts[0]?.embedBoldItalic?.fontKey).toBe("BOLDITALIC");
   });
 
   it("round-trips empty fonts", () => {

@@ -6,7 +6,6 @@ import {
   toUint8Array,
   uniqueUuid,
 } from "@office-open/core";
-import type { Guid } from "@office-open/core";
 
 /**
  * Font Wrapper module for WordprocessingML documents.
@@ -19,18 +18,60 @@ import type { Guid } from "@office-open/core";
  * @module
  */
 import type { ViewWrapper } from "../../context";
-import type { EmbeddedFontOptions } from "./font-table";
+import {
+  EMBEDDED_FONT_PART_NAMES,
+  type EmbeddedFontOptions,
+  type EmbeddedFontPartName,
+  type EmbeddedFontPartOptions,
+} from "./font-table";
 
-/**
- * Font options extended with a unique font key.
- */
-export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & {
-  fontKey: Guid;
-  /** Relationship id assigned to embedRegular (only fonts carrying data). */
+type FontTableFaces<TPart> = Omit<EmbeddedFontOptions, EmbeddedFontPartName> & {
+  [K in EmbeddedFontPartName]?: TPart;
+};
+
+/** A font declaration whose embedded faces carry resolve-time state. */
+export type FontTableFont = FontTableFaces<EmbeddedFontPartWithKey>;
+
+/** A font declaration whose faces are ready for compilation. */
+export type NormalizedFontTableFont = FontTableFaces<NormalizedEmbeddedFontPart>;
+
+export type EmbeddedFontPartWithKey = EmbeddedFontPartOptions & {
+  /** Relationship id assigned to the embedded face (only parts carrying data). */
   embedRid?: string;
   /** Normalized font bytes (Uint8Array regardless of the input form). */
   data?: Uint8Array;
 };
+
+/** Compile-time face with normalized bytes and an assigned obfuscation key. */
+export type NormalizedEmbeddedFontPart = EmbeddedFontPartWithKey & {
+  fontKey: string;
+};
+
+/** XML element name for one embedded font face. */
+export function embeddedFontElementName(partName: EmbeddedFontPartName): string {
+  return `w:${partName}`;
+}
+
+/** Default .odttf package path for a face; regular keeps the legacy compact name. */
+export function defaultEmbeddedFontPath(
+  fontName: string,
+  partName: EmbeddedFontPartName,
+  ownerDirectory = "",
+): string {
+  const stem = partName === "embedRegular" ? fontName : `${fontName}.${partName}`;
+  const prefix = ownerDirectory ? `${ownerDirectory}/` : "";
+  return `word/${prefix}fonts/${stem}.odttf`;
+}
+
+/** Owned embedded parts in CT_Font order. */
+export function embeddedFontParts<
+  TPart extends EmbeddedFontPartWithKey | NormalizedEmbeddedFontPart,
+>(font: FontTableFaces<TPart>): [EmbeddedFontPartName, TPart][] {
+  return EMBEDDED_FONT_PART_NAMES.flatMap((partName) => {
+    const part = font[partName];
+    return part ? [[partName, part as TPart] as const] : [];
+  });
+}
 
 /**
  * Wrapper class for managing embedded font relationships.
@@ -47,7 +88,7 @@ export type EmbeddedFontOptionsWithKey = EmbeddedFontOptions & {
  */
 export class FontWrapper implements ViewWrapper {
   public relationships: Relationships;
-  public fontOptionsWithKey: EmbeddedFontOptionsWithKey[] = [];
+  public fontOptionsWithKey: NormalizedFontTableFont[] = [];
 
   public constructor(
     public options: EmbeddedFontOptions[],
@@ -60,28 +101,37 @@ export class FontWrapper implements ViewWrapper {
     // Keep every font declaration — metadata-only fonts (no `data`) carry no
     // bytes to embed but must still round-trip into fontTable.xml. Only fonts
     // with binary data receive a fontKey + relationship for the .odttf part.
-    this.fontOptionsWithKey = options.map((o): EmbeddedFontOptionsWithKey => ({
-      ...o,
-      data: o.data !== undefined ? toUint8Array(o.data) : undefined,
-      fontKey:
-        o.data !== undefined
-          ? (o.fontKey ?? reproducible?.nextUuid() ?? uniqueUuid())
-          : (o.fontKey ?? ""),
-    }));
+    this.fontOptionsWithKey = options.map((o): NormalizedFontTableFont => {
+      const font = { ...o } as NormalizedFontTableFont;
+      for (const partName of EMBEDDED_FONT_PART_NAMES) {
+        const part = font[partName];
+        if (!part || part.data === undefined) continue;
+        const partWithKey: NormalizedEmbeddedFontPart = {
+          ...part,
+          data: toUint8Array(part.data),
+          fontKey: part.fontKey ?? reproducible?.nextUuid() ?? uniqueUuid(),
+        };
+        font[partName] = {
+          ...partWithKey,
+        };
+      }
+      return font;
+    });
     this.relationships = new Relationships();
 
     let relIdx = 0;
     for (const font of this.fontOptionsWithKey) {
-      if (font.data === undefined) continue;
-      relIdx++;
-      font.embedRid = `rId${relIdx}`;
-      const resolved =
-        font.odttfPath ??
-        `word/${ownerDirectory ? `${ownerDirectory}/` : ""}fonts/${font.name}.odttf`;
-      const target = relativeFontTarget(resolved, ownerDirectory);
-      // A Target is a URI: escape the font part name per segment (spaces,
-      // non-ASCII) so it matches the ZIP entry packed by compileDocument.
-      this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, encodeUriPath(target));
+      for (const [partName, part] of embeddedFontParts(font)) {
+        if (part.data === undefined) continue;
+        relIdx += 1;
+        part.embedRid = `rId${relIdx}`;
+        const resolved =
+          part.odttfPath ?? defaultEmbeddedFontPath(font.name, partName, ownerDirectory);
+        const target = relativeFontTarget(resolved, ownerDirectory);
+        // A Target is a URI: escape the font part name per segment (spaces,
+        // non-ASCII) so it matches the ZIP entry packed by compileDocument.
+        this.relationships.addRelationship(relIdx, RELATIONSHIP_TYPES.font, encodeUriPath(target));
+      }
     }
   }
 }
