@@ -20,7 +20,7 @@ import {
   themeOverrideDesc,
 } from "@office-open/core";
 import type { PresentationPartOptions } from "@parts/presentation";
-import { buildCustomLayoutXml, buildLayoutXml, type SlideLayoutType } from "@parts/slide-layout";
+import { buildCustomLayoutXml, buildLayoutXml } from "@parts/slide-layout";
 import type {
   LayoutDefinition,
   MasterDefinition,
@@ -129,7 +129,7 @@ export function wireEmbeddedOle(
  */
 function resolveLayoutDef(
   layoutDef: LayoutDefinition | undefined,
-  slideLayoutType: SlideLayoutType,
+  slideLayoutType: string,
   slideWidth: number,
 ): LayoutDefinition {
   if (layoutDef && hasStructuredLayoutContent(layoutDef)) return layoutDef;
@@ -169,7 +169,7 @@ export function buildMasterMap(
   // Master placeholder positions scale to the slide width — record it on the
   // shared context so slideMasterDesc.stringify can read it.
   ctx.slideWidth = slideWidth;
-  const defs = masterDefs.length > 0 ? masterDefs : [{} as MasterDefinition];
+  const defs = masterDefs.length > 0 ? masterDefs : [{}];
   const slideMasterLookup = new Map<number, number>();
 
   for (const [si, slide] of slides.entries()) {
@@ -255,7 +255,7 @@ export function buildMasterMap(
     const emittedLayoutDefs = def.layouts ?? layoutKeys.map(() => undefined);
     for (const [li, layoutDef] of emittedLayoutDefs.entries()) {
       const key = layoutDef ? layoutLookupKey(layoutDef, mi, li) : layoutKeys[li]!;
-      const slideLayoutType = (layoutDef?.type ?? key) as SlideLayoutType;
+      const slideLayoutType = layoutDef?.type ?? key;
       const themeOverride = layoutDef?.themeOverride
         ? (themeOverrideDesc.stringify(layoutDef.themeOverride, ctx) ?? undefined)
         : undefined;

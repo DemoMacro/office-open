@@ -37,7 +37,6 @@ import { viewPropsDesc } from "./parts/descriptors/view-properties";
 export { parseArchive };
 
 import type { CustomerDataOptions } from "./parts/presentation";
-import type { SlideLayoutType } from "./parts/slide-layout";
 import type {
   LayoutDefinition,
   MasterDefinition,
@@ -959,7 +958,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
     // slideDesc.parse returns the slide-part fields of SlideOptions (children/
     // background/transition/animations/…). The public-API-only fields (layout,
     // master, comments, notes, section) are enriched below before the push.
-    const slideOpts = slideDesc.parse(slideEl, readCtx) as Record<string, unknown>;
+    const slideOpts: SlideOptions = slideDesc.parse(slideEl, readCtx);
     collectChartSourcePaths(slideOpts);
     const slideId = sourceSlideIds?.[slideIndex];
     if (slideId !== undefined) slideOpts.slideId = slideId;
@@ -976,7 +975,7 @@ function parsePresentationFromPptx(pptx: PptxDocument): PresentationOptions {
         const layoutOpts = slideLayoutDesc.parse(layoutEl, layoutReadCtx);
         const layoutKey = layoutKeysByPath.get(layoutPath);
         if (layoutKey !== undefined) slideOpts.layoutKey = layoutKey;
-        slideOpts.layout = (layoutOpts.type ?? layoutOpts.name ?? "blank") as SlideLayoutType;
+        slideOpts.layout = layoutOpts.type ?? layoutOpts.name ?? "blank";
       }
 
       const resolvedMasterPath = layoutMasterPaths.get(layoutPath);

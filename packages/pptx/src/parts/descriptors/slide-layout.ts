@@ -115,7 +115,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
   },
 
   parse(el, ctx) {
-    const result: Partial<LayoutDefinition> = {};
+    const result: LayoutDefinition = {};
 
     // Root attributes (CT_SlideLayout).
     const typeAttr = attr(el, "type");
@@ -206,7 +206,7 @@ export const slideLayoutDesc: CustomDescriptor<LayoutDefinition, PptxWriteContex
       if (inner) result.ext = inner;
     }
 
-    return result as LayoutDefinition;
+    return result;
   },
 };
 
@@ -218,7 +218,7 @@ const STUB_READ_CONTEXT = {
   resolveRelationship: () => undefined,
   getPart: () => undefined,
   getRaw: () => undefined,
-} as unknown as ReadContext;
+} satisfies ReadContext;
 
 /**
  * Parse a pre-built slideLayout XML string into a structured LayoutDefinition.

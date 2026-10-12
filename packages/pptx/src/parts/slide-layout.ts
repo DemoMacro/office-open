@@ -294,7 +294,7 @@ const LAYOUT_DEFS: Record<SlideLayoutType, LayoutDef> = {
   },
 };
 
-export function buildLayoutXml(layoutType: SlideLayoutType, slideWidth: number = SW_REF): string {
+export function buildLayoutXml(layoutType: string, slideWidth: number = SW_REF): string {
   // LayoutDefinition.type accepts any ST_SlideLayoutType string, so a parsed
   // layout may carry a type we model no shapes for — fall back to blank.
   const def =
