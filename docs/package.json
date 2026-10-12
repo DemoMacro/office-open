@@ -9,18 +9,19 @@
     "preview": "nuxt preview"
   },
   "devDependencies": {
-    "@ai-sdk/mcp": "2.0.62",
-    "@ai-sdk/openai-compatible": "3.0.59",
-    "@ai-sdk/vue": "4.0.122",
-    "@bysages/docs-theme": "0.2.3",
-    "@bysages/vue": "0.2.3",
-    "@iconify-json/lucide": "1.2.137",
-    "@iconify-json/simple-icons": "1.2.98",
-    "@iconify-json/vscode-icons": "1.2.83",
-    "@takumi-rs/core": "2.14.0",
-    "@takumi-rs/wasm": "2.14.0",
-    "ai": "7.0.122",
+    "@ai-sdk/mcp": "2.0.73",
+    "@ai-sdk/openai-compatible": "3.0.67",
+    "@ai-sdk/vue": "4.0.137",
+    "@bysages/docs-theme": "0.4.1",
+    "@bysages/vue": "0.4.1",
+    "@iconify-json/lucide": "1.2.143",
+    "@iconify-json/simple-icons": "1.2.100",
+    "@iconify-json/vscode-icons": "1.2.88",
+    "@takumi-rs/core": "2.15.1",
+    "@takumi-rs/wasm": "2.15.1",
+    "ai": "7.0.137",
     "nuxt": "4.5.2",
-    "office-open": "workspace:*"
+    "office-open": "workspace:*",
+    "tailwindcss": "4.3.3"
   }
 }
