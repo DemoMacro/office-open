@@ -15,8 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
-      - run: pnpm run boundaries:check
-      - run: pnpm run docs:parity
+      - run: pnpm run gates:boundaries
+      - run: pnpm run gates:docs-parity
 
   ooxml:
     name: OOXML gates
@@ -24,9 +24,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
-      - run: pnpm run xsd:coverage
+      - run: pnpm run coverage:xsd
       - run: npx tsx scripts/validation/ooxml.ts
-      - run: pnpm run containers:check
+      - run: pnpm run gates:containers
 
   odf:
     name: ODF gates
@@ -46,7 +46,7 @@ jobs:
       - run: pnpm run coverage:legacy
       - run: pnpm run corpus:setup
       - run: pnpm run corpus:check
-      - run: pnpm run legacy:corpus
+      - run: pnpm run corpus:legacy
 
   cross-format:
     name: Cross-format gate
@@ -54,4 +54,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: "./.github/actions/install-and-build"
-      - run: pnpm run cross-format:check
+      - run: pnpm run gates:cross-format

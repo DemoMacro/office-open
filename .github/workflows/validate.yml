@@ -17,4 +17,4 @@ jobs:
       - name: Validate Demos
         run: npx tsx scripts/validation/ooxml.ts
       - name: Check Container Models
-        run: pnpm run containers:check
+        run: pnpm run gates:containers
