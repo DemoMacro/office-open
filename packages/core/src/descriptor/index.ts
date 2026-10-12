@@ -11,7 +11,12 @@ export type { CustomDescriptor } from "./types";
 export { parse, stringify } from "./runtime";
 
 // Context
-export type { HyperlinkTarget, ReadContext, WriteContext } from "./context";
+export {
+  NOOP_WRITE_CONTEXT,
+  type HyperlinkTarget,
+  type ReadContext,
+  type WriteContext,
+} from "./context";
 
 // Field consistency auditing — declared field sets + round-trip drift diff.
 export { checkOrder, diffTagSets, roundTripFields } from "./field-consistency";

@@ -134,18 +134,20 @@ function fieldValue(value: object, key: string): unknown {
   return (value as Record<string, unknown>)[key];
 }
 
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value);
+}
+
 /** Structural deep equality (objects, arrays, primitives); no special-case classes. */
 function deepEqual(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   if (typeof a !== typeof b) return false;
   if (a === null || b === null) return a === b;
   if (typeof a !== "object") return a === b;
-  const aArr = Array.isArray(a);
-  const bArr = Array.isArray(b);
-  if (aArr || bArr) {
-    if (!aArr || !bArr) return false;
-    const aa = a as unknown[];
-    const bb = b as unknown[];
+  if (isUnknownArray(a) || isUnknownArray(b)) {
+    if (!isUnknownArray(a) || !isUnknownArray(b)) return false;
+    const aa = a;
+    const bb = b;
     if (aa.length !== bb.length) return false;
     return aa.every((v, i) => deepEqual(v, bb[i]));
   }

@@ -42,7 +42,7 @@ const XML_PARSE_OPTIONS = {
 export class ParsedArchive {
   private readonly source: Uint8Array | ByteSource;
   /** Compressed entries not yet inflated (empty on the eager fallback path). */
-  private readonly index: Map<string, ZipEntryMeta>;
+  private index: Map<string, ZipEntryMeta>;
   /** Inflated parts, populated on demand (and wholesale on the eager fallback). */
   private readonly parts = new Map<string, Uint8Array>();
   private readonly modified = new Map<string, Uint8Array>();
@@ -55,33 +55,37 @@ export class ParsedArchive {
    * a Blob-backed one (hydrated wholesale) list parts identically — callers
    * compare parsed documents, and part order leaks into them.
    */
-  private readonly order: string[];
+  private order: string[];
 
-  public constructor(data: Uint8Array) {
-    this.source = data;
-    let entries: ZipEntryMeta[];
-    try {
-      entries = readCentralDirectory(data);
-    } catch {
-      // Non-classic ZIP variant (zip64, exotic layouts) or not an archive at
-      // all: fall back to fflate's eager full read, the reference
-      // implementation — it throws on unreadable input, as before.
-      const eager = unzipSync(data);
-      for (const [name, bytes] of Object.entries(eager)) {
-        const path = name.replace(/\\/g, "/");
-        this.parts.set(path, bytes);
-        this.indexPath(path);
+  public constructor(source: Uint8Array | ByteSource, entries?: readonly ZipEntryMeta[]) {
+    this.source = source;
+    this.index = new Map();
+    this.order = [];
+    if (!entries) {
+      if (!(source instanceof Uint8Array)) {
+        throw new TypeError("Byte-backed archive data is required without entries");
       }
-      this.index = new Map();
-      this.order = [...this.parts.keys()];
+      let parsedEntries: ZipEntryMeta[];
+      try {
+        parsedEntries = readCentralDirectory(source);
+      } catch {
+        // Non-classic ZIP variant (zip64, exotic layouts) or not an archive at
+        // all: fall back to fflate's eager full read, the reference
+        // implementation — it throws on unreadable input, as before.
+        const eager = unzipSync(source);
+        for (const [name, bytes] of Object.entries(eager)) {
+          const path = name.replace(/\\/g, "/");
+          this.parts.set(path, bytes);
+          this.indexPath(path);
+        }
+        this.index = new Map();
+        this.order = [...this.parts.keys()];
+        return;
+      }
+      this.initializeIndex(parsedEntries);
       return;
     }
-    // OPC part names use forward slashes; a few producers emit backslash
-    // separators, which every downstream path comparison expects normalized.
-    for (const entry of entries) entry.name = entry.name.replace(/\\/g, "/");
-    this.index = new Map(entries.map((e) => [e.name, e]));
-    this.order = entries.map((e) => e.name);
-    for (const name of this.order) this.indexPath(name);
+    this.initializeIndex(entries);
   }
 
   /**
@@ -103,24 +107,38 @@ export class ParsedArchive {
       // behavior (it throws on unreadable input, as before).
       return new ParsedArchive(await toUint8ArrayAsync(data));
     }
-    // Object.create skips the constructor (a Blob-backed archive holds a
-    // ByteSource, not bytes), so the private state is assigned here — inside
-    // the class — and hydrated immediately: the index drains into `parts`,
-    // keeping get/getRaw/save synchronous from this point on. Both casts go
-    // through `unknown`: crossing the class's private fields with a public
-    // shape of the same names would intersect them down to `never`.
-    const archive = Object.create(ParsedArchive.prototype) as unknown as HydratedArchive;
-    archive.source = source;
-    for (const entry of entries) entry.name = entry.name.replace(/\\/g, "/");
-    archive.index = new Map(entries.map((e) => [e.name, e]));
-    archive.parts = new Map();
-    archive.modified = new Map();
-    archive.wrapperCache = new Map();
-    archive.byLower = new Map();
-    archive.order = entries.map((e) => e.name);
-    for (const name of archive.order) archive.indexPath(name);
-    await hydrateArchive(archive);
-    return archive as unknown as ParsedArchive;
+    const archive = new ParsedArchive(source, entries);
+    await archive.hydrate(source);
+    return archive;
+  }
+
+  private initializeIndex(entries: readonly ZipEntryMeta[]): void {
+    // OPC part names use forward slashes; a few producers emit backslash
+    // separators, which every downstream path comparison expects normalized.
+    const normalizedEntries = entries.map((entry) => ({
+      ...entry,
+      name: entry.name.replace(/\\/g, "/"),
+    }));
+    this.index = new Map(normalizedEntries.map((entry) => [entry.name, entry]));
+    this.order = normalizedEntries.map((entry) => entry.name);
+    for (const name of this.order) this.indexPath(name);
+  }
+
+  /** Decompress every indexed entry so a Blob-backed archive can read synchronously. */
+  private async hydrate(source: ByteSource): Promise<void> {
+    // Deleting the just-consumed entry while iterating a Map is defined
+    // behavior — the iterator only visits what the map still holds.
+    for (const entry of this.index.values()) {
+      const data = await inflateEntryFrom(source, entry).catch(async () => {
+        // inflateEntryFrom verifies CRC-32 on the native path; tolerate a
+        // mismatch the way the fflate fallback always has — retry check-free.
+        const raw = await source.read(entry.dataStart, entry.compSize);
+        const data = entry.method === 0 ? raw.slice() : inflateSync(raw);
+        return entry.name.endsWith(".xml") ? stripOversizedGfxdata(data) : data;
+      });
+      this.index.delete(entry.name);
+      this.parts.set(entry.name, data);
+    }
   }
 
   /** Register a stored path in the case-insensitive lookup (first wins). */
@@ -145,7 +163,10 @@ export class ParsedArchive {
     if (entry === undefined) return undefined;
     // Bytes-backed archives only — a Blob-backed one drains its index during
     // open(), so this never sees a ByteSource.
-    const bytes = this.source as Uint8Array;
+    if (!(this.source instanceof Uint8Array)) {
+      throw new TypeError("Byte-backed archive data is required for lazy inflate.");
+    }
+    const bytes = this.source;
     let data: Uint8Array;
     // The native inflate verifies CRC-32; a corrupt entry fails the package
     // instead of silently reading truncated bytes (Excel rejects these too).
@@ -266,33 +287,4 @@ export class ParsedArchive {
 /** Parse an OOXML archive (.docx, .pptx, .xlsx) into a ParsedArchive. */
 export function parseArchive(data: Uint8Array): ParsedArchive {
   return new ParsedArchive(data);
-}
-
-/** Writable view of a Blob-backed archive's private state, for open()/hydrate. */
-interface HydratedArchive {
-  source: Uint8Array | ByteSource;
-  index: Map<string, ZipEntryMeta>;
-  parts: Map<string, Uint8Array>;
-  modified: Map<string, Uint8Array>;
-  wrapperCache: Map<string, Element>;
-  byLower: Map<string, string>;
-  order: string[];
-  indexPath(path: string): void;
-}
-
-/** Decompress every indexed entry (Blob-backed open — after this, sync reads). */
-async function hydrateArchive(archive: HydratedArchive): Promise<void> {
-  const source = archive.source as ByteSource;
-  // Deleting the just-consumed entry while iterating a Map is defined
-  // behavior — the iterator only visits what the map still holds.
-  for (const entry of archive.index.values()) {
-    const data = await inflateEntryFrom(source, entry).catch(async () => {
-      // inflateEntryFrom verifies CRC-32 on the native path; tolerate a
-      // mismatch the way the fflate fallback always has — retry check-free.
-      const raw = await source.read(entry.dataStart, entry.compSize);
-      return entry.method === 0 ? raw.slice() : inflateSync(raw);
-    });
-    archive.index.delete(entry.name);
-    archive.parts.set(entry.name, data);
-  }
 }

@@ -41,6 +41,13 @@ export interface WriteContext {
   readonly reproducible?: ReproducibleScope;
 }
 
+/** Shared no-op context for pure stringifiers that never touch relationships/media. */
+export const NOOP_WRITE_CONTEXT: WriteContext = {
+  addRelationship: () => "",
+  addMedia: () => "",
+  addHyperlink: () => {},
+};
+
 /** Context passed during parse (parse path). */
 export interface ReadContext {
   /** Resolve a relationship rId to its target path. */

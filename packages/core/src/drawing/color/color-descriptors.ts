@@ -7,7 +7,12 @@
 import { escapeXml } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 
-import type { CustomDescriptor, ReadContext, WriteContext } from "../../descriptor";
+import {
+  NOOP_WRITE_CONTEXT,
+  type CustomDescriptor,
+  type ReadContext,
+  type WriteContext,
+} from "../../descriptor";
 import {
   emitAngle,
   emitPercent,
@@ -248,26 +253,22 @@ const SYSTEM_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SystemCol
 const PRESET_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(PresetColor));
 const SCHEME_COLOR_VALUES: ReadonlySet<string> = new Set(Object.values(SchemeColor));
 
-// The six color descriptors ignore their write context (no media/rel side
-// effects), so the context-free emitter passes this placeholder.
-const NO_WRITE_CTX = undefined as unknown as WriteContext;
-
 /** Emit an EG_ColorChoice element string (direct color element, no
  * `a:solidFill` wrapper). The single discrimination for all six color kinds —
  * gradient stops, fg/bg clr, effect colors, and the color factories all share
  * this path. */
 export function emitColorChoice(color: SolidFillOptions): string {
-  if ("hue" in color) return hslColorDesc.stringify(color, NO_WRITE_CTX) ?? "";
-  if ("r" in color) return scRgbColorDesc.stringify(color, NO_WRITE_CTX) ?? "";
+  if ("hue" in color) return hslColorDesc.stringify(color, NOOP_WRITE_CONTEXT) ?? "";
+  if ("r" in color) return scRgbColorDesc.stringify(color, NOOP_WRITE_CONTEXT) ?? "";
   // Remaining variants (rgb/scheme/system/preset) share a `value` key.
   const colorValue = (color as { value: string }).value;
   if (SYSTEM_COLOR_VALUES.has(colorValue))
-    return systemColorDesc.stringify(color as SystemColorOptions, NO_WRITE_CTX) ?? "";
+    return systemColorDesc.stringify(color as SystemColorOptions, NOOP_WRITE_CONTEXT) ?? "";
   if (PRESET_COLOR_VALUES.has(colorValue))
-    return presetColorDesc.stringify(color as PresetColorOptions, NO_WRITE_CTX) ?? "";
+    return presetColorDesc.stringify(color as PresetColorOptions, NOOP_WRITE_CONTEXT) ?? "";
   if (SCHEME_COLOR_VALUES.has(colorValue))
-    return schemeColorDesc.stringify(color as SchemeColorOptions, NO_WRITE_CTX) ?? "";
-  return rgbColorDesc.stringify(color as RgbColorOptions, NO_WRITE_CTX) ?? "";
+    return schemeColorDesc.stringify(color as SchemeColorOptions, NOOP_WRITE_CONTEXT) ?? "";
+  return rgbColorDesc.stringify(color as RgbColorOptions, NOOP_WRITE_CONTEXT) ?? "";
 }
 
 /** Stringify an EG_ColorChoice (direct color element, no `a:solidFill` wrapper).
