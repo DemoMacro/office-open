@@ -1581,7 +1581,7 @@ function parseWorkbookFromXlsx(xlsx: XlsxDocument): WorkbookOptions {
     for (const msPath of macrosheetPaths) {
       const msEl = xlsx.doc.get(msPath);
       if (!msEl) continue;
-      const msData = worksheetDesc.parse(msEl, readContext) as MacrosheetOptions;
+      const msData = worksheetDesc.parse(msEl, readContext);
       msData.sourcePath = msPath;
       const sheetInfo = sheetInfoByPath.get(msPath);
       if (sheetInfo) {

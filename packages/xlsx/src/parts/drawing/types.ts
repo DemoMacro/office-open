@@ -113,28 +113,20 @@ export interface DrawingAnchorOptions {
 /** Pick the anchor fields defined on `source` (undefined ones stay absent). */
 export function pickAnchorOptions<T extends DrawingAnchorOptions>(source: T): DrawingAnchorOptions {
   const picked: DrawingAnchorOptions = { col: source.col, row: source.row };
-  const keys = [
-    "colOffset",
-    "rowOffset",
-    "toCol",
-    "toRow",
-    "toColOffset",
-    "toRowOffset",
-    "anchorType",
-    "editAs",
-    "absoluteX",
-    "absoluteY",
-    "extentCx",
-    "extentCy",
-    "locksWithSheet",
-    "printsWithSheet",
-  ] as const;
-  // Correlated union-key writes need this cast — TS cannot narrow the write
-  // type from a `keys` element alone.
-  const optional = picked as unknown as Record<(typeof keys)[number], unknown>;
-  for (const key of keys) {
-    if (source[key] !== undefined) optional[key] = source[key];
-  }
+  if (source.colOffset !== undefined) picked.colOffset = source.colOffset;
+  if (source.rowOffset !== undefined) picked.rowOffset = source.rowOffset;
+  if (source.toCol !== undefined) picked.toCol = source.toCol;
+  if (source.toRow !== undefined) picked.toRow = source.toRow;
+  if (source.toColOffset !== undefined) picked.toColOffset = source.toColOffset;
+  if (source.toRowOffset !== undefined) picked.toRowOffset = source.toRowOffset;
+  if (source.anchorType !== undefined) picked.anchorType = source.anchorType;
+  if (source.editAs !== undefined) picked.editAs = source.editAs;
+  if (source.absoluteX !== undefined) picked.absoluteX = source.absoluteX;
+  if (source.absoluteY !== undefined) picked.absoluteY = source.absoluteY;
+  if (source.extentCx !== undefined) picked.extentCx = source.extentCx;
+  if (source.extentCy !== undefined) picked.extentCy = source.extentCy;
+  if (source.locksWithSheet !== undefined) picked.locksWithSheet = source.locksWithSheet;
+  if (source.printsWithSheet !== undefined) picked.printsWithSheet = source.printsWithSheet;
   return picked;
 }
 

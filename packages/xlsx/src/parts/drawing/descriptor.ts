@@ -38,6 +38,7 @@ import {
   XDR_NS,
 } from "./stringify";
 import type {
+  DrawingAnchorOptions,
   DrawingChartOptions,
   DrawingContentPartOptions,
   DrawingWebExtensionOptions,
@@ -267,7 +268,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
     // record it so stringify can re-emit them interleaved instead of grouped
     // per type bucket.
     let order = 0;
-    const stamp = <T extends { zOrder?: number; shapeId?: number }>(
+    const stamp = <T extends DrawingAnchorOptions>(
       obj: T,
       anchor: XmlElement,
       wrapped?: "choice" | "fallback",
@@ -275,9 +276,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       obj.zOrder = order++;
       const shapeId = readAnchorShapeId(anchor);
       if (shapeId !== undefined) obj.shapeId = shapeId;
-      if (wrapped) {
-        (obj as { alternateContent?: "choice" | "fallback" }).alternateContent = wrapped;
-      }
+      if (wrapped) obj.alternateContent = wrapped;
       return obj;
     };
 
@@ -345,7 +344,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       if (sp) {
         const inChoice = findXdr(anchor, "sp") === undefined;
         const shape = stamp(parseShapeAnchor(anchor, sp, name, ctx), anchor, wrapped);
-        if (inChoice) (shape as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        if (inChoice) shape.objectAlternateContent = true;
         shapes.push(shape);
         continue;
       }
@@ -354,8 +353,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       if (cxnSp) {
         const inChoice = findXdr(anchor, "cxnSp") === undefined;
         const connector = stamp(parseConnectorAnchor(anchor, cxnSp, name, ctx), anchor, wrapped);
-        if (inChoice)
-          (connector as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        if (inChoice) connector.objectAlternateContent = true;
         connectors.push(connector);
         continue;
       }
@@ -364,7 +362,7 @@ export const drawingDesc: CustomDescriptor<DrawingOptions> = {
       if (grpSp) {
         const inChoice = findXdr(anchor, "grpSp") === undefined;
         const group = stamp(parseGroupAnchor(anchor, grpSp, name, ctx), anchor, wrapped);
-        if (inChoice) (group as { objectAlternateContent?: boolean }).objectAlternateContent = true;
+        if (inChoice) group.objectAlternateContent = true;
         groups.push(group);
         continue;
       }
