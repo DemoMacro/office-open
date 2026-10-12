@@ -46,7 +46,7 @@ export interface ClassificationLabelOptions {
 export interface ClassificationExtensionOptions {
   /** Extension namespace URI (required). */
   uri: string;
-  /** Foreign-namespace child XML declared by the extension registry. */
+  /** Foreign-namespace child XML carried verbatim inside the extension. */
   innerXml?: string;
 }
 

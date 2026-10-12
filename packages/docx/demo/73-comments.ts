@@ -97,7 +97,7 @@ const buffer = await generateDocument({
       id: 3,
     },
   ],
-  // word/people.xml — the author registry Word 2013+ writes alongside comments;
+  // word/people.xml — the author index Word 2013+ writes alongside comments;
   // each entry pairs with comments by exact author-string equality.
   people: [
     { author: "Ray Chen", contact: "ray.chen@example.com" },

@@ -32,7 +32,7 @@ import {
   TargetModeType,
   replaceNumberingPlaceholders,
   IMAGE_MEDIA_CONTENT_TYPES,
-  resolverFromRegistry,
+  partContentTypeResolver,
   ooxmlPackageFormatInfo,
   resolveMainPartContentType,
 } from "@office-open/core";
@@ -78,8 +78,8 @@ import {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-/** DOCX part path → content type, derived from the part registry. */
-const DOCX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(DOCX_PARTS);
+/** DOCX part path → content type, derived from the part manifest. */
+const DOCX_CONTENT_TYPE_RESOLVER = partContentTypeResolver(DOCX_PARTS);
 
 const DOCX_THEME_CONTENT_TYPE = "application/vnd.openxmlformats-officedocument.theme+xml";
 const DOCX_CHART_EX_CONTENT_TYPE = "application/vnd.ms-office.chartex+xml";

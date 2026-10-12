@@ -21,14 +21,14 @@ import { smartArtDesc } from "./smartart";
 
 // ── Mock contexts ──
 
-const smartArtRegistry = new Map<string, unknown>();
+const smartArtParts = new Map<string, unknown>();
 
 const writeCtx = {
   registerShapeId() {},
   addRelationship: () => "rId1",
   addMedia: () => "",
   nextSmartArtKey: () => "smartart_1024",
-  addSmartArt: (key: string, data: unknown) => smartArtRegistry.set(key, data),
+  addSmartArt: (key: string, data: unknown) => smartArtParts.set(key, data),
 } as unknown as WriteContext;
 
 const readCtx = {
@@ -81,7 +81,7 @@ describe("smartArtDesc round-trip", () => {
   });
 
   it("registers SmartArt data in context when nodes provided", () => {
-    smartArtRegistry.clear();
+    smartArtParts.clear();
     const opts: SmartArtOptions = {
       id: 300,
       smartArtKey: "smartart_test",
@@ -92,7 +92,7 @@ describe("smartArtDesc round-trip", () => {
     };
     smartArtDesc.stringify(opts, writeCtx);
 
-    expect(smartArtRegistry.has("smartart_test")).toBe(true);
+    expect(smartArtParts.has("smartart_test")).toBe(true);
   });
 
   it("round-trips with empty nodes", () => {
@@ -132,7 +132,7 @@ describe("smartArtDesc round-trip", () => {
   });
 
   it("round-trips a typed data model without raw bytes", () => {
-    smartArtRegistry.clear();
+    smartArtParts.clear();
     const dataModel: DataModelOptions = {
       points: [
         {
@@ -171,7 +171,7 @@ describe("smartArtDesc round-trip", () => {
     const xml = smartArtDesc.stringify(opts, writeCtx)!;
     const el = parseXml(xml).elements?.[0];
     if (!el) throw new Error("stringify returned no element");
-    const entry = smartArtRegistry.get("smartart_1024") as { dataModelXml: string };
+    const entry = smartArtParts.get("smartart_1024") as { dataModelXml: string };
     const ctx = {
       resolveRelationship: (relationshipId: string) =>
         relationshipId.startsWith("{smartart:") ? "ppt/diagrams/data1.xml" : undefined,
@@ -243,7 +243,7 @@ describe("smartArtDesc custom definitions", () => {
   };
 
   it("registers custom definitions verbatim in the SmartArt entry", () => {
-    smartArtRegistry.clear();
+    smartArtParts.clear();
     const opts: SmartArtOptions = {
       id: 600,
       nodes: [{ text: "Step" }],
@@ -252,7 +252,7 @@ describe("smartArtDesc custom definitions", () => {
       color: customColors,
     };
     smartArtDesc.stringify(opts, writeCtx);
-    const entry = smartArtRegistry.get("smartart_1024") as {
+    const entry = smartArtParts.get("smartart_1024") as {
       layout: unknown;
       style: unknown;
       color: unknown;

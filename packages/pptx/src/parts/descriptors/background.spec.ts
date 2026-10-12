@@ -77,7 +77,7 @@ describe("backgroundDesc round-trip", () => {
   });
 
   it("registers a blip fill with the media store and embeds its placeholder", () => {
-    // The descriptor path must register the image — an unregistered {fileName}
+    // The descriptor path must add the image — an unmapped {fileName}
     // placeholder would leak into r:embed with no relationship behind it.
     const addMedia = vi.fn(() => "{image1.png}");
     const ctx = { addMedia, addRelationship: () => "rId1" } as unknown as WriteContext;

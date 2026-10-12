@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 function mathExecutableEvidence(localName: string): readonly string[] {
   if (localName === "mathPr") {
@@ -150,7 +150,7 @@ const MATH_QNAMES = [
   "zeroWid",
 ] as const;
 
-export const MATH_REGISTRY: readonly ModelRegistryEntry[] = MATH_QNAMES.map((localName) => ({
+export const MATH_OWNERSHIP: readonly ModelOwnershipEntry[] = MATH_QNAMES.map((localName) => ({
   domain: "math",
   qname: `m:${localName}`,
   canonicalOptionPath: localName === "mathPr" ? "MathPropertiesOptions" : "MathInput",

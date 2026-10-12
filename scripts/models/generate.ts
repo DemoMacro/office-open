@@ -161,7 +161,7 @@ function parseXml(text: string): XNode {
   return root;
 }
 
-// ── Schema registry ──────────────────────────────────────────────────────────
+// ── Schema manifest ──────────────────────────────────────────────────────────
 
 interface SchemaFile {
   file: string;

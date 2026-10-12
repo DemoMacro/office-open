@@ -4023,7 +4023,7 @@
       "description": "Extension element with an `xs:any` payload.",
       "properties": {
         "innerXml": {
-          "description": "Foreign-namespace child XML declared by the extension registry.",
+          "description": "Foreign-namespace child XML carried verbatim inside the extension.",
           "type": "string"
         },
         "uri": {

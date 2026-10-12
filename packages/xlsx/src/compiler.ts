@@ -25,7 +25,7 @@ import {
   resolveRelationshipTarget,
   ooxmlPackageFormatInfo,
   resolveMainPartContentType,
-  resolverFromRegistry,
+  partContentTypeResolver,
   XLSX_PARTS,
   customPropertiesDesc,
   toUint8Array,
@@ -94,9 +94,9 @@ const XML_DECL = OOXML_XML_DECLARATION;
 
 const IMAGE_REL = RELATIONSHIP_TYPES.image;
 
-/** XLSX part path → content type, derived from the part registry. Matches
+/** XLSX part path → content type, derived from the part manifest. Matches
  * actual file paths, so the dense/sequential xlsx part naming is handled. */
-const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
+const XLSX_CONTENT_TYPE_RESOLVER = partContentTypeResolver(XLSX_PARTS);
 
 /** Chart part → user-shapes part relationship (c:userShapes bridge). */
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;

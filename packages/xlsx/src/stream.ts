@@ -30,7 +30,7 @@ import {
   customPropertiesDesc,
   deriveContentTypes,
   ooxmlPackageFormatInfo,
-  resolverFromRegistry,
+  partContentTypeResolver,
   XLSX_PARTS,
   ZIP_DEFLATE_LEVEL,
   type CompressionOptions,
@@ -54,7 +54,7 @@ import { XlsxWriteContext } from "./context";
 /** Rows per serialization flush — bounds the intermediate chunk size. */
 const ROWS_PER_CHUNK = 5_000;
 
-const XLSX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(XLSX_PARTS);
+const XLSX_CONTENT_TYPE_RESOLVER = partContentTypeResolver(XLSX_PARTS);
 
 /** Workbook keys this path serializes. Anything else falls back to full compile. */
 const WORKBOOK_KEYS: ReadonlySet<string> = new Set([

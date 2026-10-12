@@ -1,5 +1,5 @@
 /**
- * Declarative part registry — the machine-readable source of truth for which
+ * Declarative package part manifest — the source of truth for which
  * parts each OOXML package is expected to contain.
  *
  * Consumed by {@link validateOpcConsistency} to detect two failure classes the
@@ -8,7 +8,7 @@
  *   - O2 missing part — an `always` part the ZIP lacks
  *
  * Content-type and relationship integrity (O3/O5/O6/O7) are derived directly
- * from the ZIP + `.rels` + `[Content_Types].xml`, so they need no registry.
+ * from the ZIP + `.rels` + `[Content_Types].xml`.
  *
  * Presence semantics:
  *   - `always`      — present in *any* valid package (content-types map,
@@ -48,13 +48,13 @@ export interface PartDefinition {
   contentType?: string;
   presence: PartPresence;
   /**
-   * Binary member with no canonical OOXML model. Registry-declared only;
+   * Binary member with no canonical OOXML model. Manifest-declared only;
    * modeled XML may not use this channel.
    */
   opaque?: boolean;
 }
 
-export interface PackagePartRegistry {
+export interface PackagePartManifest {
   format: "docx" | "pptx" | "xlsx";
   parts: readonly PartDefinition[];
   /**
@@ -319,7 +319,7 @@ export const DOCX_PARTS = {
       presence: { kind: "conditional", flag: "macro-enabled package" },
     },
   ],
-} as const satisfies PackagePartRegistry;
+} as const satisfies PackagePartManifest;
 
 // ── PPTX ────────────────────────────────────────────────────────────────────
 
@@ -524,7 +524,7 @@ export const PPTX_PARTS = {
       presence: { kind: "conditional", flag: "macro-enabled package" },
     },
   ],
-} as const satisfies PackagePartRegistry;
+} as const satisfies PackagePartManifest;
 
 // ── XLSX ────────────────────────────────────────────────────────────────────
 
@@ -637,7 +637,7 @@ export const XLSX_PARTS = {
     {
       // Override is emitted unconditionally; the part file is only written
       // when the shared-strings table is non-empty — an O6 stale-Override
-      // risk this registry exists to surface.
+      // risk this manifest exists to surface.
       path: "xl/sharedStrings.xml",
       contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml",
       presence: { kind: "conditional", flag: "sharedStrings.count > 0" },
@@ -790,9 +790,9 @@ export const XLSX_PARTS = {
       presence: { kind: "conditional", flag: "revisionLog.users" },
     },
   ],
-} as const satisfies PackagePartRegistry;
+} as const satisfies PackagePartManifest;
 
-export const PART_REGISTRIES: Record<PackagePartRegistry["format"], PackagePartRegistry> = {
+export const PACKAGE_PART_MANIFESTS: Record<PackagePartManifest["format"], PackagePartManifest> = {
   docx: DOCX_PARTS,
   pptx: PPTX_PARTS,
   xlsx: XLSX_PARTS,
@@ -802,17 +802,17 @@ function opaquePattern(path: string): string {
   return `^${path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\\$\{i\}/g, "[0-9]+")}$`;
 }
 
-/** Derive the format's raw-parts policy from the shared OPC part registry. */
-export function opaquePassthroughPolicy(format: PackagePartRegistry["format"]): {
+/** Derive the format's raw-parts policy from the shared OPC part manifest. */
+export function opaquePassthroughPolicy(format: PackagePartManifest["format"]): {
   opaquePatterns: RegExp[];
 } {
-  const registry = PART_REGISTRIES[format];
+  const manifest = PACKAGE_PART_MANIFESTS[format];
   return {
     opaquePatterns: [
-      ...registry.parts
+      ...manifest.parts
         .filter((part) => part.opaque === true)
         .map((part) => new RegExp(opaquePattern(part.path), "i")),
-      ...registry.opaquePrefixes.map(
+      ...manifest.opaquePrefixes.map(
         (prefix) => new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "i"),
       ),
     ],

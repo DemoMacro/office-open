@@ -106,7 +106,7 @@ export function descriptorCase<TInput, TOutput>(
   return fixtureCase as OoxmlExecutableCaseInput;
 }
 
-export interface OoxmlExecutableRegistry {
+export interface OoxmlExecutableCaseManifest {
   cases: readonly OoxmlExecutableCaseInput[];
 }
 
@@ -4150,7 +4150,7 @@ const mathNormalRunCase = descriptorCase({
   expected: [{ text: "y", properties: { normal: true } }] as MathInput[],
 });
 
-export const OOXML_EXECUTABLE_REGISTRY: OoxmlExecutableRegistry = {
+export const OOXML_EXECUTABLE_CASES: OoxmlExecutableCaseManifest = {
   cases: [
     mathStructuresCase,
     mathParagraphCase,

@@ -92,7 +92,7 @@ export interface DocumentOptions extends CorePropertiesOptions {
   /**
    * Comment authors (word/people.xml). Word pairs each w15:person with
    * comments by exact author-string equality; omit for documents whose
-   * comments carry no author registry.
+   * comments carry no author index.
    */
   people?: CommentPersonOptions[];
   /**

@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const QNAMES = [
   "snd",
@@ -216,13 +216,13 @@ const QNAMES = [
   "viewPr",
 ] as const;
 
-export const PML_REGISTRY: readonly ModelRegistryEntry[] = QNAMES.map((localName) => ({
+export const PML_OWNERSHIP: readonly ModelOwnershipEntry[] = QNAMES.map((localName) => ({
   domain: "pml",
   qname: `p:${localName}`,
   canonicalOptionPath: null,
   classification: "planned",
   classificationReason:
-    "pml registry is now visible; each QName requires explicit ownership and executable evidence.",
+    "pml ownership is now visible; each QName requires explicit ownership and executable evidence.",
   owner: { stringify: null, parse: null, compiler: null, publicApi: null },
   evidence: { static: [], executable: [], rawOnly: false },
 }));

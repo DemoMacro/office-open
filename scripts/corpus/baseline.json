@@ -7,6 +7,22 @@
       "parseFail": 0,
       "genFail": 0,
       "malformed": 1
+    },
+    "xlsx": {
+      "total": 155,
+      "clean": 155,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 0
+    },
+    "pptx": {
+      "total": 226,
+      "clean": 226,
+      "diff": 0,
+      "parseFail": 0,
+      "genFail": 0,
+      "malformed": 0
     }
   },
   "calamine": {

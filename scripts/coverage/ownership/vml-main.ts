@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const OWNER = "packages/core/src/vector/shapes.ts:stringifyVmlShapeChild";
 const RUNTIME_OWNER = "packages/core/src/vector/shape-elements";
@@ -7,7 +7,7 @@ const EVIDENCE = [
   "packages/docx/src/parts/pict/pict.spec.ts",
 ] as const;
 
-function modeled(localName: string, canonicalOptionPath: string): ModelRegistryEntry {
+function modeled(localName: string, canonicalOptionPath: string): ModelOwnershipEntry {
   return {
     domain: "vml-main",
     qname: `v:${localName}`,
@@ -25,7 +25,7 @@ function modeled(localName: string, canonicalOptionPath: string): ModelRegistryE
   };
 }
 
-export const VML_MAIN_REGISTRY: readonly ModelRegistryEntry[] = [
+export const VML_MAIN_OWNERSHIP: readonly ModelOwnershipEntry[] = [
   modeled("arc", "VmlArcOptions"),
   modeled("background", "VmlBackgroundOptions"),
   modeled("curve", "VmlCurveOptions"),

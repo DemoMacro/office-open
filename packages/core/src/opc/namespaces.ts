@@ -4,7 +4,7 @@
  * Producers are free to bind any prefix to a namespace (XML namespaces say
  * the prefix is arbitrary), and real-world generators do: pandoc writes
  * `ns0:`, ClosedXML binds the spreadsheet namespace to `x:`. Everything
- * downstream of the parser — descriptor `findChild("w:p")` calls, registry
+ * downstream of the parser — descriptor `findChild("w:p")` calls, package
  * path matching — addresses elements by the canonical prefixes this library
  * itself emits, so non-canonical sources parsed blind.
  *

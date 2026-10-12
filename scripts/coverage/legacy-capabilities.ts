@@ -62,7 +62,7 @@ function capabilities(
   }));
 }
 
-export const LEGACY_CAPABILITY_REGISTRY: readonly LegacyCapabilityFormat[] = [
+export const LEGACY_CAPABILITY_PROBES: readonly LegacyCapabilityFormat[] = [
   {
     id: "doc",
     mode: "parse-only",

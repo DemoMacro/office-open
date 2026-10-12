@@ -14,7 +14,7 @@ import {
   toUint8Array,
   getReferencedMedia,
   replacePlaceholders,
-  resolverFromRegistry,
+  partContentTypeResolver,
   withDiagramNamespaces,
 } from "@office-open/core";
 import type { Zippable } from "@office-open/core";
@@ -39,10 +39,10 @@ import { wireEmbeddedOle } from "./masters";
 import { XML_DECL, encoder, wirePartHyperlinks } from "./shared";
 import type { SlideCompileArtifacts } from "./slides";
 
-/** PPTX part path → content type, derived from the part registry. Matches
+/** PPTX part path → content type, derived from the part manifest. Matches
  * actual file paths, so dense (slides) and sparse (slide-indexed comments)
  * naming are both handled. */
-export const PPTX_CONTENT_TYPE_RESOLVER = resolverFromRegistry(PPTX_PARTS);
+export const PPTX_CONTENT_TYPE_RESOLVER = partContentTypeResolver(PPTX_PARTS);
 
 /** Chart part → user-shapes part relationship (c:userShapes bridge). */
 const CHART_USER_SHAPES_REL = RELATIONSHIP_TYPES.chartUserShapes;

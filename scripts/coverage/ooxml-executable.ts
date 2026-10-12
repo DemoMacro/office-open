@@ -13,7 +13,7 @@ import {
 } from "../../packages/pptx/dist/index.mjs";
 import { generateWorkbookSync, parseWorkbookSync } from "../../packages/xlsx/dist/index.mjs";
 import { parse as parseXml } from "../../packages/xml/dist/index.mjs";
-import { OOXML_EXECUTABLE_REGISTRY, type OoxmlExecutableCaseInput } from "./ooxml-fixtures";
+import { OOXML_EXECUTABLE_CASES, type OoxmlExecutableCaseInput } from "./ooxml-fixtures";
 import { XSD_CONFIGS } from "./xsd";
 import { parseXsdStructured } from "./xsd-model";
 
@@ -328,7 +328,7 @@ export function buildOoxmlExecutableReport(schemaLabels: readonly string[]): Oox
   const evidenceRecords: OoxmlExecutableEvidenceRecord[] = [];
   let executedCases = 0;
 
-  for (const fixtureCase of OOXML_EXECUTABLE_REGISTRY.cases) {
+  for (const fixtureCase of OOXML_EXECUTABLE_CASES.cases) {
     if (!schemaElements.has(fixtureCase.schema)) continue;
     const coveredElements = new Set<string>();
     const coveredAttributes = new Set<string>();

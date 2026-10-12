@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vite-plus/test";
 
 import { buildOoxmlExecutableReport, executeOoxmlCase } from "./ooxml-executable";
-import { OOXML_EXECUTABLE_REGISTRY } from "./ooxml-fixtures";
+import { OOXML_EXECUTABLE_CASES } from "./ooxml-fixtures";
 
 describe("executable OOXML fixture harness", () => {
   it("executes every registered OOXML fixture", () => {
-    expect(OOXML_EXECUTABLE_REGISTRY.cases.length).toBe(40);
-    for (const fixtureCase of OOXML_EXECUTABLE_REGISTRY.cases) {
+    expect(OOXML_EXECUTABLE_CASES.cases.length).toBe(40);
+    for (const fixtureCase of OOXML_EXECUTABLE_CASES.cases) {
       expect(() => executeOoxmlCase(fixtureCase)).not.toThrow();
     }
   });

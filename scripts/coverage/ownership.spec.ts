@@ -5,15 +5,15 @@ import { inflateRawSync } from "node:zlib";
 
 import { expect, describe, it } from "vite-plus/test";
 
-import { LEGACY_CAPABILITY_REGISTRY } from "./legacy-registry";
-import { ODF_CODEC_REGISTRY } from "./odf-registry";
+import { LEGACY_CAPABILITY_PROBES } from "./legacy-capabilities";
+import { ODF_CODEC_OWNERSHIP } from "./odf-ownership";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-describe("coverage registry gates", () => {
+describe("coverage ownership gates", () => {
   it("requires every ODF mapper to be executable and non-generic", () => {
-    expect(ODF_CODEC_REGISTRY.length).toBeGreaterThan(0);
-    for (const entry of ODF_CODEC_REGISTRY) {
+    expect(ODF_CODEC_OWNERSHIP.length).toBeGreaterThan(0);
+    for (const entry of ODF_CODEC_OWNERSHIP) {
       expect(entry.classification).not.toBe("unsupported");
       expect(entry.classification).not.toBe("generic-only");
       expect(entry.schemaElements?.length).toBeGreaterThan(0);
@@ -28,8 +28,8 @@ describe("coverage registry gates", () => {
   });
 
   it("requires legacy capabilities to name implementation, tests, and fixtures", () => {
-    expect(LEGACY_CAPABILITY_REGISTRY.length).toBe(4);
-    for (const format of LEGACY_CAPABILITY_REGISTRY) {
+    expect(LEGACY_CAPABILITY_PROBES.length).toBe(4);
+    for (const format of LEGACY_CAPABILITY_PROBES) {
       expect(format.capabilities.length).toBeGreaterThan(0);
       for (const capability of format.capabilities) {
         expect(capability.supported).toBe(true);

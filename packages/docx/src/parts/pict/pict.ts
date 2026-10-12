@@ -80,7 +80,7 @@ export interface PictOptions {
  * tree's `{fileName}` placeholders are remapped to the registered names), then
  * emit the ordered children.
  *
- * The context is narrowed to the media registry — callers outside the body
+ * The context is narrowed to media collection — callers outside the body
  * descriptor chain (e.g. numbering picture bullets) pass `{ file: writeCtx }`.
  */
 export function stringifyPict(opts: PictOptions, ctx: Pick<BodyContext, "file">): string {

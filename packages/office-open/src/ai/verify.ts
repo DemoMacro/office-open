@@ -13,7 +13,7 @@
 import {
   encodeBase64,
   OOXML_PACKAGE_FORMATS,
-  PART_REGISTRIES,
+  PACKAGE_PART_MANIFESTS,
   unzipSync,
   validateOpcConsistency,
 } from "@office-open/core";
@@ -40,7 +40,7 @@ export function generateVerifiedBase64(type: OfficeGenerateFormat, bytes: Uint8A
   for (const name of Object.keys(files)) {
     entries.set(name, decoder.decode(files[name]));
   }
-  const issues = validateOpcConsistency(entries, PART_REGISTRIES[schemaType]!);
+  const issues = validateOpcConsistency(entries, PACKAGE_PART_MANIFESTS[schemaType]!);
   if (issues.length > 0) {
     const lines = issues.map((i) => `  ${i.code} [${i.severity}] ${i.part}: ${i.message}`);
     throw new Error(

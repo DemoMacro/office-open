@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const QNAMES = [
   "accent1",
@@ -324,13 +324,13 @@ const QNAMES = [
   "xfrm",
 ] as const;
 
-export const DML_MAIN_REGISTRY: readonly ModelRegistryEntry[] = QNAMES.map((localName) => ({
+export const DML_MAIN_OWNERSHIP: readonly ModelOwnershipEntry[] = QNAMES.map((localName) => ({
   domain: "dml-main",
   qname: `a:${localName}`,
   canonicalOptionPath: null,
   classification: "planned",
   classificationReason:
-    "dml-main registry is now visible; each QName requires explicit ownership and executable evidence.",
+    "dml-main ownership is now visible; each QName requires explicit ownership and executable evidence.",
   owner: { stringify: null, parse: null, compiler: null, publicApi: null },
   evidence: { static: [], executable: [], rawOnly: false },
 }));

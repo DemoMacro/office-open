@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { resolverFromRegistry } from "./content-types-input";
-import { opaquePassthroughPolicy, PART_REGISTRIES } from "./part-registry";
+import { partContentTypeResolver } from "./content-types-input";
+import { opaquePassthroughPolicy, PACKAGE_PART_MANIFESTS } from "./package-parts";
 
 describe("opaque part policy", () => {
-  it("allows only registry-declared opaque or standalone parts", () => {
+  it("allows only manifest-declared opaque or standalone parts", () => {
     const docx = opaquePassthroughPolicy("docx");
     expect(docx.opaquePatterns.some((pattern) => pattern.test("word/vbaProject.bin"))).toBe(true);
     expect(docx.opaquePatterns.some((pattern) => pattern.test("customXml/item1.xml"))).toBe(true);
@@ -25,17 +25,17 @@ describe("opaque part policy", () => {
     expect(xlsx.opaquePatterns.some((pattern) => pattern.test("xl/vbaProject.bin"))).toBe(true);
   });
 
-  it("keeps policy prefixes in one registry per package", () => {
-    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("media/");
-    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("word/printerSettings/");
-    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("customXml/");
-    expect(PART_REGISTRIES.docx.opaquePrefixes).toContain("docProps/thumbnail.");
-    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/embeddings/");
-    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/media/");
-    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/printerSettings/");
-    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("ppt/ink/");
-    expect(PART_REGISTRIES.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
-    expect(PART_REGISTRIES.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
+  it("keeps policy prefixes in one manifest per package", () => {
+    expect(PACKAGE_PART_MANIFESTS.docx.opaquePrefixes).toContain("media/");
+    expect(PACKAGE_PART_MANIFESTS.docx.opaquePrefixes).toContain("word/printerSettings/");
+    expect(PACKAGE_PART_MANIFESTS.docx.opaquePrefixes).toContain("customXml/");
+    expect(PACKAGE_PART_MANIFESTS.docx.opaquePrefixes).toContain("docProps/thumbnail.");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/embeddings/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/media/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/printerSettings/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("ppt/ink/");
+    expect(PACKAGE_PART_MANIFESTS.pptx.opaquePrefixes).toContain("docProps/thumbnail.");
+    expect(PACKAGE_PART_MANIFESTS.xlsx.opaquePrefixes).toContain("xl/printerSettings/");
   });
 
   it("allows standalone PowerPoint revision metadata", () => {
@@ -45,19 +45,19 @@ describe("opaque part policy", () => {
   });
 
   it("resolves printer settings parts to their family content types", () => {
-    const docx = resolverFromRegistry(PART_REGISTRIES.docx)(
+    const docx = partContentTypeResolver(PACKAGE_PART_MANIFESTS.docx)(
       "word/printerSettings/printerSettings1.bin",
     );
     expect(docx).toBe(
       "application/vnd.openxmlformats-officedocument.wordprocessingml.printerSettings",
     );
-    const pptx = resolverFromRegistry(PART_REGISTRIES.pptx)(
+    const pptx = partContentTypeResolver(PACKAGE_PART_MANIFESTS.pptx)(
       "ppt/printerSettings/printerSettings1.bin",
     );
     expect(pptx).toBe(
       "application/vnd.openxmlformats-officedocument.presentationml.printerSettings",
     );
-    const xlsx = resolverFromRegistry(PART_REGISTRIES.xlsx)(
+    const xlsx = partContentTypeResolver(PACKAGE_PART_MANIFESTS.xlsx)(
       "xl/printerSettings/printerSettings1.bin",
     );
     expect(xlsx).toBe(

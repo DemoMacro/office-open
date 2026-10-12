@@ -8808,7 +8808,7 @@
           "type": "array"
         },
         "people": {
-          "description": "Comment authors (word/people.xml). Word pairs each w15:person with comments by exact author-string equality; omit for documents whose comments carry no author registry.",
+          "description": "Comment authors (word/people.xml). Word pairs each w15:person with comments by exact author-string equality; omit for documents whose comments carry no author index.",
           "items": {
             "$ref": "#/definitions/CommentPersonOptions"
           },

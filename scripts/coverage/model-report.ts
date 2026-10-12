@@ -4,12 +4,12 @@ import { fileURLToPath } from "node:url";
 
 import { parse } from "../../packages/xml/dist/index.mjs";
 import type { OoxmlExecutableEvidenceManifest } from "./ooxml-executable";
-import { MODEL_REGISTRIES } from "./registry";
+import { MODEL_OWNERSHIP } from "./ownership";
 import type {
   ModelCoverageReport,
   ModelCoverageViolation,
-  ModelRegistryEntry,
-} from "./registry/types";
+  ModelOwnershipEntry,
+} from "./ownership/types";
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const REPORT_PATH = path.join(ROOT_DIR, ".temp", "model-coverage.json");
@@ -67,7 +67,7 @@ function ownerArtifactExists(reference: string): boolean {
   return !symbol || fs.readFileSync(filePath, "utf8").includes(symbol);
 }
 
-function validateEvidence(entry: ModelRegistryEntry): boolean {
+function validateEvidence(entry: ModelOwnershipEntry): boolean {
   const owner = [entry.owner.stringify, entry.owner.parse].filter(
     (reference): reference is string => Boolean(reference),
   );
@@ -75,11 +75,11 @@ function validateEvidence(entry: ModelRegistryEntry): boolean {
 }
 
 function executableEvidenceStatus(
-  entry: ModelRegistryEntry,
+  entry: ModelOwnershipEntry,
   evidence: OoxmlExecutableEvidenceManifest,
 ): { ok: boolean; reason: string } {
   if (entry.evidence.executable.length === 0) {
-    return { ok: false, reason: "No executable case is registered." };
+    return { ok: false, reason: "No executable case is present." };
   }
   const missing = entry.evidence.executable.filter((caseId) => {
     const record = evidence.records.find((candidate) => candidate.caseId === caseId);
@@ -118,7 +118,7 @@ export function buildModelCoverageReport(
       ]);
     }
   }
-  const entries = [...MODEL_REGISTRIES]
+  const entries = [...MODEL_OWNERSHIP]
     .map((entry) => ({
       ...entry,
       evidence: {
@@ -131,21 +131,21 @@ export function buildModelCoverageReport(
         left.domain.localeCompare(right.domain) || left.qname.localeCompare(right.qname),
     );
   const violations: ModelCoverageViolation[] = [];
-  const unregistered: { domain: string; qname: string }[] = [];
-  const registered = new Set(entries.map((entry) => `${entry.domain}:${entry.qname}`));
+  const unowned: { domain: string; qname: string }[] = [];
+  const owned = new Set(entries.map((entry) => `${entry.domain}:${entry.qname}`));
 
   const schemaQNames = new Set<string>();
   for (const schema of DOMAIN_SCHEMAS) {
     for (const qname of collectSchemaQNames(schema.schema, schema.prefix)) {
       schemaQNames.add(qname);
-      if (!registered.has(`${schema.domain}:${qname}`)) {
-        unregistered.push({ domain: schema.domain, qname });
+      if (!owned.has(`${schema.domain}:${qname}`)) {
+        unowned.push({ domain: schema.domain, qname });
         violations.push(
           violation(
-            "unregistered-qname",
+            "unowned-qname",
             schema.domain,
             qname,
-            "XSD global element is missing from the explicit model registry.",
+            "XSD global element is missing from explicit model ownership.",
           ),
         );
       }
@@ -156,20 +156,20 @@ export function buildModelCoverageReport(
     if (!schemaQNames.has(entry.qname)) {
       violations.push(
         violation(
-          "unknown-registry-qname",
+          "unknown-ownership-qname",
           entry.domain,
           entry.qname,
-          "Registry entry is not declared by the source schema.",
+          "Ownership entry is not declared by the source schema.",
         ),
       );
     }
     if (!DOMAINS.includes(entry.domain as (typeof DOMAINS)[number])) {
       violations.push(
         violation(
-          "unknown-registry-qname",
+          "unknown-ownership-qname",
           entry.domain,
           entry.qname,
-          `Registry domain is not enabled; expected one of ${DOMAINS.join(", ")}.`,
+          `Ownership domain is not enabled; expected one of ${DOMAINS.join(", ")}.`,
         ),
       );
       continue;
@@ -231,7 +231,7 @@ export function buildModelCoverageReport(
 
   const summary: Record<string, number> = {
     total: entries.length,
-    unregistered: unregistered.length,
+    unowned: unowned.length,
   };
   for (const entry of entries) {
     summary[entry.classification] = (summary[entry.classification] ?? 0) + 1;
@@ -241,7 +241,7 @@ export function buildModelCoverageReport(
     schemaVersion: 1,
     domains: DOMAINS,
     entries,
-    unregistered,
+    unowned,
     summary,
     violations,
   };

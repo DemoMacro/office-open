@@ -34,7 +34,7 @@ import { xmlRegisterFsInputProviders } from "libxml2-wasm/lib/nodejs.mjs";
 
 // Relative source import so tsx always sees the latest OPC validator without
 // depending on a prior @office-open/core dist build.
-import { validateOpcConsistency, PART_REGISTRIES } from "../../packages/core/src/opc";
+import { validateOpcConsistency, PACKAGE_PART_MANIFESTS } from "../../packages/core/src/opc";
 
 const execFileAsync = promisify(execFile);
 
@@ -86,7 +86,7 @@ function validateOpcPhase(
   label: string,
 ): string[] {
   const entries = extractAllEntries(zipPath);
-  const issues = validateOpcConsistency(entries, PART_REGISTRIES[format]);
+  const issues = validateOpcConsistency(entries, PACKAGE_PART_MANIFESTS[format]);
   const failures: string[] = [];
   for (const issue of issues) {
     const tag = issue.severity === "error" ? "OPC-ERR" : "OPC-WARN";

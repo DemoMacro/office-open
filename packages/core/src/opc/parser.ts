@@ -22,7 +22,7 @@ const XML_PARSE_OPTIONS = {
   // Normalize namespace prefixes to the canonical ones the library itself
   // emits — sources binding the Word namespace to ns0: or the spreadsheet
   // namespace to x: parse into canonical names, so descriptor matching and
-  // registry paths see the elements they address.
+  // manifest paths see the elements they address.
   normalizeNamespaces: OOXML_CANONICAL_PREFIXES,
 };
 

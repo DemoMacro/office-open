@@ -4,7 +4,7 @@
  * Parses each transitional schema with the real XML parser and resolves
  * global element declarations into typed models: attributes (direct,
  * attributeGroup, and base-type chain) plus direct child element refs.
- * This is the foundation for the per-QName ownership registry and the
+ * This is the foundation for the per-QName ownership inventory and the
  * runtime fixture matrix (coverage plan phase 1).
  *
  * Usage: pnpm exec tsx scripts/coverage/xsd-model.ts [--json <out>] [--summary]

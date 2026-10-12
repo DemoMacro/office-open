@@ -1,3 +1,3 @@
 export * from "./metadata";
-export * from "./registry";
+export * from "./dispositions";
 export * from "./types";

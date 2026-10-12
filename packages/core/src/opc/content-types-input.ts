@@ -5,7 +5,7 @@
  * Default/Override entries from a path→contentType resolver plus an
  * extension→MIME map. The part set is the single source of truth, so the
  * content-type declarations cannot drift from what is written — the class of
- * bug that registry/facts builders exist to patch (#357). Sparse or index-based
+ * bug that manifest/facts builders exist to patch (#357). Sparse or index-based
  * part naming (e.g. pptx comments keyed by slide index rather than a dense
  * sequence) is handled naturally: every written file is declared regardless of
  * its naming scheme, because emission follows the files, not a count.
@@ -21,8 +21,8 @@ import { OOXML_XML_DECLARATION } from "@office-open/xml";
 import type { CustomDescriptor, WriteContext } from "../descriptor";
 import type { DataType } from "../util/data-type";
 import { toUint8Array } from "../util/data-type";
+import type { PackagePartManifest } from "./package-parts";
 import type { Zippable } from "./packer";
-import type { PackagePartRegistry } from "./part-registry";
 
 // ── Types ──
 
@@ -110,7 +110,7 @@ export const contentTypesDesc: CustomDescriptor<ContentTypesInput> = {
 
 export type PartContentTypeResolver = (partPath: string) => string | undefined;
 
-/** Convert a registry part path (with `${i}` placeholders) to an anchored RegExp. */
+/** Convert a manifest part path (with `${i}` placeholders) to an anchored RegExp. */
 function patternToRegExp(path: string): RegExp {
   const segments = path.split("${i}");
   const escaped = segments.map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
@@ -118,15 +118,15 @@ function patternToRegExp(path: string): RegExp {
 }
 
 /**
- * Build a path→contentType resolver from a part registry. Only the path pattern
+ * Build a path→contentType resolver from a part manifest. Only the path pattern
  * and contentType are consulted; the presence/flag/countFrom fields are
  * irrelevant here because emission is driven by the files actually written, not
  * by a separate facts map. Any path the resolver does not recognize falls
  * through to extension-based Default handling (media, embeddings, .rels).
  */
-export function resolverFromRegistry(registry: PackagePartRegistry): PartContentTypeResolver {
+export function partContentTypeResolver(manifest: PackagePartManifest): PartContentTypeResolver {
   const patterns: Array<{ re: RegExp; contentType: string }> = [];
-  for (const part of registry.parts) {
+  for (const part of manifest.parts) {
     if (!part.contentType) continue;
     patterns.push({ re: patternToRegExp(part.path), contentType: part.contentType });
   }
@@ -284,7 +284,7 @@ export function deriveContentTypes(
  *   disagrees with (or omits) their derived type. A part the compiler
  *   rebuilds from its parsed source stays the same part kind, so a surviving
  *   source Override (macro-enabled variants included) keeps the source type —
- *   the static registry cannot know the package variant the source declared.
+ *   the static manifest cannot know the package variant the source declared.
  * - A derived Default joins only when an output part of that extension is
  *   still uncovered after Overrides — a source table that declares its .jpg
  *   parts via per-part Overrides stays as-is.

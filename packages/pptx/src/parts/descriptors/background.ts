@@ -46,7 +46,7 @@ function stringifyBackgroundInner(opts: BackgroundOptions, ctx: WriteContext): s
   if (opts.shadeToTitle) bgPrAttrs.push(' shadeToTitle="1"');
 
   // The descriptor path (not the context-free buildFill) so a blip fill
-  // registers its media with the write context — an unregistered {fileName}
+  // adds its media to the write context — an unmapped {fileName}
   // placeholder would leak into r:embed with no relationship behind it — and
   // so id/date reads honor a reproducible scope. A skipped fill (one-stop
   // gradient, illegal gsLst) falls back to noFill so p:bgPr always carries

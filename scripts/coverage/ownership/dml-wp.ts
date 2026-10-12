@@ -1,4 +1,4 @@
-import type { ModelOwner, ModelRegistryEntry } from "./types";
+import type { ModelOwner, ModelOwnershipEntry } from "./types";
 
 const WORDPROCESSING_DRAWING_QNAMES = [
   "align",
@@ -127,7 +127,7 @@ const OPTION_PATHS: Record<string, string> = {
   xfrm: "MediaTransformation",
 };
 
-function modeled(localName: string): ModelRegistryEntry {
+function modeled(localName: string): ModelOwnershipEntry {
   return {
     domain: "dml-wp",
     qname: `wp:${localName}`,
@@ -140,6 +140,6 @@ function modeled(localName: string): ModelRegistryEntry {
   };
 }
 
-export const DML_WP_REGISTRY: readonly ModelRegistryEntry[] = WORDPROCESSING_DRAWING_QNAMES.map(
+export const DML_WP_OWNERSHIP: readonly ModelOwnershipEntry[] = WORDPROCESSING_DRAWING_QNAMES.map(
   (localName) => modeled(localName),
 );

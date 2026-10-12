@@ -90,7 +90,7 @@ const ODP_STYLES: readonly SchemaElementDescriptor[] = [
 ];
 const ODP_META: readonly SchemaElementDescriptor[] = ODT_META;
 
-export const ODF_CODEC_REGISTRY: readonly OdfCodecEntry[] = [
+export const ODF_CODEC_OWNERSHIP: readonly OdfCodecEntry[] = [
   {
     id: "manifest",
     classification: "subdocument",

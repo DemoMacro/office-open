@@ -111,16 +111,16 @@ export {
   DOCX_PARTS,
   PPTX_PARTS,
   XLSX_PARTS,
-  PART_REGISTRIES,
+  PACKAGE_PART_MANIFESTS,
   opaquePassthroughPolicy,
   type PartDefinition,
   type PartPresence,
-  type PackagePartRegistry,
-} from "./part-registry";
+  type PackagePartManifest,
+} from "./package-parts";
 export { buildContentTypeOverrides, type ContentTypeOverrideEntry } from "./content-type-overrides";
 export {
   contentTypesDesc,
-  resolverFromRegistry,
+  partContentTypeResolver,
   deriveContentTypes,
   finalizeContentTypes,
   type ContentTypeDefault,

@@ -5,11 +5,11 @@ import {
   contentTypesDesc,
   deriveContentTypes,
   finalizeContentTypes,
-  resolverFromRegistry,
+  partContentTypeResolver,
 } from "./content-types-input";
-import { PPTX_PARTS } from "./part-registry";
+import { PPTX_PARTS } from "./package-parts";
 
-const resolve = resolverFromRegistry(PPTX_PARTS);
+const resolve = partContentTypeResolver(PPTX_PARTS);
 const MEDIA = {
   png: "image/png",
   jpeg: "image/jpeg",
@@ -18,7 +18,7 @@ const MEDIA = {
   mp4: "video/mp4",
 };
 
-describe("resolverFromRegistry", () => {
+describe("partContentTypeResolver", () => {
   it("matches dense sequential and sparse index-based part names equally", () => {
     // Dense: slides are written slide1, slide2, slide3 in sequence.
     expect(resolve("ppt/slides/slide1.xml")).toBe(
@@ -118,7 +118,7 @@ describe("deriveContentTypes", () => {
   });
 
   it("merges explicit overrides for data-driven parts (altChunks, sub-documents)", () => {
-    // altChunk paths are not in the registry and carry a per-file content type.
+    // altChunk paths are not in the manifest and carry a per-file content type.
     const input = deriveContentTypes(["word/afchunks/chunk1.html", "word/document.xml"], {
       resolve,
       mediaContentTypes: MEDIA,

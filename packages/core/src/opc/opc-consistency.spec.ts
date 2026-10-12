@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vite-plus/test";
 
 import { validateOpcConsistency, type OpcIssue } from "./opc-consistency";
-import { DOCX_PARTS, PPTX_PARTS, XLSX_PARTS } from "./part-registry";
+import { DOCX_PARTS, PPTX_PARTS, XLSX_PARTS } from "./package-parts";
 
 const NS_TYPES = "http://schemas.openxmlformats.org/package/2006/content-types";
 const NS_RELS = "http://schemas.openxmlformats.org/package/2006/relationships";

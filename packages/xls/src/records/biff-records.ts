@@ -8,21 +8,21 @@ export type BiffRecordDisposition =
   | { kind: "structural-noop"; reason: string }
   | { kind: "unsupported" };
 
-export interface BiffRegistryEntry {
+export interface BiffRecordClassification {
   readonly code: number;
   readonly name: string;
   readonly scope: BiffRecordScope;
   readonly disposition: BiffRecordDisposition;
 }
 
-export type BiffRecordRegistry = ReadonlyMap<number, BiffRegistryEntry>;
+export type BiffRecordClassifications = ReadonlyMap<number, BiffRecordClassification>;
 
 const canonical = (
   code: number,
   name: string,
   scope: BiffRecordScope,
   owner: "record-reader" | "workbook-globals" | "worksheet",
-): [number, BiffRegistryEntry] => [
+): [number, BiffRecordClassification] => [
   code,
   { code, name, scope, disposition: { kind: "canonical", owner } },
 ];
@@ -32,12 +32,12 @@ const noop = (
   name: string,
   scope: BiffRecordScope,
   reason: string,
-): [number, BiffRegistryEntry] => [
+): [number, BiffRecordClassification] => [
   code,
   { code, name, scope, disposition: { kind: "structural-noop", reason } },
 ];
 
-export const BIFF_RECORD_REGISTRY: BiffRecordRegistry = new Map([
+export const BIFF_RECORD_CLASSIFICATIONS: BiffRecordClassifications = new Map([
   canonical(0x000a, "End Of File", "both", "record-reader"),
   canonical(0x0809, "Begin Of File", "both", "record-reader"),
   canonical(0x002f, "File Pass", "both", "record-reader"),
@@ -131,7 +131,7 @@ export function biffRecordContext(
   reason: string,
   extra: { readonly property?: string } = {},
 ) {
-  const entry = BIFF_RECORD_REGISTRY.get(record.code);
+  const entry = BIFF_RECORD_CLASSIFICATIONS.get(record.code);
   return {
     part: "stream" as const,
     recordType: record.code,
@@ -144,12 +144,14 @@ export function biffRecordContext(
   };
 }
 
-export function assertRegisteredBiffRecord(record: BiffRecord): BiffRegistryEntry | undefined {
-  const entry = BIFF_RECORD_REGISTRY.get(record.code);
+export function assertSupportedBiffRecord(
+  record: BiffRecord,
+): BiffRecordClassification | undefined {
+  const entry = BIFF_RECORD_CLASSIFICATIONS.get(record.code);
   if (!entry) {
     // Real-world workbooks (all of which Excel opens) carry records outside
-    // any public registry. Skipping with a structured warning keeps them
-    // readable; explicit registry entries still control strict rejection.
+    // any public classification table. Skipping with a structured warning keeps
+    // them readable; explicit classifications still control strict rejection.
     console.warn(
       `xls parse diagnostic: skipped unknown record (${JSON.stringify({
         ...biffRecordContext(record, "unknown-record"),

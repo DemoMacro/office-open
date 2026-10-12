@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const QNAMES = [
   "filterColumn",
@@ -392,13 +392,13 @@ const QNAMES = [
   "webPublishObject",
 ] as const;
 
-export const SML_REGISTRY: readonly ModelRegistryEntry[] = QNAMES.map((localName) => ({
+export const SML_OWNERSHIP: readonly ModelOwnershipEntry[] = QNAMES.map((localName) => ({
   domain: "sml",
   qname: `sml:${localName}`,
   canonicalOptionPath: null,
   classification: "planned",
   classificationReason:
-    "sml registry is now visible; each QName requires explicit ownership and executable evidence.",
+    "sml ownership is now visible; each QName requires explicit ownership and executable evidence.",
   owner: { stringify: null, parse: null, compiler: null, publicApi: null },
   evidence: { static: [], executable: [], rawOnly: false },
 }));

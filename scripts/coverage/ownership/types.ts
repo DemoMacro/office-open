@@ -17,7 +17,7 @@ export interface ModelEvidence {
   rawOnly: boolean;
 }
 
-export interface ModelRegistryEntry {
+export interface ModelOwnershipEntry {
   domain: string;
   qname: string;
   canonicalOptionPath: string | null;
@@ -30,12 +30,12 @@ export interface ModelRegistryEntry {
 export interface ModelCoverageViolation {
   severity: "error";
   code:
-    | "unregistered-qname"
+    | "unowned-qname"
     | "modeled-without-option-path"
     | "modeled-without-both-directions"
     | "modeled-without-executable-evidence"
     | "raw-only-modeled-evidence"
-    | "unknown-registry-qname";
+    | "unknown-ownership-qname";
   domain: string;
   qname: string;
   reason: string;
@@ -44,8 +44,8 @@ export interface ModelCoverageViolation {
 export interface ModelCoverageReport {
   schemaVersion: 1;
   domains: readonly string[];
-  entries: readonly ModelRegistryEntry[];
-  unregistered: readonly { domain: string; qname: string }[];
+  entries: readonly ModelOwnershipEntry[];
+  unowned: readonly { domain: string; qname: string }[];
   summary: Readonly<Record<string, number>>;
   violations: readonly ModelCoverageViolation[];
 }

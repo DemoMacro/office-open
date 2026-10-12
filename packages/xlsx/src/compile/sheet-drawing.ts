@@ -492,7 +492,7 @@ export function compileSheetDrawing(
     });
   }
 
-  // Generate drawing XML (via descriptor). Snapshot the hyperlink registry
+  // Generate drawing XML (via descriptor). Snapshot the hyperlink map
   // first so only runs stringified for this sheet's drawing resolve here.
   const hyperlinkBase = ctx.hyperlinks.length;
   const drawingXml = drawingDesc.stringify(

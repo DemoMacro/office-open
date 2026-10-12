@@ -15,9 +15,9 @@ import {
   type BiffRecord,
   type BiffVersion,
 } from "../records";
+import { assertSupportedBiffRecord, biffRecordContext } from "../records/biff-records";
 import { escherImages } from "../records/escher";
 import { decodeFormula } from "../records/formula";
-import { assertRegisteredBiffRecord, biffRecordContext } from "../records/registry";
 import {
   BEGIN_OF_FILE_CODES,
   detectBiffVersion,
@@ -74,7 +74,7 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
     }
     if (!inGlobals) continue;
 
-    assertRegisteredBiffRecord(record);
+    assertSupportedBiffRecord(record);
     if (sharedStringParts && record.code !== RecordCode.Continue) {
       sharedStrings.push(
         ...parseSharedStrings(

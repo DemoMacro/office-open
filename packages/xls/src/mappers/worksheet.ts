@@ -3,9 +3,9 @@ import type { NoteAnchorOptions, WorksheetOptions } from "@office-open/xlsx";
 import { XlsParseError } from "../errors";
 import type { BiffRecord } from "../records";
 import { RecordCode, isClearedFilePass, recordsFrom } from "../records";
+import { assertSupportedBiffRecord } from "../records/biff-records";
 import { escherAnchors, escherDrawings } from "../records/escher";
 import { decodeFormula } from "../records/formula";
-import { assertRegisteredBiffRecord } from "../records/registry";
 import {
   BEGIN_OF_FILE_CODES,
   encodingForCodepage,
@@ -872,7 +872,7 @@ export function parseWorksheetStream(
         break;
       }
       default:
-        assertRegisteredBiffRecord(record);
+        assertSupportedBiffRecord(record);
         break;
     }
   }

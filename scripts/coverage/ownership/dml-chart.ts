@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const CHART_DESCRIPTOR_OWNER = "packages/core/src/chart/chart-descriptors.ts:chartSpaceDesc";
 
@@ -231,7 +231,7 @@ const MODELED_EVIDENCE: Readonly<Record<string, readonly string[]>> = {
   yVal: ["packages/core/src/chart/chart-descriptors.spec.ts"],
 };
 
-function modeled(localName: string): ModelRegistryEntry {
+function modeled(localName: string): ModelOwnershipEntry {
   const evidence = MODELED_EVIDENCE[localName] ?? [];
   return {
     domain: "dml-chart",
@@ -250,7 +250,7 @@ function modeled(localName: string): ModelRegistryEntry {
   };
 }
 
-function planned(localName: string): ModelRegistryEntry {
+function planned(localName: string): ModelOwnershipEntry {
   return {
     domain: "dml-chart",
     qname: `c:${localName}`,
@@ -490,7 +490,7 @@ const PLANNED_QNAMES = [
   "yMode",
 ] as const;
 
-export const DML_CHART_REGISTRY: readonly ModelRegistryEntry[] = [
+export const DML_CHART_OWNERSHIP: readonly ModelOwnershipEntry[] = [
   ...MODELED_QNAMES.map(modeled),
   ...PLANNED_QNAMES.map(planned),
 ];

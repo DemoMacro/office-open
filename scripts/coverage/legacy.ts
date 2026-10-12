@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { LEGACY_CAPABILITY_REGISTRY } from "./legacy-registry";
+import { LEGACY_CAPABILITY_PROBES } from "./legacy-capabilities";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -14,7 +14,7 @@ interface TestRun {
 
 interface CapabilityResult {
   format: string;
-  capability: (typeof LEGACY_CAPABILITY_REGISTRY)[number]["capabilities"][number];
+  capability: (typeof LEGACY_CAPABILITY_PROBES)[number]["capabilities"][number];
   packageMissing: boolean;
   moduleMissing: boolean;
   exportMissing: boolean;
@@ -28,11 +28,9 @@ const testRuns = new Map<string, TestRun>();
 function filter(): string | undefined {
   const format = process.argv.slice(2).find((argument) => !argument.startsWith("--"));
   if (format === undefined) return undefined;
-  if (!LEGACY_CAPABILITY_REGISTRY.some((entry) => entry.id === format)) {
+  if (!LEGACY_CAPABILITY_PROBES.some((entry) => entry.id === format)) {
     console.error(`unknown format: ${format}`);
-    console.error(
-      `valid formats: ${LEGACY_CAPABILITY_REGISTRY.map((entry) => entry.id).join(", ")}`,
-    );
+    console.error(`valid formats: ${LEGACY_CAPABILITY_PROBES.map((entry) => entry.id).join(", ")}`);
     process.exit(2);
   }
   return format;
@@ -107,7 +105,7 @@ function runFormatTests(packageId: string, testModule: string): TestRun {
 
 async function results(): Promise<CapabilityResult[]> {
   const output: CapabilityResult[] = [];
-  for (const format of LEGACY_CAPABILITY_REGISTRY) {
+  for (const format of LEGACY_CAPABILITY_PROBES) {
     const packageDirectory = path.join(ROOT, "packages", format.id);
     const packageMissing = !fs.existsSync(path.join(packageDirectory, "package.json"));
     const publicModule = await moduleExports(format.id, format.capabilities[0]!.owner.module);

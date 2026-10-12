@@ -1,4 +1,4 @@
-import type { ModelRegistryEntry } from "./types";
+import type { ModelOwnershipEntry } from "./types";
 
 const WML_QNAMES = [
   "tblPrEx",
@@ -616,13 +616,13 @@ const WML_QNAMES = [
   "glossaryDocument",
 ] as const;
 
-export const WML_REGISTRY: readonly ModelRegistryEntry[] = WML_QNAMES.map((localName) => ({
+export const WML_OWNERSHIP: readonly ModelOwnershipEntry[] = WML_QNAMES.map((localName) => ({
   domain: "wml",
   qname: `w:${localName}`,
   canonicalOptionPath: null,
   classification: "planned",
   classificationReason:
-    "WordprocessingML registry is now visible; each QName requires explicit ownership and executable evidence.",
+    "WordprocessingML ownership is now visible; each QName requires explicit ownership and executable evidence.",
   owner: { stringify: null, parse: null, compiler: null, publicApi: null },
   evidence: { static: [], executable: [], rawOnly: false },
 }));

@@ -1,4 +1,4 @@
-import type { ModelOwner, ModelRegistryEntry } from "./types";
+import type { ModelOwner, ModelOwnershipEntry } from "./types";
 
 const layoutOwner: ModelOwner = {
   stringify: "packages/core/src/smartart/layout-definition.ts:stringifyLayoutDefinitionPart",
@@ -55,7 +55,7 @@ function modeledDefinitionHeaders(
   descriptorName: string,
   optionName: string,
   caseId: string,
-): ModelRegistryEntry {
+): ModelOwnershipEntry {
   const reference = `packages/core/src/drawing/diagram/headers.ts:${descriptorName}`;
   return {
     domain: "dml-diagram",
@@ -95,7 +95,7 @@ const LAYOUT_CASE = "dml-diagram.layout-definition.round-trip";
 const STYLE_CASE = "dml-diagram.style-definition.round-trip";
 const COLOR_CASE = "dml-diagram.color-definition.round-trip";
 
-function modeledDescriptor(qname: string): ModelRegistryEntry {
+function modeledDescriptor(qname: string): ModelOwnershipEntry {
   return {
     domain: "dml-diagram",
     qname,
@@ -111,7 +111,7 @@ function modeledDescriptor(qname: string): ModelRegistryEntry {
   };
 }
 
-function modeledExtensions(): ModelRegistryEntry {
+function modeledExtensions(): ModelOwnershipEntry {
   return {
     domain: "dml-diagram",
     qname: "dgm:extLst",
@@ -133,7 +133,7 @@ function modeled(
   canonicalOptionPath: string,
   evidence: readonly string[],
   executable: readonly string[] = evidence,
-): ModelRegistryEntry[] {
+): ModelOwnershipEntry[] {
   return qnames.map((qname) => ({
     domain: "dml-diagram",
     qname,
@@ -150,7 +150,7 @@ function planned(
   owner: ModelOwner,
   canonicalOptionPath: string,
   evidence: readonly string[],
-): ModelRegistryEntry[] {
+): ModelOwnershipEntry[] {
   return qnames.map((qname) => ({
     domain: "dml-diagram",
     qname,
@@ -163,7 +163,7 @@ function planned(
   }));
 }
 
-export const DML_DIAGRAM_REGISTRY: readonly ModelRegistryEntry[] = [
+export const DML_DIAGRAM_OWNERSHIP: readonly ModelOwnershipEntry[] = [
   ...modeled(
     [
       "dgm:layoutDef",
