@@ -142,16 +142,12 @@ importers:
 
   packages/odf:
     dependencies:
-      '@office-open/xml':
-        specifier: workspace:*
-        version: link:../xml
-      fflate:
-        specifier: 0.8.3
-        version: 0.8.3
-    devDependencies:
       '@office-open/core':
         specifier: workspace:*
         version: link:../core
+      '@office-open/xml':
+        specifier: workspace:*
+        version: link:../xml
 
   packages/odp:
     dependencies:
@@ -171,6 +167,9 @@ importers:
 
   packages/ods:
     dependencies:
+      '@office-open/core':
+        specifier: workspace:*
+        version: link:../core
       '@office-open/odf':
         specifier: workspace:*
         version: link:../odf
@@ -178,9 +177,6 @@ importers:
         specifier: workspace:*
         version: link:../xlsx
     devDependencies:
-      '@office-open/core':
-        specifier: workspace:*
-        version: link:../core
       '@office-open/xml':
         specifier: workspace:*
         version: link:../xml
