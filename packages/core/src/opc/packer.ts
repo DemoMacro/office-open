@@ -114,8 +114,8 @@ export interface CompressionOptions {
 }
 
 /** Options for Packer output methods. */
-export interface PackerOptions<T extends OutputType = "nodebuffer"> {
-  /** Output format. Defaults to `"nodebuffer"` (Node.js Buffer). */
+export interface PackerOptions<T extends OutputType = "uint8array"> {
+  /** Output format. Defaults to cross-runtime `"uint8array"`. */
   type?: T;
   /** OOXML package dialect. Defaults to the family's standard format. */
   packageVariant?: OoxmlPackageVariant;
@@ -365,12 +365,12 @@ export interface Packer<TFile> {
   compile: CompileFn<TFile>;
 
   /** Generic async output — returns the requested OutputType. */
-  pack<T extends OutputType = "nodebuffer">(
+  pack<T extends OutputType = "uint8array">(
     file: TFile,
     options?: PackerOptions<T>,
   ): Promise<OutputByType[T]>;
   /** Generic sync output — returns the requested OutputType. */
-  packSync<T extends OutputType = "nodebuffer">(
+  packSync<T extends OutputType = "uint8array">(
     file: TFile,
     options?: PackerOptions<T>,
   ): OutputByType[T];
@@ -427,11 +427,11 @@ export const createPacker = <TFile>(options: {
   const scopeOf = <T extends OutputType>(opts?: PackerOptions<T>): ReproducibleScope | undefined =>
     opts?.reproducible ? createReproducibleScope(opts.reproducible) : undefined;
 
-  const pack = async <T extends OutputType = "nodebuffer">(
+  const pack = async <T extends OutputType = "uint8array">(
     file: TFile,
     opts?: PackerOptions<T>,
   ): Promise<OutputByType[T]> => {
-    const type = opts?.type ?? ("nodebuffer" as T);
+    const type = opts?.type ?? ("uint8array" as T);
     const packageVariant = opts?.packageVariant ?? "standard";
     const mimeType = ooxmlMimeType(family, packageVariant);
     const reproducible = scopeOf(opts);
@@ -463,11 +463,11 @@ export const createPacker = <TFile>(options: {
 
   // ── Sync methods (zipSync, maximum throughput) ──
 
-  const packSync = <T extends OutputType = "nodebuffer">(
+  const packSync = <T extends OutputType = "uint8array">(
     file: TFile,
     opts?: PackerOptions<T>,
   ): OutputByType[T] => {
-    const type = opts?.type ?? ("nodebuffer" as T);
+    const type = opts?.type ?? ("uint8array" as T);
     const packageVariant = opts?.packageVariant ?? "standard";
     const mimeType = ooxmlMimeType(family, packageVariant);
     const reproducible = scopeOf(opts);

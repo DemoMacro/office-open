@@ -178,14 +178,14 @@ function addPackageFile(files: OdfPackageFiles, member: PackageMemberOptions): v
   files[member.path] = typeof member.data === "string" ? member.data : toUint8Array(member.data);
 }
 
-export function generatePresentationSync<T extends OutputType = "nodebuffer">(
+export function generatePresentationSync<T extends OutputType = "uint8array">(
   options: PresentationOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdpPackage(options), (output ?? "nodebuffer") as T, MIME);
+  return convertOutput(generateOdpPackage(options), (output ?? "uint8array") as T, MIME);
 }
 
-export async function generatePresentation<T extends OutputType = "nodebuffer">(
+export async function generatePresentation<T extends OutputType = "uint8array">(
   options: PresentationOptions,
   output?: T,
 ): Promise<OutputByType[T]> {

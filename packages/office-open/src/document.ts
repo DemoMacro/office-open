@@ -41,7 +41,7 @@ export type DocumentPatchFormat = "docx" | "docm" | "dotx" | "dotm";
 
 const DOCUMENT_PATCH_FORMATS: readonly DocumentPatchFormat[] = ["docx", "docm", "dotx", "dotm"];
 
-export type DocumentPatchRequest<T extends OutputType = OutputType> = Omit<
+export type DocumentPatchRequest<T extends OutputType = "uint8array"> = Omit<
   PatchDocumentOptions<T>,
   "data" | "outputType"
 > & {
@@ -78,14 +78,14 @@ export async function parseDocument(
 
 export async function generateDocument<
   F extends DocumentGenerateFormat,
-  T extends OutputType = "nodebuffer",
+  T extends OutputType = "uint8array",
 >(
   format: F,
   options: DocumentOptions | OdtDocumentOptions,
   output?: T,
   reproducible?: F extends "odt" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
-  const outputType = (output ?? "nodebuffer") as T;
+  const outputType = (output ?? "uint8array") as T;
 
   if (format === "odt") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODT");
@@ -113,10 +113,10 @@ export async function generateDocument<
   );
 }
 
-export async function patchDocument<T extends OutputType = OutputType>(
+export async function patchDocument<T extends OutputType = "uint8array">(
   request: DocumentPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  const { format, data, outputType = "uint8array" as T, ...patch } = request;
   if (!DOCUMENT_PATCH_FORMATS.includes(format)) {
     throw new Error(`${format} does not support document patching`);
   }

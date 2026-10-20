@@ -78,7 +78,7 @@ function isPresentationFormat(format: OfficeGenerateFormat): format is Presentat
 
 export async function generateOffice<
   Format extends OfficeGenerateFormat,
-  Output extends OutputType = "nodebuffer",
+  Output extends OutputType = "uint8array",
 >(
   format: Format,
   options: OfficeOptionsFor[Format],

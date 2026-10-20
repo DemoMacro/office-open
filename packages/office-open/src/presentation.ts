@@ -40,7 +40,7 @@ const PRESENTATION_PATCH_FORMATS: readonly PresentationPatchFormat[] = [
   "potm",
 ];
 
-export type PresentationPatchRequest<T extends OutputType = OutputType> = Omit<
+export type PresentationPatchRequest<T extends OutputType = "uint8array"> = Omit<
   PatchPresentationOptions<T>,
   "data" | "outputType"
 > & {
@@ -73,14 +73,14 @@ export async function parsePresentation(
 
 export async function generatePresentation<
   F extends PresentationGenerateFormat,
-  T extends OutputType = "nodebuffer",
+  T extends OutputType = "uint8array",
 >(
   format: F,
   options: PresentationOptions,
   output?: T,
   reproducible?: F extends "odp" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
-  const outputType = (output ?? "nodebuffer") as T;
+  const outputType = (output ?? "uint8array") as T;
 
   if (format === "odp") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODP");
@@ -97,10 +97,10 @@ export async function generatePresentation<
   );
 }
 
-export async function patchPresentation<T extends OutputType = OutputType>(
+export async function patchPresentation<T extends OutputType = "uint8array">(
   request: PresentationPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  const { format, data, outputType = "uint8array" as T, ...patch } = request;
   if (!PRESENTATION_PATCH_FORMATS.includes(format)) {
     throw new Error(`${format} does not support presentation patching`);
   }

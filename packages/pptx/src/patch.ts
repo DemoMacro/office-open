@@ -64,7 +64,7 @@ const COMMENT_AUTHORS_CONTENT_TYPE =
 export type Patch = TextRunOptions | TextRunOptions[] | string;
 
 export interface PatchPresentationOptions<
-  T extends OutputType = OutputType,
+  T extends OutputType = "uint8array",
 > extends BasePatchOptions<T, Patch> {
   /**
    * Slide collection edits. Appended slides inherit the template's first slide
@@ -437,7 +437,7 @@ const appendCommentsToMap = (
  *
  * @publicApi
  */
-export const patchPresentation = async <T extends OutputType = OutputType>({
+export const patchPresentation = async <T extends OutputType = "uint8array">({
   outputType,
   data,
   placeholders,

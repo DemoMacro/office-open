@@ -253,6 +253,12 @@ describe("createPacker", () => {
   });
 
   describe("#packSync()", () => {
+    it("should export to uint8array by default", () => {
+      const result = Packer.packSync(mockFile);
+      expect(result).toBeInstanceOf(Uint8Array);
+      expect(result).not.toBeInstanceOf(Buffer);
+    });
+
     it("should export to uint8array synchronously", () => {
       const result = Packer.packSync(mockFile, { type: "uint8array" });
       expect(result).toBeInstanceOf(Uint8Array);
@@ -617,6 +623,14 @@ describe("toUint8Array / base64", () => {
     expect(Array.from(toUint8Array(buf))).toEqual(Array.from(bytes));
     expect(Array.from(toUint8Array(Array.from(bytes)))).toEqual(Array.from(bytes));
     expect(Array.from(toUint8Array(new DataView(buf)))).toEqual(Array.from(bytes));
+  });
+
+  it("toUint8Array normalizes any typed-array view without copying its bytes", () => {
+    const source = new Uint8Array([0, 1, 2, 3, 4, 5]);
+    const words = new Uint16Array(source.buffer, 2, 2);
+    const normalized = toUint8Array(words);
+    expect(Array.from(normalized)).toEqual([2, 3, 4, 5]);
+    expect(normalized.buffer).toBe(source.buffer);
   });
 
   it("encodeBase64 round-trips with decodeBase64", () => {

@@ -48,7 +48,7 @@ import { generateWorkbook } from "@office-open/xlsx";
 const buffer = await generateWorkbook({ worksheets: [...] });
 ```
 
-Output types: `"nodebuffer"` (default), `"blob"`, `"base64"`, `"uint8array"`, `"arraybuffer"`, `"string"`.
+Output types: `"uint8array"` (default), `"blob"`, `"base64"`, `"arraybuffer"`, `"string"`, `"nodebuffer"`.
 Sync variants: `generateDocumentSync`, `generatePresentationSync`, `generateWorkbookSync`.
 Stream variant: `generateDocumentStream`, `generatePresentationStream`, `generateWorkbookStream`.
 
@@ -58,7 +58,7 @@ Read existing files back into options objects for modification or round-trip:
 
 ```ts
 import { parseDocument, generateDocument } from "@office-open/docx";
-const opts = parseDocument(readFileSync("input.docx")); // Uint8Array, ArrayBuffer, base64 string
+const opts = parseDocument(readFileSync("input.docx")); // Uint8Array, ArrayBuffer, typed-array view, base64 string
 const buffer = await generateDocument(opts);
 ```
 
@@ -72,7 +72,7 @@ Replace `{{placeholder}}` tokens in template files:
 // DOCX — paragraph or block-level replacement
 import { patchDocument } from "@office-open/docx";
 const result = await patchDocument({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: readFileSync("template.docx"),
   placeholders: {
     name: { type: "paragraph", children: [{ text: "John Doe" }] },
@@ -84,7 +84,7 @@ const result = await patchDocument({
 // PPTX — run-level replacement
 import { patchPresentation } from "@office-open/pptx";
 const result = await patchPresentation({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: readFileSync("template.pptx"),
   placeholders: { title: [{ text: "Updated" }] },
 });
@@ -92,7 +92,7 @@ const result = await patchPresentation({
 // XLSX — cell-level replacement
 import { patchWorkbook } from "@office-open/xlsx";
 const result = await patchWorkbook({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: readFileSync("template.xlsx"),
   placeholders: { amount: 1500 },
 });

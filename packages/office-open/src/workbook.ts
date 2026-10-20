@@ -36,7 +36,7 @@ export type WorkbookPatchFormat = "xlsx" | "xlsm" | "xltx" | "xltm";
 
 const WORKBOOK_PATCH_FORMATS: readonly WorkbookPatchFormat[] = ["xlsx", "xlsm", "xltx", "xltm"];
 
-export type WorkbookPatchRequest<T extends OutputType = OutputType> = Omit<
+export type WorkbookPatchRequest<T extends OutputType = "uint8array"> = Omit<
   PatchWorkbookOptions<T>,
   "data" | "outputType"
 > & {
@@ -69,14 +69,14 @@ export async function parseWorkbook(
 
 export async function generateWorkbook<
   F extends WorkbookGenerateFormat,
-  T extends OutputType = "nodebuffer",
+  T extends OutputType = "uint8array",
 >(
   format: F,
   options: WorkbookOptions | OdsWorkbookOptions,
   output?: T,
   reproducible?: F extends "ods" ? never : ReproducibleGenerationOptions,
 ): Promise<OutputByType[T]> {
-  const outputType = (output ?? "nodebuffer") as T;
+  const outputType = (output ?? "uint8array") as T;
 
   if (format === "ods") {
     if (reproducible) throw new Error("Reproducible generation is not supported for ODS");
@@ -93,10 +93,10 @@ export async function generateWorkbook<
   );
 }
 
-export async function patchWorkbook<T extends OutputType = OutputType>(
+export async function patchWorkbook<T extends OutputType = "uint8array">(
   request: WorkbookPatchRequest<T>,
 ): Promise<OutputByType[T]> {
-  const { format, data, outputType = "nodebuffer" as T, ...patch } = request;
+  const { format, data, outputType = "uint8array" as T, ...patch } = request;
   if (!WORKBOOK_PATCH_FORMATS.includes(format)) {
     throw new Error(`${format} does not support workbook patching`);
   }

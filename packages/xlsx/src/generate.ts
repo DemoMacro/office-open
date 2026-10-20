@@ -55,7 +55,7 @@ function encryptedPassthrough<T extends OutputType>(
 /**
  * Generate an XLSX file from pure JSON options.
  *
- * The output format is controlled by `packerOptions.type` (default: `"nodebuffer"` → Buffer).
+ * The output format is controlled by `packerOptions.type` (default: `"uint8array"`).
  * For synchronous generation, use {@link generateWorkbookSync}. For streaming, use {@link generateWorkbookStream}.
  *
  * @param options - Workbook options (worksheets, styles, etc.)
@@ -70,13 +70,13 @@ function encryptedPassthrough<T extends OutputType>(
  * const blob = await generateWorkbook({ worksheets: [...] }, { type: "blob" });
  * ```
  */
-export function generateWorkbook<T extends OutputType = "nodebuffer">(
+export function generateWorkbook<T extends OutputType = "uint8array">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant,
   );
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
@@ -86,13 +86,13 @@ export function generateWorkbook<T extends OutputType = "nodebuffer">(
 /**
  * Synchronously generate an XLSX file from pure JSON options.
  */
-export function generateWorkbookSync<T extends OutputType = "nodebuffer">(
+export function generateWorkbookSync<T extends OutputType = "uint8array">(
   options: WorkbookOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant,
   );
   if (encrypted) return encrypted as OutputByType[T];

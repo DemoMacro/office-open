@@ -30,14 +30,11 @@ function utf16leEncode(str: string): Uint8Array {
 
 export function randomBytes(length: number): Uint8Array {
   const bytes = new Uint8Array(length);
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(bytes);
-  } else {
-    for (let i = 0; i < length; i++) {
-      bytes[i] = Math.floor(Math.random() * 256);
-    }
+  const webCrypto = globalThis.crypto as Crypto | undefined;
+  if (typeof webCrypto?.getRandomValues !== "function") {
+    throw new TypeError("Cryptographically secure random bytes require Web Crypto");
   }
+  webCrypto.getRandomValues(bytes);
   return bytes;
 }
 

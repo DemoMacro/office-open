@@ -50,7 +50,7 @@ export type ScalarValue = string | number | boolean | Date;
 /** A patch value is just a scalar. */
 export type Patch = ScalarValue;
 
-export interface PatchWorkbookOptions<T extends OutputType = OutputType> extends BasePatchOptions<
+export interface PatchWorkbookOptions<T extends OutputType = "uint8array"> extends BasePatchOptions<
   T,
   ScalarValue
 > {
@@ -108,7 +108,7 @@ const toDisplayString = (value: Exclude<ScalarValue, string>): string => {
  *
  * @publicApi
  */
-export const patchWorkbook = async <T extends OutputType = OutputType>({
+export const patchWorkbook = async <T extends OutputType = "uint8array">({
   outputType,
   data,
   placeholders,

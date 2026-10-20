@@ -249,7 +249,7 @@ const opts = await parseDocument(buffer);
 
 // Patch template placeholders
 const result = await patchDocument({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     name: { type: "paragraph", children: [{ text: "John" }] },
@@ -267,7 +267,7 @@ const opts = await parsePresentation(buffer);
 
 // Patch template placeholders
 const result = await patchPresentation({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     title: [{ text: "Updated", bold: true }],
@@ -285,7 +285,7 @@ const opts = await parseWorkbook(buffer);
 
 // Patch template placeholders
 const result = await patchWorkbook({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     name: "John Doe",

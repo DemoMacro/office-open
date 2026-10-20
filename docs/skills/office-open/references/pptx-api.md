@@ -594,7 +594,7 @@ Add `class: "exit"`:
 ## Parsing
 
 ```json
-// parsePresentation accepts Uint8Array, ArrayBuffer, DataView, number[], base64 string
+// parsePresentation accepts Uint8Array, ArrayBuffer, typed-array views, number[], base64 string
 parsePresentation(readFileSync("input.pptx"))
 // Returns PresentationOptions — pass to generatePresentation(opts) to modify and re-export
 ```

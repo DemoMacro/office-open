@@ -224,14 +224,14 @@ function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
   return generateOcf(MIME, files, mediaTypes, packageManifest);
 }
 
-export function generateDocumentSync<T extends OutputType = "nodebuffer">(
+export function generateDocumentSync<T extends OutputType = "uint8array">(
   options: OdtDocumentOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdtPackage(options), (output ?? "nodebuffer") as T, MIME);
+  return convertOutput(generateOdtPackage(options), (output ?? "uint8array") as T, MIME);
 }
 
-export async function generateDocument<T extends OutputType = "nodebuffer">(
+export async function generateDocument<T extends OutputType = "uint8array">(
   options: OdtDocumentOptions,
   output?: T,
 ): Promise<OutputByType[T]> {

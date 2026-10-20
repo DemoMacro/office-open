@@ -53,7 +53,7 @@ function sectionsOf(options: DocumentOptions): DocumentOptions["sections"] {
 /**
  * Generate a DOCX file from pure JSON options.
  *
- * The output format is controlled by `packerOptions.type` (default: `"nodebuffer"` → Buffer).
+ * The output format is controlled by `packerOptions.type` (default: `"uint8array"`).
  * For synchronous generation, use {@link generateDocumentSync}. For streaming, use {@link generateDocumentStream}.
  *
  * @param options - Document options (sections, styles, numbering, etc.)
@@ -68,13 +68,13 @@ function sectionsOf(options: DocumentOptions): DocumentOptions["sections"] {
  * const blob = await generateDocument({ sections: [...] }, { type: "blob" });
  * ```
  */
-export function generateDocument<T extends OutputType = "nodebuffer">(
+export function generateDocument<T extends OutputType = "uint8array">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant,
   );
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
@@ -84,13 +84,13 @@ export function generateDocument<T extends OutputType = "nodebuffer">(
 /**
  * Synchronously generate a DOCX file from pure JSON options.
  */
-export function generateDocumentSync<T extends OutputType = "nodebuffer">(
+export function generateDocumentSync<T extends OutputType = "uint8array">(
   options: DocumentOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant,
   );
   if (encrypted) return encrypted as OutputByType[T];

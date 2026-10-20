@@ -249,7 +249,7 @@ const opts = await parseDocument(buffer);
 
 // 修补模板占位符
 const result = await patchDocument({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     name: { type: "paragraph", children: [{ text: "John" }] },
@@ -267,7 +267,7 @@ const opts = await parsePresentation(buffer);
 
 // 修补模板占位符
 const result = await patchPresentation({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     title: [{ text: "已更新", bold: true }],
@@ -285,7 +285,7 @@ const opts = await parseWorkbook(buffer);
 
 // 修补模板占位符
 const result = await patchWorkbook({
-  outputType: "nodebuffer",
+  outputType: "uint8array",
   data: buffer,
   placeholders: {
     name: "张三",

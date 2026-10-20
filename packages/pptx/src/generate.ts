@@ -39,7 +39,7 @@ function encryptedPassthrough<T extends OutputType>(
 /**
  * Generate a PPTX file from pure JSON options.
  *
- * The output format is controlled by `packerOptions.type` (default: `"nodebuffer"` → Buffer).
+ * The output format is controlled by `packerOptions.type` (default: `"uint8array"`).
  * For synchronous generation, use {@link generatePresentationSync}. For streaming, use {@link generatePresentationStream}.
  *
  * @param options - Presentation options (slides, masters, themes, etc.)
@@ -54,13 +54,13 @@ function encryptedPassthrough<T extends OutputType>(
  * const blob = await generatePresentation({ slides: [...] }, { type: "blob" });
  * ```
  */
-export function generatePresentation<T extends OutputType = "nodebuffer">(
+export function generatePresentation<T extends OutputType = "uint8array">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): Promise<OutputByType[T]> {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant ?? "standard",
   );
   if (encrypted) return Promise.resolve(encrypted as OutputByType[T]);
@@ -70,13 +70,13 @@ export function generatePresentation<T extends OutputType = "nodebuffer">(
 /**
  * Synchronously generate a PPTX file from pure JSON options.
  */
-export function generatePresentationSync<T extends OutputType = "nodebuffer">(
+export function generatePresentationSync<T extends OutputType = "uint8array">(
   options: PresentationOptions,
   packerOptions?: PackerOptions<T>,
 ): OutputByType[T] {
   const encrypted = encryptedPassthrough(
     options,
-    packerOptions?.type ?? "nodebuffer",
+    packerOptions?.type ?? "uint8array",
     packerOptions?.packageVariant ?? "standard",
   );
   if (encrypted) return encrypted as OutputByType[T];

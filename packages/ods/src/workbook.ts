@@ -193,14 +193,14 @@ export function unsupportedOdsValue(name: string, reason: string): OdsParseError
   );
 }
 
-export function generateWorkbookSync<T extends OutputType = "nodebuffer">(
+export function generateWorkbookSync<T extends OutputType = "uint8array">(
   options: OdsWorkbookOptions,
   output?: T,
 ): OutputByType[T] {
-  return convertOutput(generateOdsPackage(options), (output ?? "nodebuffer") as T, MIME);
+  return convertOutput(generateOdsPackage(options), (output ?? "uint8array") as T, MIME);
 }
 
-export async function generateWorkbook<T extends OutputType = "nodebuffer">(
+export async function generateWorkbook<T extends OutputType = "uint8array">(
   options: OdsWorkbookOptions,
   output?: T,
 ): Promise<OutputByType[T]> {

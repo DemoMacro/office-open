@@ -385,7 +385,7 @@ Parse a `.xlsx` file into `WorkbookOptions`, suitable for `generateWorkbook(pars
 ```ts
 import { parseWorkbook, generateWorkbook } from "@office-open/xlsx";
 
-// Accepts Uint8Array, ArrayBuffer, Buffer, number[], base64 string
+// Accepts Uint8Array, other typed-array views, ArrayBuffer, Buffer, number[], base64 string
 const options = parseWorkbook(readFileSync("input.xlsx"));
 // options.title, options.creator, options.worksheets, etc.
 

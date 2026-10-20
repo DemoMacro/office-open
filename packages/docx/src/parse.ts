@@ -242,7 +242,7 @@ function resolveEmbeddedFontData(
           "missing-package-part",
         );
       }
-      part.data = Buffer.from(bytes);
+      part.data = bytes;
       part.rawOdttf = true;
       part.odttfPath = decoded;
     }

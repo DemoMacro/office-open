@@ -1,8 +1,9 @@
 /**
  * Binary input normalization.
  *
- * Accepts the full range of binary inputs (Buffer/Uint8Array/ArrayBuffer/
- * DataView/number[]/string/base64 data URL/…) and normalizes to `Uint8Array`.
+ * Accepts the full range of binary inputs (Buffer/Uint8Array/other typed-array
+ * views/ArrayBuffer/number[]/string/base64 data URL/…) and normalizes to
+ * `Uint8Array`.
  * Centralized here so every entry point (packer, patch, descriptor helpers)
  * shares one definition instead of re-declaring per module.
  *
@@ -12,9 +13,9 @@ import { decodeBase64 } from "./base64";
 
 /** Supported binary input shapes. */
 export type DataType =
-  | ArrayBufferLike
+  | ArrayBuffer
+  | ArrayBufferView
   | Blob
-  | DataView
   | number[]
   | ReadableStream
   | string
@@ -33,8 +34,9 @@ export function isBase64DataURL(input: string): boolean {
 export interface ToUint8ArrayOptions {
   /**
    * How to interpret a plain (non-data-URL) string input. Data URLs
-   * (`data:...;base64,...`) and binary inputs (Buffer/Uint8Array/ArrayBuffer/
-   * DataView/number[]) are auto-detected and ignore this hint.
+   * (`data:...;base64,...`) and binary inputs (Buffer/Uint8Array/other
+   * typed-array views/ArrayBuffer/number[]) are auto-detected and ignore this
+   * hint.
    *
    * - `"utf8"` (default): UTF-8 text.
    * - `"base64"`: base64-encoded binary — e.g. an image supplied via
@@ -47,7 +49,7 @@ export interface ToUint8ArrayOptions {
 export function toUint8Array(data: DataType, options?: ToUint8ArrayOptions): Uint8Array {
   if (data instanceof Uint8Array) return data;
   if (data instanceof ArrayBuffer) return new Uint8Array(data);
-  if (data instanceof DataView)
+  if (ArrayBuffer.isView(data))
     return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
   if (typeof data === "string") {
     const match = data.match(DATA_URL_RE);

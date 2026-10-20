@@ -24,7 +24,7 @@ export interface PlaceholderDelimiters {
  * content, or a scalar) — every occurrence of a placeholder is replaced, not
  * just the first.
  */
-export interface BasePatchOptions<T extends OutputType = OutputType, TPatch = unknown> {
+export interface BasePatchOptions<T extends OutputType = "uint8array", TPatch = unknown> {
   /** Source document bytes (Buffer / Uint8Array / ArrayBuffer / base64 data URL / …). */
   data: DataType;
   /** Output container type — controls the return type via OutputByType. */

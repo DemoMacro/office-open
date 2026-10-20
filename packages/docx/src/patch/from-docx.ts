@@ -363,7 +363,7 @@ interface HyperlinkRelationshipAddition {
   hyperlink: { id: string; link: string };
 }
 
-export interface PatchDocumentOptions<T extends OutputType = OutputType> extends BasePatchOptions<
+export interface PatchDocumentOptions<T extends OutputType = "uint8array"> extends BasePatchOptions<
   T,
   Patch
 > {
@@ -415,7 +415,7 @@ const compareByteArrays = (a: Uint8Array, b: Uint8Array): boolean => {
  *
  * @publicApi
  */
-export const patchDocument = async <T extends OutputType = OutputType>({
+export const patchDocument = async <T extends OutputType = "uint8array">({
   outputType,
   data,
   placeholders,
