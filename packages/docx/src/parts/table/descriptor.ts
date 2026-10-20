@@ -592,6 +592,7 @@ function collectNestedTables(root: TableOptions): TableOptions[] {
     if (!frame.expand) {
       const value = frame.value;
       if (typeof value !== "object" || value === null || seen.has(value)) continue;
+      if (ArrayBuffer.isView(value) || value instanceof ArrayBuffer) continue;
       seen.add(value);
       if ("table" in value && typeof value.table === "object" && value.table !== null) {
         const table = value.table as TableOptions;

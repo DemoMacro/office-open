@@ -13,6 +13,7 @@ function collectTextBoxParts(value: unknown, parts: TextBoxPartOptions[], seen: 
   while (pending.length > 0) {
     const item = pending.pop();
     if (!item || typeof item !== "object" || seen.has(item)) continue;
+    if (ArrayBuffer.isView(item) || item instanceof ArrayBuffer) continue;
     seen.add(item);
     if (Array.isArray(item)) {
       for (let index = item.length - 1; index >= 0; index -= 1) pending.push(item[index]);

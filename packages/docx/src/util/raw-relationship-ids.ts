@@ -12,6 +12,7 @@ export function collectRawXmlRelationshipIds(
       continue;
     }
     if (!current || typeof current !== "object") continue;
+    if (ArrayBuffer.isView(current) || current instanceof ArrayBuffer) continue;
     for (const [key, child] of Object.entries(current)) {
       if (key === "rawXml" && typeof child === "string") {
         for (const match of child.matchAll(RELATIONSHIP_ATTRIBUTE)) {
