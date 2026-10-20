@@ -18,6 +18,8 @@ pnpm check            # Lint all packages
 
 The same command runs the pinned third-party corpus when it has been installed with `pnpm corpus:setup`. If the external corpus is absent, the synthetic gate still runs so a clean worktree remains verifiable. Synthetic options are strict: an XML part entering `rawParts` or any nested `rawXml` field fails the gate; opaque independent binaries must be explicitly allowed. External raw-part findings remain visible as absorption blockers because their repair is package-by-package rather than a corpus-script rewrite.
 
+External corpus files are discovered first, then processed by a shared bounded worker pool; results merge deterministically regardless of batch order. The pool defaults to eight workers and `CORPUS_WORKERS` overrides that limit for machines with different memory and CPU budgets.
+
 ## Coverage Gates
 
 `pnpm coverage:xsd` reports schema-owned implementation coverage. `pnpm coverage:xsd-runtime` pairs structured XSD QNames with implementation ownership and spec-side runtime evidence. `pnpm coverage:ooxml-executable` is the strict executable bridge for registered schema families: each fixture must generate its part, validate it against its XSD, preserve its canonical projection through parse, and reproduce the same part on recompile. It writes a QName-level evidence manifest. `pnpm coverage:model` reruns that bridge and admits a modeled registry entry only when a passed case actually covers its QName. `pnpm coverage:canonical` verifies every part descriptor has a real or compiler-bridged bidirectional path. `pnpm coverage:odf` executes explicit ODF ownership fixtures, and `pnpm coverage:legacy` executes legacy/RTF capability probes.
