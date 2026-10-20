@@ -1,8 +1,15 @@
+import { convertToTwip } from "@office-open/core";
 import type { ParagraphOptions, RunOptions } from "@office-open/docx";
 
-import { assertAllowed, registerColor, reject, type RtfGenerateContext } from "./context";
+import {
+  assertAllowed,
+  registerColor,
+  reject,
+  styleCode,
+  type RtfGenerateContext,
+} from "./context";
 import { control, rtfText } from "./escape";
-import { writeFootnoteReference } from "./footnote";
+import { writeEndnoteReference, writeFootnoteReference } from "./footnote";
 import { writeParagraphNumbering, type NumberingReferences } from "./numbering";
 import { writeInlineChild, writeRun } from "./run";
 
@@ -15,6 +22,7 @@ const PARAGRAPH_PROPERTIES = [
   "shading",
   "border",
   "numbering",
+  "indent",
 ] as const;
 
 function alignmentControl(alignment: NonNullable<ParagraphOptions["alignment"]>): string {
@@ -30,6 +38,37 @@ function alignmentControl(alignment: NonNullable<ParagraphOptions["alignment"]>)
   );
 }
 
+function indentControl(
+  value: number | NonNullable<NonNullable<ParagraphOptions["indent"]>["left"]>,
+  word: string,
+  path: string,
+): string {
+  const twips = convertToTwip(value);
+  if (!Number.isInteger(twips)) {
+    reject("paragraph", path, word, "RTF indentation requires whole twips");
+  }
+  return control(word, twips);
+}
+
+function writeIndent(indent: NonNullable<ParagraphOptions["indent"]>, path: string): string {
+  assertAllowed(
+    indent,
+    ["left", "start", "right", "end", "firstLine", "hanging"],
+    "paragraph",
+    path,
+  );
+  let output = "";
+  const left = indent.left ?? indent.start;
+  const right = indent.right ?? indent.end;
+  if (left !== undefined) output += indentControl(left, "li", path);
+  if (right !== undefined) output += indentControl(right, "ri", path);
+  if (indent.firstLine !== undefined) output += indentControl(indent.firstLine, "fi", path);
+  if (indent.hanging !== undefined) {
+    output += indentControl(-convertToTwip(indent.hanging), "fi", path);
+  }
+  return output;
+}
+
 export function writeParagraph(
   paragraph: ParagraphOptions,
   context: RtfGenerateContext,
@@ -39,15 +78,18 @@ export function writeParagraph(
   assertAllowed(paragraph, PARAGRAPH_PROPERTIES, "paragraph", path);
   let properties = "";
   if (paragraph.style !== undefined) {
-    const match = /^rtf-style-(\d+)$/u.exec(paragraph.style);
-    if (!match) {
-      reject("paragraph", "style", paragraph.style, "RTF requires a canonical rtf paragraph style");
+    const styleCodeValue = styleCode(context, paragraph.style);
+    if (styleCodeValue === undefined) {
+      reject("paragraph", "style", paragraph.style, "RTF paragraph style must be declared");
     }
-    properties += control("s", Number(match![1]));
+    properties += control("s", styleCodeValue);
   }
   if (paragraph.alignment) properties += alignmentControl(paragraph.alignment);
   if (paragraph.numbering) {
     properties += writeParagraphNumbering(paragraph.numbering, references, path);
+  }
+  if (paragraph.indent) {
+    properties += writeIndent(paragraph.indent, `${path}.indent`);
   }
   if (paragraph.shading) {
     assertAllowed(paragraph.shading, ["type", "fill"], "paragraph", `${path}.shading`);
@@ -110,6 +152,9 @@ export function writeParagraph(
             if ("footnoteReference" in child) {
               return writeFootnoteReference(context, child.footnoteReference, childPath);
             }
+            if ("endnoteReference" in child) {
+              return writeEndnoteReference(context, child.endnoteReference, childPath);
+            }
             const isRun =
               "text" in child ||
               "bold" in child ||
@@ -123,7 +168,7 @@ export function writeParagraph(
               "children" in child;
             return isRun
               ? writeRun(child as RunOptions, context, childPath)
-              : writeInlineChild(child, childPath);
+              : writeInlineChild(child, context, childPath);
           })
           .join("");
   return `${properties}${childrenText}${control("par")}`;

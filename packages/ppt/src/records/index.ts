@@ -1,6 +1,7 @@
 import { PptParseError } from "../errors";
 
 const RECORD_HEADER_SIZE = 8;
+const OPAQUE_CONTAINER_TYPES = new Set([1064]);
 
 export const RecordType = {
   document: 1000,
@@ -72,6 +73,10 @@ export function isContainer(record: RecordHeader): boolean {
   return record.version === 15;
 }
 
+function isOpaqueContainer(record: RecordHeader): boolean {
+  return OPAQUE_CONTAINER_TYPES.has(record.type);
+}
+
 export function readRecordHeader(
   view: DataView,
   offset: number,
@@ -134,7 +139,7 @@ export function readRecordTree(
     }
     const header = readRecordHeader(view, cursor, end);
     let children: RecordNode[] = [];
-    if (isContainer(header) && header.length > 0) {
+    if (isContainer(header) && header.length > 0 && !isOpaqueContainer(header)) {
       children =
         depth < maxDepth
           ? readRecordTree(view, header.offset + RECORD_HEADER_SIZE, header.end, depth + 1)

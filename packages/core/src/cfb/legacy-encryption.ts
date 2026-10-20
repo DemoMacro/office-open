@@ -1,5 +1,7 @@
 import { md5, sha1 } from "@noble/hashes/legacy.js";
 
+import { CfbError } from "./cfb-error";
+
 const BLOCK_KEY_BYTES = 4;
 const LEGACY_KEY_SIZE_BITS = 40;
 const FULL_KEY_BYTES = 16;
@@ -145,7 +147,7 @@ interface LegacyVerifier {
 
 function readVerifier(data: Uint8Array, offset: number, hashBytes: number): LegacyVerifier {
   if (offset + 40 + hashBytes > data.byteLength) {
-    throw new Error("Invalid legacy Office encryption verifier");
+    throw new CfbError("Invalid legacy Office encryption verifier");
   }
   return {
     salt: data.slice(offset + 4, offset + 20),
@@ -163,13 +165,13 @@ export function parseRc4CryptoApiHeader(
   verifier: LegacyVerifier;
 } {
   if (offset + 8 > data.byteLength) {
-    throw new Error("Invalid legacy Office RC4 CryptoAPI header");
+    throw new CfbError("Invalid legacy Office RC4 CryptoAPI header");
   }
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   const headerSize = view.getUint32(offset + 4, true);
   const headerEnd = offset + 8 + headerSize;
   if (headerEnd + 4 > data.byteLength) {
-    throw new Error("Invalid legacy Office RC4 CryptoAPI header");
+    throw new CfbError("Invalid legacy Office RC4 CryptoAPI header");
   }
   const keySizeBits = view.getUint32(offset + 24, true);
   return { keySizeBits, verifier: readVerifier(data, headerEnd, RC4_VERIFIER_HASH_BYTES) };
@@ -178,7 +180,7 @@ export function parseRc4CryptoApiHeader(
 /** Parse the fixed legacy RC4 verifier that immediately follows its four version bytes. */
 export function parseLegacyRc4Verifier(data: Uint8Array, offset = 0): LegacyVerifier {
   if (offset + VERIFIER_BYTES * 3 > data.byteLength) {
-    throw new Error("Invalid legacy Office encryption verifier");
+    throw new CfbError("Invalid legacy Office encryption verifier");
   }
   return {
     salt: data.slice(offset, offset + VERIFIER_BYTES),

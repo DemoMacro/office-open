@@ -32,6 +32,7 @@ interface Counts {
   total: number;
   success: number;
   encrypted: number;
+  malformed: number;
   packageFailure: number;
   parseFailure: number;
 }
@@ -51,10 +52,14 @@ function emptyCounts(): Counts {
     total: 0,
     success: 0,
     encrypted: 0,
+    malformed: 0,
     packageFailure: 0,
     parseFailure: 0,
   };
 }
+
+const MALFORMED_PARSE_REASONS = new Set(["invalid-element-placement", "invalid-repeat-count"]);
+const PACKAGE_PARSE_REASONS = new Set(["missing-package-part"]);
 
 async function collectFiles(directory: string, files: string[] = []): Promise<string[]> {
   const entries = await readdir(directory, { withFileTypes: true });
@@ -123,9 +128,9 @@ function packageCategory(message: string): string {
 }
 
 function parseCategory(error: unknown): string {
-  if (error instanceof OdtParseError) return `parse:${error.name}:${error.reason}`;
-  if (error instanceof OdsParseError) return `parse:${error.name}:${error.reason}`;
-  if (error instanceof OdpParseError) return `parse:${error.name}:${error.reason}`;
+  if (error instanceof OdtParseError) return `parse:${error.elementName}:${error.reason}`;
+  if (error instanceof OdsParseError) return `parse:${error.elementName}:${error.reason}`;
+  if (error instanceof OdpParseError) return `parse:${error.elementName}:${error.reason}`;
   return "parse:unknown";
 }
 
@@ -137,6 +142,7 @@ function printCounts(label: string, counts: Counts): void {
   printLine(label, counts.total);
   printLine(`${label}.success`, counts.success);
   printLine(`${label}.encrypted`, counts.encrypted);
+  printLine(`${label}.malformed`, counts.malformed);
   printLine(`${label}.packageFailure`, counts.packageFailure);
   printLine(`${label}.parseFailure`, counts.parseFailure);
 }
@@ -182,7 +188,18 @@ async function run(directory: string): Promise<void> {
       totals.success++;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      const structuredReason =
+        error instanceof OdtParseError ||
+        error instanceof OdsParseError ||
+        error instanceof OdpParseError
+          ? error.reason
+          : undefined;
+      const isMalformed =
+        structuredReason !== undefined && MALFORMED_PARSE_REASONS.has(structuredReason);
+      const isPackageReason =
+        structuredReason !== undefined && PACKAGE_PARSE_REASONS.has(structuredReason);
       const isPackageFailure =
+        isPackageReason ||
         /(?:unexpected odf mime type|odf package|invalid odf manifest|manifest does not declare|invalid zip|unknown compression|embedded object subdocument is missing)/i.test(
           message,
         ) ||
@@ -192,7 +209,10 @@ async function run(directory: string): Promise<void> {
           error.part === "mimetype");
       const category = isPackageFailure ? packageCategory(message) : parseCategory(error);
 
-      if (isPackageFailure) {
+      if (isMalformed) {
+        counts.malformed++;
+        totals.malformed++;
+      } else if (isPackageFailure) {
         counts.packageFailure++;
         totals.packageFailure++;
       } else {
@@ -209,7 +229,7 @@ async function run(directory: string): Promise<void> {
           ...(error instanceof OdtParseError ||
           error instanceof OdsParseError ||
           error instanceof OdpParseError
-            ? { part: error.part, name: error.name, reason: error.reason }
+            ? { part: error.part, name: error.elementName, reason: error.reason }
             : {}),
         });
       }

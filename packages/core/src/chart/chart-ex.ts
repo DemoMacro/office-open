@@ -498,6 +498,7 @@ export interface ChartExPrintSettings {
 
 export interface ChartExSpaceOptions {
   chartData?: ChartExChartData;
+  chartDataIntentionallyChanged?: ChartExChartData;
   chart?: ChartExChart;
   dashboard?: ChartExDashboard;
   shapeProperties?: ShapePropertiesOptions;

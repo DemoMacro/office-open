@@ -1,3 +1,4 @@
+import { convertToTwip } from "@office-open/core";
 import type {
   DocumentOptions,
   ParagraphOptions,
@@ -6,6 +7,7 @@ import type {
   SectionOptions,
 } from "@office-open/docx";
 
+import { tagToLcid } from "../langs";
 import { assertAllowed, createContext, reject, supportedMetadata } from "./context";
 import { control, rtfText } from "./escape";
 import { writeColorTable, writeFontTable } from "./font-color";
@@ -64,7 +66,14 @@ function writeMetadata(options: DocumentOptions): string {
   }
   const metadata = supportedMetadata(options);
   const entries = Object.entries(metadata).map(([name, value]) => {
-    const word = name === "creator" ? "author" : name === "description" ? "doccomm" : name;
+    const word =
+      name === "creator"
+        ? "author"
+        : name === "lastModifiedBy"
+          ? "operator"
+          : name === "description"
+            ? "doccomm"
+            : name;
     return `{\\${word} ${rtfText(value)}}`;
   });
   const appProperties = options.appProperties ?? {};
@@ -93,6 +102,106 @@ function writeMetadata(options: DocumentOptions): string {
     })
     .join("");
   return entries.length > 0 || appEntries ? `{\\info${entries.join("")}${appEntries}}` : "";
+}
+
+function writeDefaultLanguage(options: DocumentOptions): string {
+  if (options.language === undefined) return "";
+  const lcid = tagToLcid(options.language);
+  if (lcid === undefined) {
+    reject("metadata", "language", options.language, "RTF language table has no such tag");
+  }
+  return control("deflang", lcid);
+}
+
+function writeApplication(options: DocumentOptions): string {
+  return options.application === undefined ? "" : `{\\generator ${rtfText(options.application)}}`;
+}
+
+const W3CDTF = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/u;
+
+function assertTimestampType(value: string | false | undefined, path: string): void {
+  if (value === undefined || value === false || value === "dcterms:W3CDTF") return;
+  reject("metadata", path, "type", "RTF timestamps require W3CDTF");
+}
+
+function writeTimestamp(word: string, value: unknown, path: string): string {
+  const date = value instanceof Date ? value : new Date(typeof value === "string" ? value : "");
+  if (
+    (typeof value !== "string" && !(value instanceof Date)) ||
+    (typeof value === "string" && !W3CDTF.test(value)) ||
+    Number.isNaN(date.getTime()) ||
+    date.getUTCMilliseconds() !== 0
+  ) {
+    reject("metadata", path, word, "RTF requires a valid W3CDTF date or Date without milliseconds");
+  }
+  const pad = (component: number) => component.toString().padStart(2, "0");
+  return `{\\${word}\\yr${date.getUTCFullYear()}\\mo${pad(date.getUTCMonth() + 1)}\\dy${pad(
+    date.getUTCDate(),
+  )}\\hr${pad(date.getUTCHours())}\\min${pad(date.getUTCMinutes())}\\sec${pad(
+    date.getUTCSeconds(),
+  )}}`;
+}
+
+const VIEW_KINDS = {
+  none: 0,
+  print: 1,
+  outline: 2,
+  masterPages: 3,
+  normal: 4,
+  web: 5,
+} as const;
+
+function settingEnabled(value: unknown): boolean {
+  return value === true || value === "true" || value === "1" || value === "on" || value === "t";
+}
+
+function settingDisabled(value: unknown): boolean {
+  return value === false || value === "false" || value === "0" || value === "off" || value === "f";
+}
+
+function writeSettings(settings: DocumentOptions["settings"], path: string): string {
+  if (!settings) return "";
+  assertAllowed(
+    settings,
+    ["defaultTabStop", "view", "zoom", "trackRevisions", "doNotTrackMoves"],
+    "settings",
+    path,
+  );
+  let result = "";
+  if (settings.defaultTabStop !== undefined) {
+    const value = convertToTwip(settings.defaultTabStop);
+    if (!Number.isInteger(value) || value <= 0) {
+      reject("settings", path, "defaultTabStop", "RTF requires a positive integer tab width");
+    }
+    result += control("deftab", value);
+  }
+  if (settings.view !== undefined) result += control("viewkind", VIEW_KINDS[settings.view]);
+  if (settings.zoom !== undefined) {
+    assertAllowed(settings.zoom, ["percent"], "settings", `${path}.zoom`);
+    if (settings.zoom.percent !== undefined) {
+      const percent =
+        typeof settings.zoom.percent === "number"
+          ? settings.zoom.percent
+          : Number(settings.zoom.percent.slice(0, -1));
+      if (!Number.isInteger(percent) || percent <= 0) {
+        reject("settings", `${path}.zoom`, "percent", "RTF requires a positive integer percentage");
+      }
+      result += control("viewscale", percent);
+    }
+  }
+  if (settings.trackRevisions !== undefined) {
+    if (!settingEnabled(settings.trackRevisions) && !settingDisabled(settings.trackRevisions)) {
+      reject("settings", path, "trackRevisions", "RTF requires a valid on/off value");
+    }
+    if (settingEnabled(settings.trackRevisions)) result += control("revisions");
+  }
+  if (settings.doNotTrackMoves !== undefined) {
+    if (!settingEnabled(settings.doNotTrackMoves) && !settingDisabled(settings.doNotTrackMoves)) {
+      reject("settings", path, "doNotTrackMoves", "RTF requires a valid on/off value");
+    }
+    if (settingDisabled(settings.doNotTrackMoves)) result += control("trackmoves");
+  }
+  return result;
 }
 
 function writeSectionProperties(section: SectionOptions, path: string): string {
@@ -172,6 +281,14 @@ function writeChild(
     return writeParagraph(child.paragraph, context, references, `${path}.paragraph`);
   }
   if ("table" in child) return writeTable(child.table, context, references, `${path}.table`);
+  if ("bookmarkStart" in child) {
+    assertAllowed(child.bookmarkStart, ["id", "name"], "bookmark", `${path}.bookmarkStart`);
+    return `{\\*\\bkmkstart ${rtfText(child.bookmarkStart.name)}}`;
+  }
+  if ("bookmarkEnd" in child) {
+    assertAllowed(child.bookmarkEnd, ["id"], "bookmark", `${path}.bookmarkEnd`);
+    return "{\\*\\bkmkend }";
+  }
   reject(
     "document",
     path,
@@ -214,28 +331,70 @@ export function writeRtf(options: DocumentOptions): string {
       "title",
       "subject",
       "creator",
+      "lastModifiedBy",
       "keywords",
       "description",
       "category",
+      "created",
+      "createdType",
+      "modified",
+      "modifiedType",
+      "lastPrinted",
+      "language",
+      "endnotes",
+      "settings",
+      "rawParts",
+      "passthroughRelationships",
       "appProperties",
       "styles",
       "numbering",
       "footnotes",
+      "defaultNamespace",
+      "contentTypes",
+      "corePropertiesPath",
+      "primaryPartPath",
+      "conformance",
+      "dialect",
+      "application",
     ],
     "document",
     "options",
   );
+  if (options.rawParts?.length) {
+    reject("document", "options", "rawParts", "RTF cannot retain opaque OOXML parts");
+  }
+  if (options.passthroughRelationships?.length) {
+    reject(
+      "document",
+      "options",
+      "passthroughRelationships",
+      "RTF cannot retain OOXML relationship parts",
+    );
+  }
   const references: NumberingReferences = new Map();
   const context = createContext();
   context.footnotes = options.footnotes;
+  context.endnotes = options.endnotes;
   const first = options.sections[0] ?? { children: [] };
   const body = [
+    writeSettings(options.settings, "settings"),
     writeMetadata(options),
+    assertTimestampType(options.createdType, "created"),
+    assertTimestampType(options.modifiedType, "modified"),
+    options.created === undefined || options.created === null
+      ? ""
+      : writeTimestamp("creatim", options.created, "created"),
+    options.modified === undefined || options.modified === null
+      ? ""
+      : writeTimestamp("revtim", options.modified, "modified"),
+    options.lastPrinted === undefined
+      ? ""
+      : writeTimestamp("printim", options.lastPrinted, "lastPrinted"),
     writeStyles(options.styles, context),
     writeNumberingTable(options.numbering, references),
     writeDestinations(first, "sections[0]"),
     writeSections(options, references, context),
   ].join("");
   const tables = `${writeFontTable(context)}${writeColorTable(context)}`;
-  return `{\\rtf1${tables}${body}}`;
+  return `{\\rtf1${writeApplication(options)}${writeDefaultLanguage(options)}${tables}${body}}`;
 }

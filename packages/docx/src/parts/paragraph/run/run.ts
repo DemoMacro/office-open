@@ -86,7 +86,7 @@ interface RunOptionsBase {
   children?: (
     | (typeof PageNumber)[keyof typeof PageNumber]
     | string
-    | { text: string; preserveSpace?: boolean }
+    | { text: string; preserveSpace?: boolean; nil?: true }
     | { instructionText: string; preserveSpace?: boolean }
     | { deletedInstructionText: string; preserveSpace?: boolean }
     | { deletedText: string; preserveSpace?: boolean }
@@ -112,6 +112,8 @@ interface RunOptionsBase {
     | ParagraphChild
   )[];
   break?: number | BreakOptions;
+  /** Tolerated legacy `w:br` placed directly in paragraph/block content. */
+  blockBreak?: number | BreakOptions;
   /** Page break (`w:br/@w:type="page"`) mixed with other run content. */
   pageBreak?: boolean;
   /** Column break (`w:br/@w:type="column"`) mixed with other run content. */

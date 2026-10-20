@@ -18,6 +18,41 @@ describe("ODS codec", () => {
     expect(parsed.worksheets?.[0]?.rows?.[0]?.cells).toEqual([{ reference: "A1", value: "ODS" }]);
   });
 
+  it("compresses identical adjacent rows without losing reparse positions", async () => {
+    const row: WorksheetOptions["rows"] = [{ cells: [{ value: "Shared" }, { value: "Shared" }] }];
+    const generated = await generateWorkbook({ worksheets: [{ rows: [...row, ...row, ...row] }] });
+    const content = (await readOcf(generated, "application/vnd.oasis.opendocument.spreadsheet"))
+      .files["content.xml"]!;
+    expect(content).toContain('table:number-columns-repeated="2"');
+    expect(content).toContain('table:number-rows-repeated="3"');
+    const parsed = await parseWorkbook(generated);
+    expect(parsed.worksheets?.[0]?.rows?.map((entry) => entry.rowNumber)).toEqual([1, 2, 3]);
+    expect(parsed.worksheets?.[0]?.rows?.[2]?.cells).toEqual([
+      { reference: "A3", value: "Shared" },
+      { reference: "B3", value: "Shared" },
+    ]);
+  });
+
+  it("does not bridge nonadjacent identical rows", async () => {
+    const parsed = await parseWorkbook(
+      await generateWorkbook({
+        worksheets: [
+          {
+            rows: [
+              { rowNumber: 1, cells: [{ value: "Shared" }] },
+              { rowNumber: 3, cells: [{ value: "Shared" }] },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.worksheets?.[0]?.rows?.map((entry) => entry.rowNumber)).toEqual([1, 2, 3]);
+    expect(
+      parsed.worksheets?.[0]?.rows?.[1]?.cells?.every((cell) => cell.value === undefined),
+    ).toBe(true);
+    expect(parsed.worksheets?.[0]?.rows?.[2]?.cells?.[0]?.value).toBe("Shared");
+  });
+
   it("round-trips percentage, currency, and time cell semantics", async () => {
     const parsed = await parseWorkbook(
       await generateWorkbook({
@@ -371,7 +406,7 @@ describe("ODS codec", () => {
     expect(error).toMatchObject({
       part: "content.xml",
       path: '/office:document-content/office:body/office:spreadsheet/table:table[@table:name="Sheet1"]/table:unknown',
-      name: "table:unknown",
+      elementName: "table:unknown",
       reason: "element has no canonical WorksheetOptions mapping",
     });
   });
@@ -456,13 +491,13 @@ describe("ODS codec", () => {
     expect(error).toBeInstanceOf(OdsParseError);
     expect(error).toMatchObject({
       part: "content.xml",
-      name: "draw:image",
+      elementName: "draw:image",
       reason: "missing-image-source",
     });
   });
 
   it("treats parent-relative image references as external source URLs", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value="1"><draw:frame svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:image xlink:href="../logo.png"/></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:spreadsheet><table:table table:name="Sheet1"><table:table-row><table:table-cell office:value="1"><draw:frame svg:x="1cm" svg:y="2cm" svg:width="3cm" svg:height="4cm"><draw:image xlink:href="../logo.png"/><svg:title>Logo</svg:title></draw:frame></table:table-cell></table:table-row></table:table></office:spreadsheet></office:body></office:document-content>`;
     const graphic = (
       await parseWorkbook(
         generateOcf("application/vnd.oasis.opendocument.spreadsheet", { "content.xml": content }),
@@ -472,6 +507,7 @@ describe("ODS codec", () => {
       type: "image",
       href: "../logo.png",
       sourceUrl: "../logo.png",
+      title: "Logo",
     });
   });
 
@@ -531,7 +567,7 @@ describe("ODS codec", () => {
       error = cause;
     }
     expect(error).toBeInstanceOf(OdsParseError);
-    expect(error).toMatchObject({ part: "content.xml", name: "draw:unknown" });
+    expect(error).toMatchObject({ part: "content.xml", elementName: "draw:unknown" });
   });
 
   it("round-trips calculation settings, forms, and covered cells", async () => {
@@ -661,7 +697,7 @@ describe("ODS codec", () => {
     expect(error).toBeInstanceOf(OdsParseError);
     expect(error).toMatchObject({
       part: "content.xml",
-      name: "form:automatic-focus",
+      elementName: "form:automatic-focus",
       reason: "invalid boolean value: yes",
     });
   });
@@ -699,7 +735,7 @@ describe("ODS codec", () => {
     expect(error).toBeInstanceOf(OdsParseError);
     expect(error).toMatchObject({
       part: "content.xml",
-      name: "table:unknown",
+      elementName: "table:unknown",
       reason: "element has no canonical calculation mapping",
     });
   });

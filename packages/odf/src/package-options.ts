@@ -38,6 +38,8 @@ export interface StyleResourceOptions {
 
 /** Unified OCF and style resources attached to one canonical family model. */
 export interface PackageOptions {
+  /** Source package MIME type; retained for template and legacy packages. */
+  packageMediaType?: string;
   packageManifest?: OcfManifestOptions;
   packageMembers?: PackageMemberOptions[];
   styleResources?: StyleResourceOptions[];

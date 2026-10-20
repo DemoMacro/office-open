@@ -500,16 +500,17 @@ function parseDate(value: string): boolean {
   return day <= (maximumDay ?? 0);
 }
 
-function parseTime(value: string): boolean {
+function normalizeTime(value: string): string | undefined {
   const match =
     /^(\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)(?:Z|[+-]\d{2}:\d{2})?$/.exec(value) ??
-    /^(\d{2})(\d{2})(\d{2,8}(?:\.\d+)?)(?:Z|[+-]\d{2}:\d{2})?$/.exec(value);
-  if (!match) return false;
+    /^(\d{2})(\d{2})(\d{2})(?:\.?(\d{1,6}))?(?:Z|[+-]\d{2}:\d{2})?$/.exec(value);
+  if (!match) return undefined;
   const hour = Number(match[1]);
   const minute = Number(match[2]);
   const second = Number(match[3]);
-  if (hour > 24 || minute > 59 || Number(second) >= 60) return false;
-  return hour < 24 || (minute === 0 && second === 0);
+  if (hour > 24 || minute > 59 || second >= 60) return undefined;
+  if (hour === 24 && (minute !== 0 || second !== 0)) return undefined;
+  return value;
 }
 
 function parseDuration(value: string): boolean {
@@ -544,7 +545,11 @@ function parseAttributeValue(value: string, type: AttributeType): unknown {
   }
   if (type === "xmlId" || type === "formId") return value;
   if (type === "date" && !parseDate(value)) throw new Error("invalid date");
-  if (type === "time" && !parseTime(value)) throw new Error("invalid time");
+  if (type === "time") {
+    const time = normalizeTime(value);
+    if (!time) throw new Error("invalid time");
+    return time;
+  }
   if (type === "duration" && !parseDuration(value)) throw new Error("invalid duration");
   if (type === "triState") {
     const parsed = parseEnum(value, TRI_STATES);
@@ -937,6 +942,9 @@ function parseControl(
     throw formError(part, controlPath, "xml:id", "invalid ID");
   attributes.xmlId = explicitXmlId ?? ids.allocate(id);
   const control = { control: kind, ...attributes } as FormControlOptions;
+  if (kind === "comboBox") (control as ComboBoxControlOptions).items = [];
+  if (kind === "listBox") (control as ListBoxControlOptions).options = [];
+  if (kind === "grid") (control as GridControlOptions).columns = [];
   for (const child of element.elements ?? []) {
     if (child.type === "text") continue;
     const childElement = child;

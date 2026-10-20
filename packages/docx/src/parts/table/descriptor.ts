@@ -65,8 +65,6 @@ import type { CnfStyleOptions } from "@parts/table/table-row/table-row-propertie
 import type { TableWidthProperties } from "@parts/table/table-width";
 import { widthFiftiethsToPct } from "@parts/table/table-width";
 
-import { DocxParseError } from "../../errors";
-
 /** Read a CT_TblWidth @w:type as the Options-side width unit word. */
 const widthTypeOf = (el: Element): string | undefined => {
   const raw = attr(el, "w:type");
@@ -543,7 +541,8 @@ export const tableDesc: CustomDescriptor<TableOptions, BodyContext> = {
   kind: "custom",
 
   stringify(opts, ctx) {
-    if (_nestedOutputs.has(opts)) return _nestedOutputs.get(opts)!;
+    const nestedOutput = _nestedOutputs.get(opts);
+    if (nestedOutput !== undefined) return nestedOutput;
     const previousOutputs = _nestedOutputs;
     _nestedOutputs = createNestedTableOutputs(opts, ctx);
     try {
@@ -670,25 +669,27 @@ function stringifyTableEl(opts: TableOptions, ctx: BodyContext): string {
   parts.push(stringifyTableProperties(tblPrOpts, ctx.reproducible)!);
 
   // Table grid (fallback width count ignores markers between cells)
-  const columnWidths =
-    opts.columnWidthsRaw ??
-    opts.columnWidths ??
-    Array(
-      Math.max(
-        1,
-        ...opts.rows.map((r) =>
-          isPlainRow(r) ? r.cells.filter((c) => !isRowMarker(c)).length : 0,
+  if (opts.tableGridOmitted !== true) {
+    const columnWidths =
+      opts.columnWidthsRaw ??
+      opts.columnWidths ??
+      Array(
+        Math.max(
+          1,
+          ...opts.rows.map((r) =>
+            isPlainRow(r) ? r.cells.filter((c) => !isRowMarker(c)).length : 0,
+          ),
         ),
+      ).fill(100);
+    parts.push(
+      buildTableGridXml(
+        columnWidths,
+        opts.columnWidthsRevision,
+        ctx.reproducible,
+        opts.legacyColumnCount,
       ),
-    ).fill(100);
-  parts.push(
-    buildTableGridXml(
-      columnWidths,
-      opts.columnWidthsRevision,
-      ctx.reproducible,
-      opts.legacyColumnCount,
-    ),
-  );
+    );
+  }
 
   // Compute vertical merge CONTINUE cells
   const extraCells = computeVerticalMergeCells(opts.rows);
@@ -1006,22 +1007,18 @@ export function parseTablePropertiesEl(el: Element): TablePropertiesOptions {
 
 function parseColumnWidthsEl(
   el: Element,
-  ctx: DocxReadContext,
+  _ctx: DocxReadContext,
 ): {
   widths: Array<number | string | null>;
   legacyColumnCount?: number;
+  tableGridOmitted?: true;
   revision?: TableGridChangeOptions;
 } {
   const widths: Array<number | string | null> = [];
   let legacyColumnCount: number | undefined;
   const tblGrid = findChild(el, "w:tblGrid");
   if (!tblGrid) {
-    throw new DocxParseError(
-      "Table is missing its required grid",
-      ctx.currentPart,
-      "/w:tbl/w:tblGrid",
-      "missing-required-element",
-    );
+    return { widths: [], tableGridOmitted: true };
   }
 
   for (const col of children(tblGrid, "w:gridCol")) {
@@ -1589,6 +1586,7 @@ function parseTableEl(el: Element, ctx: DocxReadContext): TableOptions {
     >;
     if (sourceWidths.some((width) => width === null)) opts.columnWidthsRaw = sourceWidths;
   }
+  if (grid.tableGridOmitted) opts.tableGridOmitted = true;
   if (grid.revision) {
     opts.columnWidthsRevision = grid.revision;
   }

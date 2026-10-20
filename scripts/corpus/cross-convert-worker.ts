@@ -1,38 +1,57 @@
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import { OOXML_PACKAGE_FORMATS } from "../../packages/core/dist/opc/index.mjs";
+import { CfbError } from "../../packages/core/dist/cfb/index.mjs";
+import { OOXML_PACKAGE_FORMATS, OpcPackageError } from "../../packages/core/dist/opc/index.mjs";
 import { parseDocument as parseDocDocument } from "../../packages/doc/dist/index.mjs";
+import { DocParseError } from "../../packages/doc/dist/index.mjs";
 import {
   generateDocument as generateDocxDocument,
   parseDocument as parseDocxDocument,
 } from "../../packages/docx/dist/index.mjs";
+import { DocxParseError } from "../../packages/docx/dist/index.mjs";
+import {
+  OcfError,
+  OcfManifestError,
+  OcfMimeTypeError,
+  OdfSchemaError,
+  OdfXmlError,
+} from "../../packages/odf/dist/index.mjs";
 import {
   generatePresentation as generateOdpPresentation,
   parsePresentation as parseOdpPresentation,
 } from "../../packages/odp/dist/index.mjs";
+import { OdpGenerateError, OdpParseError } from "../../packages/odp/dist/index.mjs";
 import {
   generateWorkbook as generateOdsWorkbook,
   parseWorkbook as parseOdsWorkbook,
 } from "../../packages/ods/dist/index.mjs";
+import { OdsParseError } from "../../packages/ods/dist/index.mjs";
 import {
   generateDocument as generateOdtDocument,
   parseDocument as parseOdtDocument,
 } from "../../packages/odt/dist/index.mjs";
+import { OdtGenerateError, OdtParseError } from "../../packages/odt/dist/index.mjs";
 import { parsePresentation as parsePptDocument } from "../../packages/ppt/dist/index.mjs";
+import { PptParseError } from "../../packages/ppt/dist/index.mjs";
 import {
   generatePresentation as generatePptxPresentation,
   parsePresentation as parsePptxPresentation,
 } from "../../packages/pptx/dist/index.mjs";
+import { PptxParseError } from "../../packages/pptx/dist/index.mjs";
 import {
   generateDocument as generateRtfDocument,
   parseDocument as parseRtfDocument,
 } from "../../packages/rtf/dist/index.mjs";
+import { RtfGenerateError, RtfParseError } from "../../packages/rtf/dist/index.mjs";
 import { parseWorkbook as parseXlsDocument } from "../../packages/xls/dist/index.mjs";
+import { XlsParseError } from "../../packages/xls/dist/index.mjs";
 import {
   generateWorkbook as generateXlsxWorkbook,
   parseWorkbook as parseXlsxDocument,
 } from "../../packages/xlsx/dist/index.mjs";
+import { XlsxParseError } from "../../packages/xlsx/dist/index.mjs";
 
 type DocumentSource = "doc" | "docx" | "docm" | "dotx" | "dotm" | "rtf" | "odt";
 type WorkbookSource = "xls" | "xlsx" | "xlsm" | "xltx" | "xltm" | "ods";
@@ -61,6 +80,14 @@ interface FamilyResult {
   reparseFailures: number;
   writeFailures: number;
   reasons: Record<string, number>;
+  issues: CrossConvertIssue[];
+}
+
+interface CrossConvertIssue {
+  readonly source: string;
+  readonly target?: string;
+  readonly phase: "parse" | "generate" | "write" | "reparse" | "worker";
+  readonly reason: string;
 }
 
 interface WorkerResult {
@@ -81,6 +108,7 @@ const FAMILY_TARGETS: Record<Family, readonly string[]> = {
 } as const satisfies Record<Family, readonly string[]>;
 
 const LEGACY_PASSWORDS = ["VelvetSweatshop", "Password1234_", "password"] as const;
+const MAX_STRING_BYTES = 0x1fffffe8;
 
 function decodeRtf(data: Uint8Array): string {
   if (data[0] === 0xff && data[1] === 0xfe) return new TextDecoder("utf-16le").decode(data);
@@ -104,6 +132,7 @@ const emptyFamily = (): FamilyResult => ({
   reparseFailures: 0,
   writeFailures: 0,
   reasons: {},
+  issues: [],
 });
 
 const emptyResult = (): WorkerResult => ({
@@ -135,31 +164,59 @@ function familyOf(source: SourceFormat): Family {
 }
 
 function outcomeOf(error: unknown): Exclude<Outcome, "generated"> {
-  const diagnostic = error as { name?: string; context?: { reason?: string }; reason?: string };
-  const reason = diagnostic.context?.reason ?? diagnostic.reason;
-  const message = String((error as Error)?.message ?? error);
-  if (diagnostic.name === "RtfGenerateError" || /RTF (cannot|writer|requires)/i.test(message))
-    return "unsupported-target";
-  if (/Animation entry needs a target/.test(message)) return "unsupported-target";
-  if (reason === "unsupported-style-resources" || reason === "unsupported-named-chart-style")
-    return "unsupported-target";
-  if (/encrypted|password/i.test(message)) return "encrypted";
+  const name = (error as { name?: string })?.name;
+  const reason =
+    (error as { context?: { reason?: string }; reason?: string })?.context?.reason ??
+    (error as { reason?: string })?.reason;
   if (
-    reason === "out-of-range" ||
-    reason === "invalid-repeat-count" ||
-    reason === "invalid-style-coverage-total" ||
-    reason === "malformed-formula" ||
-    /(?:bad signature|truncated|must begin with|invalid CFB|invalid ODF|invalid zip|invalid URL|not a supported Compound|signature is not|malformed formula|unsupported formula token|unsupported RTF destination|objdata requires binary|Manifest does not declare|Manifest declares missing package path|embedded object subdocument is missing|missing required|missing its required|Unsupported legacy|Corrupt legacy|Unable to detect office format|Unable to read the ZIP|missing \[Content_Types\]|ZIP CRC)/i.test(
-      message,
-    )
-  )
+    name === RtfGenerateError.name ||
+    name === OdpGenerateError.name ||
+    name === OdtGenerateError.name
+  ) {
+    return "unsupported-target";
+  }
+  if (
+    name === DocParseError.name ||
+    name === XlsParseError.name ||
+    name === PptParseError.name ||
+    name === DocxParseError.name ||
+    name === PptxParseError.name ||
+    name === XlsxParseError.name ||
+    name === RtfParseError.name ||
+    name === OcfError.name ||
+    name === OcfMimeTypeError.name ||
+    name === OcfManifestError.name ||
+    name === OdfXmlError.name ||
+    name === OdfSchemaError.name ||
+    name === OdtParseError.name ||
+    name === OdsParseError.name ||
+    name === OdpParseError.name ||
+    name === CfbError.name ||
+    name === OpcPackageError.name
+  ) {
     return "invalid";
+  }
   return "failed";
+}
+
+function structuredReason(error: unknown): string | undefined {
+  return (
+    (error as { context?: { reason?: string }; reason?: string })?.context?.reason ??
+    (error as { reason?: string })?.reason
+  );
+}
+
+function isEncrypted(error: unknown): boolean {
+  return structuredReason(error) === "encrypted-unsupported";
 }
 
 function reasonOf(error: unknown): string {
   const message = String((error as Error)?.message ?? error);
   return message.replace(/"(.{32})[^"]*"/g, '"$1…"').slice(0, 220);
+}
+
+function issueSource(id: string): string {
+  return createHash("sha256").update(id).digest("hex").slice(0, 12);
 }
 
 function count(family: FamilyResult, outcome: Outcome, error?: unknown): void {
@@ -177,11 +234,18 @@ function count(family: FamilyResult, outcome: Outcome, error?: unknown): void {
   }
 }
 
+function addIssue(
+  family: FamilyResult,
+  issue: Omit<CrossConvertIssue, "source"> & { sourceId: string },
+): void {
+  family.issues.push({ ...issue, source: issueSource(issue.sourceId) });
+}
+
 async function withLegacyPasswords<T>(parse: (password?: string) => Promise<T> | T): Promise<T> {
   try {
     return await parse();
   } catch (error) {
-    if (!/encrypted|password/i.test(String((error as Error)?.message))) throw error;
+    if (!isEncrypted(error)) throw error;
   }
   let lastError: unknown;
   for (const password of LEGACY_PASSWORDS) {
@@ -333,7 +397,10 @@ for (const item of items) {
     options = await parseSource(item.source, new Uint8Array(fs.readFileSync(item.file)));
   } catch (error) {
     restore();
+    if (process.env.CROSS_CONVERT_DEBUG === "1")
+      process.stderr.write(`parse failed: ${item.id}: ${String(error)}\n`);
     count(family, outcomeOf(error), error);
+    addIssue(family, { sourceId: item.id, phase: "parse", reason: reasonOf(error) });
     continue;
   } finally {
     restore();
@@ -349,8 +416,17 @@ for (const item of items) {
       bytes = new Uint8Array(await generateTarget(familyName, target, options));
     } catch (error) {
       restore();
-      count(family, outcomeOf(error), error);
-      if (outcomeOf(error) === "failed") family.generateFailures++;
+      if (process.env.CROSS_CONVERT_DEBUG === "1")
+        process.stderr.write(`generate failed: ${item.id} -> ${target}: ${String(error)}\n`);
+      const outcome = outcomeOf(error);
+      count(family, outcome, error);
+      addIssue(family, {
+        sourceId: item.id,
+        target,
+        phase: "generate",
+        reason: reasonOf(error),
+      });
+      if (outcome === "failed") family.generateFailures++;
       continue;
     } finally {
       restore();
@@ -363,8 +439,26 @@ for (const item of items) {
         fs.writeFileSync(output, bytes);
       } catch {
         family.writeFailures++;
+        addIssue(family, {
+          sourceId: item.id,
+          target,
+          phase: "write",
+          reason: "failed to write generated output",
+        });
         continue;
       }
+    }
+
+    if (bytes.byteLength > MAX_STRING_BYTES) {
+      const error = new Error(`Generated output exceeds V8 string limit: ${bytes.byteLength}`);
+      count(family, "unsupported-target", error);
+      addIssue(family, {
+        sourceId: item.id,
+        target,
+        phase: "generate",
+        reason: `generated output exceeds V8 string limit: ${bytes.byteLength} bytes`,
+      });
+      continue;
     }
 
     try {
@@ -372,8 +466,16 @@ for (const item of items) {
       await reparse(familyName, target, bytes);
     } catch (error) {
       restore();
+      if (process.env.CROSS_CONVERT_DEBUG === "1")
+        process.stderr.write(`reparse failed: ${item.id} -> ${target}: ${String(error)}\n`);
       family.reparseFailures++;
       count(family, outcomeOf(error), error);
+      addIssue(family, {
+        sourceId: item.id,
+        target,
+        phase: "reparse",
+        reason: reasonOf(error),
+      });
       continue;
     } finally {
       restore();

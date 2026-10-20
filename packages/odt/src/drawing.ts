@@ -405,7 +405,11 @@ export function parseChartFrame(frame: Element, context: ParseContext): Paragrap
     const mediaType = href ? context.objectMediaTypes.get(href) : undefined;
     if (!href) throw malformedEmbeddedObject("chart frame has no object reference", undefined);
     if (mediaType === undefined)
-      throw malformedEmbeddedObject("embedded object media type is not declared", href);
+      throw malformedEmbeddedObject(
+        "embedded object media type is not declared",
+        href,
+        "missing-package-part",
+      );
     if (!context.embeddedObjects.has(href))
       throw malformedEmbeddedObject("embedded object subdocument is missing", href);
   }
@@ -467,13 +471,17 @@ function embeddedObjectShape(frame: Element, context: ParseContext, shapeId: num
   };
 }
 
-function malformedEmbeddedObject(reason: string, href?: string): OdtParseError {
+function malformedEmbeddedObject(
+  reason: string,
+  href?: string,
+  structuredReason = reason,
+): OdtParseError {
   return new OdtParseError(
     `content.xml: ${href ?? "draw:object"}: ${reason}`,
     "content.xml",
     "/draw:frame/draw:object/@xlink:href",
     "draw:object",
-    reason,
+    structuredReason,
   );
 }
 

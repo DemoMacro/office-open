@@ -33,8 +33,8 @@ export function readHyperlinkTargets(
       const id = atom && atom.length >= 4 ? readInt32(view, atom, 0) : undefined;
       const url = strings[1] ? decodeUtf16(recordBody(view, strings[1])) : undefined;
       const tooltip = strings[0] ? decodeUtf16(recordBody(view, strings[0])) : undefined;
-      if (id === undefined || !url) {
-        throw new PptParseError("Corrupt legacy PowerPoint hyperlink: missing target id or URL", {
+      if (id === undefined) {
+        throw new PptParseError("Corrupt legacy PowerPoint hyperlink: missing target id", {
           part: "record",
           recordType: link.type,
           recordName: "HyperlinkContainer",

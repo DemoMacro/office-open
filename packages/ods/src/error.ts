@@ -4,10 +4,11 @@ export class OdsParseError extends Error {
     message: string,
     readonly part: string = "",
     readonly path: string = "",
-    readonly name: string = "",
+    readonly elementName: string = "",
     readonly reason: string = "",
     options?: ErrorOptions,
   ) {
     super(message, options);
+    this.name = "OdsParseError";
   }
 }

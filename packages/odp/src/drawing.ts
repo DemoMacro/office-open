@@ -61,9 +61,7 @@ export function pictureFrameXml(picture: PictureOptions, images: OdpImage[]): st
     [
       xmlElement("draw:image", {
         "xlink:href": path,
-        ...(picture.sourceUrl && picture.data === undefined
-          ? { "xlink:type": "simple", "xlink:show": "embed" }
-          : {}),
+        ...(picture.sourceUrl && picture.data === undefined ? { "xlink:type": "simple" } : {}),
       }),
     ],
   );
@@ -76,7 +74,7 @@ export function chartFrameXml(chart: ChartOptions, charts: OdpChart[]): string {
   return xmlElement(
     "draw:frame",
     {
-      "draw:name": chart.name,
+      "draw:name": chart.name || path,
       "svg:x": toOdfLength(chart.x),
       "svg:y": toOdfLength(chart.y),
       "svg:width": toOdfLength(chart.width),
@@ -157,7 +155,7 @@ export function parseChartFrame(
   const object = childNamed(frame, "draw:object");
   if (!object) return undefined;
   const href = attributeString(object, "xlink:href")?.replace(/^\.\//, "").replace(/\/$/, "");
-  const name = attributeString(frame, "draw:name") ?? href;
+  const name = attributeString(frame, "draw:name") || href;
   const path = `/draw:frame[@draw:name="${name ?? ""}"]/draw:object`;
   if (!href || !name) {
     const reason = "chart frame has no object reference";
@@ -207,26 +205,16 @@ export function parsePictureFrame(
   if (!data || !path) {
     const href = attributeString(image, "xlink:href");
     if (!href) return undefined;
-    if (isExternalOdfUrl(href))
-      return {
-        picture: {
-          type: pictureTypeFromUrl(href),
-          sourceUrl: href,
-          x: lengthToEmu(attributeString(frame, "svg:x")),
-          y: lengthToEmu(attributeString(frame, "svg:y")),
-          width: lengthToEmu(attributeString(frame, "svg:width")),
-          height: lengthToEmu(attributeString(frame, "svg:height")),
-        },
-      };
-    const reason = "missing-package-part";
-    const referencePath = "/draw:frame/draw:image/@xlink:href";
-    throw new OdpParseError(
-      `content.xml: ${href}: package image is missing`,
-      "content.xml",
-      referencePath,
-      "draw:image",
-      reason,
-    );
+    return {
+      picture: {
+        type: pictureTypeFromUrl(href),
+        sourceUrl: href,
+        x: lengthToEmu(attributeString(frame, "svg:x")),
+        y: lengthToEmu(attributeString(frame, "svg:y")),
+        width: lengthToEmu(attributeString(frame, "svg:width")),
+        height: lengthToEmu(attributeString(frame, "svg:height")),
+      },
+    };
   }
   return {
     picture: {

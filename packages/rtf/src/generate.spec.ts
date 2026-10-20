@@ -18,6 +18,218 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(source)).toEqual(parseDocument(source));
   });
 
+  it("projects valid W3CDTF and Date metadata timestamps", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [{ children: [] }],
+        created: "2026-10-19T08:09:10Z",
+        createdType: "dcterms:W3CDTF",
+        modified: new Date(Date.UTC(2026, 8, 1, 7, 6, 5)) as unknown as string,
+        modifiedType: false,
+        lastPrinted: "2026-10-19T02:03:04+08:00",
+      }),
+    );
+    expect(generated).toContain(String.raw`{\creatim\yr2026\mo10\dy19\hr08\min09\sec10}`);
+    expect(generated).toContain(String.raw`{\revtim\yr2026\mo09\dy01\hr07\min06\sec05}`);
+    expect(generated).toContain(String.raw`{\printim\yr2026\mo10\dy18\hr18\min03\sec04}`);
+  });
+
+  it("rejects invalid and lossy metadata timestamps", () => {
+    const sections = [{ children: [] }] as DocumentOptions["sections"];
+    expect(() =>
+      generateDocument({ sections, created: "19 October 2026" as unknown as string }),
+    ).toThrow(RtfGenerateError);
+    expect(() =>
+      generateDocument({
+        sections,
+        modified: new Date(Date.UTC(2026, 0, 1, 0, 0, 1, 500)) as unknown as string,
+      }),
+    ).toThrow(RtfGenerateError);
+  });
+
+  it("projects lastModifiedBy and endnote references", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [{ paragraph: { children: [{ text: "Body" }, { endnoteReference: 0 }] } }],
+        },
+      ],
+      lastModifiedBy: "Editor",
+      endnotes: [
+        {
+          id: 0,
+          children: [{ paragraph: { children: [{ text: "End" }] } }],
+        },
+      ],
+    };
+    const generated = decoder.decode(generateDocument(options));
+    expect(generated).toContain(String.raw`{\operator Editor}`);
+    expect(generated).toContain(String.raw`{\footnote\ftnalt End\par`);
+    expect(roundTrip(generated)).toEqual(options);
+  });
+
+  it("projects document language and generating application", () => {
+    const options: DocumentOptions = {
+      sections: [{ children: [] }],
+      language: "en-US",
+      application: "office-open",
+    };
+    const generated = decoder.decode(generateDocument(options));
+    expect(generated).toContain(String.raw`{\generator office-open}`);
+    expect(generated).toContain(String.raw`\deflang1033 `);
+    expect(roundTrip(generated)).toEqual(options);
+  });
+
+  it("rejects unrepresentable OOXML package state", () => {
+    const sections = [{ children: [{ paragraph: { children: [{ text: "Body" }] } }] }];
+    expect(() =>
+      generateDocument({
+        sections,
+        rawParts: [
+          {
+            path: "custom/raw.bin",
+            data: new Uint8Array([1, 2, 3]),
+            contentType: "application/octet-stream",
+          },
+        ],
+      }),
+    ).toThrow(RtfGenerateError);
+    expect(() =>
+      generateDocument({
+        sections,
+        passthroughRelationships: [
+          {
+            source: "word/document.xml",
+            relationshipType: "http://example.com/raw",
+            target: "custom/raw.bin",
+            rId: "rId8",
+          },
+        ],
+      }),
+    ).toThrow(RtfGenerateError);
+  });
+
+  it("projects expressible document settings and rejects unsupported settings", () => {
+    const options: DocumentOptions = {
+      sections: [{ children: [] }],
+      settings: {
+        defaultTabStop: "36pt",
+        view: "print",
+        zoom: { percent: "150%" },
+        trackRevisions: true,
+        doNotTrackMoves: false,
+      },
+    };
+    const generated = decoder.decode(generateDocument(options));
+    expect(generated).toContain(String.raw`\deftab720 `);
+    expect(generated).toContain(String.raw`\viewkind1 `);
+    expect(generated).toContain(String.raw`\viewscale150 `);
+    expect(generated).toContain(String.raw`\revisions `);
+    expect(generated).toContain(String.raw`\trackmoves `);
+    expect(() =>
+      generateDocument({
+        sections: [{ children: [] }],
+        settings: { updateFields: true },
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        context: expect.objectContaining({
+          part: "settings",
+          path: "settings",
+          name: "updateFields",
+        }),
+      }),
+    );
+  });
+
+  it("projects section-child bookmark starts", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              { bookmarkStart: { id: 7, name: "Section" } },
+              { paragraph: { children: [{ text: "Body" }] } },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(generated.indexOf(String.raw`{\*\bkmkstart Section}`)).toBeLessThan(
+      generated.indexOf("Body"),
+    );
+  });
+
+  it("projects paragraph indents", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                indent: { left: 720, right: 240, firstLine: 120 },
+                children: [{ text: "Body" }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = decoder.decode(generateDocument(options));
+    expect(generated).toContain(String.raw`\li720 \ri240 \fi120`);
+    expect(parseDocument(generated)).toEqual(options);
+  });
+
+  it("projects formatted runs containing hyperlinks", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  {
+                    bold: true,
+                    children: [{ hyperlink: { url: "https://example.com", children: ["Link"] } }],
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const generated = decoder.decode(generateDocument(options));
+    expect(generated).toContain(String.raw`HYPERLINK "https://example.com"`);
+    expect(parseDocument(generated)).toEqual(options);
+  });
+
+  it("maps declared style ids to stable RTF style codes", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [
+          {
+            children: [
+              {
+                paragraph: {
+                  style: "Heading",
+                  children: [{ style: "Emphasis", children: [{ text: "Body" }] }],
+                },
+              },
+            ],
+          },
+        ],
+        styles: {
+          paragraphStyles: [{ id: "Heading", name: "Heading" }],
+          characterStyles: [{ id: "Emphasis", name: "Emphasis" }],
+        },
+      }),
+    );
+    expect(generated).toContain(String.raw`{\stylesheet\s0`);
+    expect(generated).toContain(String.raw`\cs1`);
+    expect(generated).toContain(String.raw`\s0 {\cs1 Body}`);
+  });
+
   it("round-trips left, right, and first headers and footers", () => {
     const options: DocumentOptions = {
       sections: [

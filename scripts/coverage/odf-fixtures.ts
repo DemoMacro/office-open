@@ -454,7 +454,7 @@ export const ODF_COVERAGE_FIXTURES = {
     ] as const;
     const generated = await generateWorkbook({
       worksheets: [{ rows: [{ cells: [{ value: "Overlay" }] }] }],
-      styleOverlays: overlays,
+      styleResources: overlays,
     });
     const content = unzipSync(generated)["content.xml"]!;
     const contentXml = strFromU8(content);
@@ -468,7 +468,7 @@ export const ODF_COVERAGE_FIXTURES = {
     });
     const parsed = await parseWorkbook(referenced);
     assertEqual(parsed.worksheets?.[0]?.rows?.[0]?.height, 20, "raw length fallback semantics");
-    assertEqual(parsed.styleOverlays, [overlays[1]], "raw percent overlay semantic round trip");
+    assertEqual(parsed.styleResources, [overlays[1]], "raw percent overlay semantic round trip");
     return {
       semanticRoundTrip: true,
       rawFallbackElements: ["style:paragraph-properties"],
@@ -484,7 +484,7 @@ export const ODF_NEGATIVE_FIXTURES = {
           manifestOptionsXml({
             version: "1.3",
             entries: [{ fullPath: "content.xml", mediaType: "text/xml" }],
-          }).replace("</manifest:manifest>", "<office:unknown/></manifest:manifest>"),
+          }).replace("</manifest:manifest>", "<manifest:unknown/></manifest:manifest>"),
         ),
       "Unknown manifest element",
     );

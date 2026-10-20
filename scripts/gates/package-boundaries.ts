@@ -160,7 +160,12 @@ for (const entry of fs.readdirSync(PACKAGES, { withFileTypes: true })) {
   if (!fs.existsSync(path.join(directory, "package.json"))) continue;
   if (TARGET_PACKAGES.has(entry.name) && !packageExists(name)) continue;
 
-  const declared = declaredDependencies(directory);
+  const manifest = JSON.parse(fs.readFileSync(path.join(directory, "package.json"), "utf8"));
+  const declared = new Set(
+    ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"].flatMap(
+      (field) => Object.keys(manifest[field] ?? {}),
+    ),
+  );
   for (const file of walkSources(directory)) {
     const relativeFile = path.relative(ROOT, file).replaceAll("\\", "/");
     const source = fs.readFileSync(file, "utf8");

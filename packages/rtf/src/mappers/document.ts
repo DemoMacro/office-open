@@ -1,5 +1,6 @@
 import type {
   DocumentOptions,
+  EndnoteOptions,
   FootnoteOptions,
   NumberingOptions,
   ParagraphOptions,
@@ -31,7 +32,7 @@ import { RtfParseError } from "../errors";
 import { lcidToTag } from "../langs";
 import { type RtfToken } from "../tokenizer";
 import { numberingFromParsed, parseListOverrides, parseListTable } from "./numbering";
-import { parseRtfShape } from "./shape";
+import { imageDimensions, parseRtfShape } from "./shape";
 import { parseStylesheet, stylesFromDrafts, type StyleDraft } from "./stylesheet";
 
 type StoryBlocks = Map<"default" | "even" | "first", SectionChild[]>;
@@ -56,6 +57,33 @@ function applyStoryBlocks(
   if (firstFooters) section.footers = { ...section.footers, first: firstFooters };
 }
 
+function rtfDate(start: number, end: number, tokens: readonly RtfToken[]): string {
+  const values = new Map<string, number>();
+  for (let index = start; index < end; index += 1) {
+    const token = tokens[index];
+    if (token?.kind !== "control" || token.word === undefined || token.param === undefined)
+      continue;
+    if (["yr", "mo", "dy", "hr", "min", "sec"].includes(token.word)) {
+      values.set(token.word, token.param);
+    }
+  }
+  const date = new Date(
+    Date.UTC(
+      values.get("yr") ?? 0,
+      (values.get("mo") ?? 1) - 1,
+      values.get("dy") ?? 1,
+      values.get("hr") ?? 0,
+      values.get("min") ?? 0,
+      values.get("sec") ?? 0,
+    ),
+  );
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number, length = 2) => value.toString().padStart(length, "0");
+  return `${pad(date.getUTCFullYear(), 4)}-${pad(date.getUTCMonth() + 1)}-${pad(
+    date.getUTCDate(),
+  )}T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}Z`;
+}
+
 export function parseRtfTokens(tokens: readonly RtfToken[], source: string): DocumentOptions {
   const fonts = new Map<number, string>();
   const colors: (string | null)[] = [];
@@ -65,6 +93,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let activeSection = sections[0]!;
   let blocks: SectionChild[] = activeSection.children;
   const footnotes: FootnoteOptions[] = [];
+  const endnotes: EndnoteOptions[] = [];
   const numberingReferences = new Set<string>();
   const listFormats = new Map<string, "bullet" | "decimal">();
   const headerBlocks = new Map<"default" | "even" | "first", SectionChild[]>();
@@ -97,6 +126,8 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
   let color: { red?: number; green?: number; blue?: number } = {};
   let tokenIndex = 0;
   let pendingHyperlink: string | undefined;
+  let lastPrinted: string | undefined;
+  let documentLanguage: string | undefined;
 
   const consumeGroup = (start: number): number => {
     let depth = 1;
@@ -177,6 +208,11 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       binary.length > 0
         ? binary
         : (hex.match(/../gu)?.map((pair) => Number.parseInt(pair, 16)) ?? []);
+    const intrinsic = payload.length > 0 ? imageDimensions(new Uint8Array(payload)) : undefined;
+    if (intrinsic) {
+      width = width > 0 ? width : intrinsic.width * 635;
+      height = height > 0 ? height : intrinsic.height * 635;
+    }
     if (binary.length === 0 && hex.length % 2 !== 0)
       throw new RtfParseError(
         "\\pict hexadecimal data has an odd byte length",
@@ -588,6 +624,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
       case "par":
         startParagraph();
         return;
+      case "column":
+        appendInline({ columnBreak: true });
+        return;
       case "tab":
         appendInline({ tab: true });
         return;
@@ -609,6 +648,9 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
           const tag = lcidToTag(token.param);
           if (tag !== undefined) format.language = { value: tag };
         }
+        return;
+      case "deflang":
+        if (token.param !== undefined) documentLanguage = lcidToTag(token.param);
         return;
       case "insrsid":
         if (token.param === undefined)
@@ -661,9 +703,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.strike = token.param !== 0;
         return;
       case "edmins":
-        if (token.param === undefined || !Number.isInteger(token.param) || token.param < 0)
-          throw new RtfParseError("\\edmins requires a minute count", token.position, source);
-        appProperties.totalTime = token.param;
+        appProperties.totalTime = token.param ?? 0;
         return;
       case "nofpages":
       case "nofwords":
@@ -677,8 +717,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         else appProperties.charactersWithSpaces = token.param;
         return;
       case "s":
-        if (token.param === undefined)
-          throw new RtfParseError("\\s requires a style number", token.position, source);
+        if (token.param === undefined) return;
         ensureParagraph().options.style = `rtf-style-${token.param}`;
         return;
       case "cs":
@@ -800,13 +839,40 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         format.underline = { type: "single" };
         return;
       case "fs":
-        if (!token.param || token.param <= 0)
-          throw new RtfParseError(
-            "\\fs requires a positive half-point size",
-            token.position,
-            source,
-          );
+        if (!token.param || token.param <= 0) return;
         format.size = token.param / 2;
+        return;
+      case "li":
+      case "ri":
+      case "fi": {
+        if (token.param === undefined) return;
+        const draft = ensureParagraph();
+        draft.options.indent ??= {};
+        if (word === "li") draft.options.indent.left = token.param;
+        else if (word === "ri") draft.options.indent.right = token.param;
+        else draft.options.indent.firstLine = token.param;
+        return;
+      }
+      case "sb":
+      case "sa":
+      case "sl":
+      case "slmult": {
+        if (token.param === undefined) return;
+        const draft = ensureParagraph();
+        draft.options.spacing ??= {};
+        const spacing = draft.options.spacing;
+        if (word === "sb") spacing.before = token.param;
+        else if (word === "sa") spacing.after = token.param;
+        else if (word === "sl") spacing.line = token.param;
+        else if (token.param === 1) spacing.lineRule = "auto";
+        else spacing.lineRule = "exact";
+        return;
+      }
+      case "ltrpar":
+        ensureParagraph().options.bidirectional = false;
+        return;
+      case "rtlpar":
+        ensureParagraph().options.bidirectional = true;
         return;
       case "f":
         format.font = token.param !== undefined ? fonts.get(token.param) : undefined;
@@ -840,6 +906,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         return;
       case "trowd":
         ensureTable();
+        previousBoundary = 0;
         return;
       case "cell":
       case "nestcell":
@@ -852,16 +919,15 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         endNestedRow();
         return;
       case "cellx":
-        if (token.param === undefined)
-          throw new RtfParseError("\\cellx requires a boundary", token.position, source);
+        if (token.param === undefined) return;
         const table = activeTable();
         if (!table) return;
-        if (token.param <= previousBoundary)
-          throw new RtfParseError("\\cellx boundaries must increase", token.position, source);
-        table.cellDefinitions.push({ ...pendingCellProperties });
-        table.boundaries.push(token.param);
-        pendingCellProperties = {};
-        previousBoundary = token.param;
+        if (token.param > previousBoundary) {
+          table.cellDefinitions.push({ ...pendingCellProperties });
+          table.boundaries.push(token.param);
+          pendingCellProperties = {};
+          previousBoundary = token.param;
+        }
         return;
       default:
         return;
@@ -915,6 +981,19 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     const currentFrame = groupFrames.at(-1);
     const destination = currentFrame?.destination ?? "root";
 
+    if (
+      token.kind === "control" &&
+      currentFrame?.starred &&
+      currentFrame.skip &&
+      token.word === "generator"
+    ) {
+      const end = consumeGroup(tokenIndex);
+      const value = decodeDestinationText(tokenIndex, end)[0] ?? "";
+      if (value) metadata.set("generator", value);
+      groupFrames.pop();
+      tokenIndex = end;
+      continue;
+    }
     if (token.kind === "group-start") {
       handleGroupStart(token.position, tokenIndex - 1);
       continue;
@@ -939,7 +1018,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     }
     if (token.kind === "control" && token.word === "shpinst" && currentFrame) {
       const end = consumeGroup(tokenIndex);
-      shapes.push({ wpsShape: parseRtfShape(tokens, tokenIndex, end, source) });
+      shapes.push(parseRtfShape(tokens, tokenIndex, end, source));
       groupFrames.pop();
       tokenIndex = end;
       continue;
@@ -1058,10 +1137,20 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
               map.set(target, children);
             } else if (token.word === "footnote") {
               const children = blocksFromText(tokenIndex, end);
-              if (children.length > 0) footnotes.push({ children });
+              const isEndnote = tokens
+                .slice(tokenIndex, end)
+                .some((noteToken) => noteToken.kind === "control" && noteToken.word === "ftnalt");
+              if (children.length > 0) {
+                if (isEndnote) {
+                  endnotes.push({ id: endnotes.length, children });
+                } else {
+                  footnotes.push({ children });
+                }
+              }
               const draft = ensureParagraph();
               flushRun(draft);
-              draft.runs.push({ footnoteReference: footnotes.length - 1 });
+              if (isEndnote) draft.runs.push({ endnoteReference: endnotes.length - 1 });
+              else draft.runs.push({ footnoteReference: footnotes.length - 1 });
               draft.format = { ...format };
             } else if (token.word === "objdata") {
               const objectData = readObjectData(tokenIndex, end);
@@ -1117,7 +1206,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         if (token.word !== undefined && CAPTURED_METADATA.has(token.word)) {
           const end = consumeGroup(tokenIndex);
           const value = decodeDestinationText(tokenIndex, end)[0] ?? "";
-          if (value) metadata.set(token.word, value);
+          if (value) metadata.set(token.word === "operator" ? "lastModifiedBy" : token.word, value);
           groupFrames.pop();
           tokenIndex = end;
           continue;
@@ -1151,17 +1240,35 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
         }
         if (token.word === "shpinst") {
           const end = consumeGroup(tokenIndex);
-          shapes.push({ wpsShape: parseRtfShape(tokens, tokenIndex, end, source) });
+          shapes.push(parseRtfShape(tokens, tokenIndex, end, source));
           groupFrames.pop();
           tokenIndex = end;
           continue;
         }
-        if (token.word === "shp") continue;
+        if (token.word === "shp") {
+          const end = consumeGroup(tokenIndex);
+          shapes.push(parseRtfShape(tokens, tokenIndex, end, source));
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
+        if (token.word === "shpgrp" || token.word === "do") {
+          currentFrame.decided = true;
+          continue;
+        }
         if (token.word === "shprslt") {
           currentFrame.skip = true;
           continue;
         }
         if (token.word === "info") continue;
+        if (token.word === "printim") {
+          const end = consumeGroup(tokenIndex);
+          const value = rtfDate(tokenIndex, end, tokens);
+          if (value) lastPrinted = value;
+          groupFrames.pop();
+          tokenIndex = end;
+          continue;
+        }
         if (token.word === "insrsid") {
           applyControl(token, destination);
           continue;
@@ -1265,6 +1372,7 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     metadataEntries.title !== undefined ||
     metadataEntries.subject !== undefined ||
     metadataEntries.author !== undefined ||
+    metadataEntries.lastModifiedBy !== undefined ||
     metadataEntries.keywords !== undefined ||
     metadataEntries.doccomm !== undefined ||
     metadataEntries.category !== undefined;
@@ -1275,17 +1383,34 @@ export function parseRtfTokens(tokens: readonly RtfToken[], source: string): Doc
     sections,
     ...(numbering ? { numbering } : {}),
     ...(footnotes.length > 0 ? { footnotes } : {}),
+    ...(endnotes.length > 0 ? { endnotes } : {}),
     ...(hasCoreMetadata
       ? {
-          title: metadataEntries.title,
-          subject: metadataEntries.subject,
-          creator: metadataEntries.author,
-          keywords: metadataEntries.keywords,
-          description: metadataEntries.doccomm,
-          category: metadataEntries.category,
+          ...(metadataEntries.title === undefined ? {} : { title: metadataEntries.title }),
+          ...(metadataEntries.subject === undefined ? {} : { subject: metadataEntries.subject }),
+          ...(metadataEntries.author === undefined ? {} : { creator: metadataEntries.author }),
+          ...(metadataEntries.lastModifiedBy === undefined
+            ? {}
+            : { lastModifiedBy: metadataEntries.lastModifiedBy }),
+          ...(metadataEntries.keywords === undefined ? {} : { keywords: metadataEntries.keywords }),
+          ...(metadataEntries.doccomm === undefined
+            ? {}
+            : { description: metadataEntries.doccomm }),
+          ...(metadataEntries.category === undefined ? {} : { category: metadataEntries.category }),
         }
       : {}),
     ...(styles ? { styles } : {}),
-    ...(Object.keys(appProperties).length === 0 ? {} : { appProperties }),
+    ...(Object.keys(appProperties).length === 0
+      ? {}
+      : {
+          appProperties: {
+            ...appProperties,
+            ...(metadataEntries.company === undefined ? {} : { company: metadataEntries.company }),
+            ...(metadataEntries.manager === undefined ? {} : { manager: metadataEntries.manager }),
+          },
+        }),
+    ...(lastPrinted === undefined ? {} : { lastPrinted }),
+    ...(documentLanguage === undefined ? {} : { language: documentLanguage }),
+    ...(metadataEntries.generator === undefined ? {} : { application: metadataEntries.generator }),
   };
 }

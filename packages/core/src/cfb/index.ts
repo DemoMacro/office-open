@@ -1,4 +1,5 @@
 export { CompoundFileReader, type CompoundFileEntry, type CompoundFileEntryType } from "./reader";
+export { CfbError } from "./cfb-error";
 export {
   decryptLegacyRc4,
   decryptRc4CryptoApi,

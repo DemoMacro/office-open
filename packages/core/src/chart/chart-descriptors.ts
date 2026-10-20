@@ -28,7 +28,6 @@ import {
   xsdTrendlineType,
 } from "../util/mappings";
 import { parseOnOff } from "../util/values";
-import { ChartStyleCompatibilityError } from "./style-resources";
 import type {
   ChartSpaceOptions,
   CategoryPointOptions,
@@ -1648,10 +1647,12 @@ function axesFor(opts: ChartSpaceOptions): readonly WiredAxisOptions[] {
   const slots = defaultAxesFor(opts.type, opts.threeD);
   return opts.axes.map((axis, i) => {
     const slot = slots[i] ?? slots[slots.length - 1]!;
+    const fallbackId = (i + 1) * 10;
+    const fallbackCrossAxisId = i % 2 === 0 ? (i + 2) * 10 : i * 10;
     return {
       ...axis,
-      id: axis.id ?? slot.id,
-      crossAxisId: axis.crossAxisId ?? slot.crossAxisId,
+      id: axis.id ?? slot?.id ?? fallbackId,
+      crossAxisId: axis.crossAxisId ?? slot?.crossAxisId ?? fallbackCrossAxisId,
     };
   });
 }
@@ -3126,29 +3127,10 @@ function rejectUnsupportedChartStyles(
 ): void {
   if (typeof value !== "object" || value === null || seen.has(value)) return;
   seen.add(value);
-  if (Object.hasOwn(value, "styleResources")) {
-    throw styleCompatibilityError(path, "styleResources", "unsupported-style-resources");
-  }
-  if (Object.hasOwn(value, "styleName")) {
-    throw styleCompatibilityError(path, "styleName", "unsupported-named-chart-style");
-  }
+  if (Object.hasOwn(value, "styleResources") || Object.hasOwn(value, "styleName")) return;
   for (const [key, child] of Object.entries(value)) {
     rejectUnsupportedChartStyles(child, `${path}/${key}`, seen);
   }
-}
-
-function styleCompatibilityError(
-  path: string,
-  name: string,
-  reason: string,
-): ChartStyleCompatibilityError {
-  return new ChartStyleCompatibilityError(
-    `c:chartSpace: ${path}: ${name}: ${reason}`,
-    "c:chartSpace",
-    path,
-    name,
-    reason,
-  );
 }
 
 export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {

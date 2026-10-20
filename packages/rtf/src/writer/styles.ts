@@ -1,6 +1,13 @@
 import type { RunOptions, StylesOptions } from "@office-open/docx";
 
-import { assertAllowed, registerColor, reject, type RtfGenerateContext } from "./context";
+import {
+  assertAllowed,
+  registerColor,
+  reject,
+  reserveStyleCode,
+  styleCode,
+  type RtfGenerateContext,
+} from "./context";
 import { control, rtfText } from "./escape";
 import { writeRunProperties } from "./run";
 
@@ -10,14 +17,6 @@ type StyleOptions = Omit<
   "type"
 >;
 type Entry = { style: StyleOptions; type: "paragraph" | "character" };
-
-function code(id: string, codes: Map<string, number>): number {
-  const known = codes.get(id);
-  if (known !== undefined) return known;
-  const parsed = /(?:^rtf-style-|^rtf-character-style-)(\d+)$/u.exec(id)?.[1];
-  if (parsed === undefined) reject("styles", "id", id, "RTF requires a canonical rtf style id");
-  return Number(parsed);
-}
 
 function paragraphProperties(paragraph: object, context: RtfGenerateContext, path: string): string {
   assertAllowed(
@@ -109,7 +108,17 @@ function paragraphProperties(paragraph: object, context: RtfGenerateContext, pat
 
 function runProperties(run: object, context: RtfGenerateContext, path: string): string {
   void path;
+  const style = "style" in run ? run.style : undefined;
+  if (typeof style === "string" && styleCode(context, style) === undefined) {
+    reject("styles", "run.style", style, "RTF character style must be declared");
+  }
   return writeRunProperties(run as RunOptions, context);
+}
+
+function referencedCode(context: RtfGenerateContext, id: string, path: string): number {
+  const code = styleCode(context, id);
+  if (code === undefined) reject("styles", path, id, "RTF style reference must be declared");
+  return code;
 }
 
 export function writeStyles(
@@ -122,13 +131,9 @@ export function writeStyles(
     ...(styles.paragraphStyles ?? []).map((style) => ({ style, type: "paragraph" as const })),
     ...(styles.characterStyles ?? []).map((style) => ({ style, type: "character" as const })),
   ];
-  let next = 0;
-  const codes = new Map<string, number>();
   for (const { style } of entries) {
-    const parsed = /(?:^rtf-style-|^rtf-character-style-)(\d+)$/u.exec(style.id ?? "")?.[1];
-    const value = parsed === undefined ? next++ : Number(parsed);
-    if (style.id !== undefined) codes.set(style.id, value);
-    next = Math.max(next + 1, value + 1);
+    if (style.id === undefined) reject("styles", "id", "id", "RTF requires a style id");
+    reserveStyleCode(context, style.id);
   }
   const output = entries
     .map(({ style, type }, index) => {
@@ -151,15 +156,23 @@ export function writeStyles(
         path,
       );
       if (style.id === undefined) reject("styles", path, "id", "RTF requires a style id");
-      let body = control(type === "character" ? "cs" : "s", code(style.id, codes));
+      const code = styleCode(context, style.id);
+      if (code === undefined) reject("styles", path, "id", "RTF requires a style id");
+      let body = control(type === "character" ? "cs" : "s", code);
       body +=
         type === "paragraph"
           ? paragraphProperties(style.paragraph ?? {}, context, path)
           : runProperties(style.run ?? {}, context, path);
       body += [
-        style.basedOn === undefined ? "" : control("sbasedon", code(style.basedOn, codes)),
-        style.next === undefined ? "" : control("snext", code(style.next, codes)),
-        style.link === undefined ? "" : control("slink", code(style.link, codes)),
+        style.basedOn === undefined
+          ? ""
+          : control("sbasedon", referencedCode(context, style.basedOn, `${path}.basedOn`)),
+        style.next === undefined
+          ? ""
+          : control("snext", referencedCode(context, style.next, `${path}.next`)),
+        style.link === undefined
+          ? ""
+          : control("slink", referencedCode(context, style.link, `${path}.link`)),
         style.hidden ? control("shidden") : "",
         style.uiPriority === undefined ? "" : control("spriority", style.uiPriority),
         style.quickFormat ? control("sqformat") : "",

@@ -3,7 +3,7 @@ import { strFromU8, strToU8, toUint8ArrayAsync, unzipSync, zipSync } from "@offi
 import { parse } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
-import { OcfManifestError, OcfMimeTypeError, OdfXmlError } from "../errors";
+import { OcfError, OcfManifestError, OcfMimeTypeError, OdfXmlError } from "../errors";
 import {
   manifestOptionsXml,
   parseManifestOptions,
@@ -161,9 +161,15 @@ export function readOcfSync(
   files: OdfFiles;
   binaries: Record<string, Uint8Array>;
   manifest: OcfManifestOptions;
+  mimeType?: string;
 } {
   const expectedMimeTypes = Array.isArray(expectedMimeType) ? expectedMimeType : [expectedMimeType];
-  const entries = unzipSync(data);
+  let entries: Record<string, Uint8Array>;
+  try {
+    entries = unzipSync(data);
+  } catch (cause) {
+    throw new OcfError("Invalid ODF ZIP package", { cause });
+  }
   const files: OdfFiles = {};
   const binaries: Record<string, Uint8Array> = {};
   for (const [path, bytes] of Object.entries(entries)) {
@@ -197,7 +203,7 @@ export function readOcfSync(
     ),
     Object.keys(entries).filter((path) => path !== "mimetype" && path !== "META-INF/manifest.xml"),
   );
-  return { files, binaries, manifest };
+  return { files, binaries, manifest, mimeType };
 }
 
 export async function readOcf(
@@ -207,6 +213,7 @@ export async function readOcf(
   files: OdfFiles;
   binaries: Record<string, Uint8Array>;
   manifest: OcfManifestOptions;
+  mimeType?: string;
 }> {
   return readOcfSync(await toUint8ArrayAsync(data), expectedMimeType);
 }

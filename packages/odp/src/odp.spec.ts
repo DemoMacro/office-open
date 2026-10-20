@@ -267,6 +267,43 @@ describe("ODP codec", () => {
     ).toMatchObject({ picture: { sourceUrl: "../images/logo.png" } });
   });
 
+  it("round-trips a missing package image as a linked-only picture", async () => {
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:frame svg:x="1cm" svg:y="1cm" svg:width="4cm" svg:height="3cm"><draw:image xlink:href="Pictures/missing.png" xlink:show="embed"/></draw:frame></draw:page></office:presentation></office:body></office:document-content>`;
+    const parsed = await parsePresentation(
+      generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
+    );
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      picture: { type: "png", sourceUrl: "Pictures/missing.png" },
+    });
+    expect(
+      (await parsePresentation(await generatePresentation(parsed))).slides?.[0]?.children?.[0],
+    ).toEqual(parsed.slides?.[0]?.children?.[0]);
+  });
+
+  it("projects compatibility legacy drawings as positioned frames", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [
+          {
+            children: [
+              {
+                rawXml:
+                  '<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="2056" name="Legacy"/><p:cNvGraphicFramePr/><p:nvPr/></p:nvGraphicFramePr>' +
+                  '<p:xfrm><a:off x="5508625" y="4508500"/><a:ext cx="3419475" cy="1709738"/></p:xfrm>' +
+                  '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/compatibility">' +
+                  '<com:legacyDrawing xmlns:com="http://schemas.openxmlformats.org/drawingml/2006/compatibility" spid="_x0000_s2056"/>' +
+                  "</a:graphicData></a:graphic></p:graphicFrame>",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
+      shape: { id: 2056, name: "Legacy", x: 5508625, y: 4508500, width: 3419475, height: 1709738 },
+    });
+  });
+
   it("round-trips line breaks and hyperlink runs", async () => {
     const options: OdpPresentationOptions = {
       slides: [
@@ -428,7 +465,7 @@ describe("ODP codec", () => {
   });
 
   it("maps primitive ODF shapes to canonical pptx shapes", async () => {
-    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
+    const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:presentation><draw:page><draw:rect svg:x="1cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" draw:name="Box"><text:p>Box</text:p></draw:rect><draw:path svg:x="4cm" svg:y="1cm" svg:width="2cm" svg:height="1cm" svg:viewBox="0 0 2 1" svg:d="M 0 0 L 2 0 L 2 1 Z"/><draw:g><draw:custom-shape svg:x="1cm" svg:y="3cm" svg:width="1cm" svg:height="1cm" draw:name="Grouped"/></draw:g></draw:page></office:presentation></office:body></office:document-content>`;
     const parsed = await parsePresentation(
       generateOcf("application/vnd.oasis.opendocument.presentation", { "content.xml": content }),
     );
@@ -510,7 +547,7 @@ describe("ODP codec", () => {
       error = cause;
     }
     expect(error).toBeInstanceOf(OdpParseError);
-    expect(error).toMatchObject({ part: "content.xml", name: "form:unknown" });
+    expect(error).toMatchObject({ part: "content.xml", elementName: "form:unknown" });
   });
 
   it("round-trips slide charts with position, size, semantics, and order", async () => {
@@ -565,6 +602,15 @@ describe("ODP codec", () => {
     expect(children[1]).toMatchObject({ chart: { type: "bar" } });
   });
 
+  it("assigns an object path name to an unnamed slide chart", async () => {
+    const parsed = await parsePresentation(
+      await generatePresentation({
+        slides: [{ children: [{ chart: { type: "pie", series: [{ values: [1] }] } }] }],
+      }),
+    );
+    expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({ chart: { name: "Object 1" } });
+  });
+
   it("reports unknown slide elements with structured errors", async () => {
     const content = `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES} xmlns:presentation="urn:oasis:names:tc:opendocument:xmlns:presentation:1.0"><office:body><office:presentation><draw:page><draw:unknown/></draw:page></office:presentation></office:body></office:document-content>`;
     let error: unknown;
@@ -581,7 +627,7 @@ describe("ODP codec", () => {
     expect(error).toMatchObject({
       part: "content.xml",
       path: "/office:document-content/office:body/office:presentation/draw:page/draw:unknown",
-      name: "draw:unknown",
+      elementName: "draw:unknown",
       reason: "element has no canonical PresentationOptions mapping",
     });
   });

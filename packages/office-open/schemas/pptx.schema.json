@@ -2895,6 +2895,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -2922,6 +2925,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -3652,6 +3658,159 @@
       "required": ["formatCode"],
       "type": "object"
     },
+    "ChartOdfEnhancedGeometryOptions": {
+      "additionalProperties": false,
+      "description": "ODF enhanced geometry attached to an inline chart custom shape.",
+      "properties": {
+        "enhancedPath": {
+          "description": "ODF enhanced-path command string; placeholders use equation names.",
+          "type": "string"
+        },
+        "equations": {
+          "description": "Named equations available to `enhancedPath` placeholders.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfGeometryEquationOptions"
+          },
+          "type": "array"
+        },
+        "mirrorHorizontal": {
+          "description": "Horizontal mirror flag.",
+          "type": "boolean"
+        },
+        "mirrorVertical": {
+          "description": "Vertical mirror flag.",
+          "type": "boolean"
+        },
+        "textAreas": {
+          "description": "Text-area rectangle in the source geometry coordinate grammar.",
+          "type": "string"
+        },
+        "textRotateAngle": {
+          "description": "ODF text rotation in the source angle grammar.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Enhanced shape type, such as `ooxml-rect`.",
+          "type": "string"
+        },
+        "viewBox": {
+          "description": "Source viewBox values: x, y, width, height.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ChartOdfGeometryEquationOptions": {
+      "additionalProperties": false,
+      "description": "ODF equation referenced by an inline chart decoration's enhanced path.",
+      "properties": {
+        "formula": {
+          "description": "ODF geometry formula, such as `logwidth/2`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Equation name used by path placeholders, such as `f0`.",
+          "type": "string"
+        }
+      },
+      "required": ["name", "formula"],
+      "type": "object"
+    },
+    "ChartOdfShapeOptions": {
+      "additionalProperties": false,
+      "description": "ODF drawing decoration embedded directly in a chart body. Coordinates are EMU; polyline points are EMU pairs in source order.",
+      "properties": {
+        "endCellAddress": {
+          "description": "End anchor cell address for spreadsheet-like chart decorations.",
+          "type": "string"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "enhancedGeometry": {
+          "$ref": "#/definitions/ChartOdfEnhancedGeometryOptions",
+          "description": "ODF enhanced geometry retained for custom shapes."
+        },
+        "height": {
+          "description": "Height in EMU.",
+          "type": "number"
+        },
+        "kind": {
+          "description": "Inline shape discriminant.",
+          "enum": ["customShape", "polyline"],
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible drawing name.",
+          "type": "string"
+        },
+        "points": {
+          "description": "Polyline vertex coordinates in EMU.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": ["x", "y"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ChartShapePropertiesOptions",
+          "description": "Projected fill, outline, and other DrawingML shape properties."
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Plain text projected from the shape's paragraphs.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Package-local text style reference.",
+          "type": "string"
+        },
+        "transform": {
+          "description": "ODF drawing transform command list retained verbatim.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Left offset in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Top offset in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["kind"],
+      "type": "object"
+    },
     "ChartOptions": {
       "additionalProperties": false,
       "description": "Chart frame (p:graphicFrame → c:chartSpace): chart payload from ChartSpaceOptions (core shared model), cNvPr from NonVisualDrawingPropertiesOptions. `title` is c:title; alt text in `description`.",
@@ -3987,6 +4146,17 @@
         },
         "nvPrExtensions": {
           "$ref": "#/definitions/PictureOptions/properties/nvPrExtensions"
+        },
+        "odfClassToken": {
+          "description": "Source ODF `chart:class`; retains vendor add-in classes.",
+          "type": "string"
+        },
+        "odfShapes": {
+          "description": "ODF drawing decorations embedded in the chart body.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfShapeOptions"
+          },
+          "type": "array"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -4428,6 +4598,22 @@
       "required": ["index"],
       "type": "object"
     },
+    "ChartPropertyMappingOptions": {
+      "additionalProperties": false,
+      "description": "LibreOffice's legacy misspelled per-series property mapping element.",
+      "properties": {
+        "cellRangeAddress": {
+          "description": "Source cell range for the mapped data sequence.",
+          "type": "string"
+        },
+        "property": {
+          "description": "Data-sequence role, such as `values-x` or `values-y`.",
+          "type": "string"
+        }
+      },
+      "required": ["property", "cellRangeAddress"],
+      "type": "object"
+    },
     "ChartSeriesData": {
       "additionalProperties": false,
       "properties": {
@@ -4511,6 +4697,17 @@
           ],
           "description": "Line/scatter/radar marker (c:marker)."
         },
+        "meanValueLine": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "ODF mean-value decoration (`chart:mean-value`); OOXML has no direct equivalent."
+        },
         "name": {
           "anyOf": [
             {
@@ -4564,6 +4761,13 @@
         "pictureOptions": {
           "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
+        },
+        "propertyMappings": {
+          "description": "LibreOffice chart property mappings (`loext:propertry-mapping`) retained verbatim.",
+          "items": {
+            "$ref": "#/definitions/ChartPropertyMappingOptions"
+          },
+          "type": "array"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -4825,7 +5029,7 @@
           "type": "array"
         }
       },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes", "dr3dLights"],
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
       "type": "object"
     },
     "ChartThemeOverrideData": {
@@ -6145,6 +6349,82 @@
       ],
       "type": "string"
     },
+    "ContentPartLockingOptions": {
+      "$ref": "#/definitions/BaseLockingOptions"
+    },
+    "ContentPartNonVisualProperties": {
+      "additionalProperties": false,
+      "description": "PowerPoint 2010 p14:nvContentPartPr extension properties.",
+      "properties": {
+        "contentPartProperties": {
+          "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
+        },
+        "drawingProperties": {
+          "additionalProperties": false,
+          "properties": {
+            "creationId": {
+              "$ref": "#/definitions/ShapeOptions/properties/creationId"
+            },
+            "creationIdExtension": {
+              "$ref": "#/definitions/ShapeOptions/properties/creationIdExtension"
+            },
+            "description": {
+              "$ref": "#/definitions/ShapeOptions/properties/description"
+            },
+            "ext": {
+              "$ref": "#/definitions/ShapeOptions/properties/ext"
+            },
+            "hidden": {
+              "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
+              "type": "boolean"
+            },
+            "id": {
+              "type": ["number", "string"]
+            },
+            "name": {
+              "$ref": "#/definitions/ShapeOptions/properties/name"
+            },
+            "title": {
+              "description": "XSD `@title`.",
+              "type": "string"
+            }
+          },
+          "required": ["id"],
+          "type": "object"
+        },
+        "properties": {
+          "additionalProperties": false,
+          "properties": {
+            "extensions": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "required": ["drawingProperties"],
+      "type": "object"
+    },
+    "ContentPartOptions": {
+      "additionalProperties": false,
+      "description": "p:contentPart and its typed PowerPoint 2010 extension surface.",
+      "properties": {
+        "blackWhiteMode": {
+          "$ref": "#/definitions/BlackWhiteMode"
+        },
+        "nonVisualProperties": {
+          "$ref": "#/definitions/ContentPartNonVisualProperties"
+        },
+        "rId": {
+          "type": "string"
+        },
+        "transform": {
+          "$ref": "#/definitions/Transform2DOptions"
+        }
+      },
+      "required": ["rId"],
+      "type": "object"
+    },
     "ContentTypeDefault": {
       "additionalProperties": false,
       "properties": {
@@ -6363,7 +6643,14 @@
         },
         "slides": {
           "items": {
-            "$ref": "#/definitions/SlideChild/anyOf/12/properties/contentPart"
+            "additionalProperties": false,
+            "properties": {
+              "rId": {
+                "type": "string"
+              }
+            },
+            "required": ["rId"],
+            "type": "object"
           },
           "type": "array"
         }
@@ -6403,7 +6690,7 @@
           "$ref": "#/definitions/CustomShowOptions/properties/slides"
         },
         "tags": {
-          "$ref": "#/definitions/SlideChild/anyOf/12/properties/contentPart"
+          "$ref": "#/definitions/CustomShowOptions/properties/slides/items"
         }
       },
       "type": "object"
@@ -6664,6 +6951,23 @@
       },
       "type": "object"
     },
+    "DataModelAlternativeContentOptions": {
+      "additionalProperties": false,
+      "description": "A data-model point wrapped in MCE Compatibility Choice/Fallback branches.",
+      "properties": {
+        "choices": {
+          "items": {
+            "$ref": "#/definitions/DataModelPointAlternativeOptions"
+          },
+          "type": "array"
+        },
+        "fallback": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        }
+      },
+      "required": ["choices"],
+      "type": "object"
+    },
     "DataModelBackgroundOptions": {
       "additionalProperties": false,
       "description": "dgm:bg —.",
@@ -6752,7 +7056,7 @@
         },
         "points": {
           "items": {
-            "$ref": "#/definitions/DataModelPointOptions"
+            "$ref": "#/definitions/DataModelPointMemberOptions"
           },
           "type": "array"
         },
@@ -6761,6 +7065,31 @@
         }
       },
       "type": "object"
+    },
+    "DataModelPointAlternativeOptions": {
+      "additionalProperties": false,
+      "description": "One MCE branch containing a data-model point.",
+      "properties": {
+        "point": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        "requires": {
+          "type": "string"
+        }
+      },
+      "required": ["requires", "point"],
+      "type": "object"
+    },
+    "DataModelPointMemberOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        {
+          "$ref": "#/definitions/DataModelAlternativeContentOptions"
+        }
+      ],
+      "description": "dgm:ptLst member: a direct point or a typed MCE-wrapped point."
     },
     "DataModelPointOptions": {
       "additionalProperties": false,
@@ -11128,6 +11457,7 @@
           "type": "string"
         },
         "options": {
+          "description": "Selectable options, in source order.",
           "items": {
             "$ref": "#/definitions/ListBoxOptionOptions"
           },
@@ -11914,6 +12244,20 @@
         "text": {
           "description": "Label text (c:v).",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NonVisualContentPartPropertiesOptions": {
+      "additionalProperties": false,
+      "properties": {
+        "isComment": {
+          "description": "Whether the content part hosts a comment (`@isComment`, default true). Only `false` deviates from the default and is emitted explicitly.",
+          "type": "boolean"
+        },
+        "locks": {
+          "$ref": "#/definitions/ContentPartLockingOptions",
+          "description": "Locking flags (a:cpLocks —)"
         }
       },
       "type": "object"
@@ -15471,6 +15815,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -15498,6 +15845,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -16674,18 +17024,45 @@
           "additionalProperties": false,
           "properties": {
             "contentPart": {
-              "additionalProperties": false,
-              "properties": {
-                "rId": {
-                  "type": "string"
-                }
-              },
-              "required": ["rId"],
-              "type": "object"
+              "$ref": "#/definitions/ContentPartOptions"
             }
           },
           "required": ["contentPart"],
           "title": "contentPart",
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "alternateContent": {
+              "additionalProperties": false,
+              "properties": {
+                "choices": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "child": {
+                        "$ref": "#/definitions/SlideChild"
+                      },
+                      "requires": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["requires", "child"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "fallback": {
+                  "$ref": "#/definitions/SlideChild"
+                }
+              },
+              "required": ["choices"],
+              "type": "object"
+            }
+          },
+          "required": ["alternateContent"],
+          "title": "alternateContent",
           "type": "object"
         },
         {

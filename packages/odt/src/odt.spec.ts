@@ -1,11 +1,12 @@
 import { unzipSync } from "@office-open/core";
 import type { FormControlOptions, OfficeFormsOptions } from "@office-open/core";
-import type { DocumentOptions } from "@office-open/docx";
+import type { DocumentOptions, TableOptions } from "@office-open/docx";
 import type { ParagraphOptions } from "@office-open/docx";
-import { generateOcf, ODF_NAMESPACES } from "@office-open/odf";
+import { CHART_MIME, generateOcf, ODF_NAMESPACES } from "@office-open/odf";
 import { describe, expect, it } from "vite-plus/test";
 
-import { generateDocument, OdtParseError, parseDocument } from "./index";
+import { generateDocument, OdtGenerateError, OdtParseError, parseDocument } from "./index";
+import { trackRevisionBlocks } from "./paragraph";
 
 const FORM_NAMESPACE = 'xmlns:form="urn:oasis:names:tc:opendocument:xmlns:form:1.0"';
 
@@ -19,6 +20,7 @@ type SectionBodyChild = NonNullable<
 
 type ParagraphRun = NonNullable<ParagraphOptions["children"]>[number];
 type RunLikeChild = Extract<ParagraphRun, { children?: unknown }>;
+type TableRow = TableOptions["rows"][number];
 
 function sectionParagraph(child: SectionBodyChild | undefined): ParagraphOptions | undefined {
   return child && "paragraph" in child && typeof child.paragraph !== "string"
@@ -51,7 +53,7 @@ async function parseBodyError(body: string, name: string, reason?: string): Prom
     expect(cause).toBeInstanceOf(OdtParseError);
     const error = cause as OdtParseError;
     expect(error.part).toBe("content.xml");
-    expect(error.name).toBe(name);
+    expect(error.elementName).toBe(name);
     if (reason) expect(error.reason).toContain(reason);
     return error;
   }
@@ -287,6 +289,44 @@ describe("ODT canonical projection", () => {
     ).toEqual(parsed.sections[0]?.children?.[0]);
   });
 
+  it("round-trips deeply nested tables without exhausting the stack", async () => {
+    let child: SectionBodyChild = { paragraph: { children: ["Leaf"] } };
+    for (let depth = 0; depth < 2_000; depth += 1)
+      child = { table: { rows: [{ cells: [{ children: [child] }] }] } };
+    const parsed = await parseDocument(
+      await generateDocument({ sections: [{ children: [child] }] }),
+    );
+    let depth = 0;
+    let current = parsed.sections[0]?.children?.[0];
+    while (current && "table" in current) {
+      depth += 1;
+      const row: TableRow | undefined = current.table.rows[0];
+      const cells = row && "cells" in row ? row.cells : undefined;
+      if (!cells) break;
+      const cell = cells[0];
+      if (!cell || !("children" in cell)) break;
+      current = cell.children?.[0];
+    }
+    expect(depth).toBe(2_000);
+  });
+
+  it("round-trips repeated body bookmarks with the same canonical id", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            { bookmarkStart: { id: 0, name: "_GoBack" } },
+            { bookmarkEnd: { id: 0 } },
+            { bookmarkStart: { id: 0, name: "_GoBack" } },
+            { bookmarkEnd: { id: 0 } },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
+  });
+
   it("round-trips sender fields", async () => {
     const source = odtPackage(
       "<text:p><text:sender-initials>AI</text:sender-initials><text:sender-city>City</text:sender-city><text:sender-state-or-province>State</text:sender-state-or-province></text:p>",
@@ -505,7 +545,7 @@ describe("ODT canonical projection", () => {
     expect(error).toBeInstanceOf(OdtParseError);
     expect(error).toMatchObject({
       part: "content.xml",
-      name: "draw:object",
+      elementName: "draw:object",
       reason: "embedded object subdocument is missing",
     });
   });
@@ -737,6 +777,93 @@ describe("ODT canonical projection", () => {
     ).toEqual(projection(parsed.sections[0]?.children));
   });
 
+  it("preserves bookmark starts in table-of-contents leading content", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              toc: {
+                leading: [{ bookmarkStart: { id: 4, name: "contents" } }],
+                trailing: [{ bookmarkEnd: { id: 4 } }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.children?.[0]).toEqual({
+      toc: {
+        alias: undefined,
+        entries: [{ bookmarkStart: { id: 4, name: "contents" } }, { bookmarkEnd: { id: 4 } }],
+        headingStyleRange: "1-10",
+        hyperlink: false,
+      },
+    });
+  });
+
+  it("projects orphan comment ranges as empty annotations", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ commentRangeStart: { id: 2 } }, { commentRangeEnd: { id: 2 } }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(parsed.sections[0]?.children?.[0]).toEqual({
+      paragraph: {
+        children: [
+          { commentRangeStart: { id: 1 } },
+          { commentReference: 1 },
+          { commentRangeEnd: { id: 1 } },
+        ],
+      },
+    });
+    expect(parsed.comments).toEqual([{ id: 1, children: [] }]);
+  });
+
+  it("round-trips duplicate bookmark names with distinct canonical ids", async () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [
+                  { bookmarkStart: { id: 4, name: "Repeated" } },
+                  { bookmarkEnd: { id: 4 } },
+                  { bookmarkStart: { id: 5, name: "Repeated" } },
+                  { bookmarkEnd: { id: 5 } },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    expect(projection(parsed.sections[0]?.children)).toEqual(options.sections[0]?.children);
+  });
+
+  it("round-trips an unsupported Word field through a typed ODF expression", async () => {
+    const field = { instruction: "DOCPROPERTY Unknown", cachedValue: "Value" };
+    const options: DocumentOptions = {
+      sections: [{ children: [{ paragraph: { children: [{ simpleField: field }] } }] }],
+    };
+    const parsed = await parseDocument(await generateDocument(options));
+    const paragraph = sectionParagraph(parsed.sections[0]?.children[0]);
+    const child = paragraph?.children?.[0];
+    expect(child).toEqual({ simpleField: field });
+  });
+
   it("round-trips annotations, indexes, bibliography, and shapes", async () => {
     const options: DocumentOptions = {
       sections: [
@@ -845,26 +972,17 @@ describe("ODT canonical projection", () => {
     ).toContain("no canonical");
   });
 
-  it("rejects canonical field instructions without ODF representations", async () => {
+  it("rejects orphan bookmarks without ODF representations", async () => {
     const section = (children: NonNullable<ParagraphOptions["children"]>): DocumentOptions => ({
       sections: [{ children: [{ paragraph: { children } }] }],
     });
     try {
-      await generateDocument(section([{ simpleField: { instruction: "DOCPROPERTY Unknown" } }]));
-    } catch (cause) {
-      expect(cause).toBeInstanceOf(OdtParseError);
-      const error = cause as OdtParseError;
-      expect(error.part).toBe("content.xml");
-      expect(error.name).toBe("text:field");
-      expect(error.reason).toBe("unsupported field instruction");
-    }
-    try {
       await generateDocument(section([{ bookmarkEnd: { id: 7 } }]));
     } catch (cause) {
-      expect(cause).toBeInstanceOf(OdtParseError);
-      const error = cause as OdtParseError;
-      expect(error.name).toBe("text:bookmark-end");
-      expect(error.reason).toBe("no canonical bookmark start");
+      expect(cause).toBeInstanceOf(OdtGenerateError);
+      const error = cause as OdtGenerateError;
+      expect(error.field).toBe("bookmarkEnd");
+      expect(error.reason).toBe("unrepresentable-orphan-bookmark-end");
       return;
     }
     throw new Error("Expected canonical input without ODF representation to reject generation");
@@ -874,5 +992,217 @@ describe("ODT canonical projection", () => {
     const error = await parseBodyError("<text:unknown/>", "text:unknown");
     expect(error.path).toBe("/office:document-content/office:body/office:text/text:unknown");
     expect(error.reason).toBe("no canonical DocumentOptions mapping");
+  });
+
+  it("rejects tracked paragraph content without a track-change projection", () => {
+    expect(() =>
+      trackRevisionBlocks("insertion", { id: 1, author: "Author", date: "2026-01-01T00:00:00Z" }, [
+        { paragraph: { children: [{ math: { equations: [] } }] } },
+      ]),
+    ).toThrow("tracked content has no canonical track-change child mapping");
+  });
+
+  it("applies tracked block revisions inside custom XML", () => {
+    const revision = { id: 1, author: "Author", date: "2026-01-01T00:00:00Z" };
+    const tracked = trackRevisionBlocks("deletion", revision, [
+      { customXml: { element: "test", children: [{ paragraph: { text: "Text" } }] } },
+    ]);
+    expect(tracked).toEqual([
+      {
+        customXml: {
+          element: "test",
+          children: [
+            { paragraph: { children: [{ deletion: { ...revision, children: ["Text"] } }] } },
+          ],
+        },
+      },
+    ]);
+  });
+});
+
+describe("ODT linked and revision boundaries", () => {
+  it("round-trips the alphabetical index auto-mark file", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:alphabetical-index-auto-mark-file xlink:type='simple' xlink:href='../terms.sdi'/><text:p>Body</text:p>",
+      ),
+    );
+    expect(parsed.indexAutoMarkFile).toEqual({ href: "../terms.sdi" });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.indexAutoMarkFile).toEqual(parsed.indexAutoMarkFile);
+  });
+
+  it("round-trips a named section's external source", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:section text:name='Linked'><text:section-source xlink:type='simple' xlink:href='../source.odt' text:filter-name='writer8' text:section-name='Source'/><text:p>Inside</text:p></text:section><text:p>After</text:p>",
+      ),
+    );
+    expect(parsed.sectionSources).toEqual([
+      {
+        href: "../source.odt",
+        filterName: "writer8",
+        sectionName: "Linked",
+        targetSectionName: "Source",
+      },
+    ]);
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sectionSources).toEqual(parsed.sectionSources);
+  });
+
+  it("keeps a format change open across paragraph boundaries", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:tracked-changes text:track-changes='false'><text:changed-region text:id='fmt1'><text:format-change><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00</dc:date></office:change-info></text:format-change></text:changed-region></text:tracked-changes><text:p><text:change-start text:change-id='fmt1'/><text:span>One</text:span></text:p><text:p><text:span>Two</text:span><text:change-end text:change-id='fmt1'/></text:p>",
+      ),
+    );
+    const revisionChildren = parsed.sections[0]?.children ?? [];
+    const firstRun = sectionParagraph(revisionChildren[0])?.children?.[0] as {
+      revision?: unknown;
+    };
+    const secondRun = sectionParagraph(revisionChildren[1])?.children?.[0] as {
+      revision?: unknown;
+    };
+    expect(firstRun.revision).toMatchObject({ author: "Author", id: 1 });
+    expect(secondRun.revision).toMatchObject({ author: "Author", id: 1 });
+  });
+
+  it("round-trips a body-level format change range", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:tracked-changes text:track-changes='false'><text:changed-region text:id='fmt1'><text:format-change><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00</dc:date></office:change-info></text:format-change></text:changed-region></text:tracked-changes><text:change-start text:change-id='fmt1'/><text:p>One</text:p><text:p>Two</text:p><text:change-end text:change-id='fmt1'/><text:p>Three</text:p>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+    for (const index of [0, 1]) {
+      const paragraph = sectionParagraph(children[index]);
+      expect(paragraph?.children?.[0]).toMatchObject({
+        text: index === 0 ? "One" : "Two",
+        revision: { author: "Author", id: 1 },
+      });
+    }
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children.slice(0, 2)).toEqual(
+      parsed.sections[0]?.children.slice(0, 2),
+    );
+  });
+
+  it("tracks insertion and deletion ranges across paragraphs and tables", async () => {
+    const revision = {
+      author: "Author",
+      date: "2026-01-01T00:00:00Z",
+    };
+    const parsed = await parseDocument(
+      odtPackage(
+        `<text:tracked-changes><text:changed-region text:id='ins1'><text:insertion><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info></text:insertion></text:changed-region><text:changed-region text:id='del1'><text:deletion><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info><text:p>Removed</text:p></text:deletion></text:changed-region></text:tracked-changes>` +
+          "<text:change-start text:change-id='ins1'/><text:p>Before</text:p><table:table><table:table-column/><table:table-row><table:table-cell><text:p>Cell</text:p></table:table-cell></table:table-row></table:table><text:change-end text:change-id='ins1'/>" +
+          "<text:change-start text:change-id='del1'/><text:p>After</text:p><text:change-end text:change-id='del1'/>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+    const table = children[1] && "table" in children[1] ? children[1].table : undefined;
+    const cell = table?.rows[0] && "cells" in table.rows[0] ? table.rows[0].cells[0] : undefined;
+    const cellParagraph =
+      cell && "children" in cell ? sectionParagraph(cell.children[0]) : undefined;
+    expect(sectionParagraph(children[0])?.children?.[0]).toMatchObject({
+      insertion: { ...revision, children: ["Before"] },
+    });
+    expect(cellParagraph?.children?.[0]).toMatchObject({
+      insertion: { ...revision, children: ["Cell"] },
+    });
+    expect(sectionParagraph(children[2])?.children?.[0]).toMatchObject({
+      deletion: { ...revision, children: ["After"] },
+    });
+  });
+
+  it("preserves empty paragraphs and hyperlinks inside format-change ranges", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:tracked-changes><text:changed-region text:id='fmt1'><text:format-change><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info></text:format-change></text:changed-region></text:tracked-changes>" +
+          "<text:change-start text:change-id='fmt1'/><text:p/><text:p><text:a xlink:type='simple' xlink:href='https://example.com/'><text:span>Link</text:span></text:a></text:p><text:change-end text:change-id='fmt1'/>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+    expect(sectionParagraph(children[0])?.revision).toMatchObject({ author: "Author", id: 1 });
+    const link = sectionParagraph(children[1])?.children?.[0] as {
+      hyperlink?: { children?: { revision?: unknown }[] };
+    };
+    expect(link.hyperlink?.children?.[0]?.revision).toMatchObject({ author: "Author", id: 1 });
+    const regenerated = await parseDocument(await generateDocument(parsed));
+    expect(regenerated.sections[0]?.children.slice(0, 2)).toEqual(
+      parsed.sections[0]?.children.slice(0, 2),
+    );
+  });
+
+  it("tracks a change that starts inside and ends inside later paragraphs", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:tracked-changes><text:changed-region text:id='ins1'><text:insertion><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info></text:insertion></text:changed-region></text:tracked-changes>" +
+          "<text:p>Before<text:change-start text:change-id='ins1'/><text:span>Inserted</text:span></text:p><text:p><text:span>Inside</text:span><text:change-end text:change-id='ins1'/>After</text:p>",
+      ),
+    );
+    const children = parsed.sections[0]?.children ?? [];
+    expect(sectionParagraph(children[0])?.text).toBe("Before");
+    expect(sectionParagraph(children[1])?.children?.[0]).toMatchObject({
+      insertion: {
+        author: "Author",
+        children: [{ text: "Inserted" }],
+      },
+    });
+    expect(sectionParagraph(children[2])?.children?.[0]).toMatchObject({
+      insertion: {
+        author: "Author",
+        children: [{ text: "Inside" }],
+      },
+    });
+    expect(sectionParagraph(children[3])?.text).toBe("After");
+  });
+
+  it("retains every deleted paragraph from headings and lists", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:tracked-changes><text:changed-region text:id='del1'><text:deletion><office:change-info><dc:creator>Author</dc:creator><dc:date>2026-01-01T00:00:00Z</dc:date></office:change-info><text:h>Heading</text:h><text:list><text:list-item><text:p>Item</text:p></text:list-item></text:list></text:deletion></text:changed-region></text:tracked-changes>" +
+          "<text:p>Keep<text:change text:change-id='del1'/></text:p>",
+      ),
+    );
+    const children = sectionParagraph(parsed.sections[0]?.children[0])?.children ?? [];
+    expect(children).toHaveLength(3);
+    expect(children[1]).toMatchObject({ deletion: { children: ["Heading"] } });
+    expect(children[2]).toMatchObject({ deletion: { children: ["Item"] } });
+  });
+
+  it("pairs nested fieldmark boundaries before consuming a separator", async () => {
+    const parsed = await parseDocument(
+      odtPackage(
+        "<text:p><field:fieldmark-start field:type='vnd.oasis.opendocument.field.UNHANDLED'><field:param field:name='vnd.oasis.opendocument.field.code' field:value='A'/></field:fieldmark-start><field:fieldmark-start field:type='vnd.oasis.opendocument.field.UNHANDLED'><field:param field:name='vnd.oasis.opendocument.field.code' field:value='B'/></field:fieldmark-start><field:fieldmark-separator/><field:fieldmark-end/><field:fieldmark-separator/><field:fieldmark-end/></text:p>",
+      ),
+    );
+    const children = sectionParagraph(parsed.sections[0]?.children[0])?.children ?? [];
+    const complex = children[0] as {
+      complexField?: {
+        instruction?: string;
+        instructionMembers?: { simpleField?: { instruction?: string } }[];
+      };
+    };
+    expect(complex.complexField?.instruction).toBe("A");
+    expect(
+      complex.complexField?.instructionMembers?.map((member) => member.simpleField?.instruction),
+    ).toEqual(["B"]);
+  });
+
+  it("keeps an empty chart subdocument as a typed opaque embedded object", async () => {
+    const archive = generateOcf(
+      "application/vnd.oasis.opendocument.text",
+      {
+        "content.xml": `<?xml version="1.0"?><office:document-content ${ODF_NAMESPACES}><office:body><office:text><text:p><draw:frame svg:width='1cm' svg:height='1cm'><draw:object xlink:href='Object 1'/></draw:frame></text:p></office:text></office:body></office:document-content>`,
+        "styles.xml": `<?xml version="1.0"?><office:document-styles ${ODF_NAMESPACES}><office:styles/></office:document-styles>`,
+        "Object 1/content.xml":
+          '<?xml version="1.0"?><office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"><office:body><office:chart/></office:body></office:document-content>',
+      },
+      { "Object 1/": CHART_MIME },
+    );
+    const parsed = await parseDocument(archive);
+    expect(sectionParagraph(parsed.sections[0]?.children[0])?.children).toHaveLength(1);
+    expect(parsed.embeddedObjects?.map((object) => object.path)).toEqual(["Object 1"]);
   });
 });

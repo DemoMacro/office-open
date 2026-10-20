@@ -210,7 +210,13 @@ export function parseWorksheetStream(
     }
     if (depth === 0) continue;
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new XlsParseError("Encrypted legacy XLS files are not supported");
+      throw new XlsParseError("Encrypted legacy XLS files are not supported", {
+        part: "stream",
+        recordType: record.code,
+        recordName: "FilePass",
+        offset: record.start,
+        reason: "encrypted-unsupported",
+      });
     if (record.code === RecordCode.EndOfFile) {
       if (depth === 1 && currentDrawing) addDrawings(concatBytes(currentDrawing));
       depth--;

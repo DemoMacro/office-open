@@ -105,7 +105,7 @@ it("reports unknown pivot cache XML children structurally", () => {
     const parseError = error as XlsxParseError;
     expect(parseError.part).toBe("xl/pivotCache/pivotCacheDefinition1.xml");
     expect(parseError.path).toBe("/pivotCacheDefinition/cacheFields");
-    expect(parseError.name).toBe("notACacheField");
+    expect(parseError.elementName).toBe("notACacheField");
     expect(parseError.reason).toContain("unexpected child");
   }
 });

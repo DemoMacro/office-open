@@ -254,6 +254,81 @@ function buildDifatContainer(): Uint8Array {
   return bytes;
 }
 
+function buildV4MiniFatContainer(streamData: Uint8Array): Uint8Array {
+  const sectorSize = 4096;
+  const miniSectorCount = 1025;
+  const rootSize = miniSectorCount * 64;
+  const rootMiniSectorCount = Math.ceil(rootSize / sectorSize);
+  const directorySectorCount = 1;
+  const miniFatSectorCount = 2;
+  const sectorCount = 1 + directorySectorCount + miniFatSectorCount + rootMiniSectorCount;
+  const bytes = new Uint8Array(sectorSize + sectorCount * sectorSize);
+  const view = new DataView(bytes.buffer);
+  const sectorOffset = (sector: number): number => sectorSize + sector * sectorSize;
+
+  for (const [index, byte] of [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1].entries()) {
+    bytes[index] = byte;
+  }
+  view.setUint16(24, 0x3e, true);
+  view.setUint16(26, 4, true);
+  view.setUint16(28, 0xfffe, true);
+  view.setUint16(30, 12, true);
+  view.setUint16(32, 6, true);
+  view.setUint32(40, directorySectorCount, true);
+  view.setUint32(44, 1, true);
+  view.setUint32(48, 1, true);
+  view.setUint32(56, 4096, true);
+  view.setUint32(60, 2, true);
+  view.setUint32(64, miniFatSectorCount, true);
+  view.setUint32(68, END_OF_CHAIN, true);
+  view.setUint32(72, 0, true);
+  for (let index = 0; index < 109; index++) {
+    view.setUint32(76 + index * 4, index === 0 ? 0 : FREE_SECT, true);
+  }
+
+  const fat = Array.from<number>({ length: sectorCount }).fill(FREE_SECT);
+  fat[0] = FAT_SECT;
+  fat[1] = END_OF_CHAIN;
+  fat[2] = 3;
+  fat[3] = END_OF_CHAIN;
+  for (let index = 0; index < rootMiniSectorCount - 1; index++) {
+    fat[4 + index] = 5 + index;
+  }
+  fat[4 + rootMiniSectorCount - 1] = END_OF_CHAIN;
+  for (let index = 0; index < sectorSize / 4; index++) {
+    view.setUint32(sectorOffset(0) + index * 4, fat[index] ?? FREE_SECT, true);
+  }
+
+  for (let index = 0; index < miniSectorCount; index++) {
+    const miniSector = Math.floor(index / (sectorSize / 4));
+    const slot = index % (sectorSize / 4);
+    view.setUint32(
+      sectorOffset(2 + miniSector) + slot * 4,
+      index + 1 === miniSectorCount ? END_OF_CHAIN : index + 1,
+      true,
+    );
+  }
+
+  writeDirectoryEntry(bytes, sectorOffset(1), {
+    name: "Root Entry",
+    objectType: 5,
+    rightSiblingId: NO_STREAM,
+    childId: 1,
+    startSector: 4,
+    size: rootSize,
+  });
+  writeDirectoryEntry(bytes, sectorOffset(1) + 128, {
+    name: "small.bin",
+    objectType: 2,
+    rightSiblingId: NO_STREAM,
+    childId: NO_STREAM,
+    startSector: 0,
+    size: streamData.byteLength,
+  });
+  bytes.set(streamData, sectorOffset(4));
+  return bytes;
+}
+
 describe("CompoundFileReader", () => {
   it("reads nested mini and regular streams", () => {
     const small = Uint8Array.from({ length: 16 }, (_, index) => index + 1);
@@ -291,6 +366,13 @@ describe("CompoundFileReader", () => {
   it("follows DIFAT when FAT sectors exceed the header array", () => {
     const reader = new CompoundFileReader(buildDifatContainer());
     expect(reader.entries).toEqual([]);
+  });
+
+  it("reads a v4 Mini FAT sector boundary", () => {
+    const small = Uint8Array.from({ length: 80 }, (_, index) => index + 1);
+    const bytes = buildV4MiniFatContainer(small);
+    const reader = new CompoundFileReader(bytes);
+    expect(reader.read("small.bin")).toEqual(small);
   });
 
   it("reads left and right directory siblings", () => {

@@ -86,6 +86,10 @@ export interface ChartSeriesCommon {
   valueCache?: boolean;
   trendlines?: readonly TrendlineOptions[];
   errorBars?: readonly ErrorBarOptions[];
+  /** ODF mean-value decoration (`chart:mean-value`); OOXML has no direct equivalent. */
+  meanValueLine?: boolean | ChartLinesOptions;
+  /** LibreOffice chart property mappings (`loext:propertry-mapping`) retained verbatim. */
+  propertyMappings?: readonly ChartPropertyMappingOptions[];
   dataLabels?: DataLabelsOptions;
   /** Per-point overrides (c:dPt), emitted after spPr in ser order. */
   dataPoints?: readonly DataPointOptions[];
@@ -426,6 +430,14 @@ export interface ChartLinesOptions {
   shapeProperties?: ChartShapePropertiesOptions;
 }
 
+/** LibreOffice's legacy misspelled per-series property mapping element. */
+export interface ChartPropertyMappingOptions {
+  /** Data-sequence role, such as `values-x` or `values-y`. */
+  property: string;
+  /** Source cell range for the mapped data sequence. */
+  cellRangeAddress: string;
+}
+
 /** Up/down bar pair with independent formatting (CT_UpDownBars). */
 export interface UpDownBarsOptions {
   /** Gap width as percent (c:gapWidth). */
@@ -555,6 +567,8 @@ export interface ChartSpaceOptions {
   date1904?: boolean;
   /** Chart UI language (c:lang, e.g. "en-US") — emitted only when set. */
   lang?: string;
+  /** Source ODF `chart:class`; retains vendor add-in classes. */
+  odfClassToken?: string;
   /** Rounded chart-area corners (c:roundedCorners) — emitted only when set. */
   roundedCorners?: boolean;
 
@@ -739,6 +753,8 @@ export interface ChartSpaceOptions {
   legendEntries?: readonly LegendEntryOptions[];
   /** User-drawn shapes layered over the chart (c:userShapes, after printSettings). */
   userShapes?: ChartUserShapesOptions;
+  /** ODF drawing decorations embedded in the chart body. */
+  odfShapes?: readonly ChartOdfShapeOptions[];
   /**
    * Raw inner XML of the chart-space trailing c:extLst (after userShapes —
    * c14:pivotOptions' home). Round-trip only, same contract as series ext.
@@ -770,6 +786,75 @@ export interface ChartUserShapesOptions {
   anchors: (RelativeSizeAnchorOptions | AbsoluteSizeAnchorOptions)[];
   /** A zero-byte companion part is valid and must not be re-created. */
   empty?: boolean;
+}
+
+/** ODF equation referenced by an inline chart decoration's enhanced path. */
+export interface ChartOdfGeometryEquationOptions {
+  /** Equation name used by path placeholders, such as `f0`. */
+  name: string;
+  /** ODF geometry formula, such as `logwidth/2`. */
+  formula: string;
+}
+
+/** ODF enhanced geometry attached to an inline chart custom shape. */
+export interface ChartOdfEnhancedGeometryOptions {
+  /** Enhanced shape type, such as `ooxml-rect`. */
+  type?: string;
+  /** ODF enhanced-path command string; placeholders use equation names. */
+  enhancedPath?: string;
+  /** Text-area rectangle in the source geometry coordinate grammar. */
+  textAreas?: string;
+  /** Source viewBox values: x, y, width, height. */
+  viewBox?: readonly [number, number, number, number];
+  /** Horizontal mirror flag. */
+  mirrorHorizontal?: boolean;
+  /** Vertical mirror flag. */
+  mirrorVertical?: boolean;
+  /** ODF text rotation in the source angle grammar. */
+  textRotateAngle?: string;
+  /** Named equations available to `enhancedPath` placeholders. */
+  equations?: readonly ChartOdfGeometryEquationOptions[];
+}
+
+/**
+ * ODF drawing decoration embedded directly in a chart body. Coordinates are
+ * EMU; polyline points are EMU pairs in source order.
+ */
+export interface ChartOdfShapeOptions {
+  /** Inline shape discriminant. */
+  kind: "customShape" | "polyline";
+  /** Accessible drawing name. */
+  name?: string;
+  /** Package-local graphic style reference. */
+  styleName?: string;
+  /** Package-local text style reference. */
+  textStyleName?: string;
+  /** Painting order; higher numbers render above lower numbers. */
+  zIndex?: number;
+  /** Left offset in EMU. */
+  x?: number;
+  /** Top offset in EMU. */
+  y?: number;
+  /** Width in EMU. */
+  width?: number;
+  /** Height in EMU. */
+  height?: number;
+  /** End anchor cell address for spreadsheet-like chart decorations. */
+  endCellAddress?: string;
+  /** ODF drawing transform command list retained verbatim. */
+  transform?: string;
+  /** Horizontal offset of the end anchor in EMU. */
+  endX?: number;
+  /** Vertical offset of the end anchor in EMU. */
+  endY?: number;
+  /** Polyline vertex coordinates in EMU. */
+  points?: readonly { x: number; y: number }[];
+  /** Projected fill, outline, and other DrawingML shape properties. */
+  shapeProperties?: ChartShapePropertiesOptions;
+  /** Plain text projected from the shape's paragraphs. */
+  text?: string;
+  /** ODF enhanced geometry retained for custom shapes. */
+  enhancedGeometry?: ChartOdfEnhancedGeometryOptions;
 }
 
 // ── 3D view ──

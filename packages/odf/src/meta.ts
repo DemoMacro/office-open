@@ -345,7 +345,7 @@ function documentStatisticsXml(statistics: DocumentStatisticsOptions | undefined
 
 function parseUserDefined(element: Element): UserDefinedMetadataOptions {
   const name = attributeString(element, "meta:name");
-  if (!name) throw metadataError("meta:user-defined", "missing property name");
+  if (name === undefined) throw metadataError("meta:user-defined", "missing property name");
   const type = attributeString(element, "meta:value-type");
   const text = textOf(element);
   if (type === "float") {

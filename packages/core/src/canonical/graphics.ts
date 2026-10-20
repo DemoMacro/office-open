@@ -12,6 +12,8 @@ export interface CellImageGraphicOptions {
   sourceUrl?: string;
   /** Accessible image name. */
   name?: string;
+  /** Accessible image title. */
+  title?: string;
   /** Accessible image description. */
   description?: string;
   /** Drawing identifier. */
@@ -42,6 +44,10 @@ export interface CellImageGraphicOptions {
   endX?: number;
   /** Vertical offset of the end anchor in EMU. */
   endY?: number;
+  /** ODF drawing transform command list retained verbatim. */
+  transform?: string;
+  /** ODF legacy output target; `printer` hides the frame on screen. */
+  display?: "printer";
 }
 
 /** Embedded object graphic anchored to a spreadsheet cell. */
@@ -54,6 +60,8 @@ export interface CellObjectGraphicOptions {
   chart?: ChartSpaceOptions;
   /** Accessible object name. */
   name?: string;
+  /** Accessible object title. */
+  title?: string;
   /** Accessible object description. */
   description?: string;
   /** Drawing identifier. */
@@ -84,6 +92,10 @@ export interface CellObjectGraphicOptions {
   endX?: number;
   /** Vertical offset of the end anchor in EMU. */
   endY?: number;
+  /** ODF drawing transform command list retained verbatim. */
+  transform?: string;
+  /** ODF legacy output target; `printer` hides the frame on screen. */
+  display?: "printer";
 }
 
 export type CellGraphicOptions = CellImageGraphicOptions | CellObjectGraphicOptions;
@@ -96,4 +108,6 @@ export interface CoveredCellOptions {
   valueType?: "float" | "string" | "date" | "boolean" | "percentage" | "currency" | "time";
   /** Placeholder text retained from the covered cell. */
   text?: string;
+  /** Graphics anchored inside the covered cell. */
+  graphics?: CellGraphicOptions[];
 }

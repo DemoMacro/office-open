@@ -2,7 +2,12 @@ import { CompoundFileReader } from "@office-open/core/cfb";
 import type { PresentationOptions } from "@office-open/pptx";
 
 import { PptParseError } from "../errors";
-import { assertCfbSignature, readStream, readSummaryInformation } from "../parts/container";
+import {
+  assertCfbSignature,
+  isLegacyPp40Reader,
+  readStream,
+  readSummaryInformation,
+} from "../parts/container";
 import {
   assertNotEncrypted,
   createView,
@@ -57,11 +62,58 @@ export function parsePresentation(
     );
   }
 
+  if (isLegacyPp40Reader(reader)) {
+    throw new PptParseError("Unsupported legacy PowerPoint 4/PP40 file", {
+      part: "container",
+      path: "PP40",
+      reason: "unsupported-legacy-format",
+    });
+  }
+
   let document = readStream(reader, POWERPOINT_DOCUMENT_STREAM);
-  let currentUser = readStream(reader, CURRENT_USER_STREAM);
+  let currentUser = reader.entry(CURRENT_USER_STREAM)
+    ? readStream(reader, CURRENT_USER_STREAM)
+    : undefined;
   const pictures = reader.entry("Pictures") ? readPictureStore(reader.read("Pictures")) : [];
   const documentView = createView(document);
+  const lastEditOffset = currentUserOffset(documentView);
+  if (currentUser === undefined) {
+    if (lastEditOffset === undefined) {
+      throw new PptParseError(
+        "Corrupt legacy PowerPoint file: no usable Current User or UserEditAtom",
+        {
+          part: "stream",
+          path: CURRENT_USER_STREAM,
+          reason: "missing-required-stream",
+        },
+      );
+    }
+    currentUser = new Uint8Array(28);
+  }
   const currentUserView = createView(currentUser);
+
+  const currentUserValid =
+    currentUser.byteLength >= 28 &&
+    currentUserView.getUint16(2, true) === RecordType.currentUserAtom;
+  if (!currentUserValid) {
+    if (lastEditOffset === undefined) {
+      throw new PptParseError(
+        "Unsupported or corrupt legacy PowerPoint file: Current User atom is too short",
+        {
+          part: "stream",
+          path: CURRENT_USER_STREAM,
+          recordType: RecordType.currentUserAtom,
+          recordName: "CurrentUserAtom",
+          offset: 0,
+          length: 28,
+          reason: "truncated-header",
+        },
+      );
+    }
+    currentUserView.setUint16(2, RecordType.currentUserAtom, true);
+    currentUserView.setUint32(12, NON_ENCRYPTED_TOKEN, true);
+    currentUserView.setUint32(16, lastEditOffset, true);
+  }
 
   if (currentUser.byteLength < 28) {
     throw new PptParseError(
@@ -199,5 +251,18 @@ export function parsePresentation(
   if (size) result.size = size;
   if (masters.length > 0) result.masters = masters;
   if (slides.length > 0) result.slides = slides;
+  return result;
+}
+
+function currentUserOffset(view: DataView): number | undefined {
+  let result: number | undefined;
+  for (let offset = 0; offset + 8 <= view.byteLength; offset += 1) {
+    const length = view.getUint32(offset + 4, true);
+    const end = offset + 8 + length;
+    if (end > view.byteLength) continue;
+    if (view.getUint16(offset + 2, true) !== RecordType.userEditAtom) continue;
+    if (length < 28) continue;
+    result = offset;
+  }
   return result;
 }

@@ -7,6 +7,7 @@ import {
   descendantElements,
   escapeText,
   lengthToEmu,
+  parseXmlElement,
   textOf,
   unknownAttributeNames,
   unknownChildElement,
@@ -38,9 +39,11 @@ import {
   parseEmbeddedObjectFrame,
   type OdpEmbeddedObjectPool,
 } from "./embedded-frames";
+import { OdpGenerateError } from "./error";
+import { unknownSlideChild } from "./error";
 import { isOpaqueSlideNode, opaqueSlideNode, type OdpOpaqueSlideNodeOptions } from "./opaque-node";
 import type { OdpSlideOptions } from "./options";
-import { formsXml, parseForms, unknownSlideChild } from "./presentation";
+import { formsXml, parseForms } from "./presentation";
 import {
   assignOdfShapeIds,
   collectOdfShapeIds,
@@ -166,8 +169,76 @@ export function slideChildXml(
         slideChildXml(nested, styles, images, mediaFiles, embeddedObjects, charts),
       ),
     );
-  if ("rawXml" in child) return child.rawXml;
+  if ("rawXml" in child) {
+    if (child.rawXml === "") return "";
+    const legacyShape = compatibilityLegacyShape(child.rawXml);
+    if (legacyShape) return shapeXml(legacyShape, styles);
+    const match = /<([A-Za-z_][\w.-]*)(?::([\w.-]+))?/u.exec(child.rawXml);
+    const prefix = match?.[2] ? match[2] : undefined;
+    if (prefix === undefined || !ODF_RAW_PREFIXES.has(prefix)) {
+      throw new OdpGenerateError(
+        `Opaque slide node "${prefix}" is not representable as ODF`,
+        "content.xml",
+        "/office:document-content/office:body/office:presentation/draw:page",
+        prefix ?? "rawXml",
+        "unsupported-target",
+      );
+    }
+    return child.rawXml;
+  }
   return "";
+}
+
+const ODF_RAW_PREFIXES = new Set([
+  "anim",
+  "draw",
+  "dr3d",
+  "loext",
+  "office",
+  "presentation",
+  "table",
+  "text",
+]);
+
+type SlideShape = Extract<SlideChild, { shape: unknown }>["shape"];
+
+function localElementName(element: Element): string {
+  return element.name?.split(":").pop() ?? "";
+}
+
+function compatibilityLegacyShape(rawXml: string): SlideShape | undefined {
+  const root = parseXmlElement(rawXml);
+  const graphicData = root
+    ? descendantElements(root).find((element) => localElementName(element) === "graphicData")
+    : undefined;
+  if (
+    !root ||
+    !graphicData ||
+    attributeString(graphicData, "uri") !==
+      "http://schemas.openxmlformats.org/drawingml/2006/compatibility"
+  )
+    return undefined;
+  const legacyDrawing = descendantElements(root).find(
+    (element) => localElementName(element) === "legacyDrawing",
+  );
+  if (!legacyDrawing) return undefined;
+  const nonVisual = childNamed(root, "p:nvGraphicFramePr");
+  const drawingProperties = nonVisual ? childNamed(nonVisual, "p:cNvPr") : undefined;
+  const transform = childNamed(root, "p:xfrm");
+  const offset = transform ? childNamed(transform, "a:off") : undefined;
+  const extent = transform ? childNamed(transform, "a:ext") : undefined;
+  return {
+    ...(attributeNumber(drawingProperties, "id") === undefined
+      ? {}
+      : { id: attributeNumber(drawingProperties, "id") }),
+    ...(attributeString(drawingProperties, "name") === undefined
+      ? {}
+      : { name: attributeString(drawingProperties, "name") }),
+    x: attributeNumber(offset, "x") ?? 0,
+    y: attributeNumber(offset, "y") ?? 0,
+    width: attributeNumber(extent, "cx") ?? 0,
+    height: attributeNumber(extent, "cy") ?? 0,
+  };
 }
 
 export function parseSlide(
@@ -182,11 +253,12 @@ export function parseSlide(
   manifestMediaTypes: Map<string, string | undefined>,
   nextEmbeddedShapeId: { value: number },
 ): OdpSlideOptions {
-  const forms = parseForms(page);
-  const animationRoots = (page.elements ?? [])
+  const normalizedPage = compatibilityPage(page);
+  const forms = parseForms(normalizedPage);
+  const animationRoots = (normalizedPage.elements ?? [])
     .filter((child): child is Element => child.name !== undefined && isAnimationElement(child.name))
     .map(parseAnimation);
-  const shapeReferences = collectOdfShapeIds(page);
+  const shapeReferences = collectOdfShapeIds(normalizedPage);
   const notes = childNamed(
     childNamed(childNamed(page, "presentation:notes"), "draw:frame"),
     "draw:text-box",
@@ -196,7 +268,7 @@ export function parseSlide(
   const opaqueNodes: OdpOpaqueSlideNodeOptions[] = [];
   const opaqueSources = new Set<Element>();
   const children =
-    page.elements?.flatMap((child): SlideChild[] => {
+    normalizedPage.elements?.flatMap((child): SlideChild[] => {
       if (child.name === "draw:frame") {
         const chart = parseChartFrame(child, chartPool);
         if (chart) return [chart];
@@ -266,7 +338,7 @@ export function parseSlide(
   const transition = parseTransition(animationRoots);
   let childIndex = 0;
   let opaqueNodeCount = 0;
-  for (const source of page.elements ?? []) {
+  for (const source of normalizedPage.elements ?? []) {
     if (source.type !== "element") continue;
     if (
       source.name !== "presentation:notes" &&
@@ -297,6 +369,41 @@ export function parseSlide(
     ...(opaqueNodes.length > 0 ? { opaqueNodes } : {}),
   };
   return slideOptions;
+}
+
+function compatibilityPage(page: Element): Element {
+  const children = (page.elements ?? []).flatMap((child) => {
+    if (child.name !== "mc:AlternateContent") return [child];
+    const branches = child.elements ?? [];
+    const candidates = [
+      ...branches.filter((branch) => branch.name === "mc:Choice"),
+      ...branches.filter((branch) => branch.name === "mc:Fallback"),
+    ];
+    const known = candidates.flatMap((branch) =>
+      (branch.elements ?? []).filter((content) => isKnownCompatibilityChild(content.name)),
+    );
+    const selected = (known[0] ?? candidates[0]?.elements?.[0]) as Element | undefined;
+    if (selected === undefined) {
+      throw unknownSlideChild(
+        child,
+        "/office:document-content/office:body/office:presentation/draw:page/mc:AlternateContent",
+      );
+    }
+    return [selected];
+  });
+  return { ...page, elements: children };
+}
+
+function isKnownCompatibilityChild(name: string | undefined): boolean {
+  if (name === undefined) return false;
+  return (
+    name.startsWith("draw:") ||
+    name.startsWith("anim:") ||
+    name === "table:table" ||
+    name === "presentation:notes" ||
+    name === "office:forms" ||
+    name === "officeooo:annotation"
+  );
 }
 
 function visibleChildIndex(page: Element, child: Element): number {

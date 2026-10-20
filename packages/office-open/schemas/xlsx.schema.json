@@ -1590,6 +1590,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -1617,6 +1620,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -2585,6 +2591,11 @@
           "description": "Accessible image description.",
           "type": "string"
         },
+        "display": {
+          "const": "printer",
+          "description": "ODF legacy output target; `printer` hides the frame on screen.",
+          "type": "string"
+        },
         "endCellAddress": {
           "description": "End anchor cell address, such as `D4`, for spreadsheet-anchored graphics.",
           "type": "string"
@@ -2637,6 +2648,14 @@
           "description": "Text style reference for labels attached to the frame.",
           "type": "string"
         },
+        "title": {
+          "description": "Accessible image title.",
+          "type": "string"
+        },
+        "transform": {
+          "description": "ODF drawing transform command list retained verbatim.",
+          "type": "string"
+        },
         "type": {
           "const": "image",
           "description": "Image graphic discriminant.",
@@ -2673,6 +2692,9 @@
         "description": {
           "description": "Accessible object description.",
           "type": "string"
+        },
+        "display": {
+          "$ref": "#/definitions/CellImageGraphicOptions/properties/display"
         },
         "endCellAddress": {
           "$ref": "#/definitions/CellImageGraphicOptions/properties/endCellAddress"
@@ -2719,6 +2741,14 @@
         },
         "textStyleName": {
           "description": "Text style reference for labels attached to the frame.",
+          "type": "string"
+        },
+        "title": {
+          "description": "Accessible object title.",
+          "type": "string"
+        },
+        "transform": {
+          "description": "ODF drawing transform command list retained verbatim.",
           "type": "string"
         },
         "type": {
@@ -4745,6 +4775,159 @@
       "required": ["formatCode"],
       "type": "object"
     },
+    "ChartOdfEnhancedGeometryOptions": {
+      "additionalProperties": false,
+      "description": "ODF enhanced geometry attached to an inline chart custom shape.",
+      "properties": {
+        "enhancedPath": {
+          "description": "ODF enhanced-path command string; placeholders use equation names.",
+          "type": "string"
+        },
+        "equations": {
+          "description": "Named equations available to `enhancedPath` placeholders.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfGeometryEquationOptions"
+          },
+          "type": "array"
+        },
+        "mirrorHorizontal": {
+          "description": "Horizontal mirror flag.",
+          "type": "boolean"
+        },
+        "mirrorVertical": {
+          "description": "Vertical mirror flag.",
+          "type": "boolean"
+        },
+        "textAreas": {
+          "description": "Text-area rectangle in the source geometry coordinate grammar.",
+          "type": "string"
+        },
+        "textRotateAngle": {
+          "description": "ODF text rotation in the source angle grammar.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Enhanced shape type, such as `ooxml-rect`.",
+          "type": "string"
+        },
+        "viewBox": {
+          "description": "Source viewBox values: x, y, width, height.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ChartOdfGeometryEquationOptions": {
+      "additionalProperties": false,
+      "description": "ODF equation referenced by an inline chart decoration's enhanced path.",
+      "properties": {
+        "formula": {
+          "description": "ODF geometry formula, such as `logwidth/2`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Equation name used by path placeholders, such as `f0`.",
+          "type": "string"
+        }
+      },
+      "required": ["name", "formula"],
+      "type": "object"
+    },
+    "ChartOdfShapeOptions": {
+      "additionalProperties": false,
+      "description": "ODF drawing decoration embedded directly in a chart body. Coordinates are EMU; polyline points are EMU pairs in source order.",
+      "properties": {
+        "endCellAddress": {
+          "description": "End anchor cell address for spreadsheet-like chart decorations.",
+          "type": "string"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "enhancedGeometry": {
+          "$ref": "#/definitions/ChartOdfEnhancedGeometryOptions",
+          "description": "ODF enhanced geometry retained for custom shapes."
+        },
+        "height": {
+          "description": "Height in EMU.",
+          "type": "number"
+        },
+        "kind": {
+          "description": "Inline shape discriminant.",
+          "enum": ["customShape", "polyline"],
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible drawing name.",
+          "type": "string"
+        },
+        "points": {
+          "description": "Polyline vertex coordinates in EMU.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": ["x", "y"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ChartShapePropertiesOptions",
+          "description": "Projected fill, outline, and other DrawingML shape properties."
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Plain text projected from the shape's paragraphs.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Package-local text style reference.",
+          "type": "string"
+        },
+        "transform": {
+          "description": "ODF drawing transform command list retained verbatim.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Left offset in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Top offset in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["kind"],
+      "type": "object"
+    },
     "ChartPageMarginsOptions": {
       "additionalProperties": false,
       "description": "Print page margins in inches.",
@@ -4896,6 +5079,22 @@
       "required": ["index"],
       "type": "object"
     },
+    "ChartPropertyMappingOptions": {
+      "additionalProperties": false,
+      "description": "LibreOffice's legacy misspelled per-series property mapping element.",
+      "properties": {
+        "cellRangeAddress": {
+          "description": "Source cell range for the mapped data sequence.",
+          "type": "string"
+        },
+        "property": {
+          "description": "Data-sequence role, such as `values-x` or `values-y`.",
+          "type": "string"
+        }
+      },
+      "required": ["property", "cellRangeAddress"],
+      "type": "object"
+    },
     "ChartSeriesData": {
       "additionalProperties": false,
       "properties": {
@@ -4979,6 +5178,17 @@
           ],
           "description": "Line/scatter/radar marker (c:marker)."
         },
+        "meanValueLine": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "ODF mean-value decoration (`chart:mean-value`); OOXML has no direct equivalent."
+        },
         "name": {
           "anyOf": [
             {
@@ -5032,6 +5242,13 @@
         "pictureOptions": {
           "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
+        },
+        "propertyMappings": {
+          "description": "LibreOffice chart property mappings (`loext:propertry-mapping`) retained verbatim.",
+          "items": {
+            "$ref": "#/definitions/ChartPropertyMappingOptions"
+          },
+          "type": "array"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -5505,6 +5722,17 @@
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
           "type": "boolean"
         },
+        "odfClassToken": {
+          "description": "Source ODF `chart:class`; retains vendor add-in classes.",
+          "type": "string"
+        },
+        "odfShapes": {
+          "description": "ODF drawing decorations embedded in the chart body.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfShapeOptions"
+          },
+          "type": "array"
+        },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
           "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
@@ -5810,7 +6038,7 @@
           "type": "array"
         }
       },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes", "dr3dLights"],
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
       "type": "object"
     },
     "ChartTitleOptions": {
@@ -8102,6 +8330,13 @@
       "additionalProperties": false,
       "description": "A placeholder covering the non-origin cells of a merged range.",
       "properties": {
+        "graphics": {
+          "description": "Graphics anchored inside the covered cell.",
+          "items": {
+            "$ref": "#/definitions/CellGraphicOptions"
+          },
+          "type": "array"
+        },
         "reference": {
           "description": "Covered-cell reference, such as `B2`.",
           "type": "string"
@@ -8965,6 +9200,23 @@
       },
       "type": "object"
     },
+    "DataModelAlternativeContentOptions": {
+      "additionalProperties": false,
+      "description": "A data-model point wrapped in MCE Compatibility Choice/Fallback branches.",
+      "properties": {
+        "choices": {
+          "items": {
+            "$ref": "#/definitions/DataModelPointAlternativeOptions"
+          },
+          "type": "array"
+        },
+        "fallback": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        }
+      },
+      "required": ["choices"],
+      "type": "object"
+    },
     "DataModelBackgroundOptions": {
       "additionalProperties": false,
       "description": "dgm:bg —.",
@@ -9053,7 +9305,7 @@
         },
         "points": {
           "items": {
-            "$ref": "#/definitions/DataModelPointOptions"
+            "$ref": "#/definitions/DataModelPointMemberOptions"
           },
           "type": "array"
         },
@@ -9062,6 +9314,31 @@
         }
       },
       "type": "object"
+    },
+    "DataModelPointAlternativeOptions": {
+      "additionalProperties": false,
+      "description": "One MCE branch containing a data-model point.",
+      "properties": {
+        "point": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        "requires": {
+          "type": "string"
+        }
+      },
+      "required": ["requires", "point"],
+      "type": "object"
+    },
+    "DataModelPointMemberOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        {
+          "$ref": "#/definitions/DataModelAlternativeContentOptions"
+        }
+      ],
+      "description": "dgm:ptLst member: a direct point or a typed MCE-wrapped point."
     },
     "DataModelPointOptions": {
       "additionalProperties": false,
@@ -15347,6 +15624,7 @@
           "type": "string"
         },
         "options": {
+          "description": "Selectable options, in source order.",
           "items": {
             "$ref": "#/definitions/ListBoxOptionOptions"
           },
@@ -22396,6 +22674,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -22423,6 +22704,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -31078,6 +31362,9 @@
         "chartData": {
           "$ref": "#/definitions/ChartExChartData"
         },
+        "chartDataIntentionallyChanged": {
+          "$ref": "#/definitions/ChartExChartData"
+        },
         "col": {
           "description": "1-based column (from marker)",
           "type": "number"
@@ -31557,6 +31844,13 @@
         },
         "objectAlternateContent": {
           "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
+        },
+        "odfClassToken": {
+          "description": "Source ODF `chart:class`; retains vendor add-in classes.",
+          "type": "string"
+        },
+        "odfShapes": {
+          "$ref": "#/definitions/ChartSpaceOptions/properties/odfShapes"
         },
         "ofPieType": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/ofPieType"

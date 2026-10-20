@@ -380,6 +380,17 @@ describe("parseRun text space preservation", () => {
     expect(xml).toContain('<w:t xml:space="preserve">b</w:t>');
   });
 
+  it("applies the run marker to plain strings beside marked segments", () => {
+    const xml = stringifyRunInline(
+      {
+        preserveSpace: true,
+        children: [" spaced ", { text: "b", preserveSpace: true }],
+      } as never,
+      {} as never,
+    );
+    expect(xml.match(/<w:t xml:space="preserve">/gu)).toHaveLength(2);
+  });
+
   it("adds xml:space when edge-whitespace text requires it", () => {
     const doc = parseXml(`<w:r ${W_NS}><w:t> spaced </w:t></w:r>`);
     const el = doc.elements?.[0];

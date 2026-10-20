@@ -2,6 +2,7 @@ import type { ChartOptions } from "@parts/chart-frame";
 import type { LockedCanvasFrameOptions } from "@parts/locked-canvas-frame";
 import type { OleOptions } from "@parts/ole-frame";
 import type { SmartArtOptions } from "@parts/smartart";
+import type { ContentPartOptions } from "@shared/content-part";
 import type { AudioFrameOptions } from "@shared/media/audio-frame";
 import type { VideoFrameOptions } from "@shared/media/video-frame";
 import type { PictureOptions } from "@shared/picture";
@@ -27,6 +28,12 @@ export type SlideChild =
   | { smartart: SmartArtOptions }
   | { lockedCanvas: LockedCanvasFrameOptions }
   | { ole: OleOptions }
-  | { contentPart: { rId: string } }
+  | { contentPart: ContentPartOptions }
+  | {
+      alternateContent: {
+        choices: { requires: string; child: SlideChild }[];
+        fallback?: SlideChild;
+      };
+    }
   /** Unrecognized element — verbatim XML so round-trip never drops content. */
   | { rawXml: string };

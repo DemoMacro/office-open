@@ -65,11 +65,13 @@ import type {
 } from "@parts/paragraph/run/properties";
 import { ON_OFF_LEXICAL_VALUES } from "@parts/paragraph/run/properties";
 import type { OnOffLexicalValue } from "@parts/paragraph/run/properties";
-import type { RunOptions } from "@parts/paragraph/run/run";
+import type { BreakOptions, RunOptions } from "@parts/paragraph/run/run";
+import { breakXml } from "@parts/paragraph/run/run";
 import { parseRun, parseRunProperties, parsedRunToOptions } from "@parts/paragraph/run/run-parse";
 import { parseSdtProperties } from "@parts/sdt/sdt-parse";
 import { parseSubDoc } from "@parts/sub-doc/sub-doc-parse";
 import { stringifyTableOfContents } from "@parts/table-of-contents/descriptor";
+import type { TableOptions } from "@parts/table/table";
 import { parseBorderSide } from "@shared/border";
 import type { MediaData } from "@shared/media/data";
 import type { SectionChild } from "@shared/section";
@@ -205,6 +207,14 @@ export function stringifyParagraph(
         body += `<w:r>${textElementXml("w:t", child)}</w:r>`;
       } else if (typeof child === "object" && child !== null) {
         // Try JSON child dispatch first (image, chart, pageBreak, etc.)
+        if ("table" in child) {
+          body += tableDesc.stringify(child.table, ctx) ?? "";
+          continue;
+        }
+        if ("blockBreak" in child) {
+          body += breakXml(child.blockBreak);
+          continue;
+        }
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {
           body += Array.isArray(jsonResult) ? jsonResult.join("") : jsonResult;
@@ -2479,6 +2489,27 @@ function parseRunLevelChildren(
         } else {
           childList.push(hlChild);
         }
+        break;
+      }
+      case "w:tbl":
+        childList.push({ table: tableDesc.parse(child, ctx) as TableOptions });
+        break;
+      case "w:br": {
+        const type = attr(child, "w:type");
+        const clear = attr(child, "w:clear");
+        childList.push(
+          type === "page"
+            ? { pageBreak: true }
+            : type === "column"
+              ? { columnBreak: true }
+              : {
+                  blockBreak: {
+                    count: 1,
+                    ...(type ? { type: type as BreakOptions["type"] } : {}),
+                    ...(clear ? { clear: clear as BreakOptions["clear"] } : {}),
+                  },
+                },
+        );
         break;
       }
       case "w:subDoc": {

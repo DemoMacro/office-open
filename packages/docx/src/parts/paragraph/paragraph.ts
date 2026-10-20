@@ -16,6 +16,7 @@ import type { SdtPropertiesOptions } from "@parts/table-of-contents";
 import type { ContentPartOptions } from "@shared/media/data";
 import type { ChangedProperties } from "@shared/track-revision/track-revision";
 
+import type { TableOptions } from "../table/table";
 import type {
   BookmarkOptions,
   MarkupRangeOptions,
@@ -221,6 +222,20 @@ export interface FormFieldChild {
 export type ComplexFieldInstructionMember =
   | { run: RunOptions }
   | { simpleField: SimpleFieldOptions }
+  | {
+      footnoteReference: number | FootnoteEndnoteReferenceOptions;
+      properties?: RunPropertiesOptions;
+      additionRsid?: LongHexNumber;
+      runPropertiesRsid?: LongHexNumber;
+      deletionRsid?: LongHexNumber;
+    }
+  | {
+      endnoteReference: number | FootnoteEndnoteReferenceOptions;
+      properties?: RunPropertiesOptions;
+      additionRsid?: LongHexNumber;
+      runPropertiesRsid?: LongHexNumber;
+      deletionRsid?: LongHexNumber;
+    }
   | { bookmarkStart: BookmarkStartOptions }
   | { bookmarkEnd: MarkupRangeOptions }
   | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
@@ -233,22 +248,7 @@ export type ComplexFieldInstructionMember =
   | { movedFrom: ChangedProperties & { children: TrackChangeChild[] } }
   | { movedTo: ChangedProperties & { children: TrackChangeChild[] } }
   | {
-      hyperlink: {
-        url?: string;
-        /** Source document relationship id; round-trip only. */
-        sourceRelationshipId?: string;
-        anchor?: string;
-        tooltip?: string;
-        /** Target frame for the hyperlink (CT_Hyperlink `@tgtFrame`) */
-        targetFrame?: string;
-        /** Location within the target document (CT_Hyperlink `@docLocation`) */
-        docLocation?: string;
-        /** Add the target to the navigation history (CT_Hyperlink `@history`) */
-        history?: boolean;
-        /** Link content: text runs plus drawings (image links) and other
-         *  run-level children the paragraph dispatch serializes. */
-        children?: (RunOptions | string | ParagraphChild)[];
-      };
+      hyperlink: Extract<ParagraphChild, { hyperlink: unknown }>["hyperlink"];
     };
 
 /**
@@ -260,83 +260,40 @@ export type ComplexFieldInstructionMember =
 export type TrackChangeChild =
   | RunOptions
   | string
-  | { commentRangeStart: MarkupRangeOptions }
-  | { commentRangeEnd: MarkupRangeOptions }
-  | { bookmarkStart: BookmarkStartOptions }
-  | { bookmarkEnd: MarkupRangeOptions }
-  | { pageBreak: true }
-  | { columnBreak: true }
-  | { complexField: ComplexFieldOptions }
-  | { fieldMarker: FieldMarkerOptions }
-  | {
-      hyperlink: Extract<ParagraphChild, { hyperlink: unknown }>["hyperlink"];
-    }
-  | {
-      formField: FormFieldOptions;
-      /** Field lock (w:fldChar/`@w:fldLock` on the begin marker). */
-      fieldLock?: boolean;
-      /** Revision save ID of the begin run (w:rsidR, round-trip). */
-      additionRsid?: LongHexNumber;
-      /** Revision save ID of the begin run properties (w:rsidRPr, round-trip). */
-      runPropertiesRsid?: LongHexNumber;
-      /** Control-run properties shared by begin/separate (round-trip). */
-      rPrXml?: string;
-      /** Whether the source carried a separate marker and result (round-trip). */
-      hasResult?: boolean;
-      /** Revision save ID of the separator run (w:rsidR, round-trip). */
-      separatorAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the separator run properties (w:rsidRPr, round-trip). */
-      separatorRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim separator-run properties; empty string means explicitly absent. */
-      separatorRPrXml?: string;
-      /** Ordered typed members when markers interrupt the field code. */
-      instructionMembers?: ComplexFieldInstructionMember[];
-      /** Revision save ID of the instruction run (w:rsidR, round-trip). */
-      instructionAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the instruction run properties (w:rsidRPr, round-trip). */
-      instructionRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim instruction-run properties (round-trip; defaults to control rPr). */
-      instructionRPrXml?: string;
-      /** Complete instruction-stage runs (round-trip only — do not hand-author). */
-      instrRunsXml?: string;
-      /** Ordered typed members when markers interrupt the cached result. */
-      resultMembers?: ComplexFieldInstructionMember[];
-      /** Revision save ID of the result run (w:rsidR, round-trip). */
-      resultAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the result run properties (w:rsidRPr, round-trip). */
-      resultRunPropertiesRsid?: LongHexNumber;
-      /** Result-run properties (round-trip; differs from the control rPr). */
-      resultRPrXml?: string;
-      /** Complete result-stage runs after the separate marker (round-trip only). */
-      resultRunsXml?: string;
-      /** Complete source run when one producer packed all field stages into it
-       *  (round-trip only — do not hand-author). */
-      compoundRunXml?: string;
-      /** Revision save ID of the end run (w:rsidR, round-trip). */
-      endAdditionRsid?: LongHexNumber;
-      /** Revision save ID of the end run properties (w:rsidRPr, round-trip). */
-      endRunPropertiesRsid?: LongHexNumber;
-      /** Verbatim run-properties of the end fldChar run (round-trip). */
-      endRPrXml?: string;
-    }
-  | { proofErr: "spellStart" | "spellEnd" | "gramStart" | "gramEnd" }
-  | { rawXml: string }
-  | { sdt: SdtRunOptions }
-  | { symbolRun: SymbolRunOptions }
-  | { object: ObjectElementOptions }
-  | { pict: PictOptions }
-  // Drawings inserted as revisions (w:ins around the drawing's w:r)
-  | { picture: PictureOptions }
-  | { chart: ChartOptions }
-  | { chartEx: ChartExOptions }
-  | { wpsShape: ShapeOptions }
-  | { wpgGroup: GroupOptions }
-  | { wordprocessingCanvas: WordprocessingCanvasOptions }
-  | { insertion: ChangedProperties & { children: TrackChangeChild[] } }
-  | { deletion: ChangedProperties & { children: TrackChangeChild[] } };
+  | Extract<
+      ParagraphChild,
+      | { commentRangeStart: unknown }
+      | { commentRangeEnd: unknown }
+      | { comment: unknown }
+      | { commentReference: unknown }
+      | { bookmarkStart: unknown }
+      | { bookmarkEnd: unknown }
+      | { pageBreak: unknown }
+      | { columnBreak: unknown }
+      | { complexField: unknown }
+      | { fieldMarker: unknown }
+      | { hyperlink: unknown }
+      | { formField: unknown }
+      | { proofErr: unknown }
+      | { rawXml: unknown }
+      | { sdt: unknown }
+      | { symbolRun: unknown }
+      | { object: unknown }
+      | { pict: unknown }
+      | { picture: unknown }
+      | { chart: unknown }
+      | { chartEx: unknown }
+      | { wpsShape: unknown }
+      | { wpgGroup: unknown }
+      | { wordprocessingCanvas: unknown }
+      | { insertion: unknown }
+      | { deletion: unknown }
+    >;
 
 /** Discriminated union of all paragraph child types (inline elements, runs, etc.). */
 export type ParagraphChild =
+  // Tolerated legacy files place a table directly inside w:p; Word reads it.
+  | { table: TableOptions }
   | { chart: ChartOptions }
   | { chartEx: ChartExOptions }
   | { smartArt: SmartArtOptions }

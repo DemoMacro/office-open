@@ -118,6 +118,12 @@ describe("collectText", () => {
   it("should return empty string for undefined", () => {
     expect(collectText(undefined)).toBe("");
   });
+
+  it("should traverse very deep trees without recursion", () => {
+    let element: Element = { text: "leaf" };
+    for (let index = 0; index < 20_000; index += 1) element = { elements: [element] };
+    expect(collectText(element)).toBe("leaf");
+  });
 });
 
 describe("attr", () => {
@@ -231,8 +237,26 @@ describe("findDeep", () => {
     expect(findDeep(parent, "target")).toHaveLength(2);
   });
 
+  it("should keep document order across sibling subtrees", () => {
+    const parent: Element = {
+      elements: [
+        { elements: [{ name: "target", text: "first" }] },
+        { name: "target", text: "second" },
+      ],
+    };
+    expect(findDeep(parent, "target").map(textOf)).toEqual(["first", "second"]);
+  });
+
   it("should handle undefined parent", () => {
     expect(findDeep(undefined, "a")).toEqual([]);
+  });
+
+  it("should traverse very deep matches without recursion", () => {
+    let element: Element = { name: "target", text: "leaf" };
+    for (let index = 0; index < 20_000; index += 1) element = { elements: [element] };
+    const result = findDeep(element, "target");
+    expect(result).toHaveLength(1);
+    expect(textOf(result[0])).toBe("leaf");
   });
 });
 

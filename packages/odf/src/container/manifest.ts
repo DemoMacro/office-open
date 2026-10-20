@@ -81,6 +81,7 @@ export interface OcfManifestFileEntryOptions {
   /** Size in bytes. */
   size?: number;
   encryptionData?: OcfEncryptionDataOptions;
+  foreignChildrenXml?: string[];
 }
 
 export interface OcfManifestOptions {
@@ -90,6 +91,7 @@ export interface OcfManifestOptions {
   entries: OcfManifestFileEntryOptions[];
   /** Encrypted package keys, in source order. */
   encryptedKeys?: OcfEncryptedKeyOptions[];
+  foreignChildrenXml?: string[];
 }
 
 export const MANIFEST_SCHEMA_ELEMENTS = MANIFEST_ELEMENTS.map((name) => ({
@@ -116,6 +118,7 @@ function parseManifestModel(root: Element): OcfManifestOptions {
   ) as Element[];
   const encryptedKeys: OcfEncryptedKeyOptions[] = [];
   const entries: OcfManifestFileEntryOptions[] = [];
+  const foreignChildren: Element[] = [];
   let seenFileEntry = false;
   for (const child of children) {
     if (child.name === "manifest:file-entry") {
@@ -124,6 +127,8 @@ function parseManifestModel(root: Element): OcfManifestOptions {
     } else if (child.name === "manifest:encrypted-key") {
       if (seenFileEntry) throw unknownManifestChild(child);
       encryptedKeys.push(parseEncryptedKey(child));
+    } else if (!child.name?.startsWith("manifest:")) {
+      foreignChildren.push(child);
     } else {
       throw unknownManifestChild(child);
     }
@@ -136,6 +141,7 @@ function parseManifestModel(root: Element): OcfManifestOptions {
         : requiredManifestAttribute(root, "version", "/manifest:manifest"),
     entries,
     ...(encryptedKeys.length > 0 ? { encryptedKeys } : {}),
+    ...(foreignChildren.length > 0 ? { foreignChildrenXml: foreignChildren.map(foreignXml) } : {}),
   };
 }
 
@@ -149,6 +155,12 @@ function parseFileEntry(element: Element): OcfManifestFileEntryOptions {
   const encryption = (element.elements ?? []).find(
     (child) => child.type === "element" && child.name === "manifest:encryption-data",
   ) as Element | undefined;
+  const foreignChildren = (element.elements ?? []).filter(
+    (child) =>
+      child.type === "element" &&
+      child.name !== "manifest:encryption-data" &&
+      !child.name?.startsWith("manifest:"),
+  );
   return {
     fullPath: requiredManifestAttribute(element, "full-path", path),
     ...(requiredOrUndefined(element, "version", path)
@@ -164,6 +176,7 @@ function parseFileEntry(element: Element): OcfManifestFileEntryOptions {
       : {}),
     ...(size === undefined ? {} : { size: numberAttribute(size, `${path}/@manifest:size`) }),
     ...(encryption ? { encryptionData: parseEncryptionData(encryption) } : {}),
+    ...(foreignChildren.length > 0 ? { foreignChildrenXml: foreignChildren.map(foreignXml) } : {}),
   };
 }
 
@@ -292,6 +305,7 @@ function manifestModelXml(options: OcfManifestOptions): string {
       "manifest:version": options.version,
     },
     [
+      ...(options.foreignChildrenXml ?? []),
       ...(options.encryptedKeys ?? []).map(encryptedKeyXml),
       ...options.entries.map(manifestFileEntryXml),
     ],
@@ -325,7 +339,10 @@ export function manifestFileEntryXml(entry: OcfManifestFileEntryOptions): string
       "manifest:preferred-view-mode": entry.preferredViewMode,
       "manifest:size": entry.size,
     },
-    entry.encryptionData ? [encryptionDataXml(entry.encryptionData)] : [],
+    [
+      ...(entry.foreignChildrenXml ?? []),
+      ...(entry.encryptionData ? [encryptionDataXml(entry.encryptionData)] : []),
+    ],
   );
 }
 

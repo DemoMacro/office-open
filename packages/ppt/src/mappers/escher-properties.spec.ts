@@ -116,4 +116,37 @@ describe("readShapeProperties", () => {
       expect((error as PptParseError).context.reason).toBe("truncated-complex-property");
     }
   });
+
+  it("projects a segment-less freeform as a closed vertex path", () => {
+    const { record, view } = createRecord(4, 64);
+    writeProperty(view, 0, 325, 16, 0x8000);
+    writeProperty(view, 1, 326, 8, 0x8000);
+
+    const vertices = 32;
+    view.setUint32(vertices, 2, true);
+    view.setUint16(vertices + 4, 0xfff0, true);
+    view.setInt16(vertices + 6, 10, true);
+    view.setInt16(vertices + 8, 20, true);
+    view.setInt16(vertices + 10, 50, true);
+    view.setInt16(vertices + 12, 80, true);
+
+    const segments = 48;
+    view.setUint16(segments, 0, true);
+    view.setUint16(segments + 2, 0, true);
+
+    const style = readShapeProperties(view, record);
+    expect(style.customGeometry).toEqual({
+      pathList: [
+        {
+          w: 40,
+          h: 60,
+          commands: [
+            { command: "moveTo", point: { x: "10", y: "20" } },
+            { command: "lineTo", point: { x: "50", y: "80" } },
+            { command: "close" },
+          ],
+        },
+      ],
+    });
+  });
 });

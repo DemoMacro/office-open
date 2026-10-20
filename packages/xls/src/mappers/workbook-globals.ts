@@ -61,7 +61,13 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
 
   for (const record of recordsFrom(stream, 0, workbookVersion)) {
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new XlsParseError("Encrypted legacy XLS files are not supported");
+      throw new XlsParseError("Encrypted legacy XLS files are not supported", {
+        part: "stream",
+        recordType: record.code,
+        recordName: "FilePass",
+        offset: record.start,
+        reason: "encrypted-unsupported",
+      });
     if (record.code === RecordCode.Formula || record.code === RecordCode.String) {
       throw new XlsParseError(
         "Invalid legacy XLS file: worksheet record appears in workbook globals",
@@ -275,27 +281,29 @@ export function readWorkbookGlobals(stream: Uint8Array): WorkbookState {
           : "sheetNames" in supbook
             ? supbook.sheetNames?.[reference.firstSheet]
             : sheets[reference.firstSheet]?.name;
-    if (!sheetName)
-      throw new XlsParseError("Invalid legacy XLS file: EXTERNSHEET references a missing sheet", {
-        path: "workbook-globals/EXTERNSHEET",
-        reason: "missing-external-sheet",
-      });
+    const resolvedSheetName = sheetName ?? "#REF!";
     if (workbookVersion === 5) {
       externSheetReferenceCount += 1;
-      externSheetNames.set(externSheetReferenceCount, sheetName);
-      externSheetNames.set(-externSheetReferenceCount, sheetName);
+      externSheetNames.set(externSheetReferenceCount, resolvedSheetName);
+      externSheetNames.set(-externSheetReferenceCount, resolvedSheetName);
     } else {
-      externSheetNames.set(++externSheetReferenceCount, sheetName);
+      externSheetNames.set(++externSheetReferenceCount, resolvedSheetName);
     }
     if (supbook.kind === "external") {
-      externalLinks.push({ externalBook: { target: supbook.target, sheetNames: [sheetName] } });
+      externalLinks.push({
+        externalBook: { target: supbook.target, sheetNames: [resolvedSheetName] },
+      });
     }
     if (supbook.kind === "dde") {
       const [ddeService = supbook.target, ddeTopic = ""] = supbook.target.split("|");
-      externalLinks.push({ ddeLink: { ddeService, ddeTopic, ddeItems: [{ name: sheetName }] } });
+      externalLinks.push({
+        ddeLink: { ddeService, ddeTopic, ddeItems: [{ name: resolvedSheetName }] },
+      });
     }
     if (supbook.kind === "ole") {
-      externalLinks.push({ oleLink: { progId: supbook.target, oleItems: [{ name: sheetName }] } });
+      externalLinks.push({
+        oleLink: { progId: supbook.target, oleItems: [{ name: resolvedSheetName }] },
+      });
     }
   }
 
@@ -339,7 +347,13 @@ export function readLegacyWorkbookGlobals(
     const record = readRecord(stream, cursor, detected.version);
     const nextCursor = cursor + recordHeaderSize(detected.version) + record.body.byteLength;
     if (record.code === RecordCode.FilePass && !isClearedFilePass(record))
-      throw new XlsParseError("Encrypted legacy XLS files are not supported");
+      throw new XlsParseError("Encrypted legacy XLS files are not supported", {
+        part: "stream",
+        recordType: record.code,
+        recordName: "FilePass",
+        offset: record.start,
+        reason: "encrypted-unsupported",
+      });
     if (!BEGIN_OF_FILE_CODES.has(record.code)) {
       cursor = nextCursor;
       continue;
@@ -371,7 +385,13 @@ export function readLegacyWorkbookGlobals(
       const workbookRecord = readRecord(stream, cursor, detected.version);
       cursor += recordHeaderSize(detected.version) + workbookRecord.body.byteLength;
       if (workbookRecord.code === RecordCode.FilePass && !isClearedFilePass(workbookRecord))
-        throw new XlsParseError("Encrypted legacy XLS files are not supported");
+        throw new XlsParseError("Encrypted legacy XLS files are not supported", {
+          part: "stream",
+          recordType: workbookRecord.code,
+          recordName: "FilePass",
+          offset: workbookRecord.start,
+          reason: "encrypted-unsupported",
+        });
       if (workbookRecord.code !== RecordCode.Sheethdr) continue;
       if (workbookRecord.body.byteLength < 5)
         throw new XlsParseError("Invalid legacy XLS file: truncated BIFF4W sheet header");

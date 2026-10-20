@@ -5,6 +5,8 @@ import type {
 } from "@office-open/core";
 import type {
   ChartOptions,
+  BlockContentChild,
+  ComplexFieldOptions,
   DocumentOptions,
   FormFieldOptions,
   ParagraphChild,
@@ -49,11 +51,14 @@ import {
   type OdtImage,
 } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
-import { OdtParseError } from "./error";
+import { OdtGenerateError, OdtParseError } from "./error";
 import { lengthToTwips, twipsToLength } from "./master-pages";
+import type { OdtDocumentOptions } from "./options";
 import {
   annotationXml,
   bibliographyMarkXml,
+  bookmarkDisplayName,
+  canonicalBookmarkName,
   nextBookmarkId,
   noteXml,
   parseAnnotationEnd,
@@ -72,6 +77,7 @@ export type TrackChangeChild = CanonicalTrackChange["children"][number];
 export type CanonicalSimpleField = Extract<ParagraphChild, { simpleField: unknown }>["simpleField"];
 type RunChild = NonNullable<RunOptions["children"]>[number];
 type CanonicalRuby = Extract<RunChild, { ruby: unknown }>["ruby"];
+type ComplexFieldMember = NonNullable<ComplexFieldOptions["instructionMembers"]>[number];
 
 /** Canonical tracked change metadata and deleted content for ODF emission. */
 export type CanonicalRevision = ChangedProperties & {
@@ -113,17 +119,41 @@ export function isTrackChangeChild(child: string | ParagraphChild): child is Tra
   if (typeof child === "string") return true;
   return (
     "text" in child ||
+    "bookmarkStart" in child ||
+    "bookmarkEnd" in child ||
+    "commentRangeStart" in child ||
+    "commentRangeEnd" in child ||
+    "commentReference" in child ||
+    "comment" in child ||
+    "hyperlink" in child ||
+    "complexField" in child ||
+    "fieldMarker" in child ||
+    "simpleField" in child ||
+    "footnoteReference" in child ||
+    "endnoteReference" in child ||
+    "insertion" in child ||
+    "deletion" in child ||
     "break" in child ||
     "pageBreak" in child ||
     "columnBreak" in child ||
     "picture" in child ||
     "chart" in child ||
     "wpsShape" in child ||
-    "formField" in child
+    "formField" in child ||
+    "chartEx" in child ||
+    "wpgGroup" in child ||
+    "wordprocessingCanvas" in child ||
+    "symbolRun" in child ||
+    "object" in child ||
+    "pict" in child ||
+    "contentPart" in child ||
+    "proofErr" in child ||
+    "rawXml" in child ||
+    "sdt" in child
   );
 }
 
-function isRunChild(child: TrackChangeChild): child is RunOptions {
+function isRunChild(child: string | ParagraphChild | TrackChangeChild): child is RunOptions {
   return (
     typeof child !== "string" &&
     "text" in child &&
@@ -133,23 +163,236 @@ function isRunChild(child: TrackChangeChild): child is RunOptions {
   );
 }
 
+function formatHyperlinkChildren(
+  children: readonly (string | RunOptions | ParagraphChild)[],
+  revision: ChangedProperties,
+): NonNullable<Extract<TrackChangeChild, { hyperlink: unknown }>["hyperlink"]>["children"] {
+  return children.map((child) => {
+    if (typeof child === "string") return { text: child, revision };
+    if (isRunChild(child)) return { ...child, revision };
+    return child;
+  });
+}
+
 function formatChangeChildren(
   children: readonly (string | ParagraphChild)[],
   revision: ChangedProperties,
 ): TrackChangeChild[] {
   return children.map((child): TrackChangeChild => {
     if (typeof child === "string") return { text: child, revision };
+    if ("hyperlink" in child) {
+      return {
+        hyperlink: {
+          ...child.hyperlink,
+          ...(child.hyperlink.children
+            ? {
+                children: formatHyperlinkChildren(child.hyperlink.children, revision),
+              }
+            : {}),
+        },
+      };
+    }
     if (isTrackChangeChild(child) && isRunChild(child)) return { ...child, revision };
+    if (isTrackChangeChild(child)) return child;
     throw malformedOdtElement(
       "text:format-change",
       "changed content cannot carry a formatting revision",
     );
   });
 }
+/** Applies an ODF body-level format revision to every textual run in a block range. */
+function formatRevisionBlock(child: SectionChild, revision: ChangedProperties): SectionChild {
+  if ("paragraph" in child) {
+    const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+    const sourceChildren: (string | ParagraphChild)[] =
+      paragraph.children ?? (paragraph.text !== undefined ? [paragraph.text] : []);
+    const paragraphWithoutText = { ...paragraph };
+    delete paragraphWithoutText.text;
+    return {
+      paragraph: {
+        ...paragraphWithoutText,
+        ...(sourceChildren.length ? {} : { revision }),
+        ...(sourceChildren.length
+          ? {
+              children: formatChangeChildren(sourceChildren, revision),
+            }
+          : {}),
+      },
+    };
+  }
+  if ("table" in child) {
+    return {
+      table: {
+        ...child.table,
+        rows: child.table.rows.map((row) => {
+          if (!("cells" in row)) return row;
+          return {
+            ...row,
+            cells: row.cells.map((cell) => {
+              if (!("children" in cell)) return cell;
+              return { ...cell, children: formatRevisionBlocks(cell.children, revision) };
+            }),
+          };
+        }),
+      },
+    };
+  }
+  if ("textbox" in child) {
+    return {
+      textbox: {
+        ...child.textbox,
+        ...(child.textbox.children
+          ? { children: formatRevisionBlocks(child.textbox.children, revision) }
+          : {}),
+      },
+    };
+  }
+  if ("sdt" in child && child.sdt.children) {
+    return {
+      sdt: { ...child.sdt, children: formatRevisionBlockContent(child.sdt.children, revision) },
+    };
+  }
+  return child;
+}
+
+/** Applies an ODF body-level format revision to every textual run in a block range. */
+export function formatRevisionBlocks(
+  children: readonly SectionChild[],
+  revision: ChangedProperties,
+): SectionChild[] {
+  return children.map((child) => formatRevisionBlock(child, revision));
+}
+
+/** Wraps block-range runs in tracked insertions or deletions. */
+export function trackRevisionBlocks(
+  kind: "insertion" | "deletion",
+  revision: ChangedProperties,
+  children: readonly SectionChild[],
+): SectionChild[] {
+  return children.map((child): SectionChild => {
+    if ("paragraph" in child) {
+      const paragraph = typeof child.paragraph === "string" ? {} : child.paragraph;
+      const sourceChildren: (string | ParagraphChild)[] =
+        paragraph.children ?? (paragraph.text !== undefined ? [paragraph.text] : []);
+      const tracked = sourceChildren.map((source) => trackRevisionChild(kind, source, revision));
+      if (tracked.length === 0) tracked.push(trackRevisionChild(kind, undefined, revision));
+      const paragraphWithoutText = { ...paragraph };
+      delete paragraphWithoutText.text;
+      return { paragraph: { ...paragraphWithoutText, children: tracked } };
+    }
+    if ("table" in child) {
+      return {
+        table: {
+          ...child.table,
+          rows: child.table.rows.map((row) => {
+            if (!("cells" in row)) return row;
+            return {
+              ...row,
+              cells: row.cells.map((cell) => {
+                if (!("children" in cell)) return cell;
+                return { ...cell, children: trackRevisionBlocks(kind, revision, cell.children) };
+              }),
+            };
+          }),
+        },
+      };
+    }
+    if ("textbox" in child) {
+      return {
+        textbox: {
+          ...child.textbox,
+          ...(child.textbox.children
+            ? { children: trackRevisionBlocks(kind, revision, child.textbox.children) }
+            : {}),
+        },
+      };
+    }
+    if ("sdt" in child && child.sdt.children) {
+      return {
+        sdt: {
+          ...child.sdt,
+          children: trackRevisionBlockContent(kind, revision, child.sdt.children),
+        },
+      };
+    }
+    if ("customXml" in child && child.customXml.children) {
+      return {
+        customXml: {
+          ...child.customXml,
+          children: trackRevisionBlockContent(kind, revision, child.customXml.children),
+        },
+      };
+    }
+    return child;
+  });
+}
+
+function trackRevisionChild(
+  kind: "insertion" | "deletion",
+  source: string | ParagraphChild | undefined,
+  revision: ChangedProperties,
+): ParagraphChild {
+  if (kind === "insertion")
+    return {
+      insertion: {
+        ...revision,
+        children: source === undefined ? [] : trackRevisionChildren(kind, source),
+      },
+    };
+  return {
+    deletion: {
+      ...revision,
+      children: source === undefined ? [] : trackRevisionChildren(kind, source),
+    },
+  };
+}
+
+function trackRevisionChildren(
+  kind: "insertion" | "deletion",
+  source: string | ParagraphChild,
+): TrackChangeChild[] {
+  if (isTrackChangeChild(source)) return [source];
+  throw malformedOdtElement(
+    kind === "insertion" ? "text:insertion" : "text:deletion",
+    "tracked content has no canonical track-change child mapping",
+  );
+}
+
+function trackRevisionBlockContent(
+  kind: "insertion" | "deletion",
+  revision: ChangedProperties,
+  children: readonly BlockContentChild[],
+): BlockContentChild[] {
+  return children.map((child) => {
+    const revised = trackRevisionBlocks(kind, revision, [child])[0]!;
+    if ("altChunk" in revised) throw malformedOdtElement("altChunk", "invalid block content");
+    return revised;
+  });
+}
+
+function formatRevisionBlockContent(
+  children: readonly BlockContentChild[],
+  revision: ChangedProperties,
+): BlockContentChild[] {
+  return children.map((child) => {
+    const revised = formatRevisionBlock(child, revision);
+    if ("altChunk" in revised) throw malformedOdtElement("altChunk", "invalid block content");
+    return revised;
+  });
+}
 
 function nextTrackChangeId(context: ParseContext): number {
   const changes = [...context.changes.values(), ...context.changeAlternatives.values()];
   return Math.max(0, ...changes.map((change) => change.id ?? 0)) + 1;
+}
+
+function collectDeletedParagraphElements(element: Element, paragraphs: Element[] = []): Element[] {
+  if (element.name === "text:p" || element.name === "text:h") {
+    paragraphs.push(element);
+    return paragraphs;
+  }
+  for (const child of element.elements ?? []) collectDeletedParagraphElements(child, paragraphs);
+  return paragraphs;
 }
 
 /** Runs of two or more spaces emit text:s so XML whitespace folding keeps them. */
@@ -224,7 +467,20 @@ export function paragraphXml(
     "text:style-name": styleName,
     "text:outline-level": heading ? Number(heading[1]) : undefined,
   };
-  return xmlElement(heading ? "text:h" : "text:p", attributes, children);
+  const paragraph = xmlElement(heading ? "text:h" : "text:p", attributes, children);
+  if (!options.revision) return paragraph;
+  const id = options.revision.id ?? notes.revisions.size + 1;
+  const regionId = `fmt${id}`;
+  notes.revisions.set(regionId, {
+    id,
+    author: options.revision.author,
+    date: options.revision.date,
+    kind: "format",
+  });
+  const marker = { "text:change-id": regionId };
+  return (
+    xmlElement("text:change-start", marker) + paragraph + xmlElement("text:change-end", marker)
+  );
 }
 
 export function runXml(
@@ -239,6 +495,24 @@ export function runXml(
   if (options.text !== undefined && options.children === undefined) {
     return [spacesXml(options.text)];
   }
+  function complexFieldChild(member: ComplexFieldMember): ParagraphChild | undefined {
+    if ("run" in member) return member.run;
+    if (
+      "simpleField" in member ||
+      "footnoteReference" in member ||
+      "endnoteReference" in member ||
+      "bookmarkStart" in member ||
+      "bookmarkEnd" in member ||
+      "hyperlink" in member ||
+      "formField" in member ||
+      "complexField" in member ||
+      "insertion" in member ||
+      "deletion" in member
+    ) {
+      return member;
+    }
+    return undefined;
+  }
   return (options.children ?? []).map((child) => {
     if (typeof child === "string") return spacesXml(child);
     if ("pageBreak" in child) return "<text:soft-page-break/>";
@@ -250,9 +524,14 @@ export function runXml(
       });
     }
     if ("bookmarkStart" in child) {
+      const name = bookmarkDisplayName(child.bookmarkStart.id, child.bookmarkStart.name, notes);
+      const endNames = notes.bookmarkEndNames.get(child.bookmarkStart.id) ?? [];
+      endNames.push(name);
+      notes.bookmarkEndNames.set(child.bookmarkStart.id, endNames);
+      notes.bookmarkNames.set(child.bookmarkStart.id, name);
       return xmlElement("text:bookmark-start", {
         "xml:id": child.bookmarkStart.id ? `bookmark-${child.bookmarkStart.id}` : undefined,
-        "text:name": child.bookmarkStart.name,
+        "text:name": name,
       });
     }
     if ("bookmarkEnd" in child) {
@@ -260,6 +539,47 @@ export function runXml(
     }
     if ("simpleField" in child) {
       return simpleFieldXml(child.simpleField, notes);
+    }
+    if ("complexField" in child) {
+      const members = child.complexField.instructionMembers ?? [];
+      const projectableMembers = members.filter((member) => !("proofErr" in member));
+      const children = projectableMembers
+        .map(complexFieldChild)
+        .filter((memberChild): memberChild is ParagraphChild => memberChild !== undefined);
+      const resultMembers = (child.complexField.resultMembers ?? []).filter(
+        (member) => !("proofErr" in member),
+      );
+      const resultChildren = resultMembers
+        .map(complexFieldChild)
+        .filter((memberChild): memberChild is ParagraphChild => memberChild !== undefined);
+      if (
+        children.length !== projectableMembers.length ||
+        resultChildren.length !== resultMembers.length
+      ) {
+        throw malformedOdtElement(
+          "complexField",
+          "field member has no canonical ODT inline projection",
+        );
+      }
+      const memberXml = runXml(
+        { children: [...children, ...resultChildren] },
+        styles,
+        images,
+        notes,
+        numbering,
+        charts,
+        embeddedObjects,
+      );
+      return (
+        memberXml +
+        simpleFieldXml(
+          {
+            instruction: child.complexField.instruction.trim(),
+            ...(child.complexField.result ? { cachedValue: child.complexField.result } : {}),
+          },
+          notes,
+        )
+      );
     }
     if ("comment" in child) {
       return annotationXml(
@@ -271,7 +591,11 @@ export function runXml(
     if ("commentRangeStart" in child) {
       const id = child.commentRangeStart.id;
       const comment = notes.comments.get(id);
-      if (!comment) throw orphanCommentRange(id);
+      if (!comment) {
+        const name = `__Annotation__${id}__office-open`;
+        notes.annotationNames.set(id, name);
+        return annotationXml(undefined, undefined, [], name);
+      }
       notes.annotationNames.set(id, `__Annotation__${id}__office-open`);
       return annotationXml(
         comment.author,
@@ -284,10 +608,27 @@ export function runXml(
     if ("commentRangeEnd" in child) {
       const id = child.commentRangeEnd.id;
       const name = notes.annotationNames.get(id);
-      if (!name) throw orphanCommentRange(id);
+      if (!name) throw unrepresentableCommentRange(id);
       return xmlElement("office:annotation-end", { "office:name": name });
     }
-    if ("formField" in child) return formFieldXml(child.formField, notes);
+    if ("formField" in child) {
+      const children = [...(child.instructionMembers ?? []), ...(child.resultMembers ?? [])]
+        .map(complexFieldChild)
+        .filter((memberChild): memberChild is ParagraphChild => memberChild !== undefined);
+      if (
+        children.length !==
+        (child.instructionMembers ?? []).length + (child.resultMembers ?? []).length
+      ) {
+        throw malformedOdtElement(
+          "formField",
+          "field member has no canonical ODT inline projection",
+        );
+      }
+      return (
+        formFieldXml(child.formField, notes) +
+        runXml({ children }, styles, images, notes, numbering, charts, embeddedObjects)
+      );
+    }
     if ("insertion" in child) {
       return insertionXml(
         child.insertion,
@@ -301,13 +642,15 @@ export function runXml(
     }
     if ("deletion" in child) {
       const id = child.deletion.id ?? notes.revisions.size + 1;
-      notes.revisions.set(id, {
+      const regionId = `del${id}`;
+      const existing = notes.revisions.get(regionId);
+      notes.revisions.set(regionId, {
         id,
         author: child.deletion.author,
         date: child.deletion.date,
-        children: child.deletion.children,
+        children: [...(existing?.children ?? []), ...child.deletion.children],
       });
-      return xmlElement("text:change", { "text:change-id": `rev${id}` });
+      return xmlElement("text:change", { "text:change-id": `del${id}` });
     }
     if ("footnoteReference" in child) {
       return noteXml(
@@ -341,7 +684,7 @@ export function runXml(
             anchor?: string;
             tooltip?: string;
             targetFrame?: string;
-            children?: Array<string | { text?: string }>;
+            children?: Array<string | RunOptions | ParagraphChild>;
           };
           text?: string;
         }
@@ -350,7 +693,19 @@ export function runXml(
       if (href === undefined) return "";
       const inner = link.children
         ? link.children
-            .map((c) => (typeof c === "string" ? spacesXml(c) : spacesXml(c.text ?? "")))
+            .map((linkChild) =>
+              typeof linkChild === "string"
+                ? spacesXml(linkChild)
+                : runXml(
+                    { children: [linkChild] },
+                    styles,
+                    images,
+                    notes,
+                    numbering,
+                    charts,
+                    embeddedObjects,
+                  ).join(""),
+            )
             .join("")
         : spacesXml((child as { text?: string }).text ?? "");
       return xmlElement(
@@ -379,16 +734,16 @@ export function runXml(
         xmlElement("text:span", { "text:style-name": styleName }, [spacesXml(run.text ?? "")]);
       if (!run.revision) return runXml;
       const id = run.revision.id ?? notes.revisions.size + 1;
-      notes.revisions.set(id, {
+      notes.revisions.set(`fmt${id}`, {
         id,
         author: run.revision.author,
         date: run.revision.date,
         kind: "format",
       });
       return (
-        xmlElement("text:change-start", { "text:change-id": `rev${id}` }) +
+        xmlElement("text:change-start", { "text:change-id": `fmt${id}` }) +
         runXml +
-        xmlElement("text:change-end", { "text:change-id": `rev${id}` })
+        xmlElement("text:change-end", { "text:change-id": `fmt${id}` })
       );
     }
     if ("ruby" in child) {
@@ -433,6 +788,8 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
       },
       [escapeText(field.cachedValue ?? "")],
     );
+  if (instruction === "SAVEDATE")
+    return xmlElement("text:modification-date", undefined, [escapeText(field.cachedValue ?? "")]);
   if (instruction.startsWith("ODF USERFIELD "))
     return xmlElement("text:user-field-get", { "text:name": argument.value }, [
       escapeText(field.cachedValue ?? ""),
@@ -479,9 +836,11 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
       escapeText(field.cachedValue ?? ""),
     ]);
   if (instruction.startsWith("REF ")) {
-    if (odfReferenceFormat(remainder) === undefined && remainder !== "") {
-      throw unsupportedField(instruction);
-    }
+    if (odfReferenceFormat(remainder) !== undefined || remainder === "")
+      return bookmarkReferenceXml({
+        name: argument.value,
+        referenceFormat: odfReferenceFormat(remainder),
+      });
     return bookmarkReferenceXml({
       name: argument.value,
       referenceFormat: odfReferenceFormat(remainder),
@@ -489,22 +848,23 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
   }
   let formula: string | undefined;
   if (instruction.startsWith("SEQ ")) {
-    if (remainder && !remainder.startsWith("=")) throw unsupportedField(instruction);
-    if (remainder) formula = remainder.slice(1).trim();
-    notes.sequenceNames.add(argument.value);
-    return sequenceXml({
-      name: argument.value,
-      formula,
-      display: field.cachedValue,
-    });
+    if (!remainder || remainder.startsWith("=")) {
+      if (remainder) formula = remainder.slice(1).trim();
+      notes.sequenceNames.add(argument.value);
+      return sequenceXml({
+        name: argument.value,
+        formula,
+        display: field.cachedValue,
+      });
+    }
   }
   if (instruction.startsWith("STYLEREF ")) {
     const match = /^STYLEREF\s+(?<level>[1-9])\s+\\n$/.exec(instruction);
-    if (!match) throw unsupportedField(instruction);
-    return chapterXml({
-      display: field.cachedValue,
-      outlineLevel: Number(match.groups?.level),
-    });
+    if (match)
+      return chapterXml({
+        display: field.cachedValue,
+        outlineLevel: Number(match.groups?.level),
+      });
   }
   if (instruction.startsWith("VARIABLE ")) {
     if (remainder && !remainder.startsWith("=")) throw unsupportedField(instruction);
@@ -520,13 +880,23 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
     });
   }
   if (instruction.startsWith("IF ")) {
+    const conditional =
+      /^"(?<content>(?:[^\\"]|\\[\s\S])*)"\s+"(?<false>(?:[^\\"]|\\[\s\S])*)"$/.exec(remainder);
+    if (conditional) {
+      return conditionalTextXml({
+        condition: argument.value,
+        trueValue: decodeFieldArgument(conditional.groups?.content ?? ""),
+        falseValue: decodeFieldArgument(conditional.groups?.false ?? ""),
+        currentValue: field.cachedValue,
+      });
+    }
     const match = /^"(?<content>(?:[^\\"]|\\[\s\S])*)"\s+""$/.exec(remainder);
-    if (!match) throw unsupportedField(instruction);
-    return hiddenTextXml({
-      condition: argument.value,
-      content: decodeFieldArgument(match.groups?.content ?? ""),
-      hidden: field.cachedValue === undefined ? true : undefined,
-    });
+    if (match)
+      return hiddenTextXml({
+        condition: argument.value,
+        content: decodeFieldArgument(match.groups?.content ?? ""),
+        hidden: field.cachedValue === undefined ? true : undefined,
+      });
   }
   if (instruction.startsWith("=")) {
     return expressionXml({
@@ -540,7 +910,12 @@ export function simpleFieldXml(field: CanonicalSimpleField, notes: NotesContext)
     if (remainder) throw unsupportedField(instruction);
     return bibliographyMarkXml(argument.value, field.cachedValue);
   }
-  throw unsupportedField(instruction);
+  return expressionXml({
+    formula: `OOXML ${instruction}`,
+    valueType: "string",
+    value: field.cachedValue,
+    display: field.cachedValue,
+  });
 }
 
 export function decodeFieldArgument(value: string): string {
@@ -582,23 +957,11 @@ export function unsupportedField(instruction: string): OdtParseError {
   );
 }
 
-export function orphanBookmarkEnd(id: number): OdtParseError {
-  return new OdtParseError(
-    `content.xml: bookmark end ${id} has no canonical bookmark start`,
-    "content.xml",
-    "/office:document-content/office:body/office:text/text:bookmark-end",
-    "text:bookmark-end",
-    "no canonical bookmark start",
-  );
-}
-
-export function orphanCommentRange(id: number): OdtParseError {
-  return new OdtParseError(
-    `content.xml: comment range ${id} has no canonical comment body`,
-    "content.xml",
-    "/office:document-content/office:body/office:text/office:annotation",
-    "office:annotation",
-    "no canonical comment body",
+function unrepresentableCommentRange(id: number): OdtGenerateError {
+  return new OdtGenerateError(
+    `comment range ${id}: ODF annotation requires a comment body`,
+    "commentRange",
+    "unrepresentable-orphan-comment-range",
   );
 }
 
@@ -674,7 +1037,8 @@ export function insertionXml(
   embeddedObjects: OdtEmbeddedObjectOptions[] = [],
 ): string {
   const id = value.id ?? notes.revisions.size + 1;
-  notes.revisions.set(id, { id, author: value.author, date: value.date });
+  const regionId = `ins${id}`;
+  notes.revisions.set(regionId, { id, author: value.author, date: value.date });
   const children = runXml(
     { children: value.children },
     styles,
@@ -685,13 +1049,20 @@ export function insertionXml(
     embeddedObjects,
   );
   return (
-    xmlElement("text:change-start", { "text:change-id": `rev${id}` }) +
+    xmlElement("text:change-start", { "text:change-id": regionId }) +
     children.join("") +
-    xmlElement("text:change-end", { "text:change-id": `rev${id}` })
+    xmlElement("text:change-end", { "text:change-id": regionId })
   );
 }
 
-export function declarationsXml(options: DocumentOptions, notes: NotesContext): string {
+export function declarationsXml(options: OdtDocumentOptions, notes: NotesContext): string {
+  const indexAutoMarkFile = options.indexAutoMarkFile;
+  const indexAutoMarkXml = indexAutoMarkFile
+    ? xmlElement("text:alphabetical-index-auto-mark-file", {
+        "xlink:type": "simple",
+        "xlink:href": indexAutoMarkFile.href,
+      })
+    : "";
   const implicitSequenceDeclarations = [...notes.sequenceNames]
     .filter(
       (name) => !options.sequenceDeclarations?.some((declaration) => declaration.name === name),
@@ -764,41 +1135,54 @@ export function declarationsXml(options: DocumentOptions, notes: NotesContext): 
         }),
       )
     : "";
-  const revisions = notes.revisions.size
-    ? xmlElement(
-        "text:tracked-changes",
-        undefined,
-        [...notes.revisions.entries()].map(([, revision]) =>
-          xmlElement("text:changed-region", { "text:id": `rev${revision.id}` }, [
-            xmlElement(
-              `text:${
-                revision.kind === "format"
-                  ? "format-change"
-                  : revision.children
-                    ? "deletion"
-                    : "insertion"
-              }`,
-              undefined,
-              [
-                xmlElement("office:change-info", undefined, [
-                  xmlElement("dc:creator", undefined, [escapeText(revision.author)]),
-                  xmlElement("dc:date", undefined, [String(revision.date)]),
-                ]),
-                ...(revision.children ?? []).map((child) =>
-                  xmlElement(
-                    "text:p",
-                    undefined,
-                    runXml({ children: [child] }, [], [], notes, undefined, []),
-                  ),
-                ),
-              ],
+  const revisionEntries = [...notes.revisions.entries()];
+  const revisionXml: string[] = [];
+  for (let index = 0; index < revisionEntries.length; index++) {
+    const [regionId, revision] = revisionEntries[index]!;
+    revisionXml.push(
+      xmlElement("text:changed-region", { "text:id": regionId }, [
+        xmlElement(
+          `text:${
+            revision.kind === "format"
+              ? "format-change"
+              : revision.children
+                ? "deletion"
+                : "insertion"
+          }`,
+          undefined,
+          [
+            xmlElement("office:change-info", undefined, [
+              xmlElement("dc:creator", undefined, [escapeText(revision.author)]),
+              xmlElement("dc:date", undefined, [String(revision.date)]),
+            ]),
+            ...(revision.children ?? []).map((child) =>
+              xmlElement(
+                "text:p",
+                undefined,
+                runXml({ children: [child] }, [], [], notes, undefined, []),
+              ),
             ),
-          ]),
+          ],
         ),
-      )
+      ]),
+    );
+    const currentEntries = [...notes.revisions.entries()];
+    for (let next = revisionEntries.length; next < currentEntries.length; next++)
+      revisionEntries.push(currentEntries[next]!);
+  }
+  const revisions = revisionXml.length
+    ? xmlElement("text:tracked-changes", undefined, revisionXml)
     : "";
   const formsXml = officeFormsXml(notes.forms);
-  return formsXml + sequenceDecls + variableDecls + userFieldDecls + ddeDecls + revisions;
+  return (
+    indexAutoMarkXml +
+    formsXml +
+    sequenceDecls +
+    variableDecls +
+    userFieldDecls +
+    ddeDecls +
+    revisions
+  );
 }
 
 export function variableSetXml(value: {
@@ -832,8 +1216,13 @@ export function bookmarkReferenceXml(value: { name: string; referenceFormat?: st
 }
 
 export function bookmarkEndXml(id: number, notes: NotesContext): string {
-  const name = notes.bookmarkNames.get(id);
-  if (!name) throw orphanBookmarkEnd(id);
+  const name = notes.bookmarkEndNames.get(id)?.shift() ?? notes.bookmarkNames.get(id);
+  if (!name)
+    throw new OdtGenerateError(
+      `bookmark end ${id}: ODF requires a matching bookmark start`,
+      "bookmarkEnd",
+      "unrepresentable-orphan-bookmark-end",
+    );
   return xmlElement("text:bookmark-end", { "text:name": name });
 }
 
@@ -901,6 +1290,23 @@ export function hiddenTextXml(value: {
   );
 }
 
+export function conditionalTextXml(value: {
+  condition: string;
+  trueValue: string;
+  falseValue: string;
+  currentValue?: string;
+}): string {
+  return xmlElement(
+    "text:conditional-text",
+    {
+      "text:condition": value.condition,
+      "text:string-value-if-true": value.trueValue,
+      "text:string-value-if-false": value.falseValue,
+    },
+    value.currentValue === undefined ? [] : [escapeText(value.currentValue)],
+  );
+}
+
 /** Run breaks render as text:line-break (ODF has no w:br/@clear equivalent). */
 export function lineBreakXml(run: RunOptions): string {
   if (!run.break) return "";
@@ -942,6 +1348,7 @@ export function withPageBreakBefore(child: SectionChild): SectionChild {
 export function parseParagraph(element: Element, context: ParseContext): ParagraphOptions {
   const style = context.styles.get(attributeString(element, "text:style-name") ?? "");
   const headingLevel = attributeNumber(element, "text:outline-level");
+  const nodes = element.elements ?? [];
   const runs = parseRuns(element, context);
   const result: ParagraphOptions = {};
   if (style?.alignment) result.alignment = style.alignment as ParagraphOptions["alignment"];
@@ -959,6 +1366,21 @@ export function parseParagraph(element: Element, context: ParseContext): Paragra
   }
   if (runs.length === 1 && typeof runs[0] === "string") result.text = runs[0];
   else if (runs.length > 0) result.children = runs as ParagraphOptions["children"];
+  if (runs.length === 0) {
+    const start = nodes.find((node) => node.name === "text:change-start");
+    const end = nodes.find((node) => node.name === "text:change-end");
+    const id = start ? attributeString(start, "text:change-id") : undefined;
+    const change = id ? context.changes.get(id) : undefined;
+    if (
+      start &&
+      end &&
+      id &&
+      attributeString(end, "text:change-id") === id &&
+      change?.kind === "format"
+    ) {
+      result.revision = { id: change.id, author: change.author, date: change.date };
+    }
+  }
   return result;
 }
 
@@ -968,6 +1390,25 @@ export function parseRuns(
 ): (string | RunOptions | ParagraphChild)[] {
   const nodes = element.elements ?? [];
   let resumeAfter = -1;
+  const pendingFormatEndIndex = nodes.findIndex(
+    (node) =>
+      node.name === "text:change-end" &&
+      context.pendingFormatChanges.has(attributeString(node, "text:change-id") ?? ""),
+  );
+  if (pendingFormatEndIndex >= 0) {
+    const end = nodes[pendingFormatEndIndex]!;
+    const id = attributeString(end, "text:change-id") ?? "";
+    const revision = context.pendingFormatChanges.get(id)!;
+    context.pendingFormatChanges.delete(id);
+    const changed = formatChangeChildren(
+      parseRuns({ ...end, elements: nodes.slice(0, pendingFormatEndIndex) }, context),
+      revision,
+    );
+    return [
+      ...changed,
+      ...parseRuns({ ...end, elements: nodes.slice(pendingFormatEndIndex + 1) }, context),
+    ];
+  }
   const runs = (element.elements ?? []).flatMap(
     (child, index): (string | RunOptions | ParagraphChild)[] => {
       if (index <= resumeAfter) return [];
@@ -975,21 +1416,56 @@ export function parseRuns(
       if (child.name === "text:line-break") return [{ break: 1 }];
       if (child.name === "field:fieldmark") return [parseFieldmark(child, "", context)];
       if (child.name === "field:fieldmark-start") {
-        const endIndex = nodes.findIndex(
-          (node, nodeIndex) => nodeIndex > index && node.name === "field:fieldmark-end",
-        );
+        let depth = 1;
+        let endIndex = -1;
+        let separatorIndex = -1;
+        for (let nodeIndex = index + 1; nodeIndex < nodes.length && endIndex < 0; nodeIndex += 1) {
+          const node = nodes[nodeIndex]!;
+          if (node.name === "field:fieldmark-start") depth += 1;
+          if (node.name === "field:fieldmark-end") {
+            depth -= 1;
+            if (depth === 0) endIndex = nodeIndex;
+          }
+          if (separatorIndex < 0 && depth === 1 && node.name === "field:fieldmark-separator") {
+            separatorIndex = nodeIndex;
+          }
+        }
         if (endIndex < 0) {
           throw malformedOdtElement(child.name, "fieldmark end is missing");
         }
-        const separatorIndex = nodes.findIndex(
-          (node, nodeIndex) =>
-            nodeIndex > index && nodeIndex < endIndex && node.name === "field:fieldmark-separator",
-        );
         const valueElement: Element = {
           name: "field:value",
           elements: nodes.slice((separatorIndex >= 0 ? separatorIndex : index) + 1, endIndex),
         };
         const parsed = parseFieldmark(child, textOf(valueElement), context);
+        if (
+          nodes
+            .slice(index + 1, separatorIndex >= 0 ? separatorIndex : endIndex)
+            .some((node) => node.name === "field:fieldmark-start")
+        ) {
+          const nested = parseRuns(
+            {
+              ...child,
+              elements: nodes.slice(index + 1, separatorIndex >= 0 ? separatorIndex : endIndex),
+            },
+            context,
+          );
+          const members = nested.flatMap((member) => {
+            if (typeof member === "object" && "simpleField" in member)
+              return [{ simpleField: member.simpleField }];
+            throw malformedOdtElement(child.name ?? "", "nested fieldmark has no canonical member");
+          });
+          resumeAfter = endIndex;
+          return [
+            {
+              complexField: {
+                instruction: "simpleField" in parsed ? parsed.simpleField.instruction : "",
+                ...(separatorIndex >= 0 ? { result: textOf(valueElement) } : {}),
+                instructionMembers: members,
+              },
+            },
+          ];
+        }
         resumeAfter = endIndex;
         return [parsed];
       }
@@ -1010,6 +1486,11 @@ export function parseRuns(
             },
           },
         ];
+      }
+      if (child.name === "office:event-listeners") {
+        if ((child.elements ?? []).some((element) => element.type === "element"))
+          throw unknownOdtElement(child);
+        return [];
       }
       if (child.name === "text:note") return parseNote(child, context);
       if (
@@ -1034,7 +1515,11 @@ export function parseRuns(
           attributeString(child, "text:title") ??
           "";
         const id = context.bookmarkIds.get(name);
-        if (!name || id === undefined) throw unknownOdtElement(child);
+        if (!name) throw unknownOdtElement(child);
+        if (id === undefined) {
+          const allocated = bookmarkRunId(context, name);
+          return [{ bookmarkStart: { id: allocated, name } }, { bookmarkEnd: { id: allocated } }];
+        }
         return [{ bookmarkEnd: { id } }];
       }
       if (
@@ -1043,6 +1528,7 @@ export function parseRuns(
         child.name === "text:reference-mark"
       ) {
         const name =
+          attributeString(child, "text:string-value") ??
           attributeString(child, "text:name") ??
           attributeString(child, "text:key1") ??
           attributeString(child, "text:title") ??
@@ -1051,17 +1537,46 @@ export function parseRuns(
         return [{ bookmark: { name } }];
       }
       if (child.name === "text:bookmark") {
-        return [{ bookmark: { name: attributeString(child, "text:name") ?? "" } }];
+        const name = attributeString(child, "text:name") ?? "";
+        if (!name) throw unknownOdtElement(child);
+        const id = bookmarkRunId(context, name);
+        return [{ bookmarkStart: { id, name } }, { bookmarkEnd: { id } }];
+      }
+      if (child.name === "text:toc-mark") {
+        const name =
+          attributeString(child, "text:string-value") ?? attributeString(child, "text:name") ?? "";
+        if (!name) throw unknownOdtElement(child);
+        return [{ bookmark: { name } }];
       }
       if (child.name === "text:bookmark-start" || child.name === "text:reference-mark-start") {
-        const name = attributeString(child, "text:name") ?? "";
-        if (!name || context.bookmarkIds.has(name)) throw unknownOdtElement(child);
-        return [{ bookmarkStart: { id: bookmarkRunId(context, name), name } }];
+        const sourceName = attributeString(child, "text:name") ?? "";
+        const decoded = canonicalBookmarkName(sourceName);
+        const name = decoded.name;
+        if (!name) throw unknownOdtElement(child);
+        const existingId = context.bookmarkIds.get(name);
+        const encodedId = /^(?:bookmark-)?(\d+)$/.exec(
+          attributeString(child, "text:id") ??
+            attributeString(child, "xml:id") ??
+            (decoded.encodedId !== undefined ? String(decoded.encodedId) : ""),
+        )?.[1];
+        if (existingId !== undefined && sourceName === name && encodedId !== String(existingId)) {
+          throw unknownOdtElement(child);
+        }
+        const id = decoded.encodedId ?? existingId ?? bookmarkRunId(context, name);
+        if (existingId === undefined) context.bookmarkIds.set(name, id);
+        if (sourceName !== name) context.bookmarkIds.set(sourceName, id);
+        return [{ bookmarkStart: { id, name } }];
       }
       if (child.name === "text:bookmark-end" || child.name === "text:reference-mark-end") {
-        const name = attributeString(child, "text:name") ?? "";
-        const id = context.bookmarkIds.get(name);
-        if (!name || id === undefined) throw unknownOdtElement(child);
+        const sourceName = attributeString(child, "text:name") ?? "";
+        const name = canonicalBookmarkName(sourceName).name;
+        const id = context.bookmarkIds.get(sourceName) ?? context.bookmarkIds.get(name);
+        if (!name) throw unknownOdtElement(child);
+        if (id === undefined) {
+          const allocated = bookmarkRunId(context, name);
+          context.bookmarkIds.set(name, allocated);
+          return [{ bookmarkStart: { id: allocated, name } }, { bookmarkEnd: { id: allocated } }];
+        }
         return [{ bookmarkEnd: { id } }];
       }
       if (child.name === "text:change-start") {
@@ -1077,17 +1592,19 @@ export function parseRuns(
         const format = context.changeAlternatives.get(`${id}:format`) ?? context.changes.get(id);
         const change = insertion?.kind === "insertion" ? insertion : format;
         if (change?.kind === "format") {
-          if (endIndex < 0) throw malformedOdtElement(child.name, "format change end is missing");
+          const revision = { id: change.id, author: change.author, date: change.date };
+          if (endIndex < 0) {
+            const changedElement: Element = { ...child, elements: nodes.slice(index + 1) };
+            context.pendingFormatChanges.set(id, revision);
+            resumeAfter = nodes.length;
+            return formatChangeChildren(parseRuns(changedElement, context), revision);
+          }
           const changedElement: Element = {
             ...nodes[endIndex]!,
             elements: nodes.slice(index + 1, endIndex),
           };
           resumeAfter = endIndex;
-          return formatChangeChildren(parseRuns(changedElement, context), {
-            id: change.id,
-            author: change.author,
-            date: change.date,
-          });
+          return formatChangeChildren(parseRuns(changedElement, context), revision);
         }
         if (change?.kind !== "insertion") throw unknownOdtElement(child);
         if (endIndex < 0) {
@@ -1138,6 +1655,12 @@ export function parseRuns(
       }
       if (child.name === "text:change-end") {
         const id = attributeString(child, "text:change-id") ?? "";
+        const revision = context.pendingFormatChanges.get(id);
+        if (revision) {
+          context.pendingFormatChanges.delete(id);
+          const changedElement: Element = { ...child, elements: nodes.slice(0, index) };
+          return formatChangeChildren(parseRuns(changedElement, context), revision);
+        }
         context.pendingInsertions.delete(id);
         return [];
       }
@@ -1145,29 +1668,19 @@ export function parseRuns(
         const id = attributeString(child, "text:change-id") ?? "";
         const change = context.changeAlternatives.get(`${id}:deletion`) ?? context.changes.get(id);
         if (change?.kind !== "deletion") throw unknownOdtElement(child);
-        const parsedChildren = change.children?.length
-          ? parseRuns(change.children[0]!, context)
-          : [];
-        const first = parsedChildren[0];
-        const children = (
-          parsedChildren.length === 1 &&
-          typeof first === "object" &&
-          "text" in first &&
-          first.text !== undefined
-            ? [first.text]
-            : parsedChildren
-        ).filter(isTrackChangeChild);
-        if (children.length !== parsedChildren.length) throw unknownOdtElement(child);
-        return [
-          {
+        return (change.children ?? []).map((deletedParagraph) => {
+          const parsedRuns = parseRuns(deletedParagraph, context);
+          const parsedChildren = parsedRuns.filter(isTrackChangeChild);
+          if (parsedChildren.length !== parsedRuns.length) throw unknownOdtElement(child);
+          return {
             deletion: {
               id: change.id,
               author: change.author,
               date: change.date,
-              children,
+              children: parsedChildren,
             },
-          },
-        ];
+          };
+        });
       }
       if (child.name === "text:format-change") throw unknownOdtElement(child);
       if (child.name === "text:bookmark-ref" || child.name === "text:reference-ref") {
@@ -1395,6 +1908,26 @@ export function parseRuns(
         ];
       }
       if (child.name === "text:hidden-text") return [hiddenTextField(parseHiddenText(child))];
+      if (child.name === "text:conditional-text") {
+        return [
+          conditionalTextField({
+            condition: attributeString(child, "text:condition") ?? "",
+            trueValue: attributeString(child, "text:string-value-if-true") ?? "",
+            falseValue: attributeString(child, "text:string-value-if-false") ?? "",
+            currentValue: textOf(child) || undefined,
+          }),
+        ];
+      }
+      if (child.name === "text:modification-date" || child.name === "text:modification-time") {
+        return [
+          {
+            simpleField: {
+              instruction: "SAVEDATE",
+              cachedValue: textOf(child) || undefined,
+            },
+          },
+        ];
+      }
       if (child.name === "text:bibliography-mark")
         return [
           {
@@ -1681,6 +2214,23 @@ function parseFieldmark(element: Element, value: string, context: ParseContext):
       },
     };
   }
+  const code = parameter("vnd.oasis.opendocument.field.code");
+  if (code !== undefined) {
+    return {
+      simpleField: {
+        instruction: code.trim(),
+        ...(value ? { cachedValue: value } : {}),
+      },
+    };
+  }
+  if (type) {
+    return {
+      simpleField: {
+        instruction: type,
+        ...(value ? { cachedValue: value } : {}),
+      },
+    };
+  }
   throw unknownOdtElement(element);
 }
 
@@ -1733,6 +2283,9 @@ export function chapterField(value: ReturnType<typeof parseChapter>): {
 export function expressionField(value: ReturnType<typeof parseExpression>): {
   simpleField: CanonicalSimpleField;
 } {
+  if (value.formula?.startsWith("OOXML ")) {
+    return { simpleField: { instruction: value.formula.slice("OOXML ".length) } };
+  }
   return {
     simpleField: {
       instruction: `= ${value.formula ?? ""}`.trim(),
@@ -1754,6 +2307,25 @@ export function hiddenTextField(value: ReturnType<typeof parseHiddenText>): {
         "\\$1",
       )}" ""`,
       cachedValue: value.hidden ? undefined : value.content,
+    },
+  };
+}
+
+export function conditionalTextField(value: {
+  condition: string;
+  trueValue: string;
+  falseValue: string;
+  currentValue?: string;
+}): { simpleField: CanonicalSimpleField } {
+  return {
+    simpleField: {
+      instruction: [
+        "IF",
+        encodeFieldArgument(value.condition),
+        `"${value.trueValue.replace(/([\\"])/g, "\\$1")}"`,
+        `"${value.falseValue.replace(/([\\"])/g, "\\$1")}"`,
+      ].join(" "),
+      cachedValue: value.currentValue,
     },
   };
 }
@@ -1879,7 +2451,7 @@ export function parseUserFieldDeclarations(element: Element, context: ParseConte
       "office:time-value",
     ]);
     const name = attributeString(declaration, "text:name");
-    if (!name) throw unknownOdtElement(declaration);
+    if (name === undefined) throw unknownOdtElement(declaration);
     context.documentVariables.push({
       name,
       val:
@@ -1939,9 +2511,13 @@ export function parseTrackedChanges(element: Element, context: ParseContext): vo
       if (kinds.has(kind)) throw unknownOdtElement(region);
       kinds.add(kind);
       const info = childNamed(change, "office:change-info");
-      const author = info ? textOf(childNamed(info, "dc:creator")) : "";
-      const date = info ? textOf(childNamed(info, "dc:date")) : "";
-      if (!author || !date) throw unknownOdtElement(change);
+      const author = info
+        ? textOf(childNamed(info, "dc:creator")) || attributeString(info, "office:chg-author") || ""
+        : "";
+      const date = info
+        ? textOf(childNamed(info, "dc:date")) || attributeString(info, "office:chg-date-time") || ""
+        : "";
+      if (!date) throw unknownOdtElement(change);
       const content =
         kind === "deletion"
           ? (change.elements ?? []).filter((child) => child.name !== "office:change-info")
@@ -1951,11 +2527,7 @@ export function parseTrackedChanges(element: Element, context: ParseContext): vo
       );
       if (metadata.length !== 1 || (kind !== "deletion" && content.length !== 0))
         throw unknownOdtElement(change);
-      const deletedParagraphs = content.flatMap((child) =>
-        child.name === "text:p"
-          ? [child]
-          : childrenNamed(child, "text:p").flatMap((listItem) => childrenNamed(listItem, "text:p")),
-      );
+      const deletedParagraphs = content.flatMap((child) => collectDeletedParagraphElements(child));
       const parsed: ParsedTrackChange = {
         id: nextTrackChangeId(context),
         author,

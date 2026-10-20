@@ -37,6 +37,7 @@ import type { PackageMemberOptions } from "@office-open/odf";
 import type { DxfOptions, WorkbookOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
+import { dataMappingsXml, parseDataMappings } from "./data-mappings";
 import { parseWorksheetCharts } from "./drawing-chart";
 import { OdsParseError } from "./error";
 import { base64ToBytes, bytesToBase64, imageMediaType } from "./image-data";
@@ -66,6 +67,7 @@ import { worksheet, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.spreadsheet-template";
+const LEGACY_MIME = "application/vnd.sun.xml.calc";
 
 export const NAMESPACES = [
   'xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0"',
@@ -88,7 +90,8 @@ export const NAMESPACES = [
 ].join(" ");
 
 function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
-  const { packageManifest, packageMembers, styleResources } = options;
+  const { packageManifest, packageMembers, styleResources, packageMediaType } = options;
+  const mimeType = packageMediaType ?? MIME;
   const styles: string[] = styleResourcesXml(styleResources);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
@@ -113,7 +116,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
     ),
   );
   const files: OdfPackageFiles = {
-    "content.xml": contentXml(sheets.join(""), styles, options),
+    "content.xml": contentXml(sheets, styles, options),
     "styles.xml": stylesXml(),
     "meta.xml": metaXml(options),
   };
@@ -142,7 +145,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
     }
   }
   return generateOcf(
-    MIME,
+    mimeType,
     files,
     Object.fromEntries([
       ...chartFrames.map((entry) => [`${entry.name}/`, CHART_MIME]),
@@ -218,9 +221,14 @@ export function parseWorkbookSync(data: DataType): OdsWorkbookOptions {
   } catch (cause) {
     if (cause instanceof OdsParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
-      throw new OdsParseError(cause.message, cause.part, cause.path, cause.name, cause.reason, {
-        cause,
-      });
+      throw new OdsParseError(
+        cause.message,
+        cause.part,
+        cause.path,
+        cause.elementName,
+        cause.reason,
+        { cause },
+      );
     }
     throw new OdsParseError(
       cause instanceof Error ? cause.message : "Unable to parse ODS package",
@@ -234,7 +242,11 @@ export function parseWorkbookSync(data: DataType): OdsWorkbookOptions {
 }
 
 function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
-  const { files, binaries, manifest } = readOcfSync(data, [MIME, TEMPLATE_MIME]);
+  const { files, binaries, manifest, mimeType } = readOcfSync(data, [
+    MIME,
+    TEMPLATE_MIME,
+    LEGACY_MIME,
+  ]);
   const content = readXml(files, "content.xml");
   const stylesDocument =
     files["styles.xml"] === undefined ? undefined : readXml(files, "styles.xml");
@@ -249,6 +261,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   const embeddedCharts = [...parseWorksheetCharts(body, chartPool)];
   const definedNames = parseDefinedNames(body) ?? [];
   const contentValidations = parseContentValidations(body);
+  const dataMappings = parseDataMappings(body);
   const commonCellStyles = parseCommonCellStyles(stylesDocument);
   const graphicStyles = parseWorksheetGraphicStyles(automaticStyles, stylesDocument);
   const dxfs: DxfOptions[] = [];
@@ -295,15 +308,16 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
             }
             const binary = binaries[graphic.href];
             if (binary) usedBinaryPaths.add(graphic.href);
-            graphic.data = binary ? bytesToBase64(binary) : "";
-            if (!graphic.data)
+            graphic.data = binary ? bytesToBase64(binary) : undefined;
+            if (!graphic.data) {
               throw new OdsParseError(
-                `content.xml: ${graphic.href}: package image is missing`,
+                `content.xml: ${graphic.href}: image data is missing`,
                 "content.xml",
-                "/draw:frame/draw:image/@xlink:href",
+                "/office:document-content/office:body/office:spreadsheet/table:table/table:table-row/table:table-cell/draw:frame/draw:image",
                 "draw:image",
-                "missing-package-part",
+                "missing-image-data",
               );
+            }
           } else {
             const chart = chartPool.get(graphic.href);
             if (chart) graphic.chart = chart;
@@ -312,7 +326,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
       }
     }
   }
-  rejectUnknownSpreadsheetChildren(body);
+  rejectUnknownSpreadsheetChildren(body, dataMappings.length > 0);
   validateEmbeddedObjectBodies(body, files, binaries, chartPool);
   const result: WorkbookOptions = {
     ...parseMeta(files),
@@ -332,6 +346,8 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   );
   return {
     ...result,
+    ...(dataMappings.length ? { dataMappings } : {}),
+    ...(mimeType && mimeType !== MIME ? { packageMediaType: mimeType } : {}),
     ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(styleResources.length > 0 ? { styleResources } : {}),
@@ -388,18 +404,42 @@ function sourcePackageMembers(
     .map(({ path, data }) => ({ path, mediaType: mediaTypes.get(path), data }));
 }
 
-export function contentXml(sheets: string, styles: string[], options: OdsWorkbookOptions): string {
+export function contentXml(
+  sheets: readonly string[],
+  styles: readonly string[],
+  options: OdsWorkbookOptions,
+): Uint8Array {
   const workbookDefinedNames = (options.definedNames ?? []).filter(
     (definedName) => definedName.localSheetId === undefined,
   );
   const declarations = contentValidationsXml(options.worksheets ?? []);
   const prelude = `${declarations}${semanticsXml(options.calculation)}`;
-  const epilogue = `${definedNamesXml(workbookDefinedNames)}${databaseRangesXml(
+  const epilogue = `${definedNamesXml(workbookDefinedNames)}${dataMappingsXml(
+    options.dataMappings ?? [],
+  )}${databaseRangesXml(
     options.worksheets ?? [],
   )}${dataPilotTablesXml(options.worksheets ?? [])}${consolidationXml(options.worksheets ?? [])}`;
-  return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
-    "",
-  )}</office:automatic-styles><office:body><office:spreadsheet>${prelude}${sheets}${epilogue}</office:spreadsheet></office:body></office:document-content>`;
+  const encoder = new TextEncoder();
+  const chunks: Uint8Array[] = [];
+  const write = (value: string): void => {
+    chunks.push(encoder.encode(value));
+  };
+  write(
+    `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>`,
+  );
+  for (const style of styles) write(style);
+  write("</office:automatic-styles><office:body><office:spreadsheet>");
+  write(prelude);
+  for (const sheet of sheets) write(sheet);
+  write(epilogue);
+  write("</office:spreadsheet></office:body></office:document-content>");
+  const result = new Uint8Array(chunks.reduce((length, chunk) => length + chunk.length, 0));
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return result;
 }
 
 export function parseOdsSemantics(body: Element | undefined): WorkbookOptions["calculation"] {
@@ -581,7 +621,10 @@ export function stylesXml(): string {
   return `<?xml version="1.0" encoding="UTF-8"?><office:document-styles ${NAMESPACES} office:version="1.3"><office:styles/></office:document-styles>`;
 }
 
-export function rejectUnknownSpreadsheetChildren(body: Element | undefined): void {
+export function rejectUnknownSpreadsheetChildren(
+  body: Element | undefined,
+  hasDataMappings = false,
+): void {
   const allowed = new Set([
     "table:table",
     "table:calculation-settings",
@@ -593,6 +636,7 @@ export function rejectUnknownSpreadsheetChildren(body: Element | undefined): voi
     "table:consolidation",
     "table:label-ranges",
     "table:tracked-changes",
+    ...(hasDataMappings ? ["calcext:data-mappings"] : []),
     "draw:frame",
   ]);
   for (const child of body?.elements ?? []) {

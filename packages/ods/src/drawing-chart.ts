@@ -86,6 +86,8 @@ export function cellGraphicXml(graphic: NonNullable<CellOptions["graphics"]>[num
     "svg:height": emuToLength(graphic.height),
     "draw:z-index": graphic.zIndex,
     "table:end-cell-address": graphic.endCellAddress,
+    "draw:transform": graphic.transform,
+    "drawooo:display": graphic.display,
     ...(graphic.endX !== undefined ? { "table:end-x": emuToLength(graphic.endX) } : {}),
     ...(graphic.endY !== undefined ? { "table:end-y": emuToLength(graphic.endY) } : {}),
     "draw:id": graphic.id,
@@ -109,6 +111,7 @@ export function cellGraphicXml(graphic: NonNullable<CellOptions["graphics"]>[num
           }),
         ]),
     xmlElement(graphic.type === "image" ? "draw:image" : "draw:object", link),
+    ...(graphic.title ? [xmlElement("svg:title", undefined, [escapeText(graphic.title)])] : []),
     ...(graphic.description
       ? [xmlElement("svg:desc", undefined, [escapeText(graphic.description)])]
       : []),

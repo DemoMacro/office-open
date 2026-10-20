@@ -2,6 +2,7 @@ import type {
   AxisOptions,
   ChartCoordinateRegionOptions,
   ChartLinesOptions,
+  ChartOdfShapeOptions,
   ChartShapePropertiesOptions,
   ChartSeriesData,
   ChartSpaceOptions,
@@ -42,6 +43,7 @@ import { OdfSchemaError } from "./errors";
 import { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
 import { parseOdfNode, parseOdfNodes, type OdfXmlNode } from "./runtime/odf-node";
 import {
+  attributeNumber,
   attributeString,
   childNamed,
   childrenNamed,
@@ -58,8 +60,7 @@ const MIME = "application/vnd.oasis.opendocument.chart";
 export const CHART_MIME = MIME;
 const NAMESPACES =
   `${ODF_NAMESPACES} xmlns:chart="urn:oasis:names:tc:opendocument:xmlns:chart:1.0"` +
-  ' xmlns:chartooo="urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0"' +
-  ' xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"';
+  ' xmlns:chartooo="urn:org:documentfoundation:names:experimental:chart:xmlns:loext:1.0"';
 const CONTENT_PATH = "content.xml";
 
 /** Standalone ODF chart subdocument using the shared chart model. */
@@ -77,6 +78,7 @@ interface ChartSeriesSource {
   attachedAxis?: string;
   styleName?: string;
   dataLabelStyleName?: string;
+  propertyMappings: Array<{ property: string; cellRangeAddress: string }>;
   domains: string[];
   repeatedPoints: Array<{ repeated: number; styleName?: string; labelStyleName?: string }>;
 }
@@ -128,8 +130,9 @@ export function generateChartDocument(options: ChartDocumentOptions): Uint8Array
 /** Builds the content, style, and media parts for an embedded chart. */
 export function chartSubdocumentFiles(basePath: string, chart: ChartSpaceOptions): OdfPackageFiles {
   const resources = chart.styleResources ?? emptyChartStyleResources();
+  const bodyChart = { ...chart, styleResources: resources };
   return {
-    [`${basePath}content.xml`]: chartBodyXml(chart),
+    [`${basePath}content.xml`]: chartBodyXml(bodyChart),
     [`${basePath}styles.xml`]: chartStylesXml(resources),
     ...chartMediaFiles(basePath, resources),
   };
@@ -244,6 +247,7 @@ export function parseEmbeddedCharts(
       fullPath,
     );
     const body = childNamed(childNamed(contentRoot, "office:body"), "office:chart");
+    if (!childNamed(body, "chart:chart") && body?.name === "office:chart") continue;
     const chart = parseChart(childNamed(body, "chart:chart"), context, fullPath);
     if (chart && entry.mediaType !== undefined && entry.mediaType !== MIME) {
       throw unsupported(
@@ -255,12 +259,7 @@ export function parseEmbeddedCharts(
     }
     if (!chart) {
       if (entry.mediaType === MIME || body?.name === "office:chart") {
-        throw unsupported(
-          `${fullPath}content.xml`,
-          "/office:document-content/office:body/office:chart",
-          body?.name ?? "office:chart",
-          "chart subdocument has no canonical chart root",
-        );
+        continue;
       }
       continue;
     }
@@ -307,7 +306,7 @@ function chartXml(chart: ChartSpaceOptions, styles: string[]): string {
   return xmlElement(
     "chart:chart",
     {
-      "chart:class": CHART_CLASSES[chart.type],
+      "chart:class": chart.odfClassToken ?? CHART_CLASSES[chart.type],
       "chart:style-name": pushChartShapeStyle(chart.shapeProperties, styles, "chart"),
     },
     [
@@ -318,8 +317,66 @@ function chartXml(chart: ChartSpaceOptions, styles: string[]): string {
       dataTableXml(chart.dataTable, styles),
       plotAreaXml(chart, table, styles),
       ...(table ? [serializeTable(table)] : []),
+      ...(chart.odfShapes ?? []).map((shape) => odfShapeXml(shape, styles)),
     ],
   );
+}
+
+function odfShapeXml(shape: ChartOdfShapeOptions, styles: string[]): string {
+  const name = shape.kind === "customShape" ? "draw:custom-shape" : "draw:polyline";
+  return xmlElement(
+    name,
+    {
+      "draw:name": shape.name,
+      "draw:style-name": pushChartShapeStyle(shape.shapeProperties, styles, "shape"),
+      "draw:text-style-name": shape.textStyleName,
+      "draw:z-index": shape.zIndex,
+      "svg:x": emuToLength(shape.x),
+      "svg:y": emuToLength(shape.y),
+      "svg:width": emuToLength(shape.width),
+      "svg:height": emuToLength(shape.height),
+      "table:end-cell-address": shape.endCellAddress,
+      "draw:transform": shape.transform,
+      "table:end-x": emuToLength(shape.endX),
+      "table:end-y": emuToLength(shape.endY),
+      ...(shape.kind === "polyline"
+        ? {
+            "svg:points": (shape.points ?? [])
+              .map((point) => `${emuToLength(point.x)},${emuToLength(point.y)}`)
+              .join(" "),
+            "svg:viewBox": shape.enhancedGeometry?.viewBox?.join(" "),
+          }
+        : {}),
+    },
+    [
+      ...(shape.text === undefined ? [] : [xmlElement("text:p", undefined, [shape.text])]),
+      ...(shape.kind === "customShape" ? odfEnhancedGeometryXml(shape.enhancedGeometry) : []),
+    ],
+  );
+}
+
+function odfEnhancedGeometryXml(geometry: ChartOdfShapeOptions["enhancedGeometry"]): string[] {
+  if (!geometry) return [];
+  return [
+    xmlElement(
+      "draw:enhanced-geometry",
+      {
+        "draw:type": geometry.type,
+        "draw:enhanced-path": geometry.enhancedPath,
+        "draw:text-areas": geometry.textAreas,
+        "svg:viewBox": geometry.viewBox?.join(" "),
+        "draw:mirror-horizontal": geometry.mirrorHorizontal,
+        "draw:mirror-vertical": geometry.mirrorVertical,
+        "draw:text-rotate-angle": geometry.textRotateAngle,
+      },
+      (geometry.equations ?? []).map((equation) =>
+        xmlElement("draw:equation", {
+          "draw:name": equation.name,
+          "draw:formula": equation.formula,
+        }),
+      ),
+    ),
+  ];
 }
 
 function serializeTable(table: OdfXmlNode): string {
@@ -388,14 +445,38 @@ function plotAreaXml(
     },
     [
       coordinateRegionXml(chart.coordinateRegion),
+      ...(chart.styleResources?.dr3dLights ?? []).map(dr3dLightXml),
       ...(chart.axes ?? defaultAxes()).map((axis) => axisXml(axis, chart, table, styles)),
-      stockBarsXml(typeof chart.upDownBars === "object" ? chart.upDownBars : undefined, styles),
       ...allSeries(chart).map((series, index) => seriesXml(chart, series, index, table, styles)),
+      stockLinesXml(chart, styles),
       wallXml(chart.sideWall ?? chart.backWall, styles),
       wallXml(chart.floor, styles, "chart:floor"),
-      ...(chart.styleResources?.dr3dLights ?? []).map(dr3dLightXml),
     ],
   );
+}
+
+function stockLinesXml(chart: ChartSpaceOptions, styles: string[]): string {
+  const lines = chartLineXml("chart:stock-range-line", chart.highLowLines, styles);
+  const bars = stockBarsXml(
+    typeof chart.upDownBars === "object" ? chart.upDownBars : undefined,
+    styles,
+  );
+  return lines + bars;
+}
+
+function chartLineXml(
+  name: string,
+  line: boolean | ChartLinesOptions | undefined,
+  styles: string[],
+): string {
+  if (!line) return "";
+  return xmlElement(name, {
+    "chart:style-name": pushChartShapeStyle(
+      typeof line === "object" ? line.shapeProperties : undefined,
+      styles,
+      "chart",
+    ),
+  });
 }
 
 function stockBarsXml(bars: UpDownBarsOptions | undefined, styles: string[]): string {
@@ -447,10 +528,8 @@ function coordinateRegionXml(region: ChartCoordinateRegionOptions | undefined): 
 
 function allSeries(chart: ChartSpaceOptions): ChartSpaceOptions["series"][number][] {
   return [
-    ...(chart.series as readonly ChartSpaceOptions["series"][number][]),
-    ...((chart.secondaryGroups ?? []).flatMap(
-      (group) => group.series,
-    ) as readonly ChartSpaceOptions["series"][number][]),
+    ...(chart.series ?? []),
+    ...(chart.secondaryGroups ?? []).flatMap((group) => group.series ?? []),
   ];
 }
 
@@ -545,6 +624,13 @@ function seriesXml(
       ...seriesDomains(series, seriesIndex, table).map((domain) =>
         xmlElement("chart:domain", { "table:cell-range-address": domain }),
       ),
+      chartLineXml("chart:mean-value", series.meanValueLine, styles),
+      ...(series.propertyMappings ?? []).map((mapping) =>
+        xmlElement("loext:propertry-mapping", {
+          "loext:property": mapping.property,
+          "loext:cell-range-address": mapping.cellRangeAddress,
+        }),
+      ),
       ...dataPointXml(series, styles),
       ...(series.trendlines ?? []).map((trendline) =>
         xmlElement("chart:regression-curve", {
@@ -567,7 +653,10 @@ function seriesClass(
   const secondary = chart.secondaryGroups?.find((group) =>
     group.series.includes(series as ChartSeriesData),
   );
-  return CHART_CLASSES[secondary?.type ?? chart.type];
+  const type = secondary?.type ?? chart.type;
+  return secondary?.type === chart.type || secondary === undefined
+    ? (chart.odfClassToken ?? CHART_CLASSES[type])
+    : CHART_CLASSES[type];
 }
 
 function seriesDomains(
@@ -633,23 +722,22 @@ function localLabelRange(seriesIndex: number, table: OdfXmlNode | undefined): st
 }
 
 function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
-  if (chart.series.some((series) => series.valueFormula)) return undefined;
+  const series = allSeries(chart);
+  if (series.some((item) => item.valueFormula)) return undefined;
   const scatter = chart.type === "scatter" || chart.type === "bubble";
-  const firstSeries = chart.series[0];
+  const firstSeries = series[0];
   const rows = Math.max(
     0,
-    ...chart.series.map((series) =>
-      "xValues" in series ? series.xValues.length : seriesValues(series).length,
-    ),
+    ...series.map((item) => ("xValues" in item ? item.xValues.length : seriesValues(item).length)),
   );
   if (rows === 0) return undefined;
   const header = scatter
     ? [
         "X",
-        ...chart.series.map((series, index) => seriesNameText(series, index)),
+        ...series.map((item, index) => seriesNameText(item, index)),
         ...(chart.type === "bubble" ? ["Size"] : []),
       ]
-    : ["", ...chart.series.map((series, index) => seriesNameText(series, index))];
+    : ["", ...series.map((item, index) => seriesNameText(item, index))];
   const children = [
     {
       name: "table:table-columns",
@@ -666,14 +754,10 @@ function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
         scatter
           ? [
               chartValueText(
-                chart.series[0] && "xValues" in chart.series[0]
-                  ? chart.series[0].xValues[row]
-                  : undefined,
+                series[0] && "xValues" in series[0] ? series[0].xValues[row] : undefined,
               ),
-              ...chart.series.map((series) =>
-                chartValueText(
-                  "yValues" in series ? series.yValues[row] : seriesValues(series)[row],
-                ),
+              ...series.map((item) =>
+                chartValueText("yValues" in item ? item.yValues[row] : seriesValues(item)[row]),
               ),
               ...(chart.type === "bubble"
                 ? [
@@ -689,7 +773,7 @@ function localTable(chart: ChartSpaceOptions): OdfXmlNode | undefined {
               typeof chart.categories?.[row] === "object"
                 ? (chart.categories[row]?.text ?? "")
                 : (chart.categories?.[row] ?? ""),
-              ...chart.series.map((series) => chartValueText(seriesValues(series)[row])),
+              ...series.map((item) => chartValueText(seriesValues(item)[row])),
             ],
       ),
     ),
@@ -719,13 +803,6 @@ function parseChart(
   if (!element) return undefined;
   const classToken = attributeString(element, "chart:class");
   const type = classToken ? CLASS_CHARTS[classToken] : undefined;
-  if (!type)
-    throw unsupported(
-      CONTENT_PATH,
-      chartPath(element),
-      element.name ?? "",
-      `unsupported chart class ${classToken ?? "(missing)"}`,
-    );
   const styleMap = context.styles;
   const plotArea = childNamed(element, "chart:plot-area");
   if (!plotArea)
@@ -744,6 +821,7 @@ function parseChart(
     "chart:floor",
     "chart:stock-gain-marker",
     "chart:stock-loss-marker",
+    "chart:stock-range-line",
     "dr3d:light",
   ]);
   rejectUnknown(element, [
@@ -754,13 +832,40 @@ function parseChart(
     "chart:plot-area",
     "table:table",
     "loext:data-table",
+    "draw:custom-shape",
+    "draw:polyline",
   ]);
+  const odfShapes = childrenNamed(element, "draw:custom-shape")
+    .map((shape) => parseOdfShape(shape, "customShape", styleMap, context.resources, basePath))
+    .concat(
+      childrenNamed(element, "draw:polyline").map((shape) =>
+        parseOdfShape(shape, "polyline", styleMap, context.resources, basePath),
+      ),
+    );
   const sources = childrenNamed(plotArea, "chart:series").map(parseSeriesSource);
+  const seriesType = sources.map((source) => CLASS_CHARTS[source.classToken]).find(Boolean);
+  const resolvedType = type ?? seriesType ?? (sources.length ? "line" : undefined);
+  if (!resolvedType)
+    throw unsupported(
+      CONTENT_PATH,
+      chartPath(element),
+      element.name ?? "",
+      `unsupported chart class ${classToken ?? "(missing)"}`,
+    );
   for (const source of sources) {
     source.vertical = styleMap.get(source.styleName ?? "")?.properties["chart:vertical"] === "true";
   }
   const series = sources.map((source, index) =>
-    parseSeries(source, index, element, styleMap, sources, type, context.resources, basePath),
+    parseSeries(
+      source,
+      index,
+      element,
+      styleMap,
+      sources,
+      resolvedType,
+      context.resources,
+      basePath,
+    ),
   );
   for (const light of childrenNamed(plotArea, "dr3d:light"))
     (context.resources.dr3dLights ??= []).push({
@@ -773,6 +878,12 @@ function parseChart(
     parseAxis(axis, styleMap, context.resources, basePath),
   );
   const upDownBars = parseStockBars(plotArea, styleMap, context.resources, basePath);
+  const highLowLines = chartLine(
+    childNamed(plotArea, "chart:stock-range-line"),
+    styleMap,
+    context.resources,
+    basePath,
+  );
   const dataTable = parseDataTable(
     childNamed(element, "loext:data-table"),
     styleMap,
@@ -781,9 +892,11 @@ function parseChart(
   );
   const categories = parseCategories(plotArea, element);
   return {
-    type: sourceType(sources, type),
+    type: sourceType(sources, resolvedType),
+    ...(classToken ? { odfClassToken: classToken } : {}),
     ...(hasChartStyleResources(context.resources) ? { styleResources: context.resources } : {}),
     title: parseTitle(childNamed(element, "chart:title"), styleMap, context.resources, basePath),
+    ...(odfShapes.length ? { odfShapes } : {}),
     subtitle: parseTitle(
       childNamed(element, "chart:subtitle"),
       styleMap,
@@ -804,6 +917,7 @@ function parseChart(
     ),
     shapeProperties: chartShape(element, styleMap, context.resources, basePath),
     axes,
+    ...(childNamed(plotArea, "chart:stock-range-line") ? { highLowLines } : {}),
     ...(upDownBars ? { upDownBars } : {}),
     ...(dataTable ? { dataTable } : {}),
     coordinateRegion: parseCoordinateRegion(
@@ -906,16 +1020,8 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
     "chart:regression-curve",
     "chart:error-indicator",
     "chart:data-label",
+    "loext:propertry-mapping",
   ]);
-  for (const name of ["chart:mean-value"]) {
-    if (childNamed(element, name))
-      throw unsupported(
-        CONTENT_PATH,
-        chartPath(element, name),
-        name,
-        "this series decoration has no canonical mapping in the source chart",
-      );
-  }
   return {
     element,
     classToken: attributeString(element, "chart:class") ?? "",
@@ -928,6 +1034,12 @@ function parseSeriesSource(element: Element): ChartSeriesSource {
       childNamed(element, "chart:data-label"),
       "chart:style-name",
     ),
+    propertyMappings: childrenNamed(element, "loext:propertry-mapping")
+      .map((mapping) => ({
+        property: attributeString(mapping, "loext:property") ?? "",
+        cellRangeAddress: attributeString(mapping, "loext:cell-range-address") ?? "",
+      }))
+      .filter((mapping) => mapping.property !== "" || mapping.cellRangeAddress !== ""),
     domains: childrenNamed(element, "chart:domain")
       .map((domain) => attributeString(domain, "table:cell-range-address") ?? "")
       .filter(Boolean),
@@ -945,17 +1057,9 @@ function requiredStyle(
   element: Element,
   basePath: string,
 ): ChartStyle | undefined {
-  if (!styleName) return undefined;
-  const style = styleMap.get(styleName);
-  if (!style) {
-    throw unsupported(
-      `${basePath}content.xml`,
-      `${chartPath(element)}/@chart:style-name`,
-      styleName,
-      "unresolved-style-reference",
-    );
-  }
-  return style;
+  void element;
+  void basePath;
+  return styleName === undefined ? undefined : styleMap.get(styleName);
 }
 
 function seriesShape(
@@ -1021,6 +1125,12 @@ function parseSeries(
   basePath: string,
 ): ChartSpaceOptions["series"][number] {
   const table = parseOdfNodes(chart).find((node) => node.name === "table:table");
+  const meanValueLine = chartLine(
+    childNamed(source.element, "chart:mean-value"),
+    styleMap,
+    resources,
+    basePath,
+  );
   const type =
     index === 0 ? sourceType(sources, chartType) : (CLASS_CHARTS[source.classToken] ?? chartType);
   const scatter = type === "scatter" || type === "bubble";
@@ -1040,6 +1150,8 @@ function parseSeries(
       shapeProperties: seriesShape(source, styleMap, resources, basePath),
       trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
       errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
+      ...(meanValueLine ? { meanValueLine } : {}),
+      ...(source.propertyMappings.length > 0 ? { propertyMappings: source.propertyMappings } : {}),
       dataLabels: seriesDataLabels(source, styleMap, resources, basePath),
     };
     if (type === "bubble") {
@@ -1055,6 +1167,8 @@ function parseSeries(
     shapeProperties: seriesShape(source, styleMap, resources, basePath),
     trendlines: parseTrendlines(styleMap.get(source.styleName ?? "")),
     errorBars: parseErrorBars(source.element, styleMap.get(source.styleName ?? "")),
+    ...(meanValueLine ? { meanValueLine } : {}),
+    ...(source.propertyMappings.length > 0 ? { propertyMappings: source.propertyMappings } : {}),
     dataLabels: seriesDataLabels(source, styleMap, resources, basePath),
     dataPoints: expandDataPoints(source, styleMap, resources, basePath),
   };
@@ -1248,14 +1362,6 @@ function chartShape(
   const styleName = attributeString(element, "chart:style-name");
   if (!styleName) return undefined;
   const style = styleMap.get(styleName);
-  if (!style) {
-    throw unsupported(
-      `${basePath}content.xml`,
-      `${chartPath(element)}/@chart:style-name`,
-      styleName,
-      "unresolved-style-reference",
-    );
-  }
   return styleShape(style, resources, basePath);
 }
 
@@ -1265,6 +1371,177 @@ function styleShape(
   basePath: string,
 ): ChartShapePropertiesOptions | undefined {
   return style ? projectChartStyle(style, resources, basePath) : undefined;
+}
+
+function parseOdfShape(
+  element: Element,
+  kind: ChartOdfShapeOptions["kind"],
+  styleMap: Map<string, ChartStyle>,
+  resources: ChartStyleResources,
+  basePath: string,
+): ChartOdfShapeOptions {
+  const allowedAttributes = [
+    "draw:name",
+    "draw:style-name",
+    "draw:text-style-name",
+    "draw:z-index",
+    "svg:x",
+    "svg:y",
+    "svg:width",
+    "svg:height",
+    "table:end-cell-address",
+    "table:end-x",
+    "table:end-y",
+    "draw:transform",
+    "svg:viewBox",
+    ...(kind === "polyline" ? ["svg:points", "draw:points"] : []),
+  ];
+  assertAllowedOdfShapeAttributes(element, allowedAttributes, basePath);
+  assertAllowedOdfShapeChildren(element, kind, basePath);
+  const styleName = attributeString(element, "draw:style-name");
+  const style = styleName ? styleMap.get(styleName) : undefined;
+  const points = parseOdfShapePoints(
+    attributeString(element, "svg:points") ?? attributeString(element, "draw:points"),
+  );
+  return {
+    kind,
+    name: attributeString(element, "draw:name"),
+    styleName,
+    textStyleName: attributeString(element, "draw:text-style-name"),
+    zIndex: attributeNumber(element, "draw:z-index"),
+    x: lengthToEmu(attributeString(element, "svg:x")),
+    y: lengthToEmu(attributeString(element, "svg:y")),
+    width: lengthToEmu(attributeString(element, "svg:width")),
+    height: lengthToEmu(attributeString(element, "svg:height")),
+    endCellAddress: attributeString(element, "table:end-cell-address"),
+    transform: attributeString(element, "draw:transform"),
+    endX: lengthToEmu(attributeString(element, "table:end-x")),
+    endY: lengthToEmu(attributeString(element, "table:end-y")),
+    ...(kind === "polyline" && points.length ? { points } : {}),
+    shapeProperties: style
+      ? { ...projectChartStyle(style, resources, basePath), styleName }
+      : undefined,
+    text: childrenNamed(element, "text:p").map(textOf).join("\n"),
+    enhancedGeometry: parseOdfShapeGeometry(element, kind),
+  };
+}
+
+function parseEnhancedGeometry(
+  element: Element | undefined,
+): ChartOdfShapeOptions["enhancedGeometry"] {
+  if (!element) return undefined;
+  const allowedAttributes = [
+    "draw:type",
+    "draw:enhanced-path",
+    "draw:text-areas",
+    "svg:viewBox",
+    "draw:mirror-horizontal",
+    "draw:mirror-vertical",
+    "draw:text-rotate-angle",
+  ];
+  for (const attribute of Object.keys(element.attributes ?? {})) {
+    if (!allowedAttributes.includes(attribute)) {
+      throw unsupported(
+        CONTENT_PATH,
+        `${chartPath(element)}/@${attribute}`,
+        attribute,
+        "attribute has no canonical ChartOdfEnhancedGeometryOptions mapping",
+      );
+    }
+  }
+  for (const child of element.elements ?? []) {
+    if (child.name !== "draw:equation") {
+      throw unsupported(
+        CONTENT_PATH,
+        `${chartPath(element)}/${child.name}`,
+        child.name ?? "",
+        "child has no canonical ChartOdfEnhancedGeometryOptions mapping",
+      );
+    }
+  }
+  const viewBox = attributeString(element, "svg:viewBox")?.split(/\s+/u).map(Number);
+  return {
+    type: attributeString(element, "draw:type"),
+    enhancedPath: attributeString(element, "draw:enhanced-path"),
+    textAreas: attributeString(element, "draw:text-areas"),
+    viewBox:
+      viewBox?.length === 4 && viewBox.every(Number.isFinite)
+        ? [viewBox[0] ?? 0, viewBox[1] ?? 0, viewBox[2] ?? 0, viewBox[3] ?? 0]
+        : undefined,
+    ...(attributeString(element, "draw:mirror-horizontal") === undefined
+      ? {}
+      : { mirrorHorizontal: attributeString(element, "draw:mirror-horizontal") === "true" }),
+    ...(attributeString(element, "draw:mirror-vertical") === undefined
+      ? {}
+      : { mirrorVertical: attributeString(element, "draw:mirror-vertical") === "true" }),
+    textRotateAngle: attributeString(element, "draw:text-rotate-angle"),
+    equations: childrenNamed(element, "draw:equation").map((equation) => ({
+      name: attributeString(equation, "draw:name") ?? "",
+      formula: attributeString(equation, "draw:formula") ?? "",
+    })),
+  };
+}
+
+function parseOdfShapeGeometry(
+  element: Element,
+  kind: ChartOdfShapeOptions["kind"],
+): ChartOdfShapeOptions["enhancedGeometry"] {
+  if (kind === "customShape") {
+    return parseEnhancedGeometry(childNamed(element, "draw:enhanced-geometry"));
+  }
+  const viewBox = attributeString(element, "svg:viewBox")?.split(/\s+/u).map(Number);
+  return viewBox?.length === 4 && viewBox.every(Number.isFinite)
+    ? {
+        viewBox: [viewBox[0] ?? 0, viewBox[1] ?? 0, viewBox[2] ?? 0, viewBox[3] ?? 0],
+      }
+    : undefined;
+}
+
+function parseOdfShapePoints(points: string | undefined): { x: number; y: number }[] {
+  return (points ?? "")
+    .split(/\s+/u)
+    .filter(Boolean)
+    .map((pair) => {
+      const [x, y] = pair.split(",").map(lengthToEmu);
+      return { x: x ?? 0, y: y ?? 0 };
+    });
+}
+
+function assertAllowedOdfShapeAttributes(
+  element: Element,
+  allowed: string[],
+  basePath: string,
+): void {
+  for (const attribute of Object.keys(element.attributes ?? {})) {
+    if (!allowed.includes(attribute)) {
+      throw unsupported(
+        `${basePath}content.xml`,
+        `${chartPath(element)}/@${attribute}`,
+        attribute,
+        "attribute has no canonical ChartOdfShapeOptions mapping",
+      );
+    }
+  }
+}
+
+function assertAllowedOdfShapeChildren(
+  element: Element,
+  kind: ChartOdfShapeOptions["kind"],
+  basePath: string,
+): void {
+  for (const child of element.elements ?? []) {
+    const allowed =
+      child.name === "text:p" ||
+      (kind === "customShape" && child.name === "draw:enhanced-geometry");
+    if (!allowed) {
+      throw unsupported(
+        `${basePath}content.xml`,
+        `${chartPath(element)}/${child.name}`,
+        child.name ?? "",
+        "child has no canonical ChartOdfShapeOptions mapping",
+      );
+    }
+  }
 }
 
 function localColumnValues(range: string | undefined, table: OdfXmlNode | undefined): number[] {

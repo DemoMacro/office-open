@@ -2064,4 +2064,22 @@ describe("chartSpaceDesc", () => {
       upDownBars: { gapWidth: 150, upBars: true, downBars: true },
     });
   });
+
+  it("wires partial axes when the chart type has no default axis slots", () => {
+    const xml = stringify(
+      chartSpaceDesc,
+      {
+        type: "pie",
+        series: [{ name: "Series", values: [1] }],
+        axes: [{ kind: "category" }, { kind: "value" }],
+      },
+      {} as WriteContext,
+    );
+    expect(xml).toContain(
+      '<c:catAx><c:axId val="10"/><c:scaling/><c:axPos val="b"/><c:crossAx val="20"/>',
+    );
+    expect(xml).toContain(
+      '<c:valAx><c:axId val="20"/><c:scaling/><c:axPos val="l"/><c:crossAx val="10"/>',
+    );
+  });
 });

@@ -147,6 +147,12 @@ export function parseDrawingShape(
       outline: graphicOutline(style),
     },
     ...(text ? { textBody: { text } } : {}),
+    ...(attributeString(element, "svg:title")
+      ? { title: attributeString(element, "svg:title") }
+      : {}),
+    ...(attributeString(element, "svg:desc")
+      ? { description: attributeString(element, "svg:desc") }
+      : {}),
   };
 }
 
@@ -192,6 +198,8 @@ export function cellShapeXml(
         elementName,
         {
           "draw:name": shape.name,
+          ...(shape.title === undefined ? {} : { "svg:title": shape.title }),
+          ...(shape.description === undefined ? {} : { "svg:desc": shape.description }),
           ...(shape.controlId === undefined ? {} : { "draw:control": shape.controlId }),
           "draw:style-name": styleName,
           "draw:z-index": shape.zOrder,
@@ -244,8 +252,12 @@ export function parseConsolidation(
     "table:source-cell-range-addresses",
     "table:target-cell-address",
     "table:use-labels",
+    "table:use-label",
     "table:link-to-source-data",
   ]);
+  const labels =
+    attributeString(consolidation, "table:use-labels") ??
+    attributeString(consolidation, "table:use-label");
   const target = parseSheetAddress(attributeString(consolidation, "table:target-cell-address"));
   const worksheet = worksheets.find((entry) => entry.name === target?.sheet) ?? worksheets[0];
   if (!worksheet) {
@@ -258,11 +270,11 @@ export function parseConsolidation(
   }
   worksheet.dataConsolidate = {
     function: consolidationFunction(attributeString(consolidation, "table:function")),
-    ...(attributeString(consolidation, "table:use-labels") === "row"
+    ...(labels === "row"
       ? { topLabels: true }
-      : attributeString(consolidation, "table:use-labels") === "column"
+      : labels === "column"
         ? { leftLabels: true }
-        : attributeString(consolidation, "table:use-labels") === "both"
+        : labels === "both"
           ? { topLabels: true, leftLabels: true }
           : {}),
     link: attributeString(consolidation, "table:link-to-source-data") === "true" || undefined,
@@ -832,15 +844,7 @@ export function parseConditionalFormats(
           "calcext:value",
         ]);
         const styleName = attributeString(condition, "calcext:apply-style-name") ?? "";
-        const style = styles.get(styleName);
-        if (!style) {
-          throw unknownOdsElement(
-            condition,
-            CONTENT_PATH,
-            styleName,
-            "conditional style is missing",
-          );
-        }
+        const style: StyleOptions = styles.get(styleName) ?? {};
         return {
           ...conditionalRule(attributeString(condition, "calcext:value") ?? ""),
           priority: result.length + rulesPrioritySeed(format),

@@ -208,9 +208,14 @@ export function parsePresentationSync(data: DataType): OdpPresentationOptions {
   } catch (cause) {
     if (cause instanceof OdpParseError) throw cause;
     if (cause instanceof OdfSchemaError) {
-      throw new OdpParseError(cause.message, cause.part, cause.path, cause.name, cause.reason, {
-        cause,
-      });
+      throw new OdpParseError(
+        cause.message,
+        cause.part,
+        cause.path,
+        cause.elementName,
+        cause.reason,
+        { cause },
+      );
     }
     throw new OdpParseError(
       cause instanceof Error ? cause.message : "Unable to parse ODP package",
@@ -424,17 +429,4 @@ export function formsXml(forms: OfficeFormsOptions | undefined): string {
 export function parseForms(page: Element): OfficeFormsOptions | undefined {
   const element = childNamed(page, "office:forms");
   return element === undefined ? undefined : parseOfficeForms(element);
-}
-
-export function unknownSlideChild(element: Element, parentPath: string): OdpParseError {
-  const name = element.name ?? "(unknown)";
-  const path = `${parentPath}/${name}`;
-  const reason = "element has no canonical PresentationOptions mapping";
-  return new OdpParseError(
-    `content.xml: ${path}: ${name}: ${reason}`,
-    "content.xml",
-    path,
-    name,
-    reason,
-  );
 }

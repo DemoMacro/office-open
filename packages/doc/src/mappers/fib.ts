@@ -18,7 +18,14 @@ export function parseFib(word: Uint8Array): Fib {
   }
   const flags = readUint16(word, 10, streamMessage);
   if ((flags & FLAG_ENCRYPTED) !== 0) {
-    throw new DocParseError("Encrypted Word documents are not supported");
+    throw new DocParseError("Encrypted Word documents are not supported", {
+      part: "stream",
+      path: "WordDocument",
+      recordName: "FIB",
+      offset: 10,
+      length: 2,
+      reason: "encrypted-unsupported",
+    });
   }
 
   const csw = readUint16(word, 32, streamMessage);

@@ -41,6 +41,8 @@ export interface TableOptions extends BaseTableOptions<
   width?: TableWidthProperties;
   /** Count of legacy empty w:tblCol children when a producer omitted w:gridCol. */
   legacyColumnCount?: number;
+  /** Source omitted `w:tblGrid`; round-trip only for tolerated legacy input. */
+  tableGridOmitted?: true;
   /** Source w:gridCol widths, including null for an omitted optional w:w; round-trip only. */
   columnWidthsRaw?: (number | PositiveUniversalMeasure | null)[];
   columnWidthsRevision?: TableGridChangeOptions;

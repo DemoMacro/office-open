@@ -8,7 +8,7 @@ import type {
 import { attributeNumber, attributeString, escapeText, textOf, xmlElement } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
-import { unknownSlideChild } from "./presentation";
+import { OdpGenerateError, unknownSlideChild } from "./error";
 import { addTextStyle } from "./styles";
 
 export interface TextProperties {
@@ -53,9 +53,25 @@ export function textProperties(run: TextRunOptions): TextProperties {
   };
 }
 
+const OOXML_FIELD_TYPES: Record<string, TextFieldOptions["type"]> = {
+  slidenum: "slidenum",
+  slidecount: "slidecount",
+  datetime: "datetime",
+  datetimeFigureOut: "datetime",
+  time: "time",
+};
+
+function odfFieldType(type: string): TextFieldOptions["type"] {
+  if (OOXML_FIELD_TYPES[type]) return OOXML_FIELD_TYPES[type]!;
+  if (type.startsWith("datetime")) return "datetime";
+  if (type.startsWith("time")) return "time";
+  return type as TextFieldOptions["type"];
+}
+
 function fieldXml(field: TextFieldOptions): string {
+  const type = odfFieldType(field.type);
   const fixed = field.fixed === undefined ? undefined : String(field.fixed);
-  switch (field.type) {
+  switch (type) {
     case "slidenum":
       return xmlElement(
         "text:page-number",
@@ -99,7 +115,13 @@ function fieldXml(field: TextFieldOptions): string {
         [escapeText(field.text ?? "")],
       );
     default:
-      throw unknownSlideChild({ name: field.type }, "/text:p/field");
+      throw new OdpGenerateError(
+        `Unsupported text field type: ${field.type}`,
+        "content.xml",
+        "/text:p/field",
+        field.type,
+        "unsupported-text-field",
+      );
   }
 }
 

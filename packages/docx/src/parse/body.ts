@@ -848,6 +848,8 @@ function isTocFieldHeadXml(xml: string): boolean {
 function fieldMemberToChild(member: ComplexFieldInstructionMember): ParagraphChild {
   if ("run" in member) return member.run;
   if ("simpleField" in member) return { simpleField: member.simpleField };
+  if ("footnoteReference" in member) return { footnoteReference: member.footnoteReference };
+  if ("endnoteReference" in member) return { endnoteReference: member.endnoteReference };
   if ("bookmarkStart" in member) return { bookmarkStart: member.bookmarkStart };
   if ("bookmarkEnd" in member) return { bookmarkEnd: member.bookmarkEnd };
   if ("proofErr" in member) return { proofErr: member.proofErr };

@@ -15,10 +15,11 @@ export class XlsxParseError extends Error {
   constructor(
     readonly part: string,
     readonly path: string,
-    readonly name: string,
+    readonly elementName: string,
     readonly reason: string,
   ) {
-    super(`${part}${path}: ${name}: ${reason}`);
+    super(`${part}${path}: ${elementName}: ${reason}`);
+    this.name = "XlsxParseError";
   }
 }
 

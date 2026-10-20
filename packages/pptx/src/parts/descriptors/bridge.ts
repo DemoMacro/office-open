@@ -8,12 +8,21 @@
  */
 
 import { extUriMatches } from "@office-open/core";
+import {
+  parseBlackWhiteMode,
+  parseNonVisualContentPartProperties,
+  parseNonVisualDrawingProperties,
+  stringifyNonVisualContentPartProperties,
+  stringifyNonVisualDrawingProperties,
+  transform2DDesc,
+} from "@office-open/core";
 import type { ReadContext } from "@office-open/core/descriptor";
 import { attr, findChild, findFirst, stringifyElement } from "@office-open/xml";
 import type { Element as XmlElement } from "@office-open/xml";
 import type { SlideChild as LegacySlideChild } from "@parts/slide/slide-child";
 
 import type { PptxWriteContext } from "../../context";
+import { PptxParseError } from "../../pptx-parse-error";
 import { chartDesc } from "./chart";
 import { groupShapeDesc } from "./group";
 import { connectorShapeDesc, lineShapeDesc } from "./line";
@@ -70,8 +79,50 @@ export function stringifyChild(child: LegacySlideChild, ctx: PptxWriteContext): 
   if ("contentPart" in child && child.contentPart) {
     // r:id must name an external relationship the caller owns — without one
     // there is nothing to reference, so the element is skipped
-    if (!child.contentPart.rId) return "";
-    return `<p:contentPart r:id="${child.contentPart.rId}"/>`;
+    const part = child.contentPart;
+    if (!part.rId) return "";
+    const extension =
+      part.blackWhiteMode === undefined && !part.nonVisualProperties && !part.transform
+        ? ""
+        : ' xmlns:p14="http://schemas.microsoft.com/office/powerpoint/2010/main"';
+    const nonVisual = part.nonVisualProperties
+      ? `<p14:nvContentPartPr>` +
+        stringifyNonVisualDrawingProperties(
+          "p14:cNvPr",
+          part.nonVisualProperties.drawingProperties.id,
+          part.nonVisualProperties.drawingProperties,
+          "ContentPart",
+        ) +
+        stringifyNonVisualContentPartProperties(
+          "p14:cNvContentPartPr",
+          part.nonVisualProperties.contentPartProperties,
+        ) +
+        (part.nonVisualProperties.properties?.extensions === undefined
+          ? "<p14:nvPr/>"
+          : `<p14:nvPr><a:extLst>${part.nonVisualProperties.properties.extensions}</a:extLst></p14:nvPr>`) +
+        `</p14:nvContentPartPr>`
+      : "";
+    const transformXml = part.transform
+      ? (transform2DDesc.stringify(part.transform, ctx) ?? "")
+          .replace("<a:xfrm", "<p14:xfrm")
+          .replace("</a:xfrm>", "</p14:xfrm>")
+      : "";
+    const blackWhite =
+      part.blackWhiteMode === undefined ? "" : ` p14:bwMode="${part.blackWhiteMode}"`;
+    return `<p:contentPart${blackWhite}${extension} r:id="${part.rId}">${nonVisual}${transformXml}</p:contentPart>`;
+  }
+  if ("alternateContent" in child && child.alternateContent) {
+    const choices = child.alternateContent.choices.map(
+      ({ requires, child: branch }) =>
+        `<mc:Choice Requires="${requires}">${stringifyChild(branch, ctx) ?? ""}</mc:Choice>`,
+    );
+    const fallback =
+      child.alternateContent.fallback === undefined
+        ? []
+        : [
+            `<mc:Fallback>${stringifyChild(child.alternateContent.fallback, ctx) ?? ""}</mc:Fallback>`,
+          ];
+    return `<mc:AlternateContent>${choices.join("")}${fallback.join("")}</mc:AlternateContent>`;
   }
   if ("rawXml" in child && child.rawXml) {
     return child.rawXml;
@@ -118,13 +169,88 @@ export function parseChild(el: XmlElement, ctx: ReadContext): LegacySlideChild |
       return { group: groupShapeDesc.parse(el, ctx) } as LegacySlideChild;
     case "p:contentPart": {
       const rId = attr(el, "r:id");
-      return rId ? ({ contentPart: { rId } } as LegacySlideChild) : undefined;
+      if (!rId) return undefined;
+      const bwModeKey = Object.keys(el.attributes ?? {}).find(
+        (name) => name === "bwMode" || name.endsWith(":bwMode"),
+      );
+      const nonVisual = findChild(el, "p14:nvContentPartPr");
+      const drawingPropertiesElement = nonVisual ? findChild(nonVisual, "p14:cNvPr") : undefined;
+      if (nonVisual && !drawingPropertiesElement)
+        throw new Error("p14:nvContentPartPr requires p14:cNvPr");
+      const contentPartProperties = nonVisual
+        ? parseNonVisualContentPartProperties(findChild(nonVisual, "p14:cNvContentPartPr"))
+        : undefined;
+      const propertiesElement = nonVisual ? findChild(nonVisual, "p14:nvPr") : undefined;
+      const transformElement = findChild(el, "p14:xfrm");
+      const extensionsElement = propertiesElement
+        ? findFirst(propertiesElement, "a:extLst")
+        : undefined;
+      return {
+        contentPart: {
+          rId,
+          ...(bwModeKey === undefined
+            ? {}
+            : (() => {
+                const blackWhiteMode = parseBlackWhiteMode(el.attributes?.[bwModeKey]);
+                if (blackWhiteMode === undefined)
+                  throw new Error("p:contentPart has invalid p14:bwMode");
+                return { blackWhiteMode };
+              })()),
+          ...(nonVisual && drawingPropertiesElement
+            ? {
+                nonVisualProperties: {
+                  drawingProperties: {
+                    id: attr(drawingPropertiesElement, "id") ?? "",
+                    ...parseNonVisualDrawingProperties(drawingPropertiesElement),
+                  },
+                  ...(contentPartProperties === undefined ? {} : { contentPartProperties }),
+                  ...(propertiesElement === undefined
+                    ? {}
+                    : {
+                        properties: extensionsElement
+                          ? { extensions: stringifyElement(extensionsElement) }
+                          : {},
+                      }),
+                },
+              }
+            : {}),
+          ...(transformElement ? { transform: transform2DDesc.parse(transformElement, ctx) } : {}),
+        },
+      } as LegacySlideChild;
     }
     default:
+      if (el.name === "mc:AlternateContent") {
+        const compatibility = parseCompatibilityChild(el, ctx);
+        if (compatibility) return compatibility;
+      }
       // Unrecognized element — keep verbatim so round-trip never drops content
-      // (mc:AlternateContent, vendor extensions, future schema versions).
+      // (vendor extensions, future schema versions).
       return { rawXml: stringifyElement(el) } as LegacySlideChild;
   }
+}
+
+/**
+ * Select the most broadly representable markup-compatibility branch. Modern
+ * branches often contain host-specific controls whose fallback is an ordinary
+ * picture; parse candidates first and prefer any branch with a typed model.
+ */
+function parseCompatibilityChild(el: XmlElement, ctx: ReadContext): LegacySlideChild | undefined {
+  const choices = (el.elements ?? [])
+    .filter((branch) => branch.name === "mc:Choice")
+    .flatMap((branch) => {
+      const requires = attr(branch, "Requires");
+      if (!requires) return [];
+      return (branch.elements ?? [])
+        .map((content) => parseChild(content, ctx))
+        .filter((child): child is LegacySlideChild => child !== undefined)
+        .map((child) => ({ requires, child }));
+    });
+  const fallbackBranch = findChild(el, "mc:Fallback");
+  const fallback = (fallbackBranch?.elements ?? [])
+    .map((content) => parseChild(content, ctx))
+    .find((child): child is LegacySlideChild => child !== undefined);
+  if (!choices.length && fallback === undefined) return undefined;
+  return { alternateContent: { choices, ...(fallback ? { fallback } : {}) } };
 }
 
 /** Detect whether a p:pic element is a video or audio frame. */
@@ -167,8 +293,17 @@ function parseGraphicFrameChild(el: XmlElement, ctx: ReadContext): LegacySlideCh
 
   const uri = attr(graphicData, "uri") ?? "";
 
-  if (uri.includes("/chart")) {
-    return { chart: chartDesc.parse(el, ctx) } as LegacySlideChild;
+  if (uri.endsWith("/chart")) {
+    const chart = chartDesc.parse(el, ctx);
+    if (chart.type === undefined) {
+      throw new PptxParseError(
+        "Chart graphic frame has no supported chart type",
+        "slide",
+        "p:graphicFrame/a:graphicData",
+        "missing-chart-type",
+      );
+    }
+    return { chart };
   }
   if (uri.includes("/diagram")) {
     return { smartart: smartArtDesc.parse(el, ctx) } as LegacySlideChild;

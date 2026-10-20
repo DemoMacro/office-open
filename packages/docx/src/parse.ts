@@ -12,6 +12,7 @@ import {
   collectPassthroughParts,
   isEncryptedContainer,
   opaquePassthroughPolicy,
+  OpcPackageError,
   partPathToRelsPath,
   resolveRelationshipTarget,
 } from "@office-open/core/opc";
@@ -1119,9 +1120,14 @@ function parseDocumentFromDocx(docx: DocxDocument): DocumentOptions {
   // external targets no model field represents (orphaned hyperlinks). The
   // shared passthrough collector only keeps package-root externals, so scan
   // these parts here; the compiler claims them back into the owning rels.
-  const walkNodes = function* (el: Element): Generator<Element> {
-    yield el;
-    for (const child of el.elements ?? []) yield* walkNodes(child);
+  const walkNodes = function* (root: Element): Generator<Element> {
+    const pending: Element[] = [root];
+    while (pending.length > 0) {
+      const el = pending.pop()!;
+      yield el;
+      const children = el.elements ?? [];
+      for (let index = children.length - 1; index >= 0; index -= 1) pending.push(children[index]!);
+    }
   };
   const referencedIds = (partPath: string): Set<string> => {
     const ids = new Set<string>();
@@ -1204,9 +1210,19 @@ function parseDocxArchive(doc: ParsedArchive): DocxDocument {
   const rootRels = parseRootRels(doc);
   const primaryPartPath = rootRels.primaryPartPath ?? "word/document.xml";
   const documentEl = doc.get(primaryPartPath);
-  if (!documentEl) throw new Error(`primary document part not found: ${primaryPartPath}`);
+  if (!documentEl)
+    throw new OpcPackageError(
+      `primary document part not found: ${primaryPartPath}`,
+      primaryPartPath,
+      "missing-primary-part",
+    );
   const body = documentEl.elements?.find((e) => e.name === "w:body");
-  if (!body) throw new Error("w:body not found in word/document.xml");
+  if (!body)
+    throw new OpcPackageError(
+      "w:body not found in word/document.xml",
+      primaryPartPath,
+      "invalid-primary-part",
+    );
   const background = documentEl.elements?.find((e) => e.name === "w:background");
 
   const styles = doc.get("word/styles.xml");

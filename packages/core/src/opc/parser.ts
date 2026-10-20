@@ -7,6 +7,7 @@ import { decodeXmlBytes } from "../util/xml-decode";
 import { blobSource, type ByteSource } from "./byte-source";
 import { stripOversizedGfxdata } from "./gfxdata";
 import { OOXML_CANONICAL_PREFIXES } from "./namespaces";
+import { OpcPackageError } from "./package-error";
 import { levelForMediaName, ZIP_MEDIA_LEVEL } from "./packer";
 import { inflateEntryFrom } from "./stream-inflate";
 import {
@@ -72,7 +73,12 @@ export class ParsedArchive {
         // Non-classic ZIP variant (zip64, exotic layouts) or not an archive at
         // all: fall back to fflate's eager full read, the reference
         // implementation — it throws on unreadable input, as before.
-        const eager = unzipSync(source);
+        let eager: Record<string, Uint8Array>;
+        try {
+          eager = unzipSync(source);
+        } catch (cause) {
+          throw new OpcPackageError("Invalid OPC ZIP package", undefined, "invalid-zip", { cause });
+        }
         for (const [name, bytes] of Object.entries(eager)) {
           const path = name.replace(/\\/g, "/");
           this.parts.set(path, bytes);
@@ -123,7 +129,12 @@ export class ParsedArchive {
     for (const entry of normalizedEntries) {
       if (entry.name.endsWith("/") || entry.uncompSize === 0) continue;
       const partKey = entry.name.toLowerCase();
-      if (seenParts.has(partKey)) throw new Error(`duplicate ZIP part name: ${entry.name}`);
+      if (seenParts.has(partKey))
+        throw new OpcPackageError(
+          `duplicate ZIP part name: ${entry.name}`,
+          entry.name,
+          "duplicate-part",
+        );
       seenParts.add(partKey);
     }
     this.index = new Map(normalizedEntries.map((entry) => [entry.name, entry]));
@@ -139,9 +150,18 @@ export class ParsedArchive {
       const data = await inflateEntryFrom(source, entry).catch(async () => {
         // inflateEntryFrom verifies CRC-32 on the native path; tolerate a
         // mismatch the way the fflate fallback always has — retry check-free.
-        const raw = await source.read(entry.dataStart, entry.compSize);
-        const data = entry.method === 0 ? raw.slice() : inflateSync(raw);
-        return entry.name.endsWith(".xml") ? stripOversizedGfxdata(data) : data;
+        try {
+          const raw = await source.read(entry.dataStart, entry.compSize);
+          const data = entry.method === 0 ? raw.slice() : inflateSync(raw);
+          return entry.name.endsWith(".xml") ? stripOversizedGfxdata(data) : data;
+        } catch (cause) {
+          throw new OpcPackageError(
+            `invalid ZIP entry: ${entry.name}`,
+            entry.name,
+            "invalid-entry",
+            { cause },
+          );
+        }
       });
       this.index.delete(entry.name);
       this.parts.set(entry.name, data);
@@ -177,7 +197,13 @@ export class ParsedArchive {
     let data: Uint8Array;
     // The native inflate verifies CRC-32; a corrupt entry fails the package
     // instead of silently reading truncated bytes (Excel rejects these too).
-    data = inflateZipEntry(bytes, entry);
+    try {
+      data = inflateZipEntry(bytes, entry);
+    } catch (cause) {
+      throw new OpcPackageError(`invalid ZIP entry: ${entry.name}`, entry.name, "invalid-entry", {
+        cause,
+      });
+    }
     if (path.endsWith(".xml")) data = stripOversizedGfxdata(data);
     this.index.delete(path);
     this.parts.set(path, data);

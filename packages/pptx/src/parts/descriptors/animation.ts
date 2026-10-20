@@ -326,7 +326,20 @@ function flattenAnimationTree(
   const timing: AnimationEntry = { ...inherited, ...entry };
   const { children, timeNode, ...current } = timing;
   if (current.behavior === "transitionFilter") return [];
-  if (!children?.length || !timeNode) return [{ ...current }];
+  if (!children?.length) return timeNode ? [] : [{ ...current }];
+  if (
+    current.shapeId === undefined &&
+    current.shapeName === undefined &&
+    current.behavior === undefined &&
+    current.type === undefined
+  )
+    return [];
+  if (
+    current.shapeId === undefined &&
+    current.shapeName === undefined &&
+    current.behavior === undefined
+  )
+    return [];
 
   return children.flatMap((child) =>
     flattenAnimationTree(child, {

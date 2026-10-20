@@ -574,7 +574,7 @@ function wireSlidePlaceholderBatches(
           styleRelType: RELATIONSHIP_TYPES.diagramQuickStyle,
           hasDrawing: (key) => {
             const smartArt = smartArtsByKey.get(key);
-            return smartArt?.raw?.drawing !== undefined || smartArt?.raw === undefined;
+            return smartArt?.raw === undefined || smartArt.raw.drawingRelationship === true;
           },
           sourceTargetFor: (key, kind) => {
             if (kind === "drawing") return undefined;

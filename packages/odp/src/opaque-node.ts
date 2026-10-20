@@ -1,4 +1,4 @@
-import { stringifyElement } from "@office-open/xml";
+import { stringifyElement } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 /** ODF slide node without a PPTX canonical equivalent. */

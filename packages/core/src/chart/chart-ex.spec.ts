@@ -102,6 +102,27 @@ describe("ChartEx descriptor", () => {
     expect(reparsed.colorMapping).toEqual(options.colorMapping);
   });
 
+  it("round-trips intentionally changed chart data", () => {
+    const source = root(
+      `<cx:chartSpace xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">` +
+        `<cx:chartDataIntentionallyChanged><cx:externalData r:id="rId1" cx:autoUpdate="0"/><cx:data id="0"><cx:numDim type="val"><cx:f>Sheet1!$A$1:$A$2</cx:f></cx:numDim></cx:data></cx:chartDataIntentionallyChanged>` +
+        `<cx:chart><cx:plotArea><cx:plotAreaRegion><cx:series layoutId="waterfall"><cx:dataId val="0"/></cx:series></cx:plotAreaRegion></cx:plotArea></cx:chart>` +
+        `</cx:chartSpace>`,
+    );
+    const options = parseDescriptor(chartExSpaceDesc, source, READ_CONTEXT);
+    const generated = stringifyDescriptor(chartExSpaceDesc, options, WRITE_CONTEXT)!;
+    const reparsed = parseDescriptor(chartExSpaceDesc, root(generated), READ_CONTEXT);
+
+    expect(options.chartDataIntentionallyChanged?.externalData).toEqual({
+      relationshipId: "rId1",
+      autoUpdate: false,
+      autoUpdatePrefix: "cx",
+    });
+    expect(generated).toContain("<cx:chartDataIntentionallyChanged>");
+    expect(generated).not.toContain("<cx:chartData>");
+    expect(reparsed).toEqual(options);
+  });
+
   it("preserves value-only titles, color dimensions, and chart-space properties", () => {
     const source = root(
       `<cx:chartSpace xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">` +

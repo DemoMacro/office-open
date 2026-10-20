@@ -88,10 +88,17 @@ describe("parseDocument RTF text and formatting", () => {
     });
   });
 
-  it("ignores starred unknown destinations and known metadata destinations", () => {
+  it("captures generator metadata and skips other starred unknown destinations", () => {
     const source = String.raw`{\rtf1Visible{\*\generator Hidden}{\info{\title Also Hidden}}After}`;
+    expect(parseDocument(source)).toMatchObject({ application: "Hidden" });
     expect(parseDocument(source).sections[0]?.children[0]).toEqual({
       paragraph: { children: [{ text: "VisibleAfter" }] },
+    });
+  });
+
+  it("maps document default language", () => {
+    expect(parseDocument(String.raw`{\rtf1\deflang1033 Body`)).toMatchObject({
+      language: "en-US",
     });
   });
 

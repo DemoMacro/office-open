@@ -211,6 +211,21 @@ describe("timingDesc round-trip", () => {
     expect(typeof result).toBe("string");
     expect(timingDesc.stringify(result, writeCtx)).toBe(xml);
   });
+
+  it("omits slide transitions that have no shape target", () => {
+    const entries = [
+      {
+        timeNode: "par",
+        children: [{ behavior: "transitionFilter" }],
+      },
+    ] as AnimationEntry[];
+    expect(timingDesc.stringify(entries, writeCtx)).toBe("");
+  });
+
+  it("omits empty timing containers", () => {
+    const entries = [{ timeNode: "par" }] as AnimationEntry[];
+    expect(timingDesc.stringify(entries, writeCtx)).toBe("");
+  });
 });
 
 describe("shapeName resolution (fresh authoring channel)", () => {

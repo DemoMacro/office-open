@@ -82,13 +82,17 @@ export function collectText(element: Element | undefined): string {
 }
 
 function collectTextRecursive(element: Element | undefined, parts: string[]): void {
-  if (!element) return;
-  if (element.text !== undefined && typeof element.text === "string") {
-    parts.push(element.text);
-  }
-  if (element.elements) {
-    for (const child of element.elements) {
-      collectTextRecursive(child, parts);
+  const stack: Element[] = [];
+  if (element) stack.push(element);
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current.text !== undefined && typeof current.text === "string") {
+      parts.push(current.text);
+    }
+    if (current.elements) {
+      for (let index = current.elements.length - 1; index >= 0; index -= 1) {
+        stack.push(current.elements[index]!);
+      }
     }
   }
 }
@@ -187,10 +191,14 @@ export function findDeep(parent: Element | undefined, name: string): Element[] {
 }
 
 function collectDeep(parent: Element | undefined, name: string, result: Element[]): void {
-  if (!parent) return;
-  for (const child of parent.elements ?? []) {
-    if (child.name === name) result.push(child);
-    collectDeep(child, name, result);
+  const stack: Element[] = [];
+  if (parent) stack.push(parent);
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (current !== parent && current.name === name) result.push(current);
+    for (let index = (current.elements?.length ?? 0) - 1; index >= 0; index -= 1) {
+      stack.push(current.elements![index]!);
+    }
   }
 }
 
@@ -200,11 +208,16 @@ function collectDeep(parent: Element | undefined, name: string, result: Element[
  * to avoid traversing the whole subtree and allocating the full results array.
  */
 export function findFirst(parent: Element | undefined, name: string): Element | undefined {
-  if (!parent) return undefined;
-  for (const child of parent.elements ?? []) {
-    if (child.name === name) return child;
-    const found = findFirst(child, name);
-    if (found) return found;
+  const stack: Element[] = [];
+  if (parent) stack.push(parent);
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    for (const child of current.elements ?? []) {
+      if (child.name === name) return child;
+    }
+    for (let index = (current.elements?.length ?? 0) - 1; index >= 0; index -= 1) {
+      stack.push(current.elements![index]!);
+    }
   }
   return undefined;
 }

@@ -156,14 +156,47 @@ describe("SmartArt data model", () => {
       getRaw: () => image,
     })!;
 
-    expect(model.points?.[0]?.propertySet?.layoutCategoryId).toBe("");
-    expect(model.points?.[0]?.blackWhiteMode).toBe("gray");
-    expect(model.points?.[0]?.shapeProperties?.fill).toMatchObject({
+    const point = model.points?.[0];
+    if (!point || !("modelId" in point)) throw new Error("expected a direct data model point");
+    expect(point.propertySet?.layoutCategoryId).toBe("");
+    expect(point.blackWhiteMode).toBe("gray");
+    expect(point.shapeProperties?.fill).toMatchObject({
       type: "blip",
       rotWithShape: false,
       fillRectangle: {},
     });
     expect(stringifyDataModelOptions(model)).toContain('loCatId=""');
     expect(stringifyDataModelOptions(model)).toContain('<dgm:spPr bwMode="gray">');
+  });
+
+  it("round-trips a compatibility-wrapped point", () => {
+    const model: DataModelOptions = {
+      points: [
+        {
+          choices: [
+            {
+              requires: "a14",
+              point: {
+                modelId: "compatibility",
+                propertySet: { placeholderText: "[text]" },
+                textBody: {
+                  bodyProperties: {},
+                  paragraphs: [{ endParagraphProperties: false, text: "Choice" }],
+                },
+              },
+            },
+          ],
+          fallback: {
+            modelId: "compatibility",
+            propertySet: { placeholderText: "[text]" },
+            textBody: {
+              bodyProperties: {},
+              paragraphs: [{ endParagraphProperties: false, text: "Fallback" }],
+            },
+          },
+        },
+      ],
+    };
+    expect(roundTrip(model)).toEqual(model);
   });
 });

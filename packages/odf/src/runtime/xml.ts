@@ -1,5 +1,7 @@
-import { escapeXml } from "@office-open/xml";
+import { escapeXml, parse, stringifyElement } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
+
+export { stringifyElement };
 
 export type XmlAttributes = Record<string, string | number | boolean | undefined>;
 
@@ -21,6 +23,11 @@ export function xmlElement(
     : `<${name}${renderedAttributes}/>`;
 }
 
+/** Parses one XML fragment and returns its first element. */
+export function parseXmlElement(xml: string): Element | undefined {
+  return parse(xml).elements?.find((element) => element.type === "element");
+}
+
 export function childrenNamed(element: Element | undefined, name: string): Element[] {
   return element?.elements?.filter((child) => child.name === name) ?? [];
 }
@@ -39,9 +46,17 @@ export function textOf(element: Element | undefined): string {
 }
 
 export function descendantElements(element: Element | undefined): Element[] {
-  return (element?.elements ?? []).flatMap((child) =>
-    child.type === "element" ? [child, ...descendantElements(child)] : [],
-  );
+  const result: Element[] = [];
+  const pending = [...(element?.elements ?? [])].reverse();
+  while (pending.length > 0) {
+    const child = pending.pop()!;
+    if (child.type !== "element") continue;
+    result.push(child);
+    for (const grandchild of [...(child.elements ?? [])].reverse()) {
+      pending.push(grandchild);
+    }
+  }
+  return result;
 }
 
 export function spreadsheetColumnName(column: number): string {

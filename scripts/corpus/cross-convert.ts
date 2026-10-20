@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as fs from "node:fs";
 import os from "node:os";
 import * as path from "node:path";
@@ -46,6 +47,14 @@ interface FamilyResult {
   reparseFailures: number;
   writeFailures: number;
   reasons: Record<string, number>;
+  issues: WorkerIssue[];
+}
+
+interface WorkerIssue {
+  readonly source: string;
+  readonly target?: string;
+  readonly phase: "parse" | "generate" | "write" | "reparse" | "worker";
+  readonly reason: string;
 }
 
 interface WorkerResult {
@@ -81,6 +90,11 @@ const EXTENSIONS: Record<SourceFormat, Family> = {
   odp: "presentation",
 };
 const FAMILY_NAMES: readonly Family[] = ["document", "workbook", "presentation"];
+const FAMILY_CONVERSION_COUNTS: Record<Family, number> = {
+  document: 5,
+  workbook: 4,
+  presentation: 4,
+};
 
 function walk(root: string, files: WorkItem[] = []): WorkItem[] {
   let entries: fs.Dirent[];
@@ -122,6 +136,7 @@ function emptyFamily(): FamilyResult {
     reparseFailures: 0,
     writeFailures: 0,
     reasons: {},
+    issues: [],
   };
 }
 
@@ -132,6 +147,10 @@ function emptyResult(): WorkerResult {
 function mergeCounts(target: Record<string, number>, source: Record<string, number>): void {
   for (const [reason, count] of Object.entries(source))
     target[reason] = (target[reason] ?? 0) + count;
+}
+
+function mergeIssues(target: WorkerIssue[], source: readonly WorkerIssue[]): void {
+  target.push(...source);
 }
 
 function merge(target: WorkerResult, source: WorkerResult): void {
@@ -156,6 +175,7 @@ function merge(target: WorkerResult, source: WorkerResult): void {
       left[key] += right[key];
     }
     mergeCounts(left.reasons, right.reasons);
+    mergeIssues(left.issues, right.issues);
   }
 }
 
@@ -167,7 +187,7 @@ function runWorker(items: readonly WorkItem[], write: boolean): Promise<WorkerRe
       [
         "--import",
         "tsx",
-        "--max-old-space-size=4096",
+        "--max-old-space-size=8192",
         path.join(__dirname, "cross-convert-worker.ts"),
       ],
       { stdio: ["pipe", "pipe", "pipe"] },
@@ -195,9 +215,16 @@ async function runWithFallback(items: readonly WorkItem[], write: boolean): Prom
     if (items.length === 1) {
       const result = emptyResult();
       const family = EXTENSIONS[items[0]!.source];
+      const conversionCount = FAMILY_CONVERSION_COUNTS[family];
       result[family].sources = 1;
-      result[family].invalid = 1;
-      result[family].reasons["invalid: worker crashed on source"] = 1;
+      result[family].conversions = conversionCount;
+      result[family].generateFailures = conversionCount;
+      result[family].reasons["failed: worker crashed"] = conversionCount;
+      result[family].issues.push({
+        source: createHash("sha256").update(items[0]!.id).digest("hex").slice(0, 12),
+        phase: "worker",
+        reason: "worker crashed while processing this source",
+      });
       return result;
     }
     const middle = Math.floor(items.length / 2);
@@ -222,10 +249,18 @@ const sourceArgument = process.argv.indexOf("--source");
 const requestedSource = sourceArgument === -1 ? undefined : process.argv[sourceArgument + 1];
 if (requestedSource && !(requestedSource in EXTENSIONS))
   throw new Error(`Unknown source format: ${requestedSource}`);
+const sourceHashArgument = process.argv.indexOf("--source-hash");
+const requestedSourceHash =
+  sourceHashArgument === -1 ? undefined : process.argv[sourceHashArgument + 1];
+if (requestedSourceHash !== undefined && !/^[0-9a-f]{12}$/i.test(requestedSourceHash))
+  throw new Error("Source hash must contain 12 hexadecimal characters");
 const selected = files.filter(
   (file) =>
     (!requestedFamily || EXTENSIONS[file.source] === requestedFamily) &&
-    (!requestedSource || file.source === requestedSource),
+    (!requestedSource || file.source === requestedSource) &&
+    (!requestedSourceHash ||
+      createHash("sha256").update(file.id).digest("hex").slice(0, 12) ===
+        requestedSourceHash.toLowerCase()),
 );
 const write = process.argv.includes("--write");
 if (write) {
@@ -270,6 +305,7 @@ const summary = {
         .slice(0, 60),
     ]),
   ),
+  issues: Object.fromEntries(FAMILY_NAMES.map((family) => [family, result[family].issues])),
 };
 fs.writeFileSync(REPORT_PATH, `${JSON.stringify(summary, null, 2)}\n`);
 

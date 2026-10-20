@@ -1870,6 +1870,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -1897,6 +1900,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -3650,6 +3656,9 @@
         "chartData": {
           "$ref": "#/definitions/ChartExChartData"
         },
+        "chartDataIntentionallyChanged": {
+          "$ref": "#/definitions/ChartExChartData"
+        },
         "colorMapping": {
           "additionalProperties": false,
           "properties": {
@@ -4069,6 +4078,9 @@
         "chartData": {
           "$ref": "#/definitions/ChartExChartData"
         },
+        "chartDataIntentionallyChanged": {
+          "$ref": "#/definitions/ChartExChartData"
+        },
         "colorMapping": {
           "$ref": "#/definitions/ChartExOptions/properties/colorMapping"
         },
@@ -4439,6 +4451,159 @@
       "required": ["formatCode"],
       "type": "object"
     },
+    "ChartOdfEnhancedGeometryOptions": {
+      "additionalProperties": false,
+      "description": "ODF enhanced geometry attached to an inline chart custom shape.",
+      "properties": {
+        "enhancedPath": {
+          "description": "ODF enhanced-path command string; placeholders use equation names.",
+          "type": "string"
+        },
+        "equations": {
+          "description": "Named equations available to `enhancedPath` placeholders.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfGeometryEquationOptions"
+          },
+          "type": "array"
+        },
+        "mirrorHorizontal": {
+          "description": "Horizontal mirror flag.",
+          "type": "boolean"
+        },
+        "mirrorVertical": {
+          "description": "Vertical mirror flag.",
+          "type": "boolean"
+        },
+        "textAreas": {
+          "description": "Text-area rectangle in the source geometry coordinate grammar.",
+          "type": "string"
+        },
+        "textRotateAngle": {
+          "description": "ODF text rotation in the source angle grammar.",
+          "type": "string"
+        },
+        "type": {
+          "description": "Enhanced shape type, such as `ooxml-rect`.",
+          "type": "string"
+        },
+        "viewBox": {
+          "description": "Source viewBox values: x, y, width, height.",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 4,
+          "minItems": 4,
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ChartOdfGeometryEquationOptions": {
+      "additionalProperties": false,
+      "description": "ODF equation referenced by an inline chart decoration's enhanced path.",
+      "properties": {
+        "formula": {
+          "description": "ODF geometry formula, such as `logwidth/2`.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Equation name used by path placeholders, such as `f0`.",
+          "type": "string"
+        }
+      },
+      "required": ["name", "formula"],
+      "type": "object"
+    },
+    "ChartOdfShapeOptions": {
+      "additionalProperties": false,
+      "description": "ODF drawing decoration embedded directly in a chart body. Coordinates are EMU; polyline points are EMU pairs in source order.",
+      "properties": {
+        "endCellAddress": {
+          "description": "End anchor cell address for spreadsheet-like chart decorations.",
+          "type": "string"
+        },
+        "endX": {
+          "description": "Horizontal offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "endY": {
+          "description": "Vertical offset of the end anchor in EMU.",
+          "type": "number"
+        },
+        "enhancedGeometry": {
+          "$ref": "#/definitions/ChartOdfEnhancedGeometryOptions",
+          "description": "ODF enhanced geometry retained for custom shapes."
+        },
+        "height": {
+          "description": "Height in EMU.",
+          "type": "number"
+        },
+        "kind": {
+          "description": "Inline shape discriminant.",
+          "enum": ["customShape", "polyline"],
+          "type": "string"
+        },
+        "name": {
+          "description": "Accessible drawing name.",
+          "type": "string"
+        },
+        "points": {
+          "description": "Polyline vertex coordinates in EMU.",
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": ["x", "y"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "shapeProperties": {
+          "$ref": "#/definitions/ChartShapePropertiesOptions",
+          "description": "Projected fill, outline, and other DrawingML shape properties."
+        },
+        "styleName": {
+          "description": "Package-local graphic style reference.",
+          "type": "string"
+        },
+        "text": {
+          "description": "Plain text projected from the shape's paragraphs.",
+          "type": "string"
+        },
+        "textStyleName": {
+          "description": "Package-local text style reference.",
+          "type": "string"
+        },
+        "transform": {
+          "description": "ODF drawing transform command list retained verbatim.",
+          "type": "string"
+        },
+        "width": {
+          "description": "Width in EMU.",
+          "type": "number"
+        },
+        "x": {
+          "description": "Left offset in EMU.",
+          "type": "number"
+        },
+        "y": {
+          "description": "Top offset in EMU.",
+          "type": "number"
+        },
+        "zIndex": {
+          "description": "Painting order; higher numbers render above lower numbers.",
+          "type": "number"
+        }
+      },
+      "required": ["kind"],
+      "type": "object"
+    },
     "ChartOptions": {
       "additionalProperties": false,
       "description": "Options for creating a ChartRun.\n\nExtends `ChartSpaceOptions` from `@office-open/core` with DOCX-specific positioning and layout properties.",
@@ -4753,6 +4918,17 @@
         "numericCategories": {
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
           "type": "boolean"
+        },
+        "odfClassToken": {
+          "description": "Source ODF `chart:class`; retains vendor add-in classes.",
+          "type": "string"
+        },
+        "odfShapes": {
+          "description": "ODF drawing decorations embedded in the chart body.",
+          "items": {
+            "$ref": "#/definitions/ChartOdfShapeOptions"
+          },
+          "type": "array"
         },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
@@ -5139,6 +5315,22 @@
       "required": ["index"],
       "type": "object"
     },
+    "ChartPropertyMappingOptions": {
+      "additionalProperties": false,
+      "description": "LibreOffice's legacy misspelled per-series property mapping element.",
+      "properties": {
+        "cellRangeAddress": {
+          "description": "Source cell range for the mapped data sequence.",
+          "type": "string"
+        },
+        "property": {
+          "description": "Data-sequence role, such as `values-x` or `values-y`.",
+          "type": "string"
+        }
+      },
+      "required": ["property", "cellRangeAddress"],
+      "type": "object"
+    },
     "ChartSeriesData": {
       "additionalProperties": false,
       "properties": {
@@ -5222,6 +5414,17 @@
           ],
           "description": "Line/scatter/radar marker (c:marker)."
         },
+        "meanValueLine": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "$ref": "#/definitions/ChartLinesOptions"
+            }
+          ],
+          "description": "ODF mean-value decoration (`chart:mean-value`); OOXML has no direct equivalent."
+        },
         "name": {
           "anyOf": [
             {
@@ -5275,6 +5478,13 @@
         "pictureOptions": {
           "$ref": "#/definitions/ChartPictureOptions",
           "description": "Picture-fill options (c:pictureOptions, bar/area)."
+        },
+        "propertyMappings": {
+          "description": "LibreOffice chart property mappings (`loext:propertry-mapping`) retained verbatim.",
+          "items": {
+            "$ref": "#/definitions/ChartPropertyMappingOptions"
+          },
+          "type": "array"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -5588,6 +5798,13 @@
         "numericCategories": {
           "$ref": "#/definitions/ChartOptions/properties/numericCategories"
         },
+        "odfClassToken": {
+          "description": "Source ODF `chart:class`; retains vendor add-in classes.",
+          "type": "string"
+        },
+        "odfShapes": {
+          "$ref": "#/definitions/ChartOptions/properties/odfShapes"
+        },
         "ofPieType": {
           "$ref": "#/definitions/ChartOptions/properties/ofPieType"
         },
@@ -5804,7 +6021,7 @@
           "type": "array"
         }
       },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes", "dr3dLights"],
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
       "type": "object"
     },
     "ChartTitleOptions": {
@@ -7425,7 +7642,13 @@
           "type": "object"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/52"
+          "$ref": "#/definitions/ParagraphChild/anyOf/53"
+        },
+        {
+          "$ref": "#/definitions/ParagraphChild/anyOf/7"
+        },
+        {
+          "$ref": "#/definitions/ParagraphChild/anyOf/8"
         },
         {
           "$ref": "#/definitions/SectionChild/anyOf/8"
@@ -7434,42 +7657,39 @@
           "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/26"
+          "$ref": "#/definitions/ParagraphChild/anyOf/27"
         },
         {
           "$ref": "#/definitions/FormFieldChild"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/54"
-        },
-        {
           "$ref": "#/definitions/ParagraphChild/anyOf/55"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/62"
+          "$ref": "#/definitions/ParagraphChild/anyOf/56"
         },
         {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/23"
+          "$ref": "#/definitions/ParagraphChild/anyOf/63"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/15"
+          "additionalProperties": false,
+          "properties": {
+            "insertion": {
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
+            }
+          },
+          "required": ["insertion"],
+          "title": "insertion",
+          "type": "object"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/34"
+          "$ref": "#/definitions/ParagraphChild/anyOf/16"
         },
         {
           "$ref": "#/definitions/ParagraphChild/anyOf/35"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "hyperlink": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/16/properties/hyperlink"
-            }
-          },
-          "required": ["hyperlink"],
-          "title": "hyperlink",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/36"
         }
       ],
       "description": "One ordered member of a mixed complex-field stage. Runs, nested fields, bookmarks, proofing markers, and other canonical paragraph children stay in source order so nested fields do not fall back to a raw XML channel."
@@ -7483,26 +7703,24 @@
           "type": "string"
         },
         "beginNumberingChange": {
-          "$ref": "#/definitions/NumberingChangeOptions",
-          "description": "Revision metadata embedded in the begin marker (round-trip)."
+          "$ref": "#/definitions/FormFieldChild/properties/numberingChange"
         },
         "compoundEndRunXml": {
           "description": "End marker run paired with `compoundRunXml` when the producer split the final field boundary into its own run.",
           "type": "string"
         },
         "compoundRunXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/compoundRunXml"
+          "description": "Complete source run when one producer packed all field stages into it (round-trip only — do not hand-author).",
+          "type": "string"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the begin run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/FormFieldChild/properties/deletionRsid"
         },
         "endAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endAdditionRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/endAdditionRsid"
         },
         "endDeletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the end run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/FormFieldChild/properties/endDeletionRsid"
         },
         "endNumberingChange": {
           "$ref": "#/definitions/NumberingChangeOptions",
@@ -7513,7 +7731,7 @@
           "type": "string"
         },
         "endRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endRunPropertiesRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/endRunPropertiesRsid"
         },
         "fieldData": {
           "description": "Field data carried by the begin marker (`w:fldData`, round-trip).",
@@ -7535,11 +7753,10 @@
           "type": "string"
         },
         "instructionAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionAdditionRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/instructionAdditionRsid"
         },
         "instructionDeletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the instruction run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/FormFieldChild/properties/instructionDeletionRsid"
         },
         "instructionMembers": {
           "description": "Ordered members when nested simple fields occur inside a field code.",
@@ -7557,7 +7774,7 @@
           "type": "string"
         },
         "instructionRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRunPropertiesRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/instructionRunPropertiesRsid"
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (w:r > w:lastRenderedPageBreak + w:fldChar begin in one run).",
@@ -7600,20 +7817,20 @@
           "type": "string"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/runPropertiesRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/runPropertiesRsid"
         },
         "separatorAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorAdditionRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/separatorAdditionRsid"
         },
         "separatorDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID when the separator run was deleted (w:rsidDel, round-trip)."
         },
         "separatorRPrXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRPrXml"
+          "$ref": "#/definitions/FormFieldChild/properties/separatorRPrXml"
         },
         "separatorRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRunPropertiesRsid"
+          "$ref": "#/definitions/FormFieldChild/properties/separatorRunPropertiesRsid"
         }
       },
       "required": ["instruction"],
@@ -8038,7 +8255,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
+          "$ref": "#/definitions/ParagraphChild/anyOf/62/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -8064,7 +8281,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
+          "$ref": "#/definitions/ParagraphChild/anyOf/62/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -8108,7 +8325,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
+          "$ref": "#/definitions/ParagraphChild/anyOf/62/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -8374,6 +8591,23 @@
       },
       "type": "object"
     },
+    "DataModelAlternativeContentOptions": {
+      "additionalProperties": false,
+      "description": "A data-model point wrapped in MCE Compatibility Choice/Fallback branches.",
+      "properties": {
+        "choices": {
+          "items": {
+            "$ref": "#/definitions/DataModelPointAlternativeOptions"
+          },
+          "type": "array"
+        },
+        "fallback": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        }
+      },
+      "required": ["choices"],
+      "type": "object"
+    },
     "DataModelBackgroundOptions": {
       "additionalProperties": false,
       "description": "dgm:bg —.",
@@ -8462,7 +8696,7 @@
         },
         "points": {
           "items": {
-            "$ref": "#/definitions/DataModelPointOptions"
+            "$ref": "#/definitions/DataModelPointMemberOptions"
           },
           "type": "array"
         },
@@ -8471,6 +8705,31 @@
         }
       },
       "type": "object"
+    },
+    "DataModelPointAlternativeOptions": {
+      "additionalProperties": false,
+      "description": "One MCE branch containing a data-model point.",
+      "properties": {
+        "point": {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        "requires": {
+          "type": "string"
+        }
+      },
+      "required": ["requires", "point"],
+      "type": "object"
+    },
+    "DataModelPointMemberOptions": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/DataModelPointOptions"
+        },
+        {
+          "$ref": "#/definitions/DataModelAlternativeContentOptions"
+        }
+      ],
+      "description": "dgm:ptLst member: a direct point or a typed MCE-wrapped point."
     },
     "DataModelPointOptions": {
       "additionalProperties": false,
@@ -12112,23 +12371,28 @@
       "description": "A complete canonical form-field chain, including round-trip run metadata.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/additionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the begin run (w:rsidR, round-trip)."
         },
         "deletionRsid": {
-          "$ref": "#/definitions/ComplexFieldOptions/properties/deletionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the begin run was deleted (w:rsidDel, round-trip)."
         },
         "endAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endAdditionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the end run (w:rsidR, round-trip)."
         },
         "endDeletionRsid": {
-          "$ref": "#/definitions/ComplexFieldOptions/properties/endDeletionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the end run was deleted (w:rsidDel, round-trip)."
         },
         "endRPrXml": {
           "description": "Verbatim run-properties of the end fldChar run (round-trip).",
           "type": "string"
         },
         "endRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endRunPropertiesRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
         },
         "fieldLock": {
           "description": "Field lock (w:fldChar/`@w:fldLock` on the begin marker).",
@@ -12138,68 +12402,90 @@
           "$ref": "#/definitions/FormFieldOptions"
         },
         "hasResult": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/hasResult"
+          "description": "Whether the source carried a separate marker and result (round-trip).",
+          "type": "boolean"
         },
         "instrRunsXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instrRunsXml"
+          "description": "Complete instruction-stage runs (round-trip only — do not hand-author).",
+          "type": "string"
         },
         "instructionAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionAdditionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
         },
         "instructionDeletionRsid": {
-          "$ref": "#/definitions/ComplexFieldOptions/properties/instructionDeletionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID when the instruction run was deleted (w:rsidDel, round-trip)."
         },
         "instructionMembers": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionMembers"
+          "description": "Ordered typed members when markers interrupt the field code.",
+          "items": {
+            "$ref": "#/definitions/ComplexFieldInstructionMember"
+          },
+          "type": "array"
         },
         "instructionRPrXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRPrXml"
+          "description": "Verbatim instruction-run properties (round-trip; defaults to control rPr).",
+          "type": "string"
         },
         "instructionRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRunPropertiesRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (round-trip only).",
           "type": "boolean"
         },
         "numberingChange": {
-          "$ref": "#/definitions/ComplexFieldOptions/properties/beginNumberingChange"
+          "$ref": "#/definitions/NumberingChangeOptions",
+          "description": "Revision metadata embedded in the begin marker (round-trip)."
         },
         "rPrXml": {
           "description": "Control-run properties shared by begin/separate (round-trip).",
           "type": "string"
         },
         "resultAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultAdditionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the result run (w:rsidR, round-trip)."
         },
         "resultDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
           "description": "Revision save ID when the result run was deleted (w:rsidDel, round-trip)."
         },
         "resultMembers": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultMembers"
+          "description": "Ordered typed members when markers interrupt the cached result.",
+          "items": {
+            "$ref": "#/definitions/ComplexFieldInstructionMember"
+          },
+          "type": "array"
         },
         "resultRPrXml": {
           "description": "Result-run properties (round-trip; differs from the control rPr).",
           "type": "string"
         },
         "resultRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultRunPropertiesRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
         },
         "resultRunsXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultRunsXml"
+          "description": "Complete result-stage runs after the separate marker (round-trip only).",
+          "type": "string"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/runPropertiesRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
         },
         "separatorAdditionRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorAdditionRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
         },
         "separatorRPrXml": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRPrXml"
+          "description": "Verbatim separator-run properties; empty string means explicitly absent.",
+          "type": "string"
         },
         "separatorRunPropertiesRsid": {
-          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRunPropertiesRsid"
+          "$ref": "#/definitions/LongHexNumber",
+          "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
         }
       },
       "required": ["formField"],
@@ -15845,6 +16131,7 @@
           "type": "string"
         },
         "options": {
+          "description": "Selectable options, in source order.",
           "items": {
             "$ref": "#/definitions/ListBoxOptionOptions"
           },
@@ -19328,6 +19615,9 @@
     "ParagraphChild": {
       "anyOf": [
         {
+          "$ref": "#/definitions/SectionChild/anyOf/1"
+        },
+        {
           "additionalProperties": false,
           "properties": {
             "chart": {
@@ -19583,7 +19873,7 @@
           "additionalProperties": false,
           "properties": {
             "deletion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
             }
           },
           "required": ["deletion"],
@@ -19810,7 +20100,7 @@
           "additionalProperties": false,
           "properties": {
             "movedFrom": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
             }
           },
           "required": ["movedFrom"],
@@ -19821,7 +20111,7 @@
           "additionalProperties": false,
           "properties": {
             "movedTo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
             }
           },
           "required": ["movedTo"],
@@ -19889,7 +20179,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlDelRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/39/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlDelRangeStart"],
@@ -19911,7 +20201,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveFromRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/39/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveFromRangeStart"],
@@ -19933,7 +20223,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlMoveToRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/39/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlMoveToRangeStart"],
@@ -19955,7 +20245,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlConflictInsRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/39/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlConflictInsRangeStart"],
@@ -19977,7 +20267,7 @@
           "additionalProperties": false,
           "properties": {
             "customXmlConflictDelRangeStart": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/38/properties/customXmlInsRangeStart"
+              "$ref": "#/definitions/ParagraphChild/anyOf/39/properties/customXmlInsRangeStart"
             }
           },
           "required": ["customXmlConflictDelRangeStart"],
@@ -19999,7 +20289,7 @@
           "additionalProperties": false,
           "properties": {
             "conflictIns": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
             }
           },
           "required": ["conflictIns"],
@@ -20010,7 +20300,7 @@
           "additionalProperties": false,
           "properties": {
             "conflictDel": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
+              "$ref": "#/definitions/ParagraphChild/anyOf/15/properties/insertion"
             }
           },
           "required": ["conflictDel"],
@@ -20124,7 +20414,7 @@
           "additionalProperties": false,
           "properties": {
             "bdo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/58/properties/dir"
+              "$ref": "#/definitions/ParagraphChild/anyOf/59/properties/dir"
             }
           },
           "required": ["bdo"],
@@ -20700,6 +20990,17 @@
         "allCaps": {
           "type": "boolean"
         },
+        "blockBreak": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "$ref": "#/definitions/BreakOptions"
+            }
+          ],
+          "description": "Tolerated legacy `w:br` placed directly in paragraph/block content."
+        },
         "bold": {
           "type": "boolean"
         },
@@ -20770,6 +21071,10 @@
               {
                 "additionalProperties": false,
                 "properties": {
+                  "nil": {
+                    "const": true,
+                    "type": "boolean"
+                  },
                   "preserveSpace": {
                     "type": "boolean"
                   },
@@ -23681,6 +23986,9 @@
         "allCaps": {
           "type": "boolean"
         },
+        "blockBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/blockBreak"
+        },
         "bold": {
           "type": "boolean"
         },
@@ -24674,6 +24982,9 @@
         "marker": {
           "$ref": "#/definitions/ChartSeriesData/properties/marker"
         },
+        "meanValueLine": {
+          "$ref": "#/definitions/ChartSeriesData/properties/meanValueLine"
+        },
         "name": {
           "$ref": "#/definitions/ChartSeriesData/properties/name"
         },
@@ -24701,6 +25012,9 @@
         },
         "pictureOptions": {
           "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
+        },
+        "propertyMappings": {
+          "$ref": "#/definitions/ChartSeriesData/properties/propertyMappings"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
@@ -29443,6 +29757,9 @@
         "allCaps": {
           "type": "boolean"
         },
+        "blockBreak": {
+          "$ref": "#/definitions/ParagraphRunOptions/properties/blockBreak"
+        },
         "bold": {
           "type": "boolean"
         },
@@ -30344,19 +30661,16 @@
     "TableMarkerChild": {
       "anyOf": [
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/10"
+          "$ref": "#/definitions/ParagraphChild/anyOf/11"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/11"
+          "$ref": "#/definitions/ParagraphChild/anyOf/12"
         },
         {
           "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
           "$ref": "#/definitions/SectionChild/anyOf/9"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/30"
         },
         {
           "$ref": "#/definitions/ParagraphChild/anyOf/31"
@@ -30366,6 +30680,9 @@
         },
         {
           "$ref": "#/definitions/ParagraphChild/anyOf/33"
+        },
+        {
+          "$ref": "#/definitions/ParagraphChild/anyOf/34"
         }
       ],
       "description": "Run-level markers anchored directly under `w:tbl`, between rows — bookmark and revision ranges can span row boundaries and cannot live inside `w:tr`."
@@ -30518,6 +30835,11 @@
         },
         "styleRowBandSize": {
           "type": "number"
+        },
+        "tableGridOmitted": {
+          "const": true,
+          "description": "Source omitted `w:tblGrid`; round-trip only for tolerated legacy input.",
+          "type": "boolean"
         },
         "tableLook": {
           "$ref": "#/definitions/TableLookOptions",
@@ -30755,10 +31077,10 @@
     "TableRowMarkerChild": {
       "anyOf": [
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/10"
+          "$ref": "#/definitions/ParagraphChild/anyOf/11"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/11"
+          "$ref": "#/definitions/ParagraphChild/anyOf/12"
         },
         {
           "$ref": "#/definitions/SectionChild/anyOf/8"
@@ -30767,10 +31089,10 @@
           "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/28"
+          "$ref": "#/definitions/ParagraphChild/anyOf/29"
         },
         {
-          "$ref": "#/definitions/ParagraphChild/anyOf/29"
+          "$ref": "#/definitions/ParagraphChild/anyOf/30"
         }
       ],
       "description": "Run-level markers anchored directly under `w:tr`, between a row's cells — comment and bookmark ranges spanning cell boundaries land there because the tc content model cannot hold them at that position."
@@ -32693,185 +33015,6 @@
         },
         {
           "type": "string"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/10"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/11"
-        },
-        {
-          "$ref": "#/definitions/SectionChild/anyOf/8"
-        },
-        {
-          "$ref": "#/definitions/SectionChild/anyOf/9"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/8"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/9"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/54"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/55"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "additionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the begin run (w:rsidR, round-trip)."
-            },
-            "compoundRunXml": {
-              "description": "Complete source run when one producer packed all field stages into it (round-trip only — do not hand-author).",
-              "type": "string"
-            },
-            "endAdditionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the end run (w:rsidR, round-trip)."
-            },
-            "endRPrXml": {
-              "description": "Verbatim run-properties of the end fldChar run (round-trip).",
-              "type": "string"
-            },
-            "endRunPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
-            },
-            "fieldLock": {
-              "description": "Field lock (w:fldChar/`@w:fldLock` on the begin marker).",
-              "type": "boolean"
-            },
-            "formField": {
-              "$ref": "#/definitions/FormFieldOptions"
-            },
-            "hasResult": {
-              "description": "Whether the source carried a separate marker and result (round-trip).",
-              "type": "boolean"
-            },
-            "instrRunsXml": {
-              "description": "Complete instruction-stage runs (round-trip only — do not hand-author).",
-              "type": "string"
-            },
-            "instructionAdditionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
-            },
-            "instructionMembers": {
-              "description": "Ordered typed members when markers interrupt the field code.",
-              "items": {
-                "$ref": "#/definitions/ComplexFieldInstructionMember"
-              },
-              "type": "array"
-            },
-            "instructionRPrXml": {
-              "description": "Verbatim instruction-run properties (round-trip; defaults to control rPr).",
-              "type": "string"
-            },
-            "instructionRunPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
-            },
-            "rPrXml": {
-              "description": "Control-run properties shared by begin/separate (round-trip).",
-              "type": "string"
-            },
-            "resultAdditionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the result run (w:rsidR, round-trip)."
-            },
-            "resultMembers": {
-              "description": "Ordered typed members when markers interrupt the cached result.",
-              "items": {
-                "$ref": "#/definitions/ComplexFieldInstructionMember"
-              },
-              "type": "array"
-            },
-            "resultRPrXml": {
-              "description": "Result-run properties (round-trip; differs from the control rPr).",
-              "type": "string"
-            },
-            "resultRunPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
-            },
-            "resultRunsXml": {
-              "description": "Complete result-stage runs after the separate marker (round-trip only).",
-              "type": "string"
-            },
-            "runPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
-            },
-            "separatorAdditionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
-            },
-            "separatorRPrXml": {
-              "description": "Verbatim separator-run properties; empty string means explicitly absent.",
-              "type": "string"
-            },
-            "separatorRunPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
-            }
-          },
-          "required": ["formField"],
-          "title": "formField",
-          "type": "object"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/26"
-        },
-        {
-          "$ref": "#/definitions/SectionChild/anyOf/10"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/62"
-        },
-        {
-          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/1"
-        },
-        {
-          "$ref": "#/definitions/ParagraphRunOptions/properties/children/items/anyOf/26"
-        },
-        {
-          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/3"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/3"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/0"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/1"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/20"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/21"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/22"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "insertion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["insertion"],
-          "title": "insertion",
-          "type": "object"
-        },
-        {
-          "$ref": "#/definitions/ParagraphChild/anyOf/15"
         }
       ],
       "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo) — runs, the comment range markers Word anchors directly inside the wrapper, complete field chains, and nested same-type wrappers."

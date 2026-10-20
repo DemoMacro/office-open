@@ -60,6 +60,12 @@ describe("ODF schema codecs", () => {
       ],
     };
     expect(parseMeta({ "meta.xml": metaXml(metadata) })).toMatchObject(metadata);
+    expect(
+      parseMeta({
+        "meta.xml":
+          '<?xml version="1.0"?><office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0"><office:meta><meta:user-defined meta:name=""/></office:meta></office:document-meta>',
+      }),
+    ).toEqual({ userDefinedProperties: [{ name: "", type: "text", value: "" }] });
     expect(() =>
       parseMeta({
         "meta.xml":
@@ -225,7 +231,7 @@ describe("ODF schema codecs", () => {
     expect(error).toMatchObject({
       part: "content.xml",
       path: "/office:document-content/office:body/office:chart/chart:chart[chart:plot-area]/chart:foo",
-      name: "chart:foo",
+      elementName: "chart:foo",
       reason: "element has no canonical ChartSpaceOptions mapping",
     });
   });
@@ -532,7 +538,7 @@ describe("ODF schema codecs", () => {
       expect(error).toBeInstanceOf(OdfSchemaError);
       expect(error).toMatchObject({
         part: "content.xml",
-        name: expectedName,
+        elementName: expectedName,
         reason: expectedReason,
       });
       expect((error as OdfSchemaError).path.endsWith(expectedPathSuffix)).toBe(true);

@@ -19,6 +19,7 @@ import { ZipPassThrough, inflateSync } from "fflate";
 import type { FlateError, Zippable, ZipOptions } from "fflate";
 
 import type { ByteSource } from "./byte-source";
+import { OpcPackageError } from "./package-error";
 
 // ── CRC-32 lookup table ──
 
@@ -472,7 +473,7 @@ export function inflateRawWindow(raw: Uint8Array, entry: ZipEntryMeta): Uint8Arr
     const dec = _nativeInflate(raw);
     // >>> 0 normalizes the signed CRC_TABLE accumulation against zlib's unsigned crc32.
     if ((_nativeCrc32 ?? computeCrc32)(dec) >>> 0 !== entry.crc)
-      throw new Error(`ZIP CRC-32 mismatch: ${entry.name}`);
+      throw new OpcPackageError(`ZIP CRC-32 mismatch: ${entry.name}`, entry.name, "crc-mismatch");
     return dec;
   }
   return inflateSync(raw);

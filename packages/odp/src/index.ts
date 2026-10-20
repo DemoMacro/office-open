@@ -5,7 +5,7 @@ export {
   parsePresentation,
   parsePresentationSync,
 } from "./presentation";
-export { OdpParseError } from "./error";
+export { OdpGenerateError, OdpParseError } from "./error";
 export type { OdpPresentationOptions, PresentationOptions, SlideOptions } from "./options";
 export type { OdpEmbeddedObjectOptions, OdpEmbeddedObjectFrameOptions } from "./embedded-objects";
 export type { OdpOpaqueSlideNodeOptions } from "./opaque-node";

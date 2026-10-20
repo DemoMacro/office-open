@@ -216,6 +216,8 @@ export interface ListBoxOptionOptions {
 }
 export interface ListBoxControlOptions extends FormControlBaseOptions {
   control: "listBox";
+  /** Selectable options, in source order. */
+  options: ListBoxOptionOptions[];
   disabled?: boolean;
   dropdown?: boolean;
   printable?: boolean;
@@ -232,7 +234,6 @@ export interface ListBoxControlOptions extends FormControlBaseOptions {
   sourceCellRange?: string;
   multiple?: boolean;
   xformsListSource?: string;
-  options: ListBoxOptionOptions[];
 }
 export interface CheckboxControlOptions extends FormControlBaseOptions {
   control: "checkbox";

@@ -21,6 +21,36 @@ import type { Element } from "@office-open/xml";
 import { OdsParseError } from "./error";
 import { numFmtDataStyle } from "./numbering";
 
+const dataStyleCaches = new WeakMap<string[], Map<string, string>>();
+const styleCaches = new WeakMap<string[], Map<string, string>>();
+
+function cachedName(
+  caches: WeakMap<string[], Map<string, string>>,
+  styles: string[],
+  key: string,
+): string | undefined {
+  let cache = caches.get(styles);
+  if (cache === undefined) {
+    cache = new Map();
+    caches.set(styles, cache);
+  }
+  return cache.get(key);
+}
+
+function cacheName(
+  caches: WeakMap<string[], Map<string, string>>,
+  styles: string[],
+  key: string,
+  name: string,
+): void {
+  let cache = caches.get(styles);
+  if (cache === undefined) {
+    cache = new Map();
+    caches.set(styles, cache);
+  }
+  cache.set(key, name);
+}
+
 export interface DimensionStyle {
   width?: number;
   height?: number;
@@ -33,8 +63,20 @@ export interface DimensionStyle {
 /** Registers a table-cell style (numFmt data style + font/fill); returns its name. */
 export function addCellStyle(style: StyleOptions, styles: string[]): string {
   const data = style.numFmt ? numFmtDataStyle(style.numFmt) : undefined;
-  const dataName = `N${styles.length + 1}`;
-  if (data) styles.push(xmlElement(data.name, { "style:name": dataName }, data.children));
+  const children = cellStyleChildren(style);
+  let dataName: string | undefined;
+  if (data) {
+    const dataKey = JSON.stringify([data.name, data.children]);
+    dataName = cachedName(dataStyleCaches, styles, dataKey);
+    if (dataName === undefined) {
+      dataName = `N${styles.length + 1}`;
+      styles.push(xmlElement(data.name, { "style:name": dataName }, data.children));
+      cacheName(dataStyleCaches, styles, dataKey, dataName);
+    }
+  }
+  const styleKey = JSON.stringify([dataName, children]);
+  const cachedStyleName = cachedName(styleCaches, styles, styleKey);
+  if (cachedStyleName !== undefined) return cachedStyleName;
   const styleName = `ce${styles.length + 1}`;
   styles.push(
     xmlElement(
@@ -44,9 +86,10 @@ export function addCellStyle(style: StyleOptions, styles: string[]): string {
         "style:family": "table-cell",
         "style:data-style-name": data ? dataName : undefined,
       },
-      cellStyleChildren(style),
+      children,
     ),
   );
+  cacheName(styleCaches, styles, styleKey, styleName);
   return styleName;
 }
 
@@ -279,7 +322,6 @@ export function addDimensionStyle(
   styles: string[],
   family: "column" | "row",
 ): string {
-  const name = `${family === "column" ? "co" : "ro"}${styles.length + 1}`;
   const properties =
     family === "column"
       ? xmlElement("style:table-column-properties", {
@@ -289,26 +331,34 @@ export function addDimensionStyle(
       : xmlElement("style:table-row-properties", {
           "style:row-height": style.height ? `${style.height}pt` : undefined,
         });
+  const key = JSON.stringify([family, properties]);
+  const cachedNameValue = cachedName(styleCaches, styles, key);
+  if (cachedNameValue !== undefined) return cachedNameValue;
+  const name = `${family === "column" ? "co" : "ro"}${styles.length + 1}`;
   styles.push(
     xmlElement("style:style", { "style:name": name, "style:family": `table-${family}` }, [
       properties,
     ]),
   );
+  cacheName(styleCaches, styles, key, name);
   return name;
 }
 
 export function addTableStyle(style: DimensionStyle, styles: string[]): string {
+  const properties = xmlElement("style:table-properties", {
+    "table:display": style.hidden ? false : undefined,
+    "gnm:display-formulas": style.showFormulas,
+    "gnm:display-col-header": style.showColumnHeaders,
+    "gnm:display-row-header": style.showRowHeaders,
+  });
+  const key = JSON.stringify(["table", properties]);
+  const cachedNameValue = cachedName(styleCaches, styles, key);
+  if (cachedNameValue !== undefined) return cachedNameValue;
   const name = `ta${styles.length + 1}`;
   styles.push(
-    xmlElement("style:style", { "style:name": name, "style:family": "table" }, [
-      xmlElement("style:table-properties", {
-        "table:display": style.hidden ? false : undefined,
-        "gnm:display-formulas": style.showFormulas,
-        "gnm:display-col-header": style.showColumnHeaders,
-        "gnm:display-row-header": style.showRowHeaders,
-      }),
-    ]),
+    xmlElement("style:style", { "style:name": name, "style:family": "table" }, [properties]),
   );
+  cacheName(styleCaches, styles, key, name);
   return name;
 }
 
@@ -456,7 +506,7 @@ export function parseStyleResources(container: Element | undefined): StyleResour
       for (const [attribute, value] of Object.entries(property.attributes ?? {})) {
         if (isMappedDimensionAttribute(property.name ?? "", attribute)) continue;
         if (
-          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext|css3t|tableooo):/.test(
+          !/^(fo|style|text|draw|table|svg|dr3d|presentation|smil|officeooo|loext|css3t|tableooo|gnm):/.test(
             attribute,
           )
         ) {

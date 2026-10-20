@@ -8,6 +8,7 @@ export {
   generatePresentationStream,
 } from "./generate";
 export { compilePresentation } from "./compiler";
+export { PptxParseError } from "./pptx-parse-error";
 export { PptxWriteContext, PptxReadContext } from "./context";
 export type {
   CompressionOptions,

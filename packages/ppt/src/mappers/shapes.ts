@@ -464,7 +464,6 @@ function parseShape(
 
   const properties: ShapeOptions["properties"] = {};
   const geometry = SHAPE_TYPE_PRESETS[shapeRecord.instance];
-  if (geometry !== undefined) properties.geometry = geometry;
   const textWarp = SHAPE_TYPE_WARPS[shapeRecord.instance];
   const wordArtText =
     text && textWarp
@@ -477,7 +476,11 @@ function parseShape(
           },
         }
       : text;
-  if (shapeRecord.instance === 0) {
+  if (style.customGeometry) {
+    properties.customGeometry = style.customGeometry;
+  } else if (geometry !== undefined) {
+    properties.geometry = geometry;
+  } else if (shapeRecord.instance === 0) {
     if (!style.customGeometry) {
       throw new PptParseError("Legacy PowerPoint freeform has no canonical geometry", {
         part: "record",
@@ -605,11 +608,9 @@ function placeholderOptions(
 }
 
 function resolveFill(style: EscherShapeStyle, context: DrawingContext) {
-  if (style.fillType === 5) {
+  if (style.fillType === 1 || style.fillType === 2 || style.fillType === 3) {
     const picture = findPicture(context, style.fillBlipReference);
-    return picture
-      ? ({ type: "blip", data: picture.data, imageType: picture.type } as const)
-      : undefined;
+    if (picture) return { type: "blip", data: picture.data, imageType: picture.type } as const;
   }
   return style.fill;
 }

@@ -13,6 +13,7 @@ import {
   xmlElement,
   type GraphicStyle,
 } from "@office-open/odf";
+import { stringifyElement } from "@office-open/odf";
 import type {
   ConnectorOptions,
   LineShapeOptions,
@@ -20,11 +21,10 @@ import type {
   SlideChild,
 } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
-import { stringifyElement } from "@office-open/xml";
 
 import { endpointConnection, parseChartFrame, parsePictureFrame } from "./drawing";
-import { OdpParseError } from "./error";
-import { unknownSlideChild } from "./presentation";
+import { OdpGenerateError, OdpParseError, unknownSlideChild } from "./error";
+import { GeometryFormulaEvaluator } from "./geometry-formulas";
 import { parseSlideTable } from "./slide";
 import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
@@ -66,6 +66,17 @@ export function collectOdfShapeIds(root: Element): Map<string, number> {
       references.set(raw, id);
       nextId = Math.max(nextId, id + 1);
     }
+  }
+  const shapeNames: string[] = [];
+  const collectShapeNames = (element: Element): void => {
+    const name = isShapeElement(element) ? attributeString(element, "draw:name") : undefined;
+    if (name !== undefined) shapeNames.push(name);
+    for (const child of element.elements ?? [])
+      if (child.type === "element") collectShapeNames(child);
+  };
+  collectShapeNames(root);
+  for (const name of shapeNames) {
+    if (!references.has(name)) references.set(name, nextId++);
   }
   for (const raw of rawIds) {
     if (references.has(raw)) continue;
@@ -176,8 +187,9 @@ export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
         "svg:y": toOdfLength(shape.y),
         "svg:width": toOdfLength(shape.width),
         "svg:height": toOdfLength(shape.height),
+        "svg:viewBox": `0 0 ${shape.width} ${shape.height}`,
         "draw:name": shape.name,
-        "svg:d": customGeometryPath(customGeometry),
+        "svg:d": customGeometryPath(customGeometry, shape),
       },
       shape.textBody ? textBodyXml(shape.textBody, styles) : [],
     );
@@ -228,17 +240,108 @@ export function controlShapeXml(shape: ShapeOptions, styles: string[]): string {
   );
 }
 
-function customGeometryPath(geometry: CustomGeometryOptions): string {
-  return (geometry.pathList ?? [])
-    .flatMap((path) => path.commands ?? [])
+function customGeometryPath(geometry: CustomGeometryOptions, shape: ShapeOptions): string {
+  const width = shape.width;
+  const height = shape.height;
+  if (width === undefined || height === undefined) {
+    throw new OdpGenerateError(
+      "Custom geometry requires explicit shape dimensions",
+      "content.xml",
+      "/draw:custom-shape",
+      "svg:width",
+      "missing-custom-geometry-dimensions",
+    );
+  }
+  const widthEmu =
+    typeof width === "number" ? width : throwOdpGeometryDimension(lengthToEmu(width), "svg:width");
+  const heightEmu =
+    typeof height === "number"
+      ? height
+      : throwOdpGeometryDimension(lengthToEmu(height), "svg:height");
+  let currentX = 0;
+  let currentY = 0;
+  const formulas = new GeometryFormulaEvaluator(geometry, widthEmu, heightEmu);
+  const coordinate = (value: string): string => {
+    let emu: number;
+    try {
+      emu = formulas.coordinate(value);
+    } catch (error) {
+      if (error instanceof RangeError) {
+        throw new OdpGenerateError(
+          error.message,
+          "content.xml",
+          "/draw:path",
+          "svg:d",
+          "unsupported-geometry-formula",
+        );
+      }
+      throw error;
+    }
+    if (!Number.isFinite(emu)) {
+      throw new OdpParseError(
+        "Invalid custom geometry coordinate",
+        "content.xml",
+        "/draw:path",
+        "svg:d",
+        "invalid-custom-geometry-coordinate",
+      );
+    }
+    return String(Math.round(emu));
+  };
+  const point = (point: { x: string; y: string }): string =>
+    `${coordinate(point.x)} ${coordinate(point.y)}`;
+  const commands = (geometry.pathList ?? []).flatMap((path) => path.commands ?? []);
+  return commands
     .map((command): string => {
-      const coordinate = (value: string): string =>
-        String(Math.round((Number(value) / 360000) * 1000) / 1000);
-      if (command.command === "moveTo")
-        return `M ${coordinate(command.point.x)} ${coordinate(command.point.y)}`;
-      if (command.command === "lineTo")
-        return `L ${coordinate(command.point.x)} ${coordinate(command.point.y)}`;
+      if (command.command === "moveTo") {
+        currentX = formulas.coordinate(command.point.x) / 360000;
+        currentY = formulas.coordinate(command.point.y) / 360000;
+        return `M ${point(command.point)}`;
+      }
+      if (command.command === "lineTo") {
+        currentX = formulas.coordinate(command.point.x) / 360000;
+        currentY = formulas.coordinate(command.point.y) / 360000;
+        return `L ${point(command.point)}`;
+      }
       if (command.command === "close") return "Z";
+      if (command.command === "quadBezTo") {
+        const [control, end] = command.points;
+        currentX = formulas.coordinate(end!.x) / 360000;
+        currentY = formulas.coordinate(end!.y) / 360000;
+        return `Q ${point(control!)} ${point(end!)}`;
+      }
+      if (command.command === "cubicBezTo") {
+        const [first, second, end] = command.points;
+        currentX = formulas.coordinate(end!.x) / 360000;
+        currentY = formulas.coordinate(end!.y) / 360000;
+        return `C ${point(first!)} ${point(second!)} ${point(end!)}`;
+      }
+      if (command.command === "arcTo") {
+        const widthRadius = formulas.coordinate(command.widthRadius) / 360000;
+        const heightRadius = formulas.coordinate(command.heightRadius) / 360000;
+        const startAngle = formulas.coordinate(command.startAngle) / 60000;
+        const sweepAngle = formulas.coordinate(command.sweepAngle) / 60000;
+        const angle = (startAngle * Math.PI) / 180;
+        const centerX = currentX - widthRadius * Math.cos(angle);
+        const centerY = currentY - heightRadius * Math.sin(angle);
+        const endAngle = ((startAngle + sweepAngle) * Math.PI) / 180;
+        const endX = centerX + widthRadius * Math.cos(endAngle);
+        const endY = centerY + heightRadius * Math.sin(endAngle);
+        const largeArc = Math.abs(sweepAngle) > 180 ? 1 : 0;
+        const sweep = sweepAngle > 0 ? 1 : 0;
+        currentX = endX;
+        currentY = endY;
+        return [
+          "A",
+          widthRadius,
+          heightRadius,
+          0,
+          largeArc,
+          sweep,
+          Math.round(endX * 1000) / 1000,
+          Math.round(endY * 1000) / 1000,
+        ].join(" ");
+      }
       throw new OdpParseError(
         "Unsupported custom geometry path command",
         "content.xml",
@@ -248,6 +351,19 @@ function customGeometryPath(geometry: CustomGeometryOptions): string {
       );
     })
     .join(" ");
+}
+
+function throwOdpGeometryDimension(value: number | undefined, name: string): number {
+  if (value === undefined || !Number.isFinite(value) || value < 0) {
+    throw new OdpGenerateError(
+      "Custom geometry dimensions must resolve to finite EMU values",
+      "content.xml",
+      "/draw:custom-shape",
+      name,
+      "invalid-custom-geometry-dimension",
+    );
+  }
+  return value;
 }
 
 export function shapeXml(shape: ShapeOptions, styles: string[]): string {
@@ -413,7 +529,9 @@ export function parsePrimitiveSlideShape(
   const paragraphs = childrenNamed(element, "text:p");
   const x = lengthToEmu(attributeString(element, "svg:x"));
   const y = lengthToEmu(attributeString(element, "svg:y"));
-  const customGeometry = primitiveGeometry(element);
+  const width = lengthToEmu(attributeString(element, "svg:width"));
+  const height = lengthToEmu(attributeString(element, "svg:height"));
+  const customGeometry = primitiveGeometry(element, width ?? 0, height ?? 0);
   const geometry =
     element.name === "draw:rect"
       ? ("rect" as const)
@@ -425,8 +543,8 @@ export function parsePrimitiveSlideShape(
     name: attributeString(element, "draw:name"),
     x,
     y,
-    width: lengthToEmu(attributeString(element, "svg:width")),
-    height: lengthToEmu(attributeString(element, "svg:height")),
+    width,
+    height,
     ...(paragraphs.length > 0
       ? {
           textBody: {
@@ -538,10 +656,21 @@ function isPrimitiveShape(element: Element): boolean {
   );
 }
 
-function primitiveGeometry(element: Element): CustomGeometryOptions | undefined {
+function primitiveGeometry(
+  element: Element,
+  widthEmu: number,
+  heightEmu: number,
+): CustomGeometryOptions | undefined {
   if (element.name === "draw:path")
     return {
-      pathList: [{ commands: parseSvgPath(attributeString(element, "svg:d") ?? "") }],
+      pathList: [
+        {
+          commands: parseSvgPath(
+            attributeString(element, "svg:d") ?? "",
+            primitiveLocalPoint(element, widthEmu, heightEmu),
+          ),
+        },
+      ],
     };
   if (element.name === "draw:polygon" || element.name === "draw:polyline")
     return {
@@ -550,6 +679,7 @@ function primitiveGeometry(element: Element): CustomGeometryOptions | undefined 
           commands: parsePointList(
             attributeString(element, "draw:points") ?? attributeString(element, "svg:points") ?? "",
             element.name === "draw:polygon",
+            primitiveLocalPoint(element, widthEmu, heightEmu),
           ),
         },
       ],
@@ -557,9 +687,63 @@ function primitiveGeometry(element: Element): CustomGeometryOptions | undefined 
   return undefined;
 }
 
-function parseSvgPath(path: string): PathCommand[] {
-  const tokens = path.match(/[MLHVCSQTAZmlhvcsqtaz]|-?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/gu);
-  if (!tokens) throw invalidPrimitivePath();
+function primitiveLocalPoint(
+  element: Element,
+  widthEmu: number,
+  heightEmu: number,
+): (x: number, y: number) => { x: string; y: string } {
+  const viewBox = parseViewBox(element, widthEmu, heightEmu);
+  return (x: number, y: number) => ({
+    x: String(Math.round(((x - viewBox.x) / viewBox.width) * widthEmu)),
+    y: String(Math.round(((y - viewBox.y) / viewBox.height) * heightEmu)),
+  });
+}
+
+function parseViewBox(
+  element: Element,
+  widthEmu: number,
+  heightEmu: number,
+): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} {
+  const values = (attributeString(element, "svg:viewBox") ?? "")
+    .split(/[\s,]+/u)
+    .filter(Boolean)
+    .map(Number);
+  if (
+    values.length !== 4 ||
+    values.some((value) => !Number.isFinite(value)) ||
+    values[2]! <= 0 ||
+    values[3]! <= 0 ||
+    widthEmu <= 0 ||
+    heightEmu <= 0
+  ) {
+    throw invalidPrimitivePath();
+  }
+  return { x: values[0]!, y: values[1]!, width: values[2]!, height: values[3]! };
+}
+
+function parseSvgPath(
+  path: string,
+  localPoint: (x: number, y: number) => { x: string; y: string },
+): PathCommand[] {
+  const tokens: string[] = [];
+  const tokenPattern = /[MLHVCSQTAZmlhvcsqtaz]|[+-]?(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?/gu;
+  let cursor = 0;
+  while (cursor < path.length) {
+    if (/[\s,]/u.test(path[cursor]!)) {
+      cursor += 1;
+      continue;
+    }
+    tokenPattern.lastIndex = cursor;
+    const match = tokenPattern.exec(path);
+    if (!match || match.index !== cursor) throw invalidPrimitivePath();
+    tokens.push(match[0]);
+    cursor += match[0].length;
+  }
   const commands: PathCommand[] = [];
   let index = 0;
   let command:
@@ -593,10 +777,7 @@ function parseSvgPath(path: string): PathCommand[] {
   const point = (x: number, y: number, relative: boolean): { x: string; y: string } => {
     const left = relative ? currentX + x : x;
     const top = relative ? currentY + y : y;
-    return {
-      x: String(lengthToEmu(`${left}cm`) ?? 0),
-      y: String(lengthToEmu(`${top}cm`) ?? 0),
-    };
+    return localPoint(left, top);
   };
   while (index < tokens.length) {
     const token = tokens[index]!;
@@ -715,6 +896,7 @@ function parseSvgPath(path: string): PathCommand[] {
           sweep! !== 0,
           end.x,
           end.y,
+          localPoint,
         ),
       );
       previousCubic = undefined;
@@ -737,6 +919,7 @@ function arcToCubic(
   sweep: boolean,
   endX: number,
   endY: number,
+  localPoint: (x: number, y: number) => { x: string; y: string },
 ): PathCommand[] {
   if (startX === endX && startY === endY) return [];
   const phi = (rotationDegrees * Math.PI) / 180;
@@ -781,25 +964,20 @@ function arcToCubic(
     commands.push({
       command: "cubicBezTo",
       points: [
-        {
-          x: String(lengthToEmu(`${first.x}cm`) ?? 0),
-          y: String(lengthToEmu(`${first.y}cm`) ?? 0),
-        },
-        {
-          x: String(lengthToEmu(`${second.x}cm`) ?? 0),
-          y: String(lengthToEmu(`${second.y}cm`) ?? 0),
-        },
-        {
-          x: String(lengthToEmu(`${target.x}cm`) ?? 0),
-          y: String(lengthToEmu(`${target.y}cm`) ?? 0),
-        },
+        localPoint(first.x, first.y),
+        localPoint(second.x, second.y),
+        localPoint(target.x, target.y),
       ],
     });
   }
   return commands;
 }
 
-function parsePointList(points: string, close: boolean): PathCommand[] {
+function parsePointList(
+  points: string,
+  close: boolean,
+  localPoint: (x: number, y: number) => { x: string; y: string },
+): PathCommand[] {
   const values = points
     .split(/[ ,;]+/u)
     .filter(Boolean)
@@ -815,8 +993,7 @@ function parsePointList(points: string, close: boolean): PathCommand[] {
     commands.push({
       command: index === 0 ? "moveTo" : "lineTo",
       point: {
-        x: String(lengthToEmu(`${values[index]!}cm`) ?? 0),
-        y: String(lengthToEmu(`${values[index + 1]!}cm`) ?? 0),
+        ...localPoint(values[index]!, values[index + 1]!),
       },
     });
   }

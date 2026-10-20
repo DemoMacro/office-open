@@ -458,7 +458,7 @@ function parseData(el: XmlElement, index: number): ChartExData {
   };
 }
 
-function chartDataXml(data: ChartExChartData): string {
+function chartDataXml(data: ChartExChartData, tagName = "chartData"): string {
   const external = data.externalData
     ? element("externalData", {
         "r:id": data.externalData.relationshipId,
@@ -471,7 +471,7 @@ function chartDataXml(data: ChartExChartData): string {
             }),
       })
     : "";
-  return element("chartData", undefined, [
+  return element(tagName, undefined, [
     external,
     ...data.data.map((item) =>
       element("data", { id: item.id }, [
@@ -1280,6 +1280,9 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
       },
       [
         options.chartData ? chartDataXml(options.chartData) : "",
+        options.chartDataIntentionallyChanged
+          ? chartDataXml(options.chartDataIntentionallyChanged, "chartDataIntentionallyChanged")
+          : "",
         options.chart ? chartXml(options.chart) : dashboardXml(options.dashboard),
         shapeXml(options.shapeProperties),
         textPropertiesXml(options.textProperties),
@@ -1301,6 +1304,7 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
     if (!chart && !dashboard) throw new Error("ChartEx chartSpace requires chart or dashboard");
     const knownChildren = new Set([
       "chartData",
+      "chartDataIntentionallyChanged",
       "chart",
       "dashboard",
       "spPr",
@@ -1332,7 +1336,16 @@ export const chartExSpaceDesc: CustomDescriptor<ChartExSpaceOptions> = {
     const featureList = attr(el, "featureList");
     const fallbackImage = attr(el, "fallbackImg");
     return {
-      chartData: parseChartData(findChild(el, "chartData")),
+      ...(findChild(el, "chartData")
+        ? { chartData: parseChartData(findChild(el, "chartData")) }
+        : {}),
+      ...(findChild(el, "chartDataIntentionallyChanged")
+        ? {
+            chartDataIntentionallyChanged: parseChartData(
+              findChild(el, "chartDataIntentionallyChanged"),
+            ),
+          }
+        : {}),
       ...(chart ? { chart: parseChart(chart) } : {}),
       ...(dashboard ? { dashboard: parseDashboard(dashboard) } : {}),
       ...(shapeProperties ? { shapeProperties } : {}),

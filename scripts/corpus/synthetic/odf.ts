@@ -37,9 +37,9 @@ export async function odtMissingEmbeddedObject(): Promise<void> {
   } catch (cause) {
     error = cause;
   }
-  const diagnostic = error as { name?: string; reason?: string } | undefined;
+  const diagnostic = error as { elementName?: string; reason?: string } | undefined;
   assert(diagnostic, part, "missing embedded object did not reject");
-  assertEqual(diagnostic?.name, "draw:object", part, "embedded object error element");
+  assertEqual(diagnostic?.elementName, "draw:object", part, "embedded object error element");
   assertEqual(
     diagnostic?.reason,
     "embedded object subdocument is missing",

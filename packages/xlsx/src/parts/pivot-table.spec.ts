@@ -83,7 +83,7 @@ it("reports unknown pivotTable children structurally", () => {
     const parseError = error as XlsxParseError;
     expect(parseError.part).toBe("xl/pivotTables/pivotTable1.xml");
     expect(parseError.path).toBe("/pivotTableDefinition");
-    expect(parseError.name).toBe("notAllowed");
+    expect(parseError.elementName).toBe("notAllowed");
     expect(parseError.reason).toContain("unexpected child");
   }
 });

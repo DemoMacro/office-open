@@ -8,11 +8,12 @@ import type {
   FillImageResource,
   OutlineOptions,
 } from "@office-open/core";
+import type { DataType } from "@office-open/core";
 import { toUint8Array } from "@office-open/core";
 import type { Element } from "@office-open/xml";
 
 import type { OdfPackageFiles } from "./container/package";
-import { pushShapeStyle } from "./drawing/graphic-style";
+import { hexColorValue, pushShapeStyle } from "./drawing/graphic-style";
 import { OdfSchemaError } from "./errors";
 import {
   attributeString,
@@ -29,6 +30,96 @@ export interface ChartStyle {
   properties: Record<string, string>;
   part: string;
   containerPath: string;
+}
+
+const chartStyleNameCaches = new WeakMap<ChartStyleResources, Map<string, string>>();
+const drawingResourceKeys = new WeakMap<ChartStyleResources, Map<string, string[]>>();
+
+function chartNameCache(resources: ChartStyleResources): Map<string, string> {
+  let cache = chartStyleNameCaches.get(resources);
+  if (cache === undefined) {
+    cache = new Map();
+    chartStyleNameCaches.set(resources, cache);
+  }
+  return cache;
+}
+
+function resourceKeyCache(resources: ChartStyleResources): Map<string, string[]> {
+  let cache = drawingResourceKeys.get(resources);
+  if (cache === undefined) {
+    cache = new Map();
+    drawingResourceKeys.set(resources, cache);
+  }
+  return cache;
+}
+
+function uniqueStyleName(
+  prefix: string,
+  resources: ChartStyleResources,
+  xmlStyles: readonly string[],
+): string {
+  const names = new Set([...resources.styles.map((style) => style.name), ...xmlStyles]);
+  let index = resources.styles.length + xmlStyles.length + 1;
+  while (names.has(`${prefix}-${index}`)) index += 1;
+  return `${prefix}-${index}`;
+}
+
+function uniqueResourceName(resources: readonly FillImageResource[], prefix: string): string {
+  const names = new Set(resources.map((resource) => resource.name));
+  let index = resources.length + 1;
+  while (names.has(`${prefix}-${index}`)) index += 1;
+  return `${prefix}-${index}`;
+}
+
+function resourceFingerprint(data: DataType | undefined): string {
+  if (data === undefined) return "";
+  const bytes = toUint8Array(data);
+  let hash = 2166136261;
+  for (const byte of bytes) {
+    hash ^= byte;
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${bytes.byteLength}:${(hash >>> 0).toString(16)}`;
+}
+
+function byteEqual(left: DataType | undefined, right: DataType | undefined): boolean {
+  if (left === right) return true;
+  if (left === undefined || right === undefined) return false;
+  const leftBytes = toUint8Array(left);
+  const rightBytes = toUint8Array(right);
+  return (
+    leftBytes.byteLength === rightBytes.byteLength &&
+    leftBytes.every((byte, index) => byte === rightBytes[index])
+  );
+}
+
+function dedupeResource<T extends DrawingStyleResource>(
+  collection: T[],
+  resources: ChartStyleResources,
+  cachePrefix: string,
+  attributes: Record<string, string>,
+  create: (name: string) => T,
+  data?: DataType,
+): T {
+  const attributesKey = JSON.stringify(attributes);
+  const key = `${cachePrefix}:${attributesKey}:${resourceFingerprint(data)}`;
+  const cache = resourceKeyCache(resources);
+  for (const name of cache.get(key) ?? []) {
+    const existing = collection.find((resource) => resource.name === name);
+    if (
+      existing &&
+      JSON.stringify(existing.attributes) === attributesKey &&
+      byteEqual((existing as FillImageResource).data, data)
+    )
+      return existing;
+  }
+  const names = new Set(collection.map((resource) => resource.name));
+  let index = collection.length + 1;
+  while (names.has(`${cachePrefix}-${index}`)) index += 1;
+  const resource = create(`${cachePrefix}-${index}`);
+  collection.push(resource);
+  cache.set(key, [...(cache.get(key) ?? []), resource.name]);
+  return resource;
 }
 
 export function parseChartStyleContext(
@@ -51,15 +142,13 @@ export function parseChartStyleContext(
         resources.styles.push(resource);
         const graphic = childNamed(style, "style:graphic-properties");
         const chart = childNamed(style, "style:chart-properties");
-        if (attributeString(style, "style:family") === "chart") {
-          styles.set(name, {
-            styleName: name,
-            graphic: elementAttributes(graphic),
-            properties: elementAttributes(chart),
-            part,
-            containerPath: `/office:document-${part === "styles.xml" ? "styles" : "content"}/${containerName}/style:style[@style:name="${name}"]`,
-          });
-        }
+        styles.set(name, {
+          styleName: name,
+          graphic: elementAttributes(graphic),
+          properties: elementAttributes(chart),
+          part,
+          containerPath: `/office:document-${part === "styles.xml" ? "styles" : "content"}/${containerName}/style:style[@style:name="${name}"]`,
+        });
       }
     }
   }
@@ -117,14 +206,26 @@ export function pushChartStyle(
       );
     return style.name;
   }
-  const graphicName = pushShapeStyle(
-    shapeProperties?.fill,
-    shapeProperties?.outline,
-    styles,
-    fallbackName,
-  );
+  const resource = pushChartFillResource(shapeProperties?.fill, resources);
+  const graphicName =
+    resource?.name ??
+    pushShapeStyle(shapeProperties?.fill, shapeProperties?.outline, styles, fallbackName);
+  if (resource && Object.values(chartProperties).every((value) => value === undefined)) {
+    const cache = chartNameCache(resources);
+    const cacheKey = `chart-fill:${resource.name}`;
+    const cachedName = cache.get(cacheKey);
+    if (cachedName !== undefined) return cachedName;
+    const name = uniqueStyleName("chart-fill", resources, styles);
+    styles.push(
+      xmlElement("style:style", { "style:name": name, "style:family": "chart" }, [
+        resource.graphicXml,
+      ]),
+    );
+    cache.set(cacheKey, name);
+    return name;
+  }
   if (Object.values(chartProperties).every((value) => value === undefined)) return graphicName;
-  const name = `ch-${fallbackName}-${styles.length + 1}`;
+  const name = uniqueStyleName(`ch-${fallbackName}`, resources, styles);
   const graphicXml = graphicName
     ? (styles
         .find((style) => style.includes(`style:name="${graphicName}"`))
@@ -137,6 +238,109 @@ export function pushChartStyle(
     ]),
   );
   return name;
+}
+
+function pushChartFillResource(
+  fill: FillOptions | null | undefined,
+  resources: ChartStyleResources,
+): { name: string; graphicXml: string } | undefined {
+  if (!fill || typeof fill === "string" || fill.type === "solid" || fill.type === "none")
+    return undefined;
+  if (fill.type === "gradient") {
+    const gradient = "options" in fill ? fill.options : fill;
+    const stops = gradient.stops;
+    const angle = "angle" in gradient ? gradient.angle : undefined;
+    const path = "path" in gradient ? gradient.path : undefined;
+    const gradientAttributes = {
+      ...(path
+        ? {
+            "draw:style":
+              path === "rect" ? "rectangular" : path === "circle" ? "radial" : "ellipsoid",
+          }
+        : { "draw:style": "linear" }),
+      ...(angle !== undefined ? { "draw:angle": String(angle) } : {}),
+      ...(stops?.[0]
+        ? { "draw:start-color": `#${hexColorValue(stops[0].color) ?? "000000"}` }
+        : {}),
+      ...(stops?.at(-1)
+        ? { "draw:end-color": `#${hexColorValue(stops.at(-1)!.color) ?? "000000"}` }
+        : {}),
+    };
+    const resource = dedupeResource(
+      resources.gradients,
+      resources,
+      "gradient",
+      gradientAttributes,
+      (name) => ({ name, attributes: gradientAttributes }),
+    );
+    const name = resource.name;
+    return {
+      name,
+      graphicXml: xmlElement("style:graphic-properties", {
+        "draw:fill": "gradient",
+        "draw:fill-gradient-name": name,
+      }),
+    };
+  }
+  if (fill.type === "pattern") {
+    const hatchAttributes = {
+      "draw:style":
+        fill.pattern === "cross" || fill.pattern === "diagonalCross" ? "double" : "single",
+      "draw:rotation":
+        fill.pattern === "vertical" ? "900" : fill.pattern === "downDiagonal" ? "450" : "0",
+      ...(fill.foregroundColor
+        ? { "draw:color": `#${hexColorValue(fill.foregroundColor) ?? "000000"}` }
+        : {}),
+    };
+    const resource = dedupeResource(
+      resources.hatches,
+      resources,
+      "hatch",
+      hatchAttributes,
+      (name) => ({ name, attributes: hatchAttributes }),
+    );
+    const name = resource.name;
+    return {
+      name,
+      graphicXml: xmlElement("style:graphic-properties", {
+        "draw:fill": "hatch",
+        "draw:fill-hatch-name": name,
+      }),
+    };
+  }
+  if (fill.type !== "blip")
+    throw styleError(
+      "content.xml",
+      "/office:document-content",
+      fill.type,
+      "unsupported-chart-fill",
+    );
+  const href: string =
+    fill.linkedUrl ??
+    (fill.sourceReferenceId
+      ? `#${fill.sourceReferenceId}`
+      : `media/${fill.fileName ?? `${uniqueResourceName(resources.fillImages, "fill-image")}.png`}`);
+  const resource = dedupeResource(
+    resources.fillImages,
+    resources,
+    "fill-image",
+    { "xlink:href": href },
+    (name) => ({
+      name,
+      attributes: { "xlink:href": href },
+      ...(fill.data === undefined ? {} : { data: fill.data }),
+    }),
+    fill.data,
+  );
+  const name = resource.name;
+  return {
+    name,
+    graphicXml: xmlElement("style:graphic-properties", {
+      "draw:fill": "bitmap",
+      "draw:fill-image-name": name,
+      ...(fill.stretch === false ? { "style:repeat": "repeat" } : {}),
+    }),
+  };
 }
 
 export function chartStylesXml(resources: ChartStyleResources): string {
@@ -244,32 +448,21 @@ function projectFill(
   }
   if (token === "gradient") {
     const name = graphic["draw:fill-gradient-name"];
-    if (!name)
-      throw projectionError(style, "draw:fill-gradient-name", "unresolved-style-reference");
-    const resource = findResource(resources.gradients, name);
-    if (!resource)
-      throw projectionError(style, "draw:fill-gradient-name", "unresolved-style-reference");
+    const resource = name === undefined ? undefined : findResource(resources.gradients, name);
+    if (resource === undefined) return undefined;
     return gradientFill(resource);
   }
   if (token === "hatch") {
     const name = graphic["draw:fill-hatch-name"];
     const resource = name === undefined ? undefined : findResource(resources.hatches, name);
-    if (name !== undefined && !resource)
-      throw projectionError(style, "draw:fill-hatch-name", "unresolved-style-reference");
+    if (resource === undefined) return undefined;
     return hatchFill(resource);
   }
   if (token === "bitmap") return bitmapFill(style, resources, basePath);
   throw projectionError(style, "draw:fill", "unsupported-odf-fill");
 }
 
-function hatchFill(resource: DrawingStyleResource | undefined): FillOptions {
-  if (!resource)
-    return {
-      type: "pattern",
-      pattern: "percent5",
-      foregroundColor: "000000",
-      backgroundColor: "FFFFFF",
-    };
+function hatchFill(resource: DrawingStyleResource): FillOptions {
   const style = resource.attributes["draw:style"];
   const rotation = ((Number(resource.attributes["draw:rotation"] ?? 0) % 3600) + 3600) % 3600;
   const foreground = stripColor(resource.attributes["draw:color"]) ?? "000000";
@@ -286,13 +479,19 @@ function hatchFill(resource: DrawingStyleResource | undefined): FillOptions {
   return { type: "pattern", pattern, foregroundColor: foreground, backgroundColor: "FFFFFF" };
 }
 
-function bitmapFill(style: ChartStyle, resources: ChartStyleResources, basePath: string) {
+function bitmapFill(
+  style: ChartStyle,
+  resources: ChartStyleResources,
+  basePath: string,
+): FillOptions | undefined {
   const graphic = style.graphic ?? {};
   const name = graphic["draw:fill-image-name"];
   const resource = resources.fillImages.find((item) => item.name === name);
-  if (!name || !resource)
-    throw projectionError(style, "draw:fill-image-name", "unresolved-style-reference");
+  if (resource === undefined) return undefined;
   const href = resource.attributes["xlink:href"];
+  if (href?.startsWith("#")) {
+    return { type: "blip", noEmbed: true, sourceReferenceId: href.slice(1) };
+  }
   const repeat = graphic["style:repeat"] as "no-repeat" | "repeat" | "stretch" | undefined;
   const overlay = {
     type: "bitmap" as const,

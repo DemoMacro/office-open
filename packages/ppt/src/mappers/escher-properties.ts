@@ -11,32 +11,12 @@ import type {
   ShapeType,
   TextShapePreset,
 } from "@office-open/core/drawing";
+import { MSO_SHAPE_TYPE_PRESETS } from "@office-open/core/drawing";
 
 import { PptParseError } from "../errors";
 import type { RecordNode } from "../records";
 
-/** Escher shape-instance → OOXML preset geometry for ordinary autoshapes. */
-export const SHAPE_TYPE_PRESETS: Readonly<Record<number, ShapeType>> = {
-  1: "rect",
-  2: "roundRect",
-  3: "ellipse",
-  4: "diamond",
-  5: "triangle",
-  6: "rtTriangle",
-  7: "parallelogram",
-  8: "trapezoid",
-  9: "hexagon",
-  10: "octagon",
-  11: "plus",
-  12: "star5",
-  13: "rightArrow",
-  15: "homePlate",
-  19: "arc",
-  21: "plaque",
-  22: "can",
-  23: "donut",
-  193: "actionButtonForwardNext",
-};
+export const SHAPE_TYPE_PRESETS = MSO_SHAPE_TYPE_PRESETS;
 
 interface GeometryBounds {
   readonly left: number;
@@ -58,6 +38,7 @@ const MSO_PATH_CLOSE = 3;
 const MSO_PATH_END = 4;
 
 export const SHAPE_TYPE_WARPS: Readonly<Record<number, TextShapePreset>> = {
+  136: "textPlain",
   24: "textPlain",
   27: "textCurveUp",
   28: "textWave1",
@@ -128,7 +109,7 @@ export interface EscherShapeFlags {
 export interface EscherShapeStyle {
   /** 0x0104 blip reference for the shape's own picture (instance 75). */
   blipReference?: number;
-  /** 0x0186 blip reference when fill type is 5 (picture fill). */
+  /** 0x0186 blip reference for picture, texture, and pattern fills. */
   fillBlipReference?: number;
   /** Raw 0x0180 fill type so callers can resolve blip fills. */
   fillType?: number;
@@ -270,6 +251,7 @@ function readSignedProperty(
 ): number {
   const property = collected.get(propertyId);
   if (!property) {
+    if (propertyId >= 320 && propertyId <= 323) return 0;
     throw new PptParseError("Missing legacy PowerPoint custom geometry property", {
       part: "record",
       recordType: options.type,
@@ -302,7 +284,7 @@ function readCustomGeometry(
 ): void {
   const vertices = collected.get(325);
   const segments = collected.get(326);
-  if (!vertices && !segments) return;
+  if (!vertices || !segments) return;
   if (!vertices?.complex || !segments?.complex) {
     throw new PptParseError("Missing legacy PowerPoint freeform geometry data", {
       part: "record",
@@ -334,12 +316,15 @@ function readCustomGeometry(
     });
   }
 
-  const bounds: GeometryBounds = {
+  let bounds: GeometryBounds = {
     left: readSignedProperty(collected, 320, options),
     top: readSignedProperty(collected, 321, options),
     right: readSignedProperty(collected, 322, options),
     bottom: readSignedProperty(collected, 323, options),
   };
+  if (bounds.right <= bounds.left || bounds.bottom <= bounds.top) {
+    bounds = deriveVertexBounds(vertices.complex) ?? bounds;
+  }
   const width = bounds.right - bounds.left;
   const height = bounds.bottom - bounds.top;
   if (width <= 0 || height <= 0) {
@@ -362,6 +347,23 @@ function readCustomGeometry(
   let segmentOffset = 4;
   const pathList: PathOptions[] = [];
   let commands: PathCommand[] = [];
+
+  if (segmentCount === 0) {
+    const componentSize = pointSize === 8 ? 4 : 2;
+    const pointCount = Math.floor((vertices.complex.byteLength - 6) / (componentSize * 2));
+    const reader: ComplexPointReader = {
+      offset: 6,
+      pointSize,
+      view: vertices.complex,
+    };
+    for (let index = 0; index < pointCount; index += 1) {
+      const point = readPoint(reader, options);
+      commands.push(index === 0 ? { command: "moveTo", point } : { command: "lineTo", point });
+    }
+    commands.push({ command: "close" });
+    style.customGeometry = { pathList: [{ w: width, h: height, commands }] };
+    return;
+  }
 
   for (let index = 0; index < segmentCount; index += 1) {
     if (segmentOffset + 4 > segments.complex.byteLength) {
@@ -432,6 +434,32 @@ function readCustomGeometry(
   style.customGeometry = { pathList };
 }
 
+function deriveVertexBounds(view: DataView): GeometryBounds | undefined {
+  const pointSize = view.getUint16(4, true);
+  if (pointSize !== 4 && pointSize !== 0xfff0 && pointSize !== 8) return undefined;
+  const componentSize = pointSize === 8 ? 4 : 2;
+  let left = Number.MAX_SAFE_INTEGER;
+  let top = Number.MAX_SAFE_INTEGER;
+  let right = Number.MIN_SAFE_INTEGER;
+  let bottom = Number.MIN_SAFE_INTEGER;
+  for (let offset = 6; offset + componentSize * 2 <= view.byteLength; offset += componentSize * 2) {
+    const x = componentSize === 4 ? view.getInt32(offset, true) : view.getInt16(offset, true);
+    const y =
+      componentSize === 4 ? view.getInt32(offset + 4, true) : view.getInt16(offset + 2, true);
+    left = Math.min(left, x);
+    top = Math.min(top, y);
+    right = Math.max(right, x);
+    bottom = Math.max(bottom, y);
+  }
+  if (left > right || top > bottom) return undefined;
+  return {
+    left: left === right ? left - 1 : left,
+    top: top === bottom ? top - 1 : top,
+    right,
+    bottom,
+  };
+}
+
 function readPoint(reader: ComplexPointReader, options: RecordNode): { x: string; y: string } {
   const componentSize = reader.pointSize === 4 || reader.pointSize === 0xfff0 ? 2 : 4;
   if (reader.pointSize !== 4 && reader.pointSize !== 0xfff0 && reader.pointSize !== 8) {
@@ -482,7 +510,7 @@ function readBlipReference(
 function readFill(
   collected: ReadonlyMap<number, CollectedProperty>,
   style: EscherShapeStyle,
-  options: RecordNode,
+  _options: RecordNode,
 ) {
   const fillType = collected.get(0x0180);
   const foreground = collected.get(0x0181);
@@ -492,36 +520,47 @@ function readFill(
   const angle = collected.get(0x018b);
   if (!fillType) return;
   style.fillType = fillType.value;
-  if (fillType.value === 0) {
-    style.fill = { type: "none" };
+  if (fillType.value === 2 || fillType.value === 3) {
+    if (fillBlip) style.fillBlipReference = fillBlip.value;
+    else if (foreground)
+      style.fill = {
+        type: "pattern",
+        foregroundColor: escherColorHex(foreground.value),
+        backgroundColor: background ? escherColorHex(background.value) : "FFFFFF",
+      };
     return;
   }
-  if (fillType.value === 1 && foreground) {
-    style.fill = { type: "solid", color: solidColor(foreground.value, fillOpacity(opacity)) };
+  if (fillType.value === 1) {
+    if (fillBlip) style.fillBlipReference = fillBlip.value;
+    else if (foreground)
+      style.fill = {
+        type: "pattern",
+        foregroundColor: escherColorHex(foreground.value),
+        backgroundColor: background ? escherColorHex(background.value) : "FFFFFF",
+      };
     return;
   }
-  if (fillType.value === 5 && fillBlip) {
-    style.fillBlipReference = fillBlip.value;
-    return;
-  }
-  if ((fillType.value === 6 || fillType.value === 8) && foreground) {
+  if (fillType.value >= 4 && fillType.value <= 8 && foreground) {
     const stops: GradientStopOptions[] = [{ position: 0, color: escherColorHex(foreground.value) }];
     if (background) stops.push({ position: 100, color: escherColorHex(background.value) });
     style.fill = {
       type: "gradient",
       ...(angle ? { angle: angle.value / 65536 } : {}),
+      ...(fillType.value === 5 || fillType.value === 6 || fillType.value === 8
+        ? { path: "shape" as const }
+        : {}),
+      ...(fillType.value === 7 ? { scaled: true } : {}),
       stops,
     };
     return;
   }
-  throw new PptParseError(`Unsupported legacy PowerPoint fill type ${fillType.value}`, {
-    part: "record",
-    recordType: options.type,
-    recordName: "OfficeArtFOPT",
-    propertyId: 0x0180,
-    byteRange: [fillType.offset, fillType.offset + 6],
-    reason: "unsupported-fill-type",
-  });
+  if (fillType.value === 9) {
+    style.fill = { type: "group" };
+    return;
+  }
+  if (foreground) {
+    style.fill = { type: "solid", color: solidColor(foreground.value, fillOpacity(opacity)) };
+  }
 }
 
 function readOutline(collected: ReadonlyMap<number, CollectedProperty>, style: EscherShapeStyle) {

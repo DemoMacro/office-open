@@ -1,4 +1,9 @@
-import type { DocumentOptions, FootnoteOptions, RunOptions } from "@office-open/docx";
+import type {
+  DocumentOptions,
+  EndnoteOptions,
+  FootnoteOptions,
+  RunOptions,
+} from "@office-open/docx";
 
 import { RtfGenerateError } from "../errors";
 
@@ -6,10 +11,16 @@ export interface RtfGenerateContext {
   colors: string[];
   fonts: string[];
   footnotes?: FootnoteOptions[];
+  endnotes?: EndnoteOptions[];
+  styleCodes: Map<string, number>;
 }
 
 export function createContext(): RtfGenerateContext {
-  return { colors: [], fonts: [] };
+  return {
+    colors: [],
+    fonts: [],
+    styleCodes: new Map(),
+  };
 }
 
 export function reject(part: string, path: string, name: string, reason: string): never {
@@ -68,9 +79,22 @@ export function registerColor(context: RtfGenerateContext, color: string): numbe
   return context.colors.length;
 }
 
+export function reserveStyleCode(context: RtfGenerateContext, id: string): number {
+  const known = context.styleCodes.get(id);
+  if (known !== undefined) return known;
+  const canonical = /^(?:rtf-style|rtf-character-style)-(\d+)$/u.exec(id)?.[1];
+  const code = canonical === undefined ? context.styleCodes.size : Number(canonical);
+  context.styleCodes.set(id, code);
+  return code;
+}
+
+export function styleCode(context: RtfGenerateContext, id: string): number | undefined {
+  return context.styleCodes.get(id);
+}
+
 export type RtfMetadata = Pick<
   DocumentOptions,
-  "title" | "subject" | "creator" | "keywords" | "description" | "category"
+  "title" | "subject" | "creator" | "lastModifiedBy" | "keywords" | "description" | "category"
 >;
 
 export function supportedMetadata(options: DocumentOptions): RtfMetadata {
@@ -78,6 +102,7 @@ export function supportedMetadata(options: DocumentOptions): RtfMetadata {
     ...(options.title !== undefined ? { title: options.title } : {}),
     ...(options.subject !== undefined ? { subject: options.subject } : {}),
     ...(options.creator !== undefined ? { creator: options.creator } : {}),
+    ...(options.lastModifiedBy !== undefined ? { lastModifiedBy: options.lastModifiedBy } : {}),
     ...(options.keywords !== undefined ? { keywords: options.keywords } : {}),
     ...(options.description !== undefined ? { description: options.description } : {}),
     ...(options.category !== undefined ? { category: options.category } : {}),

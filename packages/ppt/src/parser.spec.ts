@@ -50,15 +50,17 @@ function rgb(red: number, green: number, blue: number): number[] {
 
 function styledText(value: string, truncated = false): number[] {
   const body = [
-    ...int32(value.length),
+    ...int16(value.length),
     ...int16(2),
     ...int32(0x00000800),
     ...int16(2),
-    ...int32(Math.ceil(value.length / 2)),
+    ...int16(Math.ceil(value.length / 2)),
+    ...int16(0),
     ...int32(0x00010107),
     ...int16(0x0107),
     ...int16(0),
-    ...int32(value.length - Math.ceil(value.length / 2)),
+    ...int16(value.length - Math.ceil(value.length / 2)),
+    ...int16(0),
     ...int32(0x00060000),
     ...int16(18),
     ...rgb(255, 0, 0),
@@ -68,8 +70,10 @@ function styledText(value: string, truncated = false): number[] {
 
 function multiScriptStyledText(value: string): number[] {
   return record(4001, [
-    ...int32(value.length),
-    ...int32(Math.ceil(value.length / 2)),
+    ...int16(value.length),
+    ...int16(0),
+    ...int16(Math.ceil(value.length / 2)),
+    ...int16(0),
     ...int32(0x00010107 | 0x000f0000),
     ...int16(0x0107),
     ...int16(0),
@@ -652,7 +656,7 @@ describe("parsePresentation", () => {
         () =>
           parsePresentation(
             buildCfb([
-              { name: "PowerPoint Document", data: unsupported.document },
+              { name: "PowerPoint Document", data: new Uint8Array(0) },
               { name: "Current User", data: unsupported.currentUser },
             ]),
           ),
@@ -696,6 +700,12 @@ describe("parsePresentation", () => {
         path: "/",
       });
     }
+  });
+
+  it("recovers the current user atom from the last document edit", () => {
+    const { document } = buildDocument();
+    const options = parsePresentation(buildCfb([{ name: "PowerPoint Document", data: document }]));
+    expect(options.slides).toHaveLength(1);
   });
 
   it("projects persisted slides, anchored text shapes, and paragraph runs", () => {
@@ -1135,7 +1145,7 @@ describe("parsePresentation", () => {
           2063,
           1,
           [40, 100, 300, 180],
-          [optEntry(0x0180, 5), optEntry(0x0186, 1, true)],
+          [optEntry(0x0180, 3), optEntry(0x0186, 1, true)],
           true,
         ),
       ],

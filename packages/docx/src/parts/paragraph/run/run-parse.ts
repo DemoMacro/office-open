@@ -624,10 +624,15 @@ export function parseRun(
       case "w:t": {
         let text = textOf(child);
         const preserve = attr(child, "xml:space") === "preserve";
+        const nil = attr(child, "xsi:nil") === "true";
         const needsMarker = preserve || /^[\t\n\r ]|[\t\n\r ]$/.test(text);
         if (preserve) preserveSpace = true;
         else if (needsMarker && preserveSpace === undefined) preserveSpace = false;
-        children.push(needsMarker ? { text, preserveSpace: preserve } : text);
+        children.push(
+          needsMarker || nil
+            ? { text, ...(nil ? { nil: true } : {}), preserveSpace: preserve }
+            : text,
+        );
         break;
       }
       case "w:instrText": {
@@ -995,18 +1000,27 @@ export function parsedRunToOptions(
     "text" in first &&
     "preserveSpace" in first &&
     first.preserveSpace === false;
+  const firstNilText =
+    typeof first === "object" && first !== null && "text" in first && "nil" in first;
 
   // Fast path: the overwhelmingly common run shape — one plain text node, no
   // rsids — skips the reference/symbol/object scans and collection loop.
   if (
     contentChildren.length === 1 &&
-    (typeof first === "string" || firstUnpreservedText) &&
+    (typeof first === "string" || firstUnpreservedText || firstNilText) &&
     parsed.childOrder === undefined &&
     parsed.additionRsid === undefined &&
     parsed.runPropertiesRsid === undefined &&
     parsed.deletionRsid === undefined
   ) {
     const text = typeof first === "string" ? first : first.text;
+    if (firstNilText) {
+      return {
+        ...parsed.properties,
+        children: [first],
+        ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}),
+      } as RunOptions;
+    }
     const base =
       parsed.properties === undefined
         ? { text, ...(parsed.childOrder ? { childOrder: parsed.childOrder } : {}) }

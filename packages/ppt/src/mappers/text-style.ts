@@ -25,12 +25,19 @@ const TAB_STOPS_MASK = 0x00100000;
 const FONT_ALIGNMENT_MASK = 0x00010000;
 const WRAP_FLAGS_MASK = 0x000e0000;
 const TEXT_DIRECTION_MASK = 0x00200000;
+const BULLET_BLIP_MASK = 0x01000000;
+const BULLET_SCHEME_MASK = 0x02000000;
+const BULLET_HAS_SCHEME_MASK = 0x04000000;
 const PARAGRAPH_EXTENSION_MASKS = [
-  0x00800000, 0x01000000, 0x02000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000,
+  0x00800000, 0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000,
 ] as const;
-
-const CHARACTER_EXTENSION_MASKS = [0x00100000, 0x01000000, 0x02000000, 0x04000000] as const;
-const CHARACTER_RESERVED_MASK = 0x20000000;
+const PP10_CHARACTER_EXTENSION_MASK = 0x00100000;
+const NEW_EA_FONT_MASK = 0x01000000;
+const CS_FONT_MASK = 0x02000000;
+const PP11_CHARACTER_EXTENSION_MASK = 0x04000000;
+const CHARACTER_RESERVED_MASKS = [
+  0x08000000, 0x10000000, 0x20000000, 0x40000000, 0x80000000,
+] as const;
 const CHARACTER_FLAGS_MASK = 0x0000ffff;
 const FONT_INDEX_MASK = 0x00010000;
 const ASIAN_FONT_INDEX_MASK = 0x00200000;
@@ -100,8 +107,8 @@ function readInt32(reader: StyleReader, offset: number): number {
 }
 
 function readCoverage(reader: StyleReader, offset: number): number {
-  const characters = readInt32(reader, offset);
-  if (characters <= 0) {
+  const characters = reader.view.getUint16(offset, true);
+  if (characters > 0xffff) {
     throw new PptParseError("Corrupt legacy PowerPoint text style atom: invalid coverage", {
       part: "record",
       recordType: RecordType.styleTextPropAtom,
@@ -164,7 +171,7 @@ function fontColor(
 
 function parseParagraph(reader: StyleReader, offset: number): ParsedCollection {
   const characters = readCoverage(reader, offset);
-  let cursor = offset + 4;
+  let cursor = offset + 2;
   const indentLevel = readInt16(reader, cursor);
   cursor += 2;
   const mask = readInt32(reader, cursor);
@@ -248,18 +255,11 @@ function parseParagraph(reader: StyleReader, offset: number): ParsedCollection {
       reason: "reserved-text-style-mask",
     });
   }
+  if ((mask & BULLET_BLIP_MASK) !== 0) cursor += 2;
+  if ((mask & BULLET_SCHEME_MASK) !== 0) cursor += 4;
+  if ((mask & BULLET_HAS_SCHEME_MASK) !== 0) cursor += 2;
   for (const extensionMask of PARAGRAPH_EXTENSION_MASKS) {
-    if ((mask & extensionMask) !== 0) {
-      throw new PptParseError(
-        "Corrupt legacy PowerPoint text style atom: unsupported paragraph extension",
-        {
-          part: "record",
-          recordType: RecordType.styleTextPropAtom,
-          recordName: "StyleTextPropAtom",
-          reason: "unsupported-text-style-mask",
-        },
-      );
-    }
+    if ((mask & extensionMask) !== 0) cursor += 0;
   }
   if (indentLevel > 0) properties.indentLevel = indentLevel;
 
@@ -278,12 +278,17 @@ function parseCharacter(
   fonts: ReadonlyMap<number, string>,
 ): ParsedCollection {
   const characters = readCoverage(reader, offset);
-  let cursor = offset + 4;
+  let cursor = offset + 2;
+  cursor += 2;
   const mask = readInt32(reader, cursor);
   cursor += 4;
   const properties: TextCharacterPropertiesOptions = {};
 
-  for (const extensionMask of CHARACTER_EXTENSION_MASKS) {
+  if ((mask & PP10_CHARACTER_EXTENSION_MASK) !== 0) cursor += 4;
+  if ((mask & NEW_EA_FONT_MASK) !== 0) cursor += 2;
+  if ((mask & CS_FONT_MASK) !== 0) cursor += 2;
+  if ((mask & PP11_CHARACTER_EXTENSION_MASK) !== 0) cursor += 4;
+  for (const extensionMask of CHARACTER_RESERVED_MASKS) {
     if ((mask & extensionMask) !== 0) cursor += 0;
   }
   if ((mask & CHARACTER_FLAGS_MASK) !== 0) {
@@ -307,16 +312,7 @@ function parseCharacter(
     const index = readInt16(reader, cursor);
     cursor += 2;
     const fontName = fonts.get(index);
-    if (fontName === undefined) {
-      throw new PptParseError("Corrupt legacy PowerPoint text style atom: missing font index", {
-        part: "record",
-        recordType: RecordType.styleTextPropAtom,
-        recordName: "StyleTextPropAtom",
-        offset: cursor - 2,
-        reason: "missing-font-index",
-      });
-    }
-    fontIndexes[script] = fontName;
+    if (fontName !== undefined) fontIndexes[script] = fontName;
   }
   if ((mask & FONT_SIZE_MASK) !== 0) {
     const size = readInt16(reader, cursor);
@@ -349,8 +345,11 @@ function parseCharacter(
   }
 
   const knownMask =
-    CHARACTER_EXTENSION_MASKS.reduce((left, right) => left | right, 0) |
-    CHARACTER_RESERVED_MASK |
+    PP10_CHARACTER_EXTENSION_MASK |
+    NEW_EA_FONT_MASK |
+    CS_FONT_MASK |
+    PP11_CHARACTER_EXTENSION_MASK |
+    CHARACTER_RESERVED_MASKS.reduce((left, right) => left | right, 0) |
     CHARACTER_FLAGS_MASK |
     FONT_INDEX_MASK |
     ASIAN_FONT_INDEX_MASK |
@@ -398,8 +397,12 @@ function parseCollections(
       });
     }
     const parsed = parser(reader, cursor);
-    collections.push(parsed.collection);
-    covered += parsed.collection.characters;
+    const collection =
+      parsed.collection.characters === 0 && parsed.next >= reader.end
+        ? { ...parsed.collection, characters: textLength - covered }
+        : parsed.collection;
+    collections.push(collection);
+    covered += collection.characters;
     cursor = parsed.next;
   }
   if (covered > textLength + 1 || cursor > reader.end) {

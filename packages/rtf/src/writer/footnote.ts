@@ -1,11 +1,14 @@
-import type { FootnoteOptions } from "@office-open/docx";
+import type { EndnoteOptions, FootnoteOptions } from "@office-open/docx";
 
 import { assertAllowed, reject, type RtfGenerateContext } from "./context";
 import { control, rtfText } from "./escape";
 
-function footnoteText(footnote: FootnoteOptions, path: string): string {
-  assertAllowed(footnote, ["children"], "footnote", path);
-  return footnote.children
+function noteText(note: FootnoteOptions | EndnoteOptions, path: string): string {
+  assertAllowed(note, ["id", "children", "autoReferenceMark"], "footnote", path);
+  if ("autoReferenceMark" in note && note.autoReferenceMark === false) {
+    reject("footnote", path, "autoReferenceMark", "RTF always projects a note reference mark");
+  }
+  return note.children
     .map((child, childIndex) => {
       const childPath = `${path}.children[${childIndex}]`;
       if (
@@ -40,5 +43,29 @@ export function writeFootnoteReference(
   if (!footnote) {
     reject("run", path, "footnoteReference", "RTF footnote reference has no matching content");
   }
-  return `{\\footnote ${footnoteText(footnote, `footnotes[${reference}]`)}}`;
+  return `{\\footnote ${noteText(footnote, `footnotes[${reference}]`)}}`;
+}
+
+export function writeEndnoteReference(
+  context: RtfGenerateContext,
+  reference: unknown,
+  path: string,
+): string {
+  const index =
+    typeof reference === "number"
+      ? reference
+      : typeof reference === "object" &&
+          reference !== null &&
+          "id" in reference &&
+          typeof reference.id === "number"
+        ? reference.id
+        : undefined;
+  if (typeof index !== "number" || !Number.isInteger(index) || index < 0) {
+    reject("run", path, "endnoteReference", "RTF requires an ordered endnote index");
+  }
+  const endnote = context.endnotes?.[index];
+  if (endnote === undefined) {
+    reject("run", path, "endnoteReference", "RTF endnote reference has no matching content");
+  }
+  return `{\\footnote\\ftnalt ${noteText(endnote, `endnotes[${index}]`)}}`;
 }

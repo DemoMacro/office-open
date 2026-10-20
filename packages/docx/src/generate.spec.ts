@@ -3,6 +3,7 @@ import type { GroupChildMediaData } from "@shared/media";
 import type { SectionChild } from "@shared/section";
 import { describe, expect, it } from "vite-plus/test";
 
+import type { DocumentOptions } from ".";
 import { compileDocument } from "./compiler";
 import { generateDocument, generateDocumentSync } from "./generate";
 import { parseDocumentSync } from "./parse";
@@ -109,6 +110,7 @@ describe("deep documents", () => {
       { type: "uint8array" },
     );
     expect(generated.byteLength).toBeGreaterThan(0);
+    expect(parseDocumentSync(generated).sections?.[0]?.children?.[0]).toBeDefined();
   });
 });
 
@@ -129,7 +131,7 @@ describe("malformed package boundaries", () => {
     );
   });
 
-  it("rejects a parsed table whose source omitted tblGrid", async () => {
+  it("tolerates a parsed table whose source omitted tblGrid", async () => {
     const generated = await generateDocument(
       {
         sections: [
@@ -151,9 +153,109 @@ describe("malformed package boundaries", () => {
     entries["word/document.xml"] = new TextEncoder().encode(
       documentXml.replace(/<w:tblGrid>.*?<\/w:tblGrid>/s, ""),
     );
-    expect(() => parseDocumentSync(zipSync(entries))).toThrowError(
-      /Table is missing its required grid/,
+    const parsed = parseDocumentSync(zipSync(entries));
+    const child = parsed.sections[0]?.children[0];
+    const table = child && "table" in child ? child.table : undefined;
+    expect(table?.columnWidths).toEqual([]);
+    expect(table?.tableGridOmitted).toBe(true);
+    expect(
+      new TextDecoder().decode(compileDocument(parsed)["word/document.xml"] as Uint8Array),
+    ).not.toContain("<w:tblGrid>");
+  });
+
+  it("preserves a tolerated table nested directly in a paragraph", async () => {
+    const generated = await generateDocument(
+      {
+        sections: [
+          {
+            children: [
+              {
+                table: {
+                  rows: [{ cells: [{ children: [{ paragraph: { children: ["Outer"] } }] }] }],
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { type: "uint8array" },
     );
+    const entries = unzipSync(generated);
+    const documentXml = new TextDecoder().decode(entries["word/document.xml"]);
+    entries["word/document.xml"] = new TextEncoder().encode(
+      documentXml.replace(
+        "Outer</w:t></w:r></w:p>",
+        "Outer</w:t></w:r><w:tbl><w:tr><w:tc><w:p><w:r><w:t>Inner</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:p>",
+      ),
+    );
+    expect(new TextDecoder().decode(entries["word/document.xml"])).toContain(
+      "Outer</w:t></w:r><w:tbl>",
+    );
+    const parsed = parseDocumentSync(zipSync(entries));
+    const table = parsed.sections[0]?.children[0];
+    expect(table && "table" in table).toBe(true);
+    const outerTable = table && "table" in table ? table.table : undefined;
+    const row = outerTable?.rows[0];
+    const cell = row && "cells" in row ? row.cells[0] : undefined;
+    const paragraph = cell && "children" in cell ? cell.children?.[0] : undefined;
+    const children =
+      paragraph && "paragraph" in paragraph && typeof paragraph.paragraph !== "string"
+        ? paragraph.paragraph.children
+        : undefined;
+    expect(children?.[1]).toMatchObject({
+      table: {
+        rows: [{ cells: [{ children: [{ paragraph: { text: "Inner" } }] }] }],
+      },
+    });
+  });
+
+  it("preserves xsi:nil on empty text", async () => {
+    const generated = await generateDocument(
+      { sections: [{ children: [{ paragraph: { children: ["Nil"] } }] }] },
+      { type: "uint8array" },
+    );
+    const entries = unzipSync(generated);
+    const documentXml = new TextDecoder().decode(entries["word/document.xml"]);
+    entries["word/document.xml"] = new TextEncoder().encode(
+      documentXml.replace(/<w:t[^>]*>Nil<\/w:t>/, '<w:t xsi:nil="true"/>'),
+    );
+    const paragraph = parseDocumentSync(zipSync(entries)).sections[0]?.children[0];
+    const options = paragraph && "paragraph" in paragraph ? paragraph.paragraph : undefined;
+    expect(typeof options === "string" ? undefined : options?.children?.[0]).toEqual({
+      children: [{ text: "", nil: true, preserveSpace: false }],
+    });
+  });
+
+  it("preserves a break tolerated directly in a paragraph", async () => {
+    const source: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                children: [{ blockBreak: { count: 1, type: "textWrapping", clear: "all" } }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    const xml = new TextDecoder().decode(
+      compileDocument(source)["word/document.xml"] as Uint8Array,
+    );
+    expect(xml).toContain('<w:p><w:br w:type="textWrapping" w:clear="all"/>');
+
+    const generated = await generateDocument(source, { type: "uint8array" });
+    const parsed = parseDocumentSync(generated);
+    const paragraph = parsed.sections[0]?.children[0];
+    expect(paragraph && "paragraph" in paragraph && typeof paragraph.paragraph !== "string").toBe(
+      true,
+    );
+    const children =
+      paragraph && "paragraph" in paragraph && typeof paragraph.paragraph !== "string"
+        ? paragraph.paragraph.children
+        : undefined;
+    expect(children).toEqual([{ blockBreak: { count: 1, type: "textWrapping", clear: "all" } }]);
   });
 });
 

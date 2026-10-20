@@ -16,6 +16,21 @@ export function readSummaryInformation(reader: CompoundFileReader): Presentation
 }
 
 export function assertCfbSignature(data: Uint8Array): void {
+  if (
+    data.byteLength >= 8 &&
+    data[0] === 0xed &&
+    data[1] === 0xde &&
+    data[2] === 0xad &&
+    data[3] === 0x0b
+  ) {
+    throw new PptParseError("Unsupported legacy PowerPoint 2/3 file", {
+      part: "container",
+      path: "/",
+      offset: 0,
+      length: 8,
+      reason: "unsupported-legacy-format",
+    });
+  }
   const signature = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
   if (data.byteLength < signature.length || signature.some((byte, index) => data[index] !== byte)) {
     throw new PptParseError("Input is not a legacy PowerPoint CFB container", {
@@ -26,6 +41,10 @@ export function assertCfbSignature(data: Uint8Array): void {
       reason: "invalid-container-signature",
     });
   }
+}
+
+export function isLegacyPp40Reader(reader: CompoundFileReader): boolean {
+  return reader.entry("PP40") !== undefined && reader.entry("PowerPoint Document") === undefined;
 }
 
 export function readStream(reader: CompoundFileReader, path: string): Uint8Array {

@@ -5,7 +5,7 @@ export {
   parseDocument,
   parseDocumentSync,
 } from "./body";
-export { OdtParseError } from "./error";
+export { OdtGenerateError, OdtParseError } from "./error";
 export type { OdtDocumentOptions } from "./options";
 export type {
   OdtEmbeddedObjectOptions,

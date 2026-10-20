@@ -1,9 +1,17 @@
 import type { RunOptions } from "@office-open/docx";
 
 import { tagToLcid } from "../langs";
-import { assertAllowed, colorIndex, fontIndex, reject, type RtfGenerateContext } from "./context";
+import {
+  assertAllowed,
+  colorIndex,
+  fontIndex,
+  reject,
+  styleCode,
+  type RtfGenerateContext,
+} from "./context";
 import { control, rtfText } from "./escape";
 import { writeFieldChild } from "./field";
+import { writeEndnoteReference } from "./footnote";
 import { writeDrawingChild } from "./shape-picture";
 
 const RUN_PROPERTIES = [
@@ -99,11 +107,19 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
     run.emboss === true ? control("impr") : "",
     run.emboss === false ? control("impr", 0) : "",
     run.scale === undefined ? "" : control("charscalex", run.scale),
-    run.style === undefined
-      ? ""
-      : run.style.match(/^rtf-character-style-(\d+)$/)
-        ? control("cs", Number(run.style.match(/^rtf-character-style-(\d+)$/)![1]))
-        : reject("run", "run.style", run.style, "RTF writer only projects parsed character styles"),
+    (() => {
+      if (run.style === undefined) return "";
+      const code = styleCode(context, run.style);
+      if (code === undefined) {
+        reject(
+          "run",
+          "run.style",
+          run.style,
+          "RTF character style must be declared in the stylesheet",
+        );
+      }
+      return control("cs", code);
+    })(),
     (() => {
       const tag = run.language?.value;
       if (tag === undefined) return "";
@@ -125,6 +141,7 @@ export function writeRunProperties(run: RunOptions, context: RtfGenerateContext)
 
 export function writeInlineChild(
   child: NonNullable<RunOptions["children"]>[number],
+  context: RtfGenerateContext,
   path: string,
 ): string {
   if (typeof child === "string") return rtfText(child);
@@ -156,6 +173,9 @@ export function writeInlineChild(
     assertAllowed(child.bookmarkEnd, ["id"], "bookmark", `${path}.bookmarkEnd`);
     return "{\\*\\bkmkend }";
   }
+  if ("endnoteReference" in child) {
+    return writeEndnoteReference(context, child.endnoteReference, `${path}.endnoteReference`);
+  }
   const field = writeFieldChild(child, path);
   if (field !== undefined) return field;
   const drawing = writeDrawingChild(child, path);
@@ -171,7 +191,7 @@ export function writeRun(run: RunOptions, context: RtfGenerateContext, path: str
     return `{${properties}${rtfText(run.text)}}`;
   }
   const children = (run.children ?? []).map((child, index) =>
-    writeInlineChild(child, `${path}.children[${index}]`),
+    writeInlineChild(child, context, `${path}.children[${index}]`),
   );
   if (!properties) return children.join("");
   return `{${properties}${children.join("")}}`;

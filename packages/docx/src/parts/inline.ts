@@ -329,7 +329,6 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext, isDeleted
     opts.children?.some(
       (child) => typeof child === "object" && child !== null && "preserveSpace" in child,
     ) === true;
-
   // Top-level references — a pure reference run flattened by the parse path
   // (e.g. inside w:hyperlink) carries the reference alongside its rPr with no
   // children; without this branch the run would emit empty and drop it.
@@ -348,7 +347,11 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext, isDeleted
   if (opts.children) {
     for (const child of opts.children) {
       if (typeof child === "string") {
-        body += textElementXml(textTag, child, opts.preserveSpace && !hasSpaceSegment);
+        body += textElementXml(
+          textTag,
+          child,
+          hasSpaceSegment ? /^[\t\n\r ]|[\t\n\r ]$/.test(child) : opts.preserveSpace,
+        );
       } else if (typeof child === "object" && child !== null) {
         // Bare run-inner elements — emit directly inside this <w:r>. Must run
         // before stringifyChildDispatch, which wraps paragraph-level children
@@ -357,9 +360,14 @@ export function stringifyRunInline(opts: RunOptions, ctx: BodyContext, isDeleted
           body += "<w:tab/>";
           continue;
         }
-        const textSegment = child as { text?: string; preserveSpace?: boolean };
-        if (typeof textSegment.text === "string" && "preserveSpace" in textSegment) {
-          body += textElementXml(textTag, textSegment.text, textSegment.preserveSpace);
+        const textSegment = child as { text?: string; preserveSpace?: boolean; nil?: true };
+        if (
+          typeof textSegment.text === "string" &&
+          ("preserveSpace" in textSegment || "nil" in textSegment)
+        ) {
+          body += textSegment.nil
+            ? `<${textTag} xsi:nil="true">${escapeXml(textSegment.text)}</${textTag}>`
+            : textElementXml(textTag, textSegment.text, textSegment.preserveSpace);
           continue;
         }
         if ("instructionText" in textSegment) {
@@ -1350,6 +1358,14 @@ export function stringifyParagraphInline(
       if (typeof child === "string") {
         body += stringifyRunInline({ text: child }, ctx);
       } else if (typeof child === "object" && child !== null) {
+        if ("table" in child) {
+          body += ctx.stringifyChild({ table: child.table });
+          continue;
+        }
+        if ("blockBreak" in child) {
+          body += breakXml(child.blockBreak);
+          continue;
+        }
         // Try JSON child dispatch first (image, chart, hyperlink, etc.)
         const jsonResult = stringifyChildDispatch(child as ParagraphChild, ctx);
         if (jsonResult !== undefined) {

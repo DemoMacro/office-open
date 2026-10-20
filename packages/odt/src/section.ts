@@ -11,7 +11,7 @@ import {
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
-import { blocksXml, parseBlocks, unknownOdtElement, type ParseContext } from "./body";
+import { blockXml, blocksXml, parseBlocks, unknownOdtElement, type ParseContext } from "./body";
 import type { OdtChart, OdtImage } from "./drawing";
 import type { OdtEmbeddedObjectOptions } from "./embedded-objects";
 import type { CanonicalRevision } from "./paragraph";
@@ -51,12 +51,14 @@ export interface NotesContext {
   footnotes: Map<number, NoteChildren>;
   endnotes: Map<number, NoteChildren>;
   bookmarkNames: Map<number, string>;
+  bookmarkEndNames: Map<number, string[]>;
   sequenceNames: Set<string>;
   variableTypes: Map<string, "float" | "string">;
   forms: OfficeFormsOptions;
-  revisions: Map<number, CanonicalRevision>;
+  revisions: Map<string, CanonicalRevision>;
   comments: Map<number, NonNullable<DocumentOptions["comments"]>[number]>;
   annotationNames: Map<number, string>;
+  sectionSources: Map<string, import("./options").OdtSectionSourceOptions>;
 }
 
 export function sectionChildText(child: SectionChild): string {
@@ -124,11 +126,29 @@ export function bibliographyMarkXml(bibliographyType: string, cachedValue?: stri
   );
 }
 
-export function indexXml(value: Extract<SectionChild, { toc: unknown }>["toc"]): string {
+export function indexXml(
+  value: Extract<SectionChild, { toc: unknown }>["toc"],
+  styles: string[],
+  images: OdtImage[],
+  notes: NotesContext,
+  numbering: DocumentOptions["numbering"],
+  charts: OdtChart[],
+  embeddedObjects: OdtEmbeddedObjectOptions[] = [],
+): string {
+  const entryXml = (entries: SectionChild[] | undefined): string[] =>
+    (entries ?? []).map((entry) =>
+      blockXml(entry, styles, images, notes, numbering, charts, embeddedObjects),
+    );
+  const blockXmlGroup = (entries: SectionChild[] | undefined): string =>
+    blocksXml(entries ?? [], styles, images, notes, numbering, charts, embeddedObjects);
   if (value.captionLabelIncludingNumbers === undefined) {
     return xmlElement("text:table-of-content", { "text:name": value.alias }, [
       xmlElement("text:table-of-content-source", { "text:outline-level": 10 }),
-      indexBodyXml(value.entries?.map(sectionChildText) ?? []),
+      indexBodyXml([
+        blockXmlGroup(value.leading),
+        ...entryXml(value.entries),
+        blockXmlGroup(value.trailing),
+      ]),
     ]);
   }
   return xmlElement(
@@ -141,23 +161,13 @@ export function indexXml(value: Extract<SectionChild, { toc: unknown }>["toc"]):
         "text:index-scope": "document",
         "text:use-caption": value.captionLabelIncludingNumbers !== undefined,
       }),
-      xmlElement(
-        "text:index-body",
-        undefined,
-        value.entries
-          ?.map(sectionChildText)
-          .map((text) => xmlElement("text:p", undefined, [escapeText(text)])),
-      ),
+      xmlElement("text:index-body", undefined, entryXml(value.entries)),
     ],
   );
 }
 
 function indexBodyXml(texts: string[]): string {
-  return xmlElement(
-    "text:index-body",
-    undefined,
-    texts.map((text) => xmlElement("text:p", undefined, [escapeText(text)])),
-  );
+  return xmlElement("text:index-body", undefined, texts);
 }
 
 export function bibliographyIndexXml(
@@ -194,6 +204,35 @@ export function nextBookmarkId(context: ParseContext): number {
   return Math.max(0, ...context.bookmarkIds.values()) + 1;
 }
 
+export function bookmarkDisplayName(id: number, name: string, notes: NotesContext): string {
+  const duplicateCount = bookmarkRawNameCounts.get(notes)?.get(name) ?? 1;
+  const counts = duplicateBookmarkCounts.get(notes) ?? new Map<string, number>();
+  duplicateBookmarkCounts.set(notes, counts);
+  const key = `${id}\0${name}`;
+  const occurrence = counts.get(key) ?? 0;
+  counts.set(key, occurrence + 1);
+  if (duplicateCount < 2) return name;
+  return occurrence === 0
+    ? `${name}__office-open-id-${id}__`
+    : `${name}__office-open-id-${id}-${occurrence}__`;
+}
+
+const duplicateBookmarkCounts = new WeakMap<NotesContext, Map<string, number>>();
+const bookmarkRawNameCounts = new WeakMap<NotesContext, Map<string, number>>();
+
+export function countBookmarkName(id: number, name: string, notes: NotesContext): void {
+  const counts = bookmarkRawNameCounts.get(notes) ?? new Map<string, number>();
+  bookmarkRawNameCounts.set(notes, counts);
+  counts.set(name, (counts.get(name) ?? 0) + 1);
+  notes.bookmarkNames.set(id, name);
+}
+
+export function canonicalBookmarkName(name: string): { name: string; encodedId?: number } {
+  const match = /^(?<name>.+)__office-open-id-(?<id>\d+)(?:-\d+)?__$/.exec(name);
+  if (!match) return { name };
+  return { name: match.groups?.name ?? name, encodedId: Number(match.groups?.id) };
+}
+
 export function parseAnnotation(element: Element): ParagraphChild {
   if (attributeString(element, "office:display") === "true") throw unknownOdtElement(element);
   return {
@@ -221,19 +260,26 @@ export function parseAnnotationStart(element: Element, context: ParseContext): P
 
 export function parseAnnotationEnd(element: Element, context: ParseContext): ParagraphChild[] {
   const name = attributeString(element, "office:name") ?? "";
-  const id = context.annotationIds.get(name);
-  if (id === undefined) throw unknownOdtElement(element);
+  let id = context.annotationIds.get(name);
+  if (id === undefined) {
+    if (!name) throw unknownOdtElement(element);
+    id = context.comments.length + 1;
+    context.annotationIds.set(name, id);
+    context.comments.push({ id, children: [] });
+  }
   return [{ commentRangeEnd: { id } }];
 }
 
-export function parseIndex(element: Element): Extract<SectionChild, { toc: unknown }>["toc"] {
+export function parseIndex(
+  element: Element,
+  context: ParseContext,
+): Extract<SectionChild, { toc: unknown }>["toc"] {
   const source = childNamed(element, "text:illustration-index-source");
   const title = childNamed(source, "text:index-title-template");
   const scope = attributeString(source, "text:index-scope");
   if (scope !== undefined && scope !== "document") throw unknownOdtElement(element);
-  const entries = childrenNamed(childNamed(element, "text:index-body"), "text:p").map(
-    (paragraph): SectionChild => ({ paragraph: { text: textOf(paragraph) } }),
-  );
+  const body = childNamed(element, "text:index-body");
+  const entries = body ? parseBlocks(body.elements ?? [], context) : [];
   return {
     alias: attributeString(element, "text:name"),
     captionLabelIncludingNumbers:
@@ -245,12 +291,12 @@ export function parseIndex(element: Element): Extract<SectionChild, { toc: unkno
 export function parseContentIndex(
   element: Element,
   sourceName: string,
+  context: ParseContext,
 ): Extract<SectionChild, { toc: unknown }>["toc"] {
   const source = childNamed(element, sourceName);
   const title = childNamed(source, "text:index-title-template");
-  const entries = childrenNamed(childNamed(element, "text:index-body"), "text:p").map(
-    (paragraph): SectionChild => ({ paragraph: { text: textOf(paragraph) } }),
-  );
+  const body = childNamed(element, "text:index-body");
+  const entries = body ? parseBlocks(body.elements ?? [], context) : [];
   return {
     alias: attributeString(element, "text:name"),
     hyperlink: childrenNamed(source, "text:table-of-content-entry-template").some((template) =>

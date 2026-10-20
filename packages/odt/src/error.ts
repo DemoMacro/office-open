@@ -4,10 +4,24 @@ export class OdtParseError extends Error {
     message: string,
     readonly part: string = "",
     readonly path: string = "",
-    readonly name: string = "",
+    readonly elementName: string = "",
     readonly reason: string = "",
     options?: ErrorOptions,
   ) {
     super(message, options);
+    this.name = "OdtParseError";
+  }
+}
+
+/** Structured error raised when canonical options cannot be represented in ODF. */
+export class OdtGenerateError extends Error {
+  constructor(
+    message: string,
+    readonly field: string,
+    readonly reason: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = "OdtGenerateError";
   }
 }

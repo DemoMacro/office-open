@@ -4,7 +4,7 @@
  * @module
  */
 
-import { attr, attrBool, attrNum, findChild, stringifyElement } from "@office-open/xml";
+import { attr, attrBool, attrNum, escapeXml, findChild, stringifyElement } from "@office-open/xml";
 import type { Element } from "@office-open/xml";
 
 import type { ReadContext, WriteContext } from "../../descriptor/context";
@@ -29,6 +29,8 @@ import { parseShapeStyle } from "../../theme/style-matrix";
 import { stringifyConnection } from "./connection";
 import { parsePointDetails, stringifyPoint } from "./point";
 import type { PointPropertySetOptions } from "./point";
+
+const MC_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006";
 
 /**
  * Build the complete dgm:dataModel XML from pre-serialized point and connection strings.
@@ -68,6 +70,23 @@ export interface DataModelPointOptions {
   extensions?: DiagramExtensionOptions[];
 }
 
+/** One MCE branch containing a data-model point. */
+export interface DataModelPointAlternativeOptions {
+  requires: string;
+  point: DataModelPointOptions;
+}
+
+/** A data-model point wrapped in MCE Compatibility Choice/Fallback branches. */
+export interface DataModelAlternativeContentOptions {
+  choices: DataModelPointAlternativeOptions[];
+  fallback?: DataModelPointOptions;
+}
+
+/** dgm:ptLst member: a direct point or a typed MCE-wrapped point. */
+export type DataModelPointMemberOptions =
+  | DataModelPointOptions
+  | DataModelAlternativeContentOptions;
+
 /** dgm:cxn — one data-model connection (CT_Cxn). */
 export interface DataModelConnectionOptions {
   modelId: string;
@@ -100,7 +119,7 @@ export interface DataModelWholeOptions {
 
 /** dgm:dataModel — structured point/connection model (CT_DataModel). */
 export interface DataModelOptions {
-  points?: DataModelPointOptions[];
+  points?: DataModelPointMemberOptions[];
   connections?: DataModelConnectionOptions[];
   background?: DataModelBackgroundOptions;
   whole?: DataModelWholeOptions;
@@ -115,7 +134,7 @@ export function stringifyDataModelOptions(
   model: DataModelOptions,
   ctx: WriteContext = DIRECT_WRITE_CONTEXT,
 ): string {
-  const points = (model.points ?? []).map((p) => stringifyDataModelPoint(p, ctx));
+  const points = (model.points ?? []).map((p) => stringifyDataModelPointMember(p, ctx));
   const connections = (model.connections ?? []).map((c) => stringifyDataModelConnection(c));
   const background = model.background ? stringifyDataModelBackground(model.background, ctx) : "";
   const whole = model.whole ? stringifyDataModelWhole(model.whole, ctx) : "";
@@ -146,6 +165,23 @@ function stringifyDataModelPoint(point: DataModelPointOptions, ctx: WriteContext
     },
     ctx,
   );
+}
+
+function stringifyDataModelPointMember(
+  member: DataModelPointMemberOptions,
+  ctx: WriteContext,
+): string {
+  if (!("choices" in member)) return stringifyDataModelPoint(member, ctx);
+  const choices = member.choices
+    .map(
+      ({ requires, point }) =>
+        `<mc:Choice Requires="${escapeXml(requires)}">${stringifyDataModelPoint(point, ctx)}</mc:Choice>`,
+    )
+    .join("");
+  const fallback = member.fallback
+    ? `<mc:Fallback>${stringifyDataModelPoint(member.fallback, ctx)}</mc:Fallback>`
+    : "";
+  return `<mc:AlternateContent xmlns:mc="${MC_NS}">${choices}${fallback}</mc:AlternateContent>`;
 }
 
 function stringifyDataModelConnection(connection: DataModelConnectionOptions): string {
@@ -226,22 +262,13 @@ export function parseDataModelOptions(
 
   const ptLst = findChild(el, "dgm:ptLst");
   if (ptLst) {
-    const points: DataModelPointOptions[] = [];
+    const points: DataModelPointMemberOptions[] = [];
     for (const pt of ptLst.elements ?? []) {
-      if (pt.name !== "dgm:pt") continue;
-      const point: DataModelPointOptions = { modelId: attr(pt, "modelId") ?? "" };
-      const type = attr(pt, "type");
-      if (type) point.type = type as DataModelPointOptions["type"];
-      const cxnId = attr(pt, "cxnId");
-      if (cxnId) point.connectionId = cxnId;
-      Object.assign(point, parsePointDetails(pt, ctx));
-      const t = findChild(pt, "dgm:t");
-      if (t && !point.textBody) point.text = extractPointText(t);
-      const prSet = findChild(pt, "dgm:prSet");
-      if (prSet) point.propertySet = parsePointPropertySet(prSet, ctx);
-      const pointExtensions = findChild(pt, "dgm:extLst");
-      if (pointExtensions) point.extensions = parseDiagramExtensions(pointExtensions);
-      points.push(point);
+      if (pt.name === "dgm:pt") points.push(parseDataModelPoint(pt, ctx));
+      else if (pt.name === "mc:AlternateContent") {
+        const alternative = parseDataModelAlternativeContent(pt, ctx);
+        if (alternative) points.push(alternative);
+      }
     }
     result.points = points;
   }
@@ -297,6 +324,45 @@ export function parseDataModelOptions(
   if (extLst) result.extensions = parseDiagramExtensions(extLst);
 
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function parseDataModelPoint(pt: Element, ctx: ReadContext): DataModelPointOptions {
+  const point: DataModelPointOptions = { modelId: attr(pt, "modelId") ?? "" };
+  const type = attr(pt, "type");
+  if (type) point.type = type as DataModelPointOptions["type"];
+  const cxnId = attr(pt, "cxnId");
+  if (cxnId) point.connectionId = cxnId;
+  Object.assign(point, parsePointDetails(pt, ctx));
+  const t = findChild(pt, "dgm:t");
+  if (t && !point.textBody) point.text = extractPointText(t);
+  const prSet = findChild(pt, "dgm:prSet");
+  if (prSet) point.propertySet = parsePointPropertySet(prSet, ctx);
+  const pointExtensions = findChild(pt, "dgm:extLst");
+  if (pointExtensions) point.extensions = parseDiagramExtensions(pointExtensions);
+  return point;
+}
+
+function parseDataModelAlternativeContent(
+  el: Element,
+  ctx: ReadContext,
+): DataModelAlternativeContentOptions | undefined {
+  const choices: DataModelPointAlternativeOptions[] = [];
+  let fallback: DataModelPointOptions | undefined;
+  for (const branch of el.elements ?? []) {
+    const pointElement =
+      branch.name === "mc:Choice" || branch.name === "mc:Fallback"
+        ? findChild(branch, "dgm:pt")
+        : undefined;
+    if (!pointElement) continue;
+    const point = parseDataModelPoint(pointElement, ctx);
+    if (branch.name === "mc:Choice") {
+      const requires = attr(branch, "Requires");
+      if (requires === undefined) throw new Error("DataModel mc:Choice requires @Requires");
+      choices.push({ requires, point });
+    } else fallback = point;
+  }
+  if (choices.length === 0 && fallback === undefined) return undefined;
+  return { choices, ...(fallback ? { fallback } : {}) };
 }
 
 /** dgm:t holds an a:p paragraph tree; flatten its text runs. */

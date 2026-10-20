@@ -1,12 +1,8 @@
 import type { ChartSpaceOptions, ChartStyleResources } from "@office-open/core";
-import {
-  ChartStyleCompatibilityError,
-  chartSpaceDesc,
-  stringify,
-  type WriteContext,
-} from "@office-open/core";
+import { chartSpaceDesc, stringify, type WriteContext } from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
+import { pushChartStyle } from "./chart-style";
 import { generateChartDocument, parseChartDocument } from "./index";
 
 function style(fill: Record<string, string>, outline: Record<string, string> = {}) {
@@ -34,6 +30,24 @@ async function parse(resources: ChartStyleResources) {
 }
 
 describe("ODF chart style resources", () => {
+  it("deduplicates generated fill resources and style names", () => {
+    const resources: ChartStyleResources = {
+      styles: [],
+      gradients: [],
+      hatches: [],
+      fillImages: [],
+      strokeDashes: [],
+    };
+    const fill = { type: "gradient", stops: [{ position: 0, color: "000000" }] } as const;
+    const first = pushChartStyle({ fill }, resources, [], "series");
+    const second = pushChartStyle({ fill }, resources, [], "other");
+    expect(first).toBe(second);
+    expect(resources.gradients).toHaveLength(1);
+    expect(resources.styles).toHaveLength(0);
+    expect(resources.hatches).toHaveLength(0);
+    expect(resources.fillImages).toHaveLength(0);
+  });
+
   it("projects all supported gradient kinds and scales intensity in RGB", async () => {
     const cases = [
       ["linear", undefined],
@@ -82,7 +96,7 @@ describe("ODF chart style resources", () => {
     }
   });
 
-  it("preserves hatch styling and rejects it for OOXML generation", async () => {
+  it("preserves hatch styling and projects it for OOXML generation", async () => {
     const resources: ChartStyleResources = {
       styles: [style({ "draw:fill": "hatch", "draw:fill-hatch-name": "hatch" })],
       gradients: [],
@@ -103,9 +117,7 @@ describe("ODF chart style resources", () => {
     };
     const parsed = await parse(resources);
     expect(parsed.shapeProperties?.styleName).toBe("chart-style");
-    expect(() => stringify(chartSpaceDesc, parsed, {} as WriteContext)).toThrow(
-      ChartStyleCompatibilityError,
-    );
+    expect(stringify(chartSpaceDesc, parsed, {} as WriteContext)).toContain("<c:chartSpace");
   });
 
   it("projects embedded and linked bitmap fills", async () => {
@@ -245,16 +257,24 @@ describe("ODF chart style resources", () => {
     ]);
   });
 
-  it("throws structured errors for broken references, missing media, and missing dash width", async () => {
+  it("omits broken fill references but reports missing media and dash width", async () => {
+    const unresolved = await parse({
+      styles: [style({ "draw:fill": "gradient", "draw:fill-gradient-name": "missing" })],
+      gradients: [],
+      hatches: [],
+      fillImages: [],
+      strokeDashes: [],
+    });
+    expect(unresolved.shapeProperties?.fill).toBeUndefined();
     await expect(
       parse({
-        styles: [style({ "draw:fill": "gradient", "draw:fill-gradient-name": "missing" })],
+        styles: [style({ "draw:fill": "bitmap", "draw:fill-image-name": "image" })],
         gradients: [],
         hatches: [],
-        fillImages: [],
+        fillImages: [{ name: "image", attributes: { "xlink:href": "media/missing.png" } }],
         strokeDashes: [],
       }),
-    ).rejects.toMatchObject({ reason: "unresolved-style-reference" });
+    ).rejects.toMatchObject({ reason: "missing-fill-image-part" });
     await expect(
       parse({
         styles: [style({ "draw:fill": "bitmap", "draw:fill-image-name": "image" })],
