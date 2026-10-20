@@ -171,17 +171,8 @@ export const pictureDesc: CustomDescriptor<PictureOptions> = {
     // as well: there are no bytes to store, so the blip re-emits bare.
     let mediaFileName: string | undefined;
     if (opts.data !== undefined) {
-      const fileName = opts.fileName ?? `${name.replace(/\s+/g, "_")}.${opts.type}`;
-      // Register media with the PPTX context (content-deduplicated). Identity
-      // fields only — the extent is emitted from opts per reference, never
-      // carried on the shared dedup entry.
-      const mediaEntry = pptx.addImage(fileName, {
-        key: fileName,
-        type: opts.type,
-        fileName,
-        data: toUint8Array(opts.data ?? new Uint8Array(0), { encoding: "base64" }),
-      });
-      mediaFileName = mediaEntry.fileName;
+      const data = toUint8Array(opts.data, { encoding: "base64" });
+      mediaFileName = pptx.addMedia(data, opts.type, opts.fileName).slice(1, -1);
     }
     const blipReferenceId = opts.data !== undefined ? mediaFileName : opts.fileName;
     const blipRawReferenceId = opts.data !== undefined ? undefined : opts.relationshipId;
