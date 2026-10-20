@@ -3,7 +3,7 @@ import type { DataType } from "@office-open/core";
 import type { OcfManifestOptions } from "./container/manifest";
 
 /** Style family allowed by ODF automatic/common style containers. */
-export type OdfStyleFamily =
+export type StyleFamily =
   | "paragraph"
   | "text"
   | "graphic"
@@ -17,28 +17,28 @@ export type OdfStyleFamily =
   | "ruby";
 
 /** Source-only OCF member carried outside modeled canonical content. */
-export interface OdfPackageMemberOptions {
+export interface PackageMemberOptions {
   path: string;
   mediaType?: string;
   data: DataType;
 }
 
 /** RNG-valid property element retained after canonical fields are mapped. */
-export interface OdfStylePropertyOverlay {
+export interface StylePropertyOptions {
   name: string;
   attributes: Record<string, string | number | boolean>;
 }
 
 /** Automatic style retained for an RNG-valid property not in canonical options. */
-export interface OdfStyleOverlayOptions {
+export interface StyleResourceOptions {
   name: string;
-  family: OdfStyleFamily;
-  properties: OdfStylePropertyOverlay[];
+  family: StyleFamily;
+  properties: StylePropertyOptions[];
 }
 
-/** Unified OCF and ODF overlay attached to one canonical family model. */
-export interface OdfPackageOverlayOptions {
+/** Unified OCF and style resources attached to one canonical family model. */
+export interface PackageOptions {
   packageManifest?: OcfManifestOptions;
-  packageMembers?: OdfPackageMemberOptions[];
-  styleOverlays?: OdfStyleOverlayOptions[];
+  packageMembers?: PackageMemberOptions[];
+  styleResources?: StyleResourceOptions[];
 }

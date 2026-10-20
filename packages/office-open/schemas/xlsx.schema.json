@@ -1162,8 +1162,7 @@
       "description": "Options for blip fill properties.",
       "properties": {
         "blipEffects": {
-          "$ref": "#/definitions/BlipEffectsOptions",
-          "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+          "$ref": "#/definitions/FillOptions/anyOf/5/properties/blipEffects"
         },
         "compression": {
           "$ref": "#/definitions/BlipCompression",
@@ -1193,8 +1192,7 @@
           "description": "Explicit stretch mode; `true` preserves a bare `<a:stretch/>`."
         },
         "tile": {
-          "$ref": "#/definitions/TileOptions",
-          "description": "Tile fill mode (if omitted, defaults to stretch)"
+          "$ref": "#/definitions/FillOptions/anyOf/5/properties/tile"
         }
       },
       "type": "object"
@@ -1556,8 +1554,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/categoryPointCount"
         },
         "categorySource": {
-          "$ref": "#/definitions/ChartCategorySourceOptions",
-          "description": "Per-series category source; overrides the chart-level source."
+          "$ref": "#/definitions/ChartSeriesData/properties/categorySource"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
@@ -1619,16 +1616,14 @@
           "$ref": "#/definitions/ChartSeriesData/properties/orderDeclared"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/ChartPictureOptions",
-          "description": "Picture-fill options (c:pictureOptions, bar/area)."
+          "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
+          "$ref": "#/definitions/ChartSeriesData/properties/shapeProperties"
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -1726,8 +1721,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1828,8 +1822,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1885,8 +1878,7 @@
           "type": "string"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -1923,8 +1915,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -3126,17 +3117,7 @@
         },
         "multiLevelCategories": {
           "items": {
-            "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/MultiLevelCategoryPoint"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array"
+            "$ref": "#/definitions/ChartSpaceOptions/properties/multiLevelCategories/items"
           },
           "type": "array"
         },
@@ -5171,14 +5152,6 @@
             }
           ]
         },
-        "odfStyle": {
-          "$ref": "#/definitions/OdfChartStyleOptions",
-          "description": "Source ODF fill/outline fields retained beside their canonical projection."
-        },
-        "odfStyleName": {
-          "description": "Source ODF style name (`@chart:style-name`); ODF output only.",
-          "type": "string"
-        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
@@ -5191,6 +5164,10 @@
         },
         "shape3d": {
           "$ref": "#/definitions/Shape3DOptions"
+        },
+        "styleName": {
+          "description": "Named chart style referenced by the source (`@chart:style-name`).",
+          "type": "string"
         },
         "transformPresent": {
           "description": "Source `a:xfrm` presence; `true` preserves an explicit empty transform.",
@@ -5528,10 +5505,6 @@
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
           "type": "boolean"
         },
-        "odfStyleResources": {
-          "$ref": "#/definitions/OdfChartStyleResources",
-          "description": "Named style resources from an ODF chart subdocument; ODF output only."
-        },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
           "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
@@ -5684,6 +5657,10 @@
           "$ref": "#/definitions/ChartStyle2010Options",
           "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
         },
+        "styleResources": {
+          "$ref": "#/definitions/ChartStyleResources",
+          "description": "Named style resources referenced by chart shape and series styles."
+        },
         "subtitle": {
           "anyOf": [
             {
@@ -5764,6 +5741,70 @@
         }
       },
       "required": ["style"],
+      "type": "object"
+    },
+    "ChartStyleResource": {
+      "additionalProperties": false,
+      "description": "A named style definition retained beside a chart subdocument.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "properties": {
+          "items": {
+            "$ref": "#/definitions/StylePropertiesOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["name", "attributes", "properties"],
+      "type": "object"
+    },
+    "ChartStyleResources": {
+      "additionalProperties": false,
+      "description": "Named style resources retained beside canonical chart projections.",
+      "properties": {
+        "fillImages": {
+          "items": {
+            "$ref": "#/definitions/FillImageResource"
+          },
+          "type": "array"
+        },
+        "gradients": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "hatches": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "strokeDashes": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "styles": {
+          "items": {
+            "$ref": "#/definitions/ChartStyleResource"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
       "type": "object"
     },
     "ChartTitleOptions": {
@@ -5957,8 +5998,7 @@
           "type": "string"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -5986,8 +6026,7 @@
           "type": "string"
         },
         "externalLink": {
-          "$ref": "#/definitions/ExternalLinkOptions",
-          "description": "Chart-owned external link part for c:externalData — round-trip only."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/externalLink"
         },
         "externalLinkPath": {
           "description": "Source chart-owned external link path — round-trip only.",
@@ -6360,17 +6399,6 @@
         }
       },
       "required": ["id", "enabled", "method", "siteId", "removed"],
-      "type": "object"
-    },
-    "ColorBooleanTransformItem": {
-      "additionalProperties": false,
-      "description": "Value-less ordered EG_ColorTransform child; presence is the semantics.",
-      "properties": {
-        "type": {
-          "$ref": "#/definitions/BooleanTransformKey"
-        }
-      },
-      "required": ["type"],
       "type": "object"
     },
     "ColorChangeEffectOptions": {
@@ -6931,25 +6959,6 @@
           "description": "Tint: moves color toward white (0-100, where 100 = full white)"
         }
       },
-      "type": "object"
-    },
-    "ColorValueTransformItem": {
-      "additionalProperties": false,
-      "description": "Valued ordered EG_ColorTransform child; percent fields use integer percent.",
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/Percentage"
-            }
-          ],
-          "description": "Integer percent (`50` = 50%) or a source literal (`\"50%\"`)."
-        }
-      },
-      "required": ["value"],
       "type": "object"
     },
     "ColorsOptions": {
@@ -7640,8 +7649,7 @@
           "description": "Anchor type (default \"twoCell\")."
         },
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -7651,8 +7659,7 @@
           "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -7686,8 +7693,7 @@
           "type": "boolean"
         },
         "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/hyperlink"
         },
         "locking": {
           "$ref": "#/definitions/ConnectorLockingOptions",
@@ -7731,8 +7737,7 @@
           "description": "a:stCxn — start endpoint glued to a shape connection site."
         },
         "style": {
-          "$ref": "#/definitions/DefaultShapeStyleOptions",
-          "description": "Theme style-matrix references (xdr:style)."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/style"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -10178,12 +10183,31 @@
       "required": ["rId"],
       "type": "object"
     },
+    "DrawingStyleResource": {
+      "additionalProperties": false,
+      "description": "Base fields for a named ODF drawing style resource.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "attributes"],
+      "type": "object"
+    },
     "DrawingWebExtensionFallbackOptions": {
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "blipEffects": {
           "$ref": "#/definitions/BlipEffectsOptions",
@@ -10197,16 +10221,14 @@
           "$ref": "#/definitions/PictureOptions/properties/cNvPicPrExt"
         },
         "compression": {
-          "$ref": "#/definitions/BlipCompression",
-          "description": "Compression state (a:blip/@cstate); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/compression"
         },
         "fPublished": {
           "description": "Published-object flag (pic/@fPublished).",
           "type": "boolean"
         },
         "locking": {
-          "$ref": "#/definitions/PictureLockingOptions",
-          "description": "Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr."
+          "$ref": "#/definitions/PictureOptions/properties/locking"
         },
         "preferRelativeResize": {
           "description": "Relative-resize hint (cNvPicPr/@preferRelativeResize).",
@@ -10221,8 +10243,7 @@
           "type": "string"
         },
         "sourceRectangle": {
-          "$ref": "#/definitions/SourceRectangleOptions",
-          "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
+          "$ref": "#/definitions/PictureOptions/properties/sourceRectangle"
         },
         "useLocalDpi": {
           "$ref": "#/definitions/PictureOptions/properties/useLocalDpi"
@@ -11244,6 +11265,29 @@
           "$ref": "#/definitions/SolidFillOptions"
         }
       },
+      "type": "object"
+    },
+    "FillImageResource": {
+      "additionalProperties": false,
+      "description": "An ODF fill image and its embedded media bytes, when available.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "data": {
+          "$ref": "#/definitions/DataType"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["attributes", "name"],
       "type": "object"
     },
     "FillOptions": {
@@ -13328,12 +13372,10 @@
       "description": "Connector nested inside a group (no anchor).",
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -13342,8 +13384,7 @@
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/description"
         },
         "endConnection": {
-          "$ref": "#/definitions/EndpointConnectionOptions",
-          "description": "a:endCxn — end endpoint glued to a shape connection site."
+          "$ref": "#/definitions/ConnectorOptions/properties/endConnection"
         },
         "ext": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/ext"
@@ -13356,12 +13397,10 @@
           "type": "boolean"
         },
         "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/hyperlink"
         },
         "locking": {
-          "$ref": "#/definitions/ConnectorLockingOptions",
-          "description": "a:cxnSpLocks — connector locking (inside cNvCxnSpPr)."
+          "$ref": "#/definitions/ConnectorOptions/properties/locking"
         },
         "macro": {
           "type": "string"
@@ -13377,12 +13416,10 @@
           "type": "number"
         },
         "startConnection": {
-          "$ref": "#/definitions/EndpointConnectionOptions",
-          "description": "a:stCxn — start endpoint glued to a shape connection site."
+          "$ref": "#/definitions/ConnectorOptions/properties/startConnection"
         },
         "style": {
-          "$ref": "#/definitions/DefaultShapeStyleOptions",
-          "description": "Theme style-matrix references (xdr:style)."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/style"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -13507,8 +13544,7 @@
           "type": "array"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -13541,8 +13577,7 @@
           "type": "boolean"
         },
         "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/hyperlink"
         },
         "images": {
           "description": "Nested pictures.",
@@ -13628,12 +13663,10 @@
       "description": "Picture nested inside a group (no worksheet anchor, but size/id survive).",
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "blipEffects": {
-          "$ref": "#/definitions/BlipEffectsOptions",
-          "description": "Image adjustment effects carried inside a:blip (a:lum, a:duotone, …)."
+          "$ref": "#/definitions/PictureOptions/properties/blipEffects"
         },
         "blipExt": {
           "description": "Verbatim a:blip `a:extLst` inner XML for extensions beyond useLocalDpi (a14 imgProps artistic effects, …). Round-trip only; subsumes `useLocalDpi` when the source list carries both. Named blipExt to avoid colliding with the inherited cNvPr `ext` channel.",
@@ -13648,12 +13681,10 @@
           "$ref": "#/definitions/PictureOptions/properties/cNvPicPrExt"
         },
         "compression": {
-          "$ref": "#/definitions/BlipCompression",
-          "description": "Compression state (a:blip/@cstate); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/compression"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -13686,16 +13717,14 @@
           "type": "boolean"
         },
         "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/hyperlink"
         },
         "linkRId": {
           "description": "Relationship ID for the linked source (a:blip",
           "type": "string"
         },
         "locking": {
-          "$ref": "#/definitions/PictureLockingOptions",
-          "description": "Picture locks (cNvPicPr/a:picLocks); absent = empty cNvPicPr."
+          "$ref": "#/definitions/PictureOptions/properties/locking"
         },
         "macro": {
           "description": "Macro reference (xdr:pic/@macro); empty string round-trips.",
@@ -13723,8 +13752,7 @@
           "type": "number"
         },
         "sourceRectangle": {
-          "$ref": "#/definitions/SourceRectangleOptions",
-          "description": "Blip crop (a:srcRect); an empty object round-trips the bare marker."
+          "$ref": "#/definitions/PictureOptions/properties/sourceRectangle"
         },
         "title": {
           "description": "XSD `@title`.",
@@ -13742,12 +13770,10 @@
       "description": "Shape nested inside a group (no anchor — positioned via spPr.xfrm).",
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -16428,285 +16454,6 @@
       },
       "type": "object"
     },
-    "OdfChartFillOptions": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "none",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "type": {
-              "const": "solid",
-              "type": "string"
-            }
-          },
-          "required": ["type", "color"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "gradient",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "hatch",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "height": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            },
-            "opacityName": {
-              "type": "string"
-            },
-            "refPoint": {
-              "type": "string"
-            },
-            "refPointX": {
-              "type": "string"
-            },
-            "refPointY": {
-              "type": "string"
-            },
-            "repeat": {
-              "enum": ["no-repeat", "repeat", "stretch"],
-              "type": "string"
-            },
-            "tileRepeatOffset": {
-              "type": "string"
-            },
-            "type": {
-              "const": "bitmap",
-              "type": "string"
-            },
-            "width": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        }
-      ]
-    },
-    "OdfChartOutlineOptions": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "none",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "type": {
-              "const": "solid",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "dash",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        }
-      ]
-    },
-    "OdfChartStyleOptions": {
-      "additionalProperties": false,
-      "description": "ODF-only chart shape style fields retained alongside canonical projections.",
-      "properties": {
-        "fill": {
-          "$ref": "#/definitions/OdfChartFillOptions"
-        },
-        "outline": {
-          "$ref": "#/definitions/OdfChartOutlineOptions"
-        }
-      },
-      "type": "object"
-    },
-    "OdfChartStyleResource": {
-      "additionalProperties": false,
-      "description": "A named ODF style definition retained for an ODF chart subdocument.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "properties": {
-          "items": {
-            "$ref": "#/definitions/OdfStylePropertiesOptions"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["name", "attributes", "properties"],
-      "type": "object"
-    },
-    "OdfChartStyleResources": {
-      "additionalProperties": false,
-      "description": "ODF style resources retained in source order for an ODF chart subdocument.",
-      "properties": {
-        "fillImages": {
-          "items": {
-            "$ref": "#/definitions/OdfFillImageResource"
-          },
-          "type": "array"
-        },
-        "gradients": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "hatches": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "strokeDashes": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "styles": {
-          "items": {
-            "$ref": "#/definitions/OdfChartStyleResource"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
-      "type": "object"
-    },
-    "OdfDrawingStyleResource": {
-      "additionalProperties": false,
-      "description": "Base fields for a named ODF drawing style resource.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["name", "attributes"],
-      "type": "object"
-    },
-    "OdfFillImageResource": {
-      "additionalProperties": false,
-      "description": "An ODF fill image and its embedded media bytes, when available.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "data": {
-          "$ref": "#/definitions/DataType"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["attributes", "name"],
-      "type": "object"
-    },
-    "OdfStylePropertiesOptions": {
-      "additionalProperties": false,
-      "description": "Attributes of an ODF style-properties child, keyed by expanded XML name.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["name", "attributes"],
-      "type": "object"
-    },
     "OfPieType": {
       "description": "ofPie variant: \"pie\" pie-of-pie, \"bar\" bar-of-pie.",
       "enum": ["pie", "bar"],
@@ -17916,8 +17663,7 @@
           "description": "Compression state (a:blip/@cstate); absent = attribute omitted."
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -22589,8 +22335,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/categoryPointCount"
         },
         "categorySource": {
-          "$ref": "#/definitions/ChartCategorySourceOptions",
-          "description": "Per-series category source; overrides the chart-level source."
+          "$ref": "#/definitions/ChartSeriesData/properties/categorySource"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
@@ -22652,16 +22397,14 @@
           "$ref": "#/definitions/ChartSeriesData/properties/orderDeclared"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/ChartPictureOptions",
-          "description": "Picture-fill options (c:pictureOptions, bar/area)."
+          "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
+          "$ref": "#/definitions/ChartSeriesData/properties/shapeProperties"
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -23011,8 +22754,7 @@
           "type": "number"
         },
         "scatterStyle": {
-          "$ref": "#/definitions/ScatterStyle",
-          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/scatterStyle"
         },
         "series": {
           "description": "This group's series; categories come from the chart-level source.",
@@ -23257,8 +22999,7 @@
           "description": "Anchor type (default \"twoCell\")."
         },
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black/white mode (spPr/@bwMode); absent = attribute omitted."
+          "$ref": "#/definitions/PictureOptions/properties/blackWhiteMode"
         },
         "col": {
           "description": "1-based column (from marker)",
@@ -23267,9 +23008,12 @@
         "colOffset": {
           "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
+        "controlId": {
+          "description": "Drawing control reference (`draw:control`); absent for ordinary spreadsheet shapes.",
+          "type": "string"
+        },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -23302,8 +23046,7 @@
           "type": "boolean"
         },
         "hyperlink": {
-          "$ref": "#/definitions/TextHyperlinkOptions",
-          "description": "Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) — jump to a URL when the object is clicked."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/hyperlink"
         },
         "locking": {
           "$ref": "#/definitions/ShapeLockingOptions",
@@ -23322,10 +23065,6 @@
         },
         "objectAlternateContent": {
           "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
-        },
-        "odfControlId": {
-          "description": "ODF-only `draw:control` reference; absent for ordinary spreadsheet shapes.",
-          "type": "string"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
@@ -23347,8 +23086,7 @@
           "type": "number"
         },
         "style": {
-          "$ref": "#/definitions/DefaultShapeStyleOptions",
-          "description": "Theme style-matrix references (xdr:style)."
+          "$ref": "#/definitions/GroupShapeChildOptions/properties/style"
         },
         "textBody": {
           "$ref": "#/definitions/TextBodyOptions",
@@ -24865,6 +24603,23 @@
           "type": "boolean"
         }
       },
+      "type": "object"
+    },
+    "StylePropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Attributes of a style-properties child, keyed by expanded XML name.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "attributes"],
       "type": "object"
     },
     "SupplementalFontOptions": {
@@ -27036,8 +26791,7 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+          "$ref": "#/definitions/UserShapeShapeOptions/properties/blackWhiteMode"
         },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
@@ -27203,8 +26957,7 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+          "$ref": "#/definitions/UserShapeShapeOptions/properties/blackWhiteMode"
         },
         "blipFill": {
           "$ref": "#/definitions/BlipFillOptions"
@@ -29203,8 +28956,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -29283,8 +29035,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -29332,15 +29083,13 @@
           "type": "string"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -29349,8 +29098,7 @@
           "$ref": "#/definitions/VmlShapeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -29661,8 +29409,7 @@
           "$ref": "#/definitions/VmlFillType"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapeOptions/properties/forcedash"
         },
         "id": {
           "type": "string"
@@ -31356,8 +31103,7 @@
           "type": "object"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -31423,8 +31169,7 @@
           "type": "boolean"
         },
         "frameLocks": {
-          "$ref": "#/definitions/GraphicFrameLockingOptions",
-          "description": "Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/frameLocks"
         },
         "frameOffsetX": {
           "description": "Graphic-frame transform offset from left (a:xfrm/a:off/@x, EMU).",
@@ -31590,12 +31335,10 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/colorMappingOverride"
         },
         "coordinateRegion": {
-          "$ref": "#/definitions/ChartCoordinateRegionOptions",
-          "description": "ODF chart:coordinate-region (or chartooo equivalent) geometry."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/coordinateRegion"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -31604,8 +31347,7 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/customSplitPoints"
         },
         "dataLabels": {
-          "$ref": "#/definitions/DataLabelsOptions",
-          "description": "Chart-group-level data labels (c:dLbls after the ser elements)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/dataLabels"
         },
         "dataTable": {
           "$ref": "#/definitions/DataTableOptions",
@@ -31621,8 +31363,7 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/dialect"
         },
         "displayBlanksAs": {
-          "$ref": "#/definitions/DisplayBlanksAs",
-          "description": "How blank cells are plotted (c:dispBlanksAs)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/displayBlanksAs"
         },
         "dropLines": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/dropLines"
@@ -31641,8 +31382,7 @@
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "externalData": {
-          "$ref": "#/definitions/ExternalDataOptions",
-          "description": "External linked workbook (c:externalData, after c:txPr)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/externalData"
         },
         "externalDataRelationshipTarget": {
           "description": "Source c:externalData relationship target — round-trip only.",
@@ -31728,8 +31468,7 @@
           "type": "number"
         },
         "grouping": {
-          "$ref": "#/definitions/ChartGrouping",
-          "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/grouping"
         },
         "groupingDeclared": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/groupingDeclared"
@@ -31763,16 +31502,13 @@
           "type": "boolean"
         },
         "legendPosition": {
-          "$ref": "#/definitions/LegendPosition",
-          "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/legendPosition"
         },
         "legendShapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Legend fill and outline (c:legend's c:spPr) — round-trip."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/legendShapeProperties"
         },
         "legendTextProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Legend text (c:legend's c:txPr, a) — round-trip."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/legendTextProperties"
         },
         "locksWithSheet": {
           "description": "Lock anchor with sheet (default true)",
@@ -31797,13 +31533,8 @@
         "objectAlternateContent": {
           "$ref": "#/definitions/PictureOptions/properties/objectAlternateContent"
         },
-        "odfStyleResources": {
-          "$ref": "#/definitions/OdfChartStyleResources",
-          "description": "Named style resources from an ODF chart subdocument; ODF output only."
-        },
         "ofPieType": {
-          "$ref": "#/definitions/OfPieType",
-          "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/ofPieType"
         },
         "overlap": {
           "description": "Bar/column overlap as percent (c:overlap, 2D only).",
@@ -31813,15 +31544,13 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/pivotFormats"
         },
         "pivotSource": {
-          "$ref": "#/definitions/PivotSourceOptions",
-          "description": "Pivot chart source (c:pivotSource, after clrMapOvr, before protection)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/pivotSource"
         },
         "plotAreaLayout": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/plotAreaLayout"
         },
         "plotAreaShapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/plotAreaShapeProperties"
         },
         "plotVisOnly": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/plotVisOnly"
@@ -31830,20 +31559,17 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/plotVisOnlyPresent"
         },
         "printSettings": {
-          "$ref": "#/definitions/PrintSettingsOptions",
-          "description": "Print settings (c:printSettings, after c:externalData)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/printSettings"
         },
         "printsWithSheet": {
           "description": "Print with sheet (default true)",
           "type": "boolean"
         },
         "protection": {
-          "$ref": "#/definitions/ProtectionOptions",
-          "description": "Chart protection (c:protection, before c:chart)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/protection"
         },
         "radarStyle": {
-          "$ref": "#/definitions/RadarStyle",
-          "description": "Radar variant (c:radarStyle, default \"standard\")."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/radarStyle"
         },
         "roundedCorners": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/roundedCorners"
@@ -31856,8 +31582,7 @@
           "$ref": "#/definitions/PictureOptions/properties/rowOffset"
         },
         "scatterStyle": {
-          "$ref": "#/definitions/ScatterStyle",
-          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/scatterStyle"
         },
         "secondPieSize": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/secondPieSize"
@@ -31872,16 +31597,14 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/seriesLines"
         },
         "shape": {
-          "$ref": "#/definitions/BarShape",
-          "description": "3D bar column shape (chart-group-level c:shape on c:bar3DChart)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/shape"
         },
         "shapeId": {
           "description": "Original cNvPr id (round-trip only).",
           "type": "number"
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Chart-area shape properties (c:spPr after c:chart) — round-trip."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/shapeProperties"
         },
         "showDataLabelsOverMax": {
           "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
@@ -31899,8 +31622,7 @@
           "description": "3D side wall (c:sideWall)."
         },
         "sizeRepresents": {
-          "$ref": "#/definitions/SizeRepresents",
-          "description": "What the bubble size represents (c:sizeRepresents)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/sizeRepresents"
         },
         "smooth": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/smooth"
@@ -31914,22 +31636,22 @@
           "type": "number"
         },
         "splitType": {
-          "$ref": "#/definitions/SplitType",
-          "description": "ofPie split behavior (c:splitType, default \"auto\")."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/splitType"
         },
         "style": {
           "type": "number"
         },
         "style2010": {
-          "$ref": "#/definitions/ChartStyle2010Options",
-          "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/style2010"
+        },
+        "styleResources": {
+          "$ref": "#/definitions/ChartSpaceOptions/properties/styleResources"
         },
         "subtitle": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/subtitle"
         },
         "textProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Chart-space default text (c:txPr, a) — round-trip."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/textProperties"
         },
         "themeOverride": {
           "$ref": "#/definitions/ThemeOverrideOptions",
@@ -31969,8 +31691,7 @@
           "$ref": "#/definitions/ChartSpaceOptions/properties/upDownBarsGapWidth"
         },
         "userShapes": {
-          "$ref": "#/definitions/ChartUserShapesOptions",
-          "description": "User-drawn shapes layered over the chart (c:userShapes, after printSettings)."
+          "$ref": "#/definitions/ChartSpaceOptions/properties/userShapes"
         },
         "varyColors": {
           "$ref": "#/definitions/ChartSpaceOptions/properties/varyColors"
@@ -32646,8 +32367,7 @@
           "type": "string"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -32677,8 +32397,7 @@
           "$ref": "#/definitions/PictureOptions/properties/extentCy"
         },
         "frameLocks": {
-          "$ref": "#/definitions/GraphicFrameLockingOptions",
-          "description": "Frame locks (cNvGraphicFramePr/a:graphicFrameLocks); absent = empty."
+          "$ref": "#/definitions/WorksheetChartOptions/properties/frameLocks"
         },
         "hidden": {
           "description": "XSD `@hidden` (default false); emitted as \"1\" only when true.",
@@ -32799,8 +32518,7 @@
           "$ref": "#/definitions/PictureOptions/properties/colOffset"
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"

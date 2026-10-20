@@ -8,7 +8,7 @@ import type {
   ChartValue,
   ErrorBarOptions,
   DataType,
-  OdfChartStyleResources,
+  ChartStyleResources,
   ScatterSeriesData,
   ShapePropertiesOptions,
   TrendlineOptions,
@@ -120,7 +120,7 @@ export function generateChartDocument(options: ChartDocumentOptions): Uint8Array
 
 /** Builds the content, style, and media parts for an embedded chart. */
 export function chartSubdocumentFiles(basePath: string, chart: ChartSpaceOptions): OdfPackageFiles {
-  const resources = chart.odfStyleResources ?? emptyChartStyleResources();
+  const resources = chart.styleResources ?? emptyChartStyleResources();
   return {
     [`${basePath}content.xml`]: chartBodyXml(chart),
     [`${basePath}styles.xml`]: chartStylesXml(resources),
@@ -132,7 +132,7 @@ export function chartSubdocumentFiles(basePath: string, chart: ChartSpaceOptions
 export function chartBodyXml(chart: ChartSpaceOptions): string {
   const styles: string[] = [];
   const previousResources = activeChartStyleResources;
-  activeChartStyleResources = chart.odfStyleResources ?? emptyChartStyleResources();
+  activeChartStyleResources = chart.styleResources ?? emptyChartStyleResources();
   try {
     const body = chartXml(chart, styles);
     return `<?xml version="1.0" encoding="UTF-8"?><office:document-content ${NAMESPACES} office:version="1.3"><office:automatic-styles>${styles.join(
@@ -252,7 +252,7 @@ export function parseEmbeddedCharts(
       }
       continue;
     }
-    result.set(fullPath.replace(/\/$/, ""), { ...chart, odfStyleResources: context.resources });
+    result.set(fullPath.replace(/\/$/, ""), { ...chart, styleResources: context.resources });
   }
   for (const [path, content] of Object.entries(files)) {
     const match = /^(.+)\/content\.xml$/.exec(path);
@@ -661,7 +661,7 @@ function tableRow(values: string[]): OdfXmlNode {
 
 function parseChart(
   element: Element | undefined,
-  context: { resources: OdfChartStyleResources; styles: Map<string, ChartStyle> },
+  context: { resources: ChartStyleResources; styles: Map<string, ChartStyle> },
   basePath: string,
 ): ChartSpaceOptions | undefined {
   if (!element) return undefined;
@@ -712,7 +712,7 @@ function parseChart(
   const categories = parseCategories(plotArea, element);
   return {
     type: sourceType(sources, type),
-    ...(hasChartStyleResources(context.resources) ? { odfStyleResources: context.resources } : {}),
+    ...(hasChartStyleResources(context.resources) ? { styleResources: context.resources } : {}),
     title: parseTitle(childNamed(element, "chart:title"), styleMap, context.resources, basePath),
     subtitle: parseTitle(
       childNamed(element, "chart:subtitle"),
@@ -838,7 +838,7 @@ function requiredStyle(
 function seriesShape(
   source: ChartSeriesSource,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): ChartShapePropertiesOptions | undefined {
   return styleShape(
@@ -855,7 +855,7 @@ function parseSeries(
   styleMap: Map<string, ChartStyle>,
   sources: ChartSeriesSource[],
   chartType: ChartSpaceOptions["type"],
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): ChartSpaceOptions["series"][number] {
   const table = parseOdfNodes(chart).find((node) => node.name === "table:table");
@@ -899,7 +899,7 @@ function parseSeries(
 function expandDataPoints(
   source: ChartSeriesSource,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ) {
   let index = 0;
@@ -970,7 +970,7 @@ function parseErrorBars(
 function parseAxis(
   element: Element,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): AxisOptions {
   rejectUnknown(element, ["chart:title", "chart:categories", "chart:grid", "chartooo:date-scale"]);
@@ -1006,7 +1006,7 @@ function parseAxis(
 function parseTitle(
   element: Element | undefined,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): string | ChartTitleOptions | undefined {
   if (!element) return undefined;
@@ -1044,7 +1044,7 @@ function legendOverlay(element: Element | undefined): boolean | undefined {
 function parseWall(
   element: Element | undefined,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ) {
   if (!element) return undefined;
@@ -1077,7 +1077,7 @@ function categoryRange(plotArea: Element | undefined): string | undefined {
 function chartShape(
   element: Element | undefined,
   styleMap: Map<string, ChartStyle>,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): ChartShapePropertiesOptions | undefined {
   if (!element) return undefined;
@@ -1097,7 +1097,7 @@ function chartShape(
 
 function styleShape(
   style: ChartStyle | undefined,
-  resources: OdfChartStyleResources,
+  resources: ChartStyleResources,
   basePath: string,
 ): ChartShapePropertiesOptions | undefined {
   return style ? projectChartStyle(style, resources, basePath) : undefined;
@@ -1197,11 +1197,11 @@ function xmlRoot(xml: string): Element {
   return document.elements?.[0] ?? document;
 }
 
-function emptyChartStyleResources(): OdfChartStyleResources {
+function emptyChartStyleResources(): ChartStyleResources {
   return { styles: [], gradients: [], hatches: [], fillImages: [], strokeDashes: [] };
 }
 
-function hasChartStyleResources(resources: OdfChartStyleResources): boolean {
+function hasChartStyleResources(resources: ChartStyleResources): boolean {
   return (
     resources.styles.length > 0 ||
     resources.gradients.length > 0 ||

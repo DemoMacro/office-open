@@ -28,7 +28,7 @@ import {
   xsdTrendlineType,
 } from "../util/mappings";
 import { parseOnOff } from "../util/values";
-import { OdfChartStyleOverlayError } from "./odf-style";
+import { ChartStyleCompatibilityError } from "./style-resources";
 import type {
   ChartSpaceOptions,
   CategoryPointOptions,
@@ -3119,35 +3119,30 @@ function readAxes(plotArea: XmlElement | undefined, ctx: ReadContext): AxisOptio
 
 // ── Main descriptor ──
 
-function rejectOdfStyleOverlay(
+function rejectUnsupportedChartStyles(
   value: unknown,
   path = "/c:chartSpace",
   seen = new Set<unknown>(),
 ): void {
   if (typeof value !== "object" || value === null || seen.has(value)) return;
   seen.add(value);
-  if (Object.hasOwn(value, "odfStyleResources")) {
-    throw odfOverlayError(path, "odfStyleResources", "unsupported-odf-style-resources");
+  if (Object.hasOwn(value, "styleResources")) {
+    throw styleCompatibilityError(path, "styleResources", "unsupported-style-resources");
   }
-  if (Object.hasOwn(value, "odfStyleName")) {
-    throw odfOverlayError(path, "odfStyleName", "unsupported-odf-chart-style");
-  }
-  const style = (value as { odfStyle?: { fill?: { type?: string } } }).odfStyle;
-  if (style?.fill?.type === "hatch") {
-    throw odfOverlayError(`${path}/odfStyle/fill`, "hatch", "unsupported-hatch-for-drawingml");
-  }
-  if (style?.fill?.type === "bitmap") {
-    throw odfOverlayError(`${path}/odfStyle/fill`, "bitmap", "unsupported-bitmap-for-drawingml");
+  if (Object.hasOwn(value, "styleName")) {
+    throw styleCompatibilityError(path, "styleName", "unsupported-named-chart-style");
   }
   for (const [key, child] of Object.entries(value)) {
-    if (key !== "odfStyle" && key !== "odfStyleName" && key !== "odfStyleResources") {
-      rejectOdfStyleOverlay(child, `${path}/${key}`, seen);
-    }
+    rejectUnsupportedChartStyles(child, `${path}/${key}`, seen);
   }
 }
 
-function odfOverlayError(path: string, name: string, reason: string): OdfChartStyleOverlayError {
-  return new OdfChartStyleOverlayError(
+function styleCompatibilityError(
+  path: string,
+  name: string,
+  reason: string,
+): ChartStyleCompatibilityError {
+  return new ChartStyleCompatibilityError(
     `c:chartSpace: ${path}: ${name}: ${reason}`,
     "c:chartSpace",
     path,
@@ -3160,7 +3155,7 @@ export const chartSpaceDesc: CustomDescriptor<ChartSpaceOptions> = {
   kind: "custom",
 
   stringify(opts: ChartSpaceOptions, ctx: WriteContext): string {
-    rejectOdfStyleOverlay(opts);
+    rejectUnsupportedChartStyles(opts);
     const parts: string[] = [];
 
     // Opening tag with namespaces — the strict dialect re-declares the

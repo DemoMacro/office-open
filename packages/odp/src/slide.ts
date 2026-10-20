@@ -133,7 +133,7 @@ export function slideChildXml(
       .find((candidate) => candidate.frames?.some((frame) => frame.shapeId === child.shape.id));
     const frame = object?.frames?.find((candidate) => candidate.shapeId === child.shape.id);
     if (object && frame) return embeddedObjectXml(child.shape, object, frame);
-    if (child.shape.odfControlId !== undefined) return controlShapeXml(child.shape, styles);
+    if (child.shape.controlId !== undefined) return controlShapeXml(child.shape, styles);
     if (
       child.shape.properties?.geometry !== undefined ||
       child.shape.properties?.customGeometry !== undefined

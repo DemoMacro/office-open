@@ -1,4 +1,9 @@
-import type { CellOptions, WorksheetOptions } from "@office-open/xlsx";
+import {
+  generateWorkbookSync,
+  parseWorkbookSync,
+  type CellOptions,
+  type WorksheetOptions,
+} from "@office-open/xlsx";
 import { describe, expect, it } from "vitest";
 
 import { buildSmallContainer } from "./cfb/test-container";
@@ -934,11 +939,17 @@ describe("parseWorkbook", () => {
 
   it("reads BIFF8 rich label cells", () => {
     const data = workbook(8, [{ name: "Sheet", cells: [richLabelCell(0, 0, "rich")] }]);
-    const worksheet = parseWorkbook(xls(data)).worksheets?.[0];
+    const options = parseWorkbook(xls(data));
+    const worksheet = options.worksheets?.[0];
     if (!worksheet) throw new TypeError("Expected a worksheet");
+    expect(options.cellXfs).toHaveLength(4);
     const richCell = cell(worksheet, "A1");
     expect(richCell.value).toBe("rich");
     expect(richCell.style).toBe(3);
+
+    const reparsed = parseWorkbookSync(generateWorkbookSync(options));
+    expect(reparsed.cellXfs).toHaveLength(4);
+    expect(cell(reparsed.worksheets?.[0] ?? {}, "A1").style).toBe(3);
   });
 
   it("reads row layout semantics", () => {

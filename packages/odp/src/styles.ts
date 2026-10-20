@@ -6,7 +6,7 @@ import {
   lengthToEmu,
   xmlElement,
 } from "@office-open/odf";
-import type { OdfStyleFamily, OdfStyleOverlayOptions } from "@office-open/odf";
+import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import { OdpParseError } from "./error";
@@ -28,19 +28,19 @@ export function addTextStyle(properties: TextProperties, styles: string[]): stri
   return name;
 }
 
-export function styleOverlaysXml(overlays: OdfStyleOverlayOptions[] | undefined): string[] {
+export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
     xmlElement(
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties.map((property) =>
-        xmlElement(property.name, overlayAttributesXml(property.attributes)),
+        xmlElement(property.name, resourceAttributesXml(property.attributes)),
       ),
     ),
   );
 }
 
-function overlayAttributesXml(
+function resourceAttributesXml(
   attributes: Record<string, string | number | boolean>,
 ): Record<string, string | number | boolean> {
   return Object.fromEntries(
@@ -127,11 +127,11 @@ const ODP_STYLE_PROPERTIES: Record<string, string[]> = {
   ruby: ["style:ruby-properties"],
 };
 
-export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {
-  const result: OdfStyleOverlayOptions[] = [];
+export function parseStyleResources(container: Element | undefined): StyleResourceOptions[] {
+  const result: StyleResourceOptions[] = [];
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
-    const family = attributeString(style, "style:family") as OdfStyleFamily;
+    const family = attributeString(style, "style:family") as StyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
     const allowed = ODP_STYLE_PROPERTIES[family];
     if (!allowed) {
@@ -144,7 +144,7 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
         reason,
       );
     }
-    const properties: OdfStyleOverlayOptions["properties"] = [];
+    const properties: StyleResourceOptions["properties"] = [];
     for (const property of style.elements ?? []) {
       if (property.type !== "element" || property.name === "style:tab-stops") continue;
       if (!allowed.includes(property.name ?? "")) {
@@ -172,7 +172,7 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
           );
         }
         if (!isMappedTextAttribute(property.name ?? "", attribute))
-          attributes[attribute] = overlayValue(attribute, String(value));
+          attributes[attribute] = resourceValue(attribute, String(value));
       }
       if (Object.keys(attributes).length > 0)
         properties.push({ name: property.name ?? "", attributes });
@@ -191,7 +191,7 @@ function isMappedTextAttribute(element: string, attribute: string): boolean {
   );
 }
 
-function overlayValue(name: string, value: string): string | number {
+function resourceValue(name: string, value: string): string | number {
   if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
   if (name === "style:column-width") return lengthToEmu(value) ?? value;
   if (/(angle|rotation)/.test(name) && Number.isFinite(Number(value))) return Number(value);

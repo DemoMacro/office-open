@@ -301,7 +301,7 @@ describe("ODP codec", () => {
   it("restores percent and length semantics in style overlays", async () => {
     const options: OdpPresentationOptions = {
       slides: [{ notes: "Overlay" }],
-      styleOverlays: [
+      styleResources: [
         {
           name: "P1",
           family: "paragraph",
@@ -476,7 +476,7 @@ describe("ODP codec", () => {
             children: [
               {
                 shape: {
-                  odfControlId: "control1",
+                  controlId: "control1",
                   name: "Control",
                   x: 360000,
                   y: 720000,
@@ -491,7 +491,7 @@ describe("ODP codec", () => {
       }),
     );
     expect(parsed.slides?.[0]?.children?.[0]).toMatchObject({
-      shape: { odfControlId: "control1", properties: { geometry: "rect" } },
+      shape: { controlId: "control1", properties: { geometry: "rect" } },
     });
     const regenerated = await parsePresentation(await generatePresentation(parsed));
     expect(regenerated.slides?.[0]?.children).toEqual(parsed.slides?.[0]?.children);

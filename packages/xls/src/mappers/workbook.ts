@@ -44,6 +44,24 @@ function readWorkbookStream(data: Uint8Array): WorkbookState {
   return { ...globals, stream };
 }
 
+function legacyCellXfs(worksheets: readonly WorksheetOptions[]): WorkbookOptions["cellXfs"] {
+  let maxIndex = -1;
+  for (const worksheet of worksheets) {
+    for (const row of worksheet.rows ?? []) {
+      if (typeof row.style === "number") maxIndex = Math.max(maxIndex, row.style);
+      for (const cell of row.cells ?? []) {
+        if (typeof cell.style === "number") maxIndex = Math.max(maxIndex, cell.style);
+      }
+    }
+  }
+  if (maxIndex < 0) return undefined;
+  return Array.from({ length: maxIndex + 1 }, () => ({
+    fontId: 0,
+    fillId: 0,
+    borderId: 0,
+    numFmtId: 0,
+  }));
+}
 export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): WorkbookOptions {
   if (!(data instanceof Uint8Array)) throw new XlsParseError("XLS data must be a Uint8Array");
   let workbookData: Uint8Array;
@@ -76,6 +94,7 @@ export function parseWorkbook(data: Uint8Array, options?: LegacyParseOptions): W
   return {
     worksheets,
     ...metadata,
+    cellXfs: legacyCellXfs(worksheets),
     fonts: state.fonts.length > 0 ? state.fonts : undefined,
     numFmts:
       state.numberFormats.size > 0

@@ -17,7 +17,7 @@ import {
   childrenNamed,
   descendantElements,
   generateOcf,
-  hasOcfManifestOverlay,
+  hasOcfManifestOptions,
   isExternalOdfUrl,
   metaXml,
   OdfSchemaError,
@@ -33,7 +33,7 @@ import {
   type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
-import type { OdfPackageMemberOptions } from "@office-open/odf";
+import type { PackageMemberOptions } from "@office-open/odf";
 import type { DxfOptions, WorkbookOptions } from "@office-open/xlsx";
 import type { Element } from "@office-open/xml";
 
@@ -61,7 +61,7 @@ import {
   parseWorksheetGraphicStyles,
   parseWorksheetNamedExpressions,
 } from "./spreadsheet";
-import { parseDimensionStyles, parseStyleOverlays, styleOverlaysXml } from "./styles";
+import { parseDimensionStyles, parseStyleResources, styleResourcesXml } from "./styles";
 import { worksheet, worksheetXml } from "./worksheet";
 
 export const MIME = "application/vnd.oasis.opendocument.spreadsheet";
@@ -88,8 +88,8 @@ export const NAMESPACES = [
 ].join(" ");
 
 function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
-  const { packageManifest, packageMembers, styleOverlays } = options;
-  const styles: string[] = styleOverlaysXml(styleOverlays);
+  const { packageManifest, packageMembers, styleResources } = options;
+  const styles: string[] = styleResourcesXml(styleResources);
   const chartFrames = (options.worksheets ?? []).flatMap((worksheet, worksheetIndex) =>
     (worksheet.charts ?? []).map((chart, chartIndex) => ({
       name: chart.name ?? `Object ${worksheetIndex + chartIndex + 1}`,
@@ -165,7 +165,7 @@ function generateOdsPackage(options: OdsWorkbookOptions): Uint8Array {
   );
 }
 
-function addPackageFile(files: OdfPackageFiles, member: OdfPackageMemberOptions): void {
+function addPackageFile(files: OdfPackageFiles, member: PackageMemberOptions): void {
   if (
     !member.path ||
     member.path.startsWith("/") ||
@@ -322,7 +322,7 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
     ...(dxfs.length > 0 ? { dxfs } : {}),
     worksheets,
   };
-  const styleOverlays = parseStyleOverlays(automaticStyles);
+  const styleResources = parseStyleResources(automaticStyles);
   const packageMembers = sourcePackageMembers(
     manifest,
     files,
@@ -332,9 +332,9 @@ function parseOdsPackage(data: Uint8Array): OdsWorkbookOptions {
   );
   return {
     ...result,
-    ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
-    ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
+    ...(styleResources.length > 0 ? { styleResources } : {}),
   };
 }
 
@@ -367,7 +367,7 @@ function sourcePackageMembers(
   binaries: Record<string, Uint8Array>,
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
-): OdfPackageMemberOptions[] {
+): PackageMemberOptions[] {
   const mediaTypes = new Map(
     manifest.entries.map((entry) => [entry.fullPath, entry.mediaType] as const),
   );

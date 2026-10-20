@@ -96,7 +96,7 @@ describe("rtfTool", () => {
       Uint8Array.from(atob(result.base64), (character) => character.charCodeAt(0)),
     );
     expect(result.mimeType).toBe("application/rtf");
-    expect(source).toContain("AI RTF");
+    expect(source).toContain("AI\\'20RTF");
   });
 });
 

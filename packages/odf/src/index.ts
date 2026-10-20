@@ -43,7 +43,7 @@ export {
 } from "./runtime/xml-vocabulary";
 export {
   generateOcf,
-  hasOcfManifestOverlay,
+  hasOcfManifestOptions,
   manifestXml,
   readOcf,
   readOcfSync,
@@ -78,7 +78,7 @@ export {
   type OcfSemanticDigest,
 } from "./container/digest";
 export { metaXml, ODF_NAMESPACES, parseMeta } from "./meta";
-export { OdfChartStyleOverlayError } from "@office-open/core";
+export { ChartStyleCompatibilityError } from "@office-open/core";
 export {
   CHART_MIME,
   chartBodyXml,
@@ -122,9 +122,9 @@ export {
 export { PRESET_GEOMETRY_DOCX, presetGeometryOdf } from "./drawing/preset-geometry";
 
 export {
-  type OdfPackageMemberOptions,
-  type OdfPackageOverlayOptions,
-  type OdfStyleFamily,
-  type OdfStyleOverlayOptions,
-  type OdfStylePropertyOverlay,
-} from "./package-overlay";
+  type PackageMemberOptions,
+  type PackageOptions,
+  type StyleFamily,
+  type StyleResourceOptions,
+  type StylePropertyOptions,
+} from "./package-options";

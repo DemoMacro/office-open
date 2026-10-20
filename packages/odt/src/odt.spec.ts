@@ -101,7 +101,7 @@ describe("ODT canonical projection", () => {
       ),
     );
     expect(parsed.sections[0]?.children[0]).toMatchObject({
-      paragraph: { children: [{ wpsShape: { odfControlId: "control1", geometry: "rect" } }] },
+      paragraph: { children: [{ wpsShape: { controlId: "control1", geometry: "rect" } }] },
     });
     const regenerated = await generateDocument(parsed);
     expect(Buffer.from(unzipSync(regenerated)["content.xml"]!).toString()).toContain(
@@ -132,7 +132,7 @@ describe("ODT canonical projection", () => {
     expect(parsed.sections[0]?.children?.[0]).toMatchObject({
       paragraph: { text: "Styled", style: "P1", alignment: "center" },
     });
-    expect(parsed.styleOverlays).toEqual([
+    expect(parsed.styleResources).toEqual([
       {
         name: "P1",
         family: "paragraph",
@@ -158,9 +158,9 @@ describe("ODT canonical projection", () => {
       '<text:p text:style-name="P1">Styled</text:p>',
     );
     const parsed = await parseDocument(source);
-    expect(parsed.styleOverlays?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
+    expect(parsed.styleResources?.[0]?.properties[0]?.name).toBe("loext:graphic-properties");
     const reread = await parseDocument(await generateDocument(parsed));
-    expect(reread.styleOverlays).toEqual(parsed.styleOverlays);
+    expect(reread.styleResources).toEqual(parsed.styleResources);
   });
 
   it("round-trips mixed canonical and overlay run styles", async () => {
@@ -208,10 +208,10 @@ describe("ODT canonical projection", () => {
         text: { children: [{ text: "かんじ", style: "C2" }] },
       },
     });
-    expect(parsed.styleOverlays?.some((overlay) => overlay.name === "R1")).toBe(true);
+    expect(parsed.styleResources?.some((overlay) => overlay.name === "R1")).toBe(true);
 
     const reread = await parseDocument(await generateDocument(parsed));
-    expect(reread.styleOverlays?.some((overlay) => overlay.name === "R1")).toBe(true);
+    expect(reread.styleResources?.some((overlay) => overlay.name === "R1")).toBe(true);
     const rereadChild = reread.sections[0]?.children?.[0];
     const rereadParagraph = sectionParagraph(rereadChild);
     const rereadRun = rereadParagraph?.children?.[0];

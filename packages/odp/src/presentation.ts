@@ -18,7 +18,7 @@ import {
   emuToLength,
   descendantElements,
   generateOcf,
-  hasOcfManifestOverlay,
+  hasOcfManifestOptions,
   isExternalOdfUrl,
   lengthToEmu,
   metaXml,
@@ -34,7 +34,7 @@ import {
   type OcfManifestOptions,
   type OdfPackageFiles,
 } from "@office-open/odf";
-import type { OdfPackageMemberOptions } from "@office-open/odf";
+import type { PackageMemberOptions } from "@office-open/odf";
 import type { PresentationOptions, SlideOptions } from "@office-open/pptx";
 import type { Element } from "@office-open/xml";
 
@@ -43,7 +43,7 @@ import type { OdpEmbeddedObjectPool } from "./embedded-frames";
 import { OdpParseError } from "./error";
 import type { OdpPresentationOptions } from "./options";
 import { parseColumnWidths, parseSlide, slideXml } from "./slide";
-import { parseStyleOverlays, parseTextStyles, styleOverlaysXml } from "./styles";
+import { parseStyleResources, parseTextStyles, styleResourcesXml } from "./styles";
 
 export const MIME = "application/vnd.oasis.opendocument.presentation";
 export const TEMPLATE_MIME = "application/vnd.oasis.opendocument.presentation-template";
@@ -65,24 +65,24 @@ export const NAMESPACES = [
   'xmlns:loext="urn:org:documentfoundation:names:experimental:office:xmlns:loext:1.0"',
 ].join(" ");
 
-function isOdpOverlay(options: PresentationOptions): options is OdpPresentationOptions {
+function isOdpPackageOptions(options: PresentationOptions): options is OdpPresentationOptions {
   return (
     "packageManifest" in options ||
     "packageMembers" in options ||
-    "styleOverlays" in options ||
+    "styleResources" in options ||
     "embeddedObjects" in options
   );
 }
 
-function packageOverlays(options: PresentationOptions): Partial<OdpPresentationOptions> {
-  return isOdpOverlay(options) ? options : {};
+function packageOptions(options: PresentationOptions): Partial<OdpPresentationOptions> {
+  return isOdpPackageOptions(options) ? options : {};
 }
 
 function generateOdpPackage(options: PresentationOptions): Uint8Array {
-  const { packageManifest, packageMembers, styleOverlays, embeddedObjects } =
-    packageOverlays(options);
+  const { packageManifest, packageMembers, styleResources, embeddedObjects } =
+    packageOptions(options);
   validateEmbeddedObjects(options, embeddedObjects);
-  const styles: string[] = styleOverlaysXml(styleOverlays);
+  const styles: string[] = styleResourcesXml(styleResources);
   const images: OdpImage[] = [];
   const mediaFiles: OdpImage[] = [];
   const charts: OdpChart[] = [];
@@ -163,7 +163,7 @@ function validateObjectPath(path: string): void {
     throw new Error(`Invalid ODP embedded object path: ${path}`);
 }
 
-function addPackageFile(files: OdfPackageFiles, member: OdfPackageMemberOptions): void {
+function addPackageFile(files: OdfPackageFiles, member: PackageMemberOptions): void {
   if (
     !member.path ||
     member.path.startsWith("/") ||
@@ -261,7 +261,7 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
       ),
     ),
   };
-  const styleOverlays = parseStyleOverlays(childNamed(content, "office:automatic-styles"));
+  const styleResources = parseStyleResources(childNamed(content, "office:automatic-styles"));
   const packageMembers = sourcePackageMembers(
     manifest,
     files,
@@ -272,10 +272,10 @@ function parseOdpPackage(data: Uint8Array): OdpPresentationOptions {
   );
   return {
     ...result,
-    ...(hasOcfManifestOverlay(manifest) ? { packageManifest: manifest } : {}),
+    ...(hasOcfManifestOptions(manifest) ? { packageManifest: manifest } : {}),
     ...(packageMembers.length > 0 ? { packageMembers } : {}),
     ...(embeddedObjects.size > 0 ? { embeddedObjects: [...embeddedObjects.values()] } : {}),
-    ...(styleOverlays.length > 0 ? { styleOverlays } : {}),
+    ...(styleResources.length > 0 ? { styleResources } : {}),
   };
 }
 
@@ -347,7 +347,7 @@ function objectMembers(
   path: string,
   files: Record<string, string>,
   binaries: Record<string, Uint8Array>,
-): OdfPackageMemberOptions[] {
+): PackageMemberOptions[] {
   return [
     ...Object.entries(files)
       .filter(([memberPath]) => memberPath.startsWith(`${path}/`))
@@ -369,7 +369,7 @@ function sourcePackageMembers(
   chartPool: Map<string, ChartSpaceOptions>,
   usedBinaryPaths: Set<string>,
   embeddedObjects: OdpEmbeddedObjectPool,
-): OdfPackageMemberOptions[] {
+): PackageMemberOptions[] {
   const objectMemberPaths = new Set(
     [...embeddedObjects.values()].flatMap((object) => object.members.map((member) => member.path)),
   );

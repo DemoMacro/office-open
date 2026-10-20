@@ -1,4 +1,4 @@
-import type { OdfPackageMemberOptions } from "@office-open/odf";
+import type { PackageMemberOptions } from "@office-open/odf";
 
 /** ODF text anchor placement for a draw:frame. */
 export type OdtFrameAnchorType = "as-char" | "char" | "page" | "paragraph" | "frame";
@@ -14,6 +14,6 @@ export interface OdtEmbeddedObjectFrameOptions {
 export interface OdtEmbeddedObjectOptions {
   path: string;
   mediaType: string;
-  members: OdfPackageMemberOptions[];
+  members: PackageMemberOptions[];
   frames?: OdtEmbeddedObjectFrameOptions[];
 }

@@ -438,10 +438,13 @@ function postProcess(schema: Record<string, unknown>) {
   }
 
   const shared = shareDuplicatedProperties(definitions);
+  const sharedSubschemas = shareDuplicatedSubschemas(definitions);
   const guarded = applyChoiceGuards(definitions);
+  const prunedDefinitions = pruneUnreferencedDefinitions(schema);
 
   return {
     definitions: Object.keys(definitions).length,
+    prunedDefinitions,
     totalProperties,
     describedProperties,
     descriptionCoverage:
@@ -449,6 +452,7 @@ function postProcess(schema: Record<string, unknown>) {
     maxAnyOfBranches,
     guardedChoices: guarded,
     ...shared,
+    ...sharedSubschemas,
   };
 }
 
@@ -566,6 +570,114 @@ function shareDuplicatedProperties(definitions: Record<string, Record<string, un
   return { sharedProperties, sharedPropertyBytes };
 }
 
+/** P9: share exact duplicate schema nodes outside properties (union arms,
+ * array items, constraint trees). The first occurrence is the anchor; later
+ * occurrences become pointers. As with P8, draft-07 ignores $ref siblings,
+ * so an exact subtree replacement preserves validation behavior. */
+function shareDuplicatedSubschemas(definitions: Record<string, Record<string, unknown>>): {
+  sharedSubschemas: number;
+  sharedSubschemaBytes: number;
+} {
+  const anchors = new Map<string, string>();
+  let sharedSubschemas = 0;
+  let sharedSubschemaBytes = 0;
+  const visitChild = (
+    parent: Record<string, unknown>,
+    key: string | number,
+    path: string,
+  ): void => {
+    const child = parent[key];
+    if (!child || typeof child !== "object" || Array.isArray(child)) return;
+    const schema = child as Record<string, unknown>;
+    const canonical = JSON.stringify(sortKeys(schema));
+    if (canonical.length >= SHARED_PROPERTY_MIN_BYTES) {
+      const anchor = anchors.get(canonical);
+      if (anchor !== undefined) {
+        parent[key] = { $ref: anchor };
+        sharedSubschemas++;
+        sharedSubschemaBytes += canonical.length;
+        return;
+      }
+      anchors.set(canonical, path);
+    }
+    visitChildren(schema, path);
+  };
+
+  const visitChildren = (schema: Record<string, unknown>, path: string): void => {
+    const containers = ["properties", "patternProperties"] as const;
+    for (const container of containers) {
+      const entries = schema[container];
+      if (!entries || typeof entries !== "object") continue;
+      for (const [name, child] of Object.entries(entries as Record<string, unknown>)) {
+        visitChild(
+          entries as Record<string, unknown>,
+          name,
+          `${path}/${container}/${encodeURIComponent(name)}`,
+        );
+      }
+    }
+    for (const keyword of ["additionalProperties", "items", "not", "if", "then", "else"] as const) {
+      const child = schema[keyword];
+      if (child && typeof child === "object" && !Array.isArray(child)) {
+        visitChild(schema, keyword, `${path}/${keyword}`);
+      }
+    }
+    for (const keyword of ["allOf", "anyOf", "oneOf"] as const) {
+      const branches = schema[keyword];
+      if (!Array.isArray(branches)) continue;
+      branches.forEach((branch, index) => {
+        if (branch && typeof branch === "object" && !Array.isArray(branch)) {
+          visitChild(branches as unknown[], index, `${path}/${keyword}/${index}`);
+        }
+      });
+    }
+  };
+
+  for (const [name, definition] of Object.entries(definitions)) {
+    visitChildren(definition, `#/definitions/${encodeURIComponent(name)}`);
+  }
+  return { sharedSubschemas, sharedSubschemaBytes };
+}
+
+/** Remove definitions unreachable from the schema root. Overrides can replace
+ * a union wrapper while leaving its old arm definitions behind; those are
+ * implementation residue, not public schema surface. */
+function pruneUnreferencedDefinitions(schema: Record<string, unknown>): number {
+  const definitions = (schema.definitions ?? {}) as Record<string, unknown>;
+  const referenced = new Set<string>();
+  const queue: unknown[] = [schema];
+
+  const decodePointer = (reference: string): string | undefined => {
+    if (!reference.startsWith("#/definitions/")) return undefined;
+    const name = decodeURIComponent(reference.slice("#/definitions/".length));
+    return name in definitions ? name : undefined;
+  };
+
+  while (queue.length > 0) {
+    const node = queue.pop();
+    if (Array.isArray(node)) {
+      queue.push(...node);
+      continue;
+    }
+    if (!node || typeof node !== "object") continue;
+    const object = node as Record<string, unknown>;
+    if (typeof object.$ref === "string") {
+      const name = decodePointer(object.$ref);
+      if (name !== undefined && !referenced.has(name)) {
+        referenced.add(name);
+        queue.push(definitions[name]);
+      }
+    }
+    queue.push(...Object.values(object));
+  }
+
+  const before = Object.keys(definitions).length;
+  for (const name of Object.keys(definitions)) {
+    if (!referenced.has(name)) delete definitions[name];
+  }
+  return before - Object.keys(definitions).length;
+}
+
 /** Recursively sort object keys; shared by canonical serialization and the
  * canonical keys of P8 property sharing (key order must never decide whether
  * two schemas are "identical"). */
@@ -649,7 +761,9 @@ function main() {
         `${result.metrics.descriptionCoverage}% described, ` +
         `max anyOf ${result.metrics.maxAnyOfBranches}, ` +
         `${result.metrics.sharedProperties} shared properties ` +
-        `(−${Math.round(result.metrics.sharedPropertyBytes / 1024)} KB)\n`,
+        `(−${Math.round(result.metrics.sharedPropertyBytes / 1024)} KB), ` +
+        `${result.metrics.sharedSubschemas} shared subtrees ` +
+        `(−${Math.round(result.metrics.sharedSubschemaBytes / 1024)} KB)\n`,
     );
   }
 

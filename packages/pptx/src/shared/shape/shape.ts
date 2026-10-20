@@ -75,8 +75,8 @@ export interface ShapeStyleOptions {
 
 export interface ShapeOptions extends NonVisualDrawingPropertiesOptions, Transform2DOptions {
   id?: number;
-  /** ODF-only `draw:control` reference; absent for ordinary presentation shapes. */
-  odfControlId?: string;
+  /** Drawing control reference (`draw:control`); absent for ordinary presentation shapes. */
+  controlId?: string;
   /**
    * Shape properties (a:spPr children): geometry/fill/outline/effects/3D and
    * the spPr extension list. Transform fields stay top-level on the shape.

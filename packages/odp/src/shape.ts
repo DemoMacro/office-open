@@ -29,7 +29,7 @@ import { parseParagraph, textBodyXml, type TextProperties } from "./text-run";
 
 /** Shape with preset geometry renders as draw:custom-shape + enhanced-geometry. */
 export function customShapeXml(shape: ShapeOptions, styles: string[]): string {
-  if (shape.odfControlId !== undefined) return controlShapeXml(shape, styles);
+  if (shape.controlId !== undefined) return controlShapeXml(shape, styles);
   const geometry = shape.properties?.geometry;
   const preset = typeof geometry === "string" ? geometry : geometry?.preset;
   const customGeometry = shape.properties?.customGeometry;
@@ -81,7 +81,7 @@ export function controlShapeXml(shape: ShapeOptions, styles: string[]): string {
   return xmlElement(
     "draw:control",
     {
-      "draw:control": shape.odfControlId,
+      "draw:control": shape.controlId,
       "draw:style-name": pushShapeStyle(
         shape.properties?.fill ?? undefined,
         shape.properties?.outline ?? undefined,
@@ -207,7 +207,7 @@ export function parseControlSlideShape(
   const graphic = graphicStyles.get(attributeString(element, "draw:style-name") ?? "");
   const paragraphs = childrenNamed(element, "text:p");
   return {
-    odfControlId: attributeString(element, "draw:control"),
+    controlId: attributeString(element, "draw:control"),
     name: attributeString(element, "draw:name"),
     x: lengthToEmu(attributeString(element, "svg:x")),
     y: lengthToEmu(attributeString(element, "svg:y")),

@@ -402,7 +402,7 @@ describe("ODS codec", () => {
   it("restores percent and length semantics in style overlays", async () => {
     const options: OdsWorkbookOptions = {
       worksheets: [{ rows: [{ cells: [{ value: "Overlay" }] }] }],
-      styleOverlays: [
+      styleResources: [
         {
           name: "ro1",
           family: "table-row",
@@ -670,7 +670,7 @@ describe("ODS codec", () => {
     const shape = {
       col: 1,
       row: 1,
-      odfControlId: "control1",
+      controlId: "control1",
       name: "Control",
       properties: { geometry: "rect" },
     } satisfies NonNullable<WorksheetOptions["shapes"]>[number];

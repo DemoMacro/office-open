@@ -115,7 +115,7 @@ export function parseDrawingShape(
     row,
     ...(attributeString(element, "draw:control") === undefined
       ? {}
-      : { odfControlId: attributeString(element, "draw:control") }),
+      : { controlId: attributeString(element, "draw:control") }),
     colOffset: x1,
     rowOffset: y1,
     extentCx: width,
@@ -180,7 +180,7 @@ export function cellShapeXml(
       const geometry = shape.properties.geometry;
       const isLine = geometry === "line";
       const elementName =
-        shape.odfControlId !== undefined
+        shape.controlId !== undefined
           ? "draw:control"
           : geometry === "rect"
             ? "draw:rect"
@@ -192,7 +192,7 @@ export function cellShapeXml(
         elementName,
         {
           "draw:name": shape.name,
-          ...(shape.odfControlId === undefined ? {} : { "draw:control": shape.odfControlId }),
+          ...(shape.controlId === undefined ? {} : { "draw:control": shape.controlId }),
           "draw:style-name": styleName,
           "draw:z-index": shape.zOrder,
           ...(isLine

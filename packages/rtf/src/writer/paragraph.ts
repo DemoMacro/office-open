@@ -7,6 +7,8 @@ import { writeParagraphNumbering, type NumberingReferences } from "./numbering";
 import { writeInlineChild, writeRun } from "./run";
 
 const PARAGRAPH_PROPERTIES = [
+  "text",
+  "preserveSpace",
   "children",
   "style",
   "alignment",
@@ -95,28 +97,34 @@ export function writeParagraph(
       properties += control(name, value.size);
     }
   }
-  const childrenText = (paragraph.children ?? [])
-    .map((child, index) => {
-      const childPath = `${path}.children[${index}]`;
-      if (typeof child === "string") return rtfText(child);
-      if ("footnoteReference" in child) {
-        return writeFootnoteReference(context, child.footnoteReference, childPath);
-      }
-      const isRun =
-        "text" in child ||
-        "bold" in child ||
-        "italic" in child ||
-        "underline" in child ||
-        "strike" in child ||
-        "verticalAlign" in child ||
-        "color" in child ||
-        "size" in child ||
-        "font" in child ||
-        "children" in child;
-      return isRun
-        ? writeRun(child as RunOptions, context, childPath)
-        : writeInlineChild(child, childPath);
-    })
-    .join("");
+  if (paragraph.text !== undefined && paragraph.children !== undefined) {
+    reject("paragraph", "children", "children", "text and children are mutually exclusive");
+  }
+  const childrenText =
+    paragraph.text !== undefined
+      ? writeRun({ text: paragraph.text }, context, `${path}.text`)
+      : (paragraph.children ?? [])
+          .map((child, index) => {
+            const childPath = `${path}.children[${index}]`;
+            if (typeof child === "string") return rtfText(child);
+            if ("footnoteReference" in child) {
+              return writeFootnoteReference(context, child.footnoteReference, childPath);
+            }
+            const isRun =
+              "text" in child ||
+              "bold" in child ||
+              "italic" in child ||
+              "underline" in child ||
+              "strike" in child ||
+              "verticalAlign" in child ||
+              "color" in child ||
+              "size" in child ||
+              "font" in child ||
+              "children" in child;
+            return isRun
+              ? writeRun(child as RunOptions, context, childPath)
+              : writeInlineChild(child, childPath);
+          })
+          .join("");
   return `${properties}${childrenText}${control("par")}`;
 }

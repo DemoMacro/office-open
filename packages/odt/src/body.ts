@@ -27,7 +27,7 @@ import {
   childrenNamed,
   descendantElements,
   generateOcf,
-  hasOcfManifestOverlay,
+  hasOcfManifestOptions,
   metaXml,
   ODF_NAMESPACES,
   OdfSchemaError,
@@ -43,14 +43,14 @@ import {
   type GraphicStyle,
   type OcfManifestOptions,
   type OdfPackageFiles,
-  type OdfPackageMemberOptions,
+  type PackageMemberOptions,
 } from "@office-open/odf";
 import type { Element } from "@office-open/xml";
 
 import {
-  automaticStyleOverlaysXml,
+  automaticStyleResourcesXml,
   parseStyles,
-  type OdtAutomaticStyleOverlay,
+  type OdtAutomaticStyleResource,
   type StyleMap,
 } from "./automatic-styles";
 import {
@@ -154,8 +154,8 @@ export interface ParseContext {
 }
 
 function generateOdtPackage(options: OdtDocumentOptions): Uint8Array {
-  const { packageManifest, embeddedObjects, packageMembers, styleOverlays } = options;
-  const styles: string[] = automaticStyleOverlaysXml(styleOverlays);
+  const { packageManifest, embeddedObjects, packageMembers, styleResources } = options;
+  const styles: string[] = automaticStyleResourcesXml(styleResources);
   const blocks = options.sections.flatMap((section) => section.children);
   const images: OdtImage[] = [];
   const charts: OdtChart[] = [];
@@ -458,7 +458,7 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
   );
   if (embeddedObjects.size > 0) result.embeddedObjects = [...embeddedObjects.values()];
   if (packageMembers.length > 0) result.packageMembers = packageMembers;
-  const styleOverlays: OdtAutomaticStyleOverlay[] = [...styleMap]
+  const styleResources: OdtAutomaticStyleResource[] = [...styleMap]
     .filter(([, style]) =>
       (style.properties ?? []).some((property) => Object.keys(property.attributes).length > 0),
     )
@@ -469,8 +469,8 @@ function parseOdtPackage(data: Uint8Array): OdtDocumentOptions {
         (property) => Object.keys(property.attributes).length > 0,
       ),
     }));
-  if (styleOverlays.length > 0) result.styleOverlays = styleOverlays;
-  if (hasOcfManifestOverlay(manifest)) result.packageManifest = manifest;
+  if (styleResources.length > 0) result.styleResources = styleResources;
+  if (hasOcfManifestOptions(manifest)) result.packageManifest = manifest;
   if (
     context.notes.forms.containers.length > 0 ||
     context.notes.forms.models?.length ||
@@ -542,7 +542,7 @@ function objectMembers(
   path: string,
   files: Record<string, string>,
   binaries: Record<string, Uint8Array>,
-): OdfPackageMemberOptions[] {
+): PackageMemberOptions[] {
   return [
     ...Object.entries(files)
       .filter(([memberPath]) => memberPath.startsWith(`${path}/`))
@@ -560,7 +560,7 @@ function sourcePackageMembers(
   chartBodies: Map<string, ChartSpaceOptions>,
   embeddedObjects: Map<string, OdtEmbeddedObjectOptions>,
   usedBinaryPaths: Set<string>,
-): OdfPackageMemberOptions[] {
+): PackageMemberOptions[] {
   const objectMemberPaths = new Set(
     [...embeddedObjects.values()].flatMap((object) => object.members.map((member) => member.path)),
   );

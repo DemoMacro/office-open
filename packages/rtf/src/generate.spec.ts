@@ -38,6 +38,34 @@ describe("generateDocument RTF projections", () => {
     expect(roundTrip(decoder.decode(generateDocument(options)))).toEqual(options);
   });
 
+  it("projects paragraph text shorthand with preserved spaces", () => {
+    const generated = decoder.decode(
+      generateDocument({
+        sections: [{ children: [{ paragraph: { text: " Body ", preserveSpace: true } }] }],
+      }),
+    );
+    expect(parseDocument(generated).sections[0]?.children?.[0]).toEqual({
+      paragraph: { children: [{ text: " Body " }] },
+    });
+  });
+  it("rejects paragraph text and children together", () => {
+    const options: DocumentOptions = {
+      sections: [
+        {
+          children: [
+            {
+              paragraph: {
+                text: "Body",
+                children: [{ text: "Children" }],
+              },
+            },
+          ],
+        },
+      ],
+    };
+    expect(() => generateDocument(options)).toThrow(RtfGenerateError);
+  });
+
   it("round-trips footnote references at their source positions", () => {
     const source = String.raw`{\rtf1Before{\footnote Note}After\par}`;
     const options = parseDocument(source);

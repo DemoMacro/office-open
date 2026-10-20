@@ -12,7 +12,7 @@ import type { ShapePropertiesOptions } from "../drawing/shape-properties-desc";
 import type { TextBodyOptions } from "../drawing/text/text-body";
 import type { ColorMappingOptions } from "../theme/theme-options";
 import type { DataType } from "../util/data-type";
-import type { OdfChartStyleOptions, OdfChartStyleResources } from "./odf-style";
+import type { ChartStyleResources } from "./style-resources";
 import type {
   AbsoluteSizeAnchorOptions,
   RelativeSizeAnchorOptions,
@@ -24,10 +24,8 @@ import type {
 export interface ChartShapePropertiesOptions extends ShapePropertiesOptions {
   /** Black-and-white rendering mode (`c:spPr/@bwMode`). */
   blackWhiteMode?: BlackWhiteMode;
-  /** Source ODF style name (`@chart:style-name`); ODF output only. */
-  odfStyleName?: string;
-  /** Source ODF fill/outline fields retained beside their canonical projection. */
-  odfStyle?: OdfChartStyleOptions;
+  /** Named chart style referenced by the source (`@chart:style-name`). */
+  styleName?: string;
 }
 
 /** Fields shared by every chart series type (name + optional decorations). */
@@ -542,8 +540,8 @@ export interface ChartSpaceOptions {
    * stringify re-declares the matching namespace set.
    */
   dialect?: "transitional" | "strict";
-  /** Named style resources from an ODF chart subdocument; ODF output only. */
-  odfStyleResources?: OdfChartStyleResources;
+  /** Named style resources referenced by chart shape and series styles. */
+  styleResources?: ChartStyleResources;
   /**
    * Chart title (c:title). An empty string round-trips a title placeholder
    * that carries no text (bare `<c:title/>`, the legacy-Word auto-title form).

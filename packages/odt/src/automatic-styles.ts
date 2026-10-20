@@ -1,9 +1,5 @@
 import type { RunOptions } from "@office-open/docx";
-import type {
-  OdfStyleFamily,
-  OdfStyleOverlayOptions,
-  OdfStylePropertyOverlay,
-} from "@office-open/odf";
+import type { StyleFamily, StyleResourceOptions, StylePropertyOptions } from "@office-open/odf";
 import {
   attributeString,
   childNamed,
@@ -17,7 +13,7 @@ import type { Element } from "@office-open/xml";
 import { OdtParseError } from "./error";
 import { parseTabStop, tabStopXml, type TabStop } from "./paragraph";
 
-export type OdtAutomaticStyleOverlay = OdfStyleOverlayOptions;
+export type OdtAutomaticStyleResource = StyleResourceOptions;
 
 export type StyleMap = Map<
   string,
@@ -26,8 +22,8 @@ export type StyleMap = Map<
     columnWidth?: number;
     pageBreakBefore?: boolean;
     tabStops?: TabStop[];
-    family: OdfStyleFamily;
-    properties?: OdfStylePropertyOverlay[];
+    family: StyleFamily;
+    properties?: StylePropertyOptions[];
     character: CharacterProperties;
   }
 >;
@@ -135,12 +131,12 @@ export function parseStyles(container: Element | undefined): StyleMap {
         : Math.round((lengthToEmu(columnWidthValue) ?? 0) / 635);
     const color = attributeString(character, "fo:color");
     const size = attributeString(character, "fo:font-size");
-    const overlayProperties = propertyElements.map((property) => ({
+    const resourceProperties = propertyElements.map((property) => ({
       name: property.name ?? "",
       attributes: Object.fromEntries(
         Object.entries(property.attributes ?? {}).map(([attribute, value]) => [
           attribute,
-          overlayValue(attribute, String(value)),
+          resourceValue(attribute, String(value)),
         ]),
       ),
     }));
@@ -150,8 +146,8 @@ export function parseStyles(container: Element | undefined): StyleMap {
       tabStops: tabStops.length > 0 ? tabStops : undefined,
       columnWidth,
       family,
-      ...(overlayProperties.some((property) => Object.keys(property.attributes).length > 0)
-        ? { properties: overlayProperties }
+      ...(resourceProperties.some((property) => Object.keys(property.attributes).length > 0)
+        ? { properties: resourceProperties }
         : {}),
       character: {
         bold: attributeString(character, "fo:font-weight") === "bold",
@@ -170,8 +166,8 @@ export function parseStyles(container: Element | undefined): StyleMap {
   return result;
 }
 
-export function automaticStyleOverlaysXml(
-  overlays: OdtAutomaticStyleOverlay[] | undefined,
+export function automaticStyleResourcesXml(
+  overlays: OdtAutomaticStyleResource[] | undefined,
 ): string[] {
   return (overlays ?? []).map((overlay) =>
     xmlElement(
@@ -179,12 +175,12 @@ export function automaticStyleOverlaysXml(
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties
         .filter((property) => Object.keys(property.attributes).length > 0)
-        .map((property) => xmlElement(property.name, overlayAttributesXml(property.attributes))),
+        .map((property) => xmlElement(property.name, resourceAttributesXml(property.attributes))),
     ),
   );
 }
 
-function overlayAttributesXml(
+function resourceAttributesXml(
   attributes: Record<string, string | number | boolean>,
 ): Record<string, string | number | boolean> {
   return Object.fromEntries(
@@ -209,7 +205,7 @@ function isPercentAttribute(name: string): boolean {
   return /(line-height|rel-width|rel-height|opacity|transparency)/.test(name);
 }
 
-const FAMILY_PROPERTIES: Record<OdfStyleFamily, string[]> = {
+const FAMILY_PROPERTIES: Record<StyleFamily, string[]> = {
   paragraph: ["style:paragraph-properties", "loext:graphic-properties", "style:text-properties"],
   text: ["style:text-properties"],
   graphic: [
@@ -232,7 +228,7 @@ const FAMILY_PROPERTIES: Record<OdfStyleFamily, string[]> = {
   ruby: ["style:ruby-properties"],
 };
 
-const ATTRIBUTE_PREFIXES: Record<OdfStyleFamily, RegExp> = Object.fromEntries([
+const ATTRIBUTE_PREFIXES: Record<StyleFamily, RegExp> = Object.fromEntries([
   ["paragraph", /^(fo|style|text|svg|draw|officeooo|loext):/],
   ["text", /^(fo|style|text|officeooo|loext):/],
   ["graphic", /^(fo|style|draw|svg|dr3d|smil|officeooo|loext):/],
@@ -244,10 +240,10 @@ const ATTRIBUTE_PREFIXES: Record<OdfStyleFamily, RegExp> = Object.fromEntries([
   ["page-layout", /^(fo|style|text|svg|officeooo|loext):/],
   ["drawing-page", /^(fo|style|draw|svg|dr3d|presentation|smil|officeooo|loext):/],
   ["ruby", /^(fo|style|text|officeooo|loext):/],
-]) as Record<OdfStyleFamily, RegExp>;
+]) as Record<StyleFamily, RegExp>;
 
-function parseFamily(value: string | undefined, style: Element): OdfStyleFamily {
-  const families: OdfStyleFamily[] = [
+function parseFamily(value: string | undefined, style: Element): StyleFamily {
+  const families: StyleFamily[] = [
     "paragraph",
     "text",
     "graphic",
@@ -260,7 +256,7 @@ function parseFamily(value: string | undefined, style: Element): OdfStyleFamily 
     "drawing-page",
     "ruby",
   ];
-  if (value && families.includes(value as OdfStyleFamily)) return value as OdfStyleFamily;
+  if (value && families.includes(value as StyleFamily)) return value as StyleFamily;
   throw styleError(style, value ?? "style:family", "unknown style family");
 }
 
@@ -276,7 +272,7 @@ function styleError(style: Element, name: string, reason: string): OdtParseError
   );
 }
 
-function overlayValue(name: string, value: string): string | number {
+function resourceValue(name: string, value: string): string | number {
   if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
   const length = lengthToEmu(value);
   if (

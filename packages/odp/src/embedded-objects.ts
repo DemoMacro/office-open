@@ -1,4 +1,4 @@
-import type { OdfPackageMemberOptions } from "@office-open/odf";
+import type { PackageMemberOptions } from "@office-open/odf";
 
 /** ODP-specific draw:frame data carried beside the canonical pptx shape. */
 export interface OdpEmbeddedObjectFrameOptions {
@@ -12,6 +12,6 @@ export interface OdpEmbeddedObjectOptions {
   path?: string;
   sourceUrl?: string;
   mediaType?: string;
-  members: OdfPackageMemberOptions[];
+  members: PackageMemberOptions[];
   frames?: OdpEmbeddedObjectFrameOptions[];
 }

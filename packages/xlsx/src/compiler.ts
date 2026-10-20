@@ -346,14 +346,14 @@ export function compileWorkbook(
   // Adopt the parsed style table wholesale (the SDK's Stylesheet model): fonts/
   // fills/borders/cellXfs/numFmts replace the fresh-file defaults, so raw cell
   // style indices carried by parsed rows resolve exactly as in the source.
-  // fonts !== undefined is the "source styles.xml was parsed" signal (parse
+  // fonts or cellXfs !== undefined signals a parsed style table (parse
   // fills all table sections with [] when the part exists, even bare).
-  if (options.fonts !== undefined) {
+  if (options.fonts !== undefined || options.cellXfs !== undefined) {
     ctx.styles.adopt({
-      fonts: options.fonts,
+      fonts: options.fonts ?? [{ size: 11, font: "Calibri" }],
       fontsContainer: options.fontsContainer,
-      fills: options.fills ?? [],
-      borders: options.borders ?? [],
+      fills: options.fills ?? [{ patternType: "none" }, { patternType: "gray125" }],
+      borders: options.borders ?? [{}],
       cellXfs: options.cellXfs ?? [],
       numFmts: options.numFmts,
     });
@@ -368,7 +368,8 @@ export function compileWorkbook(
   if (options.styleExtensions) ctx.styles.setExtensions(options.styleExtensions);
 
   // Build workbook relationships
-  const includeStyles = !isRoundTrip || options.fonts !== undefined;
+  const includeStyles =
+    !isRoundTrip || options.fonts !== undefined || options.cellXfs !== undefined;
   const includeTheme = !isRoundTrip || options.theme !== undefined;
   // Round-trip worksheets keep their source part names (sheet26.xml); fresh
   // authoring assigns sheet1..N. Relationship targets must match whichever

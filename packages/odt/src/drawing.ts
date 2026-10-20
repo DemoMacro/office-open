@@ -118,11 +118,11 @@ export function wpsShapeFrameXml(
       : embeddedObjects.find((candidate) =>
           candidate.frames?.some((frame) => frame.shapeId === shapeId),
         );
-  if (shape.odfControlId !== undefined) {
+  if (shape.controlId !== undefined) {
     return xmlElement(
       "draw:control",
       {
-        "draw:control": shape.odfControlId,
+        "draw:control": shape.controlId,
         "text:anchor-type": "as-char",
         "draw:style-name": addShapeStyle(shape, styles),
         "svg:x": transformationOffset(offset, "x"),
@@ -266,7 +266,7 @@ export function parseShapeElement(
   const controlId = attributeString(element, "draw:control");
   return {
     children: [],
-    ...(controlId === undefined ? {} : { odfControlId: controlId }),
+    ...(controlId === undefined ? {} : { controlId }),
     ...(geometry ? { geometry } : {}),
     ...(name ? { altText: { name } } : {}),
     transformation: {

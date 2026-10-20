@@ -1383,8 +1383,7 @@
       "description": "Options for blip fill properties.",
       "properties": {
         "blipEffects": {
-          "$ref": "#/definitions/BlipEffectsOptions",
-          "description": "Image adjustment effects (brightness, contrast, grayscale, etc.)"
+          "$ref": "#/definitions/FillOptions/anyOf/5/properties/blipEffects"
         },
         "compression": {
           "$ref": "#/definitions/BlipCompression",
@@ -1414,8 +1413,7 @@
           "description": "Explicit stretch mode; `true` preserves a bare `<a:stretch/>`."
         },
         "tile": {
-          "$ref": "#/definitions/TileOptions",
-          "description": "Tile fill mode (if omitted, defaults to stretch)"
+          "$ref": "#/definitions/FillOptions/anyOf/5/properties/tile"
         }
       },
       "type": "object"
@@ -1622,8 +1620,7 @@
           "type": "number"
         },
         "displacedByCustomXml": {
-          "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml."
+          "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "name": {
           "description": "Bookmark name used for reference.",
@@ -1660,8 +1657,7 @@
           "type": "number"
         },
         "displacedByCustomXml": {
-          "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml."
+          "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "id": {
           "description": "Marker identifier.",
@@ -1838,8 +1834,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/categoryPointCount"
         },
         "categorySource": {
-          "$ref": "#/definitions/ChartCategorySourceOptions",
-          "description": "Per-series category source; overrides the chart-level source."
+          "$ref": "#/definitions/ChartSeriesData/properties/categorySource"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
@@ -1901,16 +1896,14 @@
           "$ref": "#/definitions/ChartSeriesData/properties/orderDeclared"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/ChartPictureOptions",
-          "description": "Picture-fill options (c:pictureOptions, bar/area)."
+          "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
+          "$ref": "#/definitions/ChartSeriesData/properties/shapeProperties"
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -2008,8 +2001,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2110,8 +2102,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2167,8 +2158,7 @@
           "type": "string"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2205,8 +2195,7 @@
           "type": "boolean"
         },
         "font": {
-          "$ref": "#/definitions/TextFont",
-          "description": "a:buFont — explicit bullet font; a string is the typeface only."
+          "$ref": "#/definitions/BulletCharOptions/properties/font"
         },
         "fontFollowsText": {
           "description": "a:buFontTx — bullet font follows the text run font.",
@@ -2525,8 +2514,7 @@
           "type": "string"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -2554,8 +2542,7 @@
           "type": "string"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -2584,16 +2571,14 @@
           "type": "boolean"
         },
         "customStyleRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:customStyle` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/customStyleRaw"
         },
         "default": {
           "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "defaultRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:default` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/defaultRaw"
         },
         "hidden": {
           "description": "w:hidden — style hidden from the UI.",
@@ -2627,8 +2612,7 @@
           "type": "boolean"
         },
         "quickFormatRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source qFormat on/off lexical value; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/quickFormatRaw"
         },
         "rsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -2677,17 +2661,7 @@
         },
         "multiLevelCategories": {
           "items": {
-            "items": {
-              "anyOf": [
-                {
-                  "$ref": "#/definitions/MultiLevelCategoryPoint"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "type": "array"
+            "$ref": "#/definitions/ChartOptions/properties/multiLevelCategories/items"
           },
           "type": "array"
         },
@@ -4780,10 +4754,6 @@
           "description": "Categories are numeric (c:cat carries c:numRef/c:numCache instead of c:strRef/c:strCache). Numeric categories render on a value-formatted axis; parse sets this when the source used numRef.",
           "type": "boolean"
         },
-        "odfStyleResources": {
-          "$ref": "#/definitions/OdfChartStyleResources",
-          "description": "Named style resources from an ODF chart subdocument; ODF output only."
-        },
         "ofPieType": {
           "$ref": "#/definitions/OfPieType",
           "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
@@ -4943,6 +4913,10 @@
         "style2010": {
           "$ref": "#/definitions/ChartStyle2010Options",
           "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+        },
+        "styleResources": {
+          "$ref": "#/definitions/ChartStyleResources",
+          "description": "Named style resources referenced by chart shape and series styles."
         },
         "subtitle": {
           "anyOf": [
@@ -5421,14 +5395,6 @@
             }
           ]
         },
-        "odfStyle": {
-          "$ref": "#/definitions/OdfChartStyleOptions",
-          "description": "Source ODF fill/outline fields retained beside their canonical projection."
-        },
-        "odfStyleName": {
-          "description": "Source ODF style name (`@chart:style-name`); ODF output only.",
-          "type": "string"
-        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
@@ -5441,6 +5407,10 @@
         },
         "shape3d": {
           "$ref": "#/definitions/Shape3DOptions"
+        },
+        "styleName": {
+          "description": "Named chart style referenced by the source (`@chart:style-name`).",
+          "type": "string"
         },
         "transformPresent": {
           "description": "Source `a:xfrm` presence; `true` preserves an explicit empty transform.",
@@ -5525,15 +5495,13 @@
           "$ref": "#/definitions/ChartOptions/properties/colorMappingOverride"
         },
         "coordinateRegion": {
-          "$ref": "#/definitions/ChartCoordinateRegionOptions",
-          "description": "ODF chart:coordinate-region (or chartooo equivalent) geometry."
+          "$ref": "#/definitions/ChartOptions/properties/coordinateRegion"
         },
         "customSplitPoints": {
           "$ref": "#/definitions/ChartOptions/properties/customSplitPoints"
         },
         "dataLabels": {
-          "$ref": "#/definitions/DataLabelsOptions",
-          "description": "Chart-group-level data labels (c:dLbls after the ser elements)."
+          "$ref": "#/definitions/ChartOptions/properties/dataLabels"
         },
         "dataTable": {
           "$ref": "#/definitions/DataTableOptions",
@@ -5546,8 +5514,7 @@
           "$ref": "#/definitions/ChartOptions/properties/dialect"
         },
         "displayBlanksAs": {
-          "$ref": "#/definitions/DisplayBlanksAs",
-          "description": "How blank cells are plotted (c:dispBlanksAs)."
+          "$ref": "#/definitions/ChartOptions/properties/displayBlanksAs"
         },
         "dropLines": {
           "$ref": "#/definitions/ChartOptions/properties/dropLines"
@@ -5556,8 +5523,7 @@
           "$ref": "#/definitions/ChartOptions/properties/ext"
         },
         "externalData": {
-          "$ref": "#/definitions/ExternalDataOptions",
-          "description": "External linked workbook (c:externalData, after c:txPr)."
+          "$ref": "#/definitions/ChartOptions/properties/externalData"
         },
         "firstSliceAngle": {
           "description": "Pie/doughnut first slice angle in degrees (c:firstSliceAng).",
@@ -5579,8 +5545,7 @@
           "type": "number"
         },
         "grouping": {
-          "$ref": "#/definitions/ChartGrouping",
-          "description": "Series grouping (c:grouping val). Absent → the per-type default the header always wrote (clustered for bar/column, standard for line/area)."
+          "$ref": "#/definitions/ChartOptions/properties/grouping"
         },
         "groupingDeclared": {
           "$ref": "#/definitions/ChartOptions/properties/groupingDeclared"
@@ -5606,16 +5571,13 @@
           "type": "boolean"
         },
         "legendPosition": {
-          "$ref": "#/definitions/LegendPosition",
-          "description": "Legend position (c:legendPos, defaults to \"r\" when legend is shown)."
+          "$ref": "#/definitions/ChartOptions/properties/legendPosition"
         },
         "legendShapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Legend fill and outline (c:legend's c:spPr) — round-trip."
+          "$ref": "#/definitions/ChartOptions/properties/legendShapeProperties"
         },
         "legendTextProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Legend text (c:legend's c:txPr, a) — round-trip."
+          "$ref": "#/definitions/ChartOptions/properties/legendTextProperties"
         },
         "markers": {
           "$ref": "#/definitions/ChartOptions/properties/markers"
@@ -5626,13 +5588,8 @@
         "numericCategories": {
           "$ref": "#/definitions/ChartOptions/properties/numericCategories"
         },
-        "odfStyleResources": {
-          "$ref": "#/definitions/OdfChartStyleResources",
-          "description": "Named style resources from an ODF chart subdocument; ODF output only."
-        },
         "ofPieType": {
-          "$ref": "#/definitions/OfPieType",
-          "description": "ofPie variant: pie-of-pie or bar-of-pie (c:ofPieType, default \"pie\")."
+          "$ref": "#/definitions/ChartOptions/properties/ofPieType"
         },
         "overlap": {
           "description": "Bar/column overlap as percent (c:overlap, 2D only).",
@@ -5642,15 +5599,13 @@
           "$ref": "#/definitions/ChartOptions/properties/pivotFormats"
         },
         "pivotSource": {
-          "$ref": "#/definitions/PivotSourceOptions",
-          "description": "Pivot chart source (c:pivotSource, after clrMapOvr, before protection)."
+          "$ref": "#/definitions/ChartOptions/properties/pivotSource"
         },
         "plotAreaLayout": {
           "$ref": "#/definitions/ChartOptions/properties/plotAreaLayout"
         },
         "plotAreaShapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Plot-area fill and outline (c:plotArea's trailing c:spPr) — round-trip."
+          "$ref": "#/definitions/ChartOptions/properties/plotAreaShapeProperties"
         },
         "plotVisOnly": {
           "$ref": "#/definitions/ChartOptions/properties/plotVisOnly"
@@ -5659,23 +5614,19 @@
           "$ref": "#/definitions/ChartOptions/properties/plotVisOnlyPresent"
         },
         "printSettings": {
-          "$ref": "#/definitions/PrintSettingsOptions",
-          "description": "Print settings (c:printSettings, after c:externalData)."
+          "$ref": "#/definitions/ChartOptions/properties/printSettings"
         },
         "protection": {
-          "$ref": "#/definitions/ProtectionOptions",
-          "description": "Chart protection (c:protection, before c:chart)."
+          "$ref": "#/definitions/ChartOptions/properties/protection"
         },
         "radarStyle": {
-          "$ref": "#/definitions/RadarStyle",
-          "description": "Radar variant (c:radarStyle, default \"standard\")."
+          "$ref": "#/definitions/ChartOptions/properties/radarStyle"
         },
         "roundedCorners": {
           "$ref": "#/definitions/ChartOptions/properties/roundedCorners"
         },
         "scatterStyle": {
-          "$ref": "#/definitions/ScatterStyle",
-          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
+          "$ref": "#/definitions/ChartOptions/properties/scatterStyle"
         },
         "secondPieSize": {
           "$ref": "#/definitions/ChartOptions/properties/secondPieSize"
@@ -5690,12 +5641,10 @@
           "$ref": "#/definitions/ChartOptions/properties/seriesLines"
         },
         "shape": {
-          "$ref": "#/definitions/BarShape",
-          "description": "3D bar column shape (chart-group-level c:shape on c:bar3DChart)."
+          "$ref": "#/definitions/ChartOptions/properties/shape"
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Chart-area shape properties (c:spPr after c:chart) — round-trip."
+          "$ref": "#/definitions/ChartOptions/properties/shapeProperties"
         },
         "showDataLabelsOverMax": {
           "description": "Show data labels over the chart maximum (c:showDLblsOverMax).",
@@ -5713,8 +5662,7 @@
           "description": "3D side wall (c:sideWall)."
         },
         "sizeRepresents": {
-          "$ref": "#/definitions/SizeRepresents",
-          "description": "What the bubble size represents (c:sizeRepresents)."
+          "$ref": "#/definitions/ChartOptions/properties/sizeRepresents"
         },
         "smooth": {
           "$ref": "#/definitions/ChartOptions/properties/smooth"
@@ -5724,22 +5672,22 @@
           "type": "number"
         },
         "splitType": {
-          "$ref": "#/definitions/SplitType",
-          "description": "ofPie split behavior (c:splitType, default \"auto\")."
+          "$ref": "#/definitions/ChartOptions/properties/splitType"
         },
         "style": {
           "type": "number"
         },
         "style2010": {
-          "$ref": "#/definitions/ChartStyle2010Options",
-          "description": "Word 2010+ chart style — c14:style carried via mc:AlternateContent with a c:style fallback for older readers. Takes precedence over `style`."
+          "$ref": "#/definitions/ChartOptions/properties/style2010"
+        },
+        "styleResources": {
+          "$ref": "#/definitions/ChartOptions/properties/styleResources"
         },
         "subtitle": {
           "$ref": "#/definitions/ChartOptions/properties/subtitle"
         },
         "textProperties": {
-          "$ref": "#/definitions/TextBodyOptions",
-          "description": "Chart-space default text (c:txPr, a) — round-trip."
+          "$ref": "#/definitions/ChartOptions/properties/textProperties"
         },
         "threeD": {
           "type": "boolean"
@@ -5757,8 +5705,7 @@
           "$ref": "#/definitions/ChartOptions/properties/upDownBarsGapWidth"
         },
         "userShapes": {
-          "$ref": "#/definitions/ChartUserShapesOptions",
-          "description": "User-drawn shapes layered over the chart (c:userShapes, after printSettings)."
+          "$ref": "#/definitions/ChartOptions/properties/userShapes"
         },
         "varyColors": {
           "$ref": "#/definitions/ChartOptions/properties/varyColors"
@@ -5788,6 +5735,70 @@
         }
       },
       "required": ["style"],
+      "type": "object"
+    },
+    "ChartStyleResource": {
+      "additionalProperties": false,
+      "description": "A named style definition retained beside a chart subdocument.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "properties": {
+          "items": {
+            "$ref": "#/definitions/StylePropertiesOptions"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["name", "attributes", "properties"],
+      "type": "object"
+    },
+    "ChartStyleResources": {
+      "additionalProperties": false,
+      "description": "Named style resources retained beside canonical chart projections.",
+      "properties": {
+        "fillImages": {
+          "items": {
+            "$ref": "#/definitions/FillImageResource"
+          },
+          "type": "array"
+        },
+        "gradients": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "hatches": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "strokeDashes": {
+          "items": {
+            "$ref": "#/definitions/DrawingStyleResource"
+          },
+          "type": "array"
+        },
+        "styles": {
+          "items": {
+            "$ref": "#/definitions/ChartStyleResource"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
       "type": "object"
     },
     "ChartTitleOptions": {
@@ -6200,17 +6211,6 @@
       },
       "type": "object"
     },
-    "ColorBooleanTransformItem": {
-      "additionalProperties": false,
-      "description": "Value-less ordered EG_ColorTransform child; presence is the semantics.",
-      "properties": {
-        "type": {
-          "$ref": "#/definitions/BooleanTransformKey"
-        }
-      },
-      "required": ["type"],
-      "type": "object"
-    },
     "ColorChangeEffectOptions": {
       "additionalProperties": false,
       "description": "Options for color change effect.",
@@ -6296,8 +6296,7 @@
       "description": "Options for theme color configuration.",
       "properties": {
         "themeColor": {
-          "$ref": "#/definitions/ThemeColor",
-          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
+          "$ref": "#/definitions/BorderOptions/properties/themeColor"
         },
         "themeShade": {
           "$ref": "#/definitions/UcharHexNumber"
@@ -6731,25 +6730,6 @@
       },
       "type": "object"
     },
-    "ColorValueTransformItem": {
-      "additionalProperties": false,
-      "description": "Valued ordered EG_ColorTransform child; percent fields use integer percent.",
-      "properties": {
-        "value": {
-          "anyOf": [
-            {
-              "type": "number"
-            },
-            {
-              "$ref": "#/definitions/Percentage"
-            }
-          ],
-          "description": "Integer percent (`50` = 50%) or a source literal (`\"50%\"`)."
-        }
-      },
-      "required": ["value"],
-      "type": "object"
-    },
     "ColumnProperties": {
       "additionalProperties": false,
       "description": "Options for configuring individual column properties.",
@@ -7057,37 +7037,13 @@
                 "$ref": "#/definitions/ParagraphOptions"
               },
               {
-                "additionalProperties": false,
-                "properties": {
-                  "table": {
-                    "$ref": "#/definitions/TableOptions"
-                  }
-                },
-                "required": ["table"],
-                "title": "table",
-                "type": "object"
+                "$ref": "#/definitions/SectionChild/anyOf/1"
               },
               {
-                "additionalProperties": false,
-                "properties": {
-                  "bookmarkStart": {
-                    "$ref": "#/definitions/BookmarkStartOptions"
-                  }
-                },
-                "required": ["bookmarkStart"],
-                "title": "bookmarkStart",
-                "type": "object"
+                "$ref": "#/definitions/SectionChild/anyOf/8"
               },
               {
-                "additionalProperties": false,
-                "properties": {
-                  "bookmarkEnd": {
-                    "$ref": "#/definitions/MarkupRangeOptions"
-                  }
-                },
-                "required": ["bookmarkEnd"],
-                "title": "bookmarkEnd",
-                "type": "object"
+                "$ref": "#/definitions/SectionChild/anyOf/9"
               }
             ]
           },
@@ -7463,129 +7419,40 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "simpleField": {
-              "$ref": "#/definitions/SimpleFieldOptions"
-            }
-          },
-          "required": ["simpleField"],
-          "title": "simpleField",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/52"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkStart": {
-              "$ref": "#/definitions/BookmarkStartOptions"
-            }
-          },
-          "required": ["bookmarkStart"],
-          "title": "bookmarkStart",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["bookmarkEnd"],
-          "title": "bookmarkEnd",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "proofErr": {
-              "enum": ["spellStart", "spellEnd", "gramStart", "gramEnd"],
-              "type": "string"
-            }
-          },
-          "required": ["proofErr"],
-          "title": "proofErr",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/26"
         },
         {
           "$ref": "#/definitions/FormFieldChild"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "complexField": {
-              "$ref": "#/definitions/ComplexFieldOptions"
-            }
-          },
-          "required": ["complexField"],
-          "title": "complexField",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/54"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "fieldMarker": {
-              "$ref": "#/definitions/FieldMarkerOptions"
-            }
-          },
-          "required": ["fieldMarker"],
-          "title": "fieldMarker",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/55"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "sdt": {
-              "$ref": "#/definitions/SdtRunOptions"
-            }
-          },
-          "required": ["sdt"],
-          "title": "sdt",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/62"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "insertion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["insertion"],
-          "title": "insertion",
-          "type": "object"
+          "$ref": "#/definitions/TrackChangeChild/anyOf/23"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "deletion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["deletion"],
-          "title": "deletion",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/15"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "movedFrom": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["movedFrom"],
-          "title": "movedFrom",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/34"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "movedTo": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["movedTo"],
-          "title": "movedTo",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/35"
         },
         {
           "additionalProperties": false,
@@ -7625,8 +7492,7 @@
           "description": "Revision save ID when the begin run was deleted (w:rsidDel, round-trip)."
         },
         "endAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the end run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endAdditionRsid"
         },
         "endDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -7641,8 +7507,7 @@
           "type": "string"
         },
         "endRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endRunPropertiesRsid"
         },
         "fieldData": {
           "description": "Field data carried by the begin marker (`w:fldData`, round-trip).",
@@ -7664,8 +7529,7 @@
           "type": "string"
         },
         "instructionAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionAdditionRsid"
         },
         "instructionDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -7687,8 +7551,7 @@
           "type": "string"
         },
         "instructionRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRunPropertiesRsid"
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (w:r > w:lastRenderedPageBreak + w:fldChar begin in one run).",
@@ -7731,12 +7594,10 @@
           "type": "string"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/runPropertiesRsid"
         },
         "separatorAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorAdditionRsid"
         },
         "separatorDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -7746,8 +7607,7 @@
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRPrXml"
         },
         "separatorRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRunPropertiesRsid"
         }
       },
       "required": ["instruction"],
@@ -8172,8 +8032,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
+          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -8199,8 +8058,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
+          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -8244,8 +8102,7 @@
           "type": "string"
         },
         "properties": {
-          "$ref": "#/definitions/CustomXmlPropertiesOptions",
-          "description": "Properties (placeholder, data binding, attributes)"
+          "$ref": "#/definitions/ParagraphChild/anyOf/61/properties/customXml/properties/properties"
         },
         "uri": {
           "description": "Namespace URI",
@@ -9479,8 +9336,7 @@
       "description": "Options for configuring document properties of a drawing.",
       "properties": {
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -10331,6 +10187,26 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "DrawingStyleResource": {
+      "additionalProperties": false,
+      "description": "Base fields for a named ODF drawing style resource.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "attributes"],
       "type": "object"
     },
     "DropDownListOptions": {
@@ -11195,6 +11071,29 @@
           "$ref": "#/definitions/SolidFillOptions"
         }
       },
+      "type": "object"
+    },
+    "FillImageResource": {
+      "additionalProperties": false,
+      "description": "An ODF fill image and its embedded media bytes, when available.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "data": {
+          "$ref": "#/definitions/DataType"
+        },
+        "displayName": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["attributes", "name"],
       "type": "object"
     },
     "FillOptions": {
@@ -12207,28 +12106,23 @@
       "description": "A complete canonical form-field chain, including round-trip run metadata.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the begin run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/additionRsid"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the begin run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ComplexFieldOptions/properties/deletionRsid"
         },
         "endAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the end run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endAdditionRsid"
         },
         "endDeletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the end run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ComplexFieldOptions/properties/endDeletionRsid"
         },
         "endRPrXml": {
           "description": "Verbatim run-properties of the end fldChar run (round-trip).",
           "type": "string"
         },
         "endRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the end run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/endRunPropertiesRsid"
         },
         "fieldLock": {
           "description": "Field lock (w:fldChar/`@w:fldLock` on the begin marker).",
@@ -12244,12 +12138,10 @@
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instrRunsXml"
         },
         "instructionAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the instruction run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionAdditionRsid"
         },
         "instructionDeletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the instruction run was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ComplexFieldOptions/properties/instructionDeletionRsid"
         },
         "instructionMembers": {
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionMembers"
@@ -12258,24 +12150,21 @@
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRPrXml"
         },
         "instructionRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the instruction run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/instructionRunPropertiesRsid"
         },
         "lastRenderedPageBreak": {
           "description": "A pagination hint Word parked on the begin run itself (round-trip only).",
           "type": "boolean"
         },
         "numberingChange": {
-          "$ref": "#/definitions/NumberingChangeOptions",
-          "description": "Revision metadata embedded in the begin marker (round-trip)."
+          "$ref": "#/definitions/ComplexFieldOptions/properties/beginNumberingChange"
         },
         "rPrXml": {
           "description": "Control-run properties shared by begin/separate (round-trip).",
           "type": "string"
         },
         "resultAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the result run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultAdditionRsid"
         },
         "resultDeletionRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -12289,26 +12178,22 @@
           "type": "string"
         },
         "resultRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the result run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultRunPropertiesRsid"
         },
         "resultRunsXml": {
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/resultRunsXml"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the begin run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/runPropertiesRsid"
         },
         "separatorAdditionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the separator run (w:rsidR, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorAdditionRsid"
         },
         "separatorRPrXml": {
           "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRPrXml"
         },
         "separatorRunPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the separator run properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/TrackChangeChild/anyOf/10/properties/separatorRunPropertiesRsid"
         }
       },
       "required": ["formField"],
@@ -13464,8 +13349,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/blipExt"
             },
             "compression": {
-              "$ref": "#/definitions/BlipCompression",
-              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/compression"
             },
             "data": {
               "$ref": "#/definitions/DataType"
@@ -13544,15 +13428,13 @@
           "additionalProperties": false,
           "properties": {
             "blackWhiteMode": {
-              "$ref": "#/definitions/BlackWhiteMode",
-              "description": "Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted."
+              "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/blackWhiteMode"
             },
             "blipExt": {
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/blipExt"
             },
             "compression": {
-              "$ref": "#/definitions/BlipCompression",
-              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/compression"
             },
             "data": {
               "$ref": "#/definitions/DataType"
@@ -13566,15 +13448,13 @@
               "description": "Fallback image for Word processors that do not support SVG. This ensures the document displays correctly in all viewers.",
               "properties": {
                 "blackWhiteMode": {
-                  "$ref": "#/definitions/BlackWhiteMode",
-                  "description": "Black-and-white rendering mode on pic:spPr (`@bwMode`); absent = omitted."
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/blackWhiteMode"
                 },
                 "blipExt": {
                   "$ref": "#/definitions/PictureOptions/anyOf/0/properties/blipExt"
                 },
                 "compression": {
-                  "$ref": "#/definitions/BlipCompression",
-                  "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/compression"
                 },
                 "data": {
                   "$ref": "#/definitions/DataType"
@@ -13590,8 +13470,7 @@
                   "$ref": "#/definitions/PictureOptions/anyOf/0/properties/fillRectangle"
                 },
                 "nonVisualProperties": {
-                  "$ref": "#/definitions/NonVisualPropertiesOptions",
-                  "description": "Picture non-visual properties (pic:cNvPr) for round-trip fidelity"
+                  "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/nonVisualProperties"
                 },
                 "nonVisualPropertiesPresent": {
                   "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
@@ -13648,8 +13527,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/fillRectangle"
             },
             "nonVisualProperties": {
-              "$ref": "#/definitions/NonVisualPropertiesOptions",
-              "description": "Picture non-visual properties (pic:cNvPr) for round-trip fidelity"
+              "$ref": "#/definitions/GroupChildMediaData/anyOf/1/properties/nonVisualProperties"
             },
             "nonVisualPropertiesPresent": {
               "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
@@ -13705,8 +13583,7 @@
           "additionalProperties": false,
           "properties": {
             "blackWhiteMode": {
-              "$ref": "#/definitions/BlackWhiteMode",
-              "description": "Black-and-white rendering mode on wpg:grpSpPr (`@bwMode`)."
+              "$ref": "#/definitions/GroupOptions/properties/blackWhiteMode"
             },
             "childExtentHeight": {
               "description": "Child coordinate system extent height (a:chExt",
@@ -13764,8 +13641,7 @@
               "type": "object"
             },
             "groupShapeLocks": {
-              "$ref": "#/definitions/GroupShapeLocksOptions",
-              "description": "Group shape locks (wpg:cNvGrpSpPr/a:grpSpLocks) for round-trip."
+              "$ref": "#/definitions/GroupOptions/properties/groupShapeLocks"
             },
             "nonVisualProperties": {
               "$ref": "#/definitions/GroupNonVisualPropertiesOptions",
@@ -13889,8 +13765,7 @@
                   "$ref": "#/definitions/NonVisualContentPartPropertiesOptions"
                 },
                 "creationId": {
-                  "$ref": "#/definitions/Guid",
-                  "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+                  "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
                 },
                 "creationIdExtension": {
                   "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -13906,8 +13781,7 @@
                   "type": "boolean"
                 },
                 "hyperlink": {
-                  "$ref": "#/definitions/HyperlinkOptions",
-                  "description": "Hyperlinks carried by pic:cNvPr; relationship wiring is DOCX-specific."
+                  "$ref": "#/definitions/NonVisualPropertiesOptions/properties/hyperlink"
                 },
                 "id": {
                   "type": "number"
@@ -13982,8 +13856,7 @@
       "description": "Nested group cNvPr: shared DrawingML attrs plus the runtime `@id`.",
       "properties": {
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -14016,8 +13889,7 @@
       "description": "Group options for docx (wpg:wgp). The cNvPr fields bridge through altText (DocPropertiesOptions); the rest is the docx run-level group model.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/additionRsid"
         },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
@@ -14057,16 +13929,14 @@
           "type": "array"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
         },
         "effects": {
           "$ref": "#/definitions/EffectListOptions",
           "description": "Group effects"
         },
         "extensionIds": {
-          "$ref": "#/definitions/DrawingExtensionIds",
-          "description": "Word 2010 wrapper ids; round-trip only."
+          "$ref": "#/definitions/ChartOptions/properties/extensionIds"
         },
         "extensions": {
           "description": "Group property extensions (wpg:grpSpPr/a:extLst).",
@@ -14111,12 +13981,10 @@
           "type": "string"
         },
         "runProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/runProperties"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
         "transformation": {
           "$ref": "#/definitions/MediaTransformation"
@@ -15308,8 +15176,7 @@
           "type": "boolean"
         },
         "cnfStyle": {
-          "$ref": "#/definitions/CnfConditionalOptions",
-          "description": "Conditional formatting style for table rows/cells"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/cnfStyle"
         },
         "collapsed": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
@@ -15318,16 +15185,14 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "contextualSpacingRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source contextual-spacing toggle lexical form; round-trip only."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacingRaw"
         },
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
         },
         "frame": {
-          "$ref": "#/definitions/FrameOptions",
-          "description": "Frame properties for positioning the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/frame"
         },
         "hyphenationLines": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/hyphenationLines"
@@ -15374,8 +15239,7 @@
           "type": "boolean"
         },
         "spacing": {
-          "$ref": "#/definitions/SpacingProperties",
-          "description": "Spacing before/after paragraph and between lines"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/spacing"
         },
         "suppressAutoHyphens": {
           "description": "Whether to disable automatic hyphenation for this paragraph",
@@ -16423,8 +16287,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
                 },
                 "deletion": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions"
@@ -16455,8 +16318,7 @@
                   "type": "string"
                 },
                 "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
                 },
                 "id": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -16590,312 +16452,7 @@
               "allOf": [
                 {
                   "items": {
-                    "anyOf": [
-                      {
-                        "const": "CURRENT",
-                        "type": "string"
-                      },
-                      {
-                        "const": "TOTAL_PAGES",
-                        "type": "string"
-                      },
-                      {
-                        "const": "TOTAL_PAGES_IN_SECTION",
-                        "type": "string"
-                      },
-                      {
-                        "const": "SECTION",
-                        "type": "string"
-                      },
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "preserveSpace": {
-                            "type": "boolean"
-                          },
-                          "text": {
-                            "type": "string"
-                          }
-                        },
-                        "required": ["text"],
-                        "title": "text",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "instructionText": {
-                            "type": "string"
-                          },
-                          "preserveSpace": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["instructionText"],
-                        "title": "instructionText",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "deletedInstructionText": {
-                            "type": "string"
-                          },
-                          "preserveSpace": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["deletedInstructionText"],
-                        "title": "deletedInstructionText",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "deletedText": {
-                            "type": "string"
-                          },
-                          "preserveSpace": {
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["deletedText"],
-                        "title": "deletedText",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "tab": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["tab"],
-                        "title": "tab",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "noBreakHyphen": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["noBreakHyphen"],
-                        "title": "noBreakHyphen",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "softHyphen": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["softHyphen"],
-                        "title": "softHyphen",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "dayShort": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["dayShort"],
-                        "title": "dayShort",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "monthShort": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["monthShort"],
-                        "title": "monthShort",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "yearShort": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["yearShort"],
-                        "title": "yearShort",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "dayLong": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["dayLong"],
-                        "title": "dayLong",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "monthLong": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["monthLong"],
-                        "title": "monthLong",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "yearLong": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["yearLong"],
-                        "title": "yearLong",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "annotationRef": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["annotationRef"],
-                        "title": "annotationRef",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "footnoteRef": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["footnoteRef"],
-                        "title": "footnoteRef",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "endnoteRef": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["endnoteRef"],
-                        "title": "endnoteRef",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "separator": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["separator"],
-                        "title": "separator",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "continuationSeparator": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["continuationSeparator"],
-                        "title": "continuationSeparator",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "pgNum": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["pgNum"],
-                        "title": "pgNum",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "carriageReturn": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["carriageReturn"],
-                        "title": "carriageReturn",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "lastRenderedPageBreak": {
-                            "const": true,
-                            "type": "boolean"
-                          }
-                        },
-                        "required": ["lastRenderedPageBreak"],
-                        "title": "lastRenderedPageBreak",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "object": {
-                            "$ref": "#/definitions/ObjectElementOptions"
-                          }
-                        },
-                        "required": ["object"],
-                        "title": "object",
-                        "type": "object"
-                      },
-                      {
-                        "additionalProperties": false,
-                        "properties": {
-                          "ruby": {
-                            "$ref": "#/definitions/RubyOptions"
-                          }
-                        },
-                        "required": ["ruby"],
-                        "title": "ruby",
-                        "type": "object"
-                      },
-                      {
-                        "$ref": "#/definitions/ParagraphChild"
-                      }
-                    ]
+                    "$ref": "#/definitions/ParagraphRunOptions/properties/children/items"
                   },
                   "type": "array"
                 },
@@ -16911,8 +16468,7 @@
               "$ref": "#/definitions/MathRunPropertiesOptions"
             },
             "runProperties": {
-              "$ref": "#/definitions/RunPropertiesOptions",
-              "description": "Run text formatting (w:rPr inside m:r)."
+              "$ref": "#/definitions/MathInput/anyOf/1/properties/runProperties"
             }
           },
           "type": "object"
@@ -17017,8 +16573,7 @@
               "additionalProperties": false,
               "properties": {
                 "baseArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Base argument properties (m:e/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/5/properties/superScript/properties/baseArgumentProperties"
                 },
                 "children": {
                   "items": {
@@ -17060,8 +16615,7 @@
                   "type": "boolean"
                 },
                 "baseArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Base argument properties (m:e/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/5/properties/superScript/properties/baseArgumentProperties"
                 },
                 "children": {
                   "items": {
@@ -17080,8 +16634,7 @@
                   "type": "array"
                 },
                 "subScriptArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Subscript argument properties (m:sub/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/6/properties/subScript/properties/subScriptArgumentProperties"
                 },
                 "superScript": {
                   "items": {
@@ -17090,8 +16643,7 @@
                   "type": "array"
                 },
                 "superScriptArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Superscript argument properties (m:sup/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/5/properties/superScript/properties/superScriptArgumentProperties"
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -17109,8 +16661,7 @@
               "additionalProperties": false,
               "properties": {
                 "baseArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Base argument properties (m:e/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/5/properties/superScript/properties/baseArgumentProperties"
                 },
                 "children": {
                   "items": {
@@ -17129,8 +16680,7 @@
                   "type": "array"
                 },
                 "subScriptArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Subscript argument properties (m:sub/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/6/properties/subScript/properties/subScriptArgumentProperties"
                 },
                 "superScript": {
                   "items": {
@@ -17139,8 +16689,7 @@
                   "type": "array"
                 },
                 "superScriptArgumentProperties": {
-                  "$ref": "#/definitions/MathArgumentPropertiesOptions",
-                  "description": "Superscript argument properties (m:sup/m:argPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/5/properties/superScript/properties/superScriptArgumentProperties"
                 }
               },
               "required": ["children", "subScript", "superScript"],
@@ -17255,8 +16804,7 @@
                   "type": "array"
                 },
                 "controlProperties": {
-                  "$ref": "#/definitions/MathControlPropertiesOptions",
-                  "description": "Control-character formatting (m:naryPr/m:ctrlPr)."
+                  "$ref": "#/definitions/MathInput/anyOf/10/properties/sum/properties/controlProperties"
                 },
                 "properties": {
                   "$ref": "#/definitions/MathNaryProperties"
@@ -18262,8 +17810,7 @@
           "description": "Date of the move."
         },
         "displacedByCustomXml": {
-          "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml."
+          "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "name": {
           "description": "Move range name. Share it across the matching `moveFrom`/`moveTo` pair so Word links them into one move.",
@@ -18308,8 +17855,7 @@
           "description": "Date of the move."
         },
         "displacedByCustomXml": {
-          "$ref": "#/definitions/DisplacedByCustomXml",
-          "description": "Displacement relative to a sibling customXml."
+          "$ref": "#/definitions/MarkupRangeOptions/properties/displacedByCustomXml"
         },
         "id": {
           "description": "Move range identifier.",
@@ -18406,8 +17952,7 @@
       "description": "Round-trip of `pic:cNvPr` — the picture non-visual id/name/description. All fields optional to mirror the source element: `description` is omitted when absent rather than emitted as an empty attribute (Word never writes it empty).",
       "properties": {
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -18466,8 +18011,7 @@
           "description": "Connector locks (wps:cNvCnPr/a:cxnSpLocks), when connector is set."
         },
         "creationId": {
-          "$ref": "#/definitions/Guid",
-          "description": "a16:creationId `@id` from the cNvPr/docPr extension list — Office's per-object creation stamp, the sole known cNvPr ext content."
+          "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationId"
         },
         "creationIdExtension": {
           "$ref": "#/definitions/NonVisualDrawingPropertiesOptions/properties/creationIdExtension"
@@ -18815,16 +18359,14 @@
           "type": "boolean"
         },
         "customStyleRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:customStyle` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/customStyleRaw"
         },
         "default": {
           "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "defaultRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:default` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/defaultRaw"
         },
         "hidden": {
           "description": "w:hidden — style hidden from the UI.",
@@ -18862,8 +18404,7 @@
           "type": "boolean"
         },
         "quickFormatRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source qFormat on/off lexical value; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/quickFormatRaw"
         },
         "rsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -19193,285 +18734,6 @@
         }
       },
       "required": ["updateMode"],
-      "type": "object"
-    },
-    "OdfChartFillOptions": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "none",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "type": {
-              "const": "solid",
-              "type": "string"
-            }
-          },
-          "required": ["type", "color"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "gradient",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "hatch",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "height": {
-              "type": "string"
-            },
-            "name": {
-              "type": "string"
-            },
-            "opacityName": {
-              "type": "string"
-            },
-            "refPoint": {
-              "type": "string"
-            },
-            "refPointX": {
-              "type": "string"
-            },
-            "refPointY": {
-              "type": "string"
-            },
-            "repeat": {
-              "enum": ["no-repeat", "repeat", "stretch"],
-              "type": "string"
-            },
-            "tileRepeatOffset": {
-              "type": "string"
-            },
-            "type": {
-              "const": "bitmap",
-              "type": "string"
-            },
-            "width": {
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        }
-      ]
-    },
-    "OdfChartOutlineOptions": {
-      "anyOf": [
-        {
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "const": "none",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "color": {
-              "type": "string"
-            },
-            "type": {
-              "const": "solid",
-              "type": "string"
-            }
-          },
-          "required": ["type"],
-          "title": "type",
-          "type": "object"
-        },
-        {
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "type": {
-              "const": "dash",
-              "type": "string"
-            }
-          },
-          "required": ["type", "name"],
-          "type": "object"
-        }
-      ]
-    },
-    "OdfChartStyleOptions": {
-      "additionalProperties": false,
-      "description": "ODF-only chart shape style fields retained alongside canonical projections.",
-      "properties": {
-        "fill": {
-          "$ref": "#/definitions/OdfChartFillOptions"
-        },
-        "outline": {
-          "$ref": "#/definitions/OdfChartOutlineOptions"
-        }
-      },
-      "type": "object"
-    },
-    "OdfChartStyleResource": {
-      "additionalProperties": false,
-      "description": "A named ODF style definition retained for an ODF chart subdocument.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "properties": {
-          "items": {
-            "$ref": "#/definitions/OdfStylePropertiesOptions"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["name", "attributes", "properties"],
-      "type": "object"
-    },
-    "OdfChartStyleResources": {
-      "additionalProperties": false,
-      "description": "ODF style resources retained in source order for an ODF chart subdocument.",
-      "properties": {
-        "fillImages": {
-          "items": {
-            "$ref": "#/definitions/OdfFillImageResource"
-          },
-          "type": "array"
-        },
-        "gradients": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "hatches": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "strokeDashes": {
-          "items": {
-            "$ref": "#/definitions/OdfDrawingStyleResource"
-          },
-          "type": "array"
-        },
-        "styles": {
-          "items": {
-            "$ref": "#/definitions/OdfChartStyleResource"
-          },
-          "type": "array"
-        }
-      },
-      "required": ["styles", "gradients", "hatches", "fillImages", "strokeDashes"],
-      "type": "object"
-    },
-    "OdfDrawingStyleResource": {
-      "additionalProperties": false,
-      "description": "Base fields for a named ODF drawing style resource.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["name", "attributes"],
-      "type": "object"
-    },
-    "OdfFillImageResource": {
-      "additionalProperties": false,
-      "description": "An ODF fill image and its embedded media bytes, when available.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "data": {
-          "$ref": "#/definitions/DataType"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["attributes", "name"],
-      "type": "object"
-    },
-    "OdfStylePropertiesOptions": {
-      "additionalProperties": false,
-      "description": "Attributes of an ODF style-properties child, keyed by expanded XML name.",
-      "properties": {
-        "attributes": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
-        },
-        "name": {
-          "type": "string"
-        }
-      },
-      "required": ["name", "attributes"],
       "type": "object"
     },
     "OdsoFieldMapDataOptions": {
@@ -20119,15 +19381,7 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "symbolRun": {
-              "$ref": "#/definitions/SymbolRunOptions"
-            }
-          },
-          "required": ["symbolRun"],
-          "title": "symbolRun",
-          "type": "object"
+          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/1"
         },
         {
           "additionalProperties": false,
@@ -20286,8 +19540,7 @@
                   "type": "array"
                 },
                 "date": {
-                  "$ref": "#/definitions/DateTime",
-                  "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+                  "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
                 },
                 "id": {
                   "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -20373,26 +19626,10 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkStart": {
-              "$ref": "#/definitions/BookmarkStartOptions"
-            }
-          },
-          "required": ["bookmarkStart"],
-          "title": "bookmarkStart",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["bookmarkEnd"],
-          "title": "bookmarkEnd",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
           "additionalProperties": false,
@@ -20439,26 +19676,10 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "object": {
-              "$ref": "#/definitions/ObjectElementOptions"
-            }
-          },
-          "required": ["object"],
-          "title": "object",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/children/items/anyOf/26"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "pict": {
-              "$ref": "#/definitions/PictOptions"
-            }
-          },
-          "required": ["pict"],
-          "title": "pict",
-          "type": "object"
+          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/3"
         },
         {
           "additionalProperties": false,
@@ -20990,15 +20211,7 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "subDoc": {
-              "$ref": "#/definitions/SubDocOptions"
-            }
-          },
-          "required": ["subDoc"],
-          "title": "subDoc",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/6"
         },
         {
           "additionalProperties": false,
@@ -21012,15 +20225,7 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "rawXml": {
-              "type": "string"
-            }
-          },
-          "required": ["rawXml"],
-          "title": "rawXml",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/10"
         },
         {
           "$ref": "#/definitions/RunOptions"
@@ -21080,8 +20285,7 @@
       "description": "Options for creating a Paragraph element.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID for the paragraph mark (w:rsidR, hex string)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/additionRsid"
         },
         "adjustRightInd": {
           "description": "Whether to automatically adjust right indent for document grid",
@@ -21122,8 +20326,7 @@
           "type": "array"
         },
         "cnfStyle": {
-          "$ref": "#/definitions/CnfConditionalOptions",
-          "description": "Conditional formatting style for table rows/cells"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/cnfStyle"
         },
         "collapsed": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
@@ -21132,31 +20335,26 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "contextualSpacingRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source contextual-spacing toggle lexical form; round-trip only."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacingRaw"
         },
         "defaultRunRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Default revision save ID for runs in this paragraph (w:rsidRDefault)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/defaultRunRsid"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the paragraph was deleted (w:rsidDel)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/deletionRsid"
         },
         "divId": {
           "description": "HTML div ID reference",
           "type": "number"
         },
         "editId": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Paragraph edit identifier (w14:editId, 8-digit hex string)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/editId"
         },
         "emptyProperties": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
-          "$ref": "#/definitions/FrameOptions",
-          "description": "Frame properties for positioning the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/frame"
         },
         "heading": {
           "description": "Heading level (Heading1, Heading2, etc.) - applies predefined heading style",
@@ -21206,15 +20404,13 @@
           "type": "boolean"
         },
         "paraId": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Unique paragraph identifier (w14:paraId, 8-digit hex string)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/paraId"
         },
         "preserveSpace": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/preserveSpace"
         },
         "propertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID for the paragraph properties (w:rsidP)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/propertiesRsid"
         },
         "revision": {
           "$ref": "#/definitions/ParagraphPropertiesChangeOptions"
@@ -21224,12 +20420,10 @@
           "type": "number"
         },
         "run": {
-          "$ref": "#/definitions/ParagraphRunOptions",
-          "description": "Run properties to apply to all runs in the paragraph."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/run"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID for the paragraph mark run properties (w:rsidRPr)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/runPropertiesRsid"
         },
         "sectionFooters": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionFooters"
@@ -21238,20 +20432,17 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionHeaders"
         },
         "sectionProperties": {
-          "$ref": "#/definitions/SectionPropertiesOptions",
-          "description": "Section break hosted by a paragraph inside a block container (TOC or SDT). Top-level section breaks remain on `SectionOptions.properties`."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionProperties"
         },
         "shading": {
-          "$ref": "#/definitions/ShadingProperties",
-          "description": "Background shading/fill color for the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/shading"
         },
         "snapToGrid": {
           "description": "Whether to snap the current paragraph to the document grid",
           "type": "boolean"
         },
         "spacing": {
-          "$ref": "#/definitions/SpacingProperties",
-          "description": "Spacing before/after paragraph and between lines"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/spacing"
         },
         "style": {
           "description": "Style ID to apply to this paragraph",
@@ -21283,8 +20474,7 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textDirection"
         },
         "textId": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Paragraph text identifier (w14:textId, 8-digit hex string)."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textId"
         },
         "textboxTightWrap": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/textboxTightWrap"
@@ -21338,8 +20528,7 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/bullet"
         },
         "cnfStyle": {
-          "$ref": "#/definitions/CnfConditionalOptions",
-          "description": "Conditional formatting style for table rows/cells"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/cnfStyle"
         },
         "collapsed": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
@@ -21348,12 +20537,10 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "contextualSpacingRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source contextual-spacing toggle lexical form; round-trip only."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacingRaw"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -21363,8 +20550,7 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
-          "$ref": "#/definitions/FrameOptions",
-          "description": "Frame properties for positioning the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/frame"
         },
         "heading": {
           "$ref": "#/definitions/ParagraphOptions/properties/heading"
@@ -21416,8 +20602,7 @@
           "type": "number"
         },
         "run": {
-          "$ref": "#/definitions/ParagraphRunOptions",
-          "description": "Run properties to apply to all runs in the paragraph."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/run"
         },
         "sectionFooters": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionFooters"
@@ -21426,20 +20611,17 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionHeaders"
         },
         "sectionProperties": {
-          "$ref": "#/definitions/SectionPropertiesOptions",
-          "description": "Section break hosted by a paragraph inside a block container (TOC or SDT). Top-level section breaks remain on `SectionOptions.properties`."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/sectionProperties"
         },
         "shading": {
-          "$ref": "#/definitions/ShadingProperties",
-          "description": "Background shading/fill color for the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/shading"
         },
         "snapToGrid": {
           "description": "Whether to snap the current paragraph to the document grid",
           "type": "boolean"
         },
         "spacing": {
-          "$ref": "#/definitions/SpacingProperties",
-          "description": "Spacing before/after paragraph and between lines"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/spacing"
         },
         "style": {
           "description": "Style ID to apply to this paragraph",
@@ -22230,16 +21412,14 @@
           "type": "boolean"
         },
         "customStyleRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:customStyle` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/customStyleRaw"
         },
         "default": {
           "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "defaultRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:default` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/defaultRaw"
         },
         "hidden": {
           "description": "w:hidden — style hidden from the UI.",
@@ -22276,8 +21456,7 @@
           "type": "boolean"
         },
         "quickFormatRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source qFormat on/off lexical value; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/quickFormatRaw"
         },
         "rsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -22324,8 +21503,7 @@
           "description": "Border settings for the paragraph"
         },
         "cnfStyle": {
-          "$ref": "#/definitions/CnfConditionalOptions",
-          "description": "Conditional formatting style for table rows/cells"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/cnfStyle"
         },
         "collapsed": {
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/collapsed"
@@ -22334,8 +21512,7 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacing"
         },
         "contextualSpacingRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source contextual-spacing toggle lexical form; round-trip only."
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/contextualSpacingRaw"
         },
         "divId": {
           "description": "HTML div ID reference",
@@ -22345,8 +21522,7 @@
           "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/emptyProperties"
         },
         "frame": {
-          "$ref": "#/definitions/FrameOptions",
-          "description": "Frame properties for positioning the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/frame"
         },
         "heading": {
           "description": "Heading shorthand for the referenced style (w:pStyle val=\"HeadingN\").",
@@ -22397,16 +21573,14 @@
           "type": "number"
         },
         "shading": {
-          "$ref": "#/definitions/ShadingProperties",
-          "description": "Background shading/fill color for the paragraph"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/shading"
         },
         "snapToGrid": {
           "description": "Whether to snap the current paragraph to the document grid",
           "type": "boolean"
         },
         "spacing": {
-          "$ref": "#/definitions/SpacingProperties",
-          "description": "Spacing before/after paragraph and between lines"
+          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/spacing"
         },
         "style": {
           "description": "Referenced style inside the style's own pPr (w:pStyle).",
@@ -22986,8 +22160,7 @@
           "additionalProperties": false,
           "properties": {
             "additionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/additionRsid"
             },
             "altText": {
               "$ref": "#/definitions/DocPropertiesOptions"
@@ -23016,8 +22189,7 @@
               "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
             },
             "deletionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
             },
             "dpi": {
               "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
@@ -23027,8 +22199,7 @@
               "$ref": "#/definitions/EffectListOptions"
             },
             "extensionIds": {
-              "$ref": "#/definitions/DrawingExtensionIds",
-              "description": "Word 2010 wrapper ids; round-trip only."
+              "$ref": "#/definitions/ChartOptions/properties/extensionIds"
             },
             "fileName": {
               "description": "Source media file basename (round-trip). `type` normalizes jpeg→jpg etc., which would otherwise rewrite imageN.jpeg to imageN.jpg and drop the source [Content_Types] Default extension. Omit for fresh authoring.",
@@ -23102,8 +22273,7 @@
               "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
             },
             "runPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
             },
             "scene3d": {
               "$ref": "#/definitions/Scene3DOptions",
@@ -23171,15 +22341,13 @@
           "additionalProperties": false,
           "properties": {
             "additionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/additionRsid"
             },
             "altText": {
               "$ref": "#/definitions/DocPropertiesOptions"
             },
             "blackWhiteMode": {
-              "$ref": "#/definitions/BlackWhiteMode",
-              "description": "Black-and-white rendering mode (pic:spPr `@bwMode`); absent = omitted."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/blackWhiteMode"
             },
             "blipEffects": {
               "$ref": "#/definitions/BlipEffectsOptions"
@@ -23188,19 +22356,16 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/blipExt"
             },
             "compression": {
-              "$ref": "#/definitions/BlipCompression",
-              "description": "Compression state (a:blip `@cstate`); absent = attribute omitted (schema default \"none\")."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/compression"
             },
             "customGeometry": {
-              "$ref": "#/definitions/CustomGeometryOptions",
-              "description": "Custom picture geometry (pic:spPr/a:custGeom); wins over geometry."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/customGeometry"
             },
             "data": {
               "$ref": "#/definitions/DataType"
             },
             "deletionRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
             },
             "dpi": {
               "description": "Rendering resolution in DPI (pic:blipFill/@dpi).",
@@ -23210,16 +22375,14 @@
               "$ref": "#/definitions/EffectListOptions"
             },
             "extensionIds": {
-              "$ref": "#/definitions/DrawingExtensionIds",
-              "description": "Word 2010 wrapper ids; round-trip only."
+              "$ref": "#/definitions/ChartOptions/properties/extensionIds"
             },
             "fallback": {
               "additionalProperties": false,
               "description": "Required in case the Word processor does not support SVG. A raster fallback always carries bytes — the linked-only form has no vector part to fall back from.",
               "properties": {
                 "data": {
-                  "$ref": "#/definitions/DataType",
-                  "description": "Image binary. Absent on a linked-only picture (external sourceUrl, no bytes in the package) — the emitted a:blip carries r:link alone."
+                  "$ref": "#/definitions/PictureOptions/anyOf/0/properties/data"
                 },
                 "fileName": {
                   "$ref": "#/definitions/PictureOptions/anyOf/0/properties/fileName"
@@ -23258,8 +22421,7 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/lastRenderedPageBreak"
             },
             "nonVisualProperties": {
-              "$ref": "#/definitions/NonVisualPropertiesOptions",
-              "description": "Picture non-visual properties (pic:cNvPr) — populated by parse"
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/nonVisualProperties"
             },
             "nonVisualPropertiesPresent": {
               "description": "Whether pic:pic carried pic:nvPicPr; round-trip only.",
@@ -23275,16 +22437,13 @@
               "$ref": "#/definitions/PictureOptions/anyOf/0/properties/rotWithShape"
             },
             "runProperties": {
-              "$ref": "#/definitions/RunPropertiesOptions",
-              "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/runProperties"
             },
             "runPropertiesRsid": {
-              "$ref": "#/definitions/LongHexNumber",
-              "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+              "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
             },
             "scene3d": {
-              "$ref": "#/definitions/Scene3DOptions",
-              "description": "3D scene (pic:spPr/a:scene3d) — camera and lighting on the picture."
+              "$ref": "#/definitions/PictureOptions/anyOf/0/properties/scene3d"
             },
             "shape3d": {
               "$ref": "#/definitions/Shape3DOptions",
@@ -24366,15 +23525,7 @@
                 "type": "object"
               },
               {
-                "additionalProperties": false,
-                "properties": {
-                  "object": {
-                    "$ref": "#/definitions/ObjectElementOptions"
-                  }
-                },
-                "required": ["object"],
-                "title": "object",
-                "type": "object"
+                "$ref": "#/definitions/ParagraphRunOptions/properties/children/items/anyOf/26"
               },
               {
                 "additionalProperties": false,
@@ -24512,12 +23663,10 @@
           "type": "boolean"
         },
         "boldComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldComplexScriptRaw"
         },
         "boldRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldRaw"
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -24628,12 +23777,10 @@
           "type": "boolean"
         },
         "italicComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicComplexScriptRaw"
         },
         "italicRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicRaw"
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -24682,8 +23829,7 @@
           "type": "boolean"
         },
         "rightToLeftRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/rightToLeftRaw"
         },
         "runPropertiesRsid": {
           "$ref": "#/definitions/LongHexNumber",
@@ -24774,12 +23920,10 @@
           "type": "boolean"
         },
         "boldComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldComplexScriptRaw"
         },
         "boldRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldRaw"
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -24877,12 +24021,10 @@
           "type": "boolean"
         },
         "italicComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicComplexScriptRaw"
         },
         "italicRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicRaw"
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -24932,8 +24074,7 @@
           "type": "boolean"
         },
         "rightToLeftRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/rightToLeftRaw"
         },
         "scale": {
           "type": "number"
@@ -25014,12 +24155,10 @@
           "type": "boolean"
         },
         "boldComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldComplexScriptRaw"
         },
         "boldRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldRaw"
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -25101,12 +24240,10 @@
           "type": "boolean"
         },
         "italicComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicComplexScriptRaw"
         },
         "italicRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicRaw"
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -25148,8 +24285,7 @@
           "type": "boolean"
         },
         "rightToLeftRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/rightToLeftRaw"
         },
         "scale": {
           "type": "number"
@@ -25229,12 +24365,10 @@
           "type": "boolean"
         },
         "boldComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldComplexScriptRaw"
         },
         "boldRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldRaw"
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -25316,12 +24450,10 @@
           "type": "boolean"
         },
         "italicComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicComplexScriptRaw"
         },
         "italicRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicRaw"
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -25363,8 +24495,7 @@
           "type": "boolean"
         },
         "rightToLeftRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/rightToLeftRaw"
         },
         "scale": {
           "type": "number"
@@ -25482,8 +24613,7 @@
           "$ref": "#/definitions/ChartSeriesData/properties/categoryPointCount"
         },
         "categorySource": {
-          "$ref": "#/definitions/ChartCategorySourceOptions",
-          "description": "Per-series category source; overrides the chart-level source."
+          "$ref": "#/definitions/ChartSeriesData/properties/categorySource"
         },
         "dataLabels": {
           "$ref": "#/definitions/DataLabelsOptions"
@@ -25545,16 +24675,14 @@
           "$ref": "#/definitions/ChartSeriesData/properties/orderDeclared"
         },
         "pictureOptions": {
-          "$ref": "#/definitions/ChartPictureOptions",
-          "description": "Picture-fill options (c:pictureOptions, bar/area)."
+          "$ref": "#/definitions/ChartSeriesData/properties/pictureOptions"
         },
         "shape": {
           "$ref": "#/definitions/BarShape",
           "description": "3D bar column shape (c:shape, bar3D)."
         },
         "shapeProperties": {
-          "$ref": "#/definitions/ChartShapePropertiesOptions",
-          "description": "Series shape properties (c:ser > c:spPr: fill/outline/effects) — round-trip."
+          "$ref": "#/definitions/ChartSeriesData/properties/shapeProperties"
         },
         "smooth": {
           "description": "Smooth the line (c:smooth, line/scatter).",
@@ -25724,15 +24852,7 @@
           "$ref": "#/definitions/TableCellOptions"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "sdt": {
-              "$ref": "#/definitions/SdtCellOptions"
-            }
-          },
-          "required": ["sdt"],
-          "title": "sdt",
-          "type": "object"
+          "$ref": "#/definitions/TableRowOptions/properties/cells/items/anyOf/1"
         }
       ],
       "description": "Options for a cell-level structured document tag."
@@ -25748,8 +24868,7 @@
           "type": "array"
         },
         "endProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "Run properties for the SDT end mark (w:sdtEndPr)."
+          "$ref": "#/definitions/SectionChild/anyOf/4/properties/sdt/properties/endProperties"
         },
         "properties": {
           "$ref": "#/definitions/SdtPropertiesOptions"
@@ -25844,8 +24963,7 @@
       "description": "Color for a content control's start mark.",
       "properties": {
         "themeColor": {
-          "$ref": "#/definitions/ThemeColor",
-          "description": "Theme color slot: \"dark1\"/\"light1\" text/background, \"accent1\"–\"accent6\" theme accents, \"hyperlink\"/\"followedHyperlink\"."
+          "$ref": "#/definitions/BorderOptions/properties/themeColor"
         },
         "themeShade": {
           "$ref": "#/definitions/UcharHexNumber",
@@ -26020,8 +25138,7 @@
               "type": "boolean"
             },
             "uniqueRaw": {
-              "$ref": "#/definitions/OnOffLexicalValue",
-              "description": "Source `@w:val` spelling for `w:docPartUnique` (round-trip only)."
+              "$ref": "#/definitions/SectionChild/anyOf/2/properties/toc/properties/docPartUniqueRaw"
             }
           },
           "type": "object"
@@ -26040,8 +25157,7 @@
               "type": "boolean"
             },
             "uniqueRaw": {
-              "$ref": "#/definitions/OnOffLexicalValue",
-              "description": "Source `@w:val` spelling for `w:docPartUnique` (round-trip only)."
+              "$ref": "#/definitions/SectionChild/anyOf/2/properties/toc/properties/docPartUniqueRaw"
             }
           },
           "type": "object"
@@ -26175,23 +25291,14 @@
                 "$ref": "#/definitions/TableRowOptions"
               },
               {
-                "additionalProperties": false,
-                "properties": {
-                  "sdt": {
-                    "$ref": "#/definitions/SdtRowOptions"
-                  }
-                },
-                "required": ["sdt"],
-                "title": "sdt",
-                "type": "object"
+                "$ref": "#/definitions/TableOptions/properties/rows/items/anyOf/1"
               }
             ]
           },
           "type": "array"
         },
         "endProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "Run properties for the SDT end mark (w:sdtEndPr)."
+          "$ref": "#/definitions/SectionChild/anyOf/4/properties/sdt/properties/endProperties"
         },
         "properties": {
           "$ref": "#/definitions/SdtPropertiesOptions"
@@ -26218,8 +25325,7 @@
           "type": "array"
         },
         "endProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "Run properties for the SDT end mark (w:sdtEndPr)."
+          "$ref": "#/definitions/SectionChild/anyOf/4/properties/sdt/properties/endProperties"
         },
         "properties": {
           "$ref": "#/definitions/SdtPropertiesOptions"
@@ -26312,8 +25418,7 @@
           "type": "number"
         },
         "scatterStyle": {
-          "$ref": "#/definitions/ScatterStyle",
-          "description": "Scatter plot style (c:scatterStyle, scatter group); defaults to `line`."
+          "$ref": "#/definitions/ChartOptions/properties/scatterStyle"
         },
         "series": {
           "description": "This group's series; categories come from the chart-level source.",
@@ -26982,8 +26087,7 @@
                       "additionalProperties": false,
                       "properties": {
                         "insertion": {
-                          "$ref": "#/definitions/NumberingInsertionOptions",
-                          "description": "Numbering applied as a revision (w:numPr/w:ins)"
+                          "$ref": "#/definitions/SectionChild/anyOf/3/properties/textbox/properties/numbering/anyOf/1/properties/insertion"
                         },
                         "numberingChange": {
                           "$ref": "#/definitions/NumberingChangeOptions",
@@ -27404,8 +26508,7 @@
           "$ref": "#/definitions/ColumnsProperties"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "deletionRsid": {
           "$ref": "#/definitions/LongHexNumber"
@@ -27480,8 +26583,7 @@
           "type": "number"
         },
         "tmSection": {
-          "$ref": "#/definitions/TmSectionPropertiesOptions",
-          "description": "Vendor-defined section marker (w:tmSection, round-trip only)."
+          "$ref": "#/definitions/SectionPropertiesOptions/properties/tmSection"
         },
         "type": {
           "$ref": "#/definitions/SectionPropertiesOptions/properties/type"
@@ -28582,8 +27684,7 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted."
+          "$ref": "#/definitions/ShapeOptions/properties/blackWhiteMode"
         },
         "bodyProperties": {
           "$ref": "#/definitions/BodyPropertiesOptions"
@@ -28594,6 +27695,9 @@
         },
         "children": {
           "$ref": "#/definitions/ShapeOptions/properties/children"
+        },
+        "controlId": {
+          "$ref": "#/definitions/ShapeOptions/properties/controlId"
         },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
@@ -28628,9 +27732,6 @@
         "normalEastAsianFlow": {
           "$ref": "#/definitions/ShapeOptions/properties/normalEastAsianFlow"
         },
-        "odfControlId": {
-          "$ref": "#/definitions/ShapeOptions/properties/odfControlId"
-        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
@@ -28648,23 +27749,20 @@
           "type": "boolean"
         },
         "style": {
-          "$ref": "#/definitions/ShapeStyleOptions",
-          "description": "Theme style references (wps:style → lnRef/fillRef/effectRef/fontRef)."
+          "$ref": "#/definitions/ShapeOptions/properties/style"
         },
         "textBoxId": {
           "description": "Inline text box identity (`wps:txbx/@id`, schema default 0).",
           "type": "number"
         },
         "textBoxPart": {
-          "$ref": "#/definitions/TextBoxPartOptions",
-          "description": "External Word 2010 text-box content part. Round-trips `wps:txbx/@r:txbx` and rebuilds the referenced part from typed children."
+          "$ref": "#/definitions/ShapeOptions/properties/textBoxPart"
         },
         "transformPresent": {
           "$ref": "#/definitions/ShapeOptions/properties/transformPresent"
         },
         "wrappedNonVisualProperties": {
-          "$ref": "#/definitions/NonVisualShapePropertiesOptions",
-          "description": "Additional legacy wrapped properties emitted after the bare element."
+          "$ref": "#/definitions/ShapeOptions/properties/wrappedNonVisualProperties"
         }
       },
       "required": ["children"],
@@ -28748,8 +27846,7 @@
       "description": "Shape options for docx (wps:wsp). The shape body comes from `ShapeCoreOptions`; the rest is the docx run-level shape model (transformation, floating, altText, run wrapping).",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/additionRsid"
         },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
@@ -28772,12 +27869,15 @@
           },
           "type": "array"
         },
+        "controlId": {
+          "description": "Drawing control reference (`draw:control`); absent for ordinary DrawingML shapes.",
+          "type": "string"
+        },
         "customGeometry": {
           "$ref": "#/definitions/CustomGeometryOptions"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
         },
         "docPropertiesPresent": {
           "description": "Whether the drawing wrapper carried wp:docPr; round-trip only.",
@@ -28790,8 +27890,7 @@
           "$ref": "#/definitions/EffectListOptions"
         },
         "extensionIds": {
-          "$ref": "#/definitions/DrawingExtensionIds",
-          "description": "Word 2010 wrapper ids; round-trip only."
+          "$ref": "#/definitions/ChartOptions/properties/extensionIds"
         },
         "extensions": {
           "description": "Shape-property extensions (wps:spPr/a:extLst/a:ext).",
@@ -28862,20 +27961,14 @@
           "description": "East-Asian vertical text flow (wps:wsp `@normalEastAsianFlow`, default false).",
           "type": "boolean"
         },
-        "odfControlId": {
-          "description": "ODF-only `draw:control` reference; absent for ordinary DrawingML shapes.",
-          "type": "string"
-        },
         "outline": {
           "$ref": "#/definitions/OutlineOptions"
         },
         "runProperties": {
-          "$ref": "#/definitions/RunPropertiesOptions",
-          "description": "Structured run properties of the wrapping w:r (round-trip) — emitted before the drawing."
+          "$ref": "#/definitions/PictureOptions/anyOf/0/properties/runProperties"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
         "scene3d": {
           "$ref": "#/definitions/Scene3DOptions"
@@ -29394,8 +28487,7 @@
       "description": "Options for creating a SmartArtRun.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/additionRsid"
         },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions",
@@ -29417,12 +28509,10 @@
           "description": "Complete data model for points, connections, properties, and metadata."
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
         },
         "extensionIds": {
-          "$ref": "#/definitions/DrawingExtensionIds",
-          "description": "Word 2010 wrapper ids; round-trip only."
+          "$ref": "#/definitions/ChartOptions/properties/extensionIds"
         },
         "floating": {
           "$ref": "#/definitions/Floating",
@@ -29470,8 +28560,7 @@
           "description": "Run properties of the wrapping drawing run (round-trip fidelity)."
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
         "style": {
           "anyOf": [
@@ -30009,6 +29098,23 @@
       "required": ["index"],
       "type": "object"
     },
+    "StylePropertiesOptions": {
+      "additionalProperties": false,
+      "description": "Attributes of a style-properties child, keyed by expanded XML name.",
+      "properties": {
+        "attributes": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "attributes"],
+      "type": "object"
+    },
     "StylesOptions": {
       "additionalProperties": false,
       "description": "Options for configuring document styles.",
@@ -30035,16 +29141,14 @@
                 "type": "boolean"
               },
               "customStyleRaw": {
-                "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source `@w:customStyle` spelling; round-trip only."
+                "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/customStyleRaw"
               },
               "default": {
                 "description": "`@w:default` — the default style for its type.",
                 "type": "boolean"
               },
               "defaultRaw": {
-                "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source `@w:default` spelling; round-trip only."
+                "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/defaultRaw"
               },
               "hidden": {
                 "description": "w:hidden — style hidden from the UI.",
@@ -30078,8 +29182,7 @@
                 "type": "boolean"
               },
               "quickFormatRaw": {
-                "$ref": "#/definitions/OnOffLexicalValue",
-                "description": "Source qFormat on/off lexical value; round-trip only."
+                "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/quickFormatRaw"
               },
               "rsid": {
                 "$ref": "#/definitions/LongHexNumber",
@@ -30310,8 +29413,7 @@
       "description": "Options for creating a SymbolRun.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID for the run (w:rsidR, hex string e.g. \"00123456\")."
+          "$ref": "#/definitions/RunOptions/properties/additionRsid"
         },
         "allCaps": {
           "type": "boolean"
@@ -30323,12 +29425,10 @@
           "type": "boolean"
         },
         "boldComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `boldComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldComplexScriptRaw"
         },
         "boldRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `bold/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/boldRaw"
         },
         "border": {
           "$ref": "#/definitions/BorderOptions"
@@ -30387,8 +29487,7 @@
           "type": "string"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when run was deleted (w:rsidDel, hex string)."
+          "$ref": "#/definitions/RunOptions/properties/deletionRsid"
         },
         "doubleStrike": {
           "type": "boolean"
@@ -30443,12 +29542,10 @@
           "type": "boolean"
         },
         "italicComplexScriptRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italicComplexScript/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicComplexScriptRaw"
         },
         "italicRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `italic/@w:val` lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/italicRaw"
         },
         "kern": {
           "$ref": "#/definitions/ParagraphRunOptions/properties/kern"
@@ -30502,12 +29599,10 @@
           "type": "boolean"
         },
         "rightToLeftRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source right-to-left toggle lexical form; round-trip only — do not hand-author."
+          "$ref": "#/definitions/ParagraphRunOptions/properties/rightToLeftRaw"
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID for run properties (w:rsidRPr, hex string)."
+          "$ref": "#/definitions/RunOptions/properties/runPropertiesRsid"
         },
         "scale": {
           "type": "number"
@@ -30933,8 +30028,7 @@
           "type": "number"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "deletion": {
           "$ref": "#/definitions/ChangedProperties"
@@ -30965,8 +30059,7 @@
           "$ref": "#/definitions/ChangedProperties"
         },
         "margins": {
-          "$ref": "#/definitions/TableCellMarginOptions",
-          "description": "Cell margins (padding) for the cell content"
+          "$ref": "#/definitions/TableCellOptions/properties/margins"
         },
         "noWrap": {
           "description": "Whether the cell content does not wrap (noWrap)",
@@ -30977,8 +30070,7 @@
           "type": "number"
         },
         "shading": {
-          "$ref": "#/definitions/ShadingProperties",
-          "description": "Shading (background color/pattern) for the cell"
+          "$ref": "#/definitions/TableCellOptions/properties/shading"
         },
         "textDirection": {
           "description": "Text direction/flow within the cell",
@@ -31048,8 +30140,7 @@
           "$ref": "#/definitions/ChangedProperties"
         },
         "margins": {
-          "$ref": "#/definitions/TableCellMarginOptions",
-          "description": "Cell margins (padding) for the cell content"
+          "$ref": "#/definitions/TableCellOptions/properties/margins"
         },
         "noWrap": {
           "description": "Whether the cell content does not wrap (noWrap)",
@@ -31063,8 +30154,7 @@
           "type": "number"
         },
         "shading": {
-          "$ref": "#/definitions/ShadingProperties",
-          "description": "Shading (background color/pattern) for the cell"
+          "$ref": "#/definitions/TableCellOptions/properties/shading"
         },
         "textDirection": {
           "description": "Text direction/flow within the cell",
@@ -31072,8 +30162,7 @@
           "type": "string"
         },
         "verticalAlign": {
-          "$ref": "#/definitions/TableVerticalAlign",
-          "description": "Vertical alignment of content within the cell"
+          "$ref": "#/definitions/TableCellPropertiesChangeOptions/properties/verticalAlign"
         },
         "verticalMerge": {
           "$ref": "#/definitions/TableCellOptions/properties/verticalMerge"
@@ -31230,92 +30319,28 @@
     "TableMarkerChild": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeStart": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeStart"],
-          "title": "commentRangeStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/10"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeEnd"],
-          "title": "commentRangeEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/11"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkStart": {
-              "$ref": "#/definitions/BookmarkStartOptions"
-            }
-          },
-          "required": ["bookmarkStart"],
-          "title": "bookmarkStart",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["bookmarkEnd"],
-          "title": "bookmarkEnd",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "moveFromRangeStart": {
-              "$ref": "#/definitions/MoveRangeStartOptions"
-            }
-          },
-          "required": ["moveFromRangeStart"],
-          "title": "moveFromRangeStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/30"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "moveFromRangeEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["moveFromRangeEnd"],
-          "title": "moveFromRangeEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/31"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "moveToRangeStart": {
-              "$ref": "#/definitions/MoveRangeStartOptions"
-            }
-          },
-          "required": ["moveToRangeStart"],
-          "title": "moveToRangeStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/32"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "moveToRangeEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["moveToRangeEnd"],
-          "title": "moveToRangeEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/33"
         }
       ],
       "description": "Run-level markers anchored directly under `w:tbl`, between rows — bookmark and revision ranges can span row boundaries and cannot live inside `w:tr`."
@@ -31487,8 +30512,7 @@
       "additionalProperties": false,
       "properties": {
         "alignment": {
-          "$ref": "#/definitions/TableJustification",
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab."
+          "$ref": "#/definitions/TablePropertyExOptions/properties/alignment"
         },
         "author": {
           "description": "Name of the author who made the change",
@@ -31505,8 +30529,7 @@
           "$ref": "#/definitions/TableCellSpacingProperties"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "description": {
           "description": "Table description for accessibility (tblDescription)",
@@ -31565,8 +30588,7 @@
       "description": "Options for configuring table properties.",
       "properties": {
         "alignment": {
-          "$ref": "#/definitions/TableJustification",
-          "description": "Justification: \"both\"/\"distribute\" stretch rows to full width, \"mediumKashida\"/\"highKashida\"/\"lowKashida\" Kashida elongation, \"numericTab\" at the numeric tab."
+          "$ref": "#/definitions/TablePropertyExOptions/properties/alignment"
         },
         "borders": {
           "$ref": "#/definitions/TableBordersOptions"
@@ -31633,8 +30655,7 @@
           "type": "string"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "id": {
           "$ref": "#/definitions/RunPropertiesChangeOptions/properties/id"
@@ -31709,70 +30730,22 @@
     "TableRowMarkerChild": {
       "anyOf": [
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeStart": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeStart"],
-          "title": "commentRangeStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/10"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeEnd"],
-          "title": "commentRangeEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/11"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkStart": {
-              "$ref": "#/definitions/BookmarkStartOptions"
-            }
-          },
-          "required": ["bookmarkStart"],
-          "title": "bookmarkStart",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["bookmarkEnd"],
-          "title": "bookmarkEnd",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "permStart": {
-              "$ref": "#/definitions/PermStartOptions"
-            }
-          },
-          "required": ["permStart"],
-          "title": "permStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/28"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "permEnd": {
-              "type": ["number", "string"]
-            }
-          },
-          "required": ["permEnd"],
-          "title": "permEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/29"
         }
       ],
       "description": "Run-level markers anchored directly under `w:tr`, between a row's cells — comment and bookmark ranges spanning cell boundaries land there because the tc content model cannot hold them at that position."
@@ -31958,16 +30931,14 @@
           "type": "boolean"
         },
         "cellSpacing": {
-          "$ref": "#/definitions/TableCellSpacingProperties",
-          "description": "Spacing between cells in the row (tblCellSpacing)"
+          "$ref": "#/definitions/TableRowOptions/properties/cellSpacing"
         },
         "cnfStyle": {
           "$ref": "#/definitions/CnfStyleOptions",
           "description": "Conditional formatting style (cnfStyle)"
         },
         "date": {
-          "$ref": "#/definitions/DateTime",
-          "description": "Date and time when the change was made (ISO 8601 format); omitted when absent at source"
+          "$ref": "#/definitions/RunPropertiesChangeOptions/properties/date"
         },
         "divId": {
           "description": "div ID for HTML compatibility (divId)",
@@ -32002,12 +30973,10 @@
           "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
         },
         "widthAfter": {
-          "$ref": "#/definitions/TableWidthProperties",
-          "description": "Preferred width after the row (wAfter)"
+          "$ref": "#/definitions/TableRowOptions/properties/widthAfter"
         },
         "widthBefore": {
-          "$ref": "#/definitions/TableWidthProperties",
-          "description": "Preferred width before the row (wBefore)"
+          "$ref": "#/definitions/TableRowOptions/properties/widthBefore"
         }
       },
       "required": ["author"],
@@ -32022,8 +30991,7 @@
           "type": "boolean"
         },
         "cellSpacing": {
-          "$ref": "#/definitions/TableCellSpacingProperties",
-          "description": "Spacing between cells in the row (tblCellSpacing)"
+          "$ref": "#/definitions/TableRowOptions/properties/cellSpacing"
         },
         "cnfStyle": {
           "$ref": "#/definitions/CnfStyleOptions",
@@ -32068,12 +31036,10 @@
           "$ref": "#/definitions/TableRowOptions/properties/tableHeader"
         },
         "widthAfter": {
-          "$ref": "#/definitions/TableWidthProperties",
-          "description": "Preferred width after the row (wAfter)"
+          "$ref": "#/definitions/TableRowOptions/properties/widthAfter"
         },
         "widthBefore": {
-          "$ref": "#/definitions/TableWidthProperties",
-          "description": "Preferred width before the row (wBefore)"
+          "$ref": "#/definitions/TableRowOptions/properties/widthBefore"
         }
       },
       "type": "object"
@@ -32110,16 +31076,14 @@
           "type": "boolean"
         },
         "customStyleRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:customStyle` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/customStyleRaw"
         },
         "default": {
           "description": "`@w:default` — the default style for its type.",
           "type": "boolean"
         },
         "defaultRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source `@w:default` spelling; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/defaultRaw"
         },
         "hidden": {
           "description": "w:hidden — style hidden from the UI.",
@@ -32157,8 +31121,7 @@
           "type": "boolean"
         },
         "quickFormatRaw": {
-          "$ref": "#/definitions/OnOffLexicalValue",
-          "description": "Source qFormat on/off lexical value; round-trip only."
+          "$ref": "#/definitions/StylesOptions/properties/paragraphStyles/items/properties/quickFormatRaw"
         },
         "row": {
           "$ref": "#/definitions/TableRowPropertiesOptions",
@@ -33707,94 +32670,28 @@
           "type": "string"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeStart": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeStart"],
-          "title": "commentRangeStart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/10"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "commentRangeEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["commentRangeEnd"],
-          "title": "commentRangeEnd",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/11"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkStart": {
-              "$ref": "#/definitions/BookmarkStartOptions"
-            }
-          },
-          "required": ["bookmarkStart"],
-          "title": "bookmarkStart",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "bookmarkEnd": {
-              "$ref": "#/definitions/MarkupRangeOptions"
-            }
-          },
-          "required": ["bookmarkEnd"],
-          "title": "bookmarkEnd",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/9"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "pageBreak": {
-              "const": true,
-              "type": "boolean"
-            }
-          },
-          "required": ["pageBreak"],
-          "title": "pageBreak",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/8"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "columnBreak": {
-              "const": true,
-              "type": "boolean"
-            }
-          },
-          "required": ["columnBreak"],
-          "title": "columnBreak",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/9"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "complexField": {
-              "$ref": "#/definitions/ComplexFieldOptions"
-            }
-          },
-          "required": ["complexField"],
-          "title": "complexField",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/54"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "fieldMarker": {
-              "$ref": "#/definitions/FieldMarkerOptions"
-            }
-          },
-          "required": ["fieldMarker"],
-          "title": "fieldMarker",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/55"
         },
         {
           "additionalProperties": false,
@@ -33902,137 +32799,40 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "proofErr": {
-              "enum": ["spellStart", "spellEnd", "gramStart", "gramEnd"],
-              "type": "string"
-            }
-          },
-          "required": ["proofErr"],
-          "title": "proofErr",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/26"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "rawXml": {
-              "type": "string"
-            }
-          },
-          "required": ["rawXml"],
-          "title": "rawXml",
-          "type": "object"
+          "$ref": "#/definitions/SectionChild/anyOf/10"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "sdt": {
-              "$ref": "#/definitions/SdtRunOptions"
-            }
-          },
-          "required": ["sdt"],
-          "title": "sdt",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/62"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "symbolRun": {
-              "$ref": "#/definitions/SymbolRunOptions"
-            }
-          },
-          "required": ["symbolRun"],
-          "title": "symbolRun",
-          "type": "object"
+          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/1"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "object": {
-              "$ref": "#/definitions/ObjectElementOptions"
-            }
-          },
-          "required": ["object"],
-          "title": "object",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphRunOptions/properties/children/items/anyOf/26"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "pict": {
-              "$ref": "#/definitions/PictOptions"
-            }
-          },
-          "required": ["pict"],
-          "title": "pict",
-          "type": "object"
+          "$ref": "#/definitions/RubyContentOptions/properties/children/items/anyOf/3"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "picture": {
-              "$ref": "#/definitions/PictureOptions"
-            }
-          },
-          "required": ["picture"],
-          "title": "picture",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/3"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "chart": {
-              "$ref": "#/definitions/ChartOptions"
-            }
-          },
-          "required": ["chart"],
-          "title": "chart",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/0"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "chartEx": {
-              "$ref": "#/definitions/ChartExOptions"
-            }
-          },
-          "required": ["chartEx"],
-          "title": "chartEx",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/1"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "wpsShape": {
-              "$ref": "#/definitions/ShapeOptions"
-            }
-          },
-          "required": ["wpsShape"],
-          "title": "wpsShape",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/20"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "wpgGroup": {
-              "$ref": "#/definitions/GroupOptions"
-            }
-          },
-          "required": ["wpgGroup"],
-          "title": "wpgGroup",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/21"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "wordprocessingCanvas": {
-              "$ref": "#/definitions/WordprocessingCanvasOptions"
-            }
-          },
-          "required": ["wordprocessingCanvas"],
-          "title": "wordprocessingCanvas",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/22"
         },
         {
           "additionalProperties": false,
@@ -34046,15 +32846,7 @@
           "type": "object"
         },
         {
-          "additionalProperties": false,
-          "properties": {
-            "deletion": {
-              "$ref": "#/definitions/ParagraphChild/anyOf/14/properties/insertion"
-            }
-          },
-          "required": ["deletion"],
-          "title": "deletion",
-          "type": "object"
+          "$ref": "#/definitions/ParagraphChild/anyOf/15"
         }
       ],
       "description": "Children allowed inside a track-change wrapper (w:ins/w:del/w:moveFrom/ w:moveTo) — runs, the comment range markers Word anchors directly inside the wrapper, complete field chains, and nested same-type wrappers."
@@ -34474,8 +33266,7 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+          "$ref": "#/definitions/UserShapeShapeOptions/properties/blackWhiteMode"
         },
         "id": {
           "description": "cNvPr drawing id (schema-required)",
@@ -34641,8 +33432,7 @@
       "additionalProperties": false,
       "properties": {
         "blackWhiteMode": {
-          "$ref": "#/definitions/BlackWhiteMode",
-          "description": "Black-and-white rendering mode (cdr:spPr `@bwMode`)."
+          "$ref": "#/definitions/UserShapeShapeOptions/properties/blackWhiteMode"
         },
         "blipFill": {
           "$ref": "#/definitions/BlipFillOptions"
@@ -35057,8 +33847,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -35137,8 +33926,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -35182,15 +33970,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -35199,8 +33985,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -35794,8 +34579,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -35876,8 +34660,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -35924,15 +34707,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -35941,8 +34722,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -36455,8 +35235,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -36544,8 +35323,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -36596,15 +35374,13 @@
           "type": "array"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -36613,8 +35389,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -36913,8 +35688,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -37001,8 +35775,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -37055,15 +35828,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -37072,8 +35843,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -37227,8 +35997,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -37303,8 +36072,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -37351,15 +36119,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -37368,8 +36134,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -37566,8 +36331,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -37642,8 +36406,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -37687,15 +36450,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -37704,8 +36465,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -37885,8 +36645,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -37961,8 +36720,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -38010,15 +36768,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -38027,8 +36783,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "points": {
           "type": "string"
@@ -38154,8 +36909,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -38230,8 +36984,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -38275,15 +37028,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -38292,8 +37043,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -38448,8 +37198,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -38524,8 +37273,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -38569,15 +37317,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -38586,8 +37332,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -39109,8 +37854,7 @@
           "$ref": "#/definitions/VmlColor"
         },
         "bullet": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:bullet — paragraph mark rendered as a list bullet."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/bullet"
         },
         "button": {
           "$ref": "#/definitions/VmlTrueFalse",
@@ -39193,8 +37937,7 @@
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "formulas": {
           "$ref": "#/definitions/VmlFormulasOptions"
@@ -39250,15 +37993,13 @@
           "$ref": "#/definitions/VmlLockOptions"
         },
         "ole": {
-          "$ref": "#/definitions/VmlTrueFalseBlank",
-          "description": "o:ole — OLE behavior flag; (\"\" | boolean)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/ole"
         },
         "oleicon": {
           "$ref": "#/definitions/VmlTrueFalse"
         },
         "oned": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:oned — the shape is a one-dimensional connector."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/oned"
         },
         "opacity": {
           "type": "string"
@@ -39267,8 +38008,7 @@
           "$ref": "#/definitions/VmlShapetypeOptions/properties/path"
         },
         "pathElement": {
-          "$ref": "#/definitions/VmlPathOptions",
-          "description": "v:path child element — a separate XSD slot from the path attribute."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/pathElement"
         },
         "preferrelative": {
           "$ref": "#/definitions/VmlTrueFalse"
@@ -39988,8 +38728,7 @@
           "$ref": "#/definitions/VmlFillType"
         },
         "forcedash": {
-          "$ref": "#/definitions/VmlTrueFalse",
-          "description": "o:forcedash — always render dashed (accessibility)."
+          "$ref": "#/definitions/VmlShapetypeOptions/properties/forcedash"
         },
         "id": {
           "type": "string"
@@ -40967,8 +39706,7 @@
       "description": "Wordprocessing canvas (`wpc:wpc`). Children use the same typed media union as `wpg:wgp`; canvas-level formatting uses shared DrawingML containers.",
       "properties": {
         "additionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r (w:rsidR, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/additionRsid"
         },
         "altText": {
           "$ref": "#/definitions/DocPropertiesOptions"
@@ -40983,12 +39721,10 @@
           "type": "array"
         },
         "deletionRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID when the wrapping w:r was deleted (w:rsidDel, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/deletionRsid"
         },
         "extensionIds": {
-          "$ref": "#/definitions/DrawingExtensionIds",
-          "description": "Word 2010 wrapper ids; round-trip only."
+          "$ref": "#/definitions/ChartOptions/properties/extensionIds"
         },
         "extensions": {
           "items": {
@@ -41015,8 +39751,7 @@
           "description": "Structured run properties of the wrapping w:r (round-trip)."
         },
         "runPropertiesRsid": {
-          "$ref": "#/definitions/LongHexNumber",
-          "description": "Revision save ID of the wrapping w:r properties (w:rsidRPr, round-trip)."
+          "$ref": "#/definitions/ChartOptions/properties/runPropertiesRsid"
         },
         "transformation": {
           "$ref": "#/definitions/MediaTransformation"

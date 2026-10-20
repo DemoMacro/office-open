@@ -1,9 +1,13 @@
-import type { ChartSpaceOptions, OdfChartStyleResources } from "@office-open/core";
-import { chartSpaceDesc, stringify, type WriteContext } from "@office-open/core";
+import type { ChartSpaceOptions, ChartStyleResources } from "@office-open/core";
+import {
+  ChartStyleCompatibilityError,
+  chartSpaceDesc,
+  stringify,
+  type WriteContext,
+} from "@office-open/core";
 import { describe, expect, it } from "vite-plus/test";
 
 import { generateChartDocument, parseChartDocument } from "./index";
-import { OdfChartStyleOverlayError } from "./index";
 
 function style(fill: Record<string, string>, outline: Record<string, string> = {}) {
   return {
@@ -16,16 +20,16 @@ function style(fill: Record<string, string>, outline: Record<string, string> = {
   };
 }
 
-function chart(resources: OdfChartStyleResources): ChartSpaceOptions {
+function chart(resources: ChartStyleResources): ChartSpaceOptions {
   return {
     type: "column",
     series: [{ name: "Sales", values: [1, 2] }],
-    shapeProperties: { odfStyleName: "chart-style" },
-    odfStyleResources: resources,
+    shapeProperties: { styleName: "chart-style" },
+    styleResources: resources,
   };
 }
 
-async function parse(resources: OdfChartStyleResources) {
+async function parse(resources: ChartStyleResources) {
   return (await parseChartDocument(generateChartDocument({ chart: chart(resources) }))).chart;
 }
 
@@ -79,7 +83,7 @@ describe("ODF chart style resources", () => {
   });
 
   it("preserves hatch styling and rejects it for OOXML generation", async () => {
-    const resources: OdfChartStyleResources = {
+    const resources: ChartStyleResources = {
       styles: [style({ "draw:fill": "hatch", "draw:fill-hatch-name": "hatch" })],
       gradients: [],
       hatches: [
@@ -98,9 +102,9 @@ describe("ODF chart style resources", () => {
       strokeDashes: [],
     };
     const parsed = await parse(resources);
-    expect(parsed.shapeProperties?.odfStyle?.fill).toEqual({ type: "hatch", name: "hatch" });
+    expect(parsed.shapeProperties?.styleName).toBe("chart-style");
     expect(() => stringify(chartSpaceDesc, parsed, {} as WriteContext)).toThrow(
-      OdfChartStyleOverlayError,
+      ChartStyleCompatibilityError,
     );
   });
 
@@ -173,12 +177,7 @@ describe("ODF chart style resources", () => {
       strokeDashes: [],
     });
     expect(parsed.shapeProperties?.fill).toBeUndefined();
-    expect(parsed.shapeProperties?.odfStyle?.fill).toMatchObject({
-      type: "bitmap",
-      repeat: "no-repeat",
-      tileRepeatOffset: "10% horizontal",
-      opacityName: "opaque",
-    });
+    expect(parsed.shapeProperties?.styleName).toBe("chart-style");
   });
 
   it("preserves square gradients and round dash caps without projecting them", async () => {
@@ -190,7 +189,7 @@ describe("ODF chart style resources", () => {
       strokeDashes: [],
     });
     expect(square.shapeProperties?.fill).toEqual({ type: "gradient", stops: [] });
-    expect(square.shapeProperties?.odfStyle?.fill).toEqual({ type: "gradient", name: "gradient" });
+    expect(square.shapeProperties?.styleName).toBe("chart-style");
 
     const roundDash = await parse({
       styles: [
@@ -209,7 +208,7 @@ describe("ODF chart style resources", () => {
       strokeDashes: [{ name: "dash", attributes: { "draw:style": "round" } }],
     });
     expect(roundDash.shapeProperties?.outline?.customDash).toEqual([]);
-    expect(roundDash.shapeProperties?.odfStyle?.outline).toEqual({ type: "dash", name: "dash" });
+    expect(roundDash.shapeProperties?.styleName).toBe("chart-style");
   });
 
   it("converts percentage and absolute dash lengths", async () => {
@@ -279,7 +278,7 @@ describe("ODF chart style resources", () => {
   });
 
   it("round-trips typed resources, references, and projection semantics", async () => {
-    const resources: OdfChartStyleResources = {
+    const resources: ChartStyleResources = {
       styles: [style({ "draw:fill": "gradient", "draw:fill-gradient-name": "gradient" })],
       gradients: [
         {
@@ -306,9 +305,8 @@ describe("ODF chart style resources", () => {
     };
     const first = await parse(resources);
     const second = (await parseChartDocument(generateChartDocument({ chart: first }))).chart;
-    expect(second.odfStyleResources?.gradients).toEqual(resources.gradients);
-    expect(second.shapeProperties?.odfStyleName).toBe("chart-style");
-    expect(second.shapeProperties?.odfStyle).toEqual(first.shapeProperties?.odfStyle);
+    expect(second.styleResources?.gradients).toEqual(resources.gradients);
+    expect(second.shapeProperties?.styleName).toBe("chart-style");
     expect(second.shapeProperties?.fill).toEqual(first.shapeProperties?.fill);
   });
 });

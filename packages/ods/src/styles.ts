@@ -8,7 +8,7 @@ import {
   xmlElement,
   type XmlAttributes,
 } from "@office-open/odf";
-import type { OdfStyleFamily, OdfStyleOverlayOptions } from "@office-open/odf";
+import type { StyleFamily, StyleResourceOptions } from "@office-open/odf";
 import type {
   AlignmentOptions,
   BorderOptions,
@@ -50,19 +50,19 @@ export function addCellStyle(style: StyleOptions, styles: string[]): string {
   return styleName;
 }
 
-export function styleOverlaysXml(overlays: OdfStyleOverlayOptions[] | undefined): string[] {
+export function styleResourcesXml(overlays: StyleResourceOptions[] | undefined): string[] {
   return (overlays ?? []).map((overlay) =>
     xmlElement(
       "style:style",
       { "style:name": overlay.name, "style:family": overlay.family },
       overlay.properties.map((property) =>
-        xmlElement(property.name, overlayAttributesXml(property.attributes)),
+        xmlElement(property.name, resourceAttributesXml(property.attributes)),
       ),
     ),
   );
 }
 
-function overlayAttributesXml(
+function resourceAttributesXml(
   attributes: Record<string, string | number | boolean>,
 ): Record<string, string | number | boolean> {
   return Object.fromEntries(
@@ -419,11 +419,11 @@ const GNUMERIC_PATTERN_INDEX = new Map(
   ]),
 );
 
-export function parseStyleOverlays(container: Element | undefined): OdfStyleOverlayOptions[] {
-  const result: OdfStyleOverlayOptions[] = [];
+export function parseStyleResources(container: Element | undefined): StyleResourceOptions[] {
+  const result: StyleResourceOptions[] = [];
   for (const style of childrenNamed(container, "style:style")) {
     const name = attributeString(style, "style:name") ?? "";
-    const family = attributeString(style, "style:family") as OdfStyleFamily;
+    const family = attributeString(style, "style:family") as StyleFamily;
     const path = `/office:document-content/office:automatic-styles/style:style[@style:name="${name}"]`;
     if (!ODS_STYLE_PROPERTIES[family]) {
       const reason = "unknown style family";
@@ -439,7 +439,7 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
       (child) =>
         child.type === "element" && child.name !== "style:tab-stops" && child.name !== "style:map",
     );
-    const properties: OdfStyleOverlayOptions["properties"] = [];
+    const properties: StyleResourceOptions["properties"] = [];
     for (const property of propertyElements) {
       const propertyName = property.name ?? "";
       if (!ODS_STYLE_PROPERTIES[family]!.includes(propertyName)) {
@@ -469,7 +469,7 @@ export function parseStyleOverlays(container: Element | undefined): OdfStyleOver
             reason,
           );
         }
-        attributes[attribute] = overlayValue(attribute, String(value));
+        attributes[attribute] = resourceValue(attribute, String(value));
       }
       if (Object.keys(attributes).length > 0)
         properties.push({ name: property.name ?? "", attributes });
@@ -501,7 +501,7 @@ function isMappedDimensionAttribute(element: string, attribute: string): boolean
   );
 }
 
-function overlayValue(name: string, value: string): string | number {
+function resourceValue(name: string, value: string): string | number {
   if (/^\d+(?:\.\d+)?%$/.test(value)) return Number.parseFloat(value);
   if (name === "style:column-width") return Math.round((lengthToEmu(value) ?? 0) / 9525);
   if (name === "style:row-height" || name === "style:min-row-height") {

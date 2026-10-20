@@ -63,8 +63,8 @@ export interface TextBoxPartOptions {
 }
 
 export interface ShapeCoreOptions {
-  /** ODF-only `draw:control` reference; absent for ordinary DrawingML shapes. */
-  odfControlId?: string;
+  /** Drawing control reference (`draw:control`); absent for ordinary DrawingML shapes. */
+  controlId?: string;
   /** Black-and-white rendering mode on wps:spPr (`@bwMode`); absent = omitted. */
   blackWhiteMode?: BlackWhiteMode;
   /**

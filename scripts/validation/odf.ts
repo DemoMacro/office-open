@@ -187,8 +187,8 @@ const ODF_CHART = {
   chart: {
     type: "column",
     series: [{ name: "Sales", values: [1, 2] }],
-    shapeProperties: { odfStyleName: "chart-style" },
-    odfStyleResources: {
+    shapeProperties: { styleName: "chart-style" },
+    styleResources: {
       styles: [
         {
           name: "chart-style",

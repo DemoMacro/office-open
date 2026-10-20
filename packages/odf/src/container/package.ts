@@ -211,7 +211,7 @@ export async function readOcf(
   return readOcfSync(await toUint8ArrayAsync(data), expectedMimeType);
 }
 
-export function hasOcfManifestOverlay(manifest: OcfManifestOptions): boolean {
+export function hasOcfManifestOptions(manifest: OcfManifestOptions): boolean {
   return (
     (manifest.encryptedKeys?.length ?? 0) > 0 ||
     manifest.entries.some(

@@ -320,8 +320,8 @@ export interface DrawingSmartArtOptions
 
 /** Anchored shape (xdr:sp): geometry + optional text body. */
 export interface ShapeOptions extends DrawingAnchorOptions, NonVisualDrawingPropertiesOptions {
-  /** ODF-only `draw:control` reference; absent for ordinary spreadsheet shapes. */
-  odfControlId?: string;
+  /** Drawing control reference (`draw:control`); absent for ordinary spreadsheet shapes. */
+  controlId?: string;
   /**
    * Click hyperlink on the object itself (a:hlinkClick inside xdr:cNvPr) —
    * jump to a URL when the object is clicked.

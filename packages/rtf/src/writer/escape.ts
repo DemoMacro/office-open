@@ -9,6 +9,8 @@ export function rtfText(value: string): string {
       result += "\\line ";
     } else if (code === 0x09) {
       result += "\\tab ";
+    } else if (character === " ") {
+      result += "\\'20";
     } else if (code < 0x80) {
       result += character;
     } else {

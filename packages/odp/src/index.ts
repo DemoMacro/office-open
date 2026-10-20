@@ -8,4 +8,4 @@ export {
 export { OdpParseError } from "./error";
 export type { OdpPresentationOptions, PresentationOptions, SlideOptions } from "./options";
 export type { OdpEmbeddedObjectOptions, OdpEmbeddedObjectFrameOptions } from "./embedded-objects";
-export type { OdfPackageMemberOptions } from "@office-open/odf";
+export type { PackageMemberOptions } from "@office-open/odf";
